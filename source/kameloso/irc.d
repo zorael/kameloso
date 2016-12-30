@@ -20,6 +20,7 @@ IrcBot bot;
 struct IrcBot
 {
     string nickname = "kameloso";
+    string login    = "kameloso";
     string user     = "kameloso";
     string ident    = "NaN";
     string password;
@@ -116,7 +117,6 @@ private:
     import core.thread;
     import std.concurrency : send;
 
-    //IrcBot bot;
     Tid mainThread;
     IrcUser[string] users;
     bool delegate()[string] queue;
@@ -163,9 +163,10 @@ public:
         switch (event.type)
         {
         case NOTICE:
-            if (!bot.registered && event.content.beginsWith("***"))
+            // if (!bot.registered && event.content.beginsWith("***"))
+            if (!bot.server.length && event.content.beginsWith("***"))
             {
-                bot.registered = true;
+                //bot.registered = true;
                 bot.server = event.sender;
                 updateBot();
 
@@ -179,40 +180,51 @@ public:
                 // There's no point authing if there's no bot password
                 if (!bot.password.length) return;
 
-                if (event.content.beginsWith(cast(string)NickServLines.challenge))
+                if (event.content.beginsWith(cast(string)NickServLines.acceptance))
                 {
-                    mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG NickServ@services. :IDENTIFY %s %s"
-                        .format(bot.nickname, bot.password));
-                }
-                else if (event.content.beginsWith(cast(string)NickServLines.acceptance))
-                {
-                    if (!bot.channels.length) break;
+                    if (!bot.channels.length || bot.finishedLogin) break;
 
                     mainThread.send(ThreadMessage.Sendline(),
                          "JOIN :%s".format(bot.channels.joiner(",")));
+                    bot.finishedLogin = true;
+                    updateBot();
                 }
             }
+            break;
+
+        case WELCOME:
+            // The Welcome message is the first point at which we *know* our nickname
+            bot.nickname = event.target;
+            updateBot();
             break;
 
         case RPL_ENDOFMOTD:
             // FIXME: Deadlock if a password exists but there is no challenge
-            if (bot.password.length) break;
-
-            if (!bot.channels.length)
+            if (bot.password.length)
             {
-                writeln("No channels to join...");
+                mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG NickServ@services. :IDENTIFY %s %s"
+                    .format(bot.login, bot.password));
+            }
+            else
+            {
+                mainThread.send(ThreadMessage.Sendline(),
+                    "JOIN :%s".format(bot.channels.joiner(",")));
+                bot.finishedLogin = true;
+                updateBot();
                 break;
             }
 
-            mainThread.send(ThreadMessage.Sendline(),
-                "JOIN :%s".format(bot.channels.joiner(",")));
             break;
 
         case ERR_NICKNAMEINUSE:
-            // FIXME: Could use SELFNICK instead
-            bot.nickname ~= altNickSign;
-            mainThread.send(ThreadMessage.Sendline(), "NICK %s".format(bot.nickname));
+            mainThread.send(ThreadMessage.Sendline(),
+                "NICK %s".format(bot.nickname ~ altNickSign));
+            break;
+
+        case SELFNICK:
+            // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
+            bot.nickname = event.content;
             updateBot();
             break;
 
