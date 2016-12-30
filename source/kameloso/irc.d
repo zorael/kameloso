@@ -137,6 +137,12 @@ public:
         this.mainThread = tid;
     }
 
+    void status()
+    {
+        writefln("---------------------- %s", typeof(this).stringof);
+        printObject(bot);
+    }
+
     void newBot(IrcBot bot)
     {
         // this.bot = bot;
@@ -251,6 +257,8 @@ final class Pinger : IrcPlugin
     Tid mainThread, pingThread;
 
     void onEvent(const IrcEvent) {}
+
+    void status() {}
 
     void newBot(IrcBot) {}
 

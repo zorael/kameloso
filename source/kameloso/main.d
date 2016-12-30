@@ -98,6 +98,10 @@ ShouldQuit checkMessages()
 
                 foreach (plugin; plugins) plugin.newBot(.bot);
             },
+            (ThreadMessage.Status)
+            {
+                foreach (plugin; plugins) plugin.status();
+            },
             (LinkTerminated e)
             {
                 writeln("Some linked thread died!");

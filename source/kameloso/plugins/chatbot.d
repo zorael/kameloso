@@ -150,6 +150,12 @@ public:
         Files.quotes.loadQuotes(quotes);
     }
 
+    void status()
+    {
+        writefln("---------------------- %s", typeof(this).stringof);
+        printObject(state.bot);
+    }
+
     void newBot(IrcBot bot)
     {
         state.bot = bot;

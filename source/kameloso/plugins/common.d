@@ -14,6 +14,8 @@ interface IrcPlugin
 {
     void newBot(IrcBot);
 
+    void status();
+
     void onEvent(const IrcEvent);
 
     void teardown();

@@ -195,8 +195,9 @@ private:
 
         case "status":
             // Print out all current settings
-            writeln("I am kameloso");
-            printObject(state.bot);
+            //writeln("I am kameloso");
+            //printObject(state.bot);
+            state.mainThread.send(ThreadMessage.Status());
             break;
 
         default:
@@ -212,6 +213,12 @@ public:
         mixin(scopeguard(entry|failure));
         state.bot = bot;
         state.mainThread = tid;
+    }
+
+    void status()
+    {
+        writefln("---------------------- %s", typeof(this).stringof);
+        printObject(state.bot);
     }
 
     void newBot(IrcBot bot)

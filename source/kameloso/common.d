@@ -27,6 +27,7 @@ static struct ThreadMessage
     static struct Quit {}
     static struct Whois {}
     static struct Teardown {}
+    static struct Status {}
 }
 
 
