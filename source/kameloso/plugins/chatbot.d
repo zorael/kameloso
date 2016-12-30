@@ -165,6 +165,10 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
+        state.onEvent2!false(event, &onCommand);
+    }
+    void onEvent3(const IrcEvent event)
+    {
         with (IrcEvent.Type)
         switch (event.type)
         {
