@@ -44,7 +44,7 @@ private:
 
             if ((newUser.login == bot.master) || bot.friends.canFind(newUser.login))
             {
-                writefln("Replaying old event:");
+                writefln("Chatbot replaying old event:");
                 writeln(event.toString);
                 onCommand(event);
                 return true;

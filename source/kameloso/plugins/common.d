@@ -53,9 +53,9 @@ void doWhois2(IrcPluginState state, const IrcEvent event,
 
         if ((newUser.login == state.bot.master) || state.bot.friends.canFind(newUser.login))
         {
-            writeln("Replaying old event:");
+            writeln("plugin common replaying old event:");
             writeln(event.toString);
-            onCommand(event);
+            (*onCommand)(event);
             return true;
         }
         
