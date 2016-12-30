@@ -193,7 +193,7 @@ public:
 
     /++
      +  React to an IrcEvent from the server. At this point nothing about it is known, and only
-     +  event from whitelisted users (and master) should be reacted to. So; logic to ensure
+     +  events from whitelisted users (and master) should be reacted to. So; logic to ensure
      +  the user is authorised, and that the message was aimed toward the bot.
      +
      +  Params:
@@ -213,7 +213,8 @@ public:
             {
                 if ((*oldCommand)())
                 {
-                   state.queue.remove(event.target);
+                    // The command returned true; remove it from the queue
+                    state.queue.remove(event.target);
                 }
             }
 
