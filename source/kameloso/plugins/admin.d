@@ -21,41 +21,6 @@ private:
     IrcPluginState state;
     bool printAll;
 
-    // doWhois
-    /++
-     +  Ask the main thread to do a WHOIS call. That way the plugins don't need to know of the
-     +  Connection at all, at the cost of message passing overhead.
-     +
-     +  A big FIXME is to make this code common with AdminPlugin.
-     +
-     +  Params:
-     +      event = A complete IrcEvent to queue for later processing.
-     +/
-    version(none)
-    void doWhois(const IrcEvent event)
-    {
-        writefln("Missing user information on %s", event.sender);
-        
-        bool dg()
-        {
-            auto newUser = event.sender in state.users;
-
-            if ((newUser.login == state.bot.master) || state.bot.friends.canFind(newUser.login))
-            {
-                writefln("Replaying old event:");
-                writeln(event.toString);
-                onCommand(event);
-                return true;
-            }
-            
-            return false;
-        }
-
-        state.queue[event.sender] = &dg;
-
-        state.mainThread.send(ThreadMessage.Whois(), event.sender);
-    }
-
     // onCommand
     /++
      +  React to a command from an IRC user. At this point it is known to be aimed toward
