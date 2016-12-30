@@ -72,6 +72,18 @@ void doWhois(ref IrcPluginState state, const IrcEvent event,
 }
 
 
+// onEventGeneric
+/++
+ +  Common code to decide whether a query or channel event should be reacted to.
+ +  The same code was being used in both the Chatbot and the Admin plugins, so
+ +  by breaking it out into a template here we get to reuse the code.
+ +
+ +  Params:
+ +      queryOnly = If QueryOnly.yes then channel messages will be ignored.
+ +      ref state = A reference to a plugin's internal state, which includes
+ +                  things like user arrays and thread IDs.
+ +      onCommand = The delegate to execute if the logic says the event is interesting.
+ +/
 void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
     (ref IrcPluginState state, const IrcEvent event, void delegate(const IrcEvent) onCommand)
 {
