@@ -222,8 +222,8 @@ public:
             // Queries are always aimed toward the bot, but the user must be whitelisted
             auto user = event.sender in state.users;
 
-            // if (!user) return doWhois(event);
-            if (!user) return state.doWhois2(event, &onCommand);
+            // if (!user) return state.doWhois2(event, &onCommand);
+            if (!user) return doWhois(event);
             else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
             {
                 // master or friend
@@ -274,8 +274,8 @@ public:
             else
             {
                 // No known user, relevant channel
-                //return doWhois(event);
-                return state.doWhois2(event, &onCommand);
+                // return state.doWhois2(event, &onCommand);
+                return doWhois(event);
             }
 
         case PART:
