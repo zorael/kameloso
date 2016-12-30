@@ -38,7 +38,7 @@ struct IrcPluginState
  +      event = A complete IrcEvent to queue for later processing.
  +/
 void doWhois2(IrcPluginState state, const IrcEvent event,
-              void function(const IrcEvent) onCommand)
+              scope void delegate(const IrcEvent) onCommand)
 {
     import kameloso.common : ThreadMessage;
     import std.stdio : writeln, writefln;
