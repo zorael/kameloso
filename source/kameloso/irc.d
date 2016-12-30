@@ -131,8 +131,6 @@ private:
 public:
     this(IrcBot bot, Tid tid)
     {
-        mixin(scopeguard(entry, "Connect plugin"));
-        // this.bot = bot;
         .bot = bot;
         this.mainThread = tid;
     }
@@ -274,7 +272,6 @@ final class Pinger : IrcPlugin
 
     this(const IrcBot bot, Tid tid)
     {
-        mixin(scopeguard((entry|failure), "Pinger plugin"));
         // Ignore bot
         mainThread = tid;
 
@@ -878,6 +875,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
 void parseSpecialcases(ref IrcEvent event, ref string slice)
 {
     mixin(scopeguard(failure));
+
     with (IrcEvent.Type)
     switch (event.type)
     {

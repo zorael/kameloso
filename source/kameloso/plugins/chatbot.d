@@ -143,7 +143,6 @@ private:
 public:
     this(IrcBot bot, Tid tid)
     {
-        mixin(scopeguard(entry|failure));
         state.bot = bot;
         state.mainThread = tid;
 

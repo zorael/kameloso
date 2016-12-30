@@ -183,11 +183,7 @@ ShouldQuit handleArguments(string[] args)
 /// Simply resets and initialises all plugins.
 void initPlugins(IrcBot bot, Tid tid)
 {
-    foreach (plugin; plugins)
-    {
-        mixin(scopeguard(failure, "tearing down plugins"));
-        plugin.teardown();
-    }
+    foreach (plugin; plugins) plugin.teardown();
 
     plugins.length = 0;
 
@@ -201,7 +197,7 @@ void initPlugins(IrcBot bot, Tid tid)
 /// Main!
 void main(string[] args)
 {
-    //mixin(scopeguard(entry|exit));
+    mixin(scopeguard(entry|exit));
 
     if (handleArguments(args) == ShouldQuit.yes) return;
 
