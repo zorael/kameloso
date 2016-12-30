@@ -6,7 +6,7 @@ import kameloso.stringutils;
 import kameloso.constants;
 import kameloso.common;
 
-import std.json : JSONValue, parseJSON;
+import std.json : JSONValue, parseJSON, JSONException;
 
 
 // Chatbot
@@ -96,31 +96,30 @@ private:
             const nickname = slice.stripModeSign;
             const quote = quotes.getQuote(nickname);
 
-            if (!quote.length) break;
-
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s | %s".format(target, nickname, quote));
+            if (quote.length)
+            {
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :%s | %s".format(target, nickname, quote));
+            }
+            else
+            {
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :No quote on record for %s".format(target, nickname));
+            }
             break;
 
         case "addquote":
             // Add a quote to the JSON list and save it to disk
             const nickname = slice.nom!(Decode.yes)(' ').stripModeSign;
 
-            if (nickname.length && slice.length)
-            {
-                if (auto arr = nickname in quotes)
-                {
-                    quotes[nickname].array ~= JSONValue(slice);
-                }
-                else
-                {
-                    quotes.object[nickname] = JSONValue([ slice ]);
-                }
+            if (!nickname.length || !slice.length) return;
 
-                Files.quotes.saveQuotes(quotes);
-                state.mainThread.send("PRIVMSG %s :Quote for %s saved (%d on record)"
-                    .format(target, nickname, quotes[nickname].array.length));
-            }
+            quotes.addQuote(nickname, slice);
+            Files.quotes.saveQuotes(quotes);
+
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :Quote for %s saved (%d on record)"
+                .format(target, nickname, quotes[nickname].array.length));
             break;
         
         case "printquotes":
@@ -269,18 +268,51 @@ public:
  +/
 static string getQuote(const JSONValue quotes, const string nickname)
 {
-    if (quotes.object.length) return string.init;
-
-    if (auto arr = nickname in quotes)
+    try
     {
-        import std.random : uniform;
+        if (auto arr = nickname in quotes)
+        {
+            import std.random : uniform;
 
-        return arr.array[uniform(0,(*arr).array.length)].str;
+            return arr.array[uniform(0,(*arr).array.length)].str;
+        }
+        else
+        {
+            // No quotes available for nickname
+            return string.init;
+        }
     }
-    else
+    catch (JSONException e)
     {
-        // No quotes available for nickname
         return string.init;
+    }
+}
+
+
+static void addQuote(ref JSONValue quotes, const string nickname, const string line)
+{
+    import std.format : format;
+
+    assert((nickname.length && line.length),
+        "%s was passed an empty nickname(%s) or line(%s)".format(__FUNCTION__, nickname, line));
+
+    try
+    {
+        if (auto arr = nickname in quotes)
+        {
+            quotes[nickname].array ~= JSONValue(line);
+        }
+        else
+        {
+            // No quotes for nickname
+            quotes.object[nickname] = JSONValue([ line ]);
+        }
+    }
+    catch (JSONException e)
+    {
+        // No quotes at all
+        quotes = JSONValue("{}");
+        return quotes.addQuote(nickname, line);
     }
 }
 
