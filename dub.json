@@ -1,0 +1,15 @@
+{
+	"name": "kameloso",
+	"authors": [
+		"JR"
+	],
+	"description": "IRC bot",
+	"copyright": "Copyright © 2016, JR",
+	"license": "LGPLv2 or later",
+    "targetType": "executable",
+	"debugMode": true,
+	"debugInfo": true,
+	"debugInfoC": true,
+	"alwaysStackFrame": true,
+	"inline": true
+}
