@@ -289,6 +289,16 @@ static string getQuote(const JSONValue quotes, const string nickname)
 }
 
 
+// addQuote
+/++
+ +  Adds a quote to the JSON storage. It does not save it to disk; this has to be
+ +  done at the calling site.
+ +
+ +  Params:
+ +      ref quotes = The JSON list of all the quotes, in string[][string] form.
+ +      nickname = The string nickname of the quoted user.
+ +      line = The quote itself.
+ +/
 static void addQuote(ref JSONValue quotes, const string nickname, const string line)
 {
     import std.format : format;
