@@ -13,6 +13,7 @@
 
 # Executables
 *.exe
+kameloso
 
 # DUB
 .dub
@@ -22,3 +23,12 @@ docs/
 
 # Code coverage
 *.lst
+grinds/
+callgrind*
+
+# Other directories
+.vscode/
+
+# Misc
+kameloso.conf
+quotes.json
