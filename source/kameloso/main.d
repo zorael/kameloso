@@ -222,7 +222,7 @@ void main(string[] args)
         }
 
         // Reset fields in the bot that should not survive a reconnect
-        bot.registered = false;
+        bot.finishedLogin = false;
         bot.server = string.init;
 
         initPlugins(bot, thisTid);
