@@ -125,10 +125,13 @@ void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
         break;
 
     case CHAN:
+    // The Admin plugin only cares about Queries
+    static if (queryOnly == QueryOnly.no)
+    {
         /*
-            * Not all channel messages are of interest; only those starting with the bot's
-            * nickname, those from whitelisted users, and those in channels marked as active.
-            */
+         * Not all channel messages are of interest; only those starting with the bot's
+         * nickname, those from whitelisted users, and those in channels marked as active.
+         */
 
         if (!state.bot.channels.canFind(event.channel))
         {
@@ -137,15 +140,16 @@ void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
         }
         else
         {
-            static if (queryOnly == QueryOnly.no)
+            if (event.content.beginsWith(state.bot.nickname) &&
+               (event.content.length > state.bot.nickname.length) &&
+               (event.content[state.bot.nickname.length] == ':'))
             {
-                if (!event.content.beginsWith(state.bot.nickname) ||
-                   (event.content.length <= state.bot.nickname.length) ||
-                   (event.content[state.bot.nickname.length] != ':'))
-                {
-                    // Not aimed at the bot
-                    return;
-                }
+                // Drop down
+            }
+            else
+            {
+                // Not aimed at bot
+                return;
             }
         }
 
@@ -173,6 +177,12 @@ void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
             // Known bad user
             return;
         }
+    }
+    else
+    {
+        // Don't fall down
+        break;
+    }
 
     case PART:
     case QUIT:
