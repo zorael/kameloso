@@ -198,9 +198,10 @@ public:
             // FIXME: Deadlock if a password exists but there is no challenge
             if (bot.password.length)
             {
-                mainThread.send(ThreadMessage.Sendline(),
+                mainThread.send(ThreadMessage.Quietline(),
                     "PRIVMSG NickServ@services. :IDENTIFY %s %s"
                     .format(bot.login, bot.password));
+                writefln("--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2", bot.login);
             }
             else
             {
