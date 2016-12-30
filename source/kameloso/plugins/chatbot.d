@@ -340,6 +340,7 @@ static void saveQuotes(const string filename, const JSONValue quotes)
     scope (exit) f.close();
 
     f.write(quotes.toPrettyString);
+    f.writeln();
 }
 
 
