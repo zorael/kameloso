@@ -72,7 +72,7 @@ void doWhois(ref IrcPluginState state, const IrcEvent event,
 }
 
 
-void onEvent2(QueryOnly queryOnly = QueryOnly.no)
+void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
     (ref IrcPluginState state, const IrcEvent event, void delegate(const IrcEvent) onCommand)
 {
     import kameloso.stringutils;
