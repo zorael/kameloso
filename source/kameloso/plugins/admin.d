@@ -22,7 +22,7 @@ private:
     Tid mainThread;
     IrcUser[string] users;
     bool delegate()[string] queue;
-    bool printAll = true;
+    bool printAll;
 
     // doWhois
     /++

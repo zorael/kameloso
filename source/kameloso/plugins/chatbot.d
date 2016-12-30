@@ -182,7 +182,6 @@ public:
         state.bot = bot;
         state.mainThread = tid;
 
-        writeln("quote file:", Files.quotes);
         Files.quotes.loadQuotes(quotes);
     }
 

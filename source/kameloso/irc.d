@@ -872,8 +872,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case JOIN:
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
-        writefln("event.sender(%s) == bot.nickname(%s) ? %s",
-                 event.sender, bot.nickname, (event.sender == bot.nickname));
         event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
         event.channel = slice;
         break;
@@ -887,8 +885,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             event.channel = event.channel.unquoted;
         }
 
-        writefln("event.sender(%s) == bot.nickname(%s) ? %s",
-                 event.sender, bot.nickname, (event.sender == bot.nickname));
         event.type = (event.sender == bot.nickname) ? SELFPART : PART;
         event.content = slice;
         break;
@@ -896,16 +892,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case NICK:
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
         // FIXME: Propagate new bot if SELFNICK
-        writefln("event.sender(%s) == bot.nickname(%s) ? %s",
-                 event.sender, bot.nickname, (event.sender == bot.nickname));
         event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
         event.content = slice[1..$];
         break;
 
     case QUIT:
         // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
-        writefln("event.sender(%s) == bot.nickname(%s) ? %s",
-                 event.sender, bot.nickname, (event.sender == bot.nickname));
         event.type = (event.sender == bot.nickname) ? SELFQUIT : QUIT;
         event.content = slice[1..$].unquoted;
         break;
