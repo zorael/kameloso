@@ -2,6 +2,8 @@ module kameloso.plugins.common;
 
 import kameloso.irc;
 
+import std.typecons : Flag;
+
 
 /++
  +  Interface that all IrcPlugins must adhere to. There will obviously be more functions
@@ -25,6 +27,10 @@ struct IrcPluginState
     IrcUser[string] users;
     bool delegate()[string] queue;
 }
+
+
+/// This makes use of the onEvent2 template more self-explanatory
+alias QueryOnly = Flag!"queryOnly";
 
 
 // doWhois
@@ -66,8 +72,8 @@ void doWhois(ref IrcPluginState state, const IrcEvent event,
 }
 
 
-void onEvent2(bool queryOnly = false)(ref IrcPluginState state, const IrcEvent event,
-                                      void delegate(const IrcEvent) onCommand)
+void onEvent2(QueryOnly queryOnly = QueryOnly.no)
+    (ref IrcPluginState state, const IrcEvent event, void delegate(const IrcEvent) onCommand)
 {
     import kameloso.stringutils;
     import std.algorithm.searching : canFind;
@@ -116,7 +122,7 @@ void onEvent2(bool queryOnly = false)(ref IrcPluginState state, const IrcEvent e
         }
         else
         {
-            static if (!queryOnly)
+            static if (queryOnly == QueryOnly.no)
             {
                 if (!event.content.beginsWith(state.bot.nickname) ||
                    (event.content.length <= state.bot.nickname.length) ||
@@ -133,7 +139,7 @@ void onEvent2(bool queryOnly = false)(ref IrcPluginState state, const IrcEvent e
         if (!user)
         {
             // No known user, relevant channel
-            state.doWhois(event, onCommand);
+            return state.doWhois(event, onCommand);
         }
 
         // User exists in users database

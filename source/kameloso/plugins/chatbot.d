@@ -165,8 +165,11 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
-        state.onEvent2!false(event, &onCommand);
+        return state.onEvent2!(QueryOnly.no)(event, &onCommand);
     }
+
+
+    version(none)
     void onEvent3(const IrcEvent event)
     {
         with (IrcEvent.Type)

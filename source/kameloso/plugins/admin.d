@@ -229,6 +229,13 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
+        return state.onEvent2!(QueryOnly.yes)(event, &onCommand);
+    }
+
+
+    version(none)
+    void onEvent3(const IrcEvent event)
+    {
         if (printAll)
         {
             writeln(event.raw);
