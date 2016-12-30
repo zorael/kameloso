@@ -34,6 +34,7 @@ private:
      +  Params:
      +      event = A complete IrcEvent to queue for later processing.
      +/
+    version(none)
     void doWhois(const IrcEvent event)
     {
         writefln("Missing user information on %s", event.sender);
@@ -222,8 +223,8 @@ public:
             // Queries are always aimed toward the bot, but the user must be whitelisted
             auto user = event.sender in state.users;
 
-            // if (!user) return state.doWhois2(event, &onCommand);
-            if (!user) return doWhois(event);
+            //if (!user) return doWhois(event);
+            if (!user) return state.doWhois(event, &onCommand);
             else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
             {
                 // master or friend
@@ -252,30 +253,27 @@ public:
 
             auto user = event.sender in state.users;
 
-            if (user)
+            if (!user)
             {
-                // User exists in users database
-                if (user.login == state.bot.master)
-                {
-                    // User is master, all is ok
-                    return onCommand(event);
-                }
-                else if (state.bot.friends.canFind(user.login))
-                {
-                    // User is whitelisted, all is ok
-                    return onCommand(event);
-                }
-                else
-                {
-                    // Known bad user
-                    return;
-                }
+                // No known user, relevant channel
+                return state.doWhois(event, &onCommand);
+            }
+
+            // User exists in users database
+            if (user.login == state.bot.master)
+            {
+                // User is master, all is ok
+                return onCommand(event);
+            }
+            else if (state.bot.friends.canFind(user.login))
+            {
+                // User is whitelisted, all is ok
+                return onCommand(event);
             }
             else
             {
-                // No known user, relevant channel
-                // return state.doWhois2(event, &onCommand);
-                return doWhois(event);
+                // Known bad user
+                return;
             }
 
         case PART:

@@ -18,10 +18,7 @@ private:
     import std.stdio : write, writeln, writefln;
     import std.algorithm.searching : canFind;
 
-    IrcBot bot;
-    Tid mainThread;
-    IrcUser[string] users;
-    bool delegate()[string] queue;
+    IrcPluginState state;
     bool printAll;
 
     // doWhois
@@ -34,15 +31,16 @@ private:
      +  Params:
      +      event = A complete IrcEvent to queue for later processing.
      +/
+    version(none)
     void doWhois(const IrcEvent event)
     {
         writefln("Missing user information on %s", event.sender);
         
         bool dg()
         {
-            auto newUser = event.sender in users;
+            auto newUser = event.sender in state.users;
 
-            if ((newUser.login == bot.master) || bot.friends.canFind(newUser.login))
+            if ((newUser.login == state.bot.master) || state.bot.friends.canFind(newUser.login))
             {
                 writefln("Replaying old event:");
                 writeln(event.toString);
@@ -53,9 +51,9 @@ private:
             return false;
         }
 
-        queue[event.sender] = &dg;
+        state.queue[event.sender] = &dg;
 
-        mainThread.send(ThreadMessage.Whois(), event.sender);
+        state.mainThread.send(ThreadMessage.Whois(), event.sender);
     }
 
     // onCommand
@@ -76,7 +74,7 @@ private:
         import std.algorithm.mutation  : remove;
         import std.algorithm.searching : countUntil;
 
-        if (users[event.sender].login != bot.master)
+        if (state.users[event.sender].login != state.bot.master)
         {
             writefln("Failsafe triggered: bot is not master (%s)", event.sender);
             return;
@@ -91,7 +89,7 @@ private:
         else
         {
             // We know it to be aimed at us from earlier checks so remove nickname prefix
-            slice = event.content.stripLeft[(bot.nickname.length+1)..$];
+            slice = event.content.stripLeft[(state.bot.nickname.length+1)..$];
             slice.munch(":?! ");
         }
 
@@ -119,7 +117,7 @@ private:
                 writeln("No argument given to sudo");
                 break;
             }
-            mainThread.send(ThreadMessage.Sendline(), slice);
+            state.mainThread.send(ThreadMessage.Sendline(), slice);
             break;
 
         case "join":
@@ -133,13 +131,13 @@ private:
                 writeln("No channels supplied");
                 break;
             }
-            mainThread.send(ThreadMessage.Sendline(),
+            state.mainThread.send(ThreadMessage.Sendline(),
                 "%s :%s".format(verb.toUpper, slice.splitter(' ').joiner(",")));
             break;
         
         case "quit":
             // By sending a concurrency message it should quit nicely
-            mainThread.send(ThreadMessage.Quit());
+            state.mainThread.send(ThreadMessage.Quit());
             break;
 
         case "addhome":
@@ -147,12 +145,13 @@ private:
             slice = slice.strip;
             if (!slice.isValidChannel) break;
 
-            if (bot.channels.canFind(slice))
+            if (state.bot.channels.canFind(slice))
             {
-                mainThread.send(ThreadMessage.Sendline(), "JOIN :%s".format(slice));
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "JOIN :%s".format(slice));
             }
 
-            bot.channels ~= slice;
+            state.bot.channels ~= slice;
             break;
 
         case "delhome":
@@ -160,7 +159,7 @@ private:
             slice = slice.strip;
             if (!slice.isValidChannel) break;
 
-            auto chanIndex = bot.channels.countUntil(slice);
+            auto chanIndex = state.bot.channels.countUntil(slice);
 
             if (chanIndex == -1)
             {
@@ -168,8 +167,9 @@ private:
                 break;
             }
 
-            bot.channels = bot.channels.remove(chanIndex);
-            mainThread.send(ThreadMessage.Sendline(), "PART :%s".format(slice));
+            state.bot.channels = state.bot.channels.remove(chanIndex);
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PART :%s".format(slice));
             break;
 
         case "addfriend":
@@ -185,7 +185,7 @@ private:
                 break;
             }
 
-            bot.friends ~= slice;
+            state.bot.friends ~= slice;
             writefln("%s added to friends", slice);
             break;
 
@@ -197,7 +197,7 @@ private:
                 break;
             }
 
-            auto friendIndex = bot.friends.countUntil(slice);
+            auto friendIndex = state.bot.friends.countUntil(slice);
 
             if (friendIndex == -1)
             {
@@ -205,7 +205,7 @@ private:
                 break;
             }
 
-            bot.friends = bot.friends.remove(friendIndex);
+            state.bot.friends = bot.friends.remove(friendIndex);
             writefln("%s removed from friends", slice);
             break;
 
@@ -231,7 +231,7 @@ private:
         case "status":
             // Print out all current settings
             writeln("I am kameloso");
-            printObject(bot);
+            printObject(state.bot);
             break;
 
         default:
@@ -245,13 +245,13 @@ public:
     this(IrcBot bot, Tid tid)
     {
         mixin(scopeguard(entry|failure));
-        this.bot = bot;
-        mainThread = tid;
+        state.bot = bot;
+        state.mainThread = tid;
     }
 
     void newBot(IrcBot bot)
     {
-        this.bot = bot;
+        state.bot = bot;
     }
 
     /++
@@ -275,14 +275,14 @@ public:
         {
         case WHOISLOGIN:
             // Save user to users, then replay any queued commands.
-            users[event.target] = userFromEvent(event);
+            state.users[event.target] = userFromEvent(event);
             //users[event.target].lastWhois = Clock.currTime;
 
-            if (auto oldCommand = event.target in queue)
+            if (auto oldCommand = event.target in state.queue)
             {
                 if ((*oldCommand)())
                 {
-                    queue.remove(event.target);
+                    state.queue.remove(event.target);
                 }
             }
 
@@ -290,11 +290,10 @@ public:
 
         case QUERY:
             // Queries are always aimed toward the bot, but the user must be whitelisted
-            auto user = event.sender in users;
+            auto user = event.sender in state.users;
 
-            // if (!user) return doWhois(event);
-            if (!user) return doWhois(event);
-            else if ((user.login == bot.master)) // || bot.friends.canFind(user.login))
+            if (!user) return state.doWhois(event, &onCommand);
+            else if (user.login == state.bot.master) // || bot.friends.canFind(user.login))
             {
                 // master or friend
                 return onCommand(event);
@@ -307,58 +306,34 @@ public:
              * nickname, those from whitelisted users, and those in channels marked as active.
              */
 
-            if (!bot.channels.canFind(event.channel))
+            if (!state.bot.channels.canFind(event.channel))
             {
                 // Channel is not relevant
                 return;
             }
-            else if (!event.content.beginsWith(bot.nickname) ||
-                (event.content.length <= bot.nickname.length) ||
-                (event.content[bot.nickname.length] != ':'))
+            else if (!event.content.beginsWith(state.bot.nickname) ||
+                (event.content.length <= state.bot.nickname.length) ||
+                (event.content[state.bot.nickname.length] != ':'))
             {
                 // Not aimed at the bot
                 return;
             }
 
-            auto user = event.sender in users;
+            auto user = event.sender in state.users;
 
-            /+ if (user)
-            {
-                // User exists in users database
-                if (user.login == bot.master)
-                {
-                    // User is master, all is ok
-                    return onCommand(event);
-                }
-                /*else if (bot.friends.canFind(user.login))
-                {
-                    // User is whitelisted, all is ok
-                    return onCommand(event);
-                }*/
-                else
-                {
-                    // Known bad user
-                    return;
-                }
-            }
-            else
-            {
-                // No known user, relevant channel
-                return doWhois(event);
-            } +/
             if (!user)
             {
                 // No known user, relevant channel
-                return doWhois(event);
+                return state.doWhois(event, &onCommand);
             }
 
             // User exists in users database
-            if (user.login == bot.master)
+            if (user.login == state.bot.master)
             {
                 // User is master, all is ok
                 return onCommand(event);
             }
-            /*else if (bot.friends.canFind(user.login))
+            /*else if (state.bot.friends.canFind(user.login))
             {
                 // User is whitelisted, all is ok
                 return onCommand(event);
@@ -371,7 +346,7 @@ public:
 
         case PART:
         case QUIT:
-            users.remove(event.sender);
+            state.users.remove(event.sender);
             break;
 
         default:

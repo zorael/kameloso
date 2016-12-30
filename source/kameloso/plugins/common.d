@@ -32,13 +32,11 @@ struct IrcPluginState
  +  Ask the main thread to do a WHOIS call. That way the plugins don't need to know of the
  +  Connection at all, at the cost of message passing overhead.
  +
- +  A big FIXME is to make this code common with AdminPlugin.
- +
  +  Params:
  +      event = A complete IrcEvent to queue for later processing.
  +/
-void doWhois2(IrcPluginState state, const IrcEvent event,
-              scope void delegate(const IrcEvent) onCommand)
+void doWhois(ref IrcPluginState state, const IrcEvent event,
+              scope void delegate(const IrcEvent) dg)
 {
     import kameloso.common : ThreadMessage;
     import std.stdio : writeln, writefln;
@@ -47,7 +45,7 @@ void doWhois2(IrcPluginState state, const IrcEvent event,
 
     writefln("Missing user information on %s", event.sender);
     
-    bool dg()
+    bool queuedCommand()
     {
         auto newUser = event.sender in state.users;
 
@@ -55,14 +53,14 @@ void doWhois2(IrcPluginState state, const IrcEvent event,
         {
             writeln("plugin common replaying old event:");
             writeln(event.toString);
-            (*onCommand)(event);
+            dg(event);
             return true;
         }
         
         return false;
     }
 
-    state.queue[event.sender] = &dg;
+    state.queue[event.sender] = &queuedCommand;
 
     state.mainThread.send(ThreadMessage.Whois(), event.sender);
 }
