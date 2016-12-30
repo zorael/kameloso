@@ -116,7 +116,7 @@ private:
     import core.thread;
     import std.concurrency : send;
 
-    IrcBot bot;
+    //IrcBot bot;
     Tid mainThread;
     IrcUser[string] users;
     bool delegate()[string] queue;
@@ -132,13 +132,15 @@ public:
     this(IrcBot bot, Tid tid)
     {
         mixin(scopeguard(entry, "Connect plugin"));
-        this.bot = bot;
+        // this.bot = bot;
+        .bot = bot;
         this.mainThread = tid;
     }
 
     void newBot(IrcBot bot)
     {
-        this.bot = bot;
+        // this.bot = bot;
+        .bot = bot;
     }
 
     // onEvent
