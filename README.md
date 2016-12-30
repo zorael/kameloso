@@ -1,0 +1,2 @@
+# kameloso
+IRC bot
