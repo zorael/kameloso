@@ -22,7 +22,7 @@ alias Decode = Flag!"decode";
  +  Returns:
  +      the string arr from the start up to the separator.    
  +/
-pragma(inline, true)
+pragma(inline)
 static string nom(Decode decode = Decode.no,T,C)(ref T[] arr, C separator)
 {
     import std.stdio : writefln;
@@ -90,7 +90,7 @@ unittest
  +  Returns:
  +      The singular string if num is 1 or -1, otherwise the plural string.
  +/
-pragma(inline, true)
+pragma(inline)
 static string plurality(int num, string singular, string plural) pure
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
@@ -115,7 +115,7 @@ unittest
  +  Returns:
  +      A slice of the line argument that excludes the quotes.
  +/
-pragma(inline, true)
+pragma(inline)
 static string unquoted(string line) pure
 {
     if (line.length < 2)
@@ -150,7 +150,7 @@ unittest
  +  Returns:
  +      true if haystack starts with needle, otherwise false.
  +/
-pragma(inline, true)
+pragma(inline)
 static bool beginsWith(T)(const T haystack, const T needle) pure
 if (isSomeString!T)
 {
@@ -166,7 +166,7 @@ unittest
 }
 
 /// Ditto
-pragma(inline, true)
+pragma(inline)
 static bool beginsWith(T)(const T line, const ubyte charcode) pure
 if (isSomeString!T)
 {
@@ -191,7 +191,7 @@ unittest
  +  Returns:
  +      An array with fields split out of the line argument.
  +/
-pragma(inline, true)
+pragma(inline)
 T[] arrayify(string separator = ",", T)(const T line)
 {
     import std.algorithm.iteration : splitter, map;
