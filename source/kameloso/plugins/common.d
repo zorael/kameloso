@@ -87,7 +87,8 @@ void doWhois(ref IrcPluginState state, const IrcEvent event,
  +      onCommand = The delegate to execute if the logic says the event is interesting.
  +/
 void onEventGeneric(QueryOnly queryOnly = QueryOnly.no)
-    (ref IrcPluginState state, const IrcEvent event, void delegate(const IrcEvent) onCommand)
+    (ref IrcPluginState state, const IrcEvent event,
+     scope void delegate(const IrcEvent) onCommand)
 {
     import kameloso.stringutils;
     import std.algorithm.searching : canFind;
