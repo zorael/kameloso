@@ -29,7 +29,7 @@ struct IrcBot
     @separator(",") string[] homes = [ "#flerrp", "#garderoben" ];
     @separator(",") string[] friends  = [ "klarrt", "maku" ];
     @transient string server;
-    @transient bool registered;
+    @transient bool finishedLogin;
     // @transient uint verbosity;
 }
 
@@ -163,10 +163,8 @@ public:
         switch (event.type)
         {
         case NOTICE:
-            // if (!bot.registered && event.content.beginsWith("***"))
             if (!bot.server.length && event.content.beginsWith("***"))
             {
-                //bot.registered = true;
                 bot.server = event.sender;
                 updateBot();
 
