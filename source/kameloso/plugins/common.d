@@ -93,9 +93,9 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
     (ref IrcPluginState state, const IrcEvent event,
      scope void delegate(const IrcEvent) onCommand)
 {
-    import kameloso.stringutils;
     import std.algorithm.searching : canFind;
 
+    with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {
@@ -108,16 +108,18 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
          * nickname, those from whitelisted users, and those in channels marked as active.
          */
 
-        if (!state.bot.channels.canFind(event.channel))
+        if (!bot.channels.canFind(event.channel))
         {
             // Channel is not relevant
             return;
         }
         else
         {
-            if (event.content.beginsWith(state.bot.nickname) &&
-               (event.content.length > state.bot.nickname.length) &&
-               (event.content[state.bot.nickname.length] == ':'))
+            import kameloso.stringutils : beginsWith;
+
+            if (event.content.beginsWith(bot.nickname) &&
+               (event.content.length > bot.nickname.length) &&
+               (event.content[bot.nickname.length] == ':'))
             {
                 // Drop down
             }
@@ -128,7 +130,7 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
             }
         }
 
-        auto user = event.sender in state.users;
+        auto user = event.sender in users;
 
         if (!user)
         {
@@ -137,12 +139,12 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
         }
 
         // User exists in users database
-        if (user.login == state.bot.master)
+        if (user.login == bot.master)
         {
             // User is master, all is ok
             return onCommand(event);
         }
-        else if (state.bot.friends.canFind(user.login))
+        else if (bot.friends.canFind(user.login))
         {
             // User is whitelisted, all is ok
             return onCommand(event);
@@ -161,10 +163,10 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
 
     case QUERY:
         // Queries are always aimed toward the bot, but the user must be whitelisted
-        auto user = event.sender in state.users;
+        auto user = event.sender in users;
 
         if (!user) return state.doWhois(event, onCommand);
-        else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
+        else if ((user.login == bot.master) || bot.friends.canFind(user.login))
         {
             // master or friend
             return onCommand(event);
@@ -173,15 +175,15 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
 
     case WHOISLOGIN:
         // Save user to users, then replay any queued commands.
-        state.users[event.target] = userFromEvent(event);
+        users[event.target] = userFromEvent(event);
         //users[event.target].lastWhois = Clock.currTime;
 
-        if (auto oldCommand = event.target in state.queue)
+        if (auto oldCommand = event.target in queue)
         {
             if ((*oldCommand)())
             {
                 // The command returned true; remove it from the queue
-                state.queue.remove(event.target);
+                queue.remove(event.target);
             }
         }
 
@@ -189,12 +191,12 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
 
     case RPL_ENDOFWHOIS:
         // If there's still a queued command at this point, WHOISLOGIN was never triggered
-        state.users.remove(event.target);
+        users.remove(event.target);
         break;
 
     case PART:
     case QUIT:
-        state.users.remove(event.sender);
+        users.remove(event.sender);
         break;
 
     default:
