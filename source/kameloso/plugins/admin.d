@@ -39,172 +39,175 @@ private:
         import std.algorithm.mutation  : remove;
         import std.algorithm.searching : countUntil;
 
-        if (state.users[event.sender].login != state.bot.master)
+        with (state)
         {
-            writefln("Failsafe triggered: bot is not master (%s)", event.sender);
-            return;
-        }
 
-        string slice;
-
-        if (event.type == IrcEvent.Type.QUERY)
-        {
-            slice = event.content.stripLeft;
-        }
-        else
-        {
-            // We know it to be aimed at us from earlier checks so remove nickname prefix
-            slice = event.content.stripLeft[(state.bot.nickname.length+1)..$];
-            slice.munch(":?! ");
-        }
-
-        string verb;
-
-        // If we don't decode here the verb will be truncated if it contiains international characters
-        if (slice.indexOf(' ') != -1)
-        {
-            verb = slice.nom!(Decode.yes)(' ');
-        }
-        else
-        {
-            verb = slice;
-            slice = string.init;
-        }
-
-        // writefln("admin verb:%s slice:%s", verb, slice);
-
-        switch(verb.toLower)
-        {
-        case "sudo":
-            // Repeat the command as-is, raw, to the server
-            if (!slice.length)
+            if (users[event.sender].login != bot.master)
             {
-                writeln("No argument given to sudo");
-                break;
-            }
-            state.mainThread.send(ThreadMessage.Sendline(), slice);
-            break;
-
-        case "join":
-        case "part":
-            // Join/part comma-separated channels
-            import std.algorithm.iteration : splitter, joiner;
-            import std.uni : toUpper;
-
-            if (!slice.length)
-            {
-                writeln("No channels supplied");
-                break;
-            }
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "%s :%s".format(verb.toUpper, slice.splitter(' ').joiner(",")));
-            break;
-        
-        case "quit":
-            // By sending a concurrency message it should quit nicely
-            state.mainThread.send(ThreadMessage.Quit());
-            break;
-
-        case "addhome":
-            // Add an "active" channel, in which the bot should react
-            slice = slice.strip;
-            if (!slice.isValidChannel) break;
-
-            if (state.bot.channels.canFind(slice))
-            {
-                state.mainThread.send(ThreadMessage.Sendline(),
-                    "JOIN :%s".format(slice));
+                writefln("Failsafe triggered: bot is not master (%s)", event.sender);
+                return;
             }
 
-            state.bot.channels ~= slice;
-            break;
+            string slice;
 
-        case "delhome":
-            // Remove a channel from the active list
-            slice = slice.strip;
-            if (!slice.isValidChannel) break;
-
-            auto chanIndex = state.bot.channels.countUntil(slice);
-
-            if (chanIndex == -1)
+            if (event.type == IrcEvent.Type.QUERY)
             {
-                writefln("Channel %s was not in bot.channels", slice);
-                break;
-            }
-
-            state.bot.channels = state.bot.channels.remove(chanIndex);
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "PART :%s".format(slice));
-            break;
-
-        case "addfriend":
-            // Add a login to the whitelist, so they can access the Chatbot and such
-            if (!slice.length)
-            {
-                writeln("No nickname given.");
-                break;
-            }
-            else if (slice.indexOf(' ') != -1)
-            {
-                writeln("Nickname must not contain spaces");
-                break;
-            }
-
-            state.bot.friends ~= slice;
-            writefln("%s added to friends", slice);
-            break;
-
-        case "delfriend":
-            // Remove a login from the whitelist
-            if (!slice.length)
-            {
-                writeln("No nickname given.");
-                break;
-            }
-
-            auto friendIndex = state.bot.friends.countUntil(slice);
-
-            if (friendIndex == -1)
-            {
-                writefln("No such friend");
-                break;
-            }
-
-            state.bot.friends = state.bot.friends.remove(friendIndex);
-            writefln("%s removed from friends", slice);
-            break;
-
-        case "resetterm":
-            // If for some reason the terminal will have gotten binary on us, reset it
-            write(ControlCharacter.termReset);
-            break;
-
-        case "printall":
-            // Start/stop printing all raw strings
-            if (!printAll)
-            {
-                printAll = true;
-                writeln("Now printing everything");
+                slice = event.content.stripLeft;
             }
             else
             {
-                printAll = false;
-                writeln("No longer printing everything");
+                // We know it to be aimed at us from earlier checks so remove nickname prefix
+                slice = event.content.stripLeft[(bot.nickname.length+1)..$];
+                slice.munch(":?! ");
             }
-            break;
 
-        case "status":
-            // Print out all current settings
-            //writeln("I am kameloso");
-            //printObject(state.bot);
-            state.mainThread.send(ThreadMessage.Status());
-            break;
+            string verb;
 
-        default:
-            // writefln("admin unknown verb:%s", verb);
-            break;
+            // If we don't decode here the verb will be truncated if it contiains international characters
+            if (slice.indexOf(' ') != -1)
+            {
+                verb = slice.nom!(Decode.yes)(' ');
+            }
+            else
+            {
+                verb = slice;
+                slice = string.init;
+            }
+
+            // writefln("admin verb:%s slice:%s", verb, slice);
+
+            switch(verb.toLower)
+            {
+            case "sudo":
+                // Repeat the command as-is, raw, to the server
+                if (!slice.length)
+                {
+                    writeln("No argument given to sudo");
+                    break;
+                }
+                mainThread.send(ThreadMessage.Sendline(), slice);
+                break;
+
+            case "join":
+            case "part":
+                // Join/part comma-separated channels
+                import std.algorithm.iteration : splitter, joiner;
+                import std.uni : toUpper;
+
+                if (!slice.length)
+                {
+                    writeln("No channels supplied");
+                    break;
+                }
+                mainThread.send(ThreadMessage.Sendline(),
+                    "%s :%s".format(verb.toUpper, slice.splitter(' ').joiner(",")));
+                break;
+
+            case "quit":
+                // By sending a concurrency message it should quit nicely
+                mainThread.send(ThreadMessage.Quit());
+                break;
+
+            case "addhome":
+                // Add an "active" channel, in which the bot should react
+                slice = slice.strip;
+                if (!slice.isValidChannel) break;
+
+                if (bot.channels.canFind(slice))
+                {
+                    mainThread.send(ThreadMessage.Sendline(),
+                        "JOIN :%s".format(slice));
+                }
+
+                bot.channels ~= slice;
+                break;
+
+            case "delhome":
+                // Remove a channel from the active list
+                slice = slice.strip;
+                if (!slice.isValidChannel) break;
+
+                auto chanIndex = bot.channels.countUntil(slice);
+
+                if (chanIndex == -1)
+                {
+                    writefln("Channel %s was not in bot.channels", slice);
+                    break;
+                }
+
+                bot.channels = bot.channels.remove(chanIndex);
+                mainThread.send(ThreadMessage.Sendline(),
+                    "PART :%s".format(slice));
+                break;
+
+            case "addfriend":
+                // Add a login to the whitelist, so they can access the Chatbot and such
+                if (!slice.length)
+                {
+                    writeln("No nickname given.");
+                    break;
+                }
+                else if (slice.indexOf(' ') != -1)
+                {
+                    writeln("Nickname must not contain spaces");
+                    break;
+                }
+
+                bot.friends ~= slice;
+                writefln("%s added to friends", slice);
+                break;
+
+            case "delfriend":
+                // Remove a login from the whitelist
+                if (!slice.length)
+                {
+                    writeln("No nickname given.");
+                    break;
+                }
+
+                auto friendIndex = bot.friends.countUntil(slice);
+
+                if (friendIndex == -1)
+                {
+                    writefln("No such friend");
+                    break;
+                }
+
+                bot.friends = bot.friends.remove(friendIndex);
+                writefln("%s removed from friends", slice);
+                break;
+
+            case "resetterm":
+                // If for some reason the terminal will have gotten binary on us, reset it
+                write(ControlCharacter.termReset);
+                break;
+
+            case "printall":
+                // Start/stop printing all raw strings
+                if (!printAll)
+                {
+                    printAll = true;
+                    writeln("Now printing everything");
+                }
+                else
+                {
+                    printAll = false;
+                    writeln("No longer printing everything");
+                }
+                break;
+
+            case "status":
+                // Print out all current settings
+                //writeln("I am kameloso");
+                //printObject(bot);
+                mainThread.send(ThreadMessage.Status());
+                break;
+
+            default:
+                // writefln("admin unknown verb:%s", verb);
+                break;
+            }
         }
-    
     }
 
 public:
