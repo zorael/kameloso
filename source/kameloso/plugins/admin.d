@@ -170,7 +170,7 @@ private:
                 break;
             }
 
-            state.bot.friends = bot.friends.remove(friendIndex);
+            state.bot.friends = state.bot.friends.remove(friendIndex);
             writefln("%s removed from friends", slice);
             break;
 

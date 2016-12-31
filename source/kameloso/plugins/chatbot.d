@@ -49,7 +49,7 @@ private:
         else
         {
             // We know it to be aimed at us from earlier checks so remove nickname prefix
-            slice = event.content.stripLeft[(bot.nickname.length+1)..$];
+            slice = event.content.stripLeft[(state.bot.nickname.length+1)..$];
             slice.munch(":?! ");
         }
 

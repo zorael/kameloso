@@ -13,7 +13,7 @@ import std.algorithm.iteration : joiner;
 import std.concurrency : Tid;
 
 
-IrcBot bot;
+private IrcBot bot;
 
 
 /// A simple struct to collect all the relevant settings, options and state needed

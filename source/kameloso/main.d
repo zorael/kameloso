@@ -12,11 +12,16 @@ import std.datetime : SysTime;
 import std.concurrency;
 
 
+private:
+
 IrcBot bot;
 IrcServer server;
 IrcPlugin[] plugins;
 Connection conn;
 SysTime[string] whoisCalls;
+
+
+public:
 
 
 /// A simple struct to house the IRC server information. Helps with the configuration files.
