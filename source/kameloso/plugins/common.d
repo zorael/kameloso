@@ -51,26 +51,29 @@ void doWhois(ref IrcPluginState state, const IrcEvent event,
     import std.concurrency : send;
     import std.algorithm.searching : canFind;
 
-    writefln("Missing user information on %s", event.sender);
-    
-    bool queuedCommand()
+    with (state)
     {
-        auto newUser = event.sender in state.users;
+        writefln("Missing user information on %s", event.sender);
 
-        if ((newUser.login == state.bot.master) || state.bot.friends.canFind(newUser.login))
+        bool queuedCommand()
         {
-            writeln("plugin common replaying old event:");
-            writeln(event.toString);
-            dg(event);
-            return true;
+            auto newUser = event.sender in users;
+
+            if ((newUser.login == bot.master) || bot.friends.canFind(newUser.login))
+            {
+                writeln("plugin common replaying old event:");
+                writeln(event.toString);
+                dg(event);
+                return true;
+            }
+
+            return false;
         }
-        
-        return false;
+
+        queue[event.sender] = &queuedCommand;
+
+        mainThread.send(ThreadMessage.Whois(), event.sender);
     }
-
-    state.queue[event.sender] = &queuedCommand;
-
-    state.mainThread.send(ThreadMessage.Whois(), event.sender);
 }
 
 
