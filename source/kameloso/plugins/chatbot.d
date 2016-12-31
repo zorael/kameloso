@@ -18,7 +18,7 @@ final class Chatbot : IrcPlugin
 {
 private:
     import std.stdio : writeln, writefln;
-    import std.concurrency : Tid, thisTid, send;
+    import std.concurrency : Tid, send;
     import std.algorithm : canFind;
 
     IrcPluginState state;
