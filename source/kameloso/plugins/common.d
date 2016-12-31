@@ -96,34 +96,6 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
     with (IrcEvent.Type)
     switch (event.type)
     {
-    case WHOISLOGIN:
-        // Save user to users, then replay any queued commands.
-        state.users[event.target] = userFromEvent(event);
-        //users[event.target].lastWhois = Clock.currTime;
-
-        if (auto oldCommand = event.target in state.queue)
-        {
-            if ((*oldCommand)())
-            {
-                // The command returned true; remove it from the queue
-                state.queue.remove(event.target);
-            }
-        }
-
-        break;
-
-    case QUERY:
-        // Queries are always aimed toward the bot, but the user must be whitelisted
-        auto user = event.sender in state.users;
-
-        if (!user) return state.doWhois(event, onCommand);
-        else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
-        {
-            // master or friend
-            return onCommand(event);
-        }
-        break;
-
     case CHAN:
     // The Admin plugin only cares about Queries
     static if (queryOnly == QueryOnly.no)
@@ -183,6 +155,39 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
         // Don't fall down
         break;
     }
+
+    case QUERY:
+        // Queries are always aimed toward the bot, but the user must be whitelisted
+        auto user = event.sender in state.users;
+
+        if (!user) return state.doWhois(event, onCommand);
+        else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
+        {
+            // master or friend
+            return onCommand(event);
+        }
+        break;
+
+    case WHOISLOGIN:
+        // Save user to users, then replay any queued commands.
+        state.users[event.target] = userFromEvent(event);
+        //users[event.target].lastWhois = Clock.currTime;
+
+        if (auto oldCommand = event.target in state.queue)
+        {
+            if ((*oldCommand)())
+            {
+                // The command returned true; remove it from the queue
+                state.queue.remove(event.target);
+            }
+        }
+
+        break;
+
+    case RPL_ENDOFWHOIS:
+        // If there's still a queued command at this point, WHOISLOGIN was never triggered
+        state.users.remove(event.target);
+        break;
 
     case PART:
     case QUIT:
