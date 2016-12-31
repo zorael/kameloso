@@ -170,7 +170,7 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
-        return state.onEventGeneric!(QueryOnly.no)(event, &onCommand);
+        return state.onEventImpl!(QueryOnly.no)(event, &onCommand);
     }
 
     /// No teardown neccessary for Chatbot

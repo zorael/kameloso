@@ -235,7 +235,7 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
-        return state.onEventGeneric!(QueryOnly.yes)(event, &onCommand);
+        return state.onEventImpl!(QueryOnly.yes)(event, &onCommand);
     }
 
     /// No teardown neccessary for AdminPlugin
