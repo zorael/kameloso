@@ -48,50 +48,6 @@ private:
     TitleLookup[string] cache;
     Tid worker;
 
-    version(none)
-    void onCommand(const IrcEvent event)
-    {
-        auto matches = event.content.matchAll(urlRegex);
-
-        foreach (urlHit; matches)
-        {
-            if (!urlHit.length) continue;
-
-            const url = urlHit[0];
-            TitleLookup lookup;
-
-            auto inCache = url in cache;
-            if (inCache && ((Clock.currTime - lookup.when) < 5.minutes))
-            {
-                writeln("Cache hit!");
-                lookup = *inCache;
-            }
-            else
-            {
-                try lookup = doTitleLookup(url);
-                catch (Exception e)
-                {
-                    writeln(e.msg);
-                }
-            }
-
-            if (lookup == TitleLookup.init) return;
-
-            const target = (event.channel.length) ? event.channel : event.sender;
-
-            if (lookup.domain.length)
-            {
-                state.mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :[%s] %s".format(target, lookup.domain, lookup.title));
-            }
-            else
-            {
-                state.mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s".format(target, lookup.title));
-            }
-        }
-    }
-
     void onCommand(const IrcEvent event)
     {
         auto matches = event.content.matchAll(urlRegex);
