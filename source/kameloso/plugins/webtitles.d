@@ -7,7 +7,8 @@ import kameloso.constants;
 
 import std.stdio : writeln, writefln;
 import std.regex;
-import std.datetime : Clock, SysTime, minutes;
+import std.datetime : Clock, SysTime, minutes, seconds;
+import std.concurrency : Tid;
 
 private:
 
@@ -18,7 +19,8 @@ static titleRegex = ctRegex!(titlePattern, "i");
 /// Regex to match a URI, to see if one was pasted.
 enum gruberv1 = `\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))`;
 enum daringfireball = `(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s!()\[\]{};:'".,<>?«»“”‘’]))`;
-static uriRegex = ctRegex!daringfireball;
+enum stephenhay = `^(https?|ftp)://[^\s/$.?#].[^\s]*$`;
+static urlRegex = ctRegex!stephenhay;
 
 enum domainPattern = `(?:[a-zA-Z]+://)?([^/ ]+)/?.*`;
 static domainRegex = ctRegex!domainPattern;
@@ -39,107 +41,79 @@ final class Webtitles : IrcPlugin
 private:
     import std.stdio : writeln, writefln;
     import std.format : format;
-    import std.concurrency : Tid, send;
+    import std.concurrency : send;
     import requests;
 
     IrcPluginState state;
     TitleLookup[string] cache;
+    Tid worker;
 
+    version(none)
     void onCommand(const IrcEvent event)
     {
-        auto matches = event.content.matchAll(gruberv1);
+        auto matches = event.content.matchAll(urlRegex);
 
         foreach (urlHit; matches)
         {
             if (!urlHit.length) continue;
 
             const url = urlHit[0];
-            try
+            TitleLookup lookup;
+
+            auto inCache = url in cache;
+            if (inCache && ((Clock.currTime - lookup.when) < 5.minutes))
             {
-                auto lookup = doTitleLookup(url);
-                const target = (event.channel.length) ? event.channel : event.sender;
-                
-                if (lookup.domain.length)
+                writeln("Cache hit!");
+                lookup = *inCache;
+            }
+            else
+            {
+                try lookup = doTitleLookup(url);
+                catch (Exception e)
                 {
-                    state.mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG %s :[%s] %s".format(target, lookup.domain, lookup.title));
-                }
-                else
-                {
-                    state.mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG %s :%s".format(target, lookup.title));
+                    writeln(e.msg);
                 }
             }
-            catch (UriException e)
+
+            if (lookup == TitleLookup.init) return;
+
+            const target = (event.channel.length) ? event.channel : event.sender;
+
+            if (lookup.domain.length)
             {
-                writeln(e.msg);
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :[%s] %s".format(target, lookup.domain, lookup.title));
             }
-            catch (Exception e)
+            else
             {
-                writeln(e.msg);
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :%s".format(target, lookup.title));
             }
         }
     }
 
-
-    TitleLookup doTitleLookup(string url)
+    void onCommand(const IrcEvent event)
     {
-        import kameloso.stringutils : beginsWith;
-        import std.conv : to;
-        import core.time : seconds;
+        auto matches = event.content.matchAll(urlRegex);
 
-        if (auto lookup = url in cache)
+        foreach (urlHit; matches)
         {
-            if ((Clock.currTime - lookup.when) < 5.minutes)
-            {
-                writeln("Cache hit!");
-                return *lookup;
-            }
+            if (!urlHit.length) continue;
+
+            const url = urlHit[0];
+            const target = (event.channel.length) ? event.channel : event.sender;
+            worker.send(url, target);
         }
-
-        if (!url.beginsWith("http"))
-        {
-            url = "http://" ~ url;
-        }
-
-        TitleLookup lookup;
-        
-        writeln("URL: ", url);
-
-        auto content = getContent(url);
-        const httpBody = cast(char[])(content.data);
-
-        if (!httpBody.length)
-        {
-            writeln("Could not fetch content. Bad URL?");
-            return lookup;
-        }
-
-        auto titleHits = httpBody.matchFirst(titleRegex);
-
-        if (!titleHits.length)
-        {
-            writeln("Could not get title from page content!");
-            return lookup;
-        }
-
-        lookup.title = titleHits[1].idup;
-
-        auto domainHits = url.matchFirst(domainRegex);
-        if (!domainHits.length) return lookup;
-
-        lookup.domain = domainHits[1];
-        lookup.when = Clock.currTime;
-        cache[url] = lookup;
-
-        return lookup;
     }
 
 public:
     this(IrcBot bot, Tid tid)
     {
+        import std.concurrency : spawn;
+
         state.bot = bot;
         state.mainThread = tid;
+        worker = spawn(&titleworker, tid);
     }
 
     void status()
@@ -248,4 +222,112 @@ public:
     }
 
     void teardown() {}
+}
+
+
+
+static TitleLookup doTitleLookup(string url)
+{
+    import kameloso.stringutils : beginsWith;
+    import std.conv : to;
+    import requests;
+
+    if (!url.beginsWith("http"))
+    {
+        url = "http://" ~ url;
+    }
+
+    TitleLookup lookup;
+
+    writeln("URL: ", url);
+
+    auto content = getContent(url);
+    const httpBody = cast(char[])(content.data);
+
+    if (!httpBody.length)
+    {
+        writeln("Could not fetch content. Bad URL?");
+        return lookup;
+    }
+
+    auto titleHits = httpBody.matchFirst(titleRegex);
+
+    if (!titleHits.length)
+    {
+        writeln("Could not get title from page content!");
+        return lookup;
+    }
+
+    lookup.title = titleHits[1].idup;
+
+    auto domainHits = url.matchFirst(domainRegex);
+    if (!domainHits.length) return lookup;
+
+    lookup.domain = domainHits[1];
+    lookup.when = Clock.currTime;
+
+    return lookup;
+}
+
+
+void titleworker(Tid mainThread)
+{
+    import std.concurrency;
+    import core.time;
+    mixin(scopeguard(entry|exit));
+
+    TitleLookup[string] cache;
+    bool halt;
+
+    while (!halt)
+    {
+        receive(
+            (string url, string target)
+            {
+                import std.format : format;
+                TitleLookup lookup;
+
+                auto inCache = url in cache;
+                if (inCache && ((Clock.currTime - inCache.when) < 5.minutes))
+                {
+                    writeln("Cache hit!");
+                    lookup = *inCache;
+                }
+                else
+                {
+                    writeln("Cache miss...");
+                    try lookup = doTitleLookup(url);
+                    catch (Exception e)
+                    {
+                        writeln(e.msg);
+                    }
+                }
+
+                if (lookup == TitleLookup.init) return;
+
+                cache[url] = lookup;
+
+                if (lookup.domain.length)
+                {
+                    mainThread.send(ThreadMessage.Sendline(),
+                        "PRIVMSG %s :[%s] %s".format(target, lookup.domain, lookup.title));
+                }
+                else
+                {
+                    mainThread.send(ThreadMessage.Sendline(),
+                        "PRIVMSG %s :%s".format(target, lookup.title));
+                }
+            },
+            (OwnerTerminated o)
+            {
+                writeln("Titleworker saw owner terminated!");
+                halt = true;
+            },
+            (Variant v)
+            {
+                writeln("Titleworker received Variant");
+                writeln(v);
+            }
+        );
+    }
 }
