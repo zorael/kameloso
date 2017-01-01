@@ -44,6 +44,7 @@ enum Timeout
     resolve = 10,
     ping = 200,
     whois = 10,
+    titleCache = 600,
 }
 
 

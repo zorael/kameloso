@@ -7,7 +7,7 @@ import kameloso.constants;
 
 import std.stdio : writeln, writefln;
 import std.regex;
-import std.datetime : Clock, SysTime, minutes, seconds;
+import std.datetime : Clock, SysTime, seconds;
 import std.concurrency : Tid;
 
 private:
@@ -288,14 +288,12 @@ void titleworker(Tid mainThread)
                 TitleLookup lookup;
 
                 auto inCache = url in cache;
-                if (inCache && ((Clock.currTime - inCache.when) < 5.minutes))
+                if (inCache && ((Clock.currTime - inCache.when) < Timeout.titleCache.seconds))
                 {
-                    writeln("Cache hit!");
                     lookup = *inCache;
                 }
                 else
                 {
-                    writeln("Cache miss...");
                     try lookup = doTitleLookup(url);
                     catch (Exception e)
                     {
