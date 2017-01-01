@@ -206,6 +206,8 @@ static TitleLookup doTitleLookup(string url)
         return lookup;
     }
 
+    writeln("Page fetched.");
+
     auto titleHits = httpBody.matchFirst(titleRegex);
 
     if (!titleHits.length)
@@ -213,6 +215,8 @@ static TitleLookup doTitleLookup(string url)
         writeln("Could not get title from page content!");
         return lookup;
     }
+
+    writeln("Got title.");
 
     lookup.title = titleHits[1].idup;
 
