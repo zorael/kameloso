@@ -24,10 +24,10 @@ struct IrcBot
     string user     = "kameloso";
     string ident    = "NaN";
     string password;
-    string master   = "zorael";
-    @separator(",") string[] channels = [ "#flerrp", "#garderoben" ];
-    @separator(",") string[] homes = [ "#flerrp", "#garderoben" ];
-    @separator(",") string[] friends  = [ "klarrt", "maku" ];
+    string master;
+    @separator(",") string[] channels = [];
+    //@separator(",") string[] homes = [];
+    @separator(",") string[] friends  = [];
     @transient string server;
     @transient bool finishedLogin;
     // @transient uint verbosity;
