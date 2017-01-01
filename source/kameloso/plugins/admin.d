@@ -219,7 +219,7 @@ public:
     void status()
     {
         writefln("---------------------- %s", typeof(this).stringof);
-        printObject(state.bot);
+        printObject(state);
     }
 
     void newBot(IrcBot bot)
