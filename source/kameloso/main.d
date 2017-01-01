@@ -295,6 +295,7 @@ ShouldQuit loopGenerator(Generator!string generator)
             with (IrcEvent.Type)
             switch (event.type)
             {
+            case RPL_NAMREPLY:
             case RPL_MOTD:
             case PING:
             case PONG:
