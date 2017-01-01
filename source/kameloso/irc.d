@@ -215,6 +215,9 @@ public:
             break;
 
         case ERR_NICKNAMEINUSE:
+            bot.nickname ~= altNickSign;
+            updateBot();
+
             mainThread.send(ThreadMessage.Sendline(),
                 "NICK %s".format(bot.nickname ~ altNickSign));
             break;
