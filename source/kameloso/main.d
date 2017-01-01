@@ -99,7 +99,7 @@ ShouldQuit checkMessages()
                 auto now = Clock.currTime;
                 auto then = (nickname in whoisCalls);
                 
-                if (then && (now - *then) < 10.seconds) return;
+                if (then && (now - *then) < Timeout.whois.seconds) return;
 
                  writefln("--> WHOIS :%s".format(nickname));
                  conn.sendline("WHOIS :%s".format(nickname));
