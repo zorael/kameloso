@@ -32,7 +32,7 @@ static struct ThreadMessage
 
 
 /// Used as a UDA for "this field is not to be saved in configuration files"
-static struct transient {}
+static struct unconfigurable {}
 
 
 /// Used as a UDA for "this string is an array with this token as separator"

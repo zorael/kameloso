@@ -170,7 +170,7 @@ static void setMember(T)(ref T thing, string memberstring, string value)
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), transient))
+                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
         {
         alias MemberType = typeof(__traits(getMember, T, name));
 
@@ -258,7 +258,7 @@ static string longestMemberName(T)()
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), transient))
+                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
         {
             if (name.length > longest.length)
             {
@@ -324,7 +324,7 @@ static string configText(T)(const T thing)
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), transient))
+                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
         {
             alias MemberType = typeof(__traits(getMember, T, name));
 

@@ -29,9 +29,9 @@ struct IrcBot
     @separator(",") string[] channels = [];
     //@separator(",") string[] homes = [];
     @separator(",") string[] friends  = [];
-    @transient string server;
-    @transient bool finishedLogin;
-    // @transient uint verbosity;
+    @unconfigurable string server;
+    @unconfigurable bool finishedLogin;
+    // @unconfigurable uint verbosity;
 }
 
 
