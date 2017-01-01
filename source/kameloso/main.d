@@ -108,7 +108,6 @@ ShouldQuit checkMessages()
             },
             (shared IrcBot bot)
             {
-                writeln("Bot updated");
                 .bot = cast(IrcBot)bot;
 
                 foreach (plugin; plugins) plugin.newBot(.bot);
@@ -213,8 +212,6 @@ void initPlugins(IrcBot bot, Tid tid)
 /// Main!
 void main(string[] args)
 {
-    mixin(scopeguard(entry|exit));
-
     if (handleArguments(args) == ShouldQuit.yes) return;
 
     // Print the current settings to show what's going on.
@@ -236,7 +233,6 @@ void main(string[] args)
     }
 
     auto shouldQuit = ShouldQuit.no;
-    top:
     do
     {
         conn.reset();
