@@ -222,6 +222,18 @@ void main(string[] args)
     printObject(server);
     writeln();
 
+    if (!bot.channels.length && !bot.master.length && !bot.friends.length)
+    {
+        import std.path : baseName;
+
+        writeln("No master nor channels configured!");
+        writefln("Use %s --writeconfig to generate a configuration file.",
+            args[0].baseName);
+        writeln();
+
+        return;
+    }
+
     auto shouldQuit = ShouldQuit.no;
     top:
     do
