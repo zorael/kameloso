@@ -41,7 +41,6 @@ private:
 
         with (state)
         {
-
             if (users[event.sender].login != bot.master)
             {
                 writefln("Failsafe triggered: bot is not master (%s)", event.sender);
@@ -244,5 +243,3 @@ public:
     /// No teardown neccessary for AdminPlugin
     void teardown() {}
 }
-
-

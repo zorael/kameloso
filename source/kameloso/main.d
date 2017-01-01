@@ -11,7 +11,6 @@ import std.stdio    : writeln, writefln;
 import std.datetime : SysTime;
 import std.concurrency;
 
-
 version(Windows)
 shared static this()
 {
@@ -19,7 +18,6 @@ shared static this()
     SetConsoleCP(65001);
     SetConsoleOutputCP(65001);
 }
-
 
 private:
 

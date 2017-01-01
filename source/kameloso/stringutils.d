@@ -3,6 +3,7 @@ module kameloso.stringutils;
 import std.traits   : isSomeString;
 import std.typecons : Flag;
 
+
 /++
  +  This Flag allows us to use the more descriptive Decode.yes (and Yes.decode) instead of bools
  +  as template parameter options.
