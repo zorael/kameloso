@@ -5,8 +5,11 @@
 	],
 	"description": "IRC bot",
 	"copyright": "Copyright © 2016, JR",
-	"license": "LGPLv2 or later",
-    "targetType": "executable",
+	"license": "LGPL-2.1",
+	"dependencies": {
+		"requests": "~>0.4.0"
+	},
+	"targetType": "executable",
 	"debugMode": true,
 	"debugInfo": true,
 	"debugInfoC": true,

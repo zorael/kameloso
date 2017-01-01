@@ -13,7 +13,7 @@
 
 # Executables
 *.exe
-kameloso
+/kameloso
 
 # DUB
 .dub

@@ -5,3 +5,4 @@ module kameloso.plugins;
 public import kameloso.plugins.common;
 public import kameloso.plugins.admin;
 public import kameloso.plugins.chatbot;
+public import kameloso.plugins.webtitles;

@@ -1,5 +1,10 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"libasync": "0.7.9",
+		"libevent": "2.0.2+2.0.16",
+		"memutils": "0.4.8",
+		"requests": "0.4.0",
+		"vibe-d": "0.7.30"
 	}
 }
