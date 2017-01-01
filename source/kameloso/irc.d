@@ -68,14 +68,27 @@ IrcUser userFromEvent(const IrcEvent event)
     switch (event.type)
     {
     case RPL_WHOISUSER:
-    case WHOISLOGIN:
         // These events are sent by the server, *describing* a user
+        // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
         string content = event.content;
-        user.nickname  = event.target;
-        user.ident     = content.nom(' ');
-        user.address   = content;
-        user.login     = event.aux;
-        user.special   = event.special;
+        with (user)
+        {
+            nickname  = event.target;
+            ident     = content.nom(' ');
+            address   = content;
+            login     = event.aux;
+            special   = event.special;
+        }
+        break;
+
+    case WHOISLOGIN:
+        // WHOISLOGIN is shaped differently, no addres or ident
+        // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
+        with (user)
+        {
+            nickname = event.target;
+            login    = event.aux;
+        }
         break;
 
     default:
@@ -85,10 +98,13 @@ IrcUser userFromEvent(const IrcEvent event)
             goto case WHOISLOGIN;
         }
 
-        user.nickname = event.sender;
-        user.ident    = event.ident;
-        user.address  = event.address;
-        user.special  = event.special;
+        with (user)
+        {
+            nickname = event.sender;
+            ident    = event.ident;
+            address  = event.address;
+            special  = event.special;
+        }
         break;
     }
 
