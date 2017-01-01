@@ -83,11 +83,12 @@ ShouldQuit checkMessages()
                 // writefln("--> PONG %s".format(bot.server));                
                 conn.sendline("PONG :%s".format(bot.server));
             },
-            (ThreadMessage.Quit)
+            (ThreadMessage.Quit, string reason)
             {
                 // This should automatically close the connection
                 // Set shouldQuit to yes to propagate the decision down the stack
-                conn.sendline("QUIT :kameloso");
+                const line = reason.length ? reason : bot.quitReason;
+                conn.sendline("QUIT :%s".format(line));
                 shouldQuit = ShouldQuit.yes;
             },
             (ThreadMessage.Whois, string nickname)

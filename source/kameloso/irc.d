@@ -19,10 +19,11 @@ private IrcBot bot;
 /// A simple struct to collect all the relevant settings, options and state needed
 struct IrcBot
 {
-    string nickname = "kameloso";
-    string login    = "kameloso";
-    string user     = "kameloso";
-    string ident    = "NaN";
+    string nickname   = "kameloso";
+    string login      = "kameloso";
+    string user       = "kameloso";
+    string ident      = "NaN";
+    string quitReason = "beep boop I am a bot";
     string password;
     string master;
     @separator(",") string[] channels = [];

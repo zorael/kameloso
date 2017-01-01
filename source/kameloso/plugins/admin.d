@@ -105,7 +105,7 @@ private:
 
             case "quit":
                 // By sending a concurrency message it should quit nicely
-                mainThread.send(ThreadMessage.Quit());
+                mainThread.send(ThreadMessage.Quit(), slice);
                 break;
 
             case "addhome":
