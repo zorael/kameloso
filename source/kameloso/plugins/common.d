@@ -191,7 +191,7 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
 
     case RPL_ENDOFWHOIS:
         // If there's still a queued command at this point, WHOISLOGIN was never triggered
-        users.remove(event.target);
+        queue.remove(event.target);
         break;
 
     case PART:
