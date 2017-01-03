@@ -19,7 +19,7 @@ static titleRegex = ctRegex!(titlePattern, "i");
 /// Regex to match a URI, to see if one was pasted.
 enum gruberv1 = `\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))`;
 enum daringfireball = `(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s!()\[\]{};:'".,<>?«»“”‘’]))`;
-enum stephenhay = `^(https?|ftp)://[^\s/$.?#].[^\s]*$`;
+enum stephenhay = `\b(https?|ftp)://[^\s/$.?#].[^\s]*`;
 static urlRegex = ctRegex!stephenhay;
 
 enum domainPattern = `(?:[a-zA-Z]+://)?([^/ ]+)/?.*`;
