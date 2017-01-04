@@ -4,7 +4,6 @@ import kameloso.plugins.common;
 import kameloso.irc;
 import kameloso.common;
 
-import std.stdio : writeln, writefln;
 import std.json;
 
 private:
@@ -51,7 +50,7 @@ public:
 
     void status()
     {
-        writefln("---------------------- %s", typeof(this).stringof);
+        writeln("---------------------- ", typeof(this).stringof);
         printObject(state);
     }
 
@@ -77,7 +76,7 @@ public:
         case QUERY:
         case JOIN:
             break;
-        
+
         default:
             state.onBasicEvent(event);
             return;

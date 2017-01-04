@@ -50,7 +50,6 @@ struct IrcServer
  +/
 ShouldQuit checkMessages()
 {
-    import std.format : format;
     import core.time  : seconds;
 
     mixin(scopeguard(failure));
@@ -65,7 +64,7 @@ ShouldQuit checkMessages()
         receivedSomething = receiveTimeout(0.seconds,
             (ThreadMessage.Sendline, string line)
             {
-                writefln("--> %s", line);
+                writeln("--> ", line);
                 conn.sendline(line);
             },
             (ThreadMessage.Quietline, string line)
@@ -75,36 +74,23 @@ ShouldQuit checkMessages()
             (ThreadMessage.Ping)
             {
                 // writefln("--> PING :%s".format(bot.server));
-                conn.sendline("PING :%s".format(bot.server));
-            },
-            (ThreadMessage.Pong)
-            {
-                // writefln("--> PONG %s".format(bot.server));                
-                conn.sendline("PONG :%s".format(bot.server));
-            },
-            (ThreadMessage.Quit, string reason)
-            {
-                // This should automatically close the connection
-                // Set shouldQuit to yes to propagate the decision down the stack
-                const line = reason.length ? reason : bot.quitReason;
-                conn.sendline("QUIT :%s".format(line));
-                shouldQuit = ShouldQuit.yes;
+                conn.sendline("PING :" ~ bot.server);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
             {
                 import std.datetime : Clock;
                 import std.conv : to;
 
-                writeln("WHOIS REQUESTED ON " ~ event.sender);
+                writeln("WHOIS REQUESTED ON ", event.sender);
 
                 // Several plugins may (will) ask to WHOIS someone at the same time,
                 // so keep track on when we WHOISed whom, to limit it
                 auto now = Clock.currTime;
                 auto then = (event.sender in whoisCalls);
-                
+
                 if (then && (now - *then) < Timeout.whois.seconds) return;
 
-                 writefln("--> WHOIS :" ~ event.sender);
+                 writeln("--> WHOIS :", event.sender);
                  conn.sendline("WHOIS :" ~ event.sender);
                  whoisCalls[event.sender] = Clock.currTime;
                  replayQueue[event.sender] = event;
@@ -118,6 +104,19 @@ ShouldQuit checkMessages()
             (ThreadMessage.Status)
             {
                 foreach (plugin; plugins) plugin.status();
+            },
+            (ThreadMessage.Pong)
+            {
+                // writefln("--> PONG %s".format(bot.server));
+                conn.sendline("PONG :" ~ bot.server);
+            },
+            (ThreadMessage.Quit, string reason)
+            {
+                // This should automatically close the connection
+                // Set shouldQuit to yes to propagate the decision down the stack
+                const line = reason.length ? reason : bot.quitReason;
+                conn.sendline("QUIT :" ~ line);
+                shouldQuit = ShouldQuit.yes;
             },
             (LinkTerminated e)
             {
@@ -183,7 +182,7 @@ ShouldQuit handleArguments(string[] args)
 
     if (shouldWriteConfig)
     {
-        writefln("Writing configuration to %s", configFileFromArgs);
+        writeln("Writing configuration to ", configFileFromArgs);
         configFileFromArgs.writeConfig(bot, server);
         writeln();
         printObject(bot);
@@ -231,7 +230,6 @@ void main(string[] args)
         writeln("No master nor channels configured!");
         writefln("Use %s --writeconfig to generate a configuration file.",
             args[0].baseName);
-        writeln();
 
         return;
     }
@@ -307,7 +305,7 @@ ShouldQuit loopGenerator(Generator!string generator)
             case PONG:
                 // These event types are too spammy; ignore
                 break;
-            
+
             default:
                 // TODO: add timestamps
                 writeln(event);

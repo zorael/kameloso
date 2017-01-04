@@ -148,7 +148,8 @@ static string scopeguard(ubyte states = exit, string scopeName = string.init) pu
 
         if (scopeName.length)
         {
-            return q{
+            return
+            q{
                 // scopeguard mixin
                 scope(%s)
                 {
@@ -159,7 +160,8 @@ static string scopeguard(ubyte states = exit, string scopeName = string.init) pu
         }
         else
         {
-            return q{
+            return
+            q{
                 // scopeguard mixin
                 scope(%s)
                 {
@@ -179,14 +181,16 @@ static string scopeguard(ubyte states = exit, string scopeName = string.init) pu
 
         if (scopeName.length)
         {
-            return q{
+            return
+            q{
                 import std.stdio : writeln;
                 writeln("[%s] %s");
             }.format(scopeName, state);
         }
         else
         {
-            return q{
+            return
+            q{
                 import std.stdio  : writefln;
                 import std.string : indexOf;
                 enum __%sdotPos  = __FUNCTION__.indexOf('.');

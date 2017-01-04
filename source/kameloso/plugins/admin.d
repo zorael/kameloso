@@ -43,8 +43,7 @@ private:
     void onCommand(const IrcEvent event)
     {
         import std.string : munch, indexOf, stripLeft, strip;
-        import std.uni : toLower;
-        import std.format : format;
+        import std.uni    : toLower;
         import std.algorithm.mutation  : remove;
         import std.algorithm.searching : countUntil;
 
@@ -93,6 +92,7 @@ private:
                     writeln("No argument given to sudo");
                     break;
                 }
+
                 mainThread.send(ThreadMessage.Sendline(), slice);
                 break;
 
@@ -100,6 +100,7 @@ private:
             case "part":
                 // Join/part comma-separated channels
                 import std.algorithm.iteration : splitter, joiner;
+                import std.format : format;
                 import std.uni : toUpper;
 
                 if (!slice.length)
@@ -107,6 +108,7 @@ private:
                     writeln("No channels supplied");
                     break;
                 }
+
                 mainThread.send(ThreadMessage.Sendline(),
                     "%s :%s".format(verb.toUpper, slice.splitter(' ').joiner(",")));
                 break;
@@ -124,8 +126,7 @@ private:
 
                 if (bot.channels.canFind(slice))
                 {
-                    mainThread.send(ThreadMessage.Sendline(),
-                        "JOIN :%s".format(slice));
+                    mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ slice);
                 }
 
                 writeln("Adding channel: ", slice);
@@ -148,8 +149,7 @@ private:
                 }
 
                 bot.channels = bot.channels.remove(chanIndex);
-                mainThread.send(ThreadMessage.Sendline(),
-                    "PART :%s".format(slice));
+                mainThread.send(ThreadMessage.Sendline(), "PART :" ~ slice);
                 updateBot();
                 break;
 
@@ -213,8 +213,6 @@ private:
 
             case "status":
                 // Print out all current settings
-                //writeln("I am kameloso");
-                //printObject(bot);
                 mainThread.send(ThreadMessage.Status());
                 break;
 

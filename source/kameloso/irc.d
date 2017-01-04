@@ -154,7 +154,7 @@ public:
 
     void status()
     {
-        writefln("---------------------- %s", typeof(this).stringof);
+        writeln("---------------------- ", typeof(this).stringof);
         printObject(bot);
     }
 
@@ -258,7 +258,7 @@ public:
 
         case SELFPART:
         case SELFKICK:
-            writefln("Left %s", event.channel);
+            writeln("Left ", event.channel);
             /*bot.channels = bot.channels.remove(bot.channels.countUntil(event.channel));
             updateBot();
             writeln(bot.channels);*/
@@ -338,7 +338,7 @@ private void pinger(Tid mainThread)
             },
             (Variant v)
             {
-                writefln("pinger received Variant: %s", v);
+                writeln("pinger received Variant: ", v);
             }
         );
 

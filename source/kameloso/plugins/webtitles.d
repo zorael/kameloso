@@ -39,8 +39,6 @@ public:
 final class Webtitles : IrcPlugin
 {
 private:
-    import std.stdio : writeln, writefln;
-    import std.format : format;
     import std.concurrency : send;
     import requests;
 
@@ -74,7 +72,7 @@ public:
 
     void status()
     {
-        writefln("---------------------- %s", typeof(this).stringof);
+        writeln("---------------------- ", typeof(this).stringof);
         printObject(state);
     }
 

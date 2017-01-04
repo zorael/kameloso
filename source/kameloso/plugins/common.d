@@ -54,12 +54,12 @@ enum FilterResult { fail, pass, whois }
 void doWhois(ref IrcPluginState state, const IrcEvent event)
 {
     import kameloso.common : ThreadMessage;
-    import std.stdio : writeln, writefln;
+    import std.stdio : writeln;
     import std.concurrency : send;
 
     with (state)
     {
-        writefln("Missing user information on %s", event.sender);
+        writeln("Missing user information on", event.sender);
         shared sEvent = cast(shared)event;
         mainThread.send(ThreadMessage.Whois(), sEvent);
     }

@@ -188,7 +188,7 @@ void listenFiber(Connection conn)
             if ((Clock.currTime - timeLastReceived) > Timeout.keepalive.seconds)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                writefln("NOTHING RECEIVED FOR %s", Timeout.keepalive.seconds);
+                writeln("NOTHING RECEIVED FOR ", Timeout.keepalive.seconds);
                 return;
             }
 
@@ -211,7 +211,7 @@ void listenFiber(Connection conn)
                 return;
 
             default:
-                writefln("lastSocketError from Socket.ERROR:%s", lastSocketError);
+                writeln("lastSocketError from Socket.ERROR:", lastSocketError);
                 yield(string.init);
             }
 
