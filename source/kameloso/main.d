@@ -320,10 +320,10 @@ ShouldQuit loopGenerator(Generator!string generator)
 
                 if (event.type == IrcEvent.Type.WHOISLOGIN)
                 {
-                    auto savedEvent = event.target in replayQueue;
+                    const savedEvent = event.target in replayQueue;
                     if (!savedEvent) continue;
                     writeln("Replaying event:");
-                    writeln(savedEvent);
+                    writeln(*savedEvent);
                     plugin.onEvent(*savedEvent);
                 }
             }
