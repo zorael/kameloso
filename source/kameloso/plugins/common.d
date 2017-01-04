@@ -3,6 +3,8 @@ module kameloso.plugins.common;
 import kameloso.irc;
 
 import std.typecons : Flag;
+import std.algorithm : canFind;
+import std.stdio;
 
 
 /++
