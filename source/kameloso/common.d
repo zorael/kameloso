@@ -42,20 +42,6 @@ static struct separator
 }
 
 
-/// Unimplemented
-version(none)
-struct Command(T)
-{
-	T payload;
-	bool function(T) fn;
-
-	bool replay()
-	{
-		return fn(payload);
-	}
-}
-
-
 /++
  +  Examines a struct and one of its member (by string), and returns the separator it has
  +  been annotated with. See separator above.
