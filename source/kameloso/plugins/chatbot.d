@@ -173,7 +173,40 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
-        return state.onEventImpl!(QueryOnly.no)(event, &onCommand);
+        with (state)
+        with (IrcEvent.Type)
+        switch (event.type)
+        {
+        case CHAN:
+            if (state.filterChannel!(RequirePrefix.yes)(event) == FilterResult.fail)
+            {
+                // Invalid channel or not prefixed
+                return;
+            }
+            break;
+
+        case QUERY:
+        case JOIN:
+            break;
+
+        default:
+            state.onBasicEvent(event);
+            return;
+        }
+
+        final switch (state.filterUser(event))
+        {
+        case FilterResult.pass:
+            // It is a known good user (friend or master), but it is of any type
+            return onCommand(event);
+
+        case FilterResult.whois:
+            return state.doWhois(event);
+
+        case FilterResult.fail:
+            // It is a known bad user
+            return;
+        }
     }
 
     /// No teardown neccessary for Chatbot
