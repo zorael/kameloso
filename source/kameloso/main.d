@@ -24,6 +24,7 @@ private:
 IrcBot bot;
 IrcServer server;
 IrcPlugin[] plugins;
+IrcEvent[string] replayQueue;
 Connection conn;
 SysTime[string] whoisCalls;
 
@@ -89,20 +90,24 @@ ShouldQuit checkMessages()
                 conn.sendline("QUIT :%s".format(line));
                 shouldQuit = ShouldQuit.yes;
             },
-            (ThreadMessage.Whois, string nickname)
+            (ThreadMessage.Whois, shared IrcEvent event)
             {
                 import std.datetime : Clock;
+                import std.conv : to;
+
+                writeln("WHOIS REQUESTED ON " ~ event.sender);
 
                 // Several plugins may (will) ask to WHOIS someone at the same time,
                 // so keep track on when we WHOISed whom, to limit it
                 auto now = Clock.currTime;
-                auto then = (nickname in whoisCalls);
+                auto then = (event.sender in whoisCalls);
                 
                 if (then && (now - *then) < Timeout.whois.seconds) return;
 
-                 writefln("--> WHOIS :%s".format(nickname));
-                 conn.sendline("WHOIS :%s".format(nickname));
-                 whoisCalls[nickname] = Clock.currTime;
+                 writefln("--> WHOIS :" ~ event.sender);
+                 conn.sendline("WHOIS :" ~ event.sender);
+                 whoisCalls[event.sender] = Clock.currTime;
+                 replayQueue[event.sender] = event;
             },
             (shared IrcBot bot)
             {
@@ -311,6 +316,20 @@ ShouldQuit loopGenerator(Generator!string generator)
             {
                 mixin(scopeguard(failure, "onEvent loop"));
                 plugin.onEvent(event);
+
+                if (event.type == IrcEvent.Type.WHOISLOGIN)
+                {
+                    auto savedEvent = event.target in replayQueue;
+                    if (!savedEvent) continue;
+                    writeln("Replaying event:");
+                    writeln(savedEvent);
+                    plugin.onEvent(*savedEvent);
+                }
+            }
+
+            if (event.type == IrcEvent.Type.WHOISLOGIN)
+            {
+                replayQueue.remove(event.target);
             }
         }
 
