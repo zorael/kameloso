@@ -90,7 +90,7 @@ enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
  +      file = source filename iff message provided, defaults to __FILE__.
  +      line = source file linenumber iff message provided, defaults to __LINE__.
  +/
-static void printObject(T)(T thing, string message = "",
+static void printObject(T)(T thing, string message = string.init,
                            string file = __FILE__, int line = __LINE__)
 {
 	import std.stdio  : writefln;
@@ -137,7 +137,7 @@ static void printObject(T)(T thing, string message = "",
  +      scopeName = Optional scope name to print. Otherwise the current function name
  +                  will be used.
  +/
-static string scopeguard(ubyte states = exit, string scopeName = "") pure
+static string scopeguard(ubyte states = exit, string scopeName = string.init) pure
 {
 	import std.array : Appender;
     Appender!string app;
