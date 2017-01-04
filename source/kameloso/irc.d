@@ -236,7 +236,7 @@ public:
             updateBot();
 
             mainThread.send(ThreadMessage.Sendline(),
-                "NICK %s".format(bot.nickname ~ altNickSign));
+                "NICK %s".format(bot.nickname));
             break;
 
         case SELFNICK:
