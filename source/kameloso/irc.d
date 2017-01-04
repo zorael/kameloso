@@ -906,6 +906,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
         event.target = slice.nom(" :");
         if (!event.special && (event.target == "*")) event.special = true;
+        event.target = string.init;
         event.content = slice;
         break;
 
@@ -995,7 +996,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         {
             // :kameloso^ MODE kameloso^ :+i
             event.type = SELFMODE;
-            event.target = targetOrChannel;
             event.aux = slice[1..$];
         }
         break;
