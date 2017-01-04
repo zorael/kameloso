@@ -45,36 +45,17 @@ alias QueryOnly = Flag!"queryOnly";
  +  Params:
  +      event = A complete IrcEvent to queue for later processing.
  +/
-void doWhois(ref IrcPluginState state, const IrcEvent event,
-              scope void delegate(const IrcEvent) dg)
+void doWhois(ref IrcPluginState state, const IrcEvent event)
 {
     import kameloso.common : ThreadMessage;
     import std.stdio : writeln, writefln;
     import std.concurrency : send;
-    import std.algorithm.searching : canFind;
 
     with (state)
     {
         writefln("Missing user information on %s", event.sender);
-
-        bool queuedCommand()
-        {
-            auto newUser = event.sender in users;
-
-            if ((newUser.login == bot.master) || bot.friends.canFind(newUser.login))
-            {
-                writeln("Replaying old event:");
-                writeln(event.toString);
-                dg(event);
-                return true;
-            }
-
-            return false;
-        }
-
-        queue[event.sender] = &queuedCommand;
-
-        mainThread.send(ThreadMessage.Whois(), event.sender);
+        shared sEvent = cast(shared)event;
+        mainThread.send(ThreadMessage.Whois(), sEvent);
     }
 }
 
