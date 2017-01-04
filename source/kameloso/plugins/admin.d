@@ -21,6 +21,15 @@ private:
     IrcPluginState state;
     bool printAll;
 
+    void updateBot()
+    {
+        with (state)
+        {
+            shared botCopy = cast(shared)bot;
+            mainThread.send(botCopy);
+        }
+    }
+
     // onCommand
     /++
      +  React to a command from an IRC user. At this point it is known to be aimed toward
@@ -108,6 +117,7 @@ private:
                 break;
 
             case "addhome":
+            case "addchan":
                 // Add an "active" channel, in which the bot should react
                 slice = slice.strip;
                 if (!slice.isValidChannel) break;
@@ -118,10 +128,13 @@ private:
                         "JOIN :%s".format(slice));
                 }
 
+                writeln("Adding channel: ", slice);
                 bot.channels ~= slice;
+                updateBot();
                 break;
 
             case "delhome":
+            case "delchan":
                 // Remove a channel from the active list
                 slice = slice.strip;
                 if (!slice.isValidChannel) break;
@@ -137,6 +150,7 @@ private:
                 bot.channels = bot.channels.remove(chanIndex);
                 mainThread.send(ThreadMessage.Sendline(),
                     "PART :%s".format(slice));
+                updateBot();
                 break;
 
             case "addfriend":
@@ -154,6 +168,7 @@ private:
 
                 bot.friends ~= slice;
                 writefln("%s added to friends", slice);
+                updateBot();
                 break;
 
             case "delfriend":
@@ -174,6 +189,7 @@ private:
 
                 bot.friends = bot.friends.remove(friendIndex);
                 writefln("%s removed from friends", slice);
+                updateBot();
                 break;
 
             case "resetterm":
@@ -237,7 +253,39 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
-        return state.onEventImpl!(QueryOnly.yes)(event, &onCommand);
+        with (state)
+        with (IrcEvent.Type)
+        switch (event.type)
+        {
+        case CHAN:
+            if (state.filterChannel!(RequirePrefix.yes)(event) == FilterResult.fail)
+            {
+                // Invalid channel or not prefixed
+                return;
+            }
+            break;
+
+        case QUERY:
+            break;
+
+        default:
+            state.onBasicEvent(event);
+            return;
+        }
+
+        final switch (state.filterUser(event))
+        {
+        case FilterResult.pass:
+            // It is a known good user (friend or master), but it is of any type
+            return onCommand(event);
+
+        case FilterResult.whois:
+            return state.doWhois(event);
+
+        case FilterResult.fail:
+            // It is a known bad user
+            return;
+        }
     }
 
     /// No teardown neccessary for AdminPlugin
