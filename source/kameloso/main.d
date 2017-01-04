@@ -209,6 +209,7 @@ void initPlugins(IrcBot bot, Tid tid)
     plugins ~= new Pinger(bot, tid);
     plugins ~= new Chatbot(bot, tid);
     plugins ~= new Webtitles(bot, tid);
+    plugins ~= new NotesPlugin(bot, tid);
 }
 
 
