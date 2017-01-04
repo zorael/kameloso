@@ -166,6 +166,7 @@ unittest
     assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
 }
 
+
 /// Ditto
 pragma(inline)
 static bool beginsWith(T)(const T line, const ubyte charcode) pure
@@ -178,7 +179,10 @@ if (isSomeString!T)
 unittest
 {
     assert(":Lorem ipsum".beginsWith(':'));
+    assert(":Lorem ipsum".beginsWith(":Lo"));
+    assert(!":Lorem ipsum".beginsWith(""));
 }
+
 
 // arrayify
 /++
