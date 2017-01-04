@@ -3,6 +3,8 @@ module kameloso.plugins.common;
 import kameloso.irc;
 
 import std.typecons : Flag;
+import std.algorithm : canFind;
+import std.stdio;
 
 
 /++
@@ -35,6 +37,12 @@ struct IrcPluginState
 alias QueryOnly = Flag!"queryOnly";
 
 
+alias RequirePrefix = Flag!"requirePrefix";
+
+
+enum FilterResult { fail, pass, whois }
+
+
 // doWhois
 /++
  +  Ask the main thread to do a WHOIS call. That way the plugins don't need to know of the
@@ -43,154 +51,33 @@ alias QueryOnly = Flag!"queryOnly";
  +  Params:
  +      event = A complete IrcEvent to queue for later processing.
  +/
-void doWhois(ref IrcPluginState state, const IrcEvent event,
-              scope void delegate(const IrcEvent) dg)
+void doWhois(ref IrcPluginState state, const IrcEvent event)
 {
     import kameloso.common : ThreadMessage;
     import std.stdio : writeln, writefln;
     import std.concurrency : send;
-    import std.algorithm.searching : canFind;
 
     with (state)
     {
         writefln("Missing user information on %s", event.sender);
-
-        bool queuedCommand()
-        {
-            auto newUser = event.sender in users;
-
-            if ((newUser.login == bot.master) || bot.friends.canFind(newUser.login))
-            {
-                writeln("Replaying old event:");
-                writeln(event.toString);
-                dg(event);
-                return true;
-            }
-
-            return false;
-        }
-
-        queue[event.sender] = &queuedCommand;
-
-        mainThread.send(ThreadMessage.Whois(), event.sender);
+        shared sEvent = cast(shared)event;
+        mainThread.send(ThreadMessage.Whois(), sEvent);
     }
 }
 
 
-// onEventImpl
-/++
- +  Common code to decide whether a query or channel event should be reacted to.
- +  The same code was being used in both the Chatbot and the Admin plugins, so
- +  by breaking it out into a template here we get to reuse the code.
- +
- +  Params:
- +      queryOnly = If QueryOnly.yes then channel messages will be ignored.
- +      ref state = A reference to a plugin's internal state, which includes
- +                  things like user arrays and thread IDs.
- +      onCommand = The delegate to execute if the logic says the event is interesting.
- +/
-void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
-    (ref IrcPluginState state, const IrcEvent event,
-     scope void delegate(const IrcEvent) onCommand)
+void onBasicEvent(ref IrcPluginState state, const IrcEvent event)
 {
-    import std.algorithm.searching : canFind;
-
     with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {
-    case CHAN:
-    // The Admin plugin only cares about Queries
-    static if (queryOnly == QueryOnly.no)
-    {
-        /*
-         * Not all channel messages are of interest; only those starting with the bot's
-         * nickname, those from whitelisted users, and those in channels marked as active.
-         */
-
-        if (!bot.channels.canFind(event.channel))
-        {
-            // Channel is not relevant
-            return;
-        }
-        else
-        {
-            import kameloso.stringutils : beginsWith;
-
-            if (event.content.beginsWith(bot.nickname) &&
-               (event.content.length > bot.nickname.length) &&
-               (event.content[bot.nickname.length] == ':'))
-            {
-                // Drop down
-            }
-            else
-            {
-                // Not aimed at bot
-                return;
-            }
-        }
-
-        auto user = event.sender in users;
-
-        if (!user)
-        {
-            // No known user, relevant channel
-            return state.doWhois(event, onCommand);
-        }
-
-        // User exists in users database
-        if (user.login == bot.master)
-        {
-            // User is master, all is ok
-            return onCommand(event);
-        }
-        else if (bot.friends.canFind(user.login))
-        {
-            // User is whitelisted, all is ok
-            return onCommand(event);
-        }
-        else
-        {
-            // Known bad user
-            return;
-        }
-    }
-    else
-    {
-        // Don't fall down
-        break;
-    }
-
-    case QUERY:
-        // Queries are always aimed toward the bot, but the user must be whitelisted
-        auto user = event.sender in users;
-
-        if (!user) return state.doWhois(event, onCommand);
-        else if ((user.login == bot.master) || bot.friends.canFind(user.login))
-        {
-            // master or friend
-            return onCommand(event);
-        }
-        break;
-
     case WHOISLOGIN:
-        // Save user to users, then replay any queued commands.
-        users[event.target] = userFromEvent(event);
-        //users[event.target].lastWhois = Clock.currTime;
-
-        if (auto oldCommand = event.target in queue)
-        {
-            if ((*oldCommand)())
-            {
-                // The command returned true; remove it from the queue
-                queue.remove(event.target);
-            }
-        }
-
+        // Register the user
+        state.users[event.target] = userFromEvent(event);
         break;
 
     case RPL_ENDOFWHOIS:
-        // If there's still a queued command at this point, WHOISLOGIN was never triggered
         queue.remove(event.target);
         break;
 
@@ -200,6 +87,67 @@ void onEventImpl(QueryOnly queryOnly = QueryOnly.no)
         break;
 
     default:
+        // Not so interesting
         break;
+    }
+}
+
+
+
+FilterResult filterUser(IrcPluginState state, const IrcEvent event)
+{
+    with (state)
+    {
+        // Queries are always aimed toward the bot, but the user must be whitelisted
+        auto user = event.sender in users;
+
+        if (!user) return FilterResult.whois;
+        else if ((user.login == bot.master) || bot.friends.canFind(user.login))
+        {
+            // master or friend
+            return FilterResult.pass;
+        }
+        else
+        {
+            return FilterResult.fail;
+        }
+    }
+}
+
+
+FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
+    (IrcPluginState state, const IrcEvent event)
+{
+    with (state)
+    {
+        if (!bot.channels.canFind(event.channel))
+        {
+            // Channel is not relevant
+            return FilterResult.fail;
+        }
+        else
+        {
+            // Channel is relevant
+            static if (requirePrefix)
+            {
+                import kameloso.stringutils : beginsWith;
+
+                if (event.content.beginsWith(bot.nickname) &&
+                   (event.content.length > bot.nickname.length) &&
+                   (event.content[bot.nickname.length] == ':'))
+                {
+                    return FilterResult.pass;
+                }
+                else
+                {
+                    // writeln("A message was filtered due to not having a bot prefix");
+                    return FilterResult.fail;
+                }
+            }
+            else
+            {
+                return FilterResult.pass;
+            }
+        }
     }
 }
