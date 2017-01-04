@@ -1089,9 +1089,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case WHOISSECURECONN: // 671
     case RPL_ENDOFWHOIS: // 318
     case ERR_NICKNAMEINUSE: // 433
+    case ERR_NOSUCHNICK: // 401
         // :asimov.freenode.net 671 kameloso^ zorael :is using a secure connection
         // :asimov.freenode.net 318 kameloso^ zorael :End of /WHOIS list.
         // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
+        // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
         slice.nom(' ');
         event.target  = slice.nom(" :");
         event.content = slice;
@@ -1116,6 +1118,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case PONG:
         event.target  = string.init;
         event.content = string.init;
+        break;
+
+    case ERR_NOTREGISTERED:
+        slice.nom(" :");
+        event.content = slice;
         break;
 
     default:
