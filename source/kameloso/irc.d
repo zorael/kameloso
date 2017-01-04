@@ -1269,7 +1269,6 @@ unittest
     const e5 = ":kameloso^ MODE kameloso^ :+i".stringToIrcEvent();
     assert(e5.sender == "kameloso^");
     assert(e5.type == IrcEvent.Type.SELFMODE);
-    assert(e5.target == "kameloso^");
     assert(e5.aux == "+i");
 
     /+
