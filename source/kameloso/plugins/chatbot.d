@@ -186,7 +186,6 @@ public:
             break;
 
         case QUERY:
-        case JOIN:
             break;
 
         default:
