@@ -124,10 +124,13 @@ public:
      +      line = The string to send.
      +/
     pragma(inline, true)
-    void sendline(const string line)
+    void sendline(String...)(const String lines)
     {
         // RACE CONDITION *iff* other threads are allowed to write
-        socket.send(line);
+        foreach (i, line; lines)
+        {
+            socket.send(line);
+        }
         socket.send("\n");
 
         // ALLOCATING FIX: socket.send(line ~ '\n');

@@ -74,7 +74,7 @@ ShouldQuit checkMessages()
             (ThreadMessage.Ping)
             {
                 // writefln("--> PING :%s".format(bot.server));
-                conn.sendline("PING :" ~ bot.server);
+                conn.sendline("PING :", bot.server);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
             {
@@ -108,14 +108,14 @@ ShouldQuit checkMessages()
             (ThreadMessage.Pong)
             {
                 // writefln("--> PONG %s".format(bot.server));
-                conn.sendline("PONG :" ~ bot.server);
+                conn.sendline("PONG :", bot.server);
             },
             (ThreadMessage.Quit, string reason)
             {
                 // This should automatically close the connection
                 // Set shouldQuit to yes to propagate the decision down the stack
                 const line = reason.length ? reason : bot.quitReason;
-                conn.sendline("QUIT :" ~ line);
+                conn.sendline("QUIT :", line);
                 shouldQuit = ShouldQuit.yes;
             },
             (LinkTerminated e)
