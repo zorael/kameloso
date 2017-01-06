@@ -81,8 +81,6 @@ ShouldQuit checkMessages()
                 import std.datetime : Clock;
                 import std.conv : to;
 
-                writeln("WHOIS REQUESTED ON ", event.sender);
-
                 // Several plugins may (will) ask to WHOIS someone at the same time,
                 // so keep track on when we WHOISed whom, to limit it
                 auto now = Clock.currTime;
@@ -90,10 +88,12 @@ ShouldQuit checkMessages()
 
                 if (then && (now - *then) < Timeout.whois.seconds) return;
 
-                 writeln("--> WHOIS :", event.sender);
-                 conn.sendline("WHOIS :" ~ event.sender);
-                 whoisCalls[event.sender] = Clock.currTime;
-                 replayQueue[event.sender] = event;
+                writeln("WHOIS REQUESTED ON ", event.sender);
+
+                writeln("--> WHOIS :", event.sender);
+                conn.sendline("WHOIS :", event.sender);
+                whoisCalls[event.sender] = Clock.currTime;
+                replayQueue[event.sender] = event;
             },
             (shared IrcBot bot)
             {
