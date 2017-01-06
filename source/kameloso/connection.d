@@ -188,10 +188,12 @@ void listenFiber(Connection conn)
         }
         else if (bytesReceived == Socket.ERROR)
         {
-            if ((Clock.currTime - timeLastReceived) > Timeout.keepalive.seconds)
+            auto elapsed = (Clock.currTime - timeLastReceived);
+
+            if (elapsed > Timeout.keepalive.seconds)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                writeln("NOTHING RECEIVED FOR ", Timeout.keepalive.seconds);
+                writeln("NOTHING RECEIVED FOR %s (timeout %s)", elapsed, Timeout.keepalive.seconds);
                 return;
             }
 
