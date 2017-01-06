@@ -193,7 +193,7 @@ void listenFiber(Connection conn)
             if (elapsed > Timeout.keepalive.seconds)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                writeln("NOTHING RECEIVED FOR %s (timeout %s)", elapsed, Timeout.keepalive.seconds);
+                writefln("NOTHING RECEIVED FOR %s (timeout %s)", elapsed, Timeout.keepalive.seconds);
                 return;
             }
 
