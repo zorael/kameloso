@@ -59,7 +59,7 @@ void doWhois(ref IrcPluginState state, const IrcEvent event)
 
     with (state)
     {
-        writeln("Missing user information on", event.sender);
+        writeln("Missing user information on ", event.sender);
         shared sEvent = cast(shared)event;
         mainThread.send(ThreadMessage.Whois(), sEvent);
     }
