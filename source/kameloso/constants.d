@@ -6,6 +6,7 @@ enum Files
 {
     config = "kameloso.conf",
     quotes = "quotes.json",
+    notes  = "notes.json",
 }
 
 

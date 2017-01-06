@@ -45,7 +45,7 @@ public:
         state.bot = bot;
         state.mainThread = tid;
 
-        // Files.notes.loadNotes(notes);
+        Files.notes.loadNotes(notes);
     }
 
     void status()
