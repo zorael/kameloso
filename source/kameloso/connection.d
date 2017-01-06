@@ -49,7 +49,7 @@ public:
         catch (SocketException e)
         {
             // For some reason IPv6 addresses get resolved but we can't connect to them
-            
+
             if (e.msg == "getaddrinfo error: Name or service not known")
             {
                 // assume net down, wait and try again
@@ -235,7 +235,7 @@ void listenFiber(Connection conn)
             pos += (newline + 1); // eat remaining newline
             newline = buffer[pos..end].countUntil('\n');
         }
-        
+
         yield(string.init);
 
         if (pos >= end)

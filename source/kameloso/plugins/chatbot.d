@@ -303,7 +303,7 @@ static void saveQuotes(const string filename, const JSONValue quotes)
     {
         remove(filename); // Wise?
     }
-    
+
     auto f = File(filename, "a");
     scope (exit) f.close();
 
