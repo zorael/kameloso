@@ -311,6 +311,8 @@ ShouldQuit loopGenerator(Generator!string generator)
                 writeln(event);
             }
 
+            bool spammedAboutReplaying;
+
             foreach (plugin; plugins)
             {
                 mixin(scopeguard(failure, "onEvent loop"));
@@ -320,8 +322,14 @@ ShouldQuit loopGenerator(Generator!string generator)
                 {
                     const savedEvent = event.target in replayQueue;
                     if (!savedEvent) continue;
-                    writeln("Replaying event:");
-                    writeln(*savedEvent);
+
+                    if (!spammedAboutReplaying)
+                    {
+                        writeln("Replaying event:");
+                        writeln(*savedEvent);
+                        spammedAboutReplaying = true;
+                    }
+
                     plugin.onEvent(*savedEvent);
                 }
             }
