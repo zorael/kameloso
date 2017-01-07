@@ -13,7 +13,7 @@ enum Files
 /// NickServ's lines begin with these
 enum NickServLines
 {
-    challenge = "This nickname is registered.",
+    challenge = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
     acceptance = "You are now identified",
 }
 
