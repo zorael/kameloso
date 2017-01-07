@@ -1254,7 +1254,6 @@ unittest
     const e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".stringToIrcEvent();
     assert(e1.sender == "tepper.freenode.net");
     assert(e1.type == IrcEvent.Type.NOTICE);
-    assert(e1.target == "*");
     assert(e1.content == "*** Checking Ident");
 
     /+
