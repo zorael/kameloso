@@ -15,8 +15,8 @@ version(Windows)
 shared static this()
 {
     import core.sys.windows.windows;
-    SetConsoleCP(65001);
-    SetConsoleOutputCP(65001);
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
 }
 
 private:
