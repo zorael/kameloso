@@ -61,46 +61,55 @@ private:
     void onJoin(const IrcEvent event)
     {
         // Authorised and everything
-        foreach (note; notes.getNotes(event.sender))
+        auto noteArray = notes.getNotes(event.sender);
+        if (!noteArray.length) return;
+
+        foreach (note; noteArray)
         {
             const timestamp = "%s %02d/%02d %02d:%02d".format(note.when.dayOfWeek,
                 note.when.day, note.when.month, note.when.hour, note.when.minute);
             state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s (%s): %s".format(event.channel, note.sender, timestamp, note.line));
+                "PRIVMSG %s :%s! %s left note on %s: %s"
+                .format(event.channel, event.sender, note.sender, timestamp, note.line));
         }
+
+        notes.clearNotes(event.sender);
     }
 
     void onVerb(const IrcEvent event, string line)
     {
         import kameloso.stringutils;
+        import std.string : indexOf;
         import std.uni : toLower;
 
-        const verb = line.nom!(Decode.yes)(' ');
-        writeln("VERB: ", verb);
-        writeln("LINE: ", line);
+        string verb, args;
+        line.formattedRead("%s %s", &verb, &args);
 
         switch (verb.toLower)
         {
         case "addnote":
-            writeln("should add note");
+        case "note":
             string nickname, content;
-            auto hits = line.formattedRead("%s %s", &nickname, &content);
-            writeln("hits: ", hits);
+            const hits = args.formattedRead("%s %s", &nickname, &content);
+            if (hits != 2) return;
             notes.addNote(nickname, event.sender, content);
             Files.notes.saveNotes(notes);
             break;
 
         case "getnotes":
+            if (event.sender != state.bot.master) return;
             const nickname = (line.indexOf(' ') == -1) ? line : line.nom(' ');
-            auto note = notes.getNotes(nickname);
+            const note = notes.getNotes(nickname);
             writeln(note);
             break;
 
         case "printnotes":
+            if (event.sender != state.bot.master) return;
             writeln(notes.toPrettyString);
             break;
 
         case "fakejoin":
+            if (event.sender != state.bot.master) return;
             writeln("faking an event");
             IrcEvent newEvent = event;
             newEvent.sender = line;
@@ -179,65 +188,73 @@ public:
 
 static auto getNotes(ref JSONValue notes, const string nickname)
 {
+    import std.datetime : SysTime, Clock;
+
     struct Note
     {
         string sender, line;
         SysTime when;
-
-        version(none)
-        this(JSONValue note)
-        {
-            sender = note["sender"].str;
-            line = note["sline"].str;
-            when = SysTime.fromISOString(note["when"].str);
-        }
-
-        string toString() const
-        {
-            return `[NOTE] %s: "%s"`.format(sender, line);
-        }
     }
 
-    Note[] noteArr;
+    Note[] noteArray;
 
     try
     {
+        if (notes.isNull)
+        {
+            writeln("notes is null");
+            return noteArray;
+        }
+
         if (auto arr = nickname in notes)
         {
-            noteArr.length = arr.array.length;
+            if (arr.type != JSON_TYPE.ARRAY)
+            {
+                writefln("Invalid notes list for %s (type is %s)", nickname, arr.type);
+                writeln("Clearing");
+                notes[nickname] = null;
+                return noteArray;
+            }
+
+            noteArray.length = arr.array.length;
 
             foreach (i, note; arr.array)
             {
-                writeln("---------------------------------");
-                writeln(note.toPrettyString);
-                writeln("---------------------------------");
-                noteArr[i].sender = note["sender"].str;
-                noteArr[i].line = note["line"].str;
-                noteArr[i].when = SysTime.fromISOString(note["when"].str);
+                noteArray[i].sender = note["sender"].str;
+                noteArray[i].line = note["line"].str;
+                noteArray[i].when = SysTime.fromISOString(note["when"].str);
             }
 
-            return noteArr;
+            return noteArray;
         }
         else
         {
             writeln("No notes available for nickname ", nickname);
-            return noteArr;
+            return noteArray;
         }
     }
     catch (JSONException e)
     {
-        return noteArr;
+        writeln(e.msg);
+        return noteArray;
     }
 }
 
 
-static void addNote(ref JSONValue notes, const string nickname, const string sender, const string line)
+static void clearNotes(ref JSONValue notes, const string nickname)
 {
-    mixin(scopeguard(entry));
-    import std.format : format;
+    if (auto arr = nickname in notes)
+    {
+        writeln("Clearing stored notes for ", nickname);
+        notes[nickname] = string[].init;
+    }
+}
 
-    assert((nickname.length && line.length),
-        "%s was passed an empty nickname(%s) or line(%s)".format(__FUNCTION__, nickname, line));
+
+static void addNote(ref JSONValue notes, const string nickname,
+                    const string sender, const string line)
+{
+    import std.datetime : Clock;
 
     auto lineAsAA =
     [
@@ -246,28 +263,20 @@ static void addNote(ref JSONValue notes, const string nickname, const string sen
         "line"   : line
     ];
 
-    writeln("lineAsAA: ", lineAsAA);
-
     try
     {
-        if (auto arr = nickname in notes)
+        if (!notes.isNull && (nickname in notes) && (notes[nickname].type == JSON_TYPE.ARRAY))
         {
-            writeln(*arr);
             notes[nickname].array ~= JSONValue(lineAsAA);
-
         }
         else
         {
-            // No notes for nickname
-            notes.object[nickname] = JSONValue([ lineAsAA ]);
+            notes[nickname] = [ lineAsAA ];
         }
     }
     catch (JSONException e)
     {
         writeln(e.msg);
-        // No notes at all
-        notes = JSONValue("{}");
-        return notes.addNote(nickname, sender, line);
     }
 }
 
