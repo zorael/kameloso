@@ -212,6 +212,7 @@ void listenFiber(Connection conn)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
+                writeln("FATAL SOCKET ERROR");
                 writeln(lastSocketError);
                 return;
 
