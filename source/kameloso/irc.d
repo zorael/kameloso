@@ -1062,6 +1062,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case RPL_WHOISCHANNELS:
+        writeln("----------- CATCH ME -------------");
+        writeln(event.raw);
+        writeln("----------------------------------");
         import std.string : stripRight;
 
         slice = slice.stripRight();
