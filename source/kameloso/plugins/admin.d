@@ -5,6 +5,8 @@ import kameloso.constants;
 import kameloso.common;
 import kameloso.stringutils;
 
+import std.stdio : writeln, writefln;
+
 
 // AdminPlugin
 /++
@@ -15,7 +17,6 @@ final class AdminPlugin : IrcPlugin
 {
 private:
     import std.concurrency : Tid, send;
-    import std.stdio : write, writeln, writefln;
     import std.algorithm.searching : canFind;
 
     IrcPluginState state;
@@ -174,6 +175,7 @@ private:
 
             case "resetterm":
                 // If for some reason the terminal will have gotten binary on us, reset it
+                import std.stdio : write;
                 write(ControlCharacter.termReset);
                 break;
 
