@@ -6,6 +6,7 @@ import kameloso.stringutils;
 import kameloso.constants;
 import kameloso.common;
 
+import std.stdio : writeln, writefln;
 import std.json : JSONValue, parseJSON, JSONException;
 
 
@@ -17,7 +18,6 @@ import std.json : JSONValue, parseJSON, JSONException;
 final class Chatbot : IrcPlugin
 {
 private:
-    import std.stdio : writeln, writefln;
     import std.concurrency : Tid, send;
     import std.algorithm : canFind;
 
