@@ -5,32 +5,28 @@ import kameloso.irc;
 import kameloso.common;
 import kameloso.constants;
 
+import std.stdio  : writeln, writefln;
+import std.format : format, formattedRead;
 import std.json;
-import std.datetime;
-import std.conv;
-import std.string;
-import std.format;
-import std.stdio;
 
 
 private:
 
+
 public:
+
+
 final class NotesPlugin : IrcPlugin
 {
 private:
     import std.concurrency : Tid, send;
-
     IrcPluginState state;
     JSONValue notes;
 
     void onCommand(const IrcEvent event)
     {
         import kameloso.stringutils;
-        import std.string : indexOf, stripLeft, munch;
-        import std.format : formattedRead;
-
-        writeln("notes onCommand");
+        import std.string : indexOf, munch;
 
         with(state)
         with (IrcEvent.Type)
