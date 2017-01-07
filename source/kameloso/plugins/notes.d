@@ -299,13 +299,14 @@ static void loadNotes(const string filename, ref JSONValue notes)
     import std.stdio  : writefln;
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
+
     writefln("Loading notes");
 
     if (!filename.exists)
     {
         writefln("%s does not exist", filename);
-        notes = parseJSON("{}");
-        filename.saveNotes(notes);
+        //notes = parseJSON("{}");
+        //filename.saveNotes(notes);
         return;
     }
     else if (!filename.isFile)
