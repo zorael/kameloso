@@ -276,6 +276,7 @@ static void addQuote(ref JSONValue quotes, const string nickname, const string l
     catch (JSONException e)
     {
         // No quotes at all
+        writeln(e);
         quotes = JSONValue("{}");
         return quotes.addQuote(nickname, line);
     }
