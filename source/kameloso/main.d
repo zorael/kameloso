@@ -62,12 +62,12 @@ Quit checkMessages()
         // Use the bool of whether anything was received at all to decide if the loop should
         // continue. That way we neatly exhaust the mailbox before returning.
         receivedSomething = receiveTimeout(0.seconds,
-            (ThreadMessage.Sendline, string line)
+            (ThreadMessage.Sendline, const string line)
             {
                 writeln("--> ", line);
                 conn.sendline(line);
             },
-            (ThreadMessage.Quietline, string line)
+            (ThreadMessage.Quietline, const string line)
             {
                 conn.sendline(line);
             },
@@ -83,8 +83,8 @@ Quit checkMessages()
 
                 // Several plugins may (will) ask to WHOIS someone at the same time,
                 // so keep track on when we WHOISed whom, to limit it
-                auto now = Clock.currTime;
-                auto then = (event.sender in whoisCalls);
+                const now = Clock.currTime;
+                const then = (event.sender in whoisCalls);
 
                 if (then && (now - *then) < Timeout.whois.seconds) return;
 
@@ -110,7 +110,7 @@ Quit checkMessages()
                 // writefln("--> PONG %s".format(bot.server));
                 conn.sendline("PONG :", bot.server);
             },
-            (ThreadMessage.Quit, string reason)
+            (ThreadMessage.Quit, const string reason)
             {
                 // This should automatically close the connection
                 // Set quit to yes to propagate the decision down the stack
