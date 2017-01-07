@@ -33,7 +33,6 @@ private:
         switch (event.type)
         {
         case JOIN:
-            writeln("Should look up notes on ", event.sender);
             return onJoin(event);
 
         case CHAN:
@@ -53,7 +52,6 @@ private:
             return onVerb(event, line);
 
         default:
-            writeln("notes default");
             break;
         }
     }
@@ -202,19 +200,14 @@ static auto getNotes(ref JSONValue notes, const string nickname)
 
     try
     {
-        if (notes.isNull)
-        {
-            writeln("notes is null");
-            return noteArray;
-        }
+        if (notes.isNull) return noteArray;
 
         if (auto arr = nickname in notes)
         {
             if (arr.type != JSON_TYPE.ARRAY)
             {
                 writefln("Invalid notes list for %s (type is %s)", nickname, arr.type);
-                writeln("Clearing");
-                notes[nickname] = null;
+                notes.clearNotes(nickname);
                 return noteArray;
             }
 
@@ -307,13 +300,9 @@ static void loadNotes(const string filename, ref JSONValue notes)
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
 
-    writefln("Loading notes");
-
     if (!filename.exists)
     {
         writefln("%s does not exist", filename);
-        //notes = parseJSON("{}");
-        //filename.saveNotes(notes);
         return;
     }
     else if (!filename.isFile)

@@ -70,8 +70,6 @@ private:
 
             const target = (event.channel.length) ? event.channel : event.sender;
 
-            // writefln("Chatbot verb:%s slice:%s", verb, slice);
-
             switch(verb.toLower)
             {
             case "8ball":
@@ -318,7 +316,6 @@ static void loadQuotes(const string filename, ref JSONValue quotes)
     import std.stdio  : writefln;
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
-    writefln("Loading quotes");
 
     if (!filename.exists)
     {

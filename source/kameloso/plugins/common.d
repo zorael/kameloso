@@ -136,7 +136,6 @@ FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
                 }
                 else
                 {
-                    // writeln("A message was filtered due to not having a bot prefix");
                     return FilterResult.fail;
                 }
             }

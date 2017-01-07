@@ -81,18 +81,10 @@ private:
                 slice = string.init;
             }
 
-            // writefln("admin verb:%s slice:%s", verb, slice);
-
             switch(verb.toLower)
             {
             case "sudo":
                 // Repeat the command as-is, raw, to the server
-                if (!slice.length)
-                {
-                    writeln("No argument given to sudo");
-                    break;
-                }
-
                 mainThread.send(ThreadMessage.Sendline(), slice);
                 break;
 
@@ -103,11 +95,7 @@ private:
                 import std.format : format;
                 import std.uni : toUpper;
 
-                if (!slice.length)
-                {
-                    writeln("No channels supplied");
-                    break;
-                }
+                if (!slice.length) break;
 
                 mainThread.send(ThreadMessage.Sendline(),
                     "%s :%s".format(verb.toUpper, slice.splitter(' ').joiner(",")));
@@ -155,11 +143,7 @@ private:
 
             case "addfriend":
                 // Add a login to the whitelist, so they can access the Chatbot and such
-                if (!slice.length)
-                {
-                    writeln("No nickname given.");
-                    break;
-                }
+                if (!slice.length) break;
                 else if (slice.indexOf(' ') != -1)
                 {
                     writeln("Nickname must not contain spaces");
@@ -173,11 +157,7 @@ private:
 
             case "delfriend":
                 // Remove a login from the whitelist
-                if (!slice.length)
-                {
-                    writeln("No nickname given.");
-                    break;
-                }
+                if (!slice.length) break;
 
                 auto friendIndex = bot.friends.countUntil(slice);
 
@@ -209,7 +189,6 @@ private:
                 break;
 
             default:
-                // writefln("admin unknown verb:%s", verb);
                 break;
             }
         }
