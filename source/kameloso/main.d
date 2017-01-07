@@ -62,12 +62,12 @@ Quit checkMessages()
         // Use the bool of whether anything was received at all to decide if the loop should
         // continue. That way we neatly exhaust the mailbox before returning.
         receivedSomething = receiveTimeout(0.seconds,
-            (ThreadMessage.Sendline, const string line)
+            (ThreadMessage.Sendline, string line)
             {
                 writeln("--> ", line);
                 conn.sendline(line);
             },
-            (ThreadMessage.Quietline, const string line)
+            (ThreadMessage.Quietline, string line)
             {
                 conn.sendline(line);
             },
