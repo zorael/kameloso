@@ -33,10 +33,6 @@ struct IrcPluginState
 }
 
 
-/// This makes use of the onEvent2 template more self-explanatory
-alias QueryOnly = Flag!"queryOnly";
-
-
 alias RequirePrefix = Flag!"requirePrefix";
 
 
