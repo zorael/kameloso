@@ -6,10 +6,10 @@ import std.typecons : Flag;
 
 
 /++
- +  This Flag allows us to use the more descriptive ShouldQuit.yes (and Yes.shouldQuit)
+ +  This Flag allows us to use the more descriptive Quit.yes (and Yes.quit)
  +  instead of bools when returning such directives from functions.
  +/
-alias ShouldQuit = Flag!"shouldQuit";
+alias Quit = Flag!"quit";
 
 
 /++

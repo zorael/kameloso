@@ -46,15 +46,15 @@ struct IrcServer
  +  The return value tells the caller whether the received action means the bot should exit.
  +
  +  Returns:
- +      ShouldQuit.yes or ShouldQuit.no, depending.
+ +      Quit.yes or Quit.no, depending.
  +/
-ShouldQuit checkMessages()
+Quit checkMessages()
 {
     import core.time  : seconds;
 
     mixin(scopeguard(failure));
 
-    ShouldQuit shouldQuit;
+    Quit quit;
     bool receivedSomething;
 
     do
@@ -113,15 +113,15 @@ ShouldQuit checkMessages()
             (ThreadMessage.Quit, string reason)
             {
                 // This should automatically close the connection
-                // Set shouldQuit to yes to propagate the decision down the stack
+                // Set quit to yes to propagate the decision down the stack
                 const line = reason.length ? reason : bot.quitReason;
                 conn.sendline("QUIT :", line);
-                shouldQuit = ShouldQuit.yes;
+                quit = Quit.yes;
             },
             (LinkTerminated e)
             {
                 writeln("Some linked thread died!");
-                shouldQuit = ShouldQuit.yes;
+                quit = Quit.yes;
             },
             (Variant v)
             {
@@ -130,9 +130,9 @@ ShouldQuit checkMessages()
             }
         );
     }
-    while (receivedSomething && !shouldQuit);
+    while (receivedSomething && !quit);
 
-    return shouldQuit;
+    return quit;
 }
 
 
@@ -145,9 +145,9 @@ ShouldQuit checkMessages()
  +      The string[] args the program was called with.
  +
  +  Returns:
- +      ShouldQuit.yes or no depending on whether the arguments chosen mean the program should not proceed.
+ +      Quit.yes or no depending on whether the arguments chosen mean the program should not proceed.
  +/
-ShouldQuit handleArguments(string[] args)
+Quit handleArguments(string[] args)
 {
     import std.getopt;
     import std.format : format;
@@ -174,7 +174,7 @@ ShouldQuit handleArguments(string[] args)
         defaultGetoptPrinter("kameloso IRC bot, built %s\n"
                              .format(__TIMESTAMP__), helpInfo.options);
         writeln();
-        return ShouldQuit.yes;
+        return Quit.yes;
     }
 
     configFileFromArgs = (configFileFromArgs.length) ? configFileFromArgs : Files.config;
@@ -189,10 +189,10 @@ ShouldQuit handleArguments(string[] args)
         writeln();
         printObject(server);
         writeln();
-        return ShouldQuit.yes;
+        return Quit.yes;
     }
 
-    return ShouldQuit.no;
+    return Quit.no;
 }
 
 
@@ -215,7 +215,7 @@ void initPlugins(IrcBot bot, Tid tid)
 /// Main!
 void main(string[] args)
 {
-    if (handleArguments(args) == ShouldQuit.yes) return;
+    if (handleArguments(args) == Quit.yes) return;
 
     // Print the current settings to show what's going on.
     printObject(bot);
@@ -234,7 +234,7 @@ void main(string[] args)
         return;
     }
 
-    auto shouldQuit = ShouldQuit.no;
+    auto quit = Quit.no;
     do
     {
         conn.reset();
@@ -254,9 +254,9 @@ void main(string[] args)
         initPlugins(bot, thisTid);
 
         auto generator = new Generator!string(() => listenFiber(conn));
-        shouldQuit = loopGenerator(generator);
+        quit = loopGenerator(generator);
     }
-    while (shouldQuit == ShouldQuit.no);
+    while (!quit);
 }
 
 
@@ -270,20 +270,20 @@ void main(string[] args)
  +      generator = a string-returning Generator that's reading from the socket.
  +
  +  Returns:
- +      ShouldQuit.yes if circumstances mean the bot should exit, otherwise ShouldQuit.no.
+ +      Quit.yes if circumstances mean the bot should exit, otherwise Quit.no.
  +/
-ShouldQuit loopGenerator(Generator!string generator)
+Quit loopGenerator(Generator!string generator)
 {
     import core.thread : Fiber;
 
-    auto shouldQuit = ShouldQuit.no;
+    auto quit = Quit.no;
     do
     {
         if (generator.state == Fiber.State.TERM)
         {
             // listening Generator disconnected; reconnect
             generator.reset();
-            return ShouldQuit.no;
+            return Quit.no;
         }
 
         generator.call();
@@ -340,9 +340,9 @@ ShouldQuit loopGenerator(Generator!string generator)
             }
         }
 
-        shouldQuit = checkMessages();
+        quit = checkMessages();
     }
-    while (shouldQuit == ShouldQuit.no);
+    while (!quit);
 
-    return ShouldQuit.yes;
+    return Quit.yes;
 }
