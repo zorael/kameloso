@@ -756,7 +756,7 @@ IrcEvent parseBasic(const char[] raw)
 }
 
 
-// stringToIrcEvent
+// toIrcEvent
 /++
  +  Takes a raw IRC string and passes it to the different parsing functions to get a finished
  +  IrcEvent. Parsing goes through several phases (prefix, typestring, specialcases) and
@@ -768,7 +768,7 @@ IrcEvent parseBasic(const char[] raw)
  +  Returns:
  +      A finished IrcEvent.
  +/
-IrcEvent stringToIrcEvent(const char[] raw)
+IrcEvent toIrcEvent(const char[] raw)
 {
     import std.exception : enforce;
 
@@ -1197,7 +1197,7 @@ unittest
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
     :tepper.freenode.net NOTICE * :*** Checking Ident
      +/
-    const e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".stringToIrcEvent();
+    const e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".toIrcEvent();
     assert(e1.sender == "tepper.freenode.net");
     assert(e1.type == IrcEvent.Type.NOTICE);
     assert(e1.content == "*** Checking Ident");
@@ -1206,7 +1206,7 @@ unittest
     [ERR_NICKNAMEINUSE] tepper.freenode.net (kameloso): "Nickname is already in use." (#433)
     :tepper.freenode.net 433 * kameloso :Nickname is already in use.
      +/
-    const e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".stringToIrcEvent();
+    const e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".toIrcEvent();
     assert(e2.sender == "tepper.freenode.net");
     assert(e2.type == IrcEvent.Type.ERR_NICKNAMEINUSE);
     assert(e2.target == "kameloso");
@@ -1218,7 +1218,7 @@ unittest
     :tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
      +/
     const e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
-               .stringToIrcEvent();
+               .toIrcEvent();
     assert(e3.sender == "tepper.freenode.net");
     assert(e3.type == IrcEvent.Type.WELCOME);
     assert(e3.target == "kameloso^");
@@ -1229,7 +1229,7 @@ unittest
     [RPL_ENDOFMOTD] tepper.freenode.net (kameloso^): "End of /MOTD command." (#376)
     :tepper.freenode.net 376 kameloso^ :End of /MOTD command.
      +/
-    const e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".stringToIrcEvent();
+    const e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".toIrcEvent();
     assert(e4.sender == "tepper.freenode.net");
     assert(e4.type == IrcEvent.Type.RPL_ENDOFMOTD);
     assert(e4.target == "kameloso^");
@@ -1240,7 +1240,7 @@ unittest
     [SELFMODE] kameloso^ (kameloso^) <+i>
     :kameloso^ MODE kameloso^ :+i
      +/
-    const e5 = ":kameloso^ MODE kameloso^ :+i".stringToIrcEvent();
+    const e5 = ":kameloso^ MODE kameloso^ :+i".toIrcEvent();
     assert(e5.sender == "kameloso^");
     assert(e5.type == IrcEvent.Type.SELFMODE);
     assert(e5.aux == "+i");
@@ -1250,7 +1250,7 @@ unittest
     :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp
      +/
     const e6 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp"
-                .stringToIrcEvent();
+                .toIrcEvent();
     assert(e6.sender == "zorael");
     assert(e6.type == IrcEvent.Type.QUERY); // Will this work?
     assert(e6.target == "kameloso^");
@@ -1261,7 +1261,7 @@ unittest
     :tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr
      +/
     const e7 = ":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr"
-               .stringToIrcEvent();
+               .toIrcEvent();
     assert(e7.sender == "tepper.freenode.net");
     assert(e7.type == IrcEvent.Type.RPL_WHOISUSER);
     assert(e7.content == "~NaN ns3363704.ip-94-23-253.eu");
@@ -1273,7 +1273,7 @@ unittest
     :tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as
      +/
     const e8 = ":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as"
-               .stringToIrcEvent();
+               .toIrcEvent();
     assert(e8.sender == "tepper.freenode.net");
     assert(e8.type == IrcEvent.Type.WHOISLOGIN);
     assert(e8.target == "zurael");
@@ -1285,7 +1285,7 @@ unittest
     [PONG] tepper.freenode.net
     :tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net
      +/
-    const e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".stringToIrcEvent();
+    const e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIrcEvent();
     assert(e9.sender == "tepper.freenode.net");
     assert(e9.type == IrcEvent.Type.PONG);
     assert(e9.target == string.init); // More than the server and type is never parsed
@@ -1295,7 +1295,7 @@ unittest
     :wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection
      +/
     const e10 = ":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection"
-                .stringToIrcEvent();
+                .toIrcEvent();
     assert(e10.sender == "wonderworld");
     assert(e10.type == IrcEvent.Type.QUIT);
     assert(e10.target == string.init);
@@ -1305,7 +1305,7 @@ unittest
     [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
-     const e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".stringToIrcEvent();
+     const e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIrcEvent();
      assert(e11.sender == "zorael");
      assert(e11.type == IrcEvent.Type.CHANMODE);
      assert(e11.target == "kameloso^");

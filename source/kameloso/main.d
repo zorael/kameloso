@@ -294,7 +294,7 @@ ShouldQuit loopGenerator(Generator!string generator)
             if (!line.length) break;
 
             /// Hopefully making the event immutable means less gets copied?
-            immutable event = stringToIrcEvent(line);
+            immutable event = toIrcEvent(line);
 
             with (IrcEvent.Type)
             switch (event.type)
