@@ -374,6 +374,7 @@ struct IrcEvent
         WHOISSECURECONN, // = 671       // "<nickname> :is using a secure connection"
         WHOISLOGIN, // = 330            // "<nickname> <login> :is logged in as"
         CHANNELFORWARD, // = 470        // <#original> <#new> :Forwarding to another channel
+        CONNECTINGFROM, // = 378        // <nickname> :is connecting from *@<address> <ip>
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -679,6 +680,7 @@ struct IrcEvent
         328 : Type.CHANNELURL,
         671 : Type.WHOISSECURECONN,
         330 : Type.WHOISLOGIN,
+        378 : Type.CONNECTINGFROM,
     ];
 
     Type type;
@@ -1028,6 +1030,19 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case TOPICSETTIME: // 333
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
         slice.formattedRead("%s %s %s %s", &event.target, &event.channel, &event.content, &event.aux);
+        break;
+
+    case CONNECTINGFROM: // 378
+        //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
+        slice.nom(' ');
+        try
+        {
+            slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
+        }
+        catch (Exception e)
+        {
+            writeln(e);
+        }
         break;
 
     case RPL_LUSEROP: // 252
