@@ -14,7 +14,7 @@ enum Files
 enum NickServLines
 {
     challenge = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
-    acceptance = "You are now identified",
+    acceptance = "You are now identified for",
 }
 
 
