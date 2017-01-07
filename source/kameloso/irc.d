@@ -378,7 +378,7 @@ struct IrcEvent
         TOPICSETTIME, // = 333          // "#channel user!~ident@address 1476294377"
         USERCOUNTLOCAL, // = 265        // "Current local users n, max m"
         USERCOUNTGLOBAL, // = 266       // "Current global users n, max m"
-        CONNETCIONRECORD, // = 250      // "Highest connection count: n (m clients) (v connections received)"
+        CONNECTIONRECORD, // = 250      // "Highest connection count: n (m clients) (v connections received)"
         CHANNELURL, // = 328            // "http://linux.chat"
         WHOISSECURECONN, // = 671       // "<nickname> :is using a secure connection"
         WHOISLOGIN, // = 330            // "<nickname> <login> :is logged in as"
@@ -684,7 +684,7 @@ struct IrcEvent
         492 : Type.ERR_NOSERVICEHOST,
         265 : Type.USERCOUNTLOCAL,
         266 : Type.USERCOUNTGLOBAL,
-        250 : Type.CONNETCIONRECORD,
+        250 : Type.CONNECTIONRECORD,
         328 : Type.CHANNELURL,
         671 : Type.WHOISSECURECONN,
         330 : Type.WHOISLOGIN,
