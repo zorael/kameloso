@@ -1061,10 +1061,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.aux = slice;
         break;
 
-    case RPL_WHOISCHANNELS:
-        writeln("----------- CATCH ME -------------");
-        writeln(event.raw);
-        writeln("----------------------------------");
+    case RPL_WHOISCHANNELS: // 319
+        // :leguin.freenode.net 319 kameloso^ zorael :#flerrp
         import std.string : stripRight;
 
         slice = slice.stripRight();
