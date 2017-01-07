@@ -217,6 +217,8 @@ public:
                 mainThread.send(ThreadMessage.Quietline(),
                     "PRIVMSG NickServ@services. :IDENTIFY %s %s"
                     .format(bot.login, bot.password));
+
+                // Fake it
                 writefln("--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2", bot.login);
             }
             else
