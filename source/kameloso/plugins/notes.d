@@ -91,16 +91,9 @@ private:
             const hits = args.formattedRead("%s %s", &nickname, &content);
             if (hits != 2) return;
             notes.addNote(nickname, event.sender, content);
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :Note added".format(event.channel));
             Files.notes.saveNotes(notes);
-            break;
-
-        case "getnotes":
-            if (event.sender != state.bot.master) return;
-            //const nickname = (line.indexOf(' ') == -1) ? line : line.nom(' ');
-            //const note = notes.getNotes(nickname);
-            string nickname, note;
-            line.formattedRead("%s %s", &nickname, &note);
-            writeln(note);
             break;
 
         case "printnotes":
