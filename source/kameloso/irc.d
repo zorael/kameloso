@@ -988,6 +988,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case MODE:
         const targetOrChannel = slice.nom(' ');
+
         if (targetOrChannel.beginsWith('#'))
         {
             event.channel = targetOrChannel;
