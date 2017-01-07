@@ -7,7 +7,7 @@ import kameloso.common;
 public import kameloso.plugins.common;
 
 import std.stdio  : writeln, writefln;
-import std.format : format;
+import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
 import std.algorithm.iteration : joiner;
 import std.concurrency : Tid;
@@ -74,10 +74,11 @@ IrcUser userFromEvent(const IrcEvent event)
         with (user)
         {
             nickname  = event.target;
-            ident     = content.nom(' ');
-            address   = content;
+            //ident     = content.nom(' ');
+            //address   = content;
             login     = event.aux;
             special   = event.special;
+            content.formattedRead("%s %s", &ident, &address);
         }
         break;
 
@@ -743,9 +744,11 @@ IrcEvent parseBasic(const char[] raw)
 
     IrcEvent event;
     event.raw = raw.idup;
-    auto slice = event.raw;
+    //auto slice = event.raw;
+    //event.typestring = slice.nom(" :");
+    string slice;
+    event.raw.formattedRead("%s :%s", &event.typestring, &slice);
 
-    event.typestring = slice.nom(" :");
 
     switch (event.typestring)
     {
@@ -816,17 +819,20 @@ void parsePrefix(ref IrcEvent event, ref string slice)
 {
     auto prefix = slice.nom(' ');
 
+    with(event)
     if (prefix.canFind('!'))
     {
         // user!~ident@address
-        event.sender  = prefix.nom('!');
+        /*event.sender  = prefix.nom('!');
         event.ident   = prefix.nom('@');
         event.address = prefix;
+        event.special = (event.address == "services.");*/
+        prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
         event.special = (event.address == "services.");
     }
     else
     {
-        event.sender = prefix;
+        sender = prefix;
     }
 }
 
@@ -904,10 +910,13 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case NOTICE:
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
-        event.target = slice.nom(" :");
+        /*event.target = slice.nom(" :");
         if (!event.special && (event.target == "*")) event.special = true;
         event.target = string.init;
-        event.content = slice;
+        event.content = slice;*/
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        if (!event.special && (event.target == "*")) event.special = true;
+        event.target = string.init;
         break;
 
     case JOIN:
@@ -919,14 +928,19 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case PART:
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PART #flerrp :"WeeChat 1.6"
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
+        event.type = (event.sender == bot.nickname) ? SELFPART : PART;
+
         if (slice.canFind(' '))
         {
-            event.channel = slice.nom(" :");
-            event.channel = event.channel.unquoted;
+            /*event.channel = slice.nom(" :");
+            event.channel = event.channel.unquoted;*/
+            slice.formattedRead("%s :%s", &event.channel, &event.content);
+            event.content = event.content.unquoted;
         }
-
-        event.type = (event.sender == bot.nickname) ? SELFPART : PART;
-        event.content = slice;
+        else
+        {
+            event.content = slice;
+        }
         break;
 
     case NICK:
@@ -983,8 +997,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
                 // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
                 event.type = CHANMODE;
-                event.aux = slice.nom(' ');
-                event.target = slice;
+                /*event.aux = slice.nom(' ');
+                event.target = slice;*/
+                slice.formattedRead("%s %s", &event.aux, &event.target);
             }
             else
             {
@@ -1003,9 +1018,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case KICK:
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu KICK #flerrp kameloso^ :this is a reason
         event.type = (event.target == bot.nickname) ? SELFKICK : KICK;
-        event.channel = slice.nom(' ');
+        /*event.channel = slice.nom(' ');
         event.target  = slice.nom(" :");
-        event.content = slice;
+        event.content = slice;*/
+        slice.formattedRead("%s %s :%s", &event.channel, &event.target, &event.content);
         break;
 
     case ERR_INVITEONLYCHAN:
@@ -1015,38 +1031,43 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
         // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
-        event.target  = slice.nom(' ');
+        /*event.target  = slice.nom(' ');
         event.channel = slice.nom(" :");
-        event.content = slice;
+        event.content = slice;*/
+        slice.formattedRead("%s %s :%s", &event.target, &event.channel, &event.content);
         break;
 
     case RPL_NAMREPLY: // 353
         // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
         event.target  = slice.nom(' ');
         slice.nom(' ');
-        event.channel = slice.nom(" :");
-        event.content = slice;
+        /*event.channel = slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("%s :%s", &event.channel, &event.content);
         break;
 
     case RPL_MOTD: // 372
     case RPL_LUSERCLIENT:
         // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
-        event.target  = slice.nom(" :");
-        event.content = slice;
+        /*event.target  = slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
 
     case SERVERINFO_2: // 004
         // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
-        event.target  = slice.nom(' ');
-        event.content = slice;
+        /*event.target  = slice.nom(' ');
+        event.content = slice;*/
+        slice.formattedRead("%s %s", &event.target, &event.content);
         break;
 
     case TOPICSETTIME: // 333
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
-        event.target  = slice.nom(' ');
+        /*event.target  = slice.nom(' ');
         event.channel = slice.nom(' ');
         event.content = slice.nom(' ');
-        event.aux = slice;
+        event.aux = slice;*/
+        slice.formattedRead("%s %s %s %s", &event.target, &event.channel, &event.content, &event.aux);
         break;
 
     case RPL_LUSEROP: // 252
@@ -1066,13 +1087,15 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
         // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
         // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
-        event.target = slice.nom(' ');
+        /*event.target = slice.nom(' ');
         event.aux = slice.nom(" :");
-        event.content = slice;
+        event.content = slice;*/
+        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
         break;
 
     case RPL_WHOISUSER: // 311
         // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
+        // Hard to use formattedRead here
         slice.nom(' ');
         event.target  = slice.nom(' ');
         event.content = slice.nom(" *");
@@ -1095,24 +1118,27 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
         // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
         slice.nom(' ');
-        event.target  = slice.nom(" :");
-        event.content = slice;
+        /*event.target  = slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
 
     case RPL_WHOISSERVER: // 312
         // :asimov.freenode.net 312 kameloso^ zorael sinisalo.freenode.net :SE
         slice.nom(' ');
-        event.target  = slice.nom(' ');
+        /*event.target  = slice.nom(' ');
         event.content = slice.nom(" :");
-        event.aux = slice;
+        event.aux = slice;*/
+        slice.formattedRead("%s %s :%s", &event.target, &event.content, &event.aux);
         break;
 
     case WHOISLOGIN: // 330
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
         slice.nom(' ');
-        event.target = slice.nom(' ');
+        /*event.target = slice.nom(' ');
         event.aux = slice.nom(" :");
-        event.content = slice;
+        event.content = slice;*/
+        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
         break;
 
     case PONG:
@@ -1121,8 +1147,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case ERR_NOTREGISTERED:
-        slice.nom(" :");
-        event.content = slice;
+        // :niven.freenode.net 451 * :You have not registered
+        /*slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("* :%s", &event.content);
         break;
 
     default:
@@ -1136,8 +1164,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             writeln();
         }
 
-        event.target = slice.nom(" :");
-        event.content = slice;
+        /*event.target = slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
     }
 

@@ -98,8 +98,10 @@ private:
 
         case "getnotes":
             if (event.sender != state.bot.master) return;
-            const nickname = (line.indexOf(' ') == -1) ? line : line.nom(' ');
-            const note = notes.getNotes(nickname);
+            //const nickname = (line.indexOf(' ') == -1) ? line : line.nom(' ');
+            //const note = notes.getNotes(nickname);
+            string nickname, note;
+            line.formattedRead("%s %s", &nickname, &note);
             writeln(note);
             break;
 
@@ -112,7 +114,7 @@ private:
             if (event.sender != state.bot.master) return;
             writeln("faking an event");
             IrcEvent newEvent = event;
-            newEvent.sender = line;
+            newEvent.sender = args;
             newEvent.content = string.init;
             newEvent.type = IrcEvent.Type.JOIN;
             writeln(newEvent);
