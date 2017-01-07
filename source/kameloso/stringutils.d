@@ -180,7 +180,7 @@ unittest
 {
     assert(":Lorem ipsum".beginsWith(':'));
     assert(":Lorem ipsum".beginsWith(":Lo"));
-    assert(!":Lorem ipsum".beginsWith(""));
+    assert(":Lorem ipsum".beginsWith(""));
 }
 
 
