@@ -1,18 +1,26 @@
 {
-	"name": "kameloso",
-	"authors": [
-		"JR"
-	],
-	"description": "IRC bot",
-	"copyright": "Copyright © 2016, JR",
-	"license": "LGPL-2.1",
-	"dependencies": {
-		"requests": "~>0.4.0"
-	},
-	"targetType": "executable",
-	"debugMode": true,
-	"debugInfo": true,
-	"debugInfoC": true,
-	"alwaysStackFrame": true,
-	"inline": true
+    "name": "kameloso",
+    "authors": [
+        "JR"
+    ],
+    "description": "IRC bot",
+    "copyright": "Copyright © 2016, JR",
+    "license": "LGPL-2.1",
+    "dependencies": {
+        "requests": "~>0.4.0"
+    },
+    "targetType": "executable",
+    "debugMode": true,
+    "debugInfo": true,
+    "debugInfoC": true,
+    "alwaysStackFrame": true,
+    "inline": true,
+    "libs": [
+        "phobos2"
+    ],
+    "lflags": [
+        "-O1",
+        "--sort-common",
+        "--gc-sections"
+    ]
 }
