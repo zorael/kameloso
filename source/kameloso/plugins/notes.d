@@ -289,7 +289,6 @@ static void saveNotes(const string filename, const JSONValue notes)
 
 static void loadNotes(const string filename, ref JSONValue notes)
 {
-    import std.stdio  : writefln;
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
 
