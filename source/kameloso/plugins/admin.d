@@ -199,16 +199,8 @@ private:
 
             case "printall":
                 // Start/stop printing all raw strings
-                if (!printAll)
-                {
-                    printAll = true;
-                    writeln("Now printing everything");
-                }
-                else
-                {
-                    printAll = false;
-                    writeln("No longer printing everything");
-                }
+                printAll = !printAll;
+                writeln("Printing all: ", printAll);
                 break;
 
             case "status":
