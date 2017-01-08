@@ -14,10 +14,12 @@ private:
 
 /// Regex to grep a web page title from the HTTP body
 enum titlePattern = `<title>(.+)</title>`;
-static titleRegex = ctRegex!(titlePattern, "i");
+//static titleRegex = ctRegex!(titlePattern, "i");
+
+// https://issues.dlang.org/show_bug.cgi?id=17075
+auto titleRegex = regex(titlePattern, "i");
 
 /// Regex to match a URI, to see if one was pasted.
-//enum stephenhay = `\b(https?|ftp)://[^\s/$.?#].[^\s]*`;
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 static urlRegex = ctRegex!stephenhay;
 
