@@ -110,7 +110,7 @@ Quit checkMessages()
                 // writefln("--> PONG %s".format(bot.server));
                 conn.sendline("PONG :", bot.server);
             },
-            (ThreadMessage.Quit, const string reason)
+            (ThreadMessage.Quit, string reason)
             {
                 // This should automatically close the connection
                 // Set quit to yes to propagate the decision down the stack
