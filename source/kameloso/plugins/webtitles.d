@@ -13,11 +13,14 @@ import std.concurrency : Tid;
 private:
 
 /// Regex to grep a web page title from the HTTP body
-enum titlePattern = `<title>(.+)</title>`;
-//static titleRegex = ctRegex!(titlePattern, "i");
+enum titlePattern = `<title>([^<]+)</title>`;
+static titleRegex = ctRegex!(titlePattern, "i");
 
 // https://issues.dlang.org/show_bug.cgi?id=17075
-auto titleRegex = regex(titlePattern, "i");
+//auto titleRegex = regex(titlePattern, "i");
+
+enum descriptionPattern = `<meta[^>]+name="description"[^>]+content="([^"]+)"[^>]*>`;
+static descriptionRegex = ctRegex!descriptionPattern;
 
 /// Regex to match a URI, to see if one was pasted.
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
