@@ -128,12 +128,36 @@ public:
 }
 
 
+static string streamUntil(Stream_, Sink, Regex)(ref Stream_ stream, Regex engine, ref Sink sink)
+{
+    while (!stream.empty)
+    {
+        //writefln("Received %d bytes, total received %d from document legth %d", stream.front.length, rq.contentReceived, rq.contentLength);
+        const asString = cast(string)(stream.front);
+        auto hits = asString.matchFirst(engine);
+        sink.put(stream.front);
 
-static TitleLookup doTitleLookup(string url)
+        if (hits.length)
+        {
+            //writefln("Found title mid-stream after %s bytes", rq.contentReceived);
+            //writefln("Appender size is %d", app.data.length);
+            //writefln("capacity is %d", app.capacity);
+            return hits[1].idup;
+        }
+
+        stream.popFront;
+        continue;
+    }
+
+    return string.init;
+}
+
+
+static TitleLookup lookupTitle(string url)
 {
     import kameloso.stringutils : beginsWith;
-    import std.conv : to;
     import requests;
+    import std.array : Appender;
 
     if (!url.beginsWith("http"))
     {
@@ -142,30 +166,43 @@ static TitleLookup doTitleLookup(string url)
 
     TitleLookup lookup;
 
+    Appender!string app;
+    app.reserve(8192);
+
     writeln("URL: ", url);
 
-    auto content = getContent(url);
-    const httpBody = cast(char[])(content.data);
+    Request rq;
+    rq.useStreaming = true;
+    rq.keepAlive = false;
+    rq.bufferSize = 8192;
 
-    if (!httpBody.length)
+    auto rs = rq.get(url);
+    auto stream = rs.receiveAsRange();
+
+    if (rs.code == 404) return lookup;
+
+    lookup.title = stream.streamUntil(titleRegex, app);
+
+    if (!app.data.length)
     {
-        writeln("Could not fetch content. Bad URL?");
+        writeln("Could not get content. Bad URL?");
         return lookup;
     }
 
-    writeln("Page fetched.");
-
-    auto titleHits = httpBody.matchFirst(titleRegex);
-
-    if (!titleHits.length)
+    if (!lookup.title.length)
     {
-        writeln("Could not get title from page content!");
-        return lookup;
+        auto titleHits = app.data.matchFirst(titleRegex);
+
+        if (titleHits.length)
+        {
+            writeln("Found title in complete data (it was split)");
+            lookup.title = titleHits[1].idup;
+        }
+        else
+        {
+            writeln("No title...");
+        }
     }
-
-    writeln("Got title.");
-
-    lookup.title = titleHits[1].idup;
 
     auto domainHits = url.matchFirst(domainRegex);
     if (!domainHits.length) return lookup;
@@ -201,7 +238,7 @@ void titleworker(Tid mainThread)
                 }
                 else
                 {
-                    try lookup = doTitleLookup(url);
+                    try lookup = lookupTitle(url);
                     catch (Exception e)
                     {
                         writeln(e.msg);
