@@ -1069,13 +1069,15 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case RPL_WHOISUSER: // 311
-        // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
+        // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
         // Hard to use formattedRead here
+        import std.string : stripLeft;
+
         slice.nom(' ');
         event.target  = slice.nom(' ');
         event.content = slice.nom(" *");
         slice.nom(" :");
-        event.aux = slice;
+        event.aux = slice.stripLeft;
         break;
 
     case RPL_WHOISCHANNELS: // 319
