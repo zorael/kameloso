@@ -20,9 +20,16 @@ private:
     Address[] ips;
 
 public:
+    /// Implicitly proxy calls to the current Socket
     alias socket this;
+
+    /// Set to true if the connection is known to be active
     bool connected;
 
+    // reset
+    /++
+     +  (Re-)initializes the sockets and sets the IPv4 one as the active one.
+     +/
     void reset()
     {
         socket4 = new TcpSocket;
@@ -33,7 +40,13 @@ public:
         setOptions(socket6);
     }
 
-
+    // setOptions
+    /++
+     +  Set up sockets with the SocketOptions neede. These include timeouts and buffer sizes.
+     +
+     +  Params:
+     +      socket = The (reference to the) socket to modify.
+     +/
     void setOptions(Socket socket)
     {
         with (socket)
@@ -48,9 +61,18 @@ public:
         }
     }
 
+    // resolve
+    /++
+     +  Given an address and a port, build an array of Addresses into ips.
+     +
+     +  Params:
+     +      address = The string address to look up.
+     +      port = The remote port build into the Address.
+     +/
     void resolve(string address, ushort port)
     {
         import core.thread : Thread;
+
         try
         {
             ips = getAddress(address, port);
@@ -58,15 +80,18 @@ public:
         }
         catch (SocketException e)
         {
-            // For some reason IPv6 addresses get resolved but we can't connect to them
-
-            if (e.msg == "getaddrinfo error: Name or service not known")
+            switch (e.msg)
             {
-                // assume net down, wait and try again
+            case "getaddrinfo error: Name or service not known":
+                // Assume net down, wait and try again
                 writeln(e.msg);
                 writefln("Network down? Retrying in %d seconds", Timeout.resolve);
                 Thread.sleep(Timeout.resolve.seconds);
                 return resolve(address, port);
+
+            default:
+                writeln(e.msg);
+                assert(false);
             }
         }
         catch (Exception e)
@@ -76,6 +101,12 @@ public:
         }
     }
 
+    // connect
+    /++
+     +  Walks through the list of Addresses in ips and attempts to connect to each until
+     +  one succeeds. Success is determined by whether or not an exception was thrown during
+     +  the attempt, and is kept track of with the connected boolean.
+     +/
     void connect()
     {
         import core.thread : Thread;
@@ -84,12 +115,15 @@ public:
 
         foreach (i, ip; ips)
         {
+            // Decide which kind of socket to use based on the AddressFamily of the resolved ip
             socket = (ip.addressFamily == AddressFamily.INET6) ? socket6 : socket4;
 
             try
             {
                 writefln("Connecting to %s ...", ip);
-                connect(ip);
+                socket.connect(ip);
+
+                // If we're here no exception was thrown, so we're connected
                 connected = true;
                 writeln("Connected!");
                 break;
@@ -122,7 +156,7 @@ public:
 
     // sendline
     /++
-     +  sendline sends a line to the server.
+     +  sends a line to the server.
      +
      +  Sadly the IRC server requires lines to end with a newline, so we need to chain
      +  one directly after the line itself. If several threads are allowed to write to the same
@@ -132,25 +166,18 @@ public:
      +      line = The string to send.
      +/
     pragma(inline, true)
-    void sendline(String...)(const String lines)
+    void sendline(Strings...)(const Strings lines)
     {
         // RACE CONDITION *iff* other threads are allowed to write
-        foreach (i, line; lines)
+        foreach (line; lines)
         {
             socket.send(line);
         }
+
         socket.send("\n");
-
-        // ALLOCATING FIX: socket.send(line ~ '\n');
     }
 
-    /// Proxy calls to connect to Socket.connect.
-    auto connect(Address to)
-    {
-        return socket.connect(to);
-    }
-
-    /// Ditto but Socket.receive.
+    /// Proxy calls to Socket.receive.
     pragma(inline, true)
     auto receive(T)(T[] buffer)
     {
