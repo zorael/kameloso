@@ -15,6 +15,7 @@ import core.time   : seconds;
 struct Connection
 {
 private:
+    Socket socket4, socket6;
     Socket socket;
     Address[] ips;
 
@@ -24,8 +25,17 @@ public:
 
     void reset()
     {
-        socket = new TcpSocket;
+        socket4 = new TcpSocket;
+        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
+        socket = socket4;
 
+        setOptions(socket4);
+        setOptions(socket6);
+    }
+
+
+    void setOptions(Socket socket)
+    {
         with (socket)
         with (SocketOption)
         with (SocketOptionLevel)
@@ -34,6 +44,7 @@ public:
             setOption(SOCKET, SNDBUF, BufferSize.socketOptionSend);
             setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
             setOption(SOCKET, SNDTIMEO, Timeout.send.seconds);
+            blocking = true;
         }
     }
 
@@ -73,12 +84,8 @@ public:
 
         foreach (i, ip; ips)
         {
-            if (ip.addressFamily == AddressFamily.INET6)
-            {
-                // Unable to connect socket: Address family not supported by protocol
-                writeln("Skipping IPv6 address: ", ip);
-                continue;
-            }
+            socket = (ip.addressFamily == AddressFamily.INET6) ? socket6 : socket4;
+
             try
             {
                 writefln("Connecting to %s ...", ip);
