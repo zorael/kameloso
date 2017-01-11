@@ -32,6 +32,7 @@ enum BufferSize
     socketOptionReceive = 1024,
     socketOptionSend = 1024,
     socketReceive = 1536,
+    titleLookup = 8192,
 }
 
 

@@ -165,16 +165,15 @@ static TitleLookup lookupTitle(string url)
     }
 
     TitleLookup lookup;
-
     Appender!string app;
-    app.reserve(8192);
+    app.reserve(BufferSize.titleLookup);
 
     writeln("URL: ", url);
 
     Request rq;
     rq.useStreaming = true;
     rq.keepAlive = false;
-    rq.bufferSize = 8192;
+    rq.bufferSize = BufferSize.titleLookup;
 
     auto rs = rq.get(url);
     auto stream = rs.receiveAsRange();
