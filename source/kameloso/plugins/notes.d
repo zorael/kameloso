@@ -235,6 +235,7 @@ static void clearNotes(ref JSONValue notes, const string nickname)
     {
         writeln("Clearing stored notes for ", nickname);
         notes[nickname] = string[].init;
+        Files.notes.saveNotes(notes);
     }
 }
 
