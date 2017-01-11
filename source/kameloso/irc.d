@@ -360,6 +360,7 @@ struct IrcEvent
         MODE, CHANMODE, USERMODE,
         SELFQUIT, SELFJOIN, SELFPART,
         SELFMODE, SELFNICK, SELFKICK,
+        TOPIC,
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -1147,7 +1148,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     }
 
     if ((event.target.length && (event.target[0] == '#')) || (event.channel.length &&
-         event.channel[0] != '#'))
+         event.channel[0] != '#') && (event.type != IrcEvent.Type.TOPIC))
     {
         writeln();
         writeln("--------------- CHANNEL/TARGET REVISION --------------");
