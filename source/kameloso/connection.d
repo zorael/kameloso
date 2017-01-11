@@ -3,6 +3,8 @@ module kameloso.connection;
 import kameloso.constants;
 
 import std.stdio : writeln, writefln;
+import std.socket;
+import core.time   : seconds;
 
 
 // Connection
@@ -13,10 +15,6 @@ import std.stdio : writeln, writefln;
 struct Connection
 {
 private:
-    import std.socket;
-    import core.thread : Thread;
-    import core.time   : seconds;
-
     Socket socket;
     Address[] ips;
 
@@ -41,6 +39,7 @@ public:
 
     void resolve(string address, ushort port)
     {
+        import core.thread : Thread;
         try
         {
             ips = getAddress(address, port);
@@ -68,6 +67,8 @@ public:
 
     void connect()
     {
+        import core.thread : Thread;
+
         assert((ips.length > 0), "Tried to connect to an unresolved connection");
 
         foreach (i, ip; ips)
@@ -167,9 +168,7 @@ public:
  +/
 void listenFiber(Connection conn)
 {
-    import std.socket   : Socket, lastSocketError;
     import std.datetime : Clock, SysTime;
-    import core.time    : seconds;
     import std.concurrency : yield;
     import std.algorithm.searching : countUntil;
 
