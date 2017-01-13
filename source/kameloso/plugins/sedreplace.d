@@ -43,46 +43,31 @@ struct Line
 }
 
 
-void sedReplaceWorker(shared IrcPluginState origState)
+void onCommand(const IrcEvent event)
 {
-    mixin(scopeguard(entry|exit));
+    import kameloso.stringutils;
+    import std.format : format;
 
-    bool halt;
-    state = cast(IrcPluginState)origState;
-
-    while (!halt)
+    if (!event.content.beginsWith("s/"))
     {
-        receive(
-            (shared IrcEvent event)
-            {
-                return event.onEvent();
-            },
-            (shared IrcBot bot)
-            {
-                writeln("sed replace worker got new bot");
-                state.bot = cast(IrcBot)bot;
-            },
-            (ThreadMessage.Status)
-            {
-                writeln("---------------------- ", __MODULE__);
-                printObject(state);
-            },
-            (ThreadMessage.Teardown)
-            {
-                writeln("sed replace worker saw Teardown");
-                halt = true;
-            },
-            (OwnerTerminated e)
-            {
-                writeln("sed replace worker saw OwnerTerminated");
-                halt = true;
-            },
-            (Variant v)
-            {
-                writeln("sed replace worker received Variant");
-                writeln(v);
-            }
-        );
+        Line line;
+        line.content = event.content;
+        line.when = Clock.currTime;
+        prevlines[event.sender] = line;
+        return;
+    }
+
+    if (auto line = event.sender in prevlines)
+    {
+        if ((Clock.currTime - line.when) > 1.minutes) return;
+
+        string result = line.content.sedReplace(event.content);
+        if ((result == event.content) || !result.length) return;
+
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+
+        prevlines.remove(event.sender);
     }
 }
 
@@ -126,102 +111,18 @@ void onEvent(const IrcEvent event)
 }
 
 
-void onCommand(const IrcEvent event)
+void sedReplaceWorker(shared IrcPluginState origState)
 {
-    import kameloso.stringutils;
-    import std.format : format;
+    state = cast(IrcPluginState)origState;
 
-    if (!event.content.beginsWith("s/"))
-    {
-        Line line;
-        line.content = event.content;
-        line.when = Clock.currTime;
-        prevlines[event.sender] = line;
-        return;
-    }
-
-    if (auto line = event.sender in prevlines)
-    {
-        if ((Clock.currTime - line.when) > 1.minutes) return;
-
-        string result = line.content.sedReplace(event.content);
-        if ((result == event.content) || !result.length) return;
-
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
-
-        prevlines.remove(event.sender);
-    }
+    mixin ircPluginWorkerReceiveLoop!state receiveLoop;
+    receiveLoop.exec();
 }
 
 
 public:
 
-
 final class SedReplacePlugin(Multithreaded multithreaded) : IrcPlugin
 {
-private:
-    static if (multithreaded)
-    {
-        Tid worker;
-    }
-
-public:
-    void onEvent(const IrcEvent event)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)event);
-        }
-        else
-        {
-            return event.onEvent();
-        }
-    }
-
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (multithreaded)
-        {
-            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
-            writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&sedReplaceWorker, cast(shared)state);
-        }
-    }
-
-    void newBot(IrcBot bot)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)bot);
-        }
-        else
-        {
-            state.bot = bot;
-        }
-    }
-
-    void status()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Status());
-        }
-        else
-        {
-            writeln("---------------------- ", typeof(this).stringof);
-            printObject(state);
-        }
-    }
-
-
-    void teardown()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Teardown());
-        }
-    }
+    mixin IrcPluginBasics!(sedReplaceWorker);
 }
