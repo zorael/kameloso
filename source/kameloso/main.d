@@ -324,10 +324,13 @@ Quit loopGenerator(Generator!string generator)
             case RPL_LUSEROP:
             case RPL_LUSERCHANNELS:
             case RPL_LUSERME:
+            case RPL_LUSERUNKNOWN:
             case RPL_MOTDSTART:
             case RPL_ENDOFMOTD:
+            case RPL_ENDOFNAMES:
             case USERCOUNTGLOBAL:
             case USERCOUNTLOCAL:
+            case CONNECTIONRECORD:
                 // These event types are too spammy; ignore
                 break;
 
