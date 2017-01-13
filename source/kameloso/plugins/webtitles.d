@@ -8,7 +8,7 @@ import kameloso.constants;
 import std.stdio : writeln, writefln;
 import std.regex;
 import std.datetime : Clock, SysTime, seconds;
-import std.concurrency : Tid, send;
+import std.concurrency;
 
 private:
 
@@ -16,13 +16,16 @@ IrcPluginState state;
 TitleLookup[string] cache;
 Tid worker;
 
+
 /// Regex to grep a web page title from the HTTP body
 enum titlePattern = `<title>([^<]+)</title>`;
 static titleRegex = ctRegex!(titlePattern, "i");
 
+
 /// Regex to match a URI, to see if one was pasted.
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 static urlRegex = ctRegex!stephenhay;
+
 
 enum domainPattern = `(?:https?://)?([^/ ]+)/?.*`;
 static domainRegex = ctRegex!domainPattern;
@@ -34,6 +37,7 @@ struct TitleLookup
     string domain;
     SysTime when;
 }
+
 
 void onCommand(const IrcEvent event)
 {
@@ -89,40 +93,8 @@ void onEvent(const IrcEvent event)
 }
 
 
-public:
-
-final class Webtitles : IrcPlugin
-{
-public:
-    this(IrcPluginState origState)
-    {
-        import std.concurrency : spawn;
-
-        state = origState;
-        worker = spawn(&titleworker, state.mainThread);
-    }
-
-    void onEvent(const IrcEvent event)
-    {
-        return event.onEvent();
-    }
-
-    void status()
-    {
-        writeln("---------------------- ", typeof(this).stringof);
-        printObject(state);
-    }
-
-    void newBot(IrcBot bot)
-    {
-        state.bot = bot;
-    }
-
-    void teardown() {}
-}
-
-
-static string streamUntil(Stream_, Regex, Sink)(ref Stream_ stream, Regex engine, ref Sink sink)
+static string streamUntil(Stream_, Regex, Sink)
+    (ref Stream_ stream, Regex engine, ref Sink sink)
 {
     while (!stream.empty)
     {
@@ -211,6 +183,7 @@ void titleworker(Tid mainThread)
 {
     import std.concurrency;
     import core.time;
+
     mixin(scopeguard(entry|exit));
 
     TitleLookup[string] cache;
@@ -253,6 +226,11 @@ void titleworker(Tid mainThread)
                         "PRIVMSG %s :%s".format(target, lookup.title));
                 }
             },
+            (ThreadMessage.Teardown)
+            {
+                writeln("Titleworker saw ThreadMessage.Teardown");
+                halt = true;
+            },
             (OwnerTerminated o)
             {
                 writeln("Titleworker saw owner terminated!");
@@ -265,4 +243,34 @@ void titleworker(Tid mainThread)
             }
         );
     }
+}
+
+
+public:
+
+final class Webtitles : IrcPlugin
+{
+    this(IrcPluginState origState)
+    {
+        state = origState;
+        worker = spawn(&titleworker, state.mainThread);
+    }
+
+    void onEvent(const IrcEvent event)
+    {
+        return event.onEvent();
+    }
+
+    void status()
+    {
+        writeln("---------------------- ", typeof(this).stringof);
+        printObject(state);
+    }
+
+    void newBot(IrcBot bot)
+    {
+        state.bot = bot;
+    }
+
+    void teardown() {}
 }
