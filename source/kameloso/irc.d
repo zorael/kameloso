@@ -14,7 +14,7 @@ import std.concurrency : Tid;
 
 private:
 
-IrcPluginState state;
+IrcBot bot;
 
 
 // parseBasic
@@ -154,14 +154,17 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 {
     mixin(scopeguard(failure));
 
-    with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {
-
     case NOTICE:
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
+        if (!bot.server.length && event.content.beginsWith("***"))
+        {
+            bot.server = event.sender;
+        }
+
         slice.formattedRead("%s :%s", &event.target, &event.content);
         if (!event.special && (event.target == "*")) event.special = true;
         event.target = string.init;
@@ -193,6 +196,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
         event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
         event.content = slice[1..$];
+
+        if (event.type == SELFNICK)
+        {
+            bot.nickname = event.content;
+            // updateBot(); //? propagate?
+        }
         break;
 
     case QUIT:
@@ -387,6 +396,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         slice.formattedRead("* :%s", &event.content);
         break;
 
+    case WELCOME:
+        // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        bot.nickname = event.target;
+        break;
+
     default:
         if (event.type == NUMERIC)
         {
@@ -432,17 +447,15 @@ struct IrcBot
 {
     string nickname   = "kameloso";
     string login      = "kameloso";
-    string user       = "kameloso";
+    string user       = "kameloso!";
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
     string password;
     string master;
     @separator(",") string[] channels = [];
-    //@separator(",") string[] homes = [];
     @separator(",") string[] friends  = [];
     @unconfigurable string server;
     @unconfigurable bool finishedLogin;
-    // @unconfigurable uint verbosity;
 }
 
 
