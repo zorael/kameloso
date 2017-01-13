@@ -35,6 +35,8 @@ struct IrcPluginState
 
 alias RequirePrefix = Flag!"requirePrefix";
 
+alias Multithreaded = Flag!"multithreaded";
+
 
 enum FilterResult { fail, pass, whois }
 

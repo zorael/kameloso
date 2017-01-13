@@ -43,101 +43,186 @@ struct Line
 }
 
 
-public:
-
-
-final class SedReplacePlugin : IrcPlugin
+void sedReplaceWorker(shared IrcPluginState origState)
 {
-private:
-    IrcPluginState state;
-    Line[string] prevlines;
+    mixin(scopeguard(entry|exit));
 
-    void onCommand(const IrcEvent event)
+    bool halt;
+    state = cast(IrcPluginState)origState;
+
+    while (!halt)
     {
-        import kameloso.stringutils;
-        import std.format : format;
+        receive(
+            (shared IrcEvent event)
+            {
+                return event.onEvent();
+            },
+            (shared IrcBot bot)
+            {
+                writeln("sed replace worker got new bot");
+                state.bot = cast(IrcBot)bot;
+            },
+            (ThreadMessage.Status)
+            {
+                writeln("---------------------- ", __MODULE__);
+                printObject(state);
+            },
+            (ThreadMessage.Teardown)
+            {
+                writeln("sed replace worker saw Teardown");
+                halt = true;
+            },
+            (OwnerTerminated e)
+            {
+                writeln("sed replace worker saw OwnerTerminated");
+                halt = true;
+            },
+            (Variant v)
+            {
+                writeln("sed replace worker received Variant");
+                writeln(v);
+            }
+        );
+    }
+}
 
-        if (!event.content.beginsWith("s/"))
+
+void onEvent(const IrcEvent event)
+{
+    with (state)
+    with (IrcEvent.Type)
+    switch (event.type)
+    {
+    case CHAN:
+        if (state.filterChannel!(RequirePrefix.no)(event) == FilterResult.fail)
         {
-            Line line;
-            line.content = event.content;
-            line.when = Clock.currTime;
-            prevlines[event.sender] = line;
+            // Invalid channel
             return;
         }
+        break;
 
-        if (auto line = event.sender in prevlines)
-        {
-            writeln(line.content);
-            writeln(event.content);
+    case QUERY:
+        // All queries are okay
+        break;
 
-            if ((Clock.currTime - line.when) > 1.minutes) return;
+    default:
+        state.onBasicEvent(event);
+        return;
+    }
 
-            string result = line.content.sedReplace(event.content);
-            if ((result == event.content) || !result.length) return;
+    final switch (state.filterUser(event))
+    {
+    case FilterResult.pass:
+        // It is a known good user (friend or master), but it is of any type
+        return onCommand(event);
 
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+    case FilterResult.whois:
+        return state.doWhois(event);
 
-            prevlines.remove(event.sender);
-        }
+    case FilterResult.fail:
+        // It is a known bad user
+        return;
+    }
+}
+
+
+void onCommand(const IrcEvent event)
+{
+    import kameloso.stringutils;
+    import std.format : format;
+
+    if (!event.content.beginsWith("s/"))
+    {
+        Line line;
+        line.content = event.content;
+        line.when = Clock.currTime;
+        prevlines[event.sender] = line;
+        return;
+    }
+
+    if (auto line = event.sender in prevlines)
+    {
+        if ((Clock.currTime - line.when) > 1.minutes) return;
+
+        string result = line.content.sedReplace(event.content);
+        if ((result == event.content) || !result.length) return;
+
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+
+        prevlines.remove(event.sender);
+    }
+}
+
+
+public:
+
+
+final class SedReplacePlugin(Multithreaded multithreaded = Multithreaded.no) : IrcPlugin
+{
+private:
+    static if (multithreaded)
+    {
+        Tid worker;
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
-        state.bot = bot;
-        state.mainThread = tid;
-    }
+        state = origState;
 
-    void status()
-    {
-        writeln("---------------------- ", typeof(this).stringof);
-        printObject(state);
-    }
-
-    void newBot(IrcBot bot)
-    {
-        state.bot = bot;
+        static if (multithreaded)
+        {
+            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
+            writeln(typeof(this).stringof, " runs in a separate thread.");
+            worker = spawn(&sedReplaceWorker, cast(shared)state);
+        }
     }
 
     void onEvent(const IrcEvent event)
     {
-        with (state)
-        with (IrcEvent.Type)
-        switch (event.type)
+        static if (multithreaded)
         {
-        case CHAN:
-            if (state.filterChannel!(RequirePrefix.no)(event) == FilterResult.fail)
-            {
-                // Invalid channel
-                return;
-            }
-            break;
-
-        case QUERY:
-            // All queries are okay
-            break;
-
-        default:
-            state.onBasicEvent(event);
-            return;
+            worker.send(cast(shared)event);
         }
-
-        final switch (state.filterUser(event))
+        else
         {
-        case FilterResult.pass:
-            // It is a known good user (friend or master), but it is of any type
-            return onCommand(event);
-
-        case FilterResult.whois:
-            return state.doWhois(event);
-
-        case FilterResult.fail:
-            // It is a known bad user
-            return;
+            return event.onEvent();
         }
     }
 
-    void teardown() {}
+
+    void newBot(IrcBot bot)
+    {
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)bot);
+        }
+        else
+        {
+            state.bot = bot;
+        }
+    }
+
+    void status()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Status());
+        }
+        else
+        {
+            writeln("---------------------- ", typeof(this).stringof);
+            printObject(state);
+        }
+    }
+
+
+    void teardown()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Teardown());
+        }
+    }
 }
