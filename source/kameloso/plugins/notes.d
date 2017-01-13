@@ -34,14 +34,9 @@ void onCommand(const IrcEvent event)
         string line;
         string slice = event.content;
         const hits = slice.formattedRead(bot.nickname ~ ":%s", &line);
-        if (!hits)
-        {
-            writeln("NO HITS?!");
-            writeln(line);
-            writeln(slice);
-            writeln(hits);
-            return;
-        }
+
+        if (!hits) return;
+
         line.munch(" :");
         return onVerb(event, line);
 
