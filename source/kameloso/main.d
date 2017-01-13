@@ -229,9 +229,9 @@ void initPlugins(IrcBot bot, Tid tid)
 
 
 /// Main!
-void main(string[] args)
+int main(string[] args)
 {
-    if (handleArguments(args) == Quit.yes) return;
+    if (!handleArguments(args)) return 0;
 
     // Print the current settings to show what's going on.
     printObject(bot);
@@ -247,7 +247,7 @@ void main(string[] args)
         writefln("Use %s --writeconfig to generate a configuration file.",
             args[0].baseName);
 
-        return;
+        return 1;
     }
 
     auto quit = Quit.no;
@@ -260,7 +260,7 @@ void main(string[] args)
         if (!conn.connected)
         {
             writeln("Failed to connect.");
-            return;
+            return 1;
         }
 
         // Reset fields in the bot that should not survive a reconnect
@@ -273,6 +273,8 @@ void main(string[] args)
         quit = loopGenerator(generator);
     }
     while (!quit);
+
+    return 0;
 }
 
 
