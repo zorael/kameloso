@@ -1,15 +1,14 @@
 module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
-import kameloso.irc;
-import kameloso.common;
 import kameloso.constants;
+import kameloso.common;
+import kameloso.irc;
 
 import std.stdio : writeln, writefln;
-import std.regex;
-import std.concurrency;
 import std.datetime;
-
+import std.concurrency;
+import std.regex;
 
 private:
 
@@ -91,8 +90,7 @@ void onEvent(const IrcEvent event)
         break;
 
     default:
-        state.onBasicEvent(event);
-        return;
+        return state.onBasicEvent(event);
     }
 
     final switch (state.filterUser(event))

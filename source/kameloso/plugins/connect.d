@@ -1,8 +1,9 @@
 module kameloso.plugins.connect;
 
+import kameloso.plugins.common;
 import kameloso.constants;
-import kameloso.stringutils;
 import kameloso.common;
+import kameloso.stringutils;
 import kameloso.irc;
 
 import std.stdio : writeln, writefln;

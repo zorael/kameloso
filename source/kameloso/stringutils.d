@@ -21,7 +21,7 @@ alias Decode = Flag!"decode";
  +      separator = The token that delimenates what should be returned and to where to advance.
  +
  +  Returns:
- +      the string arr from the start up to the separator.    
+ +      the string arr from the start up to the separator.
  +/
 pragma(inline)
 static string nom(Decode decode = Decode.no,T,C)(ref T[] arr, C separator)

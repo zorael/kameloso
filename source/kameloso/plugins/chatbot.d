@@ -1,15 +1,14 @@
 module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;
-import kameloso.irc;
-import kameloso.stringutils;
 import kameloso.constants;
 import kameloso.common;
+import kameloso.stringutils;
+import kameloso.irc;
 
 import std.stdio : writeln, writefln;
 import std.json : JSONValue, parseJSON, JSONException;
 import std.concurrency;
-
 
 private:
 
@@ -285,8 +284,7 @@ void onEvent(const IrcEvent event)
         break;
 
     default:
-        state.onBasicEvent(event);
-        return;
+        return state.onBasicEvent(event);
     }
 
     final switch (state.filterUser(event))

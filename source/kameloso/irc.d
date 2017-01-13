@@ -1,10 +1,9 @@
 module kameloso.irc;
 
 import kameloso.constants;
-import kameloso.stringutils;
 import kameloso.common;
-
-public import kameloso.plugins.common;
+import kameloso.stringutils;
+import kameloso.plugins.connect;
 
 import std.stdio  : writeln, writefln;
 import std.format : format, formattedRead;
@@ -856,9 +855,6 @@ struct IrcEvent
         if (num > 0)        sink.formattedWrite(" (#%d)", num);
     }
 }
-
-
-
 
 
 // toIrcEvent

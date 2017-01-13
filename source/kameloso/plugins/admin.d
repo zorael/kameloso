@@ -1,9 +1,10 @@
 module kameloso.plugins.admin;
 
-import kameloso.irc;
+import kameloso.plugins.common;
 import kameloso.constants;
 import kameloso.common;
 import kameloso.stringutils;
+import kameloso.irc;
 
 import std.stdio : writeln, writefln;
 import std.concurrency;
@@ -16,8 +17,6 @@ bool printAll;
 
 void updateBot()
 {
-    import std.concurrency : send;
-
     with (state)
     {
         shared botCopy = cast(shared)bot;
@@ -108,6 +107,7 @@ void onCommand(const IrcEvent event)
 
             // Add an "active" channel, in which the bot should react
             slice = slice.strip;
+
             if (!slice.isValidChannel) break;
 
             if (bot.channels.canFind(slice))
@@ -220,8 +220,7 @@ void onEvent(const IrcEvent event)
         break;
 
     default:
-        state.onBasicEvent(event);
-        return;
+        return state.onBasicEvent(event);
     }
 
     final switch (state.filterUser(event))

@@ -1,15 +1,14 @@
 module kameloso.plugins.notes;
 
 import kameloso.plugins.common;
-import kameloso.irc;
-import kameloso.common;
 import kameloso.constants;
+import kameloso.common;
+import kameloso.irc;
 
 import std.stdio  : writeln, writefln;
 import std.format : format, formattedRead;
 import std.concurrency;
 import std.json;
-
 
 private:
 
@@ -20,9 +19,9 @@ JSONValue notes;
 void onCommand(const IrcEvent event)
 {
     import kameloso.stringutils;
-    import std.string : indexOf, munch;
+    import std.string : munch;
 
-    with(state)
+    with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {
@@ -48,19 +47,21 @@ void onCommand(const IrcEvent event)
 
 void onJoin(const IrcEvent event)
 {
-    import std.concurrency : send;
-
     // Authorised and everything
     auto noteArray = getNotes(event.sender);
+
     if (!noteArray.length) return;
 
     foreach (note; noteArray)
     {
-        const timestamp = "%s %02d/%02d %02d:%02d".format(note.when.dayOfWeek,
-            note.when.day, note.when.month, note.when.hour, note.when.minute);
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s! %s left note on %s: %s"
-            .format(event.channel, event.sender, note.sender, timestamp, note.line));
+        with (note.when)
+        {
+            const timestamp = "%s %02d/%02d %02d:%02d"
+                              .format(dayOfWeek, day, month, hour, minute);
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s! %s left note on %s: %s"
+                .format(event.channel, event.sender, note.sender, timestamp, note.line));
+        }
     }
 
     clearNotes(event.sender);
@@ -70,9 +71,6 @@ void onJoin(const IrcEvent event)
 void onVerb(const IrcEvent event, string line)
 {
     import kameloso.stringutils;
-
-    import std.concurrency : send;
-    import std.string : indexOf;
     import std.uni : toLower;
 
     string verb, args;
@@ -84,30 +82,36 @@ void onVerb(const IrcEvent event, string line)
     case "note":
         string nickname, content;
         const hits = args.formattedRead("%s %s", &nickname, &content);
+
         if (hits != 2) return;
+
         addNote(nickname, event.sender, content);
         state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :Note added".format(event.channel));
+
         Files.notes.saveNotes(notes);
         break;
 
     case "printnotes":
         if (event.sender != state.bot.master) return;
+
         writeln(notes.toPrettyString);
         break;
 
     case "fakejoin":
         if (event.sender != state.bot.master) return;
+
         writeln("faking an event");
         IrcEvent newEvent = event;
         newEvent.sender = args;
         newEvent.content = string.init;
         newEvent.type = IrcEvent.Type.JOIN;
+
         writeln(newEvent);
+
         return onJoin(newEvent);
 
     default:
-        writeln("notes default");
         break;
     }
 }
@@ -132,8 +136,7 @@ void onEvent(const IrcEvent event)
         break;
 
     default:
-        state.onBasicEvent(event);
-        return;
+        return state.onBasicEvent(event);
     }
 
     final switch (state.filterUser(event))

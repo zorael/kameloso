@@ -1,10 +1,11 @@
 module kameloso.plugins.pinger;
 
-import kameloso.irc;
-import kameloso.common;
+import kameloso.plugins.common;
 import kameloso.constants;
+import kameloso.common;
+import kameloso.irc;
 
-import std.stdio;
+import std.stdio : writeln, writefln;
 import std.concurrency;
 
 private:
@@ -15,7 +16,6 @@ IrcPluginState state;
 /// The pinging thread, spawned from Pinger
 private void pinger(Tid mainThread)
 {
-    import std.concurrency;
     import core.time : seconds;
 
     mixin(scopeguard(failure));
@@ -57,9 +57,7 @@ public:
  +/
 final class Pinger : IrcPlugin
 {
-    import std.concurrency : spawn, send;
-
-    Tid mainThread, pingThread;
+    Tid pingerThread;
 
     void onEvent(const IrcEvent) {}
 
@@ -73,13 +71,13 @@ final class Pinger : IrcPlugin
         state = origState;
 
         // Spawn the pinger in a separate thread, to work concurrently with the rest
-        pingThread = spawn(&pinger, state.mainThread);
+        pingerThread = spawn(&pinger, state.mainThread);
     }
 
     /// Since the pinger runs in its own thread, it needs to be torn down when the plugin should reset
     void teardown()
     {
-        try pingThread.send(ThreadMessage.Teardown());
+        try pingerThread.send(ThreadMessage.Teardown());
         catch (Exception e)
         {
             writeln("Caught exception sending abort to pinger");

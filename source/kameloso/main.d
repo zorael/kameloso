@@ -1,11 +1,11 @@
 module kameloso.main;
 
-import kameloso.irc;
-import kameloso.connection;
-import kameloso.plugins;
 import kameloso.constants;
-import kameloso.config;
 import kameloso.common;
+import kameloso.connection;
+import kameloso.config;
+import kameloso.irc;
+import kameloso.plugins;
 
 import std.stdio    : writeln, writefln;
 import std.datetime : SysTime;
@@ -18,6 +18,7 @@ shared static this()
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 }
+
 
 private:
 
@@ -86,9 +87,7 @@ Quit checkMessages()
                 const now = Clock.currTime;
                 const then = (event.sender in whoisCalls);
 
-                if (then && (now - *then) < Timeout.whois.seconds) return;
-
-                writeln("WHOIS REQUESTED ON ", event.sender);
+                if (then && ((now - *then) < Timeout.whois.seconds)) return;
 
                 writeln("--> WHOIS :", event.sender);
                 conn.sendline("WHOIS :", event.sender);
@@ -306,13 +305,13 @@ Quit loopGenerator(Generator!string generator)
 
         generator.call();
 
-        foreach (line; generator)
+        foreach (const line; generator)
         {
             /// Empty line yielded means nothing received
             if (!line.length) break;
 
             /// Hopefully making the event immutable means less gets copied?
-            immutable event = toIrcEvent(line);
+            immutable event = line.toIrcEvent();
 
             with (IrcEvent.Type)
             switch (event.type)

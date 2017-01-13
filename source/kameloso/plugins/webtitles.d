@@ -1,14 +1,14 @@
 module kameloso.plugins.webtitles;
 
 import kameloso.plugins.common;
-import kameloso.irc;
-import kameloso.common;
 import kameloso.constants;
+import kameloso.common;
+import kameloso.irc;
 
 import std.stdio : writeln, writefln;
-import std.regex;
 import std.datetime : Clock, SysTime, seconds;
 import std.concurrency;
+import std.regex;
 
 private:
 
@@ -49,6 +49,7 @@ void onCommand(const IrcEvent event)
 
         const url = urlHit[0];
         const target = (event.channel.length) ? event.channel : event.sender;
+
         worker.send(url, target);
     }
 }
@@ -73,8 +74,7 @@ void onEvent(const IrcEvent event)
         break;
 
     default:
-        state.onBasicEvent(event);
-        return;
+        return state.onBasicEvent(event);
     }
 
     final switch (state.filterUser(event))
@@ -111,7 +111,8 @@ static string streamUntil(Stream_, Regex, Sink)
             return hits[1].idup;
         }
 
-        stream.popFront;
+        stream.popFront();
+
         continue;
     }
 
@@ -125,14 +126,14 @@ static TitleLookup lookupTitle(string url)
     import requests;
     import std.array : Appender;
 
+    TitleLookup lookup;
+    Appender!string app;
+    app.reserve(BufferSize.titleLookup);
+
     if (!url.beginsWith("http"))
     {
         url = "http://" ~ url;
     }
-
-    TitleLookup lookup;
-    Appender!string app;
-    app.reserve(BufferSize.titleLookup);
 
     writeln("URL: ", url);
 
@@ -170,6 +171,7 @@ static TitleLookup lookupTitle(string url)
     }
 
     auto domainHits = url.matchFirst(domainRegex);
+
     if (!domainHits.length) return lookup;
 
     lookup.domain = domainHits[1];
@@ -181,8 +183,7 @@ static TitleLookup lookupTitle(string url)
 
 void titleworker(Tid mainThread)
 {
-    import std.concurrency;
-    import core.time;
+    import core.time : seconds;
 
     mixin(scopeguard(entry|exit));
 
@@ -195,9 +196,10 @@ void titleworker(Tid mainThread)
             (string url, string target)
             {
                 import std.format : format;
-                TitleLookup lookup;
 
+                TitleLookup lookup;
                 auto inCache = url in cache;
+
                 if (inCache && ((Clock.currTime - inCache.when) < Timeout.titleCache.seconds))
                 {
                     lookup = *inCache;
