@@ -205,7 +205,7 @@ void initPlugins(IrcPluginState state)
 
     plugins ~= new ConnectPlugin(state);
     plugins ~= new Pinger(state);
-    plugins ~= new AdminPlugin(state);
+    plugins ~= new AdminPlugin!(Multithreaded.no)(state);
     plugins ~= new Chatbot(state);
     plugins ~= new Webtitles(state);
     plugins ~= new NotesPlugin(state);

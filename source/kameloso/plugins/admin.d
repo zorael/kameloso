@@ -6,7 +6,7 @@ import kameloso.common;
 import kameloso.stringutils;
 
 import std.stdio : writeln, writefln;
-import std.concurrency : Tid, send;
+import std.concurrency;
 
 private:
 
@@ -239,6 +239,46 @@ void onEvent(const IrcEvent event)
     }
 }
 
+void adminPluginWorker(shared IrcPluginState origState)
+{
+    bool halt;
+    state = cast(IrcPluginState)origState;
+
+    while (!halt)
+    {
+        receive(
+            (shared IrcEvent event)
+            {
+                return event.onEvent();
+            },
+            (shared IrcBot bot)
+            {
+                state.bot = cast(IrcBot)bot;
+            },
+            (ThreadMessage.Status)
+            {
+                writeln("---------------------- ", __MODULE__);
+                printObject(state);
+            },
+            (ThreadMessage.Teardown)
+            {
+                writeln("admin plugin worker saw Teardown");
+                halt = true;
+            },
+            (OwnerTerminated e)
+            {
+                writeln("admin plugin worker saw OwnerTerminated");
+                halt = true;
+            },
+            (Variant v)
+            {
+                writeln("admin plugin worker received Variant");
+                writeln(v);
+            }
+        );
+    }
+}
+
 
 public:
 
@@ -247,30 +287,70 @@ public:
  +  A plugin aimed for adḿinistrative use. It was historically part of Chatbot but now lives
  +  by itself, sadly with much code between them duplicated. FIXME.
  +/
-final class AdminPlugin : IrcPlugin
+final class AdminPlugin(Multithreaded multithreaded = Multithreaded.no) : IrcPlugin
 {
+private:
+    static if (multithreaded)
+    {
+        Tid worker;
+    }
+
 public:
+    void onEvent(const IrcEvent event)
+    {
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)event);
+        }
+        else
+        {
+            return event.onEvent();
+        }
+    }
+
     this(IrcPluginState origState)
     {
         state = origState;
-    }
 
-    void onEvent(const IrcEvent event)
-    {
-        return event.onEvent();
-    }
-
-    void status()
-    {
-        writefln("---------------------- %s", typeof(this).stringof);
-        printObject(state);
+        static if (multithreaded)
+        {
+            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
+            writeln(typeof(this).stringof, " runs in a separate thread.");
+            worker = spawn(&sedReplaceWorker, cast(shared)state);
+        }
     }
 
     void newBot(IrcBot bot)
     {
-        state.bot = bot;
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)bot);
+        }
+        else
+        {
+            state.bot = bot;
+        }
     }
 
-    /// No teardown neccessary for AdminPlugin
-    void teardown() {}
+    void status()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Status());
+        }
+        else
+        {
+            writeln("---------------------- ", typeof(this).stringof);
+            printObject(state);
+        }
+    }
+
+
+    void teardown()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Teardown());
+        }
+    }
 }
