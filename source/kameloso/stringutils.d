@@ -125,7 +125,7 @@ static string unquoted(string line) pure
     }
     else if ((line[0] == '"') && (line[$-1] == '"'))
     {
-        return line[1..$-1];
+        return line[1..$-1].unquoted;
     }
     else
     {
@@ -135,6 +135,7 @@ static string unquoted(string line) pure
 unittest
 {
     assert(`"Lorem ipsum sit amet"`.unquoted == "Lorem ipsum sit amet");
+    assert(`"""""Lorem ipsum sit amet"""""`.unquoted == "Lorem ipsum sit amet");
     // Unbalanced quotes are left untouched
     assert(`"Lorem ipsum sit amet`.unquoted == `"Lorem ipsum sit amet`);
 }
