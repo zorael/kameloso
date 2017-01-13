@@ -8,11 +8,13 @@ import kameloso.constants;
 import std.stdio : writeln, writefln;
 import std.regex;
 import std.datetime : Clock, SysTime, seconds;
-import std.concurrency : Tid;
+import std.concurrency : Tid, send;
 
 private:
 
 IrcPluginState state;
+TitleLookup[string] cache;
+Tid worker;
 
 /// Regex to grep a web page title from the HTTP body
 enum titlePattern = `<title>([^<]+)</title>`;
@@ -33,32 +35,64 @@ struct TitleLookup
     SysTime when;
 }
 
+void onCommand(const IrcEvent event)
+{
+    auto matches = event.content.matchAll(urlRegex);
+
+    foreach (urlHit; matches)
+    {
+        if (!urlHit.length) continue;
+
+        const url = urlHit[0];
+        const target = (event.channel.length) ? event.channel : event.sender;
+        worker.send(url, target);
+    }
+}
+
+
+void onEvent(const IrcEvent event)
+{
+    with (state)
+    with (IrcEvent.Type)
+    switch (event.type)
+    {
+    case CHAN:
+        if (state.filterChannel!(RequirePrefix.no)(event) == FilterResult.fail)
+        {
+            // Invalid channel
+            return;
+        }
+        break;
+
+    case QUERY:
+        // All queries are okay
+        break;
+
+    default:
+        state.onBasicEvent(event);
+        return;
+    }
+
+    final switch (state.filterUser(event))
+    {
+    case FilterResult.pass:
+        // It is a known good user (friend or master), but it is of any type
+        return onCommand(event);
+
+    case FilterResult.whois:
+        return state.doWhois(event);
+
+    case FilterResult.fail:
+        // It is a known bad user
+        return;
+    }
+}
+
 
 public:
 
 final class Webtitles : IrcPlugin
 {
-private:
-    import std.concurrency : send;
-    import requests;
-
-    TitleLookup[string] cache;
-    Tid worker;
-
-    void onCommand(const IrcEvent event)
-    {
-        auto matches = event.content.matchAll(urlRegex);
-
-        foreach (urlHit; matches)
-        {
-            if (!urlHit.length) continue;
-
-            const url = urlHit[0];
-            const target = (event.channel.length) ? event.channel : event.sender;
-            worker.send(url, target);
-        }
-    }
-
 public:
     this(IrcPluginState origState)
     {
@@ -66,6 +100,11 @@ public:
 
         state = origState;
         worker = spawn(&titleworker, state.mainThread);
+    }
+
+    void onEvent(const IrcEvent event)
+    {
+        return event.onEvent();
     }
 
     void status()
@@ -79,49 +118,11 @@ public:
         state.bot = bot;
     }
 
-    void onEvent(const IrcEvent event)
-    {
-        with (state)
-        with (IrcEvent.Type)
-        switch (event.type)
-        {
-        case CHAN:
-            if (state.filterChannel!(RequirePrefix.no)(event) == FilterResult.fail)
-            {
-                // Invalid channel
-                return;
-            }
-            break;
-
-        case QUERY:
-            // All queries are okay
-            break;
-
-        default:
-            state.onBasicEvent(event);
-            return;
-        }
-
-        final switch (state.filterUser(event))
-        {
-        case FilterResult.pass:
-            // It is a known good user (friend or master), but it is of any type
-            return onCommand(event);
-
-        case FilterResult.whois:
-            return state.doWhois(event);
-
-        case FilterResult.fail:
-            // It is a known bad user
-            return;
-        }
-    }
-
     void teardown() {}
 }
 
 
-static string streamUntil(Stream_, Sink, Regex)(ref Stream_ stream, Regex engine, ref Sink sink)
+static string streamUntil(Stream_, Regex, Sink)(ref Stream_ stream, Regex engine, ref Sink sink)
 {
     while (!stream.empty)
     {
