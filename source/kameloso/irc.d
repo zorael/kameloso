@@ -12,10 +12,417 @@ import std.algorithm.searching : canFind;
 import std.algorithm.iteration : joiner;
 import std.concurrency : Tid;
 
-
 private:
 
 IrcPluginState state;
+
+
+// parseBasic
+/++
+ +  Parses the most basic of IRC events; PING and ERROR. They syntactically differ from other
+ +  events in tht they are not prefixed by its sender.
+ +
+ +  Params:
+ +      raw = The raw IRC string to parse.
+ +
+ +  Returns:
+ +      A finished IrcEvent.
+ +/
+IrcEvent parseBasic(const char[] raw)
+{
+    mixin(scopeguard(failure));
+
+    IrcEvent event;
+    event.raw = raw.idup;
+    string slice;
+    event.raw.formattedRead("%s :%s", &event.typestring, &slice);
+
+
+    switch (event.typestring)
+    {
+    case "PING":
+        event.type = IrcEvent.Type.PING;
+        event.sender = slice;
+        break;
+
+    case "ERROR":
+        event.type = IrcEvent.Type.ERROR;
+        event.content = slice;
+        break;
+
+    default:
+        break;
+    }
+
+    return event;
+}
+
+
+// parsePrefix
+/++
+ +  Takes a slice of a raw IRC string and starts parsing it into an IrcEvent struct.
+ +  This function only focuses on the prefix; the sender, be it nickname and ident
+ +  or server address.
+ +
+ +  The IrcEvent is not finished at the end of this function.
+ +
+ +  Params:
+ +      ref event = A reference to the IrcEvent to start working on.
+ +      ref slice = A reference to the slice of the raw IRC string.
+ +/
+void parsePrefix(ref IrcEvent event, ref string slice)
+{
+    auto prefix = slice.nom(' ');
+
+    with(event)
+    if (prefix.canFind('!'))
+    {
+        // user!~ident@address
+        prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
+        event.special = (event.address == "services.");
+    }
+    else
+    {
+        sender = prefix;
+    }
+}
+
+
+// parseTypestring
+/++
+ +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
+ +  This function only focuses on the typestring; the part that tells what kind of event
+ +  happened, like PRIVMSG or MODE or NICK or KICK, etc.
+ +
+ +  The IrcEvent is not finished at the end of this function.
+ +
+ +  Params:
+ +      ref event = A reference to the IrcEvent to continue working on.
+ +      ref slice = A reference to the slice of the raw IRC string.
+ +/
+void parseTypestring(ref IrcEvent event, ref string slice)
+{
+    import std.conv : to, ConvException;
+
+    event.typestring = slice.nom(' ');
+
+    assert(event.typestring.length, "Event typestring has no length! '%s'".format(event.raw));
+
+    if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
+    {
+        try
+        {
+
+            const number = event.typestring.to!uint;
+            event.num = number;
+            event.type = IrcEvent.typenums[number];
+
+            with (IrcEvent.Type)
+            event.type = (event.type == UNSET) ? NUMERIC : event.type;
+        }
+        catch (ConvException e)
+        {
+            writefln("------------------ %s ----------------", e.msg);
+            writeln(event.raw);
+        }
+    }
+    else
+    {
+        try event.type = event.typestring.to!(IrcEvent.Type);
+        catch (ConvException e)
+        {
+            writefln("------------------ %s ----------------", e.msg);
+            writeln(event.raw);
+        }
+    }
+}
+
+
+// parseSpecialcases
+/++
+ +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
+ +  This function only focuses on specialcasing the remaining line, dividing it into fields
+ +  like target, channel, content, etc.
+ +
+ +  The IrcEvent is finished at the end of this function. Beware its length.
+ +
+ +  Params:
+ +      ref event = A reference to the IrcEvent to finish working on.
+ +      ref slice = A reference to the slice of the raw IRC string.
+ +/
+void parseSpecialcases(ref IrcEvent event, ref string slice)
+{
+    mixin(scopeguard(failure));
+
+    with (state)
+    with (IrcEvent.Type)
+    switch (event.type)
+    {
+
+    case NOTICE:
+        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
+        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        if (!event.special && (event.target == "*")) event.special = true;
+        event.target = string.init;
+        break;
+
+    case JOIN:
+        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
+        event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
+        event.channel = slice;
+        break;
+
+    case PART:
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PART #flerrp :"WeeChat 1.6"
+        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
+        event.type = (event.sender == bot.nickname) ? SELFPART : PART;
+
+        if (slice.canFind(' '))
+        {
+            slice.formattedRead("%s :%s", &event.channel, &event.content);
+            event.content = event.content.unquoted;
+        }
+        else
+        {
+            event.content = slice;
+        }
+        break;
+
+    case NICK:
+        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
+        event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
+        event.content = slice[1..$];
+        break;
+
+    case QUIT:
+        // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
+        event.type = (event.sender == bot.nickname) ? SELFQUIT : QUIT;
+        event.content = slice[1..$].unquoted;
+        break;
+
+    case PRIVMSG:
+        const targetOrChannel = slice.nom(" :");
+
+        if (targetOrChannel.isValidChannel)
+        {
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
+            event.type = CHAN;
+            event.channel = targetOrChannel;
+        }
+        else
+        {
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
+            event.type = QUERY;
+            event.target = targetOrChannel;
+        }
+
+        if (slice.beginsWith(ControlCharacter.action) &&
+            (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
+        {
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
+            event.type = EMOTE;
+            event.content = (slice.length > 8) ? slice[8..$] : string.init;
+        }
+        else
+        {
+            event.content = slice;
+        }
+        break;
+
+    case MODE:
+        const targetOrChannel = slice.nom(' ');
+
+        if (targetOrChannel.beginsWith('#'))
+        {
+            event.channel = targetOrChannel;
+
+            if (slice.canFind(' '))
+            {
+                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
+                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
+                event.type = CHANMODE;
+                slice.formattedRead("%s %s", &event.aux, &event.target);
+            }
+            else
+            {
+                event.type = USERMODE;
+                event.aux = slice;
+            }
+        }
+        else
+        {
+            // :kameloso^ MODE kameloso^ :+i
+            event.type = SELFMODE;
+            event.aux = slice[1..$];
+        }
+        break;
+
+    case KICK:
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu KICK #flerrp kameloso^ :this is a reason
+        event.type = (event.target == bot.nickname) ? SELFKICK : KICK;
+        slice.formattedRead("%s %s :%s", &event.channel, &event.target, &event.content);
+        break;
+
+    case ERR_INVITEONLYCHAN:
+    case RPL_ENDOFNAMES: // 366
+    case RPL_TOPIC: // 332
+    case CHANNELURL: // 328
+        // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
+        // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
+        // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
+        slice.formattedRead("%s %s :%s", &event.target, &event.channel, &event.content);
+        break;
+
+    case RPL_NAMREPLY: // 353
+        // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
+        event.target  = slice.nom(' ');
+        slice.nom(' ');
+        slice.formattedRead("%s :%s", &event.channel, &event.content);
+        break;
+
+    case RPL_MOTD: // 372
+    case RPL_LUSERCLIENT:
+        // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        break;
+
+    case SERVERINFO_2: // 004
+        // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
+        slice.formattedRead("%s %s", &event.target, &event.content);
+        break;
+
+    case TOPICSETTIME: // 333
+        // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
+        slice.formattedRead("%s %s %s %s", &event.target, &event.channel, &event.content, &event.aux);
+        break;
+
+    case CONNECTINGFROM: // 378
+        //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
+        slice.nom(' ');
+        try
+        {
+            slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
+        }
+        catch (Exception e)
+        {
+            writeln(e);
+        }
+        break;
+
+    case RPL_LUSEROP: // 252
+    case RPL_LUSERUNKNOWN: // 253
+    case RPL_LUSERCHANNELS: // 254
+    case RPL_WHOISIDLE: //  317
+    case ERR_UNKNOWNCOMMAND: // 421
+    case ERR_ERRONEOUSNICKNAME: // 432
+    case ERR_NEEDMOREPARAMS: // 461
+    case USERCOUNTLOCAL: // 265
+    case USERCOUNTGLOBAL: // 266
+        // :asimov.freenode.net 252 kameloso^ 31 :IRC Operators online
+        // :asimov.freenode.net 253 kameloso^ 13 :unknown connection(s)
+        // :asimov.freenode.net 254 kameloso^ 54541 :channels formed
+        // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
+        // :asimov.freenode.net 432 kameloso^ @nickname :Erroneous Nickname
+        // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
+        // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
+        // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
+        /*event.target = slice.nom(' ');
+        event.aux = slice.nom(" :");
+        event.content = slice;*/
+        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
+        break;
+
+    case RPL_WHOISUSER: // 311
+        // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
+        // Hard to use formattedRead here
+        import std.string : stripLeft;
+
+        slice.nom(' ');
+        event.target  = slice.nom(' ');
+        event.content = slice.nom(" *");
+        slice.nom(" :");
+        event.aux = slice.stripLeft;
+        break;
+
+    case RPL_WHOISCHANNELS: // 319
+        // :leguin.freenode.net 319 kameloso^ zorael :#flerrp
+        import std.string : stripRight;
+
+        slice = slice.stripRight();
+        goto case RPL_ENDOFWHOIS;
+
+    case WHOISSECURECONN: // 671
+    case RPL_ENDOFWHOIS: // 318
+    case ERR_NICKNAMEINUSE: // 433
+    case ERR_NOSUCHNICK: // 401
+        // :asimov.freenode.net 671 kameloso^ zorael :is using a secure connection
+        // :asimov.freenode.net 318 kameloso^ zorael :End of /WHOIS list.
+        // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
+        // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
+        slice.nom(' ');
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        break;
+
+    case RPL_WHOISSERVER: // 312
+        // :asimov.freenode.net 312 kameloso^ zorael sinisalo.freenode.net :SE
+        slice.nom(' ');
+        slice.formattedRead("%s %s :%s", &event.target, &event.content, &event.aux);
+        break;
+
+    case WHOISLOGIN: // 330
+        // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
+        slice.nom(' ');
+        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
+        break;
+
+    case PONG:
+        event.target  = string.init;
+        event.content = string.init;
+        break;
+
+    case ERR_NOTREGISTERED:
+        // :niven.freenode.net 451 * :You have not registered
+        slice.formattedRead("* :%s", &event.content);
+        break;
+
+    default:
+        if (event.type == NUMERIC)
+        {
+            writeln();
+            writeln("--------------- UNCAUGHT NUMERIC --------------");
+            writeln(event.raw);
+            writeln(event);
+            writeln("-----------------------------------------------");
+            writeln();
+        }
+
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+        break;
+    }
+
+    if (event.target.canFind(' ') || event.channel.canFind(' '))
+    {
+        writeln();
+        writeln("--------------- SPACES, NEEDS REVISION --------------");
+        writeln(event.raw);
+        writeln(event);
+        writeln("-----------------------------------------------------");
+        writeln();
+    }
+
+    if ((event.target.length && (event.target[0] == '#')) || (event.channel.length &&
+         event.channel[0] != '#') && (event.type != IrcEvent.Type.TOPIC))
+    {
+        writeln();
+        writeln("--------------- CHANNEL/TARGET REVISION --------------");
+        writeln(event.raw);
+        writeln(event);
+        writeln("------------------------------------------------------");
+        writeln();
+    }
+}
 
 public:
 
@@ -52,219 +459,6 @@ struct IrcUser
                .format(nickname, ident, address, login, special);
     }
 }
-
-
-// userFromEvent
-/++
- +  Takes an IrcEvent and builds an IrcUser from its fields.
- +
- +  Params:
- +      event = IrcEvent to extract an IrcUser out of.
- +
- +  Returns:
- +      A freshly generated IrcUser.
- +/
-IrcUser userFromEvent(const IrcEvent event)
-{
-    IrcUser user;
-
-    with (IrcEvent.Type)
-    switch (event.type)
-    {
-    case RPL_WHOISUSER:
-        // These events are sent by the server, *describing* a user
-        // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
-        string content = event.content;
-        with (user)
-        {
-            nickname  = event.target;
-            login     = event.aux;
-            special   = event.special;
-            content.formattedRead("%s %s", &ident, &address);
-        }
-        break;
-
-    case WHOISLOGIN:
-        // WHOISLOGIN is shaped differently, no addres or ident
-        // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
-        with (user)
-        {
-            nickname = event.target;
-            login    = event.aux;
-        }
-        break;
-
-    default:
-        if (!event.sender.canFind('@'))
-        {
-            writefln("There was a server %s event and we naïvely tried to build a user from it");
-            goto case WHOISLOGIN;
-        }
-
-        with (user)
-        {
-            nickname = event.sender;
-            ident    = event.ident;
-            address  = event.address;
-            special  = event.special;
-        }
-        break;
-    }
-
-    return user;
-}
-
-
-/// This simply looks at an event and decides whether it is from NickServ
-static bool isFromNickserv(const IrcEvent event)
-{
-    return event.special
-        && (event.sender  == "NickServ")
-        && (event.ident   == "NickServ")
-        && (event.address == "services.");
-}
-
-
-// ConnectPlugin
-/++
- +  A collection of functions and state needed to connect to an IRC server. This is mostly
- +  a matter of sending USER and NICK at the starting "handshake", but also incorporates
- +  logic to authenticate with NickServ.
- +/
-final class ConnectPlugin : IrcPlugin
-{
-private:
-    import core.thread;
-    import std.concurrency : send;
-
-    /// Makes a shared copy of the current IrcBot and sends it to the main thread for propagation
-    void updateBot()
-    {
-        shared botCopy = cast(shared)(state.bot);
-        state.mainThread.send(botCopy);
-    }
-
-public:
-    this(IrcPluginState origState)
-    {
-        state = origState;
-    }
-
-    void status()
-    {
-        writeln("---------------------- ", typeof(this).stringof);
-        printObject(state.bot);
-    }
-
-    void newBot(IrcBot bot)
-    {
-        state.bot = bot;
-    }
-
-    // onEvent
-    /++
-     +  Called once for every IrcEvent generated. Whether the event is of interest to the plugin
-     +  is up to the plugin itself to decide.
-     +
-     +  Params:
-     +      event = The IrcEvent to react to.
-     +/
-    void onEvent(const IrcEvent event)
-    {
-        with (state)
-        with (IrcEvent.Type)
-        switch (event.type)
-        {
-        case NOTICE:
-            if (!bot.server.length && event.content.beginsWith("***"))
-            {
-                bot.server = event.sender;
-                updateBot();
-
-                mainThread.send(ThreadMessage.Sendline(),
-                    "NICK %s".format(bot.nickname));
-                mainThread.send(ThreadMessage.Sendline(),
-                    "USER %s * 8 : %s".format(bot.ident, bot.user));
-            }
-            else if (event.isFromNickserv)
-            {
-                // There's no point authing if there's no bot password
-                if (!bot.password.length) return;
-
-                if (event.content.beginsWith(cast(string)NickServLines.acceptance))
-                {
-                    if (!bot.channels.length || bot.finishedLogin) break;
-
-                    mainThread.send(ThreadMessage.Sendline(),
-                         "JOIN :%s".format(bot.channels.joiner(",")));
-                    bot.finishedLogin = true;
-                    updateBot();
-                }
-            }
-            break;
-
-        case WELCOME:
-            // The Welcome message is the first point at which we *know* our nickname
-            bot.nickname = event.target;
-            updateBot();
-            break;
-
-        case RPL_ENDOFMOTD:
-            // FIXME: Deadlock if a password exists but there is no challenge
-            if (bot.password.length)
-            {
-                mainThread.send(ThreadMessage.Quietline(),
-                    "PRIVMSG NickServ@services. :IDENTIFY %s %s"
-                    .format(bot.login, bot.password));
-
-                // Fake it
-                writefln("--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2", bot.login);
-            }
-            else
-            {
-                mainThread.send(ThreadMessage.Sendline(),
-                    "JOIN :%s".format(bot.channels.joiner(",")));
-                bot.finishedLogin = true;
-                updateBot();
-                break;
-            }
-
-            break;
-
-        case ERR_NICKNAMEINUSE:
-            bot.nickname ~= altNickSign;
-            updateBot();
-
-            mainThread.send(ThreadMessage.Sendline(),
-                "NICK %s".format(bot.nickname));
-            break;
-
-        case SELFNICK:
-            // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
-            bot.nickname = event.content;
-            updateBot();
-            break;
-
-        case SELFJOIN:
-            writefln("Joined %s", event.channel);
-            break;
-
-        case SELFPART:
-        case SELFKICK:
-            writeln("Left ", event.channel);
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    /// ConnectPlugin has no functionality that needs tearing down
-    void teardown() {}
-}
-
-
-
 
 
 // IrcEvent
@@ -646,44 +840,142 @@ struct IrcEvent
 }
 
 
-// parseBasic
+// ConnectPlugin
 /++
- +  Parses the most basic of IRC events; PING and ERROR. They syntactically differ from other
- +  events in tht they are not prefixed by its sender.
- +
- +  Params:
- +      raw = The raw IRC string to parse.
- +
- +  Returns:
- +      A finished IrcEvent.
+ +  A collection of functions and state needed to connect to an IRC server. This is mostly
+ +  a matter of sending USER and NICK at the starting "handshake", but also incorporates
+ +  logic to authenticate with NickServ.
  +/
-IrcEvent parseBasic(const char[] raw)
+final class ConnectPlugin : IrcPlugin
 {
-    mixin(scopeguard(failure));
+private:
+    import core.thread;
+    import std.concurrency : send;
 
-    IrcEvent event;
-    event.raw = raw.idup;
-    string slice;
-    event.raw.formattedRead("%s :%s", &event.typestring, &slice);
-
-
-    switch (event.typestring)
+    /// Makes a shared copy of the current IrcBot and sends it to the main thread for propagation
+    void updateBot()
     {
-    case "PING":
-        event.type = IrcEvent.Type.PING;
-        event.sender = slice;
-        break;
-
-    case "ERROR":
-        event.type = IrcEvent.Type.ERROR;
-        event.content = slice;
-        break;
-
-    default:
-        break;
+        shared botCopy = cast(shared)(state.bot);
+        state.mainThread.send(botCopy);
     }
 
-    return event;
+public:
+    this(IrcPluginState origState)
+    {
+        state = origState;
+    }
+
+    void status()
+    {
+        writeln("---------------------- ", typeof(this).stringof);
+        printObject(state.bot);
+    }
+
+    void newBot(IrcBot bot)
+    {
+        state.bot = bot;
+    }
+
+    // onEvent
+    /++
+     +  Called once for every IrcEvent generated. Whether the event is of interest to the plugin
+     +  is up to the plugin itself to decide.
+     +
+     +  Params:
+     +      event = The IrcEvent to react to.
+     +/
+    void onEvent(const IrcEvent event)
+    {
+        with (state)
+        with (IrcEvent.Type)
+        switch (event.type)
+        {
+        case NOTICE:
+            if (!bot.server.length && event.content.beginsWith("***"))
+            {
+                bot.server = event.sender;
+                updateBot();
+
+                mainThread.send(ThreadMessage.Sendline(),
+                    "NICK %s".format(bot.nickname));
+                mainThread.send(ThreadMessage.Sendline(),
+                    "USER %s * 8 : %s".format(bot.ident, bot.user));
+            }
+            else if (event.isFromNickserv)
+            {
+                // There's no point authing if there's no bot password
+                if (!bot.password.length) return;
+
+                if (event.content.beginsWith(cast(string)NickServLines.acceptance))
+                {
+                    if (!bot.channels.length || bot.finishedLogin) break;
+
+                    mainThread.send(ThreadMessage.Sendline(),
+                         "JOIN :%s".format(bot.channels.joiner(",")));
+                    bot.finishedLogin = true;
+                    updateBot();
+                }
+            }
+            break;
+
+        case WELCOME:
+            // The Welcome message is the first point at which we *know* our nickname
+            bot.nickname = event.target;
+            updateBot();
+            break;
+
+        case RPL_ENDOFMOTD:
+            // FIXME: Deadlock if a password exists but there is no challenge
+            if (bot.password.length)
+            {
+                mainThread.send(ThreadMessage.Quietline(),
+                    "PRIVMSG NickServ@services. :IDENTIFY %s %s"
+                    .format(bot.login, bot.password));
+
+                // Fake it
+                writefln("--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2", bot.login);
+            }
+            else
+            {
+                mainThread.send(ThreadMessage.Sendline(),
+                    "JOIN :%s".format(bot.channels.joiner(",")));
+                bot.finishedLogin = true;
+                updateBot();
+                break;
+            }
+
+            break;
+
+        case ERR_NICKNAMEINUSE:
+            bot.nickname ~= altNickSign;
+            updateBot();
+
+            mainThread.send(ThreadMessage.Sendline(),
+                "NICK %s".format(bot.nickname));
+            break;
+
+        case SELFNICK:
+            // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
+            bot.nickname = event.content;
+            updateBot();
+            break;
+
+        case SELFJOIN:
+            writefln("Joined %s", event.channel);
+            break;
+
+        case SELFPART:
+        case SELFKICK:
+            writeln("Left ", event.channel);
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    /// ConnectPlugin has no functionality that needs tearing down
+    void teardown() {}
 }
 
 
@@ -699,7 +991,7 @@ IrcEvent parseBasic(const char[] raw)
  +  Returns:
  +      A finished IrcEvent.
  +/
-IrcEvent toIrcEvent(const char[] raw)
+static IrcEvent toIrcEvent(const char[] raw)
 {
     import std.exception : enforce;
 
@@ -720,370 +1012,74 @@ IrcEvent toIrcEvent(const char[] raw)
 }
 
 
-// parsePrefix
+// userFromEvent
 /++
- +  Takes a slice of a raw IRC string and starts parsing it into an IrcEvent struct.
- +  This function only focuses on the prefix; the sender, be it nickname and ident
- +  or server address.
- +
- +  The IrcEvent is not finished at the end of this function.
+ +  Takes an IrcEvent and builds an IrcUser from its fields.
  +
  +  Params:
- +      ref event = A reference to the IrcEvent to start working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      event = IrcEvent to extract an IrcUser out of.
+ +
+ +  Returns:
+ +      A freshly generated IrcUser.
  +/
-void parsePrefix(ref IrcEvent event, ref string slice)
+static IrcUser userFromEvent(const IrcEvent event)
 {
-    auto prefix = slice.nom(' ');
+    IrcUser user;
 
-    with(event)
-    if (prefix.canFind('!'))
-    {
-        // user!~ident@address
-        prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
-        event.special = (event.address == "services.");
-    }
-    else
-    {
-        sender = prefix;
-    }
-}
-
-
-// parseTypestring
-/++
- +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
- +  This function only focuses on the typestring; the part that tells what kind of event
- +  happened, like PRIVMSG or MODE or NICK or KICK, etc.
- +
- +  The IrcEvent is not finished at the end of this function.
- +
- +  Params:
- +      ref event = A reference to the IrcEvent to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
- +/
-void parseTypestring(ref IrcEvent event, ref string slice)
-{
-    import std.conv : to, ConvException;
-
-    event.typestring = slice.nom(' ');
-
-    assert(event.typestring.length, "Event typestring has no length! '%s'".format(event.raw));
-
-    if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
-    {
-        try
-        {
-
-            const number = event.typestring.to!uint;
-            event.num = number;
-            event.type = IrcEvent.typenums[number];
-
-            with (IrcEvent.Type)
-            event.type = (event.type == UNSET) ? NUMERIC : event.type;
-        }
-        catch (ConvException e)
-        {
-            writefln("------------------ %s ----------------", e.msg);
-            writeln(event.raw);
-        }
-    }
-    else
-    {
-        try event.type = event.typestring.to!(IrcEvent.Type);
-        catch (ConvException e)
-        {
-            writefln("------------------ %s ----------------", e.msg);
-            writeln(event.raw);
-        }
-    }
-}
-
-
-// parseSpecialcases
-/++
- +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
- +  This function only focuses on specialcasing the remaining line, dividing it into fields
- +  like target, channel, content, etc.
- +
- +  The IrcEvent is finished at the end of this function. Beware its length.
- +
- +  Params:
- +      ref event = A reference to the IrcEvent to finish working on.
- +      ref slice = A reference to the slice of the raw IRC string.
- +/
-void parseSpecialcases(ref IrcEvent event, ref string slice)
-{
-    mixin(scopeguard(failure));
-
-    with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {
-
-    case NOTICE:
-        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
-        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
-        slice.formattedRead("%s :%s", &event.target, &event.content);
-        if (!event.special && (event.target == "*")) event.special = true;
-        event.target = string.init;
-        break;
-
-    case JOIN:
-        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
-        event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
-        event.channel = slice;
-        break;
-
-    case PART:
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PART #flerrp :"WeeChat 1.6"
-        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
-        event.type = (event.sender == bot.nickname) ? SELFPART : PART;
-
-        if (slice.canFind(' '))
+    case RPL_WHOISUSER:
+        // These events are sent by the server, *describing* a user
+        // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
+        string content = event.content;
+        with (user)
         {
-            slice.formattedRead("%s :%s", &event.channel, &event.content);
-            event.content = event.content.unquoted;
-        }
-        else
-        {
-            event.content = slice;
+            nickname  = event.target;
+            login     = event.aux;
+            special   = event.special;
+            content.formattedRead("%s %s", &ident, &address);
         }
         break;
 
-    case NICK:
-        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
-        event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
-        event.content = slice[1..$];
-        break;
-
-    case QUIT:
-        // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
-        event.type = (event.sender == bot.nickname) ? SELFQUIT : QUIT;
-        event.content = slice[1..$].unquoted;
-        break;
-
-    case PRIVMSG:
-        const targetOrChannel = slice.nom(" :");
-
-        if (targetOrChannel.isValidChannel)
-        {
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
-            event.type = CHAN;
-            event.channel = targetOrChannel;
-        }
-        else
-        {
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
-            event.type = QUERY;
-            event.target = targetOrChannel;
-        }
-
-        if (slice.beginsWith(ControlCharacter.action) &&
-            (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
-        {
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
-            event.type = EMOTE;
-            event.content = (slice.length > 8) ? slice[8..$] : string.init;
-        }
-        else
-        {
-            event.content = slice;
-        }
-        break;
-
-    case MODE:
-        const targetOrChannel = slice.nom(' ');
-
-        if (targetOrChannel.beginsWith('#'))
-        {
-            event.channel = targetOrChannel;
-
-            if (slice.canFind(' '))
-            {
-                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
-                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
-                event.type = CHANMODE;
-                slice.formattedRead("%s %s", &event.aux, &event.target);
-            }
-            else
-            {
-                event.type = USERMODE;
-                event.aux = slice;
-            }
-        }
-        else
-        {
-            // :kameloso^ MODE kameloso^ :+i
-            event.type = SELFMODE;
-            event.aux = slice[1..$];
-        }
-        break;
-
-    case KICK:
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu KICK #flerrp kameloso^ :this is a reason
-        event.type = (event.target == bot.nickname) ? SELFKICK : KICK;
-        slice.formattedRead("%s %s :%s", &event.channel, &event.target, &event.content);
-        break;
-
-    case ERR_INVITEONLYCHAN:
-    case RPL_ENDOFNAMES: // 366
-    case RPL_TOPIC: // 332
-    case CHANNELURL: // 328
-        // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
-        // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
-        // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
-        slice.formattedRead("%s %s :%s", &event.target, &event.channel, &event.content);
-        break;
-
-    case RPL_NAMREPLY: // 353
-        // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
-        event.target  = slice.nom(' ');
-        slice.nom(' ');
-        slice.formattedRead("%s :%s", &event.channel, &event.content);
-        break;
-
-    case RPL_MOTD: // 372
-    case RPL_LUSERCLIENT:
-        // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
-        slice.formattedRead("%s :%s", &event.target, &event.content);
-        break;
-
-    case SERVERINFO_2: // 004
-        // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
-        slice.formattedRead("%s %s", &event.target, &event.content);
-        break;
-
-    case TOPICSETTIME: // 333
-        // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
-        slice.formattedRead("%s %s %s %s", &event.target, &event.channel, &event.content, &event.aux);
-        break;
-
-    case CONNECTINGFROM: // 378
-        //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
-        slice.nom(' ');
-        try
-        {
-            slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
-        }
-        catch (Exception e)
-        {
-            writeln(e);
-        }
-        break;
-
-    case RPL_LUSEROP: // 252
-    case RPL_LUSERUNKNOWN: // 253
-    case RPL_LUSERCHANNELS: // 254
-    case RPL_WHOISIDLE: //  317
-    case ERR_UNKNOWNCOMMAND: // 421
-    case ERR_ERRONEOUSNICKNAME: // 432
-    case ERR_NEEDMOREPARAMS: // 461
-    case USERCOUNTLOCAL: // 265
-    case USERCOUNTGLOBAL: // 266
-        // :asimov.freenode.net 252 kameloso^ 31 :IRC Operators online
-        // :asimov.freenode.net 253 kameloso^ 13 :unknown connection(s)
-        // :asimov.freenode.net 254 kameloso^ 54541 :channels formed
-        // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
-        // :asimov.freenode.net 432 kameloso^ @nickname :Erroneous Nickname
-        // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
-        // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
-        // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
-        /*event.target = slice.nom(' ');
-        event.aux = slice.nom(" :");
-        event.content = slice;*/
-        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
-        break;
-
-    case RPL_WHOISUSER: // 311
-        // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
-        // Hard to use formattedRead here
-        import std.string : stripLeft;
-
-        slice.nom(' ');
-        event.target  = slice.nom(' ');
-        event.content = slice.nom(" *");
-        slice.nom(" :");
-        event.aux = slice.stripLeft;
-        break;
-
-    case RPL_WHOISCHANNELS: // 319
-        // :leguin.freenode.net 319 kameloso^ zorael :#flerrp
-        import std.string : stripRight;
-
-        slice = slice.stripRight();
-        goto case RPL_ENDOFWHOIS;
-
-    case WHOISSECURECONN: // 671
-    case RPL_ENDOFWHOIS: // 318
-    case ERR_NICKNAMEINUSE: // 433
-    case ERR_NOSUCHNICK: // 401
-        // :asimov.freenode.net 671 kameloso^ zorael :is using a secure connection
-        // :asimov.freenode.net 318 kameloso^ zorael :End of /WHOIS list.
-        // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
-        // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
-        slice.nom(' ');
-        slice.formattedRead("%s :%s", &event.target, &event.content);
-        break;
-
-    case RPL_WHOISSERVER: // 312
-        // :asimov.freenode.net 312 kameloso^ zorael sinisalo.freenode.net :SE
-        slice.nom(' ');
-        slice.formattedRead("%s %s :%s", &event.target, &event.content, &event.aux);
-        break;
-
-    case WHOISLOGIN: // 330
+    case WHOISLOGIN:
+        // WHOISLOGIN is shaped differently, no addres or ident
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
-        slice.nom(' ');
-        slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
-        break;
-
-    case PONG:
-        event.target  = string.init;
-        event.content = string.init;
-        break;
-
-    case ERR_NOTREGISTERED:
-        // :niven.freenode.net 451 * :You have not registered
-        slice.formattedRead("* :%s", &event.content);
+        with (user)
+        {
+            nickname = event.target;
+            login    = event.aux;
+        }
         break;
 
     default:
-        if (event.type == NUMERIC)
+        if (!event.sender.canFind('@'))
         {
-            writeln();
-            writeln("--------------- UNCAUGHT NUMERIC --------------");
-            writeln(event.raw);
-            writeln(event);
-            writeln("-----------------------------------------------");
-            writeln();
+            writefln("There was a server %s event and we naïvely tried to build a user from it");
+            goto case WHOISLOGIN;
         }
 
-        slice.formattedRead("%s :%s", &event.target, &event.content);
+        with (user)
+        {
+            nickname = event.sender;
+            ident    = event.ident;
+            address  = event.address;
+            special  = event.special;
+        }
         break;
     }
 
-    if (event.target.canFind(' ') || event.channel.canFind(' '))
-    {
-        writeln();
-        writeln("--------------- SPACES, NEEDS REVISION --------------");
-        writeln(event.raw);
-        writeln(event);
-        writeln("-----------------------------------------------------");
-        writeln();
-    }
+    return user;
+}
 
-    if ((event.target.length && (event.target[0] == '#')) || (event.channel.length &&
-         event.channel[0] != '#') && (event.type != IrcEvent.Type.TOPIC))
-    {
-        writeln();
-        writeln("--------------- CHANNEL/TARGET REVISION --------------");
-        writeln(event.raw);
-        writeln(event);
-        writeln("------------------------------------------------------");
-        writeln();
-    }
+
+/// This simply looks at an event and decides whether it is from NickServ
+static bool isFromNickserv(const IrcEvent event)
+{
+    return event.special
+        && (event.sender  == "NickServ")
+        && (event.ident   == "NickServ")
+        && (event.address == "services.");
 }
 
 
