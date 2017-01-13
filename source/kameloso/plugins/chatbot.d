@@ -315,6 +315,7 @@ void initQuotes()
 void chatbotWorker(shared IrcPluginState origState)
 {
     state = cast(IrcPluginState)origState;
+    initQuotes();
 
     mixin ircPluginWorkerReceiveLoop!state receiveLoop;
     receiveLoop.exec();
@@ -330,5 +331,5 @@ public:
  +/
 final class Chatbot(Multithreaded multithreaded) : IrcPlugin
 {
-    mixin IrcPluginBasics!chatbotWorker;
+    mixin IrcPluginBasics!(chatbotWorker, initQuotes);
 }
