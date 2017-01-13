@@ -110,42 +110,10 @@ void onEvent(const IrcEvent event)
 
 void connectPluginWorker(shared IrcPluginState origState)
 {
-    bool halt;
     state = cast(IrcPluginState)origState;
 
-    while (!halt)
-    {
-        receive(
-            (shared IrcEvent event)
-            {
-                return event.onEvent();
-            },
-            (shared IrcBot bot)
-            {
-                state.bot = cast(IrcBot)bot;
-            },
-            (ThreadMessage.Status)
-            {
-                writeln("---------------------- ", __MODULE__);
-                printObject(state);
-            },
-            (ThreadMessage.Teardown)
-            {
-                writeln("connect plugin worker saw Teardown");
-                halt = true;
-            },
-            (OwnerTerminated e)
-            {
-                writeln("connect plugin worker saw OwnerTerminated");
-                halt = true;
-            },
-            (Variant v)
-            {
-                writeln("connect plugin worker received Variant");
-                writeln(v);
-            }
-        );
-    }
+    mixin ircPluginWorkerReceiveLoop!state receiveLoop;
+    receiveLoop.exec();
 }
 
 
@@ -159,68 +127,5 @@ public:
  +/
 final class ConnectPlugin(Multithreaded multithreaded) : IrcPlugin
 {
-private:
-    static if (multithreaded)
-    {
-        Tid worker;
-    }
-
-public:
-    void onEvent(const IrcEvent event)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)event);
-        }
-        else
-        {
-            return event.onEvent();
-        }
-    }
-
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (multithreaded)
-        {
-            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
-            writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&connectPluginWorker, cast(shared)state);
-        }
-    }
-
-    void newBot(IrcBot bot)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)bot);
-        }
-        else
-        {
-            state.bot = bot;
-        }
-    }
-
-    void status()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Status());
-        }
-        else
-        {
-            writeln("---------------------- ", typeof(this).stringof);
-            printObject(state);
-        }
-    }
-
-
-    void teardown()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Teardown());
-        }
-    }
+    mixin IrcPluginBasics!(connectPluginWorker);
 }
