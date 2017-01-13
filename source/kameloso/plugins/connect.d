@@ -102,21 +102,6 @@ void onEvent(const IrcEvent event)
             "NICK %s".format(bot.nickname));
         break;
 
-    case SELFNICK:
-        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
-        bot.nickname = event.content;
-        updateBot();
-        break;
-
-    case SELFJOIN:
-        writefln("Joined %s", event.channel);
-        break;
-
-    case SELFPART:
-    case SELFKICK:
-        writeln("Left ", event.channel);
-        break;
-
     default:
         break;
     }
