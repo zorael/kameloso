@@ -456,6 +456,12 @@ struct IrcBot
     @separator(",") string[] friends  = [];
     @unconfigurable string server;
     @unconfigurable bool finishedLogin;
+
+    string toString()
+    {
+        return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s chans:%s friends:%s server:%s"
+               .format(nickname, user, login, password, ident, master, channels, friends, server);
+    }
 }
 
 
