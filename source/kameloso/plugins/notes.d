@@ -262,7 +262,7 @@ static void saveNotes(const string filename, const JSONValue notes)
 }
 
 
-static void loadNotes(const string filename, ref JSONValue notes)
+static JSONValue loadNotes(const string filename)
 {
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
@@ -270,57 +270,33 @@ static void loadNotes(const string filename, ref JSONValue notes)
     if (!filename.exists)
     {
         writefln("%s does not exist", filename);
-        return;
+        return JSONValue("{}");
     }
     else if (!filename.isFile)
     {
         writefln("%s is not a file", filename);
-        return;
+        return JSONValue("{}");
     }
 
     auto wholeFile = filename.readText.chomp;
-    notes = parseJSON(wholeFile);
+    return parseJSON(wholeFile);
+}
+
+
+void initNotes()
+{
+    writeln("Initialising notes ...");
+    notes = Files.notes.loadNotes();
 }
 
 
 void notesPluginWorker(shared IrcPluginState origState)
 {
-    bool halt;
     state = cast(IrcPluginState)origState;
+    initNotes();
 
-    while (!halt)
-    {
-        receive(
-            (shared IrcEvent event)
-            {
-                return event.onEvent();
-            },
-            (shared IrcBot bot)
-            {
-                state.bot = cast(IrcBot)bot;
-            },
-            (ThreadMessage.Status)
-            {
-                writeln("---------------------- ", __MODULE__);
-                printObject(state);
-            },
-            (ThreadMessage.Teardown)
-            {
-                writeln("notes plugin worker saw Teardown");
-                halt = true;
-            },
-            (OwnerTerminated e)
-            {
-                writeln("notes plugin worker saw OwnerTerminated");
-                halt = true;
-            },
-            (Variant v)
-            {
-                writeln("notes plugin worker received Variant");
-                writeln(v);
-            }
-        );
-    }
+    mixin ircPluginWorkerReceiveLoop!state receiveLoop;
+    receiveLoop.exec();
 }
 
 
@@ -328,68 +304,5 @@ public:
 
 final class NotesPlugin(Multithreaded multithreaded) : IrcPlugin
 {
-private:
-    static if (multithreaded)
-    {
-        Tid worker;
-    }
-
-public:
-    void onEvent(const IrcEvent event)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)event);
-        }
-        else
-        {
-            return event.onEvent();
-        }
-    }
-
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (multithreaded)
-        {
-            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
-            writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&notesPluginWorker, cast(shared)state);
-        }
-    }
-
-    void newBot(IrcBot bot)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)bot);
-        }
-        else
-        {
-            state.bot = bot;
-        }
-    }
-
-    void status()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Status());
-        }
-        else
-        {
-            writeln("---------------------- ", typeof(this).stringof);
-            printObject(state);
-        }
-    }
-
-
-    void teardown()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Teardown());
-        }
-    }
+    mixin IrcPluginBasics!(notesPluginWorker, initNotes);
 }
