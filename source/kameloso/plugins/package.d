@@ -6,3 +6,4 @@ public import kameloso.plugins.admin;
 public import kameloso.plugins.chatbot;
 public import kameloso.plugins.webtitles;
 public import kameloso.plugins.notes;
+public import kameloso.plugins.sedreplace;

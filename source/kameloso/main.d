@@ -209,6 +209,7 @@ void initPlugins(IrcBot bot, Tid tid)
     plugins ~= new Chatbot(bot, tid);
     plugins ~= new Webtitles(bot, tid);
     plugins ~= new NotesPlugin(bot, tid);
+    plugins ~= new SedReplacePlugin(bot, tid);
 }
 
 
