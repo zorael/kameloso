@@ -2,9 +2,10 @@ module kameloso.plugins.common;
 
 import kameloso.irc;
 
+import std.stdio : writeln, writefln;
 import std.typecons : Flag;
 import std.algorithm : canFind;
-import std.stdio;
+import std.traits : isSomeFunction;
 
 
 /++
@@ -145,6 +146,125 @@ FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
             {
                 return FilterResult.pass;
             }
+        }
+    }
+}
+
+
+template IrcPluginBasics(alias workerFunction, alias initFunction = null)
+if (isSomeFunction!workerFunction)
+{
+    private:
+    static if (multithreaded)
+    {
+        Tid worker;
+    }
+
+public:
+    void onEvent(const IrcEvent event)
+    {
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)event);
+        }
+        else
+        {
+            return event.onEvent();
+        }
+    }
+
+    this(IrcPluginState origState)
+    {
+        state = origState;
+
+        static if (!multithreaded && __traits(compiles, initFunction()))
+        {
+            initFunction();
+        }
+
+        static if (multithreaded)
+        {
+            writeln(typeof(this).stringof, " runs in a separate thread.");
+            worker = spawn(&workerFunction, cast(shared)state);
+        }
+    }
+
+    void newBot(IrcBot bot)
+    {
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)bot);
+        }
+        else
+        {
+            state.bot = bot;
+        }
+    }
+
+    void status()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Status());
+        }
+        else
+        {
+            writeln("---------------------- ", typeof(this).stringof);
+            printObject(state);
+        }
+    }
+
+    void teardown()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Teardown());
+        }
+    }
+}
+
+
+template ircPluginWorkerReceiveLoop(alias state, string id = __MODULE__)
+{
+    void exec()
+    {
+        mixin(scopeguard(entry));
+        import std.concurrency;
+
+        bool halt;
+
+        while (!halt)
+        {
+            receive(
+                (shared IrcEvent event)
+                {
+                    return event.onEvent();
+                },
+                (shared IrcBot bot)
+                {
+                    state.bot = cast(IrcBot)bot;
+                },
+                (ThreadMessage.Status)
+                {
+                    writeln("---------------------- ", id);
+                    printObject(state);
+                },
+                (ThreadMessage.Teardown)
+                {
+                    writeln(id, " worker saw Teardown");
+                    halt = true;
+                },
+                (OwnerTerminated e)
+                {
+                    writeln(id, " worker saw OwnerTerminated");
+                    halt = true;
+                },
+                (Variant v)
+                {
+                    writeln(id, " worker received Variant");
+                    writeln(v);
+                }
+            );
         }
     }
 }
