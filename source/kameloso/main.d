@@ -303,6 +303,14 @@ Quit loopGenerator(Generator!string generator)
             case RPL_MOTD:
             case PING:
             case PONG:
+            case SERVERINFO:
+            case SERVERINFO_2:
+            case RPL_LUSERCLIENT:
+            case RPL_LUSEROP:
+            case RPL_LUSERCHANNELS:
+            case RPL_LUSERME:
+            case RPL_MOTDSTART:
+            case RPL_ENDOFMOTD:
                 // These event types are too spammy; ignore
                 break;
 
