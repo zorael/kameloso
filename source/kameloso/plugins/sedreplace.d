@@ -13,6 +13,9 @@ import std.datetime;
 
 private:
 
+IrcPluginState state;
+Line[string] prevlines;
+
 
 enum sedPattern = `s/([^/]+)/([^/]*)(?:/g?)?`;
 static sedRegex = ctRegex!sedPattern;

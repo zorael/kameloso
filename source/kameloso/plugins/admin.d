@@ -7,6 +7,11 @@ import kameloso.stringutils;
 
 import std.stdio : writeln, writefln;
 
+private:
+IrcPluginState state;
+
+
+public:
 
 // AdminPlugin
 /++
@@ -19,7 +24,6 @@ private:
     import std.concurrency : Tid, send;
     import std.algorithm.searching : canFind;
 
-    IrcPluginState state;
     bool printAll;
 
     void updateBot()
@@ -197,10 +201,9 @@ private:
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
-        state.bot = bot;
-        state.mainThread = tid;
+        state = origState;
     }
 
     void status()

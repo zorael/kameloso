@@ -12,6 +12,8 @@ import std.concurrency : Tid;
 
 private:
 
+IrcPluginState state;
+
 /// Regex to grep a web page title from the HTTP body
 enum titlePattern = `<title>([^<]+)</title>`;
 static titleRegex = ctRegex!(titlePattern, "i");
@@ -40,7 +42,6 @@ private:
     import std.concurrency : send;
     import requests;
 
-    IrcPluginState state;
     TitleLookup[string] cache;
     Tid worker;
 
@@ -59,13 +60,12 @@ private:
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
         import std.concurrency : spawn;
 
-        state.bot = bot;
-        state.mainThread = tid;
-        worker = spawn(&titleworker, tid);
+        state = origState;
+        worker = spawn(&titleworker, state.mainThread);
     }
 
     void status()

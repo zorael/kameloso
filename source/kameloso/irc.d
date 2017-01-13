@@ -13,7 +13,11 @@ import std.algorithm.iteration : joiner;
 import std.concurrency : Tid;
 
 
-private IrcBot bot;
+private:
+
+IrcPluginState state;
+
+public:
 
 
 /// A simple struct to collect all the relevant settings, options and state needed
@@ -133,34 +137,28 @@ private:
     import core.thread;
     import std.concurrency : send;
 
-    Tid mainThread;
-    IrcUser[string] users;
-    bool delegate()[string] queue;
-
     /// Makes a shared copy of the current IrcBot and sends it to the main thread for propagation
     void updateBot()
     {
-        shared botCopy = cast(shared)bot;
-        mainThread.send(botCopy);
+        shared botCopy = cast(shared)(state.bot);
+        state.mainThread.send(botCopy);
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
-        .bot = bot;
-        this.mainThread = tid;
+        state = origState;
     }
 
     void status()
     {
         writeln("---------------------- ", typeof(this).stringof);
-        printObject(bot);
+        printObject(state.bot);
     }
 
     void newBot(IrcBot bot)
     {
-        // this.bot = bot;
-        .bot = bot;
+        state.bot = bot;
     }
 
     // onEvent
@@ -173,6 +171,7 @@ public:
      +/
     void onEvent(const IrcEvent event)
     {
+        with (state)
         with (IrcEvent.Type)
         switch (event.type)
         {
@@ -890,6 +889,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 {
     mixin(scopeguard(failure));
 
+    with (state)
     with (IrcEvent.Type)
     switch (event.type)
     {

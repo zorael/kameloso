@@ -12,6 +12,8 @@ import std.json;
 
 private:
 
+IrcPluginState state;
+JSONValue notes;
 
 public:
 
@@ -20,8 +22,6 @@ final class NotesPlugin : IrcPlugin
 {
 private:
     import std.concurrency : Tid, send;
-    IrcPluginState state;
-    JSONValue notes;
 
     void onCommand(const IrcEvent event)
     {
@@ -59,7 +59,7 @@ private:
     void onJoin(const IrcEvent event)
     {
         // Authorised and everything
-        auto noteArray = notes.getNotes(event.sender);
+        auto noteArray = getNotes(event.sender);
         if (!noteArray.length) return;
 
         foreach (note; noteArray)
@@ -71,7 +71,7 @@ private:
                 .format(event.channel, event.sender, note.sender, timestamp, note.line));
         }
 
-        notes.clearNotes(event.sender);
+        clearNotes(event.sender);
     }
 
     void onVerb(const IrcEvent event, string line)
@@ -90,7 +90,7 @@ private:
             string nickname, content;
             const hits = args.formattedRead("%s %s", &nickname, &content);
             if (hits != 2) return;
-            notes.addNote(nickname, event.sender, content);
+            addNote(nickname, event.sender, content);
             state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :Note added".format(event.channel));
             Files.notes.saveNotes(notes);
@@ -118,10 +118,9 @@ private:
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
-        state.bot = bot;
-        state.mainThread = tid;
+        state = origState;
 
         Files.notes.loadNotes(notes);
     }
@@ -179,7 +178,7 @@ public:
 }
 
 
-static auto getNotes(ref JSONValue notes, const string nickname)
+static auto getNotes(const string nickname)
 {
     import std.datetime : SysTime, Clock;
 
@@ -200,7 +199,8 @@ static auto getNotes(ref JSONValue notes, const string nickname)
             if (arr.type != JSON_TYPE.ARRAY)
             {
                 writefln("Invalid notes list for %s (type is %s)", nickname, arr.type);
-                notes.clearNotes(nickname);
+                clearNotes(nickname);
+
                 return noteArray;
             }
 
@@ -229,7 +229,7 @@ static auto getNotes(ref JSONValue notes, const string nickname)
 }
 
 
-static void clearNotes(ref JSONValue notes, const string nickname)
+static void clearNotes(const string nickname)
 {
     if (auto arr = nickname in notes)
     {
@@ -240,7 +240,7 @@ static void clearNotes(ref JSONValue notes, const string nickname)
 }
 
 
-static void addNote(ref JSONValue notes, const string nickname,
+static void addNote(const string nickname,
                     const string sender, const string line)
 {
     import std.datetime : Clock;
