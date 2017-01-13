@@ -230,7 +230,7 @@ void initPlugins(IrcBot bot, Tid tid)
 /// Main!
 int main(string[] args)
 {
-    if (!handleArguments(args)) return 0;
+    if (handleArguments(args) == Quit.yes) return 0;
 
     // Print the current settings to show what's going on.
     printObject(bot);
