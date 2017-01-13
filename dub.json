@@ -1,15 +1,25 @@
 {
     "name": "kameloso",
+    "description": "IRC bot",
     "authors": [
         "JR"
     ],
-    "description": "IRC bot",
     "copyright": "Copyright © 2016, JR",
     "license": "LGPL-2.1",
     "dependencies": {
         "requests": "~>0.4.0"
     },
-    "targetType": "executable",
+    "configurations": [
+        {
+            "name": "kameloso",
+            "targetType": "executable"
+        },
+        {
+            "name": "kameloso-mt",
+            "targetType": "executable",
+            "versions": [ "Multithreaded" ]
+        }
+    ],
     "debugMode": true,
     "debugInfo": true,
     "debugInfoC": true,
