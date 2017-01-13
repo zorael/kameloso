@@ -10,6 +10,14 @@ import std.stdio : writeln, writefln;
 import std.json : JSONValue, parseJSON, JSONException;
 
 
+private:
+
+IrcPluginState state;
+JSONValue quotes;
+
+
+public:
+
 // Chatbot
 /++
  +  Chatbot plugin to provide common chat functionality. Administrative actions have been
@@ -20,9 +28,6 @@ final class Chatbot : IrcPlugin
 private:
     import std.concurrency : Tid, send;
     import std.algorithm : canFind;
-
-    IrcPluginState state;
-    JSONValue quotes;
 
     // onCommand
     /++
@@ -94,7 +99,7 @@ private:
 
                 // stripModeSign to allow for quotes from @nickname and +dudebro
                 const nickname = slice.stripModeSign;
-                const quote = quotes.getQuote(nickname);
+                const quote = nickname.getQuote();
 
                 if (quote.length)
                 {
@@ -114,7 +119,7 @@ private:
 
                 if (!nickname.length || !slice.length) return;
 
-                quotes.addQuote(nickname, slice);
+                nickname.addQuote(slice);
                 Files.quotes.saveQuotes(quotes);
 
                 mainThread.send(ThreadMessage.Sendline(),
@@ -142,10 +147,9 @@ private:
     }
 
 public:
-    this(IrcBot bot, Tid tid)
+    this(IrcPluginState origState)
     {
-        state.bot = bot;
-        state.mainThread = tid;
+        state = origState;
 
         Files.quotes.loadQuotes(quotes);
     }
@@ -221,7 +225,7 @@ public:
  +               is the nickname.
  +      nickname = string nickname of the user to fetch quotes for.
  +/
-static string getQuote(const JSONValue quotes, const string nickname)
+static string getQuote(const string nickname)
 {
     try
     {
@@ -254,7 +258,7 @@ static string getQuote(const JSONValue quotes, const string nickname)
  +      nickname = The string nickname of the quoted user.
  +      line = The quote itself.
  +/
-static void addQuote(ref JSONValue quotes, const string nickname, const string line)
+static void addQuote(const string nickname, const string line)
 {
     import std.format : format;
 
@@ -278,7 +282,7 @@ static void addQuote(ref JSONValue quotes, const string nickname, const string l
         // No quotes at all
         writeln(e);
         quotes = JSONValue("{}");
-        return quotes.addQuote(nickname, line);
+        return nickname.addQuote(nickname);
     }
 }
 
