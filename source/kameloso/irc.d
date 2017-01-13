@@ -847,7 +847,6 @@ struct IrcEvent
         import std.conv   : to;
         import std.format : formattedWrite;
 
-        sink.reserve(512);
         sink.formattedWrite("[%s] %s", type.to!string, sender);
 
         if (target.length)  sink.formattedWrite(" (%s)",  target);
