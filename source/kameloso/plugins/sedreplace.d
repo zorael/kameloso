@@ -1,5 +1,3 @@
-__EOF__
-
 module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
@@ -9,11 +7,38 @@ import kameloso.constants;
 
 import std.stdio : writeln, writefln;
 import std.regex;
+import std.concurrency;
+import std.datetime;
 
 
 private:
-enum replacePattern = `^s/([^/])+/([^/])+/$`;
-static replaceRegex = ctRegex!replacePattern;
+
+
+enum sedPattern = `s/([^/]+)/([^/]*)(?:/g?)?`;
+static sedRegex = ctRegex!sedPattern;
+
+
+string sedReplace(const string originalLine, const string expression)
+{
+    string result = originalLine;
+
+    foreach (hit; expression.matchAll(sedRegex))
+    {
+        const changeThis = hit[1];
+        const toThis = hit[2];
+        result = result.replaceAll(changeThis.regex, toThis);
+    }
+
+    return result;
+}
+
+
+struct Line
+{
+    string content;
+    SysTime when;
+}
+
 
 public:
 
@@ -22,14 +47,37 @@ final class SedReplacePlugin : IrcPlugin
 {
 private:
     IrcPluginState state;
+    Line[string] prevlines;
 
     void onCommand(const IrcEvent event)
     {
-        writeln("sedreplace onCommand");
-        auto hits = event.content.matchFirst(replaceRegex);
-        if (!hits.length) return;
+        import kameloso.stringutils;
+        import std.format : format;
 
-        writeln(hits);
+        if (!event.content.beginsWith("s/"))
+        {
+            Line line;
+            line.content = event.content;
+            line.when = Clock.currTime;
+            prevlines[event.sender] = line;
+            return;
+        }
+
+        if (auto line = event.sender in prevlines)
+        {
+            writeln(line.content);
+            writeln(event.content);
+
+            if ((Clock.currTime - line.when) > 1.minutes) return;
+
+            string result = line.content.sedReplace(event.content);
+            if ((result == event.content) || !result.length) return;
+
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+
+            prevlines.remove(event.sender);
+        }
     }
 
 public:
