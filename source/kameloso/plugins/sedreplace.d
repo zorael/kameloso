@@ -21,7 +21,7 @@ enum sedPattern = `s/([^/]+)/([^/]*)(?:/g?)?`;
 static sedRegex = ctRegex!sedPattern;
 
 
-string sedReplace(const string originalLine, const string expression)
+static string sedReplace(const string originalLine, const string expression)
 {
     string result = originalLine;
 
