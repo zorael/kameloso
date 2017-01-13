@@ -203,13 +203,24 @@ void initPlugins(IrcPluginState state)
 
     plugins.length = 0;
 
-    plugins ~= new ConnectPlugin!(Multithreaded.yes)(state);
+    version (Multithreaded)
+    {
+        pragma(msg, "Building multithreaded plugins");
+        enum multithreaded = Multithreaded.yes;
+    }
+    else
+    {
+        pragma(msg, "Building singlethreaded plugins");
+        enum multithreaded = Multithreaded.no;
+    }
+
+    plugins ~= new ConnectPlugin!(multithreaded)(state);
     plugins ~= new Pinger(state);
-    plugins ~= new AdminPlugin!(Multithreaded.yes)(state);
-    plugins ~= new Chatbot!(Multithreaded.yes)(state);
+    plugins ~= new AdminPlugin!(multithreaded)(state);
+    plugins ~= new Chatbot!(multithreaded)(state);
     plugins ~= new Webtitles(state);
-    plugins ~= new NotesPlugin!(Multithreaded.yes)(state);
-    plugins ~= new SedReplacePlugin!(Multithreaded.yes)(state);
+    plugins ~= new NotesPlugin!(multithreaded)(state);
+    plugins ~= new SedReplacePlugin!(multithreaded)(state);
 }
 
 
