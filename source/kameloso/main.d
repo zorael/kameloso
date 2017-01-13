@@ -315,6 +315,8 @@ Quit loopGenerator(Generator!string generator)
             case RPL_LUSERME:
             case RPL_MOTDSTART:
             case RPL_ENDOFMOTD:
+            case USERCOUNTGLOBAL:
+            case USERCOUNTLOCAL:
                 // These event types are too spammy; ignore
                 break;
 
