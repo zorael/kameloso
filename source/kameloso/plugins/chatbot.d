@@ -17,6 +17,130 @@ IrcPluginState state;
 JSONValue quotes;
 
 
+// getQuote
+/++
+ +  Fetches a quote for the specified nickname from the JSON list. If none is available it
+ +  returns an empty string instead.
+ +
+ +  Params:
+ +      quotes = A JSON list of quotes, in the form of string[][string] where the first key
+ +               is the nickname.
+ +      nickname = string nickname of the user to fetch quotes for.
+ +/
+static string getQuote(const string nickname)
+{
+    try
+    {
+        if (auto arr = nickname in quotes)
+        {
+            import std.random : uniform;
+
+            return arr.array[uniform(0,(*arr).array.length)].str;
+        }
+        else
+        {
+            // No quotes available for nickname
+            return string.init;
+        }
+    }
+    catch (JSONException e)
+    {
+        return string.init;
+    }
+}
+
+
+// addQuote
+/++
+ +  Adds a quote to the JSON storage. It does not save it to disk; this has to be
+ +  done at the calling site.
+ +
+ +  Params:
+ +      ref quotes = The JSON list of all the quotes, in string[][string] form.
+ +      nickname = The string nickname of the quoted user.
+ +      line = The quote itself.
+ +/
+static void addQuote(const string nickname, const string line)
+{
+    import std.format : format;
+
+    assert((nickname.length && line.length),
+        "%s was passed an empty nickname(%s) or line(%s)"
+        .format(__FUNCTION__, nickname, line));
+
+    try
+    {
+        if (auto arr = nickname in quotes)
+        {
+            quotes[nickname].array ~= JSONValue(line);
+        }
+        else
+        {
+            // No quotes for nickname
+            quotes.object[nickname] = JSONValue([ line ]);
+        }
+    }
+    catch (JSONException e)
+    {
+        // No quotes at all
+        writeln(e);
+        quotes = JSONValue("{}");
+        return nickname.addQuote(nickname);
+    }
+}
+
+
+// saveQuotes
+/++
+ +  Saves JSON quote list to disk, to the supplied filename. This should be done whenever a new
+ +  quote is added to the database.
+ +
+ +  Params:
+ +      filename = The string filename of the JSON storage, usually Files.quotes.
+ +      quotes = The quotes in JSON form. Its .toPrettyString is what gets written.
+ +/
+static void saveQuotes(const string filename, const JSONValue quotes)
+{
+    import std.stdio : File;
+    import std.file  : exists, isFile, remove;
+
+    if (filename.exists && filename.isFile)
+    {
+        remove(filename); // Wise?
+    }
+
+    auto f = File(filename, "a");
+    scope (exit) f.close();
+
+    f.write(quotes.toPrettyString);
+    f.writeln();
+}
+
+
+// loadQuotes
+/// Ditto but loads instead of saves
+static JSONValue loadQuotes(const string filename)
+{
+    import std.stdio  : writefln;
+    import std.file   : exists, isFile, readText;
+    import std.string : chomp;
+
+    if (!filename.exists)
+    {
+        writefln("%s does not exist", filename);
+        return JSONValue("{}");
+    }
+    else if (!filename.isFile)
+    {
+        writefln("%s is not a file", filename);
+        return JSONValue("{}");
+    }
+
+    auto wholeFile = filename.readText.chomp;
+    return parseJSON(wholeFile);
+}
+
+
 // onCommand
 /++
     +  React to a command from an IRC user. At this point it is known to be aimed toward
@@ -123,7 +247,7 @@ void onCommand(const IrcEvent event)
         case "reloadquotes":
             // Reload quotes from disk (in case they were manually changed)
             writeln("Reloading quotes");
-            Files.quotes.loadQuotes(quotes);
+            quotes = loadQuotes(Files.quotes);
             break;
 
         default:
@@ -181,45 +305,21 @@ void onEvent(const IrcEvent event)
 }
 
 
+void initQuotes()
+{
+    writeln("Initialising quotess ...");
+    quotes = loadQuotes(Files.quotes);
+}
+
+
 void chatbotWorker(shared IrcPluginState origState)
 {
-    bool halt;
     state = cast(IrcPluginState)origState;
 
-    while (!halt)
-    {
-        receive(
-            (shared IrcEvent event)
-            {
-                return event.onEvent();
-            },
-            (shared IrcBot bot)
-            {
-                state.bot = cast(IrcBot)bot;
-            },
-            (ThreadMessage.Status)
-            {
-                writeln("---------------------- ", __MODULE__);
-                printObject(state);
-            },
-            (ThreadMessage.Teardown)
-            {
-                writeln("chatbot worker saw Teardown");
-                halt = true;
-            },
-            (OwnerTerminated e)
-            {
-                writeln("chatbot worker saw OwnerTerminated");
-                halt = true;
-            },
-            (Variant v)
-            {
-                writeln("chatbot worker received Variant");
-                writeln(v);
-            }
-        );
-    }
+    mixin ircPluginWorkerReceiveLoop!state receiveLoop;
+    receiveLoop.exec();
 }
+
 
 public:
 
@@ -230,193 +330,5 @@ public:
  +/
 final class Chatbot(Multithreaded multithreaded) : IrcPlugin
 {
-private:
-    static if (multithreaded)
-    {
-        Tid worker;
-    }
-
-public:
-    void onEvent(const IrcEvent event)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)event);
-        }
-        else
-        {
-            return event.onEvent();
-        }
-    }
-
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (multithreaded)
-        {
-            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
-            writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&chatbotWorker, cast(shared)state);
-        }
-    }
-
-    void newBot(IrcBot bot)
-    {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)bot);
-        }
-        else
-        {
-            state.bot = bot;
-        }
-    }
-
-    void status()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Status());
-        }
-        else
-        {
-            writeln("---------------------- ", typeof(this).stringof);
-            printObject(state);
-        }
-    }
-
-
-    void teardown()
-    {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Teardown());
-        }
-    }
-}
-
-
-// getQuote
-/++
- +  Fetches a quote for the specified nickname from the JSON list. If none is available it
- +  returns an empty string instead.
- +
- +  Params:
- +      quotes = A JSON list of quotes, in the form of string[][string] where the first key
- +               is the nickname.
- +      nickname = string nickname of the user to fetch quotes for.
- +/
-static string getQuote(const string nickname)
-{
-    try
-    {
-        if (auto arr = nickname in quotes)
-        {
-            import std.random : uniform;
-
-            return arr.array[uniform(0,(*arr).array.length)].str;
-        }
-        else
-        {
-            // No quotes available for nickname
-            return string.init;
-        }
-    }
-    catch (JSONException e)
-    {
-        return string.init;
-    }
-}
-
-
-// addQuote
-/++
- +  Adds a quote to the JSON storage. It does not save it to disk; this has to be
- +  done at the calling site.
- +
- +  Params:
- +      ref quotes = The JSON list of all the quotes, in string[][string] form.
- +      nickname = The string nickname of the quoted user.
- +      line = The quote itself.
- +/
-static void addQuote(const string nickname, const string line)
-{
-    import std.format : format;
-
-    assert((nickname.length && line.length),
-        "%s was passed an empty nickname(%s) or line(%s)".format(__FUNCTION__, nickname, line));
-
-    try
-    {
-        if (auto arr = nickname in quotes)
-        {
-            quotes[nickname].array ~= JSONValue(line);
-        }
-        else
-        {
-            // No quotes for nickname
-            quotes.object[nickname] = JSONValue([ line ]);
-        }
-    }
-    catch (JSONException e)
-    {
-        // No quotes at all
-        writeln(e);
-        quotes = JSONValue("{}");
-        return nickname.addQuote(nickname);
-    }
-}
-
-
-// saveQuotes
-/++
- +  Saves JSON quote list to disk, to the supplied filename. This should be done whenever a new
- +  quote is added to the database.
- +
- +  Params:
- +      filename = The string filename of the JSON storage, usually Files.quotes.
- +      quotes = The quotes in JSON form. Its .toPrettyString is what gets written.
- +/
-static void saveQuotes(const string filename, const JSONValue quotes)
-{
-    import std.stdio : File;
-    import std.file  : exists, isFile, remove;
-
-    if (filename.exists && filename.isFile)
-    {
-        remove(filename); // Wise?
-    }
-
-    auto f = File(filename, "a");
-    scope (exit) f.close();
-
-    f.write(quotes.toPrettyString);
-    f.writeln();
-}
-
-
-// loadQuotes
-/// Ditto but loads instead of saves
-static void loadQuotes(const string filename, ref JSONValue quotes)
-{
-    import std.stdio  : writefln;
-    import std.file   : exists, isFile, readText;
-    import std.string : chomp;
-
-    if (!filename.exists)
-    {
-        writefln("%s does not exist", filename);
-        quotes = parseJSON("{}");
-        filename.saveQuotes(quotes);
-        return;
-    }
-    else if (!filename.isFile)
-    {
-        writefln("%s is not a file", filename);
-        return;
-    }
-
-    auto wholeFile = filename.readText.chomp;
-    quotes = parseJSON(wholeFile);
+    mixin IrcPluginBasics!chatbotWorker;
 }
