@@ -287,7 +287,7 @@ public:
  +  A plugin aimed for adḿinistrative use. It was historically part of Chatbot but now lives
  +  by itself, sadly with much code between them duplicated. FIXME.
  +/
-final class AdminPlugin(Multithreaded multithreaded = Multithreaded.no) : IrcPlugin
+final class AdminPlugin(Multithreaded multithreaded) : IrcPlugin
 {
 private:
     static if (multithreaded)
@@ -316,7 +316,7 @@ public:
         {
             pragma(msg, "Building a multithreaded ", typeof(this).stringof);
             writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&sedReplaceWorker, cast(shared)state);
+            worker = spawn(&adminPluginWorker, cast(shared)state);
         }
     }
 

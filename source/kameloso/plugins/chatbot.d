@@ -8,7 +8,7 @@ import kameloso.common;
 
 import std.stdio : writeln, writefln;
 import std.json : JSONValue, parseJSON, JSONException;
-import std.concurrency : send;
+import std.concurrency;
 
 
 private:
@@ -181,6 +181,46 @@ void onEvent(const IrcEvent event)
 }
 
 
+void chatbotWorker(shared IrcPluginState origState)
+{
+    bool halt;
+    state = cast(IrcPluginState)origState;
+
+    while (!halt)
+    {
+        receive(
+            (shared IrcEvent event)
+            {
+                return event.onEvent();
+            },
+            (shared IrcBot bot)
+            {
+                state.bot = cast(IrcBot)bot;
+            },
+            (ThreadMessage.Status)
+            {
+                writeln("---------------------- ", __MODULE__);
+                printObject(state);
+            },
+            (ThreadMessage.Teardown)
+            {
+                writeln("chatbot worker saw Teardown");
+                halt = true;
+            },
+            (OwnerTerminated e)
+            {
+                writeln("chatbot worker saw OwnerTerminated");
+                halt = true;
+            },
+            (Variant v)
+            {
+                writeln("chatbot worker received Variant");
+                writeln(v);
+            }
+        );
+    }
+}
+
 public:
 
 // Chatbot
@@ -188,34 +228,72 @@ public:
  +  Chatbot plugin to provide common chat functionality. Administrative actions have been
  +  broken out into a plugin of its own.
  +/
-final class Chatbot : IrcPlugin
+final class Chatbot(Multithreaded multithreaded) : IrcPlugin
 {
+private:
+    static if (multithreaded)
+    {
+        Tid worker;
+    }
+
 public:
+    void onEvent(const IrcEvent event)
+    {
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)event);
+        }
+        else
+        {
+            return event.onEvent();
+        }
+    }
+
     this(IrcPluginState origState)
     {
         state = origState;
 
-        Files.quotes.loadQuotes(quotes);
-    }
-
-    void onEvent(const IrcEvent event)
-    {
-        return event.onEvent();
-    }
-
-    void status()
-    {
-        writefln("---------------------- %s", typeof(this).stringof);
-        printObject(state);
+        static if (multithreaded)
+        {
+            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
+            writeln(typeof(this).stringof, " runs in a separate thread.");
+            worker = spawn(&chatbotWorker, cast(shared)state);
+        }
     }
 
     void newBot(IrcBot bot)
     {
-        state.bot = bot;
+        static if (multithreaded)
+        {
+            worker.send(cast(shared)bot);
+        }
+        else
+        {
+            state.bot = bot;
+        }
     }
 
-    /// No teardown neccessary for Chatbot
-    void teardown() {}
+    void status()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Status());
+        }
+        else
+        {
+            writeln("---------------------- ", typeof(this).stringof);
+            printObject(state);
+        }
+    }
+
+
+    void teardown()
+    {
+        static if (multithreaded)
+        {
+            worker.send(ThreadMessage.Teardown());
+        }
+    }
 }
 
 

@@ -203,12 +203,12 @@ void initPlugins(IrcPluginState state)
 
     plugins.length = 0;
 
-    plugins ~= new ConnectPlugin(state);
+    plugins ~= new ConnectPlugin!(Multithreaded.yes)(state);
     plugins ~= new Pinger(state);
-    plugins ~= new AdminPlugin!(Multithreaded.no)(state);
-    plugins ~= new Chatbot(state);
+    plugins ~= new AdminPlugin!(Multithreaded.yes)(state);
+    plugins ~= new Chatbot!(Multithreaded.yes)(state);
     plugins ~= new Webtitles(state);
-    plugins ~= new NotesPlugin(state);
+    plugins ~= new NotesPlugin!(Multithreaded.yes)(state);
     plugins ~= new SedReplacePlugin!(Multithreaded.yes)(state);
 }
 

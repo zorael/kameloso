@@ -158,7 +158,7 @@ void onCommand(const IrcEvent event)
 public:
 
 
-final class SedReplacePlugin(Multithreaded multithreaded = Multithreaded.no) : IrcPlugin
+final class SedReplacePlugin(Multithreaded multithreaded) : IrcPlugin
 {
 private:
     static if (multithreaded)
@@ -167,18 +167,6 @@ private:
     }
 
 public:
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (multithreaded)
-        {
-            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
-            writeln(typeof(this).stringof, " runs in a separate thread.");
-            worker = spawn(&sedReplaceWorker, cast(shared)state);
-        }
-    }
-
     void onEvent(const IrcEvent event)
     {
         static if (multithreaded)
@@ -191,6 +179,17 @@ public:
         }
     }
 
+    this(IrcPluginState origState)
+    {
+        state = origState;
+
+        static if (multithreaded)
+        {
+            pragma(msg, "Building a multithreaded ", typeof(this).stringof);
+            writeln(typeof(this).stringof, " runs in a separate thread.");
+            worker = spawn(&sedReplaceWorker, cast(shared)state);
+        }
+    }
 
     void newBot(IrcBot bot)
     {
