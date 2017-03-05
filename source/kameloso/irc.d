@@ -27,15 +27,12 @@ IrcBot bot;
  +  Returns:
  +      A finished IrcEvent.
  +/
-IrcEvent parseBasic(const char[] raw)
+IrcEvent parseBasic(IrcEvent event, const char[] raw)
 {
     mixin(scopeguard(failure));
 
-    IrcEvent event;
-    event.raw = raw.idup;
     string slice;
     event.raw.formattedRead("%s :%s", &event.typestring, &slice);
-
 
     switch (event.typestring)
     {
@@ -873,10 +870,11 @@ static IrcEvent toIrcEvent(const char[] raw)
 {
     import std.exception : enforce;
 
-    if (raw[0] != ':') return parseBasic(raw);
-
     IrcEvent event;
     event.raw = raw.idup;
+
+    if (raw[0] != ':') return event.parseBasic(raw);
+
     auto slice = event.raw[1..$]; // advance past first colon
 
     // First pass: prefixes. This is the sender
