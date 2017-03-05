@@ -108,7 +108,7 @@ string streamUntil(Stream_, Regex, Sink)
             //writefln("Found title mid-stream after %s bytes", rq.contentReceived);
             //writefln("Appender size is %d", app.data.length);
             //writefln("capacity is %d", app.capacity);
-            return hits[1].idup;
+            return hits[1];
         }
 
         stream.popFront();
@@ -162,7 +162,7 @@ TitleLookup lookupTitle(string url)
         if (titleHits.length)
         {
             writeln("Found title in complete data (it was split)");
-            lookup.title = titleHits[1].idup;
+            lookup.title = titleHits[1];
         }
         else
         {
