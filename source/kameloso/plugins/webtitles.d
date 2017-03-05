@@ -124,7 +124,8 @@ TitleLookup lookupTitle(string url)
 {
     import kameloso.stringutils : beginsWith;
     import requests;
-    import std.array : Appender;
+    import std.array  : Appender, arrayReplace = replace;
+    import std.string : removechars;
 
     TitleLookup lookup;
     Appender!string app;
@@ -169,6 +170,8 @@ TitleLookup lookupTitle(string url)
             writeln("No title...");
         }
     }
+
+    lookup.title = lookup.title.removechars("\r").arrayReplace("\n", " ");
 
     auto domainHits = url.matchFirst(domainRegex);
 
