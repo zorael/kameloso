@@ -75,7 +75,7 @@ void parsePrefix(ref IrcEvent event, ref string slice)
     {
         // user!~ident@address
         prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
-        event.special = (event.address == "services.");
+        special = (address == "services.");
     }
     else
     {
