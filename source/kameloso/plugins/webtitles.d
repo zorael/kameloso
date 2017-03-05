@@ -93,7 +93,7 @@ void onEvent(const IrcEvent event)
 }
 
 
-static string streamUntil(Stream_, Regex, Sink)
+string streamUntil(Stream_, Regex, Sink)
     (ref Stream_ stream, Regex engine, ref Sink sink)
 {
     while (!stream.empty)
@@ -120,7 +120,7 @@ static string streamUntil(Stream_, Regex, Sink)
 }
 
 
-static TitleLookup lookupTitle(string url)
+TitleLookup lookupTitle(string url)
 {
     import kameloso.stringutils : beginsWith;
     import requests;
