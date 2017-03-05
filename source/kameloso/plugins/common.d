@@ -184,7 +184,6 @@ public:
 
         static if (multithreaded)
         {
-            writeln(typeof(this).stringof, " runs in a separate thread.");
             worker = spawn(&workerFunction, cast(shared)state);
         }
     }
@@ -228,7 +227,6 @@ template ircPluginWorkerReceiveLoop(alias state, string id = __MODULE__)
 {
     void exec()
     {
-        mixin(scopeguard(entry));
         import std.concurrency;
 
         bool halt;
@@ -251,12 +249,10 @@ template ircPluginWorkerReceiveLoop(alias state, string id = __MODULE__)
                 },
                 (ThreadMessage.Teardown)
                 {
-                    writeln(id, " worker saw Teardown");
                     halt = true;
                 },
                 (OwnerTerminated e)
                 {
-                    writeln(id, " worker saw OwnerTerminated");
                     halt = true;
                 },
                 (Variant v)
