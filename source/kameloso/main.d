@@ -337,8 +337,21 @@ Quit loopGenerator(Generator!string generator)
                 break;
 
             default:
-                // TODO: add timestamps
-                writeln(event);
+                import std.datetime;
+                import std.array  : Appender;
+                import std.format : formattedWrite;
+
+                Appender!string app;
+                app.reserve(768);
+
+                //const datetime = cast(DateTime)Clock.currTime;
+                const datetime = cast(DateTime)SysTime.fromUnixTime(event.time);
+                const timestamp = datetime.timeOfDay;
+
+                app.formattedWrite("[%s] ", timestamp);
+                event.put(app);
+
+                writeln(app.data);
             }
 
             bool spammedAboutReplaying;

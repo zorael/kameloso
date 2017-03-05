@@ -825,7 +825,7 @@ struct IrcEvent
     string typestring, channel, target, content, aux;
     uint num;
     bool special;
-
+    long time;
 
     /// toString here simply creates an Appender and fills it using put
     string toString() const
@@ -869,8 +869,11 @@ struct IrcEvent
 static IrcEvent toIrcEvent(const char[] raw)
 {
     import std.exception : enforce;
+    import std.datetime;
 
     IrcEvent event;
+
+    event.time = Clock.currTime.toUnixTime;
     event.raw = raw.idup;
 
     if (raw[0] != ':') return event.parseBasic(raw);
