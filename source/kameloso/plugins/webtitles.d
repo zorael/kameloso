@@ -125,7 +125,7 @@ TitleLookup lookupTitle(string url)
     import kameloso.stringutils : beginsWith;
     import requests;
     import std.array  : Appender, arrayReplace = replace;
-    import std.string : removechars;
+    import std.string : removechars, strip;
 
     TitleLookup lookup;
     Appender!string app;
