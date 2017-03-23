@@ -171,7 +171,10 @@ TitleLookup lookupTitle(string url)
         }
     }
 
-    lookup.title = lookup.title.removechars("\r").arrayReplace("\n", " ");
+    lookup.title = lookup.title
+        .removechars("\r")
+        .arrayReplace("\n", " ")
+        .strip;
 
     auto domainHits = url.matchFirst(domainRegex);
 
