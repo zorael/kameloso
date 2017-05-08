@@ -214,44 +214,6 @@ mixin template IrcPluginBasics()
     }
 }
 
-version(none)
-mixin template IrcPluginBasics(alias initFunction = null)
-{
-    void onEvent(const IrcEvent event)
-    {
-        //return event.onEvent();
-        return .onEvent(event);
-    }
-
-    this(IrcPluginState origState)
-    {
-        state = origState;
-
-        static if (__traits(compiles, initFunction()))
-        {
-            pragma(msg, "initFunction " ~ initFunction.stringof ~ " is non-null");
-            initFunction();
-        }
-
-        initialise();
-    }
-
-    void initialise() {}
-
-    void newBot(IrcBot bot)
-    {
-        state.bot = bot;
-    }
-
-    void status()
-    {
-        writeln("----[ ", typeof(this).stringof);
-        printObject(state);
-    }
-
-    void teardown() {}
-}
-
 
 mixin template onEventImpl(string module_, bool debug_ = false)
 {
