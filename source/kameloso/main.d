@@ -200,19 +200,20 @@ void initPlugins(IrcBot bot, Tid tid)
 {
     foreach (plugin; plugins) plugin.teardown();
 
-    plugins.length = 0;
-
     IrcPluginState state;
     state.bot = bot;
     state.mainThread = tid;
 
-    plugins ~= new ConnectPlugin2(state);
-    plugins ~= new Pinger2(state);
-    plugins ~= new AdminPlugin2(state);
-    plugins ~= new NotesPlugin2(state);
-    plugins ~= new Chatbot2(state);
-    plugins ~= new Webtitles2(state);
-    plugins ~= new SedReplacePlugin2(state);
+    plugins = cast(IrcPlugin[])
+    [
+        new ConnectPlugin(state),
+        new Pinger(state),
+        new AdminPlugin(state),
+        new NotesPlugin(state),
+        new Chatbot(state),
+        new Webtitles(state),
+        new SedReplacePlugin(state)
+    ];
 }
 
 
