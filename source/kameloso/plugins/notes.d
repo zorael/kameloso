@@ -1,4 +1,4 @@
-module kameloso.plugins.notes2;
+module kameloso.plugins.notes;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -299,9 +299,9 @@ mixin onEventImpl!__MODULE__;
 
 public:
 
-final class NotesPlugin2 : IrcPlugin
+final class NotesPlugin : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 
     void initialise()
     {

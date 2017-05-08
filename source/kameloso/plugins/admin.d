@@ -1,4 +1,4 @@
-module kameloso.plugins.admin2;
+module kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -301,7 +301,7 @@ public:
  +  A plugin aimed for adḿinistrative use. It was historically part of Chatbot but now lives
  +  by itself, sadly with much code between them duplicated. FIXME.
  +/
-final class AdminPlugin2 : IrcPlugin
+final class AdminPlugin : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 }

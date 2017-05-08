@@ -177,7 +177,7 @@ FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
 }
 
 
-mixin template IrcPluginBasics2()
+mixin template IrcPluginBasics()
 {
     void onEvent(const IrcEvent event)
     {

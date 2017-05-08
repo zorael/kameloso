@@ -1,4 +1,4 @@
-module kameloso.plugins.sedreplace2;
+module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -136,7 +136,7 @@ mixin onEventImpl!__MODULE__;
 
 public:
 
-final class SedReplacePlugin2 : IrcPlugin
+final class SedReplacePlugin : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 }

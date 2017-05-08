@@ -1,4 +1,4 @@
-module kameloso.plugins.pinger2;
+module kameloso.plugins.pinger;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -68,9 +68,9 @@ public:
  +  The Pinger plugin simply sends a PING once every Timeout.ping.seconds. This is to workaround
  +  freenode's new behaviour of not actively PINGing clients, but rather waiting to PONG.
  +/
-final class Pinger2 : IrcPlugin
+final class Pinger : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 
     void initialise()
     {

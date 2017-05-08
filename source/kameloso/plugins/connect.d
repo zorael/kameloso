@@ -1,4 +1,4 @@
-module kameloso.plugins.connect2;
+module kameloso.plugins.connect;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -241,7 +241,7 @@ public:
  +  a matter of sending USER and NICK at the starting "handshake", but also incorporates
  +  logic to authenticate with NickServ.
  +/
-final class ConnectPlugin2 : IrcPlugin
+final class ConnectPlugin : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 }

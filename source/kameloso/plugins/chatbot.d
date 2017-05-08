@@ -1,4 +1,4 @@
-module kameloso.plugins.chatbot2;
+module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -317,9 +317,9 @@ public:
  +  Chatbot plugin to provide common chat functionality. Administrative actions have been
  +  broken out into a plugin of its own.
  +/
-final class Chatbot2 : IrcPlugin
+final class Chatbot : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 
     void initialise()
     {

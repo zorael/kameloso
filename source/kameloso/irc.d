@@ -3,7 +3,7 @@ module kameloso.irc;
 import kameloso.constants;
 import kameloso.common;
 import kameloso.stringutils;
-import kameloso.plugins.connect2;
+import kameloso.plugins.connect;
 
 import std.stdio  : writeln, writefln;
 import std.format : format, formattedRead;

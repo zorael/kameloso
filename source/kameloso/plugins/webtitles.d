@@ -1,4 +1,4 @@
-module kameloso.plugins.webtitles2;
+module kameloso.plugins.webtitles;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -277,9 +277,9 @@ mixin onEventImpl!__MODULE__;
 
 public:
 
-final class Webtitles2 : IrcPlugin
+final class Webtitles : IrcPlugin
 {
-    mixin IrcPluginBasics2;
+    mixin IrcPluginBasics;
 
     void initialise()
     {
