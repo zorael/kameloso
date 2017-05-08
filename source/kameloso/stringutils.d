@@ -9,6 +9,7 @@ import std.typecons : Flag;
  +  as template parameter options.
  +/
 alias Decode = Flag!"decode";
+alias Advance = Flag!"advance";
 
 
 // nom
@@ -24,7 +25,8 @@ alias Decode = Flag!"decode";
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-static string nom(Decode decode = Decode.no,T,C)(ref T[] arr, C separator)
+static string nom(Decode decode = Decode.no,Advance advance = Advance.yes,T,C)
+        (ref T[] arr, C separator)
 {
     import std.stdio : writefln;
 
@@ -57,7 +59,10 @@ static string nom(Decode decode = Decode.no,T,C)(ref T[] arr, C separator)
         enum separatorLength = 1;
     }
 
-    scope(exit) arr = arr[(index+separatorLength)..$];
+    static if (advance)
+    {
+        scope(exit) arr = arr[(index+separatorLength)..$];
+    }
 
     return arr[0..index];
 }
@@ -210,4 +215,31 @@ unittest
 {
     assert("foo,bar,baz".arrayify     == [ "foo", "bar", "baz" ]);
     assert("foo|bar|baz".arrayify!"|" == [ "foo", "bar", "baz" ]);
+}
+
+
+
+string stripPrefix(bool checkIfBeginsWith = true)(const string line, const string prefix)
+{
+    import std.string : stripLeft, munch;
+
+    // writefln("stripBotPrefix: '%s'", line);
+
+    string slice = line.stripLeft();
+
+    static if (checkIfBeginsWith)
+    {
+        if (!slice.beginsWith(prefix))
+        {
+            //import std.stdio : writefln;
+            //writefln("[stripPrefix] did not begin with prefix (%s)", prefix);
+            return line;
+        }
+    }
+
+    slice = slice[(prefix.length+1)..$];
+    // writefln("step 1: '%s'", slice);
+    slice.munch(":?! ");
+    // writefln("step 2: '%s'", slice);
+    return slice;
 }

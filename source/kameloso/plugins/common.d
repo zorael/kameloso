@@ -27,6 +27,8 @@ interface IrcPlugin
 
 struct IrcPluginState
 {
+    import std.concurrency : Tid;
+
     IrcBot bot;
     Tid mainThread;
     IrcUser[string] users;
@@ -36,11 +38,26 @@ struct IrcPluginState
 
 alias RequirePrefix = Flag!"requirePrefix";
 
-alias Multithreaded = Flag!"multithreaded";
-
 
 enum FilterResult { fail, pass, whois }
+enum NickPrefixPolicy { ignored, allowed, required }
+enum PrivilegeLevel { anyone, friend, master }
 
+struct Chainable {}
+
+
+struct Prefix
+{
+    NickPrefixPolicy nickPrefixPolicy;
+    string string_;
+}
+
+
+struct Description
+{
+    string name;
+    string desc;
+}
 
 // doWhois
 /++
@@ -83,6 +100,15 @@ void onBasicEvent(ref IrcPluginState state, const IrcEvent event)
     case PART:
     case QUIT:
         users.remove(event.sender);
+        break;
+
+    case SELFNICK:
+        if (bot.nickname == event.content)
+        {
+            writefln("%s saw SELFNICK but already had that nick...", __MODULE__);
+        }
+
+        bot.nickname = event.content;
         break;
 
     default:
@@ -151,116 +177,292 @@ FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
 }
 
 
-template IrcPluginBasics(alias workerFunction, alias initFunction = null)
-if (isSomeFunction!workerFunction)
+mixin template IrcPluginBasics2()
 {
-    private:
-    static if (multithreaded)
-    {
-        Tid worker;
-    }
-
-public:
     void onEvent(const IrcEvent event)
     {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)event);
-        }
-        else
-        {
-            return event.onEvent();
-        }
+        //return event.onEvent();
+        return .onEvent(event);
     }
 
     this(IrcPluginState origState)
     {
         state = origState;
 
-        static if (!multithreaded && __traits(compiles, initFunction()))
+        static if (__traits(compiles, this.initialise()))
         {
-            initFunction();
-        }
-
-        static if (multithreaded)
-        {
-            worker = spawn(&workerFunction, cast(shared)state);
+            this.initialise();
         }
     }
 
     void newBot(IrcBot bot)
     {
-        static if (multithreaded)
-        {
-            worker.send(cast(shared)bot);
-        }
-        else
-        {
-            state.bot = bot;
-        }
+        state.bot = bot;
     }
 
     void status()
     {
-        static if (multithreaded)
-        {
-            worker.send(ThreadMessage.Status());
-        }
-        else
-        {
-            writeln("---------------------- ", typeof(this).stringof);
-            printObject(state);
-        }
+        writeln("----[ ", typeof(this).stringof);
+        printObject(state);
     }
 
-    void teardown()
-    {
-        static if (multithreaded)
+    void teardown() {
+        static if (__traits(compiles, .teardown()))
         {
-            worker.send(ThreadMessage.Teardown());
+            .teardown();
         }
     }
 }
 
-
-template ircPluginWorkerReceiveLoop(alias state, string id = __MODULE__)
+version(none)
+mixin template IrcPluginBasics(alias initFunction = null)
 {
-    void exec()
+    void onEvent(const IrcEvent event)
     {
-        import std.concurrency;
+        //return event.onEvent();
+        return .onEvent(event);
+    }
 
-        bool halt;
+    this(IrcPluginState origState)
+    {
+        state = origState;
 
-        while (!halt)
+        static if (__traits(compiles, initFunction()))
         {
-            receive(
-                (shared IrcEvent event)
+            pragma(msg, "initFunction " ~ initFunction.stringof ~ " is non-null");
+            initFunction();
+        }
+
+        initialise();
+    }
+
+    void initialise() {}
+
+    void newBot(IrcBot bot)
+    {
+        state.bot = bot;
+    }
+
+    void status()
+    {
+        writeln("----[ ", typeof(this).stringof);
+        printObject(state);
+    }
+
+    void teardown() {}
+}
+
+
+mixin template onEventImpl(string module_, bool debug_ = false)
+{
+    void onEvent(const IrcEvent event)
+    {
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import kameloso.stringutils;
+        import std.traits; // : getSymbolsByUDA, hasUDA, getUDAs, isSomeFunction, Unqual;
+        import std.string : indexOf, toLower;
+
+        foreach (fun; getSymbolsByUDA!(thisModule, IrcEvent.Type))
+        {
+            static if (isSomeFunction!fun)
+            {
+                foreach (eventTypeUDA; getUDAs!(fun, IrcEvent.Type))
                 {
-                    return event.onEvent();
-                },
-                (shared IrcBot bot)
-                {
-                    state.bot = cast(IrcBot)bot;
-                },
-                (ThreadMessage.Status)
-                {
-                    writeln("---------------------- ", id);
-                    printObject(state);
-                },
-                (ThreadMessage.Teardown)
-                {
-                    halt = true;
-                },
-                (OwnerTerminated e)
-                {
-                    halt = true;
-                },
-                (Variant v)
-                {
-                    writeln(id, " worker received Variant");
-                    writeln(v);
+                    if (eventTypeUDA != event.type) continue;
+
+                    static if (eventTypeUDA == IrcEvent.Type.CHAN)
+                    {
+                        import std.algorithm : canFind;
+
+                        if (!state.bot.channels.canFind(event.channel))
+                        {
+                            writeln("ignore invalid channel ", event.channel);
+                            //continue;
+                            return;
+                        }
+                    }
+
+                    IrcEvent mutEvent = event;  // mutable
+                    string contextPrefix;
+
+                    version(none)
+                    static if (hasUDA!(fun, Description))
+                    {
+                        import std.format : format;
+
+                        enum name2 = module_ ~ "." ~ getUDAs!(fun, Description)[0].name;
+                        //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
+                        writefln("[%s] considered...", name2);
+                    }
+
+                    static if (hasUDA!(fun, Prefix))
+                    {
+                        bool matches;
+
+                        foreach (configuredPrefix; getUDAs!(fun, Prefix))
+                        {
+                            //if (skip) break;
+                            if (matches)
+                            {
+                                writeln("MATCH! breaking");
+                                break;
+                            }
+
+                            //writeln(configuredPrefix);
+                            contextPrefix = string.init;
+
+                            with (NickPrefixPolicy)
+                            final switch (configuredPrefix.nickPrefixPolicy)
+                            {
+                            case ignored:
+                                break;
+
+                            case allowed:
+                                mutEvent.content = event.content.stripPrefix!true(state.bot.nickname);
+                                break;
+
+                            case required:
+                                if (event.type == IrcEvent.Type.QUERY)
+                                {
+                                    //writeln("but it is a query, consider allowed");
+                                    goto case allowed;
+                                }
+
+                                if (!event.content.beginsWith(state.bot.nickname))
+                                {
+                                    // writefln("[required] did not start with bot nickname (%s)", state.bot.nickname);
+                                    // skip = true;
+                                    // matches = false;
+                                    // break will break the switch
+                                    continue;
+                                }
+
+                                mutEvent.content = event.content.stripPrefix!false(state.bot.nickname);
+                                break;
+                            }
+
+                            static if (configuredPrefix.string_.length)
+                            {
+                                // case-sensitive check goes here
+                                enum configuredPrefixLowercase = configuredPrefix.string_.toLower();
+                                //string thisPrefix;
+
+                                if (mutEvent.content.indexOf(" ") == -1)
+                                {
+                                    // single word, not a prefix
+                                    contextPrefix = mutEvent.content;
+                                    mutEvent.content = string.init;
+                                }
+                                else
+                                {
+                                    contextPrefix = mutEvent.content.nom!(Decode.yes)(" ").toLower();
+                                }
+
+                                /*writefln("'%s' == '%s': %s", contextPrefix, configuredPrefixLowercase,
+                                    (contextPrefix == configuredPrefixLowercase));*/
+
+                                matches = (contextPrefix == configuredPrefixLowercase);
+                                continue;
+                            }
+                            else
+                            {
+                                // Passed nick prefix tests
+                                // No real prefix configured
+                                // what the hell is this?
+                                writeln("CONFUSED but setting matches to true...");
+                                matches = true;
+                                break;
+                            }
+                        }
+
+                        // We can't label the innermost foreach! So we have to runtime-skip here...
+                        // if (skip) continue;
+                        if (!matches) continue;
+                    }
+
+                    static if (hasUDA!(fun, PrivilegeLevel))
+                    {
+                        immutable privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+                        //enum udaType = Unqual!(typeof(privilegeLevel)).stringof;
+                        //writeln(udaType, ".", privilegeLevel);
+
+                        with (PrivilegeLevel)
+                        //final switch (getUDAs!(fun, PrivilegeLevel)[0])
+                        final switch (privilegeLevel)
+                        {
+                        case friend:
+                        case master:
+                            immutable result = state.filterUser(event);
+                            //enum resultType = Unqual!(typeof(result)).stringof;
+                            //writeln(resultType, ".", result);
+
+                            with (FilterResult)
+                            final switch (result)
+                            {
+                            case pass:
+                                if ((privilegeLevel == master) &&
+                                    (state.users[event.sender].login != state.bot.master))
+                                {
+                                    writeln("privilege pass but it isn't master, continue");
+                                    // no need to skip
+                                    continue;
+                                }
+                                break;
+
+                            case whois:
+                                return state.doWhois(event);
+
+                            case fail:
+                                writefln("privilege check failed (%s)", event.sender);
+                                // no need to skip
+                                continue;
+                            }
+                            break;
+
+                        case anyone:
+                            break;
+                        }
+                    }
+
+                    version(none)
+                    static if (hasUDA!(fun, Description))
+                    {
+                        import std.format : format;
+
+                        enum name = module_ ~ "." ~ getUDAs!(fun, Description)[0].name;
+                        //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
+                        writefln("[%s] triggered!", name);
+                    }
+
+                    import std.meta   : AliasSeq;
+                    import std.traits : Parameters;
+
+                    static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
+                    {
+                        writeln("context prefix: '", contextPrefix, "'");
+                        fun(contextPrefix, mutEvent);
+                    }
+                    else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
+                    {
+                        fun(mutEvent);
+                    }
+                    else static if (!Parameters!fun.length)
+                    {
+                        fun();
+                    }
+                    else
+                    {
+                        static assert(false, "Unknown function signature: " ~ typeof(fun).stringof);
+                    }
+
+                    static if (hasUDA!(fun, Chainable)) continue;
+                    else
+                    {
+                        return;
+                    }
                 }
-            );
+            }
         }
     }
 }

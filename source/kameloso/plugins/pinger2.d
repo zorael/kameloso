@@ -1,4 +1,4 @@
-module kameloso.plugins.pinger;
+module kameloso.plugins.pinger2;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -11,7 +11,7 @@ import std.concurrency;
 private:
 
 IrcPluginState state;
-
+Tid pingerThread;
 
 /// The pinging thread, spawned from Pinger
 private void pinger(Tid mainThread)
@@ -48,40 +48,32 @@ private void pinger(Tid mainThread)
     }
 }
 
+void onEvent(const IrcEvent event) {}
+
+void teardown()
+{
+    try pingerThread.send(ThreadMessage.Teardown());
+    catch (Exception e)
+    {
+        writeln("Caught exception sending abort to pinger");
+        writeln(e);
+    }
+}
+
 public:
+
 
 // Pinger
 /++
  +  The Pinger plugin simply sends a PING once every Timeout.ping.seconds. This is to workaround
  +  freenode's new behaviour of not actively PINGing clients, but rather waiting to PONG.
  +/
-final class Pinger : IrcPlugin
+final class Pinger2 : IrcPlugin
 {
-    Tid pingerThread;
+    mixin IrcPluginBasics2;
 
-    void onEvent(const IrcEvent) {}
-
-    void status() {}
-
-    void newBot(IrcBot) {}
-
-    this(IrcPluginState origState)
+    void initialise()
     {
-        // Ignore bot
-        state = origState;
-
-        // Spawn the pinger in a separate thread, to work concurrently with the rest
         pingerThread = spawn(&pinger, state.mainThread);
-    }
-
-    /// Since the pinger runs in its own thread, it needs to be torn down when the plugin should reset
-    void teardown()
-    {
-        try pingerThread.send(ThreadMessage.Teardown());
-        catch (Exception e)
-        {
-            writeln("Caught exception sending abort to pinger");
-            writeln(e);
-        }
     }
 }

@@ -106,6 +106,8 @@ void parseTypestring(ref IrcEvent event, ref string slice)
 
     if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
     {
+        // typestring is a number (ascii 48 is 0, 58 is 9)
+
         try
         {
 
@@ -423,13 +425,15 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         writeln();
     }
 
-    if ((event.target.length && (event.target[0] == '#')) || (event.channel.length &&
-         event.channel[0] != '#') && (event.type != IrcEvent.Type.TOPIC))
+    if ((event.type != IrcEvent.Type.TOPIC) &&
+        ((event.target.length && (event.target[0] == '#')) ||
+        (event.channel.length && event.channel[0] != '#')))
     {
         writeln();
         writeln("--------------- CHANNEL/TARGET REVISION --------------");
         writeln(event.raw);
         writeln(event);
+        printObject(event);
         writeln("------------------------------------------------------");
         writeln();
     }

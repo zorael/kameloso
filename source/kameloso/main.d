@@ -202,28 +202,17 @@ void initPlugins(IrcBot bot, Tid tid)
 
     plugins.length = 0;
 
-    version (Multithreaded)
-    {
-        pragma(msg, "Building multithreaded plugins");
-        enum multithreaded = Multithreaded.yes;
-    }
-    else
-    {
-        pragma(msg, "Building singlethreaded plugins");
-        enum multithreaded = Multithreaded.no;
-    }
-
     IrcPluginState state;
     state.bot = bot;
     state.mainThread = tid;
 
-    plugins ~= new ConnectPlugin!(multithreaded)(state);
-    plugins ~= new Pinger(state);
-    plugins ~= new AdminPlugin!(multithreaded)(state);
-    plugins ~= new Chatbot!(multithreaded)(state);
-    plugins ~= new Webtitles(state);
-    plugins ~= new NotesPlugin!(multithreaded)(state);
-    plugins ~= new SedReplacePlugin!(multithreaded)(state);
+    plugins ~= new ConnectPlugin2(state);
+    plugins ~= new Pinger2(state);
+    plugins ~= new AdminPlugin2(state);
+    plugins ~= new NotesPlugin2(state);
+    plugins ~= new Chatbot2(state);
+    plugins ~= new Webtitles2(state);
+    plugins ~= new SedReplacePlugin2(state);
 }
 
 
@@ -345,8 +334,9 @@ Quit loopGenerator(Generator!string generator)
                 app.reserve(768);
 
                 //const datetime = cast(DateTime)Clock.currTime;
-                const datetime = cast(DateTime)SysTime.fromUnixTime(event.time);
-                const timestamp = datetime.timeOfDay;
+                //const datetime = cast(DateTime)SysTime.fromUnixTime(event.time);
+                //const timestamp = datetime.timeOfDay;
+                const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time)).timeOfDay;
 
                 app.formattedWrite("[%s] ", timestamp);
                 event.put(app);

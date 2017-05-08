@@ -1,4 +1,4 @@
-module kameloso.plugins.webtitles;
+module kameloso.plugins.webtitles2;
 
 import kameloso.plugins.common;
 import kameloso.constants;
@@ -39,7 +39,12 @@ struct TitleLookup
 }
 
 
-void onCommand(const IrcEvent event)
+@(Description("message", "Catch a chat message and see if it contains a URL"))
+@(IrcEvent.Type.CHAN)
+@(IrcEvent.Type.QUERY)  // ?
+@(PrivilegeLevel.friend)
+@Chainable
+void onMessage(const IrcEvent event)
 {
     auto matches = event.content.matchAll(urlRegex);
 
@@ -50,70 +55,76 @@ void onCommand(const IrcEvent event)
         const url = urlHit[0];
         const target = (event.channel.length) ? event.channel : event.sender;
 
+        writeln("url hit");
+        writeln(url);
+        writeln(target);
+
         worker.send(url, target);
+        writeln("sent");
     }
 }
 
+// -------------------------------------- FIX THIS COPYPASTE
 
-void onEvent(const IrcEvent event)
+@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(IrcEvent.Type.WHOISLOGIN)
+void onWhoisLogin(const IrcEvent event)
 {
-    with (state)
-    with (IrcEvent.Type)
-    switch (event.type)
+    state.users[event.target] = userFromEvent(event);
+}
+
+
+@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(IrcEvent.Type.RPL_ENDOFWHOIS)
+void onEndOfWhois(const IrcEvent event)
+{
+    state.queue.remove(event.target);
+}
+
+
+@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(IrcEvent.Type.PART)
+@(IrcEvent.Type.QUIT)
+void onLeave(const IrcEvent event)
+{
+    state.users.remove(event.sender);
+}
+
+
+@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(IrcEvent.Type.SELFNICK)
+void onSelfNick(const IrcEvent event)
+{
+    // writeln("[!] on selfnick");
+    if (state.bot.nickname == event.content)
     {
-    case CHAN:
-        if (state.filterChannel!(RequirePrefix.no)(event) == FilterResult.fail)
-        {
-            // Invalid channel
-            return;
-        }
-        break;
-
-    case QUERY:
-        // All queries are okay
-        break;
-
-    default:
-        return state.onBasicEvent(event);
+        writefln("%s saw SELFNICK but already had that nick...", __MODULE__);
     }
-
-    final switch (state.filterUser(event))
+    else
     {
-    case FilterResult.pass:
-        // It is a known good user (friend or master), but it is of any type
-        return onCommand(event);
-
-    case FilterResult.whois:
-        return state.doWhois(event);
-
-    case FilterResult.fail:
-        // It is a known bad user
-        return;
+        state.bot.nickname = event.content;
     }
 }
 
+// -------------------------------------- FIX THIS COPYPASTE
 
 string streamUntil(Stream_, Regex, Sink)
     (ref Stream_ stream, Regex engine, ref Sink sink)
 {
-    while (!stream.empty)
+    foreach (data; stream)
     {
         //writefln("Received %d bytes, total received %d from document legth %d", stream.front.length, rq.contentReceived, rq.contentLength);
-        const asString = cast(string)(stream.front);
+        const asString = cast(string)data;
         auto hits = asString.matchFirst(engine);
-        sink.put(stream.front);
+        sink.put(data);
 
         if (hits.length)
         {
             //writefln("Found title mid-stream after %s bytes", rq.contentReceived);
-            //writefln("Appender size is %d", app.data.length);
-            //writefln("capacity is %d", app.capacity);
+            //writefln("Appender size is %d", sink.data.length);
+            //writefln("capacity is %d", sink.capacity);
             return hits[1];
         }
-
-        stream.popFront();
-
-        continue;
     }
 
     return string.init;
@@ -128,8 +139,8 @@ TitleLookup lookupTitle(string url)
     import std.string : removechars, strip;
 
     TitleLookup lookup;
-    Appender!string app;
-    app.reserve(BufferSize.titleLookup);
+    Appender!string pageContent;
+    pageContent.reserve(BufferSize.titleLookup);
 
     if (!url.beginsWith("http"))
     {
@@ -146,11 +157,12 @@ TitleLookup lookupTitle(string url)
     auto rs = rq.get(url);
     auto stream = rs.receiveAsRange();
 
-    if (rs.code == 404) return lookup;
+    writeln("code: ", rs.code);
+    if (rs.code >= 400) return lookup;
 
-    lookup.title = stream.streamUntil(titleRegex, app);
+    lookup.title = stream.streamUntil(titleRegex, pageContent);
 
-    if (!app.data.length)
+    if (!pageContent.data.length)
     {
         writeln("Could not get content. Bad URL?");
         return lookup;
@@ -158,7 +170,7 @@ TitleLookup lookupTitle(string url)
 
     if (!lookup.title.length)
     {
-        auto titleHits = app.data.matchFirst(titleRegex);
+        auto titleHits = pageContent.data.matchFirst(titleRegex);
 
         if (titleHits.length)
         {
@@ -168,6 +180,7 @@ TitleLookup lookupTitle(string url)
         else
         {
             writeln("No title...");
+            return lookup;
         }
     }
 
@@ -187,18 +200,24 @@ TitleLookup lookupTitle(string url)
 }
 
 
-void titleworker(Tid mainThread)
+void titleworker(shared IrcPluginState state)
 {
     import core.time : seconds;
 
     mixin(scopeguard(entry|exit));
 
+    Tid mainThread = cast(Tid)state.mainThread;
     TitleLookup[string] cache;
     bool halt;
 
     while (!halt)
     {
         receive(
+            &onEvent,
+            (shared IrcBot bot)
+            {
+                // discard
+            },
             (string url, string target)
             {
                 import std.format : format;
@@ -254,31 +273,17 @@ void titleworker(Tid mainThread)
 }
 
 
+mixin onEventImpl!__MODULE__;
+
 public:
 
-final class Webtitles : IrcPlugin
+final class Webtitles2 : IrcPlugin
 {
-    this(IrcPluginState origState)
-    {
-        state = origState;
-        worker = spawn(&titleworker, state.mainThread);
-    }
+    mixin IrcPluginBasics2;
 
-    void onEvent(const IrcEvent event)
+    void initialise()
     {
-        return event.onEvent();
+        IrcPluginState stateCopy = state;
+        worker = spawn(&titleworker, cast(shared)stateCopy);
     }
-
-    void status()
-    {
-        writeln("---------------------- ", typeof(this).stringof);
-        printObject(state);
-    }
-
-    void newBot(IrcBot bot)
-    {
-        state.bot = bot;
-    }
-
-    void teardown() {}
 }
