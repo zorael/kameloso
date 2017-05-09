@@ -836,7 +836,7 @@ struct IrcEvent
         put(sink);
     }
 
-    void put(Sink)(Sink sink) const
+    void put(Sink)(ref Sink sink) const
     {
         import std.conv   : to;
         import std.format : formattedWrite;
