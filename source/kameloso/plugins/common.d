@@ -3,9 +3,6 @@ module kameloso.plugins.common;
 import kameloso.irc;
 
 import std.stdio : writeln, writefln;
-import std.typecons : Flag;
-import std.algorithm : canFind;
-import std.traits : isSomeFunction;
 
 
 /++
@@ -34,9 +31,6 @@ struct IrcPluginState
     IrcUser[string] users;
     bool delegate()[string] queue;
 }
-
-
-alias RequirePrefix = Flag!"requirePrefix";
 
 
 enum FilterResult { fail, pass, whois }
@@ -120,6 +114,8 @@ void onBasicEvent(ref IrcPluginState state, const IrcEvent event)
 
 FilterResult filterUser(IrcPluginState state, const IrcEvent event)
 {
+    import std.algorithm.searching : canFind;
+
     with (state)
     {
         // Queries are always aimed toward the bot, but the user must be whitelisted
@@ -221,8 +217,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.stringutils;
-        import std.traits; // : getSymbolsByUDA, hasUDA, getUDAs, isSomeFunction, Unqual;
-        import std.string : indexOf, toLower;
+        import std.traits : getSymbolsByUDA, hasUDA, getUDAs, isSomeFunction;
 
         foreach (fun; getSymbolsByUDA!(thisModule, IrcEvent.Type))
         {
@@ -332,6 +327,8 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                             static if (configuredPrefix.string_.length)
                             {
+                                import std.string : indexOf, toLower;
+
                                 // case-sensitive check goes here
                                 enum configuredPrefixLowercase = configuredPrefix.string_.toLower();
                                 //string thisPrefix;
