@@ -2,6 +2,7 @@ module kameloso.stringutils;
 
 import std.traits   : isSomeString;
 import std.typecons : Flag;
+import std.datetime;
 
 
 /++
@@ -242,4 +243,41 @@ string stripPrefix(bool checkIfBeginsWith = true)(const string line, const strin
     slice.munch(":?! ");
     // writefln("step 2: '%s'", slice);
     return slice;
+}
+
+string timeSince(const Duration duration)
+{
+    import std.array  : Appender;
+    import std.format : formattedWrite;
+
+    Appender!string sink;
+    sink.reserve(50);
+
+    int days, hours, minutes, seconds;
+    duration.split!("days","hours","minutes","seconds")(days, hours, minutes, seconds);
+
+    if (days)
+    {
+        sink.formattedWrite("%d %s", days, days.plurality("day", "days"));
+    }
+    if (hours)
+    {
+        if (days)
+        {
+            sink.put(", ");
+            if (!minutes) sink.put("and ");
+        }
+        sink.formattedWrite("%d %s", hours, hours.plurality("hour", "hours"));
+    }
+    if (minutes)
+    {
+        if (hours) sink.put(", and ");
+        sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
+    }
+    if (!minutes)
+    {
+        sink.formattedWrite("%d %s", seconds, seconds.plurality("second", "seconds"));
+    }
+
+    return sink.data;
 }
