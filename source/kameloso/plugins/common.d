@@ -238,8 +238,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                         if (!state.bot.channels.canFind(event.channel))
                         {
-                            writeln("ignore invalid channel ", event.channel);
-                            //continue;
+                            //writeln("ignore invalid channel ", event.channel);
                             return;
                         }
                     }
@@ -263,14 +262,12 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                         foreach (configuredPrefix; getUDAs!(fun, Prefix))
                         {
-                            //if (skip) break;
                             if (matches)
                             {
-                                writeln("MATCH! breaking");
+                                //writeln("MATCH! breaking");
                                 break;
                             }
 
-                            //writeln(configuredPrefix);
                             contextPrefix = string.init;
 
                             with (NickPrefixPolicy)
@@ -416,7 +413,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                     static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
                     {
-                        writeln("context prefix: '", contextPrefix, "'");
+                        //writeln("context prefix: '", contextPrefix, "'");
                         fun(contextPrefix, mutEvent);
                     }
                     else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
