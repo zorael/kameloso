@@ -135,43 +135,6 @@ FilterResult filterUser(IrcPluginState state, const IrcEvent event)
 }
 
 
-FilterResult filterChannel(RequirePrefix requirePrefix = RequirePrefix.no)
-    (IrcPluginState state, const IrcEvent event)
-{
-    with (state)
-    {
-        if (!bot.channels.canFind(event.channel))
-        {
-            // Channel is not relevant
-            return FilterResult.fail;
-        }
-        else
-        {
-            // Channel is relevant
-            static if (requirePrefix)
-            {
-                import kameloso.stringutils : beginsWith;
-
-                if (event.content.beginsWith(bot.nickname) &&
-                   (event.content.length > bot.nickname.length) &&
-                   (event.content[bot.nickname.length] == ':'))
-                {
-                    return FilterResult.pass;
-                }
-                else
-                {
-                    return FilterResult.fail;
-                }
-            }
-            else
-            {
-                return FilterResult.pass;
-            }
-        }
-    }
-}
-
-
 mixin template IrcPluginBasics()
 {
     void onEvent(const IrcEvent event)
@@ -254,16 +217,6 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                     IrcEvent mutEvent = event;  // mutable
                     string contextPrefix;
 
-                    version(none)
-                    static if (hasUDA!(fun, Label))
-                    {
-                        import std.format : format;
-
-                        enum name2 = module_ ~ "." ~ getUDAs!(fun, Label)[0].name;
-                        //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
-                        writefln("[%s] considered...", name2);
-                    }
-
                     static if (hasUDA!(fun, Prefix))
                     {
                         bool matches;
@@ -331,7 +284,6 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                                 // case-sensitive check goes here
                                 enum configuredPrefixLowercase = configuredPrefix.string_.toLower();
-                                //string thisPrefix;
 
                                 if (mutEvent.content.indexOf(" ") == -1)
                                 {
@@ -343,9 +295,6 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 {
                                     contextPrefix = mutEvent.content.nom!(Decode.yes)(" ").toLower();
                                 }
-
-                                /*writefln("'%s' == '%s': %s", contextPrefix, configuredPrefixLowercase,
-                                    (contextPrefix == configuredPrefixLowercase));*/
 
                                 matches = (contextPrefix == configuredPrefixLowercase);
                                 continue;
@@ -362,25 +311,19 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                         }
 
                         // We can't label the innermost foreach! So we have to runtime-skip here...
-                        // if (skip) continue;
                         if (!matches) continue;
                     }
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
                         immutable privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
-                        //enum udaType = Unqual!(typeof(privilegeLevel)).stringof;
-                        //writeln(udaType, ".", privilegeLevel);
 
                         with (PrivilegeLevel)
-                        //final switch (getUDAs!(fun, PrivilegeLevel)[0])
                         final switch (privilegeLevel)
                         {
                         case friend:
                         case master:
                             immutable result = state.filterUser(event);
-                            //enum resultType = Unqual!(typeof(result)).stringof;
-                            //writeln(resultType, ".", result);
 
                             with (FilterResult)
                             final switch (result)
@@ -408,22 +351,11 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                         }
                     }
 
-                    version(none)
-                    static if (hasUDA!(fun, Label))
-                    {
-                        import std.format : format;
-
-                        enum name = module_ ~ "." ~ getUDAs!(fun, Label)[0].name;
-                        //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
-                        writefln("[%s] triggered!", name);
-                    }
-
                     import std.meta   : AliasSeq;
                     import std.traits : Parameters;
 
                     static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
                     {
-                        //writeln("context prefix: '", contextPrefix, "'");
                         fun(contextPrefix, mutEvent);
                     }
                     else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
