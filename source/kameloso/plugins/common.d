@@ -428,3 +428,49 @@ mixin template onEventImpl(string module_, bool debug_ = false)
         }
     }
 }
+
+mixin template basicEventHandlers()
+{
+    //@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+    @(Label("whoislogin"))
+    @(IrcEvent.Type.WHOISLOGIN)
+    void onWhoisLogin(const IrcEvent event)
+    {
+        state.users[event.target] = userFromEvent(event);
+    }
+
+
+    //@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+    @(Label("endofwhois"))
+    @(IrcEvent.Type.RPL_ENDOFWHOIS)
+    void onEndOfWhois(const IrcEvent event)
+    {
+        state.queue.remove(event.target);
+    }
+
+
+    //@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+    @(Label("part/quit"))
+    @(IrcEvent.Type.PART)
+    @(IrcEvent.Type.QUIT)
+    void onLeave(const IrcEvent event)
+    {
+        state.users.remove(event.sender);
+    }
+
+
+    //@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+    @(Label("selfnick"))
+    @(IrcEvent.Type.SELFNICK)
+    void onSelfNick(const IrcEvent event)
+    {
+        if (state.bot.nickname == event.content)
+        {
+            writeln("saw SELFNICK but already had that nick...");
+        }
+        else
+        {
+            state.bot.nickname = event.content;
+        }
+    }
+}

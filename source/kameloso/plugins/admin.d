@@ -257,56 +257,9 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 }
 
 
-// -------------------------------------- FIX THIS COPYPASTE
-
-//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
-@(Label("whoislogin"))
-@(IrcEvent.Type.WHOISLOGIN)
-void onWhoisLogin(const IrcEvent event)
-{
-    state.users[event.target] = userFromEvent(event);
-}
-
-
-//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
-@(Label("endofwhois"))
-@(IrcEvent.Type.RPL_ENDOFWHOIS)
-void onEndOfWhois(const IrcEvent event)
-{
-    state.queue.remove(event.target);
-}
-
-
-//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
-@(Label("part/quit"))
-@(IrcEvent.Type.PART)
-@(IrcEvent.Type.QUIT)
-void onLeave(const IrcEvent event)
-{
-    state.users.remove(event.sender);
-}
-
-
-//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
-@(Label("selfnick"))
-@(IrcEvent.Type.SELFNICK)
-void onSelfNick(const IrcEvent event)
-{
-    // writeln("[!] on selfnick");
-    if (state.bot.nickname == event.content)
-    {
-        writefln("%s saw SELFNICK but already had that nick...", __MODULE__);
-    }
-    else
-    {
-        state.bot.nickname = event.content;
-    }
-}
-
-// -------------------------------------- FIX THIS COPYPASTE
-
-
+mixin basicEventHandlers;
 mixin onEventImpl!__MODULE__;
+
 
 public:
 
