@@ -831,15 +831,9 @@ struct IrcEvent
     bool special;
     long time;
 
-    /// toString here simply creates an Appender and fills it using put
-    string toString() const
+    void toString(void delegate(const(char)[]) sink) const
     {
-        import std.array : Appender;
-
-        Appender!string app;
-        app.reserve(768);
-        put(app);
-        return app.data;
+        put(sink);
     }
 
     void put(Sink)(Sink sink) const
