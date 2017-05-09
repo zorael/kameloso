@@ -57,12 +57,8 @@ void onCommandQuit(const IrcEvent event)
         writefln("Failsafe triggered: bot is not master (%s)", event.sender);
         return;
     }
-    // By sending a concurrency message it should quit nicely
-    /*string message = event.content;
-    message.nom!(Decode.yes)(" ");
-    message = message.strip;
 
-    state.mainThread.send(ThreadMessage.Quit(), "QUIT :" ~ message);*/
+    // By sending a concurrency message it should quit nicely
     state.mainThread.send(ThreadMessage.Quit(), event.content);
 }
 
