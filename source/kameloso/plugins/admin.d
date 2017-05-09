@@ -210,7 +210,7 @@ void onCommandResetTerminal(const IrcEvent event)
 
 
 //@(Description("printall", "Sets a flag to print all incoming IRC strings, raw"))
-@(Label("printall"))
+@(Label("toggleprintall"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -219,6 +219,14 @@ void onCommandPrintAll(const IrcEvent event)
 {
     printAll = !printAll;
     writeln("Printing all: ", printAll);
+}
+
+
+@Label("print")
+@(IrcEvent.Type.ANY)
+void onAnyEvent(const IrcEvent event)
+{
+    if (printAll) writeln(event.raw);
 }
 
 
