@@ -232,10 +232,11 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                 {
                     if (eventTypeUDA != event.type) continue;
 
-                    static if (eventTypeUDA == IrcEvent.Type.CHAN)
+                    static if ((eventTypeUDA == IrcEvent.Type.CHAN) ||
+                               (eventTypeUDA == IrcEvent.Type.JOIN) ||
+                               (eventTypeUDA == IrcEvent.Type.PART) ||
+                               (eventTypeUDA == IrcEvent.Type.QUIT))
                     {
-                        import std.algorithm : canFind;
-
                         if (!state.bot.channels.canFind(event.channel))
                         {
                             //writeln("ignore invalid channel ", event.channel);
