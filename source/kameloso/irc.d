@@ -490,7 +490,7 @@ struct IrcEvent
     /// Taken from https://tools.ietf.org/html/rfc1459 with some additions
     enum Type
     {
-        UNSET, ERROR, NUMERIC,
+        UNSET, ANY, ERROR, NUMERIC,
         PRIVMSG, CHAN, QUERY, EMOTE, // ACTION
         JOIN, PART, QUIT, KICK, INVITE,
         NOTICE,

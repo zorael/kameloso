@@ -230,17 +230,29 @@ mixin template onEventImpl(string module_, bool debug_ = false)
             {
                 foreach (eventTypeUDA; getUDAs!(fun, IrcEvent.Type))
                 {
-                    if (eventTypeUDA != event.type) continue;
-
-                    static if ((eventTypeUDA == IrcEvent.Type.CHAN) ||
-                               (eventTypeUDA == IrcEvent.Type.JOIN) ||
-                               (eventTypeUDA == IrcEvent.Type.PART) ||
-                               (eventTypeUDA == IrcEvent.Type.QUIT))
+                    if (eventTypeUDA == IrcEvent.Type.ANY)
                     {
-                        if (!state.bot.channels.canFind(event.channel))
+                        // UDA is ANY, let pass
+                    }
+                    else
+                    {
+                        if (eventTypeUDA != event.type)
                         {
-                            //writeln("ignore invalid channel ", event.channel);
-                            return;
+                            continue;
+                        }
+
+                        static if ((eventTypeUDA == IrcEvent.Type.CHAN) ||
+                                (eventTypeUDA == IrcEvent.Type.JOIN) ||
+                                (eventTypeUDA == IrcEvent.Type.PART) ||
+                                (eventTypeUDA == IrcEvent.Type.QUIT))
+                        {
+                            import std.algorithm.searching : canFind;
+
+                            if (!state.bot.channels.canFind(event.channel))
+                            {
+                                //writeln("ignore invalid channel ", event.channel);
+                                return;
+                            }
                         }
                     }
 

@@ -206,6 +206,7 @@ void initPlugins(IrcBot bot, Tid tid)
 
     plugins = cast(IrcPlugin[])
     [
+        new Printer(state),
         new ConnectPlugin(state),
         new Pinger(state),
         new AdminPlugin(state),
@@ -297,53 +298,11 @@ Quit loopGenerator(Generator!string generator)
 
         foreach (const line; generator)
         {
-            /// Empty line yielded means nothing received
+            // Empty line yielded means nothing received
             if (!line.length) break;
 
-            /// Hopefully making the event immutable means less gets copied?
+            // Hopefully making the event immutable means less gets copied?
             immutable event = line.toIrcEvent();
-
-            with (IrcEvent.Type)
-            switch (event.type)
-            {
-            case RPL_NAMREPLY:
-            case RPL_MOTD:
-            case PING:
-            case PONG:
-            case SERVERINFO:
-            case SERVERINFO_2:
-            case RPL_LUSERCLIENT:
-            case RPL_LUSEROP:
-            case RPL_LUSERCHANNELS:
-            case RPL_LUSERME:
-            case RPL_LUSERUNKNOWN:
-            case RPL_MOTDSTART:
-            case RPL_ENDOFMOTD:
-            case RPL_ENDOFNAMES:
-            case USERCOUNTGLOBAL:
-            case USERCOUNTLOCAL:
-            case CONNECTIONRECORD:
-                // These event types are too spammy; ignore
-                break;
-
-            default:
-                import std.datetime;
-                import std.array  : Appender;
-                import std.format : formattedWrite;
-
-                Appender!string app;
-                app.reserve(768);
-
-                //const datetime = cast(DateTime)Clock.currTime;
-                //const datetime = cast(DateTime)SysTime.fromUnixTime(event.time);
-                //const timestamp = datetime.timeOfDay;
-                const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time)).timeOfDay;
-
-                app.formattedWrite("[%s] ", timestamp);
-                event.put(app);
-
-                writeln(app.data);
-            }
 
             bool spammedAboutReplaying;
 
