@@ -291,12 +291,26 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                     goto case allowed;
                                 }
 
-                                if (!event.content.beginsWith(state.bot.nickname))
+                                if (event.content.beginsWith(state.bot.nickname) &&
+                                   (event.content.length > state.bot.nickname.length))
                                 {
-                                    // writefln("[required] did not start with bot nickname (%s)", state.bot.nickname);
-                                    // skip = true;
-                                    // matches = false;
-                                    // break will break the switch
+                                    switch (event.content[state.bot.nickname.length+1])
+                                    {
+                                    case ':':
+                                    case ' ':
+                                    case '!':
+                                    case '?':
+                                        // content begins with bot nickname, followed by this
+                                        break;
+
+                                    default:
+                                        // content begins with bot nickname, followed by something
+                                        // unsupported, like ^ or other characters allowed in nicks
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
                                     continue;
                                 }
 
