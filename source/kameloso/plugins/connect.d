@@ -46,6 +46,8 @@ void onNotice(const IrcEvent event)
         {
             if (!state.bot.channels.length || state.bot.finishedLogin) return;
 
+            import std.algorithm.iteration : joiner;
+
             state.mainThread.send(ThreadMessage.Sendline(),
                     "JOIN :%s".format(state.bot.channels.joiner(",")));
             state.bot.finishedLogin = true;
