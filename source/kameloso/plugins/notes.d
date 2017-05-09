@@ -240,8 +240,8 @@ JSONValue loadNotes(const string filename)
 }
 
 
-mixin basicEventHandlers;
-mixin onEventImpl!__MODULE__;
+mixin BasicEventHandlers;
+mixin OnEventImpl!__MODULE__;
 
 
 public:

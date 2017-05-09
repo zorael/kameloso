@@ -173,7 +173,7 @@ mixin template IrcPluginBasics()
 }
 
 
-mixin template onEventImpl(string module_, bool debug_ = false)
+mixin template OnEventImpl(string module_, bool debug_ = false)
 {
     void onEvent(const IrcEvent event)
     {
@@ -395,7 +395,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
     }
 }
 
-mixin template basicEventHandlers()
+mixin template BasicEventHandlers()
 {
     @(Label("whoislogin"))
     @(IrcEvent.Type.WHOISLOGIN)
