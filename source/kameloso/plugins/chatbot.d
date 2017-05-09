@@ -263,6 +263,13 @@ void onCommandReloadQuotes(const IrcEvent event)
 }
 
 
+void initialise()
+{
+    writeln("Initialising quotess ...");
+    quotes = loadQuotes(Files.quotes);
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
@@ -277,12 +284,4 @@ public:
 final class Chatbot : IrcPlugin
 {
     mixin IrcPluginBasics;
-
-    void initialise()
-    {
-        //initQuotes();
-
-        writeln("Initialising quotess ...");
-        quotes = loadQuotes(Files.quotes);
-    }
 }

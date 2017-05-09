@@ -147,9 +147,9 @@ mixin template IrcPluginBasics()
     {
         state = origState;
 
-        static if (__traits(compiles, this.initialise()))
+        static if (__traits(compiles, .initialise()))
         {
-            this.initialise();
+            .initialise();
         }
     }
 

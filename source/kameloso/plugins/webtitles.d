@@ -227,6 +227,13 @@ void titleworker(shared IrcPluginState state)
 }
 
 
+void initialise()
+{
+    IrcPluginState stateCopy = state;
+    worker = spawn(&titleworker, cast(shared)stateCopy);
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
@@ -236,10 +243,4 @@ public:
 final class Webtitles : IrcPlugin
 {
     mixin IrcPluginBasics;
-
-    void initialise()
-    {
-        IrcPluginState stateCopy = state;
-        worker = spawn(&titleworker, cast(shared)stateCopy);
-    }
 }
