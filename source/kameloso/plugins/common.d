@@ -188,7 +188,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
             {
                 foreach (eventTypeUDA; getUDAs!(fun, IrcEvent.Type))
                 {
-                    if (eventTypeUDA == IrcEvent.Type.ANY)
+                    static if (eventTypeUDA == IrcEvent.Type.ANY)
                     {
                         // UDA is ANY, let pass
                     }
