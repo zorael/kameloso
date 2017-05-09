@@ -61,7 +61,6 @@ void onAnyEvent(const IrcEvent event)
             put("] ");
 
             event.put(reusableAppender);
-            put(data.length.text);
 
             writeln(data);
             reusableAppender.clear();
