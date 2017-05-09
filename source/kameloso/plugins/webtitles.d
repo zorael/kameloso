@@ -53,15 +53,12 @@ void onMessage(const IrcEvent event)
     {
         if (!urlHit.length) continue;
 
-        const url = urlHit[0];
-        const target = (event.channel.length) ? event.channel : event.sender;
+        immutable url = urlHit[0];
+        immutable target = (event.channel.length) ? event.channel : event.sender;
 
-        writeln("url hit");
         writeln(url);
-        writeln(target);
 
         worker.send(url, target);
-        writeln("sent");
     }
 }
 
