@@ -16,7 +16,8 @@ IrcPluginState state;
 JSONValue notes;
 
 
-@(Description("onjoin", "Catch a join event"))
+//@(Description("onjoin", "Catch a join event"))
+@(Label("onjoin"))
 @(IrcEvent.Type.JOIN)
 void onJoin(const IrcEvent event)
 {
@@ -41,7 +42,8 @@ void onJoin(const IrcEvent event)
 }
 
 
-@(Description("addnote", "Add a new queued message to a user"))
+//@(Description("addnote", "Add a new queued message to a user"))
+@(Label("addnote"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
 @(Prefix(NickPrefixPolicy.required, "addnote"))
@@ -64,7 +66,8 @@ void onCommandAddNote(const IrcEvent event)
 }
 
 
-@(Description("printnotes", "Print the list of notes on record"))
+//@(Description("printnotes", "Print the list of notes on record"))
+@(Label("printnotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -75,7 +78,8 @@ void onCommandPrintNotes(const IrcEvent event)
 }
 
 
-@(Description("fakejoin", "Fake a join event to debug notes fetching and playback"))
+//@(Description("fakejoin", "Fake a join event to debug notes fetching and playback"))
+@(Label("fakejoin"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "fakejoin"))
@@ -107,7 +111,8 @@ void onCommandFakejoin(const IrcEvent event)
 
 // -------------------------------------- FIX THIS COPYPASTE
 
-@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(Label("whoislogin"))
 @(IrcEvent.Type.WHOISLOGIN)
 void onWhoisLogin(const IrcEvent event)
 {
@@ -115,7 +120,8 @@ void onWhoisLogin(const IrcEvent event)
 }
 
 
-@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(Label("endofwhois"))
 @(IrcEvent.Type.RPL_ENDOFWHOIS)
 void onEndOfWhois(const IrcEvent event)
 {
@@ -123,7 +129,8 @@ void onEndOfWhois(const IrcEvent event)
 }
 
 
-@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(Label("part/quit"))
 @(IrcEvent.Type.PART)
 @(IrcEvent.Type.QUIT)
 void onLeave(const IrcEvent event)
@@ -132,7 +139,8 @@ void onLeave(const IrcEvent event)
 }
 
 
-@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(Label("selfnick"))
 @(IrcEvent.Type.SELFNICK)
 void onSelfNick(const IrcEvent event)
 {

@@ -28,7 +28,8 @@ void updateBot()
 }
 
 
-@(Description("sudo", "Sends a command as-is to the server"))
+//@(Description("sudo", "Sends a command as-is to the server"))
+@(Label("sudo"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -45,7 +46,8 @@ void onCommandSudo(const IrcEvent event)
 }
 
 
-@(Description("quit", "Disconnects from the server with the supplied message"))
+//@(Description("quit", "Disconnects from the server with the supplied message"))
+@(Label("quit"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -67,7 +69,8 @@ void onCommandQuit(const IrcEvent event)
 }
 
 
-@(Description("addchan", "Adds a channel to the list of channels to be active in"))
+//@(Description("addchan", "Adds a channel to the list of channels to be active in"))
+@(Label("addchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -98,7 +101,8 @@ void onCommandAddChan(const IrcEvent event)
 }
 
 
-@(Description("delchan", "Removes a channel from the list of channels to be active in"))
+//@(Description("delchan", "Removes a channel from the list of channels to be active in"))
+@(Label("delchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -130,7 +134,8 @@ void onCommandDelChan(const IrcEvent event)
 }
 
 
-@(Description("addfriend", "Add a *NickServ login* to the list of friends who may use the bot's services"))
+//@(Description("addfriend", "Add a *NickServ login* to the list of friends who may use the bot's services"))
+@(Label("addfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -156,7 +161,8 @@ void onCommandAddFriend(const IrcEvent event)
 }
 
 
-@(Description("delfriend", "Removes a *NickServ login* from the friends list"))
+//@(Description("delfriend", "Removes a *NickServ login* from the friends list"))
+@(Label("delfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -190,7 +196,8 @@ void onCommandDelFriend(const IrcEvent event)
 }
 
 
-@(Description("resetterm", "Outputs ASCII control character 15 to reset the terminal if it has entered binary mode"))
+//@(Description("resetterm", "Outputs ASCII control character 15 to reset the terminal if it has entered binary mode"))
+@(Label("resetterm"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -202,7 +209,8 @@ void onCommandResetTerminal(const IrcEvent event)
 }
 
 
-@(Description("printall", "Sets a flag to print all incoming IRC strings, raw"))
+//@(Description("printall", "Sets a flag to print all incoming IRC strings, raw"))
+@(Label("printall"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -214,7 +222,8 @@ void onCommandPrintAll(const IrcEvent event)
 }
 
 
-@(Description("status", "Prints the current bot status to the terminal"))
+//@(Description("status", "Prints the current bot status to the terminal"))
+@(Label("status"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -225,7 +234,8 @@ void onCommandStatus(const IrcEvent event)
 }
 
 
-@(Description("join/part", "Joins or parts a channel"))
+//@(Description("join/part", "Joins or parts a channel"))
+@(Label("join/part"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -249,7 +259,8 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 
 // -------------------------------------- FIX THIS COPYPASTE
 
-@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(Label("whoislogin"))
 @(IrcEvent.Type.WHOISLOGIN)
 void onWhoisLogin(const IrcEvent event)
 {
@@ -257,7 +268,8 @@ void onWhoisLogin(const IrcEvent event)
 }
 
 
-@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(Label("endofwhois"))
 @(IrcEvent.Type.RPL_ENDOFWHOIS)
 void onEndOfWhois(const IrcEvent event)
 {
@@ -265,7 +277,8 @@ void onEndOfWhois(const IrcEvent event)
 }
 
 
-@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(Label("part/quit"))
 @(IrcEvent.Type.PART)
 @(IrcEvent.Type.QUIT)
 void onLeave(const IrcEvent event)
@@ -274,7 +287,8 @@ void onLeave(const IrcEvent event)
 }
 
 
-@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(Label("selfnick"))
 @(IrcEvent.Type.SELFNICK)
 void onSelfNick(const IrcEvent event)
 {

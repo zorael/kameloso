@@ -55,7 +55,8 @@ string sedReplace(const string originalLine, const string expression)
 }
 
 
-@(Description("chan", "Catch a channel message to parse for sed-replace patterns"))
+//@(Description("chan", "Catch a channel message to parse for sed-replace patterns"))
+@(Label("chan"))
 @(IrcEvent.Type.CHAN)
 void onMessage(const IrcEvent event)
 {
@@ -90,7 +91,8 @@ void onMessage(const IrcEvent event)
 
 // -------------------------------------- FIX THIS COPYPASTE
 
-@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(Label("whoislogin"))
 @(IrcEvent.Type.WHOISLOGIN)
 void onWhoisLogin(const IrcEvent event)
 {
@@ -98,7 +100,8 @@ void onWhoisLogin(const IrcEvent event)
 }
 
 
-@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(Label("endofwhois"))
 @(IrcEvent.Type.RPL_ENDOFWHOIS)
 void onEndOfWhois(const IrcEvent event)
 {
@@ -106,7 +109,8 @@ void onEndOfWhois(const IrcEvent event)
 }
 
 
-@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(Label("part/quit"))
 @(IrcEvent.Type.PART)
 @(IrcEvent.Type.QUIT)
 void onLeave(const IrcEvent event)
@@ -115,7 +119,8 @@ void onLeave(const IrcEvent event)
 }
 
 
-@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(Label("selfnick"))
 @(IrcEvent.Type.SELFNICK)
 void onSelfNick(const IrcEvent event)
 {

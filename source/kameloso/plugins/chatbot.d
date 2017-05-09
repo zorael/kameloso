@@ -141,7 +141,8 @@ JSONValue loadQuotes(const string filename)
     return parseJSON(wholeFile);
 }
 
-@(Description("say", "Repeats what was said to the current channel or in a query"))
+//@(Description("say", "Repeats what was said to the current channel or in a query"))
+@(Label("say"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -160,7 +161,8 @@ void onCommandSay(const IrcEvent event)
         "PRIVMSG %s :%s".format(target, event.content));
 }
 
-@(Description("8ball", "Asks the all-powerful 8ball for guidance on matters"))
+//@(Description("8ball", "Asks the all-powerful 8ball for guidance on matters"))
+@(Label("8ball"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -177,7 +179,8 @@ void onCommand8ball(const IrcEvent event)
 }
 
 
-@(Description("quote", "Fetch and send a quote from the internal JSON storage"))
+//@(Description("quote", "Fetch and send a quote from the internal JSON storage"))
+@(Label("quote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -218,7 +221,8 @@ void onCommandQuote(const IrcEvent event)
 }
 
 
-@(Description("addquote", "Add a new quote to the internal JSON storage"))
+//@(Description("addquote", "Add a new quote to the internal JSON storage"))
+@(Label("addquote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -240,7 +244,8 @@ void onCommanAdddQuote(const IrcEvent event)
 }
 
 
-@(Description("printquotes", "Print the current JSON storage variable to the terminal"))
+//@(Description("printquotes", "Print the current JSON storage variable to the terminal"))
+@(Label("printquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -251,7 +256,8 @@ void onCommandPrintQuotes(const IrcEvent event)
 }
 
 
-@(Description("reloadquotes", "Re-read the JSON quotes file into meomry"))
+//@(Description("reloadquotes", "Re-read the JSON quotes file into meomry"))
+@(Label("reloadquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -264,7 +270,8 @@ void onCommandReloadQuotes(const IrcEvent event)
 
 // -------------------------------------- FIX THIS COPYPASTE
 
-@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(Label("whoislogin"))
 @(IrcEvent.Type.WHOISLOGIN)
 void onWhoisLogin(const IrcEvent event)
 {
@@ -272,7 +279,8 @@ void onWhoisLogin(const IrcEvent event)
 }
 
 
-@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(Label("endofwhois"))
 @(IrcEvent.Type.RPL_ENDOFWHOIS)
 void onEndOfWhois(const IrcEvent event)
 {
@@ -280,7 +288,8 @@ void onEndOfWhois(const IrcEvent event)
 }
 
 
-@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(Label("part/quit"))
 @(IrcEvent.Type.PART)
 @(IrcEvent.Type.QUIT)
 void onLeave(const IrcEvent event)
@@ -289,7 +298,8 @@ void onLeave(const IrcEvent event)
 }
 
 
-@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(Label("selfnick"))
 @(IrcEvent.Type.SELFNICK)
 void onSelfNick(const IrcEvent event)
 {

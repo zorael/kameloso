@@ -53,7 +53,7 @@ struct Prefix
 }
 
 
-struct Description
+struct Label
 {
     string name;
     string desc;
@@ -249,11 +249,11 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                     string contextPrefix;
 
                     version(none)
-                    static if (hasUDA!(fun, Description))
+                    static if (hasUDA!(fun, Label))
                     {
                         import std.format : format;
 
-                        enum name2 = module_ ~ "." ~ getUDAs!(fun, Description)[0].name;
+                        enum name2 = module_ ~ "." ~ getUDAs!(fun, Label)[0].name;
                         //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
                         writefln("[%s] considered...", name2);
                     }
@@ -388,11 +388,11 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                     }
 
                     version(none)
-                    static if (hasUDA!(fun, Description))
+                    static if (hasUDA!(fun, Label))
                     {
                         import std.format : format;
 
-                        enum name = module_ ~ "." ~ getUDAs!(fun, Description)[0].name;
+                        enum name = module_ ~ "." ~ getUDAs!(fun, Label)[0].name;
                         //pragma(msg, "%s:%s (%s)".format(module_, name, eventTypeUDA));
                         writefln("[%s] triggered!", name);
                     }

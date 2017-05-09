@@ -22,7 +22,8 @@ void updateBot()
     state.mainThread.send(cast(shared)botCopy);
 }
 
-@(Description("notice", "Catch a NOTICE event as received when connecting"))
+//@(Description("notice", "Catch a NOTICE event as received when connecting"))
+@(Label("notice"))
 @(IrcEvent.Type.NOTICE)
 void onNotice(const IrcEvent event)
 {
@@ -54,7 +55,8 @@ void onNotice(const IrcEvent event)
 }
 
 
-@(Description("welcome", "Catch a WELCOME event and update the bot state's nickname"))
+//@(Description("welcome", "Catch a WELCOME event and update the bot state's nickname"))
+@(Label("welcome"))
 @(IrcEvent.Type.WELCOME)
 void onWelcome(const IrcEvent event)
 {
@@ -62,7 +64,8 @@ void onWelcome(const IrcEvent event)
     updateBot();
 }
 
-@(Description("motdend", "Catch an ENDOFMOTD event and start final login sequences"))
+//@(Description("motdend", "Catch an ENDOFMOTD event and start final login sequences"))
+@(Label("welcome"))
 @(IrcEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(const IrcEvent event)
 {
@@ -88,7 +91,8 @@ void onEndOfMotd(const IrcEvent event)
     }
 }
 
-@(Description("nickinuse", "Catch a NICKNAMEINUSE error and change the bot nick"))
+//@(Description("nickinuse", "Catch a NICKNAMEINUSE error and change the bot nick"))
+@(Label("nickinuse"))
 @(IrcEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(const IrcEvent event)
 {
@@ -188,7 +192,8 @@ void onEvent(const IrcEvent event)
 
 // -------------------------------------- FIX THIS COPYPASTE
 
-@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+//@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
+@(Label("whoislogin"))
 @(IrcEvent.Type.WHOISLOGIN)
 void onWhoisLogin(const IrcEvent event)
 {
@@ -196,7 +201,8 @@ void onWhoisLogin(const IrcEvent event)
 }
 
 
-@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+//@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
+@(Label("endofwhois"))
 @(IrcEvent.Type.RPL_ENDOFWHOIS)
 void onEndOfWhois(const IrcEvent event)
 {
@@ -204,7 +210,8 @@ void onEndOfWhois(const IrcEvent event)
 }
 
 
-@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+//@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
+@(Label("part/quit"))
 @(IrcEvent.Type.PART)
 @(IrcEvent.Type.QUIT)
 void onLeave(const IrcEvent event)
@@ -213,7 +220,8 @@ void onLeave(const IrcEvent event)
 }
 
 
-@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+//@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
+@(Label("selfnick"))
 @(IrcEvent.Type.SELFNICK)
 void onSelfNick(const IrcEvent event)
 {
