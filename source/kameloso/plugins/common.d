@@ -294,9 +294,9 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 if (event.content.beginsWith(state.bot.nickname) &&
                                    (event.content.length > state.bot.nickname.length))
                                 {
-                                    writefln("trailing character is '%s'", event.content[state.bot.nickname.length+1]);
+                                    writefln("trailing character is '%s'", event.content[state.bot.nickname.length]);
 
-                                    switch (event.content[state.bot.nickname.length+1])
+                                    switch (event.content[state.bot.nickname.length])
                                     {
                                     case ':':
                                     case ' ':
