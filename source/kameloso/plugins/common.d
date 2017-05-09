@@ -380,8 +380,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 if ((privilegeLevel == master) &&
                                     (state.users[event.sender].login != state.bot.master))
                                 {
-                                    writeln("privilege pass but it isn't master, continue");
-                                    // no need to skip
+                                    writeln(event.sender, " passed privilege check but isn't master; continue");
                                     continue;
                                 }
                                 break;
@@ -390,8 +389,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 return state.doWhois(event);
 
                             case fail:
-                                writefln("privilege check failed (%s)", event.sender);
-                                // no need to skip
+                                writeln(event.sender, " failed privilege check");
                                 continue;
                             }
                             break;
