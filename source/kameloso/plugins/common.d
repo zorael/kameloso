@@ -188,6 +188,14 @@ mixin template onEventImpl(string module_, bool debug_ = false)
             {
                 foreach (eventTypeUDA; getUDAs!(fun, IrcEvent.Type))
                 {
+                    static if (hasUDA!(fun, Label))
+                    {
+                        import std.format : format;
+
+                        enum name = "%s.%s(%s)"
+                            .format(module_, getUDAs!(fun, Label)[0].name, eventTypeUDA);
+                    }
+
                     static if (eventTypeUDA == IrcEvent.Type.ANY)
                     {
                         // UDA is ANY, let pass
@@ -208,7 +216,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
                             if (!state.bot.channels.canFind(event.channel))
                             {
-                                //writeln("ignore invalid channel ", event.channel);
+                                //writeln(name, " ignore invalid channel ", event.channel);
                                 return;
                             }
                         }
@@ -225,7 +233,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                         {
                             if (matches)
                             {
-                                //writeln("MATCH! breaking");
+                                //writeln(name, " MATCH! breaking");
                                 break;
                             }
 
@@ -244,14 +252,15 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                             case required:
                                 if (event.type == IrcEvent.Type.QUERY)
                                 {
-                                    //writeln("but it is a query, consider allowed");
+                                    //writeln(name, "but it is a query, consider allowed");
                                     goto case allowed;
                                 }
 
                                 if (event.content.beginsWith(state.bot.nickname) &&
                                    (event.content.length > state.bot.nickname.length))
                                 {
-                                    //writefln("trailing character is '%s'", event.content[state.bot.nickname.length]);
+                                    /*writefln("%s trailing character is '%s'", name,
+                                        event.content[state.bot.nickname.length]);*/
 
                                     switch (event.content[state.bot.nickname.length])
                                     {
@@ -304,7 +313,9 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 // Passed nick prefix tests
                                 // No real prefix configured
                                 // what the hell is this?
-                                writeln("CONFUSED but setting matches to true...");
+
+                                writefln("%s CONFUSED on %s but setting matches to true...",
+                                         name, event.type);
                                 matches = true;
                                 break;
                             }
@@ -332,7 +343,8 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 if ((privilegeLevel == master) &&
                                     (state.users[event.sender].login != state.bot.master))
                                 {
-                                    writeln(event.sender, " passed privilege check but isn't master; continue");
+                                    /*writefln("%s: %s passed privilege check but isn't master; continue",
+                                             name, event.sender);*/
                                     continue;
                                 }
                                 break;
@@ -341,7 +353,8 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 return state.doWhois(event);
 
                             case fail:
-                                writeln(event.sender, " failed privilege check");
+                                /*writeln("%s: %s failed privilege check; continue",
+                                        name, event.sender);*/
                                 continue;
                             }
                             break;
