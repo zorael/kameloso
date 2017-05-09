@@ -28,14 +28,13 @@ void onJoin(const IrcEvent event)
 
     foreach (note; noteArray)
     {
-        with (note.when)
-        {
-            const timestamp = "%s %02d/%02d %02d:%02d"
-                              .format(dayOfWeek, day, month, hour, minute);
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s! %s left note on %s: %s"
-                .format(event.channel, event.sender, note.sender, timestamp, note.line));
-        }
+        import std.datetime : Clock;
+        import kameloso.stringutils : timeSince;
+
+        const timestamp = (Clock.currTime - note.when).timeSince;
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :%s! %s left note %s ago: %s"
+            .format(event.channel, event.sender, note.sender, timestamp, note.line));
     }
 
     clearNotes(event.sender);
