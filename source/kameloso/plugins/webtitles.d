@@ -209,7 +209,7 @@ void titleworker(shared IrcPluginState state)
 {
     import core.time : seconds;
 
-    mixin(scopeguard(entry|exit));
+    mixin(scopeguard(exit));
 
     Tid mainThread = cast(Tid)state.mainThread;
     TitleLookup[string] cache;
