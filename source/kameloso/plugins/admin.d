@@ -28,7 +28,6 @@ void updateBot()
 }
 
 
-//@(Description("sudo", "Sends a command as-is to the server"))
 @(Label("sudo"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -46,7 +45,6 @@ void onCommandSudo(const IrcEvent event)
 }
 
 
-//@(Description("quit", "Disconnects from the server with the supplied message"))
 @(Label("quit"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -69,7 +67,6 @@ void onCommandQuit(const IrcEvent event)
 }
 
 
-//@(Description("addchan", "Adds a channel to the list of channels to be active in"))
 @(Label("addchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -101,7 +98,6 @@ void onCommandAddChan(const IrcEvent event)
 }
 
 
-//@(Description("delchan", "Removes a channel from the list of channels to be active in"))
 @(Label("delchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -134,7 +130,6 @@ void onCommandDelChan(const IrcEvent event)
 }
 
 
-//@(Description("addfriend", "Add a *NickServ login* to the list of friends who may use the bot's services"))
 @(Label("addfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -161,7 +156,6 @@ void onCommandAddFriend(const IrcEvent event)
 }
 
 
-//@(Description("delfriend", "Removes a *NickServ login* from the friends list"))
 @(Label("delfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -196,7 +190,6 @@ void onCommandDelFriend(const IrcEvent event)
 }
 
 
-//@(Description("resetterm", "Outputs ASCII control character 15 to reset the terminal if it has entered binary mode"))
 @(Label("resetterm"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -209,7 +202,6 @@ void onCommandResetTerminal(const IrcEvent event)
 }
 
 
-//@(Description("printall", "Sets a flag to print all incoming IRC strings, raw"))
 @(Label("toggleprintall"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -230,7 +222,6 @@ void onAnyEvent(const IrcEvent event)
 }
 
 
-//@(Description("status", "Prints the current bot status to the terminal"))
 @(Label("status"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -242,7 +233,6 @@ void onCommandStatus(const IrcEvent event)
 }
 
 
-//@(Description("join/part", "Joins or parts a channel"))
 @(Label("join/part"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)

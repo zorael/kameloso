@@ -55,7 +55,6 @@ string sedReplace(const string originalLine, const string expression)
 }
 
 
-//@(Description("chan", "Catch a channel message to parse for sed-replace patterns"))
 @(Label("chan"))
 @(IrcEvent.Type.CHAN)
 void onMessage(const IrcEvent event)

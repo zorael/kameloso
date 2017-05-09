@@ -397,7 +397,6 @@ mixin template onEventImpl(string module_, bool debug_ = false)
 
 mixin template basicEventHandlers()
 {
-    //@(Description("whoislogin", "Catch a whois-login event to update the list of tracked users"))
     @(Label("whoislogin"))
     @(IrcEvent.Type.WHOISLOGIN)
     void onWhoisLogin(const IrcEvent event)
@@ -406,7 +405,6 @@ mixin template basicEventHandlers()
     }
 
 
-    //@(Description("endofwhois", "Catch an end-of-whois event to remove queued events"))
     @(Label("endofwhois"))
     @(IrcEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWhois(const IrcEvent event)
@@ -415,7 +413,6 @@ mixin template basicEventHandlers()
     }
 
 
-    //@(Description("part/quit", "Catch a part event to remove the nickname from the list of tracked users"))
     @(Label("part/quit"))
     @(IrcEvent.Type.PART)
     @(IrcEvent.Type.QUIT)
@@ -425,7 +422,6 @@ mixin template basicEventHandlers()
     }
 
 
-    //@(Description("selfnick", "Catch a selfnick event to properly update the bot's (nickname) state"))
     @(Label("selfnick"))
     @(IrcEvent.Type.SELFNICK)
     void onSelfNick(const IrcEvent event)

@@ -141,7 +141,6 @@ JSONValue loadQuotes(const string filename)
     return parseJSON(wholeFile);
 }
 
-//@(Description("say", "Repeats what was said to the current channel or in a query"))
 @(Label("say"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -161,7 +160,6 @@ void onCommandSay(const IrcEvent event)
         "PRIVMSG %s :%s".format(target, event.content));
 }
 
-//@(Description("8ball", "Asks the all-powerful 8ball for guidance on matters"))
 @(Label("8ball"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -179,7 +177,6 @@ void onCommand8ball(const IrcEvent event)
 }
 
 
-//@(Description("quote", "Fetch and send a quote from the internal JSON storage"))
 @(Label("quote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -221,7 +218,6 @@ void onCommandQuote(const IrcEvent event)
 }
 
 
-//@(Description("addquote", "Add a new quote to the internal JSON storage"))
 @(Label("addquote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -244,7 +240,6 @@ void onCommanAdddQuote(const IrcEvent event)
 }
 
 
-//@(Description("printquotes", "Print the current JSON storage variable to the terminal"))
 @(Label("printquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -256,7 +251,6 @@ void onCommandPrintQuotes(const IrcEvent event)
 }
 
 
-//@(Description("reloadquotes", "Re-read the JSON quotes file into meomry"))
 @(Label("reloadquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)

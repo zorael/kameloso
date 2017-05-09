@@ -39,7 +39,6 @@ struct TitleLookup
 }
 
 
-//@(Description("message", "Catch a chat message and see if it contains a URL"))
 @(Label("message"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)  // ?

@@ -22,7 +22,6 @@ void updateBot()
     state.mainThread.send(cast(shared)botCopy);
 }
 
-//@(Description("notice", "Catch a NOTICE event as received when connecting"))
 @(Label("notice"))
 @(IrcEvent.Type.NOTICE)
 void onNotice(const IrcEvent event)
@@ -57,7 +56,6 @@ void onNotice(const IrcEvent event)
 }
 
 
-//@(Description("welcome", "Catch a WELCOME event and update the bot state's nickname"))
 @(Label("welcome"))
 @(IrcEvent.Type.WELCOME)
 void onWelcome(const IrcEvent event)
@@ -66,7 +64,6 @@ void onWelcome(const IrcEvent event)
     updateBot();
 }
 
-//@(Description("motdend", "Catch an ENDOFMOTD event and start final login sequences"))
 @(Label("welcome"))
 @(IrcEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(const IrcEvent event)
@@ -93,7 +90,6 @@ void onEndOfMotd(const IrcEvent event)
     }
 }
 
-//@(Description("nickinuse", "Catch a NICKNAMEINUSE error and change the bot nick"))
 @(Label("nickinuse"))
 @(IrcEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(const IrcEvent event)

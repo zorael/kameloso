@@ -16,7 +16,6 @@ IrcPluginState state;
 JSONValue notes;
 
 
-//@(Description("onjoin", "Catch a join event"))
 @(Label("onjoin"))
 @(IrcEvent.Type.JOIN)
 void onJoin(const IrcEvent event)
@@ -41,7 +40,6 @@ void onJoin(const IrcEvent event)
 }
 
 
-//@(Description("addnote", "Add a new queued message to a user"))
 @(Label("addnote"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
@@ -65,7 +63,6 @@ void onCommandAddNote(const IrcEvent event)
 }
 
 
-//@(Description("printnotes", "Print the list of notes on record"))
 @(Label("printnotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -77,7 +74,6 @@ void onCommandPrintNotes(const IrcEvent event)
 }
 
 
-//@(Description("fakejoin", "Fake a join event to debug notes fetching and playback"))
 @(Label("fakejoin"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.master)
