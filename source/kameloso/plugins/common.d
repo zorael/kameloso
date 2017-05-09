@@ -56,7 +56,6 @@ struct Prefix
 struct Label
 {
     string name;
-    string desc;
 }
 
 // doWhois
