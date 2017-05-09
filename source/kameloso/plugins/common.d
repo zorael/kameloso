@@ -294,7 +294,7 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                 if (event.content.beginsWith(state.bot.nickname) &&
                                    (event.content.length > state.bot.nickname.length))
                                 {
-                                    writefln("trailing character is '%s'", event.content[state.bot.nickname.length]);
+                                    //writefln("trailing character is '%s'", event.content[state.bot.nickname.length]);
 
                                     switch (event.content[state.bot.nickname.length])
                                     {
@@ -303,12 +303,12 @@ mixin template onEventImpl(string module_, bool debug_ = false)
                                     case '!':
                                     case '?':
                                         // content begins with bot nickname, followed by this
+                                        // non-nick character
                                         break;
 
                                     default:
-                                        writeln("unsupported, continuing");
                                         // content begins with bot nickname, followed by something
-                                        // unsupported, like ^ or other characters allowed in nicks
+                                        // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
                                         continue;
                                     }
                                 }
