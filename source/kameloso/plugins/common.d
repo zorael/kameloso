@@ -75,44 +75,7 @@ void doWhois(ref IrcPluginState state, const IrcEvent event)
 }
 
 
-void onBasicEvent(ref IrcPluginState state, const IrcEvent event)
-{
-    with (state)
-    with (IrcEvent.Type)
-    switch (event.type)
-    {
-    case WHOISLOGIN:
-        // Register the user
-        state.users[event.target] = userFromEvent(event);
-        break;
-
-    case RPL_ENDOFWHOIS:
-        queue.remove(event.target);
-        break;
-
-    case PART:
-    case QUIT:
-        users.remove(event.sender);
-        break;
-
-    case SELFNICK:
-        if (bot.nickname == event.content)
-        {
-            writefln("%s saw SELFNICK but already had that nick...", __MODULE__);
-        }
-
-        bot.nickname = event.content;
-        break;
-
-    default:
-        // Not so interesting
-        break;
-    }
-}
-
-
-
-FilterResult filterUser(IrcPluginState state, const IrcEvent event)
+FilterResult filterUser(const IrcPluginState state, const IrcEvent event)
 {
     import std.algorithm.searching : canFind;
 
