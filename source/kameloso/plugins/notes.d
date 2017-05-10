@@ -107,7 +107,7 @@ void onCommandAddNote(const IrcEvent event)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "printnotes"))
-void onCommandPrintNotes(const IrcEvent event)
+void onCommandPrintNotes()
 {
     writeln(notes.toPrettyString);
 }
