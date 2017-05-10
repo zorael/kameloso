@@ -114,7 +114,12 @@ Quit checkMessages()
                 // This should automatically close the connection
                 // Set quit to yes to propagate the decision down the stack
                 const line = reason.length ? reason : bot.quitReason;
+
+                writeln("--> QUIT :", line);
                 conn.sendline("QUIT :", line);
+
+                foreach (plugin; plugins) plugin.teardown();
+
                 quit = Quit.yes;
             },
             (LinkTerminated e)
