@@ -212,13 +212,13 @@ void initPlugins(IrcBot bot, Tid tid)
     plugins = cast(IrcPlugin[])
     [
         new Printer(state),
-        new ConnectPlugin(state),
         new Pinger(state),
+        new Webtitles(state),
+        new SedReplacePlugin(state),
         new AdminPlugin(state),
         new NotesPlugin(state),
         new Chatbot(state),
-        new Webtitles(state),
-        new SedReplacePlugin(state)
+        new ConnectPlugin(state),
     ];
 }
 
