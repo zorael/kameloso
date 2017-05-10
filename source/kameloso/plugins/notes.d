@@ -113,6 +113,18 @@ void onCommandPrintNotes(const IrcEvent event)
 }
 
 
+@(Label("reloadnotes"))
+@(IrcEvent.Type.CHAN)
+@(IrcEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@(Prefix(NickPrefixPolicy.required, "reloadnotes"))
+void onCommandReloadQuotes()
+{
+    writeln("Reloading notes");
+    notes = loadNotes(Files.notes);
+}
+
+
 @(Label("fakejoin"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.master)
