@@ -111,8 +111,10 @@ mixin template IrcPluginBasics()
 {
     void onEvent(const IrcEvent event)
     {
-        //return event.onEvent();
-        return .onEvent(event);
+        static if (__traits(compiles, .onEvent(IrcEvent.init)))
+        {
+            .onEvent(event);
+        }
     }
 
     this(IrcPluginState origState)
