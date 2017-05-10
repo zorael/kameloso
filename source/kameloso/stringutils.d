@@ -266,14 +266,14 @@ string timeSince(const Duration duration)
     {
         if (days)
         {
-            sink.put(", ");
-            if (!minutes) sink.put("and ");
+            if (minutes) sink.put(", ");
+            else sink.put("and ");
         }
         sink.formattedWrite("%d %s", hours, hours.plurality("hour", "hours"));
     }
     if (minutes)
     {
-        if (hours) sink.put(", and ");
+        if (hours) sink.put(" and ");
         sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
     }
     if (!minutes)
