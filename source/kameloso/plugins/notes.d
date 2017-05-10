@@ -40,6 +40,30 @@ void onJoin(const IrcEvent event)
 }
 
 
+@(Label("names"))
+@(IrcEvent.Type.RPL_NAMREPLY)
+void onNames(const IrcEvent event)
+{
+    import std.algorithm.iteration : splitter;
+    import std.datetime : Clock;
+
+    foreach (nickname; event.content.splitter)
+    {
+        IrcEvent fakeEvent;
+
+        with (fakeEvent)
+        {
+            type = IrcEvent.Type.JOIN;
+            sender = nickname.stripModeSign();
+            channel = event.channel;
+            time = Clock.currTime.toUnixTime;
+        }
+
+        onJoin(fakeEvent);
+    }
+}
+
+
 @(Label("addnote"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
