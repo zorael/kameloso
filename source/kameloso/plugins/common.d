@@ -159,6 +159,17 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             .format(module_, getUDAs!(fun, Label)[0].name, eventTypeUDA);
                     }
 
+                    import std.typecons : Flag;
+
+                    static if (hasUDA!(fun, Verbose))
+                    {
+                        enum verbose = getUDAs!(fun, Verbose)[0] == Verbose.yes;
+                    }
+                    else
+                    {
+                        enum verbose = false;
+                    }
+
                     static if (eventTypeUDA == IrcEvent.Type.ANY)
                     {
                         // UDA is ANY, let pass
@@ -179,7 +190,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                             if (!state.bot.channels.canFind(event.channel))
                             {
-                                //writeln(name, " ignore invalid channel ", event.channel);
+                                static if (verbose)
+                                {
+                                    writeln(name, " ignore invalid channel ", event.channel);
+                                }
                                 return;
                             }
                         }
@@ -196,7 +210,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         {
                             if (matches)
                             {
-                                //writeln(name, " MATCH! breaking");
+                                static if (verbose)
+                                {
+                                    writeln(name, " MATCH! breaking");
+                                }
                                 break;
                             }
 
@@ -215,15 +232,21 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             case required:
                                 if (event.type == IrcEvent.Type.QUERY)
                                 {
-                                    //writeln(name, "but it is a query, consider allowed");
+                                    static if (verbose)
+                                    {
+                                        writeln(name, "but it is a query, consider allowed");
+                                    }
                                     goto case allowed;
                                 }
 
                                 if (event.content.beginsWith(state.bot.nickname) &&
                                    (event.content.length > state.bot.nickname.length))
                                 {
-                                    /*writefln("%s trailing character is '%s'", name,
-                                        event.content[state.bot.nickname.length]);*/
+                                    static if (verbose)
+                                    {
+                                        writefln("%s trailing character is '%s'", name,
+                                            event.content[state.bot.nickname.length]);
+                                    }
 
                                     switch (event.content[state.bot.nickname.length])
                                     {
@@ -246,7 +269,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     continue;
                                 }
 
-                                mutEvent.content = event.content.stripPrefix!false(state.bot.nickname);
+                                mutEvent.content = event.content
+                                    .stripPrefix!(CheckIfBeginsWith.no)(state.bot.nickname);
                                 break;
                             }
 
@@ -306,8 +330,11 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 if ((privilegeLevel == master) &&
                                     (state.users[event.sender].login != state.bot.master))
                                 {
-                                    /*writefln("%s: %s passed privilege check but isn't master; continue",
-                                             name, event.sender);*/
+                                    static if (verbose)
+                                    {
+                                        writefln("%s: %s passed privilege check but isn't master; continue",
+                                                 name, event.sender);
+                                    }
                                     continue;
                                 }
                                 break;
@@ -316,8 +343,11 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 return state.doWhois(event);
 
                             case fail:
-                                /*writeln("%s: %s failed privilege check; continue",
-                                        name, event.sender);*/
+                                static if (verbose)
+                                {
+                                    writeln("%s: %s failed privilege check; continue",
+                                            name, event.sender);
+                                }
                                 continue;
                             }
                             break;
