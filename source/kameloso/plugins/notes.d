@@ -20,20 +20,35 @@ JSONValue notes;
 @(IrcEvent.Type.JOIN)
 void onJoin(const IrcEvent event)
 {
-    // Authorised and everything
+    import std.datetime : Clock;
+    import kameloso.stringutils : timeSince;
+
     auto noteArray = getNotes(event.sender);
 
     if (!noteArray.length) return;
-
-    foreach (note; noteArray)
+    else if (noteArray.length == 1)
     {
-        import std.datetime : Clock;
-        import kameloso.stringutils : timeSince;
+        const note = noteArray[0];
+        immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-        const timestamp = (Clock.currTime - note.when).timeSince;
         state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :%s! %s left note %s ago: %s"
             .format(event.channel, event.sender, note.sender, timestamp, note.line));
+    }
+    else
+    {
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :%s! You have %d notes."
+            .format(event.channel, event.sender, noteArray.length));
+
+        foreach (const note; noteArray)
+        {
+            immutable timestamp = (Clock.currTime - note.when).timeSince;
+
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s left note %s ago: %s"
+                .format(event.channel, note.sender, timestamp, note.line));
+        }
     }
 
     clearNotes(event.sender);
