@@ -11,6 +11,7 @@ import std.datetime;
  +/
 alias Decode = Flag!"decode";
 alias Advance = Flag!"advance";
+alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
 
 
 // nom
@@ -220,7 +221,8 @@ unittest
 
 
 
-string stripPrefix(bool checkIfBeginsWith = true)(const string line, const string prefix)
+string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
+    (const string line, const string prefix)
 {
     import std.string : stripLeft, munch;
 
@@ -228,7 +230,7 @@ string stripPrefix(bool checkIfBeginsWith = true)(const string line, const strin
 
     string slice = line.stripLeft();
 
-    static if (checkIfBeginsWith)
+    static if (checkBegins)
     {
         if (!slice.beginsWith(prefix))
         {
