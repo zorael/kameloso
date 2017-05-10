@@ -60,16 +60,16 @@ struct Label
  +  Params:
  +      event = A complete IrcEvent to queue for later processing.
  +/
-void doWhois(ref IrcPluginState state, const IrcEvent event)
+void doWhois(IrcPluginState state, const IrcEvent event)
 {
     import kameloso.common : ThreadMessage;
-    import std.stdio : writeln;
     import std.concurrency : send;
 
     with (state)
     {
         writeln("Missing user information on ", event.sender);
-        shared sEvent = cast(shared)event;
+        const eventCopy = event;
+        shared sEvent = cast(shared)eventCopy;
         mainThread.send(ThreadMessage.Whois(), sEvent);
     }
 }
