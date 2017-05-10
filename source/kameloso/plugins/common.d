@@ -226,7 +226,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 break;
 
                             case allowed:
-                                mutEvent.content = event.content.stripPrefix!true(state.bot.nickname);
+                                mutEvent.content = event.content.stripPrefix(state.bot.nickname);
                                 break;
 
                             case required:
