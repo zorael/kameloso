@@ -212,6 +212,7 @@ void onCommandPrintAll(const IrcEvent event)
 
 @Label("print")
 @(IrcEvent.Type.ANY)
+@(Chainable.yes)
 void onAnyEvent(const IrcEvent event)
 {
     if (printAll) writeln(event.raw);
