@@ -37,8 +37,16 @@ enum FilterResult { fail, pass, whois }
 enum NickPrefixPolicy { ignored, allowed, required }
 enum PrivilegeLevel { anyone, friend, master }
 
-struct Chainable {}
 
+/// Annotates that an event function should be more verbose than usual, generating
+/// more terminal output
+alias Verbose = Flag!"verbose";
+
+
+/// Denotes that the annotated event should never stop an event from being processed,
+/// but keep on running until it runs out of functions to iterate, or some other
+/// non-chaining function stops it.
+alias Chainable = Flag!"chainable";
 
 struct Prefix
 {
@@ -377,7 +385,11 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         static assert(false, "Unknown function signature: " ~ typeof(fun).stringof);
                     }
 
-                    static if (hasUDA!(fun, Chainable)) continue;
+                    static if (hasUDA!(fun, Chainable) &&
+                              (getUDAs!(fun, Chainable)[0] == Chainable.yes))
+                    {
+                        continue;
+                    }
                     else
                     {
                         return;

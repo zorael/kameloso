@@ -43,7 +43,7 @@ struct TitleLookup
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)  // ?
 @(PrivilegeLevel.friend)
-@Chainable
+@(Chainable.yes)
 void onMessage(const IrcEvent event)
 {
     auto matches = event.content.matchAll(urlRegex);
