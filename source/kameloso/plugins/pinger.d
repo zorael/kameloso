@@ -49,6 +49,12 @@ private void pinger(Tid mainThread)
 }
 
 
+void initialise()
+{
+    pingerThread = spawn(&pinger, state.mainThread);
+}
+
+
 void teardown()
 {
     try pingerThread.send(ThreadMessage.Teardown());
@@ -70,9 +76,4 @@ public:
 final class Pinger : IrcPlugin
 {
     mixin IrcPluginBasics;
-
-    void initialise()
-    {
-        pingerThread = spawn(&pinger, state.mainThread);
-    }
 }
