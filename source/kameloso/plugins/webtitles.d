@@ -234,6 +234,12 @@ void initialise()
 }
 
 
+void teardown()
+{
+    worker.send(ThreadMessage.Teardown());
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
