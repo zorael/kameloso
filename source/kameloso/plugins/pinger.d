@@ -48,7 +48,6 @@ private void pinger(Tid mainThread)
     }
 }
 
-void onEvent(const IrcEvent event) {}
 
 void teardown()
 {
