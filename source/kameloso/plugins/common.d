@@ -3,6 +3,7 @@ module kameloso.plugins.common;
 import kameloso.irc;
 
 import std.stdio : writeln, writefln;
+import std.typecons : Flag;
 
 
 /++
