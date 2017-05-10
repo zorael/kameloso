@@ -291,6 +291,13 @@ JSONValue loadNotes(const string filename)
 }
 
 
+void initialise()
+{
+    writeln("Initialising notes ...");
+    notes = Files.notes.loadNotes();
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
@@ -300,10 +307,4 @@ public:
 final class NotesPlugin : IrcPlugin
 {
     mixin IrcPluginBasics;
-
-    void initialise()
-    {
-        writeln("Initialising notes ...");
-        notes = Files.notes.loadNotes();
-    }
 }
