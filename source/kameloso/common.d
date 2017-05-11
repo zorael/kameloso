@@ -17,26 +17,26 @@ alias Quit = Flag!"quit";
  +  to differentiate between messages and then have big switches inside the catching function,
  +  but with these you can actually have separate functions for each.
  +/
-static struct ThreadMessage
+struct ThreadMessage
 {
-    static struct NewServer {}
-    static struct Pong {}
-    static struct Ping {}
-    static struct Sendline {}
-    static struct Quietline {}
-    static struct Quit {}
-    static struct Whois {}
-    static struct Teardown {}
-    static struct Status {}
+    struct NewServer {}
+    struct Pong {}
+    struct Ping {}
+    struct Sendline {}
+    struct Quietline {}
+    struct Quit {}
+    struct Whois {}
+    struct Teardown {}
+    struct Status {}
 }
 
 
 /// Used as a UDA for "this field is not to be saved in configuration files"
-static struct Unconfigurable {}
+struct Unconfigurable {}
 
 
 /// Used as a UDA for "this string is an array with this token as separator"
-static struct Separator
+struct Separator
 {
 	string token = ",";
 }
@@ -46,7 +46,7 @@ static struct Separator
  +  Examines a struct and one of its member (by string), and returns the Separator it has
  +  been annotated with. See Separator above.
  +/
-static string separatorOf(T, string member)()
+string separatorOf(T, string member)()
 {
     foreach (attr; __traits(getAttributes, __traits(getMember, T, member)))
     {
@@ -91,8 +91,8 @@ enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
  +      file = source filename iff message provided, defaults to __FILE__.
  +      line = source file linenumber iff message provided, defaults to __LINE__.
  +/
-static void printObject(T)(T thing, string message = string.init,
-                           string file = __FILE__, int line = __LINE__)
+void printObject(T)(T thing, string message = string.init,
+                    string file = __FILE__, int line = __LINE__)
 {
 	import std.stdio  : writefln;
     import std.traits : isSomeFunction;
@@ -138,7 +138,7 @@ static void printObject(T)(T thing, string message = string.init,
  +      scopeName = Optional scope name to print. Otherwise the current function name
  +                  will be used.
  +/
-static string scopeguard(ubyte states = exit, string scopeName = string.init) pure
+string scopeguard(ubyte states = exit, string scopeName = string.init) pure
 {
 	import std.array : Appender;
     Appender!string app;

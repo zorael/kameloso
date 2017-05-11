@@ -868,7 +868,7 @@ struct IrcEvent
  +  Returns:
  +      A finished IrcEvent.
  +/
-static IrcEvent toIrcEvent(const char[] raw)
+IrcEvent toIrcEvent(const char[] raw)
 {
     import std.exception : enforce;
     import std.datetime;
@@ -903,7 +903,7 @@ static IrcEvent toIrcEvent(const char[] raw)
  +  Returns:
  +      A freshly generated IrcUser.
  +/
-static IrcUser userFromEvent(const IrcEvent event)
+IrcUser userFromEvent(const IrcEvent event)
 {
     IrcUser user;
 
@@ -955,7 +955,7 @@ static IrcUser userFromEvent(const IrcEvent event)
 
 
 /// This simply looks at an event and decides whether it is from NickServ
-static bool isFromNickserv(const IrcEvent event)
+bool isFromNickserv(const IrcEvent event)
 {
     return event.special
         && (event.sender  == "NickServ")
@@ -965,7 +965,7 @@ static bool isFromNickserv(const IrcEvent event)
 
 
 /// isValidChannel only checks whether a string *looks* like a channel.
-static bool isValidChannel(const string line)
+bool isValidChannel(const string line)
 {
     import std.string : indexOf;
 
@@ -991,7 +991,7 @@ unittest
  +  Returns:
  +      The nickname with the sign sliced off.
  +/
-static string stripModeSign(const string nickname)
+string stripModeSign(const string nickname)
 {
     if (!nickname.length) return string.init;
 

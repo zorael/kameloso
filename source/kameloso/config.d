@@ -88,7 +88,7 @@ if (isInputRange!Range && (T.length > 0))
  +      configFile = The string name of a configuration file.
  +      things = A compile-time variadic list of structs whose members should be configured.
  +/
-static void readConfig(T...)(const string configFile, ref T things)
+void readConfig(T...)(const string configFile, ref T things)
 {
     import std.file   : write, exists, isFile, readText;
     import std.string : chomp;
@@ -124,7 +124,7 @@ static void readConfig(T...)(const string configFile, ref T things)
  +      things = A compile-time variadic list of structs whose members should be read and
  +               saved to disk.
  +/
-static void writeConfig(T...)(const string configFile, T things)
+void writeConfig(T...)(const string configFile, T things)
 {
     import std.datetime : Clock;
     import std.file : exists, isFile, removeFile = remove;
@@ -153,7 +153,7 @@ static void writeConfig(T...)(const string configFile, T things)
  +      memberstring = The string name of one of thing's members.
  +      value = The value to assign, in string form.
  +/
-static void setMember(T)(ref T thing, string memberstring, string value)
+void setMember(T)(ref T thing, string memberstring, string value)
 {
     import std.conv : to, ConvException;
     import std.algorithm.iteration : splitter;
@@ -247,7 +247,7 @@ static void setMember(T)(ref T thing, string memberstring, string value)
  +  Template param:
  +      T = The struct type to inspect for member name lengths.
  +/
-static string longestMemberName(T)()
+string longestMemberName(T)()
 {
     string longest;
 
@@ -279,7 +279,7 @@ static string longestMemberName(T)()
  +  Params:
  +      things = A compile-time variadic list of things to "serialise".
  +/
-static string configText(T...)(const T things)
+string configText(T...)(const T things)
 if (T.length > 1)
 {
     import std.array : Appender;
@@ -303,7 +303,7 @@ if (T.length > 1)
  +  Params:
  +      thing = A struct object, whose members should be "serialised".
  +/
-static string configText(T)(const T thing)
+string configText(T)(const T thing)
 {
     import std.format : formattedWrite;
     import std.array : Appender;
