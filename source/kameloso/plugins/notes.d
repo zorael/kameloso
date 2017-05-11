@@ -393,6 +393,7 @@ mixin OnEventImpl!__MODULE__;
 
 public:
 
+
 // NotesPlugin
 /++
  +  The Notes plugin which allows people to leave messages to eachother, for offline

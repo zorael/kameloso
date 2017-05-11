@@ -85,6 +85,7 @@ void onAnyEvent(const IrcEvent event)
             event.put(reusableAppender);
 
             writeln(data);
+
             reusableAppender.clear();
         }
     }
@@ -103,7 +104,6 @@ void initialise()
 
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
-
 
 public:
 
