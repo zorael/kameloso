@@ -19,7 +19,7 @@ IrcBot bot;
 // parseBasic
 /++
  +  Parses the most basic of IRC events; PING and ERROR. They syntactically differ from other
- +  events in tht they are not prefixed by its sender.
+ +  events in that they are not prefixed by its sender.
  +
  +  Params:
  +      raw = The raw IRC string to parse.
