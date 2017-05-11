@@ -74,7 +74,6 @@ Quit checkMessages()
             },
             (ThreadMessage.Ping)
             {
-                // writefln("--> PING :%s".format(bot.server));
                 conn.sendline("PING :", bot.server);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
@@ -106,7 +105,6 @@ Quit checkMessages()
             },
             (ThreadMessage.Pong)
             {
-                // writefln("--> PONG %s".format(bot.server));
                 conn.sendline("PONG :", bot.server);
             },
             (ThreadMessage.Quit, string reason)
