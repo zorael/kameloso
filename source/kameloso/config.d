@@ -170,7 +170,7 @@ static void setMember(T)(ref T thing, string memberstring, string value)
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
+                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
         {
         alias MemberType = typeof(__traits(getMember, T, name));
 
@@ -182,15 +182,15 @@ static void setMember(T)(ref T thing, string memberstring, string value)
             }
             else static if (isArray!MemberType && !is(MemberType : string))
             {
-                static assert((hasUDA!(__traits(getMember, T, name), separator)),
+                static assert((hasUDA!(__traits(getMember, T, name), Separator)),
                         "%s %s.%s is not properly annotated with a separator token"
                         .format(MemberType.stringof, T.stringof, name));
 
                 __traits(getMember, thing, name) = MemberType.init;
 
-                static if (getUDAs!(__traits(getMember, T, name), separator).length > 0)
+                static if (getUDAs!(__traits(getMember, T, name), Separator).length > 0)
                 {
-                    foreach (entry; value.splitter(getUDAs!(__traits(getMember, T, name), separator)[0].token))
+                    foreach (entry; value.splitter(getUDAs!(__traits(getMember, T, name), Separator)[0].token))
                     {
                         static if (is(MemberType : string[]))
                         {
@@ -258,7 +258,7 @@ static string longestMemberName(T)()
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
+                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
         {
             if (name.length > longest.length)
             {
@@ -324,7 +324,7 @@ static string configText(T)(const T thing)
                    !memberSatisfies!("isTemplate", T, name) &&
                    !memberSatisfies!("isAssociativeArray", T, name) &&
                    !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), unconfigurable))
+                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
         {
             alias MemberType = typeof(__traits(getMember, T, name));
 

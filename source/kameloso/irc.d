@@ -452,10 +452,14 @@ struct IrcBot
     string quitReason = "beep boop I am a bot";
     string password;
     string master;
-    @separator(",") string[] channels = [];
-    @separator(",") string[] friends  = [];
-    @unconfigurable string server;
-    @unconfigurable bool finishedLogin;
+    @Separator(",")
+    string[] channels = [];
+    @Separator(",")
+    string[] friends  = [];
+    @Unconfigurable
+    string server;
+    @Unconfigurable
+    bool finishedLogin;
 
     string toString()
     {

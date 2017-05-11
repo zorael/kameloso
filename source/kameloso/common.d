@@ -32,29 +32,30 @@ static struct ThreadMessage
 
 
 /// Used as a UDA for "this field is not to be saved in configuration files"
-static struct unconfigurable {}
+static struct Unconfigurable {}
 
 
 /// Used as a UDA for "this string is an array with this token as separator"
-static struct separator
+static struct Separator
 {
 	string token = ",";
 }
 
 
 /++
- +  Examines a struct and one of its member (by string), and returns the separator it has
- +  been annotated with. See separator above.
+ +  Examines a struct and one of its member (by string), and returns the Separator it has
+ +  been annotated with. See Separator above.
  +/
 static string separatorOf(T, string member)()
 {
     foreach (attr; __traits(getAttributes, __traits(getMember, T, member)))
     {
-        static if (is(typeof(attr) == separator))
+        static if (is(typeof(attr) == Separator))
         {
             static assert((attr.token.length > 0),
-                "Array member %s.%s has an invalid separator token (empty string)"
+                "Array member %s.%s has an invalid Separator token (empty string)"
                 .format(T.stringof, member));
+
             return attr.token;
         }
     }
