@@ -220,7 +220,7 @@ unittest
 }
 
 
-
+pragma(inline)
 string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
     (const string line, const string prefix)
 {
@@ -247,6 +247,8 @@ string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
     return slice;
 }
 
+
+pragma(inline)
 string timeSince(const Duration duration)
 {
     import std.array  : Appender;
