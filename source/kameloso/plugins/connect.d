@@ -35,7 +35,7 @@ void updateBot()
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("notice"))
+@Label("notice")
 @(IrcEvent.Type.NOTICE)
 void onNotice(const IrcEvent event)
 {
@@ -79,7 +79,7 @@ void onNotice(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("welcome"))
+@Label("welcome")
 @(IrcEvent.Type.WELCOME)
 void onWelcome(const IrcEvent event)
 {
@@ -97,7 +97,7 @@ void onWelcome(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("endofmotd"))
+@Label("endofmotd")
 @(IrcEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(const IrcEvent event)
 {
@@ -131,7 +131,7 @@ void onEndOfMotd(const IrcEvent event)
  +  Appends a single character to the end of the bot's nickname, and propagates the change
  +  via the main thread to all other plugins.
  +/
-@(Label("nickinuse"))
+@Label("nickinuse")
 @(IrcEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {

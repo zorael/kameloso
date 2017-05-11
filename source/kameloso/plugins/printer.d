@@ -17,7 +17,7 @@ Appender!(char[]) reusableAppender;  // Appender!string can't be cleared
 enum appenderBufferSize = 600;  // longest length seen is 537
 
 
-@(Label("any"))
+@Label("any")
 @(IrcEvent.Type.ANY)
 void onAnyEvent(const IrcEvent event)
 {

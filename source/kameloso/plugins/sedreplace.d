@@ -85,7 +85,7 @@ string sedReplace(const string originalLine, const string expression)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("chan"))
+@Label("chan")
 @(IrcEvent.Type.CHAN)
 void onMessage(const IrcEvent event)
 {

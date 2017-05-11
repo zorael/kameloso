@@ -156,12 +156,12 @@ JSONValue loadQuotes(const string filename)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("say"))
+@Label("say")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@(Prefix(NickPrefixPolicy.required, "say"))
-@(Prefix(NickPrefixPolicy.required, "säg"))
+@Prefix(NickPrefixPolicy.required, "say")
+@Prefix(NickPrefixPolicy.required, "säg")
 void onCommandSay(const IrcEvent event)
 {
     import std.format : format;
@@ -190,11 +190,11 @@ void onCommandSay(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("8ball"))
+@Label("8ball")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@(Prefix(NickPrefixPolicy.required, "8ball"))
+@Prefix(NickPrefixPolicy.required, "8ball")
 void onCommand8ball(const IrcEvent event)
 {
     import std.format : format;
@@ -218,11 +218,11 @@ void onCommand8ball(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("quote"))
+@Label("quote")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@(Prefix(NickPrefixPolicy.required, "quote"))
+@Prefix(NickPrefixPolicy.required, "quote")
 void onCommandQuote(const IrcEvent event)
 {
     import std.string : strip, indexOf;
@@ -268,11 +268,11 @@ void onCommandQuote(const IrcEvent event)
  +  Params:
  +      event = The triggering IrcEvent.
  +/
-@(Label("addquote"))
+@Label("addquote")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@(Prefix(NickPrefixPolicy.required, "addquote"))
+@Prefix(NickPrefixPolicy.required, "addquote")
 void onCommanAdddQuote(const IrcEvent event)
 {
     import std.format : format;
@@ -299,11 +299,11 @@ void onCommanAdddQuote(const IrcEvent event)
  +
  +  This is for debugging purposes.
  +/
-@(Label("printquotes"))
+@Label("printquotes")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "printquotes"))
+@Prefix(NickPrefixPolicy.required, "printquotes")
 void onCommandPrintQuotes()
 {
     writeln(quotes.toPrettyString);
@@ -316,11 +316,11 @@ void onCommandPrintQuotes()
  +
  +  This is both for debugging purposes and to simply allow for live manual editing of quotes.
  +/
-@(Label("reloadquotes"))
+@Label("reloadquotes")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "reloadquotes"))
+@Prefix(NickPrefixPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
     writeln("Reloading quotes");

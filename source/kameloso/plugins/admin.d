@@ -37,11 +37,11 @@ void updateBot()
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("sudo"))
+@Label("sudo")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "sudo"))
+@Prefix(NickPrefixPolicy.required, "sudo")
 void onCommandSudo(const IrcEvent event)
 {
     if (state.users[event.sender].login != state.bot.master)
@@ -64,11 +64,11 @@ void onCommandSudo(const IrcEvent event)
  +  Params:
  +      event = tshe triggering IrcEvent.
  +/
-@(Label("quit"))
+@Label("quit")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "quit"))
+@Prefix(NickPrefixPolicy.required, "quit")
 void onCommandQuit(const IrcEvent event)
 {
     state.mainThread.send(ThreadMessage.Quit(), event.content);
@@ -82,12 +82,12 @@ void onCommandQuit(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("addchan"))
+@Label("addchan")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "addchan"))
-@(Prefix(NickPrefixPolicy.required, "addhome"))
+@Prefix(NickPrefixPolicy.required, "addchan")
+@Prefix(NickPrefixPolicy.required, "addhome")
 void onCommandAddChan(const IrcEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -119,12 +119,12 @@ void onCommandAddChan(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("delchan"))
+@Label("delchan")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "delchan"))
-@(Prefix(NickPrefixPolicy.required, "delhome"))
+@Prefix(NickPrefixPolicy.required, "delchan")
+@Prefix(NickPrefixPolicy.required, "delhome")
 void onCommandDelChan(const IrcEvent event)
 {
     import std.algorithm : countUntil, remove;
@@ -161,11 +161,11 @@ void onCommandDelChan(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("addfriend"))
+@Label("addfriend")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "addfriend"))
+@Prefix(NickPrefixPolicy.required, "addfriend")
 void onCommandAddFriend(const IrcEvent event)
 {
     import std.string : indexOf, strip;
@@ -196,11 +196,11 @@ void onCommandAddFriend(const IrcEvent event)
  +  Params:
  +      event = The triggering IrcEvent.
  +/
-@(Label("delfriend"))
+@Label("delfriend")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "delfriend"))
+@Prefix(NickPrefixPolicy.required, "delfriend")
 void onCommandDelFriend(const IrcEvent event)
 {
     import std.algorithm : countUntil, remove;
@@ -241,11 +241,11 @@ void onCommandDelFriend(const IrcEvent event)
  +  character putting it would-be binary mode, like what happens when you try to cat a
  +  binary file.
  +/
-@(Label("resetterm"))
+@Label("resetterm")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "resetterm"))
+@Prefix(NickPrefixPolicy.required, "resetterm")
 void onCommandResetTerminal()
 {
     import std.stdio : write;
@@ -259,11 +259,11 @@ void onCommandResetTerminal()
  +
  +  This is for debugging purposes.
  +/
-@(Label("toggleprintall"))
+@Label("toggleprintall")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "printall"))
+@Prefix(NickPrefixPolicy.required, "printall")
 void onCommandPrintAll()
 {
     printAll = !printAll;
@@ -299,11 +299,11 @@ void onAnyEvent(const IrcEvent event)
  +  It doesn't print its own at this point; it merely sets the ball running so it will,
  +  in the end, receive the message to do so itself.
  +/
-@(Label("status"))
+@Label("status")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "status"))
+@Prefix(NickPrefixPolicy.required, "status")
 void onCommandStatus()
 {
     state.mainThread.send(ThreadMessage.Status());
@@ -318,12 +318,12 @@ void onCommandStatus()
  +      prefix = a prefix string of either "join" or "part".
  +      event = the triggering IrcEvent.
  +/
-@(Label("join/part"))
+@Label("join/part")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "join"))
-@(Prefix(NickPrefixPolicy.required, "part"))
+@Prefix(NickPrefixPolicy.required, "join")
+@Prefix(NickPrefixPolicy.required, "part")
 void onCommandJoinPart(const string prefix, const IrcEvent event)
 {
     import std.algorithm.iteration : splitter, joiner;

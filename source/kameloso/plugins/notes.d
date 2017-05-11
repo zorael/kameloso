@@ -28,7 +28,7 @@ JSONValue notes;
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("onjoin"))
+@Label("onjoin")
 @(IrcEvent.Type.JOIN)
 void onJoin(const IrcEvent event)
 {
@@ -77,7 +77,7 @@ void onJoin(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("names"))
+@Label("names")
 @(IrcEvent.Type.RPL_NAMREPLY)
 void onNames(const IrcEvent event)
 {
@@ -108,11 +108,11 @@ void onNames(const IrcEvent event)
  +  Params:
  +      event = the triggering IrcEvent.
  +/
-@(Label("addnote"))
+@Label("addnote")
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-@(Prefix(NickPrefixPolicy.required, "addnote"))
-@(Prefix(NickPrefixPolicy.required, "note"))
+@Prefix(NickPrefixPolicy.required, "addnote")
+@Prefix(NickPrefixPolicy.required, "note")
 void onCommandAddNote(const IrcEvent event)
 {
     import std.format : format, formattedRead;
@@ -138,11 +138,11 @@ void onCommandAddNote(const IrcEvent event)
  +
  +  This is for debugging purposes.
  +/
-@(Label("printnotes"))
+@Label("printnotes")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "printnotes"))
+@Prefix(NickPrefixPolicy.required, "printnotes")
 void onCommandPrintNotes()
 {
     writeln(notes.toPrettyString);
@@ -155,11 +155,11 @@ void onCommandPrintNotes()
  +
  +  This is for debugging purposes.
  +/
-@(Label("reloadnotes"))
+@Label("reloadnotes")
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "reloadnotes"))
+@Prefix(NickPrefixPolicy.required, "reloadnotes")
 void onCommandReloadQuotes()
 {
     writeln("Reloading notes");
@@ -173,10 +173,10 @@ void onCommandReloadQuotes()
  +
  +  This is for debugging purposes.
  +/
-@(Label("fakejoin"))
+@Label("fakejoin")
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.master)
-@(Prefix(NickPrefixPolicy.required, "fakejoin"))
+@Prefix(NickPrefixPolicy.required, "fakejoin")
 void onCommandFakejoin(const IrcEvent event)
 {
     import kameloso.stringutils;
