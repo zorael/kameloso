@@ -6,13 +6,15 @@ import std.typecons : Flag;
 
 
 /++
- +  This Flag allows us to use the more descriptive Quit.yes (and Yes.quit)
+ +  Flag allowing us to use the more descriptive Quit.yes (and Yes.quit)
  +  instead of bools when returning such directives from functions.
  +/
 alias Quit = Flag!"quit";
 
 
 /++
+ +  Aggregate of thread message types.
+ +
  +  This is a way to make concurrency message passing easier. You could use string literals
  +  to differentiate between messages and then have big switches inside the catching function,
  +  but with these you can actually have separate functions for each.
