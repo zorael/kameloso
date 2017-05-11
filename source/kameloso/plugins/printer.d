@@ -1,22 +1,42 @@
 module kameloso.plugins.printer;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
 
-import std.stdio : writeln, writefln;
 import std.array : Appender;
-
 
 private:
 
-
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
-Appender!(char[]) reusableAppender;  // Appender!string can't be cleared
-enum appenderBufferSize = 600;  // longest length seen is 537
 
 
+// reusableAppender
+/+
+ +  Appender to reuse as sink to fill when printing events.
+ +
+ +  It can't be Appender!string or it can't be cleared, so use Appender!(char[]).
+ +  The content will be shortlived anyway so there's no risk of old lines creeping through.
+ +  One workaround would be not to .clear() it, but to just set it to .init. However, the
+ +  point of having a reusable Appender would be promptly lost.
+ +/
+Appender!(char[]) reusableAppender;
+
+/// Longest length seen in the wild is 537, use a buffer slightly larger than that
+enum appenderBufferSize = 600;
+
+
+// onAnyEvent
+/++
+ +  Print an event to the local terminal.
+ +
+ +  Use the reusableAppender to slightly optimise the procedure by constantly reusing memory.
+ +
+ +  Params:
+ +      event = the IrcEvent to print.
+ +/
 @Label("any")
 @(IrcEvent.Type.ANY)
 void onAnyEvent(const IrcEvent event)
@@ -50,12 +70,14 @@ void onAnyEvent(const IrcEvent event)
 
         const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time)).timeOfDay.toString;
 
-        //import std.format : formattedWrite;
-        //app.formattedWrite("[%s] ", timestamp);
-        // hot spot so let's optimize it a bit
 
+        /*  hot spot so let's optimize it a bit
+            import std.format : formattedWrite;
+            reusableAppender.formattedWrite("[%s] ", timestamp);
+        */
         with (reusableAppender)
         {
+
             put('[');
             put(timestamp);
             put("] ");
@@ -75,6 +97,14 @@ mixin OnEventImpl!__MODULE__;
 
 public:
 
+
+// Printer
+/++
+ +  The Printer plugin takes all IrcEvents and prints them to the local terminal.
+ +
+ +  This used to be part of the core program, but with UDAs it's easy to split off into
+ +  its own plugin.
+ +/
 final class Printer : IrcPlugin
 {
     mixin IrcPluginBasics;
