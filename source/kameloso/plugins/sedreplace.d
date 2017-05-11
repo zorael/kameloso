@@ -1,52 +1,74 @@
 module kameloso.plugins.sedreplace;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
 
-import std.stdio : writeln, writefln;
-import std.datetime;
-import std.concurrency;
-import std.regex;
+import std.concurrency : send;
+import std.regex : ctRegex;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+/// A Line[string] 1-buffer of the previous line every user said, with nickname as key
 Line[string] prevlines;
 
-
+/// Lifetime of a Line in prevlines, in seconds
 enum replaceTimeoutSeconds = 60;
+
+/// Regex pattern to find lines like "s/foo/bar/"
 enum sedPattern = `^s/([^/]+)/([^/]*)/(g?)$`;
 //enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
+//enum sedPattern3 = `^s|([^|]+)|([^|]*)|(g?)$`;
+
+/// ctRegex engine for the sed-replace pattern
 static sedRegex = ctRegex!sedPattern;
 
 
+/// An struct aggregate of a line and the timestamp when it was said
 struct Line
 {
+    import std.datetime : SysTime;
+
     string content;
     SysTime when;
 }
 
 
+// sedReplace
+/++
+ +  sed-replace a line with a substitution string.
+ +
+ +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`
+ +
+ +  Params:
+ +      originalLine = the line to apply the sed-replace pattern to.
+ +      expression = the replace pattern to apply.
+ +
+ +  Returns:
+ +      the original line with the changes the replace pattern caused.
+ +/
 string sedReplace(const string originalLine, const string expression)
 {
-    string result = originalLine;
+    import std.regex : matchAll, regex, replaceAll, replaceFirst;
 
-    foreach (hit; expression.matchAll(sedRegex))
+    string result = originalLine;  // need mutable
+
+    foreach (const hit; expression.matchAll(sedRegex))
     {
         const changeThis = hit[1];
         const toThis = hit[2];
-        const globalFlag = (hit[3].length > 0);
+        immutable globalFlag = (hit[3].length > 0);
 
         if (globalFlag)
         {
-            writeln("global!");
             result = result.replaceAll(changeThis.regex, toThis);
         }
         else
         {
-            writeln("not global...");
             result = result.replaceFirst(changeThis.regex, toThis);
         }
     }
@@ -55,30 +77,42 @@ string sedReplace(const string originalLine, const string expression)
 }
 
 
+// onMessage
+/++
+ +  Parses a channel message and looks for any sed-replace expressions therein, to apply on
+ +  the previous message.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("chan"))
 @(IrcEvent.Type.CHAN)
 void onMessage(const IrcEvent event)
 {
-    import kameloso.stringutils;
-    import std.string : strip;
+    import kameloso.stringutils : beginsWith;
+    import std.datetime : Clock, seconds;
     import std.format : format;
+    import std.string : strip;
 
-    const stripped = event.content.strip;
+    immutable stripped = event.content.strip;
 
     if (!stripped.beginsWith("s/"))
     {
+        // Normal message, store as previous line
+
         Line line;
         line.content = stripped;
         line.when = Clock.currTime;
         prevlines[event.sender] = line;
+
         return;
     }
 
-    if (auto line = event.sender in prevlines)
+    if (const line = event.sender in prevlines)
     {
         if ((Clock.currTime - line.when) > replaceTimeoutSeconds.seconds) return;
 
-        const result = line.content.sedReplace(event.content);
+        immutable result = line.content.sedReplace(event.content);
         if ((result == event.content) || !result.length) return;
 
         state.mainThread.send(ThreadMessage.Sendline(),
@@ -95,6 +129,13 @@ mixin OnEventImpl!__MODULE__;
 
 public:
 
+
+// SedReplacePlugin
+/++
+ + The SedReplace plugin stores a buffer of the last said line of every user, and if a new
+ + message comes in with a sed-replace-like pattern in it, tries to apply it on the original
+ + message as a regex replace.
+ +/
 final class SedReplacePlugin : IrcPlugin
 {
     mixin IrcPluginBasics;

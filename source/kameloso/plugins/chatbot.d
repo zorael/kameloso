@@ -1,42 +1,44 @@
 module kameloso.plugins.chatbot;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
-import kameloso.stringutils;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
+import kameloso.stringutils;
 
-import std.stdio  : writeln, writefln;
-import std.json   : JSONValue, parseJSON, JSONException;
-import std.format : format;
-import std.string : indexOf, strip;
-import std.concurrency;
+import std.concurrency : send;
+import std.json  : JSONValue;
+import std.stdio : writefln, writeln;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+/// The in-memory JSON storage of all user quotes. It is in the JSON form of string[][string],
+/// where the first key is the nickname.
 JSONValue quotes;
 
 
 // getQuote
 /++
- +  Fetches a quote for the specified nickname from the JSON list. If none is available it
- +  returns an empty string instead.
+ +  Fetches a quote for the specified nickname from the in-memory JSON storage.
  +
  +  Params:
- +      quotes = A JSON list of quotes, in the form of string[][string] where the first key
- +               is the nickname.
- +      nickname = string nickname of the user to fetch quotes for.
+ +      nickname = nickname of the user to fetch quotes for.
+ +
+ +  Returns:
+ +      a random quote string. If no quote is available it returns an empty string instead.
  +/
 string getQuote(const string nickname)
 {
     try
     {
-        if (auto arr = nickname in quotes)
+        if (const arr = nickname in quotes)
         {
             import std.random : uniform;
 
-            return arr.array[uniform(0,(*arr).array.length)].str;
+            return arr.array[uniform(0, (*arr).array.length)].str;
         }
         else
         {
@@ -44,8 +46,9 @@ string getQuote(const string nickname)
             return string.init;
         }
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
+        writeln("Exception when fetching quote: ", e);
         return string.init;
     }
 }
@@ -53,25 +56,19 @@ string getQuote(const string nickname)
 
 // addQuote
 /++
- +  Adds a quote to the JSON storage. It does not save it to disk; this has to be
- +  done at the calling site.
+ +  Adds a quote to the in-memory JSON storage.
+ +
+ +  It does not save it to disk; this has to be done separately at the calling site.
  +
  +  Params:
- +      ref quotes = The JSON list of all the quotes, in string[][string] form.
- +      nickname = The string nickname of the quoted user.
- +      line = The quote itself.
+ +      nickname = nickname of the quoted user.
+ +      line = the quote itself.
  +/
 void addQuote(const string nickname, const string line)
 {
-    import std.format : format;
-
-    assert((nickname.length && line.length),
-        "%s was passed an empty nickname(%s) or line(%s)"
-        .format(__FUNCTION__, nickname, line));
-
     try
     {
-        if (auto arr = nickname in quotes)
+        if (nickname in quotes)
         {
             quotes[nickname].array ~= JSONValue(line);
         }
@@ -81,26 +78,27 @@ void addQuote(const string nickname, const string line)
             quotes.object[nickname] = JSONValue([ line ]);
         }
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         // No quotes at all
-        writeln(e);
+        writeln("Exception when adding new quote: ", e);
         quotes = JSONValue("{}");
-        return nickname.addQuote(nickname);
+        // return nickname.addQuote(nickname); // ???
+        return nickname.addQuote(line);
     }
 }
 
 
 // saveQuotes
 /++
- +  Saves JSON quote list to disk, to the supplied filename. This should be done whenever a new
- +  quote is added to the database.
+ +  Saves the JSON quote list to disk.
+ +
+ +  This should be done whenever a new quote is added to the database.
  +
  +  Params:
- +      filename = The string filename of the JSON storage, usually Files.quotes.
- +      quotes = The quotes in JSON form. Its .toPrettyString is what gets written.
+ +      filename = filename of the JSON storage, usually Files.quotes.
  +/
-void saveQuotes(const string filename, const JSONValue quotes)
+void saveQuotes(const string filename)
 {
     import std.stdio : File;
     import std.file  : exists, isFile, remove;
@@ -111,7 +109,6 @@ void saveQuotes(const string filename, const JSONValue quotes)
     }
 
     auto f = File(filename, "a");
-    scope (exit) f.close();
 
     f.write(quotes.toPrettyString);
     f.writeln();
@@ -119,28 +116,46 @@ void saveQuotes(const string filename, const JSONValue quotes)
 
 
 // loadQuotes
-/// Ditto but loads instead of saves
+/++
+ +  Loads JSON quote list from disk.
+ +
+ +  This only needs to be done at plugin (re-)initialisation.
+ +
+ +  Params:
+ +      filename = filename of the JSON storage.
+ +/
 JSONValue loadQuotes(const string filename)
 {
-    import std.stdio  : writefln;
     import std.file   : exists, isFile, readText;
+    import std.json   : parseJSON;
     import std.string : chomp;
 
     if (!filename.exists)
     {
-        writefln("%s does not exist", filename);
+        writeln(filename, " does not exist");
         return JSONValue("{}");
     }
     else if (!filename.isFile)
     {
-        writefln("%s is not a file", filename);
+        writefln(filename, " is not a file");
         return JSONValue("{}");
     }
 
-    auto wholeFile = filename.readText.chomp;
+    immutable wholeFile = filename.readText.chomp;
+
     return parseJSON(wholeFile);
 }
 
+
+// onCommandSay
+/++
+ +  Repeats text to the channel the event was sent to.
+ +
+ +  If it was sent in a query, respond in a private message in kind.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("say"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -149,17 +164,32 @@ JSONValue loadQuotes(const string filename)
 @(Prefix(NickPrefixPolicy.required, "säg"))
 void onCommandSay(const IrcEvent event)
 {
+    import std.format : format;
+
     if (!event.content.length)
     {
         writeln("No text to send...");
         return;
     }
 
-    const target = (event.channel.length) ? event.channel : event.sender;
+    immutable target = (event.channel.length) ? event.channel : event.sender;
+
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, event.content));
 }
 
+
+// onCommand8ball
+/++
+ +  Implements 8ball.
+ +
+ +  Randomises a response from the table kameloso.constants.eightballAnswers and sends
+ +  it back to the channel in which the triggering event happened, or in a query if it
+ +  was a private message.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("8ball"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -167,16 +197,27 @@ void onCommandSay(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "8ball"))
 void onCommand8ball(const IrcEvent event)
 {
+    import std.format : format;
     import std.random : uniform;
 
-    // Get a random 8ball message and send it
-    const reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-    const target = (event.channel.length) ? event.channel : event.sender;
+    immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
+    immutable target = (event.channel.length) ? event.channel : event.sender;
+
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, reply));
 }
 
 
+// onCommandQuote
+/++
+ +  Fetches and repeats a random quote of a supplied nickname.
+ +
+ +  The quote is read from in-memory JSON storage, and it is sent to the channel the triggering
+ +  event occured in.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("quote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -187,23 +228,23 @@ void onCommandQuote(const IrcEvent event)
     import std.string : strip, indexOf;
     import std.format : format;
 
-    // Get a quote from the JSON list and send it
-    const stripped = event.content.strip;
-    if (!stripped.length)
+    immutable signedNickname = event.content.strip;
+
+    if (!signedNickname.length)
     {
         writeln("No one to quote....");
         return;
     }
-    else if (stripped.indexOf(" ") != -1)
+    else if (signedNickname.indexOf(" ") != -1)
     {
         writeln("Contains spaces, not a single nick...");
         return;
     }
 
     // stripModeSign to allow for quotes from @nickname and +dudebro
-    const nickname = stripped.stripModeSign;
-    const quote = nickname.getQuote();
-    const target = (event.channel.length) ? event.channel : event.sender;
+    immutable nickname = signedNickname.stripModeSign;
+    immutable quote = nickname.getQuote();
+    immutable target = (event.channel.length) ? event.channel : event.sender;
 
     if (quote.length)
     {
@@ -218,6 +259,15 @@ void onCommandQuote(const IrcEvent event)
 }
 
 
+// onCommandAddQuote
+/++
+ +  Creates a new quote.
+ +
+ +  It is added to the in-memory JSON storage which then gets immediately written to disk.
+ +
+ +  Params:
+ +      event = The triggering IrcEvent.
+ +/
 @(Label("addquote"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -225,14 +275,17 @@ void onCommandQuote(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "addquote"))
 void onCommanAdddQuote(const IrcEvent event)
 {
+    import std.format : format;
+
     string slice = event.content;  // need mutable
-    const nickname = slice.nom!(Decode.yes)(' ').stripModeSign;
+    immutable nickname = slice.nom!(Decode.yes)(' ').stripModeSign;
 
     if (!nickname.length || !slice.length) return;
 
     nickname.addQuote(slice);
-    Files.quotes.saveQuotes(quotes);
-    const target = (event.channel.length) ? event.channel : event.sender;
+    Files.quotes.saveQuotes();
+
+    immutable target = (event.channel.length) ? event.channel : event.sender;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Quote for %s saved (%d on record)"
@@ -240,32 +293,48 @@ void onCommanAdddQuote(const IrcEvent event)
 }
 
 
+// onCommandPrintQuotes
+/++
+ +  Prints the in-memory quotes JSON storage to the local terminal.
+ +
+ +  This is for debugging purposes.
+ +/
 @(Label("printquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "printquotes"))
-void onCommandPrintQuotes(const IrcEvent event)
+void onCommandPrintQuotes()
 {
     writeln(quotes.toPrettyString);
 }
 
 
+// onCommandReloadQuotes
+/++
+ +  Reloads the JSON quotes from disk.
+ +
+ +  This is both for debugging purposes and to simply allow for live manual editing of quotes.
+ +/
 @(Label("reloadquotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "reloadquotes"))
-void onCommandReloadQuotes(const IrcEvent event)
+void onCommandReloadQuotes()
 {
     writeln("Reloading quotes");
     quotes = loadQuotes(Files.quotes);
 }
 
 
+// initialise
+/++
+ +  Initialises the Chatbot plugin. Loads the quotes from disk.
+ +/
 void initialise()
 {
-    writeln("Initialising quotess ...");
+    writeln("Initialising quotes ...");
     quotes = loadQuotes(Files.quotes);
 }
 
@@ -273,8 +342,8 @@ void initialise()
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
-
 public:
+
 
 // Chatbot
 /++

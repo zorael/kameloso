@@ -1,33 +1,42 @@
 module kameloso.plugins.admin;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
-import kameloso.stringutils;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
+import kameloso.stringutils;
 
-import std.stdio : writeln, writefln;
-import std.concurrency;
-import std.traits;
-import std.string;
-import std.algorithm;
+import std.concurrency : send;
+import std.stdio : writefln, writeln;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+/// Toggles whether onAnyEvent prints the raw strings of all incoming IRC events
 bool printAll;
 
 
+// updateBot TODO: deduplicate
+/++
+ +  Takes a copy of the current bot state and concurrency-sends it to the main thread,
+ +  propagating any changes up the stack and then down to all other plugins.
+ +/
 void updateBot()
 {
-    with (state)
-    {
-        shared botCopy = cast(shared)bot;
-        mainThread.send(botCopy);
-    }
+    const botCopy = state.bot;
+    state.mainThread.send(cast(shared)botCopy);
 }
 
 
+// onCommandSudo
+/++
+ +  Sends supplied text to the server, verbatim.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("sudo"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -37,7 +46,7 @@ void onCommandSudo(const IrcEvent event)
 {
     if (state.users[event.sender].login != state.bot.master)
     {
-        writefln("Failsafe triggered: bot is not master (%s)", event.sender);
+        writefln("Failsafe triggered: user is not master (%s)", event.sender);
         return;
     }
 
@@ -45,6 +54,16 @@ void onCommandSudo(const IrcEvent event)
 }
 
 
+// onCommandQuit
+/++
+ +  Sends a QUIT event to the server.
+ +
+ +  If any extra text is following the 'quit' prefix, it uses that as the quit reason,
+ +  otherwise it falls back to the default as specified in the configuration file.
+ +
+ +  Params:
+ +      event = tshe triggering IrcEvent.
+ +/
 @(Label("quit"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -52,17 +71,17 @@ void onCommandSudo(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "quit"))
 void onCommandQuit(const IrcEvent event)
 {
-    if (state.users[event.sender].login != state.bot.master)
-    {
-        writefln("Failsafe triggered: bot is not master (%s)", event.sender);
-        return;
-    }
-
-    // By sending a concurrency message it should quit nicely
     state.mainThread.send(ThreadMessage.Quit(), event.content);
 }
 
 
+// onCommandAddChan
+/++
+ +  Add a channel to the list of currently active channels.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("addchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -76,7 +95,6 @@ void onCommandAddChan(const IrcEvent event)
 
     immutable channel = event.content.strip();
 
-    // Add an "active" channel, in which the bot should react
     if (!channel.isValidChannel)
     {
         writeln("invalid channel: ", channel);
@@ -94,6 +112,13 @@ void onCommandAddChan(const IrcEvent event)
 }
 
 
+// onCommandDelChan
+/++
+ +  Removes a channel from the list of currently active channels.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("delchan"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -102,7 +127,8 @@ void onCommandAddChan(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "delhome"))
 void onCommandDelChan(const IrcEvent event)
 {
-    // Remove a channel from the active list
+    import std.algorithm : countUntil, remove;
+    import std.string : strip;
 
     immutable channel = event.content.strip();
 
@@ -112,7 +138,7 @@ void onCommandDelChan(const IrcEvent event)
         return;
     }
 
-    const chanIndex = state.bot.channels.countUntil(channel);
+    immutable chanIndex = state.bot.channels.countUntil(channel);
 
     if (chanIndex == -1)
     {
@@ -126,6 +152,15 @@ void onCommandDelChan(const IrcEvent event)
 }
 
 
+// onCommandAddFriend
+/++
+ +  Add a nickname to the list of users who may trigger the bot.
+ +
+ +  This is at a 'friends' level, as opposed to 'anyone' and 'master'.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("addfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -133,6 +168,8 @@ void onCommandDelChan(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "addfriend"))
 void onCommandAddFriend(const IrcEvent event)
 {
+    import std.string : indexOf, strip;
+
     immutable nickname = event.content.strip();
 
     if (!nickname.length)
@@ -152,6 +189,13 @@ void onCommandAddFriend(const IrcEvent event)
 }
 
 
+// onCommandDelFriend
+/++
+ +  Remove a nickname from the list of users who may trigger the bot.
+ +
+ +  Params:
+ +      event = The triggering IrcEvent.
+ +/
 @(Label("delfriend"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -159,6 +203,9 @@ void onCommandAddFriend(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "delfriend"))
 void onCommandDelFriend(const IrcEvent event)
 {
+    import std.algorithm : countUntil, remove;
+    import std.string : indexOf, strip;
+
     immutable nickname = event.content.strip();
 
     if (!nickname.length)
@@ -168,11 +215,11 @@ void onCommandDelFriend(const IrcEvent event)
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln("Nickname must not contain spaces");
+        writeln("Only one nick at a time. Nickname must not contain spaces");
         return;
     }
 
-    auto friendIndex = state.bot.friends.countUntil(nickname);
+    immutable friendIndex = state.bot.friends.countUntil(nickname);
 
     if (friendIndex == -1)
     {
@@ -186,30 +233,55 @@ void onCommandDelFriend(const IrcEvent event)
 }
 
 
+// onCommandResetTerminal
+/++
+ +  Outputs the ASCII control character 15 to the terminal.
+ +
+ +  This helps with restoring it if the bot has accidentally printed a different control
+ +  character putting it would-be binary mode, like what happens when you try to cat a
+ +  binary file.
+ +/
 @(Label("resetterm"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "resetterm"))
-void onCommandResetTerminal(const IrcEvent event)
+void onCommandResetTerminal()
 {
     import std.stdio : write;
     write(ControlCharacter.termReset);
 }
 
 
+// onCommandPrintAll
+/++
+ +  Toggles a flag to print all incoming IRC events raw.
+ +
+ +  This is for debugging purposes.
+ +/
 @(Label("toggleprintall"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "printall"))
-void onCommandPrintAll(const IrcEvent event)
+void onCommandPrintAll()
 {
     printAll = !printAll;
     writeln("Printing all: ", printAll);
 }
 
 
+// onAnyEvent
+/++
+ +  Prints all incoming IRC events raw if the flag to do so has been set with onCommandPrintAll,
+ +  by way of the 'printall' verb.
+ +
+ +  It is annotated with Chainable.yes to allow other functions to not halt the triggering
+ +  process, allowing other functions to trigger on the same IrcEvent.
+ +
+ +  Params:
+ +      event = the event whose raw IRC string to print.
+ +/
 @Label("print")
 @(IrcEvent.Type.ANY)
 @(Chainable.yes)
@@ -219,17 +291,33 @@ void onAnyEvent(const IrcEvent event)
 }
 
 
+// onCommandStatus
+/++
+ +  Propagates a request via the main thread to have all plugins print their IrcPluginState
+ +  struct to the terminal.
+ +
+ +  It doesn't print its own at this point; it merely sets the ball running so it will,
+ +  in the end, receive the message to do so itself.
+ +/
 @(Label("status"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(Prefix(NickPrefixPolicy.required, "status"))
-void onCommandStatus(const IrcEvent event)
+void onCommandStatus()
 {
     state.mainThread.send(ThreadMessage.Status());
 }
 
 
+// onCommandJoinPart
+/++
+ +  Joins or parts a supplied channel.
+ +
+ +  Params:
+ +      prefix = a prefix string of either "join" or "part".
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("join/part"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -252,16 +340,17 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 }
 
 
-mixin BasicEventHandlers;
+mixin BasicEventHandlers!__MODULE__;
 mixin OnEventImpl!__MODULE__;
-
 
 public:
 
+
 // AdminPlugin
 /++
- +  A plugin aimed for adḿinistrative use. It was historically part of Chatbot but now lives
- +  by itself, sadly with much code between them duplicated. FIXME.
+ +  A plugin aimed for adḿinistrative use.
+ +
+ +  It was historically part of Chatbot.
  +/
 final class AdminPlugin : IrcPlugin
 {

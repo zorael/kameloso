@@ -1,29 +1,42 @@
 module kameloso.plugins.notes;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
 
-import std.stdio  : writeln, writefln;
-import std.format : format, formattedRead;
-import std.concurrency;
-import std.json;
+import std.concurrency : send;
+import std.json   : JSONValue;
+import std.stdio  : writefln, writeln;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+/// The in-memory JSON storage of all stored notes. It is in the JSON form of string[][string],
+/// where the first key is the nickname.
 JSONValue notes;
 
 
+// onJoin
+/++
+ +  Sends notes to a channel upon someone joining.
+ +
+ +  Nothing is sent if no notes are stored.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("onjoin"))
 @(IrcEvent.Type.JOIN)
 void onJoin(const IrcEvent event)
 {
-    import std.datetime : Clock;
     import kameloso.stringutils : timeSince;
+    import std.datetime : Clock;
+    import std.format : format;
 
-    auto noteArray = getNotes(event.sender);
+    const noteArray = getNotes(event.sender);
 
     if (!noteArray.length) return;
     else if (noteArray.length == 1)
@@ -55,6 +68,15 @@ void onJoin(const IrcEvent event)
 }
 
 
+// onNames
+/++
+ +  Sends notes to a channel upon joining it.
+ +
+ +  Only reacting to others joinng would mean someone never leaving would never get notes.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("names"))
 @(IrcEvent.Type.RPL_NAMREPLY)
 void onNames(const IrcEvent event)
@@ -62,7 +84,7 @@ void onNames(const IrcEvent event)
     import std.algorithm.iteration : splitter;
     import std.datetime : Clock;
 
-    foreach (nickname; event.content.splitter)
+    foreach (immutable nickname; event.content.splitter)
     {
         IrcEvent fakeEvent;
 
@@ -79,6 +101,13 @@ void onNames(const IrcEvent event)
 }
 
 
+// onCommandAddNote
+/++
+ +  Adds a note to the in-memory storage, and saves it to disk.
+ +
+ +  Params:
+ +      event = the triggering IrcEvent.
+ +/
 @(Label("addnote"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
@@ -86,11 +115,12 @@ void onNames(const IrcEvent event)
 @(Prefix(NickPrefixPolicy.required, "note"))
 void onCommandAddNote(const IrcEvent event)
 {
+    import std.format : format, formattedRead;
     import std.string : strip;
 
     string nickname, line;
     string content = event.content;  // BUG: needs to be mutable or formattedRead won't work
-    const hits = content.formattedRead("%s %s", &nickname, &line);
+    immutable hits = content.formattedRead("%s %s", &nickname, &line);
 
     if (hits != 2) return;
 
@@ -98,10 +128,16 @@ void onCommandAddNote(const IrcEvent event)
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Note added".format(event.channel));
 
-    Files.notes.saveNotes(notes);
+    Files.notes.saveNotes();
 }
 
 
+// onCommandPrintNotes
+/++
+ +  Prints saved notes in JSON form to the local terminal.
+ +
+ +  This is for debugging purposes.
+ +/
 @(Label("printnotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -113,6 +149,12 @@ void onCommandPrintNotes()
 }
 
 
+// onCommandReloadQuotes
+/++
+ +  Reloads quotes from disk, overwriting the in-memory storage.
+ +
+ +  This is for debugging purposes.
+ +/
 @(Label("reloadnotes"))
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
@@ -125,6 +167,12 @@ void onCommandReloadQuotes()
 }
 
 
+// onCommandFakeJoin
+/++
+ +  Fakes the supplied user joining a channel.
+ +
+ +  This is for debugging purposes.
+ +/
 @(Label("fakejoin"))
 @(IrcEvent.Type.CHAN)
 @(PrivilegeLevel.master)
@@ -155,9 +203,20 @@ void onCommandFakejoin(const IrcEvent event)
 }
 
 
+// getNotes
+/++
+ +  Fetches the notes for a specified user, from the in-memory JSON storage.
+ +
+ +  Params:
+ +      nickname = the user whose notes to fetch.
+ +
+ +  Returns:
+ +      a Voldemort Note[] array, where Note is a struct containing a note and metadata thereto.
+ +/
 auto getNotes(const string nickname)
 {
     import std.datetime : SysTime, Clock;
+    import std.json : JSON_TYPE;
 
     struct Note
     {
@@ -171,7 +230,7 @@ auto getNotes(const string nickname)
     {
         if (notes.isNull) return noteArray;
 
-        if (auto arr = nickname in notes)
+        if (const arr = nickname in notes)
         {
             if (arr.type != JSON_TYPE.ARRAY)
             {
@@ -198,32 +257,46 @@ auto getNotes(const string nickname)
             return noteArray;
         }
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
-        writeln(e.msg);
+        writeln("Exception when fetching notes: ", e.msg);
         return noteArray;
     }
 }
 
 
+// clearNotes
+/++
+ +  Clears the note storage of any notes pertaining to the specified user, then saves it to disk.
+ +/
 void clearNotes(const string nickname)
 {
     if (nickname in notes)
     {
         writeln("Clearing stored notes for ", nickname);
         notes.object.remove(nickname);
-        Files.notes.saveNotes(notes);
+        Files.notes.saveNotes();
     }
 }
 
 
+// addNote
+/++
+ +  Creates a note and saves it in the in-memory JSON storage.
+ +
+ +  Params:
+ +      nickname: the user for whom the note is meant.
+ +      sender: the originating user who places the note.
+ +      line: the note text.
+ +/
 void addNote(const string nickname, const string sender, const string line)
 {
     import std.datetime : Clock;
+    import std.json : JSON_TYPE;
 
     if (!line.length)
     {
-        writeln("No message to crete note from...");
+        writeln("No message to create note from...");
         return;
     }
 
@@ -245,17 +318,24 @@ void addNote(const string nickname, const string sender, const string line)
             notes[nickname] = [ lineAsAA ];
         }
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
-        writeln(e.msg);
+        writeln("Exception when adding note: ", e.msg);
     }
 }
 
 
-void saveNotes(const string filename, const JSONValue notes)
+// saveNotes
+/++
+ +  Saves all notes to disk.
+ +
+ +  Params:
+ +      filename = the filename to save to, usually Files.notes.
+ +/
+void saveNotes(const string filename)
 {
-    import std.stdio : File;
     import std.file  : exists, isFile, remove;
+    import std.stdio : File;
 
     if (filename.exists && filename.isFile)
     {
@@ -263,16 +343,22 @@ void saveNotes(const string filename, const JSONValue notes)
     }
 
     auto f = File(filename, "a");
-    scope (exit) f.close();
 
     f.write(notes.toPrettyString);
     f.writeln();
 }
 
-
+// loadNotes
+/++
+ +  Loads notes from disk into the in-memory storage.
+ +
+ +  Params:
+ +      filename = the filename to read, usually Files.notes.
+ +/
 JSONValue loadNotes(const string filename)
 {
     import std.file   : exists, isFile, readText;
+    import std.json   : parseJSON;
     import std.string : chomp;
 
     if (!filename.exists)
@@ -286,11 +372,15 @@ JSONValue loadNotes(const string filename)
         return JSONValue("{}");
     }
 
-    auto wholeFile = filename.readText.chomp;
+    immutable wholeFile = filename.readText.chomp;
     return parseJSON(wholeFile);
 }
 
 
+// initialise
+/++
+ +  Initialises the Notes plugin. Loads the notes from disk.
+ +/
 void initialise()
 {
     writeln("Initialising notes ...");
@@ -301,9 +391,13 @@ void initialise()
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
-
 public:
 
+// NotesPlugin
+/++
+ +  The Notes plugin which allows people to leave messages to eachother, for offline
+ +  communication and such.
+ +/
 final class NotesPlugin : IrcPlugin
 {
     mixin IrcPluginBasics;

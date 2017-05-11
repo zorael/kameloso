@@ -1,38 +1,45 @@
 module kameloso.plugins.pinger;
 
-import kameloso.plugins.common;
-import kameloso.constants;
 import kameloso.common;
+import kameloso.constants;
 import kameloso.irc;
+import kameloso.plugins.common;
 
-import std.stdio : writeln, writefln;
 import std.concurrency;
+import std.stdio : writefln, writeln;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+/// Thread ID of the pinging thread
 Tid pingerThread;
 
-/// The pinging thread, spawned from Pinger
-private void pinger(Tid mainThread)
+
+// pinger
+/++
+ +  Sends a ping to the main thread every Timeout.ping seconds.
+ +
+ +  It waits in a concurrency-receive loop until it's time to ping again.
+ +
+ +  Params:
+ +      mainThread = the thread ID of the main thread.
+ +/
+void pinger(Tid mainThread)
 {
     import core.time : seconds;
 
-    mixin(scopeguard(failure));
-
     bool halt;
-
     while (!halt)
     {
         receiveTimeout(Timeout.ping.seconds,
-            (ThreadMessage.Teardown t)
+            (ThreadMessage.Teardown)
             {
-                writeln("Pinger aborting due to ThreadMessage.Teardown");
                 halt = true;
             },
             (OwnerTerminated e)
             {
-                writeln("Pinger aborting due to owner terminated");
                 halt = true;
             },
             (Variant v)
@@ -49,21 +56,25 @@ private void pinger(Tid mainThread)
 }
 
 
+// initialise
+/++
+ +  Initialises the Pinger plugin. Spawns the pinger thread.
+ +/
 void initialise()
 {
     pingerThread = spawn(&pinger, state.mainThread);
 }
 
 
+// teardown
+/++
+ +  Deinitialises the Pinger plugin. Shuts down the pinger thread.
+ +/
 void teardown()
 {
-    try pingerThread.send(ThreadMessage.Teardown());
-    catch (Exception e)
-    {
-        writeln("Caught exception sending abort to pinger");
-        writeln(e);
-    }
+    pingerThread.send(ThreadMessage.Teardown());
 }
+
 
 public:
 
@@ -71,7 +82,7 @@ public:
 // Pinger
 /++
  +  The Pinger plugin simply sends a PING once every Timeout.ping.seconds. This is to workaround
- +  freenode's new behaviour of not actively PINGing clients, but rather waiting to PONG.
+ +  Freenode's new behaviour of not actively PINGing clients, but rather waiting to PONG.
  +/
 final class Pinger : IrcPlugin
 {
