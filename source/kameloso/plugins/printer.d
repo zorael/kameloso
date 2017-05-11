@@ -91,6 +91,16 @@ void onAnyEvent(const IrcEvent event)
 }
 
 
+// initialise
+/++
+ +  Initialises the Printer plugin. Reserves space in the reusable Appenderk.
+ +/
+void initialise()
+{
+    reusableAppender.reserve(appenderBufferSize);
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
@@ -108,9 +118,4 @@ public:
 final class Printer : IrcPlugin
 {
     mixin IrcPluginBasics;
-
-    void initialise()
-    {
-        reusableAppender.reserve(appenderBufferSize);
-    }
 }
