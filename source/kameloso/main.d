@@ -158,7 +158,7 @@ Quit handleArguments(string[] args)
     string configFileFromArgs;
 
     auto helpInfo = args.getopt(
-        std.getopt.config.caseSensitive,
+        config.caseSensitive,
         "n|nickname",    "Bot nickname", &bot.nickname,
         "u|user",        "Username when logging onto server (not nickname)", &bot.user,
         "i|ident",       "IDENT string", &bot.ident,
