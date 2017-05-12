@@ -58,7 +58,7 @@ if (isInputRange!Range && (T.length > 0))
 
         default:
             // Entry-value line: "^entry[ \t]+value$"
-            auto entry = line.munch("^ \t");
+            const entry = line.munch("^ \t");
             line = line.stripLeft;
 
             //writefln("(%s) %s=%s", typeIndex, entry, value);
