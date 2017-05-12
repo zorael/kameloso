@@ -21,7 +21,6 @@ alias Quit = Flag!"quit";
  +/
 struct ThreadMessage
 {
-    struct NewServer {}
     struct Pong {}
     struct Ping {}
     struct Sendline {}
