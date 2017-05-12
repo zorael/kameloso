@@ -17,18 +17,16 @@ import std.traits : isArray, isSomeFunction, hasUDA;
  +      wholeFile = A range providing the configuration lines.
  +      ref things = The structs whose members should be assigned values from the lines.
  +/
-void walkConfigLines(Range, T...)(Range wholeFile, ref T things)
-if (isInputRange!Range && (T.length > 0))
+void walkConfigLines(Range, Things...)(Range range, ref Things things)
 {
-    import std.string : strip, stripLeft, munch, chomp;
-
-    size_t typeIndex;
+    string currentSection;
 
     top:
-    foreach (line; wholeFile)
+    foreach (rawline; range)
     {
-        line = line.chomp.strip;
+        import std.string : strip;
 
+        string line = rawline.strip();
         if (!line.length) continue;
 
         switch (line[0])
@@ -39,43 +37,46 @@ if (isInputRange!Range && (T.length > 0))
             continue;
 
         case '[':
-            // Header switch
-            switch (line)
-            {
-            foreach (i, section; T)
-            {
-                case "[%s]".format(T[i].stringof):
-                    typeIndex = i;
-                    continue top;
-            }
+            // Section header
+            import std.format : formattedRead;
 
-            default:
-                // writefln("Malformed config file at line %d", lineNumber);
-                // writefln("invalid header: '%s'", line);
+            line.formattedRead("[%s]", &currentSection);
 
-                continue top;
-            } // Header switch
+            break;
 
         default:
-            // Entry-value line: "^entry[ \t]+value$"
-            const entry = line.munch("^ \t");
-            line = line.stripLeft;
+            import std.string : munch, stripLeft;
 
-            //writefln("(%s) %s=%s", typeIndex, entry, value);
+            if (!currentSection.length) continue;
 
-            switch (typeIndex)
-            {
+            // entry-value line
+            immutable entry = line.munch("^ \t");
+            immutable value = line.stripLeft();
+
+            mid:
             foreach (i, thing; things)
             {
-                case i:
-                    things[i].setMember(entry, line);
-                    continue top;
+                enum Thing = typeof(thing).stringof;
+                if (currentSection != Thing) continue;
+
+                switch (entry)
+                {
+                foreach (memberstring; __traits(derivedMembers, Things[i]))
+                {
+                    case memberstring:
+                        import std.typecons : Unqual;
+                        alias MemberType = Unqual!(typeof(__traits(getMember, thing, memberstring)));
+                        things[i].setMember(entry, value);
+                        continue mid;
+                }
+                default:
+                    break;
+                }
             }
-            default:
-                break;
-            }
-        } // line[0] switch
-    } // top switch
+
+            break;
+        }
+    }
 }
 
 
