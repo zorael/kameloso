@@ -135,7 +135,6 @@ void writeConfig(T...)(const string configFile, T things)
     }
 
     auto f = File(configFile, "a");
-    scope (exit) f.close();
 
     f.writefln("# kameloso bot config (%s)\n", Clock.currTime);
     f.write(things.configText);
