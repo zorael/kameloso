@@ -152,26 +152,22 @@ void writeConfig(T...)(const string configFile, T things)
  +      memberstring = The string name of one of thing's members.
  +      value = The value to assign, in string form.
  +/
-void setMember(T)(ref T thing, string memberstring, string value)
+void setMember(Thing)(ref Thing thing, string memberstring, string value)
 {
-    import std.conv : to, ConvException;
-    import std.algorithm.iteration : splitter;
-    import std.traits : getUDAs;
-
     top:
     switch (memberstring)
     {
 
-    foreach (name; __traits(allMembers, T))
+    foreach (name; __traits(allMembers, Thing))
     {
-        static if (!memberIsType!(T, name) &&
-                   !memberSatisfies!(isSomeFunction, T, name) &&
-                   !memberSatisfies!("isTemplate", T, name) &&
-                   !memberSatisfies!("isAssociativeArray", T, name) &&
-                   !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
+        static if (!memberIsType!(Thing, name) &&
+                   !memberSatisfies!(isSomeFunction, Thing, name) &&
+                   !memberSatisfies!("isTemplate", Thing, name) &&
+                   !memberSatisfies!("isAssociativeArray", Thing, name) &&
+                   !memberSatisfies!("isStaticArray", Thing, name) &&
+                   !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
-        alias MemberType = typeof(__traits(getMember, T, name));
+        alias MemberType = typeof(__traits(getMember, Thing, name));
 
         case name:
             static if (is(MemberType == struct) || is(MemberType == class))
@@ -181,15 +177,19 @@ void setMember(T)(ref T thing, string memberstring, string value)
             }
             else static if (isArray!MemberType && !is(MemberType : string))
             {
-                static assert((hasUDA!(__traits(getMember, T, name), Separator)),
+                import std.traits : getUDAs;
+
+                static assert((hasUDA!(__traits(getMember, Thing, name), Separator)),
                         "%s %s.%s is not properly annotated with a separator token"
                         .format(MemberType.stringof, T.stringof, name));
 
                 __traits(getMember, thing, name) = MemberType.init;
 
-                static if (getUDAs!(__traits(getMember, T, name), Separator).length > 0)
+                static if (getUDAs!(__traits(getMember, Thing, name), Separator).length > 0)
                 {
-                    foreach (entry; value.splitter(getUDAs!(__traits(getMember, T, name), Separator)[0].token))
+                    import std.algorithm.iteration : splitter;
+
+                    foreach (entry; value.splitter(getUDAs!(__traits(getMember, Thing, name), Separator)[0].token))
                     {
                         static if (is(MemberType : string[]))
                         {
@@ -200,6 +200,8 @@ void setMember(T)(ref T thing, string memberstring, string value)
                         }
                         else
                         {
+                            import std.conv : to;
+
                             try __traits(getMember, thing, name) ~= value.to!MemberType;
                             catch (ConvException e)
                             {
@@ -220,6 +222,8 @@ void setMember(T)(ref T thing, string memberstring, string value)
             }
             else
             {
+                import std.conv : to;
+
                 // Trust to std.conv.to for conversion
                 try __traits(getMember, thing, name) = value.to!MemberType;
                 catch (ConvException e)
