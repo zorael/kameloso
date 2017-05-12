@@ -33,7 +33,6 @@ Connection conn;
 SysTime[string] whoisCalls;
 
 
-public:
 
 
 /// A simple struct to house the IRC server information. Helps with the configuration files.
@@ -222,6 +221,9 @@ void initPlugins(IrcBot bot, Tid tid)
         new ConnectPlugin(state),
     ];
 }
+
+
+public:
 
 
 /// Main!
