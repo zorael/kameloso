@@ -44,38 +44,17 @@ struct Separator
 
 
 /++
- +  Examines a struct and one of its member (by string), and returns the Separator it has
- +  been annotated with. See Separator above.
- +/
-string separatorOf(T, string member)()
-{
-    foreach (attr; __traits(getAttributes, __traits(getMember, T, member)))
-    {
-        static if (is(typeof(attr) == Separator))
-        {
-            static assert((attr.token.length > 0),
-                "Array member %s.%s has an invalid Separator token (empty string)"
-                .format(T.stringof, member));
-
-            return attr.token;
-        }
-    }
-}
-
-
-/++
  +  Helper/syntactic sugar for static if constraints.
  +/
 template memberSatisfies(string trait, T, string name) {
 	import std.format : format;
+
 	mixin(`enum memberSatisfies = __traits(%s, __traits(getMember, T, "%s"));`
           .format(trait, name));
 }
 
-
 /// Ditto
 enum memberSatisfies(alias Template, T, string name) = Template!(__traits(getMember, T, name));
-
 
 /// Ditto
 enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
