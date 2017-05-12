@@ -6,8 +6,7 @@ import std.typecons : Flag;
 
 
 /++
- +  Flag allowing us to use the more descriptive Quit.yes (and Yes.quit)
- +  instead of bools when returning such directives from functions.
+ +  Flag denoting whether the program should exit.
  +/
 alias Quit = Flag!"quit";
 
@@ -32,11 +31,11 @@ struct ThreadMessage
 }
 
 
-/// Used as a UDA for "this field is not to be saved in configuration files"
+/// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
 
-/// Used as a UDA for "this string is an array with this token as separator"
+/// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
 	string token = ",";
