@@ -15,12 +15,17 @@ import core.time   : seconds;
 struct Connection
 {
 private:
+    /// Real IPv4 and IPv6 sockets to connect through.
     Socket socket4, socket6;
-    Socket socket;
+
+    /// Pointer to the socket of the AddressFamily we want to connect with
+    Socket* socket;
+
+    /// IPs already resolved using Connection.resolve.
     Address[] ips;
 
 public:
-    /// Implicitly proxy calls to the current Socket
+    /// Implicitly proxy calls to the current Socket. This successfully proxies to Socket.receive.
     alias socket this;
 
     /// Set to true if the connection is known to be active
@@ -28,13 +33,13 @@ public:
 
     // reset
     /++
-     +  (Re-)initializes the sockets and sets the IPv4 one as the active one.
+     +  (Re-)initialises the sockets and sets the IPv4 one as the active one.
      +/
     void reset()
     {
         socket4 = new TcpSocket;
         socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
-        socket = socket4;
+        socket = &socket4;
 
         setOptions(socket4);
         setOptions(socket6);
@@ -42,14 +47,14 @@ public:
 
     // setOptions
     /++
-     +  Set up sockets with the SocketOptions neede. These include timeouts and buffer sizes.
+     +  Set up sockets with the SocketOptions needed. These include timeouts and buffer sizes.
      +
      +  Params:
-     +      socket = The (reference to the) socket to modify.
+     +      socketToSetup = the (reference to the) socket to modify.
      +/
-    void setOptions(Socket socket)
+    void setOptions(Socket socketToSetup)
     {
-        with (socket)
+        with (socketToSetup)
         with (SocketOption)
         with (SocketOptionLevel)
         {
@@ -69,7 +74,7 @@ public:
      +      address = The string address to look up.
      +      port = The remote port build into the Address.
      +/
-    void resolve(string address, ushort port)
+    void resolve(const string address, const ushort port)
     {
         import core.thread : Thread;
 
@@ -116,7 +121,7 @@ public:
         foreach (i, ip; ips)
         {
             // Decide which kind of socket to use based on the AddressFamily of the resolved ip
-            socket = (ip.addressFamily == AddressFamily.INET6) ? socket6 : socket4;
+            socket = (ip.addressFamily == AddressFamily.INET6) ? &socket6 : &socket4;
 
             try
             {
@@ -126,7 +131,8 @@ public:
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
                 writeln("Connected!");
-                break;
+                //break;
+                return;
             }
             catch (SocketException e)
             {
@@ -139,8 +145,9 @@ public:
             }
             finally
             {
-                // (i < ips.length-1) is dangerous as length is unsigned!
-                if (!connected && (i+1 < ips.length))
+                // Take care! length is unsigned
+
+                if (i && (i < ips.length))
                 {
                     writefln("Trying next ip in %d seconds.", Timeout.retry);
                     Thread.sleep(Timeout.retry.seconds);
@@ -150,13 +157,13 @@ public:
 
         if (!connected)
         {
-            writeln("failed to connect");
+            writeln("Failed to connect!");
         }
     }
 
     // sendline
     /++
-     +  sends a line to the server.
+     +  Sends a line to the server.
      +
      +  Sadly the IRC server requires lines to end with a newline, so we need to chain
      +  one directly after the line itself. If several threads are allowed to write to the same
@@ -168,8 +175,9 @@ public:
     pragma(inline, true)
     void sendline(Strings...)(const Strings lines)
     {
-        // RACE CONDITION *iff* other threads are allowed to write
-        foreach (line; lines)
+        // TODO: Add throttling!
+
+        foreach (const line; lines)
         {
             socket.send(line);
         }
@@ -178,11 +186,11 @@ public:
     }
 
     /// Proxy calls to Socket.receive.
-    pragma(inline, true)
+    /*pragma(inline, true)
     auto receive(T)(T[] buffer)
     {
         return socket.receive(buffer);
-    }
+    }*/
 }
 
 
