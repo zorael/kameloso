@@ -200,6 +200,31 @@ void onCommand8ball(const IrcEvent event)
     import std.format : format;
     import std.random : uniform;
 
+    // Fetched from wikipedia
+    static immutable string[20] eightballAnswers =
+    [
+        "It is certain",
+        "It is decidedly so",
+        "Without a doubt",
+        "Yes, definitely",
+        "You may rely on it",
+        "As I see it, yes",
+        "Most likely",
+        "Outlook good",
+        "Yes",
+        "Signs point to yes",
+        "Reply hazy try again",
+        "Ask again later",
+        "Better not tell you now",
+        "Cannot predict now",
+        "Concentrate and ask again",
+        "Don't count on it",
+        "My reply is no",
+        "My sources say no",
+        "Outlook not so good",
+        "Very doubtful",
+    ];
+
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
     immutable target = (event.channel.length) ? event.channel : event.sender;
 
