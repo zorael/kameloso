@@ -10,7 +10,7 @@ import std.datetime;
  +  as template parameter options.
  +/
 alias Decode = Flag!"decode";
-alias Advance = Flag!"advance";
+
 alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
 
 
@@ -27,11 +27,8 @@ alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Decode decode = Decode.no,Advance advance = Advance.yes,T,C)
-        (ref T[] arr, C separator)
+string nom(Decode decode = Decode.no, T, C)(ref T[] arr, C separator)
 {
-    import std.stdio : writefln;
-
     static if (decode)
     {
         // We must always decode user-written text not sent by the server
@@ -47,7 +44,8 @@ string nom(Decode decode = Decode.no,Advance advance = Advance.yes,T,C)
 
     if (index == -1)
     {
-        // This can be an exception once we're sure enough of the parsing
+        import std.stdio : writefln;
+
         writefln("--------- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
         return string.init;
     }
@@ -61,10 +59,7 @@ string nom(Decode decode = Decode.no,Advance advance = Advance.yes,T,C)
         enum separatorLength = 1;
     }
 
-    static if (advance)
-    {
-        scope(exit) arr = arr[(index+separatorLength)..$];
-    }
+    scope(exit) arr = arr[(index+separatorLength)..$];
 
     return arr[0..index];
 }
