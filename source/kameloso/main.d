@@ -15,6 +15,9 @@ version(Windows)
 shared static this()
 {
     import core.sys.windows.windows;
+
+    // If we don't set the right codepage, the normal Windows cmd terminal won't display
+    // international characters like åäö.
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 }
