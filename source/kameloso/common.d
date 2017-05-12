@@ -118,7 +118,7 @@ void printObject(T)(T thing, string message = string.init,
  +      scopeName = Optional scope name to print. Otherwise the current function name
  +                  will be used.
  +/
-string scopeguard(ubyte states = exit, string scopeName = string.init) pure
+string scopeguard(ubyte states = exit, string scopeName = string.init)
 {
 	import std.array : Appender;
     Appender!string app;
