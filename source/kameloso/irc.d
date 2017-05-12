@@ -127,7 +127,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
     else
     {
         try event.type = event.typestring.to!(IrcEvent.Type);
-        catch (ConvException e)
+        catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
             writeln(event.raw);
