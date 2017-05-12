@@ -98,7 +98,7 @@ void parsePrefix(ref IrcEvent event, ref string slice)
  +/
 void parseTypestring(ref IrcEvent event, ref string slice)
 {
-    import std.conv : to, ConvException;
+    import std.conv : to;
 
     event.typestring = slice.nom(' ');
 
@@ -118,7 +118,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
             with (IrcEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
         }
-        catch (ConvException e)
+        catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
             writeln(event.raw);

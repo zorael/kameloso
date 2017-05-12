@@ -203,10 +203,10 @@ void setMember(Thing)(ref Thing thing, string memberstring, string value)
                             import std.conv : to;
 
                             try __traits(getMember, thing, name) ~= value.to!MemberType;
-                            catch (ConvException e)
+                            catch (Exception e)
                             {
-                                writefln("Caught ConvException trying to convert '%s' to %s",
-                                        value, MemberType.stringof);
+                                writefln("Caught Exception trying to convert '%s' to %s: %s",
+                                        value, MemberType.stringof, e);
                             }
                         }
                     }
@@ -226,10 +226,10 @@ void setMember(Thing)(ref Thing thing, string memberstring, string value)
 
                 // Trust to std.conv.to for conversion
                 try __traits(getMember, thing, name) = value.to!MemberType;
-                catch (ConvException e)
+                catch (Exception e)
                 {
-                    writefln("Caught ConvException trying to convert '%s' to %s",
-                            value, MemberType.stringof);
+                    writefln("Caught Exception trying to convert '%s' to %s: %s",
+                            value, MemberType.stringof, e.msg);
                 }
                 break top;
             }
