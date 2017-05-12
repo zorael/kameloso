@@ -22,20 +22,28 @@ shared static this()
     SetConsoleOutputCP(CP_UTF8);
 }
 
-
 private:
 
+/// State variables and configuration for the IRC bot.
 IrcBot bot;
+
+/// IRC server address and port.
 IrcServer server;
+
+/// A runtime array of all plugins. We iterate this when we have an IrcEvent to react to.
 IrcPlugin[] plugins;
+
+/// A 1-buffer of IrcEvents to replay when a WHOIS call returns.
 IrcEvent[string] replayQueue;
+
+/// The socket we use to connect to the server.
 Connection conn;
+
+/// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
 
 
-
-
-/// A simple struct to house the IRC server information. Helps with the configuration files.
+/// IRC server information.
 struct IrcServer
 {
     string address = "irc.freenode.net";
@@ -46,6 +54,7 @@ struct IrcServer
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was received.
+ +
  +  The return value tells the caller whether the received action means the bot should exit.
  +
  +  Returns:
@@ -142,7 +151,8 @@ Quit checkMessages()
 
 // handleArguments
 /++
- +  A simple getopt application, allowing for options to be overridden via the command line.
+ +  Read command-line options.
+ +
  +  The priority of options then becomes getopt over config file over hardcoded defaults.
  +
  +  Params:
@@ -200,7 +210,7 @@ Quit handleArguments(string[] args)
 }
 
 
-/// Simply resets and initialises all plugins.
+/// Resets and initialises all plugins.
 void initPlugins(IrcBot bot, Tid tid)
 {
     foreach (plugin; plugins) plugin.teardown();
