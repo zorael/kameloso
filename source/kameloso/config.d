@@ -240,33 +240,37 @@ void setMember(T)(ref T thing, string memberstring, string value)
 
 // longestMemberName
 /++
- +  Get the name of the longest member in a struct. This is used for formatting configuration
- +  files, so that columns line up.
+ +  Gets the name of the longest member in a struct.
+ +
+ +  This is used for formatting configuration files, so that columns line up.
  +
  +  Template param:
- +      T = The struct type to inspect for member name lengths.
+ +      T = the struct type to inspect for member name lengths.
  +/
-string longestMemberName(T)()
+template longestMemberName(T)
 {
-    string longest;
-
-    foreach (name; __traits(allMembers, T))
+    enum longestMemberName = ()
     {
-        static if (!memberIsType!(T, name) &&
-                   !memberSatisfies!(isSomeFunction, T, name) &&
-                   !memberSatisfies!("isTemplate", T, name) &&
-                   !memberSatisfies!("isAssociativeArray", T, name) &&
-                   !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
+        string longest;
+
+        foreach (name; __traits(allMembers, T))
         {
-            if (name.length > longest.length)
+            static if (!memberIsType!(T, name) &&
+                    !memberSatisfies!(isSomeFunction, T, name) &&
+                    !memberSatisfies!("isTemplate", T, name) &&
+                    !memberSatisfies!("isAssociativeArray", T, name) &&
+                    !memberSatisfies!("isStaticArray", T, name) &&
+                    !hasUDA!(__traits(getMember, T, name), Unconfigurable))
             {
-                longest = name;
+                if (name.length > longest.length)
+                {
+                    longest = name;
+                }
             }
         }
-    }
 
-    return longest;
+        return longest;
+    }();
 }
 
 
