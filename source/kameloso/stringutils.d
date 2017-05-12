@@ -4,13 +4,10 @@ import std.traits   : isSomeString;
 import std.typecons : Flag;
 import std.datetime;
 
-
-/++
- +  This Flag allows us to use the more descriptive Decode.yes (and Yes.decode) instead of bools
- +  as template parameter options.
- +/
+/// Flag denoting whether to decode strings or not.
 alias Decode = Flag!"decode";
 
+/// Flag denoting whether stripPrefix should assume the text begins with the supplied prefix
 alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
 
 
@@ -215,6 +212,12 @@ unittest
 }
 
 
+/// stripPrefix
+/++
+ +  Strips a prefix word from a string.
+ +
+ +
+ +/
 pragma(inline)
 string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
     (const string line, const string prefix)
@@ -243,6 +246,13 @@ string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
 }
 
 
+// timeSince
+/++
+ +  Express how long time has passed in a Duration, in natural language.
+ +
+ +  Params:
+ +      duration : a period of time
+ +/
 pragma(inline)
 string timeSince(const Duration duration)
 {
