@@ -286,13 +286,13 @@ template longestMemberName(T)
  +  Params:
  +      things = A compile-time variadic list of things to "serialise".
  +/
-string configText(T...)(const T things)
-if (T.length > 1)
+string configText(Things...)(const Things things)
+if (Things.length > 1)
 {
     import std.array : Appender;
     Appender!string all;
 
-    foreach (i, thing; T)
+    foreach (i, thing; Things)
     {
         all.put(things[i].configText);
         all.put("\n");
@@ -310,30 +310,30 @@ if (T.length > 1)
  +  Params:
  +      thing = A struct object, whose members should be "serialised".
  +/
-string configText(T)(const T thing)
+string configText(Thing)(const Thing thing)
 {
     import std.format : formattedWrite;
     import std.array : Appender;
 
-    Appender!(char[]) sink;
+    Appender!string sink;
     sink.reserve(256); // An IrcBot weighs in at a rough minimum of 128 characters
 
-    sink.formattedWrite("[%s]\n", T.stringof); // Section header
+    sink.formattedWrite("[%s]\n", Thing.stringof); // Section header
 
-    enum distance = (longestMemberName!T.length + 2);
+    enum distance = (longestMemberName!Thing.length + 4);
     enum pattern = "%%-%ds  %%s\n".format(distance);
     enum patternCommented = "# %%-%ds(unset)\n".format(distance);
 
-    foreach (name; __traits(allMembers, T))
+    foreach (name; __traits(allMembers, Thing))
     {
-        static if (!memberIsType!(T, name) &&
-                   !memberSatisfies!(isSomeFunction, T, name) &&
-                   !memberSatisfies!("isTemplate", T, name) &&
-                   !memberSatisfies!("isAssociativeArray", T, name) &&
-                   !memberSatisfies!("isStaticArray", T, name) &&
-                   !hasUDA!(__traits(getMember, T, name), Unconfigurable))
+        static if (!memberIsType!(Thing, name) &&
+                   !memberSatisfies!(isSomeFunction, Thing, name) &&
+                   !memberSatisfies!("isTemplate", Thing, name) &&
+                   !memberSatisfies!("isAssociativeArray", Thing, name) &&
+                   !memberSatisfies!("isStaticArray", Thing, name) &&
+                   !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
-            alias MemberType = typeof(__traits(getMember, T, name));
+            alias MemberType = typeof(__traits(getMember, Thing, name));
 
             static if ((is(MemberType == struct) || is(MemberType == class)))
             {
@@ -344,26 +344,36 @@ string configText(T)(const T thing)
             {
                 static if (isArray!MemberType && !is(MemberType : string))
                 {
-                    // Array; use std.format.format to get a separated line
-                    enum arrayPattern = "%%-(%%s%s%%)".format(separatorOf!(T, name));
-                    auto value = arrayPattern.format(__traits(getMember, thing, name));
+                    import std.traits : getUDAs;
+
+                    static assert (hasUDA!(__traits(getMember, Thing, name), Separator),
+                        "%s.%s is not annotated with a Separator"
+                        .format(T.stringof, name));
+
+                    enum separator = getUDAs!(__traits(getMember, Thing, name), Separator)[0].token;
+                    static assert(separator.length, "Invalid separator (empty)");
+
+                    // Array; use std.format.format to get a Separator-separated line
+                    enum arrayPattern = "%%-(%%s%s%%)".format(separator);
+                    immutable value = arrayPattern.format(__traits(getMember, thing, name));
                 }
                 else
                 {
                     // Simple assignment
-                    auto value = __traits(getMember, thing, name);
+                    immutable value = __traits(getMember, thing, name);
                 }
 
-                static if (is(MemberType : string) || isArray!MemberType)
+                static if (is(MemberType : string))
                 {
                     if (!value.length)
                     {
                         sink.formattedWrite(patternCommented, name);
-                        continue;
                     }
                 }
-
-                sink.formattedWrite(pattern, name, value);
+                else
+                {
+                    sink.formattedWrite(pattern, name, value);
+                }
             }
         }
     }
