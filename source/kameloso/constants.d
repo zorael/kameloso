@@ -18,8 +18,16 @@ enum NickServLines
 }
 
 
-/// Various magic numbers
-enum ControlCharacter : ubyte { action = 1, bold = 2, color = 3, termReset = 15 }
+// ControlCharacter
+/++
+ +  Various magic numbers.
+ +
+ +  action is the first character in a /me message.
+ +  bold makes the text bold. More info needed.
+ +  colour starts colour codes.
+ +  termReset outputs a byte that restores the local terminal if it has entered "binary" mode.
+ +/
+enum ControlCharacter : ubyte { action = 1, bold = 2, colour = 3, termReset = 15 }
 
 
 /// When a nickname is taken, append this to get a new name.
