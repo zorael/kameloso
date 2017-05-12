@@ -112,16 +112,16 @@ void printObject(T)(T thing, string message = string.init,
                    !memberSatisfies!("isAssociativeArray",T,name) &&
                    !memberSatisfies!("isStaticArray",T,name))
 		{
-			enum type = typeof(__traits(getMember, T, name)).stringof;
+			enum typestring = typeof(__traits(getMember, T, name)).stringof;
 			auto value = __traits(getMember, thing, name);
 
 			static if (is(typeof(value) : string))
             {
-				writefln(`%8s %-10s "%s"(%d)`, type, name, value, value.length);
+				writefln(`%8s %-10s "%s"(%d)`, typestring, name, value, value.length);
 			}
 			else
             {
-				writefln("%8s %-11s %s", type, name, value);
+				writefln("%8s %-11s %s", typestring, name, value);
 			}
 		}
 	}
