@@ -187,3 +187,26 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
     return app.data;
 }
+
+
+string colorise(Codes...)(Codes codes)
+if (Codes.length > 0)
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(16);
+
+    sink.put(BashColourToken);
+    sink.put('[');
+
+    foreach (const code; codes)
+    {
+        if (sink.data.length > 2) sink.put(';');
+
+        sink.put(cast(string)code);
+    }
+
+    sink.put('m');
+    return sink.data;
+}
