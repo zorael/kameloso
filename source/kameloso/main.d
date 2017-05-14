@@ -355,7 +355,7 @@ Quit loopGenerator(Generator!string generator)
                     if (!spammedAboutReplaying)
                     {
                         //writeln("Replaying event:");
-                        writeln(Foreground.red, "Replaying event:");
+                        writeln(Foreground.lightcyan, "Replaying event:");
                         writeln(*savedEvent);
                         spammedAboutReplaying = true;
                     }
