@@ -11,21 +11,25 @@ import std.algorithm.searching : canFind;
 import std.algorithm.iteration : joiner;
 import std.concurrency : Tid;
 
+
 private:
 
+/// State variables and configuration for the IRC bot.
 IrcBot bot;
 
 
 // parseBasic
 /++
- +  Parses the most basic of IRC events; PING and ERROR. They syntactically differ from other
- +  events in that they are not prefixed by its sender.
+ +  Parses the most basic of IRC events; PING and ERROR.
+ +
+ +  They syntactically differ from other events in that they are not prefixed by its sender.
  +
  +  Params:
- +      raw = The raw IRC string to parse.
++       event = an unfinished IrcEvent.
+ +      raw = the raw IRC string to parse.
  +
  +  Returns:
- +      A finished IrcEvent.
+ +      the finished IrcEvent.
  +/
 IrcEvent parseBasic(IrcEvent event, const char[] raw)
 {
