@@ -48,7 +48,7 @@ string getQuote(const string nickname)
     }
     catch (Exception e)
     {
-        writeln("Exception when fetching quote: ", e);
+        writeln(Foreground.lightred, "Exception when fetching quote: ", e);
         return string.init;
     }
 }
@@ -81,7 +81,7 @@ void addQuote(const string nickname, const string line)
     catch (Exception e)
     {
         // No quotes at all
-        writeln("Exception when adding new quote: ", e);
+        writeln(Foreground.lightred, "Exception when adding new quote: ", e);
         quotes = JSONValue("{}");
         // return nickname.addQuote(nickname); // ???
         return nickname.addQuote(line);
@@ -111,7 +111,8 @@ void saveQuotes(const string filename)
     auto f = File(filename, "a");
 
     f.write(quotes.toPrettyString);
-    f.writeln();
+    //f.writeln();
+    f.write("\n");
 }
 
 
@@ -132,12 +133,12 @@ JSONValue loadQuotes(const string filename)
 
     if (!filename.exists)
     {
-        writeln(filename, " does not exist");
+        writeln(Foreground.lightred, filename, " does not exist");
         return JSONValue("{}");
     }
     else if (!filename.isFile)
     {
-        writefln(filename, " is not a file");
+        writefln(Foreground.lightred, filename, " is not a file");
         return JSONValue("{}");
     }
 
@@ -168,7 +169,7 @@ void onCommandSay(const IrcEvent event)
 
     if (!event.content.length)
     {
-        writeln("No text to send...");
+        writeln(Foreground.lightred, "No text to send...");
         return;
     }
 
@@ -257,12 +258,12 @@ void onCommandQuote(const IrcEvent event)
 
     if (!signedNickname.length)
     {
-        writeln("No one to quote....");
+        writeln(Foreground.lightred, "No one to quote....");
         return;
     }
     else if (signedNickname.indexOf(" ") != -1)
     {
-        writeln("Contains spaces, not a single nick...");
+        writeln(Foreground.lightred, "Contains spaces, not a single nick...");
         return;
     }
 
@@ -348,7 +349,7 @@ void onCommandPrintQuotes()
 @Prefix(NickPrefixPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
-    writeln("Reloading quotes");
+    writeln(Foreground.lightcyan, "Reloading quotes");
     quotes = loadQuotes(Files.quotes);
 }
 
@@ -359,7 +360,7 @@ void onCommandReloadQuotes()
  +/
 void initialise()
 {
-    writeln("Initialising quotes ...");
+    writeln(Foreground.lightcyan, "Initialising quotes ...");
     quotes = loadQuotes(Files.quotes);
 }
 
