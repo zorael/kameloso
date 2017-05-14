@@ -201,7 +201,7 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
                             import std.string : strip;
 
                             // Reconstruct it by appending each field in turn
-                            __traits(getMember, thing, name) ~= entry.strip;
+                            __traits(getMember, thing, name) ~= entry.strip();
                         }
                         else
                         {
