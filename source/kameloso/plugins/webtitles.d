@@ -236,6 +236,8 @@ void titleworker(shared Tid sMainThread)
     import std.datetime : Clock;
     import std.variant : Variant;
 
+    mixin(scopeguard(exit));
+
     Tid mainThread = cast(Tid)sMainThread;
 
     /// Cache buffer of recently looked-up URIs

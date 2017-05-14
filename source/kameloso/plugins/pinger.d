@@ -30,6 +30,8 @@ void pinger(Tid mainThread)
 {
     import core.time : seconds;
 
+    mixin(scopeguard(exit));
+
     bool halt;
     while (!halt)
     {
