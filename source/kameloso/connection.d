@@ -1,8 +1,8 @@
 module kameloso.connection;
 
+import kameloso.common : writefln, writeln;
 import kameloso.constants;
 
-import std.stdio : writeln, writefln;
 import std.socket;
 import core.time : seconds;
 
@@ -81,7 +81,7 @@ public:
         try
         {
             ips = getAddress(address, port);
-            writefln("%s resolved into %d ips.", address, ips.length);
+            writefln(Foreground.white, "%s resolved into %d ips.", address, ips.length);
         }
         catch (SocketException e)
         {
@@ -89,19 +89,20 @@ public:
             {
             case "getaddrinfo error: Name or service not known":
                 // Assume net down, wait and try again
-                writeln(e.msg);
-                writefln("Network down? Retrying in %d seconds", Timeout.resolve);
+                writeln(Foreground.lightred, e.msg);
+                writefln(Foreground.lightcyan, "Network down? Retrying in %d seconds",
+                    Timeout.resolve);
                 Thread.sleep(Timeout.resolve.seconds);
                 return resolve(address, port);
 
             default:
-                writeln(e.msg);
+                writeln(Foreground.lightred, e.msg);
                 assert(false);
             }
         }
         catch (Exception e)
         {
-            writeln(e);
+            writeln(Foreground.lightred, e);
             assert(0);
         }
     }
@@ -130,17 +131,17 @@ public:
 
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
-                writeln("Connected!");
+                writeln(Foreground.lightcyan, "Connected!");
                 //break;
                 return;
             }
             catch (SocketException e)
             {
-                writeln("Failed! ", e.msg);
+                writeln(Foreground.lightred, "Failed! ", e.msg);
             }
             catch (Exception e)
             {
-                writeln(e);
+                writeln(Foreground.lightred, e);
                 assert(0);
             }
             finally
@@ -149,7 +150,7 @@ public:
 
                 if (i && (i < ips.length))
                 {
-                    writefln("Trying next ip in %d seconds.", Timeout.retry);
+                    writefln(Foreground.lightcyan, "Trying next ip in %d seconds.", Timeout.retry);
                     Thread.sleep(Timeout.retry.seconds);
                 }
             }
@@ -157,7 +158,7 @@ public:
 
         if (!connected)
         {
-            writeln("Failed to connect!");
+            writeln(Foreground.lightred, "Failed to connect!");
         }
     }
 
@@ -224,7 +225,8 @@ void listenFiber(Connection conn)
 
         if (!bytesReceived)
         {
-            writefln("ZERO RECEIVED! assuming dead connection (%s)", lastSocketError);
+            writefln(Foreground.lightred, "ZERO RECEIVED! assuming dead connection (%s)",
+                lastSocketError);
             return;
         }
         else if (bytesReceived == Socket.ERROR)
@@ -234,7 +236,8 @@ void listenFiber(Connection conn)
             if (elapsed > Timeout.keepalive.seconds)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                writefln("NOTHING RECEIVED FOR %s (timeout %s)", elapsed, Timeout.keepalive.seconds);
+                writefln(Foreground.lightred, "NOTHING RECEIVED FOR %s (timeout %s)",
+                    elapsed, Timeout.keepalive.seconds);
                 return;
             }
 
@@ -253,12 +256,12 @@ void listenFiber(Connection conn)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
-                writeln("FATAL SOCKET ERROR");
-                writeln(lastSocketError);
+                writeln(Foreground.lightred, "FATAL SOCKET ERROR");
+                writeln(Foreground.lightred, lastSocketError);
                 return;
 
             default:
-                writeln("lastSocketError from Socket.ERROR:", lastSocketError);
+                writeln(Foreground.lightred, "lastSocketError from Socket.ERROR:", lastSocketError);
                 yield(string.init);
             }
 
@@ -294,10 +297,10 @@ void listenFiber(Connection conn)
         {
             if (start == end)
             {
-                writeln("OVERFLOW! Growing buffer but data was lost");
+                writeln(Foreground.lightcyan, "OVERFLOW! Growing buffer but data was lost");
                 const old = buffer.length;
                 buffer.length = cast(size_t)(buffer.length * 1.5);
-                writefln("old size:%d new:%d", old, buffer.length);
+                writefln(Foreground.lightcyan, "old size:%d new:%d", old, buffer.length);
             }
 
             // writeln("OVERLAP");
