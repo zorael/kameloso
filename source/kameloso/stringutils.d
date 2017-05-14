@@ -224,24 +224,19 @@ string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
 {
     import std.string : stripLeft, munch;
 
-    // writefln("stripBotPrefix: '%s'", line);
-
     string slice = line.stripLeft();
 
     static if (checkBegins)
     {
         if (!slice.beginsWith(prefix))
         {
-            //import std.stdio : writefln;
-            //writefln("[stripPrefix] did not begin with prefix (%s)", prefix);
             return line;
         }
     }
 
     slice = slice[(prefix.length+1)..$];
-    // writefln("step 1: '%s'", slice);
     slice.munch(":?! ");
-    // writefln("step 2: '%s'", slice);
+
     return slice;
 }
 
