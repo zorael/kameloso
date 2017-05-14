@@ -157,13 +157,13 @@ void writeConfig(T...)(const string configFile, T things)
  +      memberstring = the string name of one of thing's members.
  +      value = the value to assign, in string form.
  +/
-void setMember(Thing)(ref Thing thing, string memberstring, string value)
+void setMember(Thing)(ref Thing thing, const string memberstring, const string value)
 {
     top:
     switch (memberstring)
     {
 
-    foreach (name; __traits(allMembers, Thing))
+    foreach (const name; __traits(allMembers, Thing))
     {
         static if (!memberIsType!(Thing, name) &&
                    !memberSatisfies!(isSomeFunction, Thing, name) &&
