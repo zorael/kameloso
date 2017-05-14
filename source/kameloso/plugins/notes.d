@@ -162,7 +162,7 @@ void onCommandPrintNotes()
 @Prefix(NickPrefixPolicy.required, "reloadnotes")
 void onCommandReloadQuotes()
 {
-    writeln("Reloading notes");
+    writeln(Foreground.lightcyan, "Reloading notes");
     notes = loadNotes(Files.notes);
 }
 
@@ -182,7 +182,7 @@ void onCommandFakejoin(const IrcEvent event)
     import kameloso.stringutils;
     import std.string : indexOf;
 
-    writeln("faking an event");
+    writeln(Foreground.lightcyan, "Faking an event");
 
     IrcEvent newEvent = event;
     newEvent.type = IrcEvent.Type.JOIN;
@@ -277,7 +277,7 @@ void clearNotes(const string nickname)
 {
     if (nickname in notes)
     {
-        writeln("Clearing stored notes for ", nickname);
+        writeln(Foreground.lightcyan, "Clearing stored notes for ", nickname);
         notes.object.remove(nickname);
         Files.notes.saveNotes();
     }
@@ -325,7 +325,7 @@ void addNote(const string nickname, const string sender, const string line)
     }
     catch (Exception e)
     {
-        writeln("Exception when adding note: ", e.msg);
+        writeln(Foreground.lightred, "Exception when adding note: ", e.msg);
     }
 }
 
@@ -350,7 +350,8 @@ void saveNotes(const string filename)
     auto f = File(filename, "a");
 
     f.write(notes.toPrettyString);
-    f.writeln();
+    //f.writeln();
+    f.write("\n");
 }
 
 // loadNotes
@@ -368,12 +369,12 @@ JSONValue loadNotes(const string filename)
 
     if (!filename.exists)
     {
-        writefln("%s does not exist", filename);
+        writefln(Foreground.lightred, "%s does not exist", filename);
         return JSONValue("{}");
     }
     else if (!filename.isFile)
     {
-        writefln("%s is not a file", filename);
+        writefln(Foreground.lightred, "%s is not a file", filename);
         return JSONValue("{}");
     }
 
@@ -388,7 +389,7 @@ JSONValue loadNotes(const string filename)
  +/
 void initialise()
 {
-    writeln("Initialising notes ...");
+    writeln(Foreground.lightcyan, "Initialising notes ...");
     notes = Files.notes.loadNotes();
 }
 
