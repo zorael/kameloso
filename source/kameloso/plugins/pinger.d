@@ -44,7 +44,7 @@ void pinger(Tid mainThread)
             },
             (Variant v)
             {
-                writeln("pinger received Variant: ", v);
+                writeln(Foreground.lightred, "pinger received Variant: ", v);
             }
         );
 
