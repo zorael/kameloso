@@ -1,6 +1,7 @@
 module kameloso.config;
 
 import kameloso.common;
+import kameloso.constants;
 
 import std.stdio  : File, writeln, writefln;
 import std.format : format;
@@ -98,12 +99,12 @@ void readConfig(T...)(const string configFile, ref T things)
 
     if (!configFile.exists)
     {
-        writeln("Config file does not exist");
+        writeln(Foreground.lightred, "Config file does not exist");
         return;
     }
     else if (!configFile.isFile)
     {
-        writeln("Config file is not a file!");
+        writeln(Foreground.lightred, "Config file is not a file!");
         return;
     }
 
