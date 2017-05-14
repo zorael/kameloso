@@ -278,7 +278,7 @@ string timeSince(const Duration duration)
         if (hours) sink.put(" and ");
         sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
     }
-    if (!minutes)
+    if (!minutes && !hours && !days)
     {
         sink.formattedWrite("%d %s", seconds, seconds.plurality("second", "seconds"));
     }
