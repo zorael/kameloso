@@ -840,18 +840,50 @@ struct IrcEvent
         put(sink);
     }
 
-    void put(Sink)(ref Sink sink) const
+    void put(Sink, bool colour = true)(ref Sink sink) const
     {
         import std.conv   : to;
         import std.format : formattedWrite;
 
-        sink.formattedWrite("[%s] %s", type.to!string, sender);
+        version(NoColours)
+        {
+            sink.formattedWrite("[%s] %s", type.to!string, sender);
 
-        if (target.length)  sink.formattedWrite(" (%s)",  target);
-        if (channel.length) sink.formattedWrite(" [%s]",  channel);
-        if (content.length) sink.formattedWrite(`: "%s"`, content);
-        if (aux.length)     sink.formattedWrite(" <%s>",  aux);
-        if (num > 0)        sink.formattedWrite(" (#%d)", num);
+            if (target.length)  sink.formattedWrite(" (%s)",  target);
+            if (channel.length) sink.formattedWrite(" [%s]",  channel);
+            if (content.length) sink.formattedWrite(`: "%s"`, content);
+            if (aux.length)     sink.formattedWrite(" <%s>",  aux);
+            if (num > 0)        sink.formattedWrite(" (#%d)", num);
+        }
+        else
+        {
+            with (Foreground)
+            {
+                enum C
+                {
+                    type    = lightblue,
+                    sender  = lightgreen,
+                    special = lightyellow,
+                    target  = cyan,
+                    channel = yellow,
+                    content = default_,
+                    aux     = white,
+                    num     = darkgrey,
+                }
+
+                sink.formattedWrite("%s[%s]%s %s",  // is the space visible? can do default_
+                    colourise(C.type), type.to!string,
+                    colourise(C.sender), sender);
+
+                if (special)        sink.formattedWrite("%s*",      colourise(C.special));
+                if (target.length)  sink.formattedWrite(" %s(%s)",  colourise(C.target), target);
+                if (channel.length) sink.formattedWrite(" %s[%s]",  colourise(C.channel), channel);
+                if (content.length) sink.formattedWrite(`%s: "%s"`, colourise(C.content), content); // CHEATS
+                if (aux.length)     sink.formattedWrite(" %s<%s>",  colourise(C.aux), aux);
+                if (num > 0)        sink.formattedWrite(" %s(#%d)", colourise(C.num), num);
+                sink.formattedWrite(colourise(Foreground.default_));
+            }
+        }
     }
 }
 

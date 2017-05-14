@@ -7,19 +7,23 @@ import kameloso.config;
 import kameloso.irc;
 import kameloso.plugins;
 
-import std.stdio    : writeln, writefln;
+//import std.stdio    : writeln, writefln;
 import std.datetime : SysTime;
 import std.concurrency;
 
 version(Windows)
-shared static this()
 {
-    import core.sys.windows.windows;
+    version = NoColours;
 
-    // If we don't set the right codepage, the normal Windows cmd terminal won't display
-    // international characters like åäö.
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
+    shared static this()
+    {
+        import core.sys.windows.windows;
+
+        // If we don't set the right codepage, the normal Windows cmd terminal won't display
+        // international characters like åäö.
+        SetConsoleCP(CP_UTF8);
+        SetConsoleOutputCP(CP_UTF8);
+    }
 }
 
 private:
@@ -76,7 +80,9 @@ Quit checkMessages()
         receivedSomething = receiveTimeout(0.seconds,
             (ThreadMessage.Sendline, string line)
             {
-                writeln("--> ", line);
+                //writeln("--> ", line);
+                //writelnColoured(Foreground.white, "--> ", line);
+                writeln(Foreground.white, "--> ", line);
                 conn.sendline(line);
             },
             (ThreadMessage.Quietline, string line)
@@ -99,7 +105,9 @@ Quit checkMessages()
 
                 if (then && ((now - *then) < Timeout.whois.seconds)) return;
 
-                writeln("--> WHOIS :", event.sender);
+                //writeln("--> WHOIS :", event.sender);
+                //writelnColoured(Foreground.white, "--> WHOIS :", event.sender);
+                writeln(Foreground.white, "--> WHOIS :", event.sender);
                 conn.sendline("WHOIS :", event.sender);
                 whoisCalls[event.sender] = Clock.currTime;
                 replayQueue[event.sender] = event;
@@ -124,7 +132,9 @@ Quit checkMessages()
                 // Set quit to yes to propagate the decision down the stack
                 const line = reason.length ? reason : bot.quitReason;
 
-                writeln("--> QUIT :", line);
+                //writeln("--> QUIT :", line);
+                //writelnColoured(Foreground.white, "--> QUIT :", line);
+                writeln(Foreground.white, "--> QUIT :", line);
                 conn.sendline("QUIT :", line);
 
                 foreach (plugin; plugins) plugin.teardown();
@@ -133,13 +143,19 @@ Quit checkMessages()
             },
             (LinkTerminated e)
             {
-                writeln("Some linked thread died!");
+                //writeln("Some linked thread died!");
+                //writelnColoured(Foreground.lightred, "Some linked thread died!");
+                writeln(Foreground.lightred, "Some linked thread died!");
+
                 quit = Quit.yes;
             },
             (Variant v)
             {
-                writeln("Main thread received unknown Variant");
-                writeln(v);
+                //writeln("Main thread received unknown Variant");
+                //writelnColoured(Foreground.lightred, "Main thread received unknown Variant");
+                writeln(Foreground.lightred, "Main thread received unknown Variant");
+                writeln(Foreground.lightred, v);
+                //writelnColoured(Foreground.lightred, v);
             }
         );
     }
@@ -239,6 +255,8 @@ public:
 /// Main!
 int main(string[] args)
 {
+    writefln(Foreground.white, "kameloso IRC bot, built %s\n", __TIMESTAMP__);
+
     if (handleArguments(args) == Quit.yes) return 0;
 
     // Print the current settings to show what's going on.
@@ -336,7 +354,8 @@ Quit loopGenerator(Generator!string generator)
 
                     if (!spammedAboutReplaying)
                     {
-                        writeln("Replaying event:");
+                        //writeln("Replaying event:");
+                        writeln(Foreground.red, "Replaying event:");
                         writeln(*savedEvent);
                         spammedAboutReplaying = true;
                     }

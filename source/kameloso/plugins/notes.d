@@ -7,7 +7,7 @@ import kameloso.plugins.common;
 
 import std.concurrency : send;
 import std.json   : JSONValue;
-import std.stdio  : writefln, writeln;
+//import std.stdio  : writefln, writeln;
 
 private:
 
@@ -234,7 +234,9 @@ auto getNotes(const string nickname)
         {
             if (arr.type != JSON_TYPE.ARRAY)
             {
-                writefln("Invalid notes list for %s (type is %s)", nickname, arr.type);
+                writefln(Foreground.lightred, "Invalid notes list for %s (type is %s)",
+                         nickname, arr.type);
+
                 clearNotes(nickname);
 
                 return noteArray;
@@ -253,13 +255,15 @@ auto getNotes(const string nickname)
         }
         else
         {
-            writeln("No notes available for nickname ", nickname);
+            //writeln("No notes available for nickname ", nickname);
+            writeln(Foreground.lightred, "No notes available for nickname ", nickname);
             return noteArray;
         }
     }
     catch (Exception e)
     {
-        writeln("Exception when fetching notes: ", e.msg);
+        //writeln("Exception when fetching notes: ", e.msg);
+        writeln(Foreground.lightred, "Exception when fetching notes: ", e.msg);
         return noteArray;
     }
 }
@@ -296,7 +300,8 @@ void addNote(const string nickname, const string sender, const string line)
 
     if (!line.length)
     {
-        writeln("No message to create note from...");
+        //writeln("No message to create note from...");
+        writeln(Foreground.lightred, "No message to create note from...");
         return;
     }
 

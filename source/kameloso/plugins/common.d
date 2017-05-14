@@ -274,7 +274,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                     static if (hasUDA!(fun, Verbose))
                     {
-                        import std.stdio : writefln, writeln;
+                        //import std.stdio : writefln, writeln;
                         enum verbose = getUDAs!(fun, Verbose)[0] == Verbose.yes;
                     }
                     else
@@ -515,7 +515,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
-    import std.stdio : writeln;
+    //import std.stdio : writeln;
 
     // onWhoisLogin
     /++
@@ -530,7 +530,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.WHOISLOGIN)
     void onWhoisLogin(const IrcEvent event)
     {
-        writeln(module_, ": Adding to users");
+        //writeln(module_, ": Adding to users");
         state.users[event.target] = userFromEvent(event);
     }
 
@@ -553,7 +553,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWhois(const IrcEvent event)
     {
-        writeln(module_, ": removing from queue");
+        //writeln(module_, ": removing from queue");
         state.queue.remove(event.target);
     }
 
@@ -572,7 +572,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.QUIT)
     void onLeave(const IrcEvent event)
     {
-        writeln(module_, ": removing from users");
+        //writeln(module_, ": removing from users");
         state.users.remove(event.sender);
     }
 

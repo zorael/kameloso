@@ -7,7 +7,7 @@ import kameloso.plugins.common;
 
 import std.concurrency : send, Tid;
 import std.regex : ctRegex;
-import std.stdio : writefln, writeln;
+//import std.stdio : writefln, writeln;
 
 private:
 

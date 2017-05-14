@@ -77,14 +77,25 @@ void onAnyEvent(const IrcEvent event)
         */
         with (reusableAppender)
         {
-
-            put('[');
-            put(timestamp);
-            put("] ");
+            version(NoColours)
+            {
+                put('[');
+                put(timestamp);
+                put("] ");
+            }
+            else
+            {
+                put(colourise(Foreground.white));
+                put('[');
+                put(timestamp);
+                put(']');
+                put(colourise(Foreground.default_));
+                put(" ");
+            }
 
             event.put(reusableAppender);
 
-            writeln(data);
+            writeln(reusableAppender.data);
 
             reusableAppender.clear();
         }

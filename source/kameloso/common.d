@@ -73,7 +73,7 @@ enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
 void printObject(T)(T thing, string message = string.init,
                     string file = __FILE__, int line = __LINE__)
 {
-	import std.stdio  : writefln;
+	//import std.stdio  : writefln;
     import std.traits : isSomeFunction;
 
     if (message.length)
@@ -133,7 +133,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%s)
                 {
-                    import std.stdio : writeln;
+                    //import std.stdio : writeln;
                     writeln("[%s] %s");
                 }
             }.format(state.toLower, state, scopeName);
@@ -145,7 +145,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%s)
                 {
-                    import std.stdio  : writefln;
+                    //import std.stdio  : writefln;
                     import std.string : indexOf;
                     enum __%sdotPos  = __FUNCTION__.indexOf('.');
                     enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
@@ -163,7 +163,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                import std.stdio : writeln;
+                //import std.stdio : writeln;
                 writeln("[%s] %s");
             }.format(scopeName, state);
         }
@@ -171,7 +171,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                import std.stdio  : writefln;
+                //import std.stdio  : writefln;
                 import std.string : indexOf;
                 enum __%sdotPos  = __FUNCTION__.indexOf('.');
                 enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
@@ -189,14 +189,26 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 }
 
 
-string colorise(Codes...)(Codes codes)
-if (Codes.length > 0)
+enum bool isAColourCode(T) = is(T : Foreground) || is(T : Background) || is(T : Format) || is(T : Reset);
+
+import std.meta : allSatisfy;
+
+string colourise(Codes...)(Codes codes)
+if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
     Appender!string sink;
     sink.reserve(16);
 
+    sink.colourise(codes);
+    return sink.data;
+}
+
+
+string colourise(Sink, Codes...)(Sink sink, Codes codes)
+if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
+{
     sink.put(BashColourToken);
     sink.put('[');
 
@@ -210,3 +222,91 @@ if (Codes.length > 0)
     sink.put('m');
     return sink.data;
 }
+
+
+mixin template ColouredWriteln()
+{
+    import std.stdio : realWrite = write, realWritefln = writefln, realWriteln = writeln;
+    import std.format : format;
+
+    version(NoColours)
+    {
+        pragma(msg, "Not doing colours");
+
+        pragma(inline)
+        void writeln(Code, Args...)(Code code, Args args)
+        if (isAColourCode!Code)
+        {
+            realWriteln(args);
+        }
+
+        pragma(inline)
+        void writeln(Args...)(Args args)
+        if (!Args.length || !isAColourCode!(Args[0]))
+        {
+            realWriteln(args);
+        }
+
+        pragma(inline)
+        void writefln(Code, Args...)(Code code, string pattern, Args args)
+        if (isAColourCode!Code)
+        {
+            realWritefln(pattern, args);
+        }
+
+        pragma(inline)
+        void writefln(Args...)(string pattern, Args args)
+        {
+            realWritefln(pattern, args);
+        }
+
+        pragma(inline)
+        void writefln()
+        {
+            realWriteln();
+        }
+    }
+    else
+    {
+        pragma(msg, "Doing colours");
+
+        pragma(inline)
+        void writeln(Code, Args...)(Code code, Args args)
+        if (isAColourCode!Code)
+        {
+            realWriteln(colourise(code), args, colourise(typeof(code).default_));
+        }
+
+        pragma(inline)
+        void writeln(Args...)(Args args)
+        if (!Args.length || !isAColourCode!(Args[0]))
+        {
+            realWriteln(args);
+        }
+
+        pragma(inline)
+        void writefln(Code, Args...)(Code code, string pattern, Args args)
+        if (isAColourCode!Code)
+        {
+            import std.conv : text;
+
+            immutable newPattern = text(colourise(code), pattern, colourise(typeof(code).default_));
+            realWritefln(newPattern, args);
+        }
+
+        pragma(inline)
+        void writefln(Args...)(string pattern, Args args)
+        {
+            realWritefln(pattern, args);
+        }
+
+        pragma(inline)
+        void writefln()
+        {
+            realWriteln();
+        }
+    }
+}
+
+
+mixin ColouredWriteln;

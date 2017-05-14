@@ -14,6 +14,11 @@
             "name": "kameloso",
             "targetType": "executable"
         },
+        {
+            "name": "nocolours",
+            "targetType": "executable",
+            "versions" : [ "NoColours" ]
+        }
     ],
     "debugMode": true,
     "debugInfo": true,
