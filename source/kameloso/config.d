@@ -108,7 +108,10 @@ void readConfig(T...)(const string configFile, ref T things)
     }
 
     // Read the contents and split by newline
-    auto wholeFile = configFile.readText.chomp.splitter(newline);
+    auto wholeFile = configFile
+        .readText
+        .chomp
+        .splitter(newline);
 
     wholeFile.walkConfigLines(things);
 }
