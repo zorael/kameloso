@@ -86,6 +86,8 @@ void onNames(const IrcEvent event)
 
     foreach (immutable nickname; event.content.splitter)
     {
+        if (nickname == state.bot.nickname) continue;
+
         IrcEvent fakeEvent;
 
         with (fakeEvent)
