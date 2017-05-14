@@ -134,7 +134,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 scope(%s)
                 {
                     //import std.stdio : writeln;
-                    writeln("[%s] %s");
+                    writeln(Foreground.white, "[%s] %s");
                 }
             }.format(state.toLower, state, scopeName);
         }
@@ -149,7 +149,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                     import std.string : indexOf;
                     enum __%sdotPos  = __FUNCTION__.indexOf('.');
                     enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
-                    writefln("[%%s] %s", __%sfunName);
+                    writefln(Foreground.white, "[%%s] %s", __%sfunName);
                 }
             }.format(state.toLower, state, state, state, state, state);
         }
@@ -164,7 +164,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
             return
             q{
                 //import std.stdio : writeln;
-                writeln("[%s] %s");
+                writeln(Foreground.white, "[%s] %s");
             }.format(scopeName, state);
         }
         else
