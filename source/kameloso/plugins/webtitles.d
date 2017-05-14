@@ -83,7 +83,7 @@ void onMessage(const IrcEvent event)
         immutable url = urlHit[0];
         immutable target = (event.channel.length) ? event.channel : event.sender;
 
-        writeln(url);
+        writeln(Foreground.white, url);
 
         workerThread.send(url, target);
     }
@@ -163,11 +163,11 @@ TitleLookup lookupTitle(string url)
 
     if (!url.beginsWith("http"))
     {
-        writeln("NEEDS HTTP. DOES THIS EVER HAPPEN?");
+        writeln(Foreground.lightred, "NEEDS HTTP. DOES THIS EVER HAPPEN?");
         url = "http://" ~ url;
     }
 
-    writeln("URL: ", url);
+    writeln(Foreground.white, "URL: ", url);
 
     Request rq;
     rq.useStreaming = true;
@@ -177,14 +177,13 @@ TitleLookup lookupTitle(string url)
     auto rs = rq.get(url);
     auto stream = rs.receiveAsRange();
 
-    writeln("code: ", rs.code);
     if (rs.code >= 400) return lookup;
 
     lookup.title = stream.streamUntil(titleRegex, pageContent);
 
     if (!pageContent.data.length)
     {
-        writeln("Could not get content. Bad URL?");
+        writeln(Foreground.lightred, "Could not get content. Bad URL?");
         return lookup;
     }
 
@@ -194,12 +193,12 @@ TitleLookup lookupTitle(string url)
 
         if (titleHits.length)
         {
-            writeln("Found title in complete data (it was split)");
+            writeln(Foreground.white, "Found title in complete data (it was split)");
             lookup.title = titleHits[1];
         }
         else
         {
-            writeln("No title...");
+            writeln(Foreground.lightred, "No title...");
             return lookup;
         }
     }
@@ -263,7 +262,7 @@ void titleworker(shared Tid sMainThread)
                     try lookup = lookupTitle(url);
                     catch (Exception e)
                     {
-                        writeln("Exception looking up a title: ", e.msg);
+                        writeln(Foreground.lightred, "Exception looking up a title: ", e.msg);
                     }
                 }
 
@@ -292,8 +291,8 @@ void titleworker(shared Tid sMainThread)
             },
             (Variant v)
             {
-                writeln("Titleworker received Variant");
-                writeln(v);
+                writeln(Foreground.lightcyan, "Titleworker received Variant");
+                writeln(Foreground.lightcyan, v);
             }
         );
     }
