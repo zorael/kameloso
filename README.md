@@ -87,14 +87,18 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | zorael | This is a quote
          you | kameloso: note OfflinePerson Why so offline?
     kameloso | Note added
+         you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
+    kameloso | this is a raw IRC command
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [www.youtube.com] Danish language
 
 ## TODO
 
-* rethink logging; should we writeln or use our own logging functions?
-* "online" help
+* rethink logging - should we writeln or use our own logging functions?
+* "online" help; listing of verbs/commands
 * random colours on nicks, based on their hash?
+* improve command-line argument handling (issues [#4](https://github.com/zorael/kameloso/issues/4) and [#5](https://github.com/zorael/kameloso/issues/5) etc)
+* make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
 
 ## Built With
 
