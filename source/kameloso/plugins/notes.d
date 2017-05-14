@@ -82,7 +82,13 @@ void onJoin(const IrcEvent event)
 void onNames(const IrcEvent event)
 {
     import std.algorithm.iteration : splitter;
+    import std.algorithm.searching : canFind;
     import std.datetime : Clock;
+
+    if (!state.bot.channels.canFind(event.channel))
+    {
+        return;
+    }
 
     foreach (immutable nickname; event.content.splitter)
     {
