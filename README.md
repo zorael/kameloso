@@ -6,11 +6,32 @@ kameloso sits and listens in the channels you specify and reacts to certain even
 
 Current functionality includes:
 
-* repeating text!
+* printing of IRC events, as they are parsed and handled, optional colouring
+* repeating text! amazing
+* 8ball! because why not
 * storing, loading and printing quotes from users
+* saving notes to offline users that get played back when they come online
 * looking up titles of pasted URLs
+* sed-replacement of the last message sent (s/this/that/ replacement)
 
-Planned is a `note` feature that allows you to write a note to someone offline, and have the bot paste it when they come online again.
+## Fails to build with OpenSSL 1.1.0
+
+### Linux
+The library `dlang-requests` has not yet been updated to work with the modern 1.1.0 version of OpenSSL, and so this project will not build unless you manually modify its project file to point to the old library. This assumes that you still have the old library installed. For instance, the package name is `openssl-1.0` in Arch linux, and can peacefully live next to the new `openssl`.
+
+Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
+
+            "libs-posix": [
+                "ssl",
+                "crypto"
+            ],
+
+Change them to look like this, and the rest of this guide should work.
+
+            "libs-posix": [
+                ":libssl.so.1.0.0",
+                ":libcrypto.so.1.0.0"
+            ],
 
 ## Getting Started
 
@@ -22,7 +43,7 @@ You need a D compiler and the official `dub` package manager. There are three co
 
 kameloso can be built using the reference compiler [dmd](https://dlang.org/download.html) and the LLVM-based [ldc](https://github.com/ldc-developers/ldc/releases), but the GCC-based [gdc](https://gdcproject.org/downloads) comes with a version of the standard library that is too old.
 
-It's *possible* to build it without `dub` but it's non-trivial.
+It's *possible* to build it without `dub` but it is non-trivial.
 
 ### Compiling
 
@@ -52,7 +73,7 @@ The bot needs the `NickServ` login name of the administrator/master of the bot, 
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-Once the bot has joined a channel trigger it with `say`, `8ball`, `quote` or by pasting a link.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login before it will listen to anything you do.
 
          you | kameloso: say herp
     kameloso | herp
@@ -62,15 +83,14 @@ Once the bot has joined a channel trigger it with `say`, `8ball`, `quote` or by 
     kameloso | Quote saved. (1 on record)
          you | kameloso: quote zorael
     kameloso | zorael | This is a quote
+         you | kameloso: note OfflinePerson Why so offline?
+    kameloso | Note added
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [www.youtube.com] Danish language
 
 ## TODO
 
-* `note` plugin
-* rework plugin authentication logic
-* add compile-time option to have everything multi-threaded
-* evaluate cost of formatting `"foo%s".format(bar)` *vs* appending `"foo" ~ bar`
+* rethink logging; should we writeln or use our own logging functions?
 
 ## Built With
 
