@@ -2,11 +2,11 @@
 
 A command-line IRC bot.
 
-kameloso sits and listens in the channels you specify and reacts to certain events. It is a passive thing and does not respond to keyboard input. It is only known to actually work on [Freenode](https://freenode.net), but other servers *may* work, as long as they use `NickServ` for authentication. Some of Freenode's replies are non-standard.
+kameloso sits and listens in the channels you specify and reacts to certain events. It is a passive thing and does not respond to keyboard input. It is only known to actually work on [Freenode](https://freenode.net), but other servers *may* work, as long as they use `NickServ` for authentication. As some of Freenode's replies are non-standard, the bot may behave incorrectly on other servers.
 
 Current functionality includes:
 
-* printing of IRC events, as they are parsed and handled, optional colouring
+* printing of IRC events as they are parsed and handled, with optional colouring
 * repeating text! amazing
 * 8ball! because why not
 * storing, loading and printing quotes from users
@@ -17,7 +17,7 @@ Current functionality includes:
 ## Fails to build with OpenSSL 1.1.0
 
 ### Linux
-The library `dlang-requests` has not yet been updated to work with the modern 1.1.0 version of OpenSSL, and so this project will not build unless you manually modify its project file to point to the old library. This assumes that you still have the old library installed. For instance, the package name is `openssl-1.0` in Arch linux, and can peacefully live next to the new `openssl`.
+The library `dlang-requests` has not yet been updated to work with the modern **1.1.0** version of OpenSSL, and so this project will not build unless you manually modify its project file to point to the old library. This assumes that you still have the old library installed. The package name is `openssl-1.0` in Arch linux and it can peacefully live next to the new `openssl`.
 
 Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
 
@@ -26,7 +26,7 @@ Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and fi
                 "crypto"
             ],
 
-Change them to look like this, and the rest of this guide should work.
+Change them to look like thisa and the rest of this guide should work.
 
             "libs-posix": [
                 ":libssl.so.1.0.0",
@@ -45,22 +45,24 @@ kameloso can be built using the reference compiler [dmd](https://dlang.org/downl
 
 It's *possible* to build it without `dub` but it is non-trivial.
 
+### Downloading
+
+Github offers downloads in ZIP format, but it's easiest to use `git` and clone the repository that way.
+
+    $ git clone https://github.com/zorael/kameloso.git
+    $ cd kameloso
+
 ### Compiling
 
     $ dub build
-
 
 This will compile it in the default `debug` mode, which adds some extra code. You can build it in `release` mode by passing that as an argument to `dub`.
 
     $ dub build -b release
 
-
-## Running tests
-
 Unit tests are built into the language, but you need to compile in `unittest` mode for them to run.
 
     $ dub build -b unittest
-
 
 The tests are run at the *start* of the program, not during compilation.
 
@@ -91,6 +93,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 ## TODO
 
 * rethink logging; should we writeln or use our own logging functions?
+* "online" help
+* random colours on nicks, based on their hash?
 
 ## Built With
 
@@ -107,3 +111,4 @@ This project is licensed under the **GNU Lesser Public License v2.1** - see the 
 * [kameloso](https://www.youtube.com/watch?v=s-mOy8VUEBk) for obvious reasons
 * [README.md template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [dlang-requests](https://github.com/ikod/dlang-requests) for making the `webtitles` plugin possible
+* [#d on freenode](irc://irc.freenode.org:6667/#d) for always answering questions
