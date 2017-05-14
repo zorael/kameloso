@@ -10,12 +10,13 @@ import std.traits : isArray, isSomeFunction, hasUDA;
 
 // walkConfigLines
 /++
- +  Walks a list of configuration lines, such as those read from a config file. It ignores
- +  commented lines and calls setMember on the valid ones to reconstruct objects.
+ +  Walks a list of configuration lines, such as those read from a config file.
+ +
+ +  It ignores commented lines and calls setMember on the valid ones to reconstruct objects.
  +
  +  Params:
- +      wholeFile = A range providing the configuration lines.
- +      ref things = The structs whose members should be assigned values from the lines.
+ +      wholeFile = a range providing the configuration lines.
+ +      ref things = a compile-time variadic list of structs whose members should be configured.
  +/
 void walkConfigLines(Range, Things...)(Range range, ref Things things)
 {
@@ -82,12 +83,11 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
 
 // readConfig
 /++
- +  Takes a string to a configuration file, reads it and sets the memer of the passed
- +  structs as the contents of the configuration file dictate. "Read config file into these."
+ +  Reads a config file and sets structs' members as they are described there.
  +
  +  Params:
- +      configFile = The string name of a configuration file.
- +      things = A compile-time variadic list of structs whose members should be configured.
+ +      configFile = the string name of a configuration file.
+ +      ref things = a compile-time variadic list of structs whose members should be configured.
  +/
 void readConfig(T...)(const string configFile, ref T things)
 {
@@ -121,8 +121,8 @@ void readConfig(T...)(const string configFile, ref T things)
  *  but strings and integers can.
  *
  *  Params:
- +      configFile = The string name of a configuration file.
- +      things = A compile-time variadic list of structs whose members should be read and
+ +      configFile = the string name of a configuration file.
+ +      things = a compile-time variadic list of structs whose members should be read and
  +               saved to disk.
  +/
 void writeConfig(T...)(const string configFile, T things)
@@ -143,15 +143,16 @@ void writeConfig(T...)(const string configFile, T things)
 
 // setMember
 /++
- +  Given a struct and the string name of one of its members, assign it the supplied value.
+ +  Set the member of a struct to a supplied value, by string name.
+ +
  +  This is a template-heavy thing but it is in principle fairly straight-forward.
  +  Foreach member of a struct, if member name is the supplied member string, use std.conv.to
  +  and set it to this value. No vaue is returned as the stuct object is passed by ref.
  +
  +  Params:
- +      ref thing = The struct object whose member should be assigned to.
- +      memberstring = The string name of one of thing's members.
- +      value = The value to assign, in string form.
+ +      ref thing = the struct object whose member should be assigned to.
+ +      memberstring = the string name of one of thing's members.
+ +      value = the value to assign, in string form.
  +/
 void setMember(Thing)(ref Thing thing, string memberstring, string value)
 {
@@ -250,7 +251,7 @@ void setMember(Thing)(ref Thing thing, string memberstring, string value)
  +
  +  This is used for formatting configuration files, so that columns line up.
  +
- +  Template param:
+ +  Params:
  +      T = the struct type to inspect for member name lengths.
  +/
 template longestMemberName(T)
