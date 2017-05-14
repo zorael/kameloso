@@ -46,7 +46,7 @@ void onCommandSudo(const IrcEvent event)
 {
     if (state.users[event.sender].login != state.bot.master)
     {
-        writefln("Failsafe triggered: user is not master (%s)", event.sender);
+        writefln(Foreground.lightred, "Failsafe triggered: user is not master (%s)", event.sender);
         return;
     }
 
@@ -97,7 +97,7 @@ void onCommandAddChan(const IrcEvent event)
 
     if (!channel.isValidChannel)
     {
-        writeln("invalid channel: ", channel);
+        writeln(Foreground.lightred, "invalid channel: ", channel);
         return;
     }
 
@@ -106,7 +106,7 @@ void onCommandAddChan(const IrcEvent event)
         state.mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
     }
 
-    writeln("Adding channel: ", channel);
+    writeln(Foreground.lightcyan, "Adding channel: ", channel);
     state.bot.channels ~= channel;
     updateBot();
 }
@@ -134,7 +134,7 @@ void onCommandDelChan(const IrcEvent event)
 
     if (!channel.isValidChannel)
     {
-        writeln("invalid channel: ", channel);
+        writeln(Foreground.lightred, "invalid channel: ", channel);
         return;
     }
 
@@ -142,7 +142,7 @@ void onCommandDelChan(const IrcEvent event)
 
     if (chanIndex == -1)
     {
-        writefln("Channel %s was not in bot.channels", channel);
+        writefln(Foreground.lightred, "Channel %s was not in bot.channels", channel);
         return;
     }
 
@@ -174,17 +174,17 @@ void onCommandAddFriend(const IrcEvent event)
 
     if (!nickname.length)
     {
-        writeln("No nickname supplied...");
+        writeln(Foreground.lightred, "No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln("Nickname must not contain spaces");
+        writeln(Foreground.lightred, "Nickname must not contain spaces");
         return;
     }
 
     state.bot.friends ~= nickname;
-    writefln("%s added to friends", nickname);
+    writefln(Foreground.lightcyan, "%s added to friends", nickname);
     updateBot();
 }
 
@@ -210,12 +210,12 @@ void onCommandDelFriend(const IrcEvent event)
 
     if (!nickname.length)
     {
-        writeln("No nickname supplied...");
+        writeln(Foreground.lightred, "No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln("Only one nick at a time. Nickname must not contain spaces");
+        writeln(Foreground.lightred, "Only one nick at a time. Nickname must not contain spaces");
         return;
     }
 
@@ -223,12 +223,12 @@ void onCommandDelFriend(const IrcEvent event)
 
     if (friendIndex == -1)
     {
-        writefln("No such friend");
+        writefln(Foreground.lightred, "No such friend");
         return;
     }
 
     state.bot.friends = state.bot.friends.remove(friendIndex);
-    writefln("%s removed from friends", nickname);
+    writefln(Foreground.lightcyan, "%s removed from friends", nickname);
     updateBot();
 }
 
@@ -267,7 +267,7 @@ void onCommandResetTerminal()
 void onCommandPrintAll()
 {
     printAll = !printAll;
-    writeln("Printing all: ", printAll);
+    writeln(Foreground.lightcyan, "Printing all: ", printAll);
 }
 
 
@@ -287,7 +287,10 @@ void onCommandPrintAll()
 @(Chainable.yes)
 void onAnyEvent(const IrcEvent event)
 {
-    if (printAll) writeln(event.raw);
+    // Bypass the roundtrip
+    import std.stdio : realWriteln = writeln;
+
+    if (printAll) realWriteln(event.raw);
 }
 
 
@@ -331,7 +334,7 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 
     if (!event.content.length)
     {
-        writeln("No channels supplied...");
+        writeln(Foreground.lightred, "No channels supplied...");
         return;
     }
 
