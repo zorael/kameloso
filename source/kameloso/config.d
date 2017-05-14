@@ -213,13 +213,13 @@ void setMember(Thing)(ref Thing thing, string memberstring, string value)
                     }
                     break top;
                 }
-                // break top;
             }
             else static if (is(MemberType : string))
             {
                 // Simple assignment
                 __traits(getMember, thing, name) = value;
-                break top;
+
+                return;
             }
             else
             {
@@ -232,7 +232,8 @@ void setMember(Thing)(ref Thing thing, string memberstring, string value)
                     writefln("Caught Exception trying to convert '%s' to %s: %s",
                             value, MemberType.stringof, e.msg);
                 }
-                break top;
+
+                return;
             }
         }
     }
