@@ -318,7 +318,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         catch (Exception e)
         {
-            writeln(e);
+            writeln(Foreground.lightred, e);
         }
         break;
 
@@ -408,10 +408,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         if (event.type == NUMERIC)
         {
             writeln();
-            writeln("--------------- UNCAUGHT NUMERIC --------------");
+            writeln(Foreground.lightred, "--------------- UNCAUGHT NUMERIC --------------");
             writeln(event.raw);
             writeln(event);
-            writeln("-----------------------------------------------");
+            writeln(Foreground.lightred, "-----------------------------------------------");
             writeln();
         }
 
@@ -422,10 +422,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     if (event.target.canFind(' ') || event.channel.canFind(' '))
     {
         writeln();
-        writeln("--------------- SPACES, NEEDS REVISION --------------");
+        writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
         writeln(event.raw);
         writeln(event);
-        writeln("-----------------------------------------------------");
+        writeln(Foreground.lightred, "-----------------------------------------------------");
         writeln();
     }
 
@@ -434,11 +434,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         (event.channel.length && event.channel[0] != '#')))
     {
         writeln();
-        writeln("--------------- CHANNEL/TARGET REVISION --------------");
+        writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
         writeln(event.raw);
         writeln(event);
         printObject(event);
-        writeln("------------------------------------------------------");
+        writeln(Foreground.lightred, "------------------------------------------------------");
         writeln();
     }
 }
@@ -972,7 +972,8 @@ IrcUser userFromEvent(const IrcEvent event)
     default:
         if (!event.sender.canFind('@'))
         {
-            writefln("There was a server %s event and we naïvely tried to build a user from it");
+            writefln(Foreground.lightred,
+                "There was a server %s event and we naïvely tried to build a user from it");
             goto case WHOISLOGIN;
         }
 
