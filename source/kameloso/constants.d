@@ -9,7 +9,6 @@ enum Files
     notes  = "notes.json",
 }
 
-
 /// NickServ's lines begin with these
 enum NickServLines
 {
@@ -48,7 +47,6 @@ enum BufferSize
     socketReceive = 1536,
     titleLookup = 8192,
 }
-
 
 /// Various timeouts in seconds
 enum Timeout

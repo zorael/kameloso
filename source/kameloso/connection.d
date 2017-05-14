@@ -4,7 +4,7 @@ import kameloso.constants;
 
 import std.stdio : writeln, writefln;
 import std.socket;
-import core.time   : seconds;
+import core.time : seconds;
 
 
 // Connection
