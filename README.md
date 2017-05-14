@@ -56,7 +56,7 @@ Github offers downloads in ZIP format, but it's easiest to use `git` and clone t
 
     $ dub build
 
-This will compile it in the default `debug` mode, which adds some extra code. You can build it in `release` mode by passing that as an argument to `dub`.
+This will compile it in the default `debug` mode, which adds some extra code. You can build it in `release` mode by passing that as an argument to `dub`. Ignore the deprecation messages of symbols not being visible from module traits, they're harmless.
 
     $ dub build -b release
 
