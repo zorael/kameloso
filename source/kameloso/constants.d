@@ -27,13 +27,18 @@ enum NickServLines
  +  colour starts colour codes.
  +  termReset outputs a byte that restores the local terminal if it has entered "binary" mode.
  +/
-enum ControlCharacter : ubyte { action = 1, bold = 2, colour = 3, termReset = 15 }
+enum ControlCharacter : ubyte
+{
+    action      = 1,
+    bold        = 2,
+    colour      = 3,
+    termReset   = 15
+}
 
 enum BashColourToken = '\033';
 
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
-
 
 /// Buffer sizes in bytes
 enum BufferSize
