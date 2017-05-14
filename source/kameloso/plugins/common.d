@@ -210,7 +210,7 @@ mixin template IrcPluginBasics()
      +/
     void status()
     {
-        writeln("--[ ", typeof(this).stringof);
+        writeln(Foreground.lightcyan, "--[ ", typeof(this).stringof);
         printObject(state);
     }
 
@@ -589,11 +589,11 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     {
         if (state.bot.nickname == event.content)
         {
-            writeln("saw SELFNICK but already had that nick...");
+            writeln(Foreground.lightred, "saw SELFNICK but already had that nick...");
         }
         else
         {
-            writeln(module_, ": new nickname");
+            writeln(Foreground.lightcyan, module_, ": new nickname");
             state.bot.nickname = event.content;
         }
     }
