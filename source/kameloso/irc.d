@@ -210,6 +210,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
         event.type = (event.sender == bot.nickname) ? SELFQUIT : QUIT;
         event.content = slice[1..$].unquoted;
+
+        if (event.content.beginsWith("Quit: "))
+        {
+            event.content.nom("Quit: ");
+        }
+
         break;
 
     case PRIVMSG:
