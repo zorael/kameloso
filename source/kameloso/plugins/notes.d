@@ -262,7 +262,7 @@ auto getNotes(const string nickname)
         }
         else
         {
-            writeln(Foreground.lightred, "No notes available for nickname ", nickname);
+            writeln(Foreground.lightcyan, "No notes available for nickname ", nickname);
             return noteArray;
         }
     }
