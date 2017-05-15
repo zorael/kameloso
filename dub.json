@@ -16,7 +16,9 @@
         },
         {
             "name": "randomnickcolours",
-            "versions": [ "RandomNickColours" ]
+            "versions": [ "RandomNickColours" ],
+            "targetType": "executable",
+            "debugMode": true
         },
         {
             "name": "nocolours",
