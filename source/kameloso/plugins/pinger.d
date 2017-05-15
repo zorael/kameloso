@@ -64,7 +64,7 @@ void pinger(Tid mainThread)
  +/
 void initialise()
 {
-    pingerThread = spawnLinked(&pinger, state.mainThread);
+    pingerThread = spawn(&pinger, state.mainThread);
 }
 
 

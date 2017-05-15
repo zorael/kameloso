@@ -307,10 +307,10 @@ void titleworker(shared Tid sMainThread)
  +/
 void initialise()
 {
-    import std.concurrency : spawnLinked;
+    import std.concurrency : spawn;
 
     const stateCopy = state;
-    workerThread = spawnLinked(&titleworker, cast(shared)(stateCopy.mainThread));
+    workerThread = spawn(&titleworker, cast(shared)(stateCopy.mainThread));
 }
 
 

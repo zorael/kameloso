@@ -141,14 +141,6 @@ Quit checkMessages()
 
                 quit = Quit.yes;
             },
-            (LinkTerminated e)
-            {
-                //writeln("Some linked thread died!");
-                //writelnColoured(Foreground.lightred, "Some linked thread died!");
-                writeln(Foreground.lightred, "Some linked thread died!");
-
-                quit = Quit.yes;
-            },
             (Variant v)
             {
                 //writeln("Main thread received unknown Variant");
