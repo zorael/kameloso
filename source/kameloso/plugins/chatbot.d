@@ -130,13 +130,17 @@ JSONValue loadQuotes(const string filename)
 
     if (!filename.exists)
     {
-        writeln(Foreground.lightred, filename, " does not exist");
-        return JSONValue("{}");
+        writeln(Foreground.white, filename, " does not exist");
+        JSONValue newJSON;
+        newJSON.object = null;
+        return newJSON;
     }
     else if (!filename.isFile)
     {
         writefln(Foreground.lightred, filename, " is not a file");
-        return JSONValue("{}");
+        JSONValue newJSON;
+        newJSON.object = null;
+        return newJSON;
     }
 
     immutable wholeFile = filename.readText.chomp;
