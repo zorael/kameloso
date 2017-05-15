@@ -90,7 +90,7 @@ public:
             case "getaddrinfo error: Name or service not known":
                 // Assume net down, wait and try again
                 writeln(Foreground.lightred, e.msg);
-                writefln(Foreground.lightcyan, "Network down? Retrying in %d seconds",
+                writefln(Foreground.lightred, "Network down? Retrying in %d seconds",
                     Timeout.resolve);
                 Thread.sleep(Timeout.resolve.seconds);
                 return resolve(address, port);
@@ -126,12 +126,12 @@ public:
 
             try
             {
-                writefln("Connecting to %s ...", ip);
+                writefln(Foreground.white, "Connecting to %s ...", ip);
                 socket.connect(ip);
 
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
-                writeln(Foreground.lightcyan, "Connected!");
+                writeln(Foreground.white, "Connected!");
                 //break;
                 return;
             }
