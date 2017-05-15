@@ -876,9 +876,29 @@ struct IrcEvent
                     num     = darkgrey,
                 }
 
+                Foreground senderColour;
+
+                version(RandomNickColours)
+                {
+                    pragma(msg, "Doing random nick colours");
+
+                    import std.traits : EnumMembers;
+
+                    static immutable Foreground[17] foregrounds = [ EnumMembers!Foreground ];
+
+                    auto colourIndex = hashOf(sender) % 16;
+                    if (colourIndex == 1) colourIndex = 16;  // map black to white
+
+                    senderColour = foregrounds[colourIndex];
+                }
+                else
+                {
+                    senderColour = C.sender;
+                }
+
                 sink.formattedWrite("%s[%s]%s %s",  // is the space visible? can do default_
                     colourise(C.type), type.to!string,
-                    colourise(C.sender), sender);
+                    colourise(senderColour), sender);
 
                 if (special)        sink.formattedWrite("%s*",      colourise(C.special));
                 if (target.length)  sink.formattedWrite(" %s(%s)",  colourise(C.target), target);
