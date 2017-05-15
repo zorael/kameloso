@@ -3,8 +3,6 @@ module kameloso.config;
 import kameloso.common;
 import kameloso.constants;
 
-import std.stdio  : File, writeln, writefln;
-import std.format : format;
 import std.range  : isInputRange;
 import std.traits : isArray, isSomeFunction, hasUDA;
 
@@ -133,6 +131,7 @@ void writeConfig(T...)(const string configFile, T things)
 {
     import std.datetime : Clock;
     import std.file : exists, isFile, removeFile = remove;
+    import std.stdio  : File;
 
     if (configFile.exists && configFile.isFile)
     {
@@ -183,6 +182,7 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
             }
             else static if (isArray!MemberType && !is(MemberType : string))
             {
+                import std.format : format;
                 import std.traits : getUDAs;
 
                 static assert((hasUDA!(__traits(getMember, Thing, name), Separator)),
@@ -319,7 +319,7 @@ if (Things.length > 1)
  +/
 string configText(Thing)(const Thing thing)
 {
-    import std.format : formattedWrite;
+    import std.format : format, formattedWrite;
     import std.array : Appender;
 
     Appender!string sink;

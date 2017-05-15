@@ -93,17 +93,13 @@ void onWelcome(const IrcEvent event)
  +  Joins channels at the end of the MOTD, and tries to authenticate with NickServ if applicable.
  +
  +  This may be Freenode-specific and may need extension to work with other servers.
- +
- +  Params:
- +      event = the triggering IrcEvent.
  +/
 @Label("endofmotd")
 @(IrcEvent.Type.RPL_ENDOFMOTD)
-void onEndOfMotd(const IrcEvent event)
+void onEndOfMotd()
 {
     import std.algorithm.iteration : joiner;
     import std.format : format;
-    //import std.stdio : writefln;
 
     // FIXME: Deadlock if a password exists but there is no challenge
     // the fix is a timeout
