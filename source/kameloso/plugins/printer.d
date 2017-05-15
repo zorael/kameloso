@@ -50,6 +50,7 @@ void onAnyEvent(const IrcEvent event)
     case PONG:
     case SERVERINFO:
     case SERVERINFO_2:
+    case TOPICSETTIME:
     case RPL_LUSERCLIENT:
     case RPL_LUSEROP:
     case RPL_LUSERCHANNELS:
