@@ -372,14 +372,25 @@ string configText(Thing)(const Thing thing)
 
                 static if (is(MemberType : string))
                 {
-                    if (!value.length)
+                    if (value.length)
+                    {
+                        sink.formattedWrite(pattern, name, value);
+                    }
+                    else
                     {
                         sink.formattedWrite(patternCommented, name);
                     }
                 }
                 else
                 {
-                    sink.formattedWrite(pattern, name, value);
+                    if (value != typeof(value).init)
+                    {
+                        sink.formattedWrite(pattern, name, value);
+                    }
+                    else
+                    {
+                        sink.formattedWrite(patternCommented, name);
+                    }
                 }
             }
         }
