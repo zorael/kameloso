@@ -247,7 +247,7 @@ int main(string[] args)
     printObject(server);
     writeln();
 
-    if (!bot.channels.length && !bot.master.length && !bot.friends.length)
+    if (!bot.homes.length && !bot.master.length && !bot.friends.length)
     {
         import std.path : baseName;
 

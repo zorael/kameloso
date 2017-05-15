@@ -58,12 +58,12 @@ void onNotice(const IrcEvent event)
 
         if (event.content.beginsWith(cast(string)NickServLines.acceptance))
         {
-            if (!state.bot.channels.length || state.bot.finishedLogin) return;
+            if (!state.bot.homes.length || state.bot.finishedLogin) return;
 
             import std.algorithm.iteration : joiner;
 
             state.mainThread.send(ThreadMessage.Sendline(),
-                    "JOIN :%s".format(state.bot.channels.joiner(",")));
+                    "JOIN :%s".format(state.bot.homes.joiner(",")));
             state.bot.finishedLogin = true;
             updateBot();
         }
@@ -120,7 +120,7 @@ void onEndOfMotd(const IrcEvent event)
     else
     {
         state.mainThread.send(ThreadMessage.Sendline(),
-            "JOIN :%s".format(state.bot.channels.joiner(",")));
+            "JOIN :%s".format(state.bot.homes.joiner(",")));
         state.bot.finishedLogin = true;
         updateBot();
     }
