@@ -41,9 +41,11 @@ string nom(Decode decode = Decode.no, T, C)(ref T[] arr, C separator)
 
     if (index == -1)
     {
-        import std.stdio : writefln;
+        import kameloso.common : writefln;
+        import kameloso.constants : Foreground;
 
-        writefln("--------- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
+        writefln(Foreground.lightred, "--------- TRIED TO NOM TOO MUCH:'%s' with '%s'",
+            arr, separator);
         return string.init;
     }
 

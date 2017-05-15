@@ -6,7 +6,6 @@ import kameloso.irc;
 import kameloso.plugins.common;
 
 import std.concurrency;
-//import std.stdio : writefln, writeln;
 
 private:
 

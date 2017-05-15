@@ -274,7 +274,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                     static if (hasUDA!(fun, Verbose))
                     {
-                        //import std.stdio : writefln, writeln;
+                        // import std.stdio : writefln, writeln;
                         enum verbose = getUDAs!(fun, Verbose)[0] == Verbose.yes;
                     }
                     else
@@ -515,8 +515,6 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
-    //import std.stdio : writeln;
-
     // onWhoisLogin
     /++
      +  Records a user's NickServ login.

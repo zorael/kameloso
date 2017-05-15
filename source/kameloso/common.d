@@ -73,7 +73,6 @@ enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
 void printObject(T)(T thing, string message = string.init,
                     string file = __FILE__, int line = __LINE__)
 {
-	//import std.stdio  : writefln;
     import std.traits : isSomeFunction;
 
     if (message.length)
@@ -133,7 +132,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%s)
                 {
-                    //import std.stdio : writeln;
+                    // import std.stdio : writeln;
                     writeln(Foreground.white, "[%s] %s");
                 }
             }.format(state.toLower, state, scopeName);
@@ -145,7 +144,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%s)
                 {
-                    //import std.stdio  : writefln;
+                    // import std.stdio  : writefln;
                     import std.string : indexOf;
                     enum __%sdotPos  = __FUNCTION__.indexOf('.');
                     enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
@@ -163,7 +162,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                //import std.stdio : writeln;
+                // import std.stdio : writeln;
                 writeln(Foreground.white, "[%s] %s");
             }.format(scopeName, state);
         }
@@ -171,7 +170,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                //import std.stdio  : writefln;
+                // import std.stdio  : writefln;
                 import std.string : indexOf;
                 enum __%sdotPos  = __FUNCTION__.indexOf('.');
                 enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
@@ -227,7 +226,6 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 mixin template ColouredWriteln()
 {
     import std.stdio : realWrite = write, realWritefln = writefln, realWriteln = writeln;
-    import std.format : format;
 
     version(NoColours)
     {
