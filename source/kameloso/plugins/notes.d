@@ -280,11 +280,18 @@ auto getNotes(const string nickname)
  +/
 void clearNotes(const string nickname)
 {
-    if (nickname in notes)
+    try
     {
-        writeln(Foreground.lightcyan, "Clearing stored notes for ", nickname);
-        notes.object.remove(nickname);
-        Files.notes.saveNotes();
+        if (nickname in notes)
+        {
+            writeln(Foreground.lightcyan, "Clearing stored notes for ", nickname);
+            notes.object.remove(nickname);
+            Files.notes.saveNotes();
+        }
+    }
+    catch (Exception e)
+    {
+        writeln(Foreground.lightred, "Exception when clearing notes: ", e.msg);
     }
 }
 
