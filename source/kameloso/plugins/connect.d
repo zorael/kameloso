@@ -114,8 +114,6 @@ void onEndOfMotd(const IrcEvent event)
             .format(state.bot.login, state.bot.password));
 
         // Don't show the bot's password in the clear, fake it
-        //writefln("--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2", state.bot.login);
-        //writeflnColoured(Foreground.white,
         writefln(Foreground.white, "--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2",
             state.bot.login);
     }

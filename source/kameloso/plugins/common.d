@@ -530,7 +530,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.WHOISLOGIN)
     void onWhoisLogin(const IrcEvent event)
     {
-        //writeln(module_, ": Adding to users");
         state.users[event.target] = userFromEvent(event);
     }
 
@@ -553,7 +552,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWhois(const IrcEvent event)
     {
-        //writeln(module_, ": removing from queue");
         state.queue.remove(event.target);
     }
 
@@ -572,7 +570,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IrcEvent.Type.QUIT)
     void onLeave(const IrcEvent event)
     {
-        //writeln(module_, ": removing from users");
         state.users.remove(event.sender);
     }
 

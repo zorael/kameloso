@@ -262,14 +262,12 @@ auto getNotes(const string nickname)
         }
         else
         {
-            //writeln("No notes available for nickname ", nickname);
             writeln(Foreground.lightred, "No notes available for nickname ", nickname);
             return noteArray;
         }
     }
     catch (Exception e)
     {
-        //writeln("Exception when fetching notes: ", e.msg);
         writeln(Foreground.lightred, "Exception when fetching notes: ", e.msg);
         return noteArray;
     }
@@ -307,7 +305,6 @@ void addNote(const string nickname, const string sender, const string line)
 
     if (!line.length)
     {
-        //writeln("No message to create note from...");
         writeln(Foreground.lightred, "No message to create note from...");
         return;
     }

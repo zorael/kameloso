@@ -7,7 +7,6 @@ import kameloso.config;
 import kameloso.irc;
 import kameloso.plugins;
 
-//import std.stdio    : writeln, writefln;
 import std.datetime : SysTime;
 import std.concurrency;
 
@@ -80,8 +79,6 @@ Quit checkMessages()
         receivedSomething = receiveTimeout(0.seconds,
             (ThreadMessage.Sendline, string line)
             {
-                //writeln("--> ", line);
-                //writelnColoured(Foreground.white, "--> ", line);
                 writeln(Foreground.white, "--> ", line);
                 conn.sendline(line);
             },
@@ -105,8 +102,6 @@ Quit checkMessages()
 
                 if (then && ((now - *then) < Timeout.whois.seconds)) return;
 
-                //writeln("--> WHOIS :", event.sender);
-                //writelnColoured(Foreground.white, "--> WHOIS :", event.sender);
                 writeln(Foreground.white, "--> WHOIS :", event.sender);
                 conn.sendline("WHOIS :", event.sender);
                 whoisCalls[event.sender] = Clock.currTime;
@@ -132,8 +127,6 @@ Quit checkMessages()
                 // Set quit to yes to propagate the decision down the stack
                 const line = reason.length ? reason : bot.quitReason;
 
-                //writeln("--> QUIT :", line);
-                //writelnColoured(Foreground.white, "--> QUIT :", line);
                 writeln(Foreground.white, "--> QUIT :", line);
                 conn.sendline("QUIT :", line);
 
@@ -143,11 +136,8 @@ Quit checkMessages()
             },
             (Variant v)
             {
-                //writeln("Main thread received unknown Variant");
-                //writelnColoured(Foreground.lightred, "Main thread received unknown Variant");
                 writeln(Foreground.lightred, "Main thread received unknown Variant");
                 writeln(Foreground.lightred, v);
-                //writelnColoured(Foreground.lightred, v);
             }
         );
     }
@@ -346,7 +336,6 @@ Quit loopGenerator(Generator!string generator)
 
                     if (!spammedAboutReplaying)
                     {
-                        //writeln("Replaying event:");
                         writeln(Foreground.lightcyan, "Replaying event:");
                         writeln(*savedEvent);
                         spammedAboutReplaying = true;
