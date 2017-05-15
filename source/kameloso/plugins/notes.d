@@ -7,7 +7,6 @@ import kameloso.plugins.common;
 
 import std.concurrency : send;
 import std.json   : JSONValue;
-//import std.stdio  : writefln, writeln;
 
 private:
 
