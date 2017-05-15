@@ -325,7 +325,7 @@ void addNote(const string nickname, const string sender, const string line)
 
     try
     {
-        if (!notes.isNull && (nickname in notes) && (notes[nickname].type == JSON_TYPE.ARRAY))
+        if ((nickname in notes) && (notes[nickname].type == JSON_TYPE.ARRAY))
         {
             notes[nickname].array ~= JSONValue(lineAsAA);
         }
