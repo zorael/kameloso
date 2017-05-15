@@ -81,10 +81,7 @@ void addQuote(const string nickname, const string line)
     catch (Exception e)
     {
         // No quotes at all
-        writeln(Foreground.lightred, "Exception when adding new quote: ", e);
-        quotes = JSONValue("{}");
-        // return nickname.addQuote(nickname); // ???
-        return nickname.addQuote(line);
+        writeln(Foreground.lightred, "Exception when adding new quote: ", e.msg);
     }
 }
 
