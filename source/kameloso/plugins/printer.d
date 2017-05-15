@@ -51,11 +51,14 @@ void onAnyEvent(const IrcEvent event)
     case SERVERINFO:
     case SERVERINFO_2:
     case TOPICSETTIME:
+    case WHOISSECURECONN:
     case RPL_LUSERCLIENT:
     case RPL_LUSEROP:
     case RPL_LUSERCHANNELS:
     case RPL_LUSERME:
     case RPL_LUSERUNKNOWN:
+    case RPL_WHOISSERVER:
+    case RPL_ENDOFWHOIS:
     case RPL_MOTDSTART:
     case RPL_ENDOFMOTD:
     case RPL_ENDOFNAMES:
