@@ -318,7 +318,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, e);
+            writeln(Foreground.lightred, e.msg);
         }
         break;
 

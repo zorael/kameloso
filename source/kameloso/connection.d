@@ -102,7 +102,7 @@ public:
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, e);
+            writeln(Foreground.lightred, e.msg);
             assert(0);
         }
     }
@@ -141,7 +141,7 @@ public:
             }
             catch (Exception e)
             {
-                writeln(Foreground.lightred, e);
+                writeln(Foreground.lightred, e.msg);
                 assert(0);
             }
             finally

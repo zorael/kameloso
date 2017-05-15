@@ -48,7 +48,7 @@ string getQuote(const string nickname)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "Exception when fetching quote: ", e);
+        writeln(Foreground.lightred, "Exception when fetching quote: ", e.msg);
         return string.init;
     }
 }
