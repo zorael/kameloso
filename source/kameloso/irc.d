@@ -190,7 +190,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         else
         {
-            event.content = slice;
+            event.channel = slice;
         }
         break;
 
