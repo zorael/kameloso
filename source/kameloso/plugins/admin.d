@@ -86,9 +86,8 @@ void onCommandQuit(const IrcEvent event)
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "addchan")
 @Prefix(NickPrefixPolicy.required, "addhome")
-void onCommandAddChan(const IrcEvent event)
+void onCommandAddHome(const IrcEvent event)
 {
     import std.algorithm.searching : canFind;
     import std.string : strip;
