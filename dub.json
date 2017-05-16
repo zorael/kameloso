@@ -6,35 +6,41 @@
     ],
     "copyright": "Copyright © 2016, JR",
     "license": "LGPL-2.1",
-    "dependencies": {
-        "requests": "~>0.4.0"
-    },
     "configurations": [
         {
             "name": "kameloso",
-            "targetType": "executable"
+            "targetType": "executable",
+            "platforms": [ "linux" ],
+            "dependencies": {
+                "requests": "~>0.4.0"
+            }
         },
         {
-            "name": "randomnickcolours",
-            "versions": [ "RandomNickColours" ],
+            "name": "nonickcolours",
             "targetType": "executable",
-            "debugMode": true
+            "platforms": [ "linux" ],
+            "versions": [ "NoNickColours" ],
+            "dependencies": {
+                "requests": "~>0.4.0"
+            }
         },
         {
             "name": "nocolours",
             "targetType": "executable",
-            "versions" : [ "NoColours" ]
+            "platforms": [ "linux", "windows" ],
+            "versions": [ "NoColours" ]
         }
     ],
     "debugMode": true,
     "debugInfo": true,
     "debugInfoC": true,
     "alwaysStackFrame": true,
-    "inline": true,
+    "inline": false,
     "libs": [
         "phobos2"
     ],
     "lflags": [
+        "-g",
         "-O1",
         "--sort-common",
         "--gc-sections"
