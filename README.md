@@ -2,22 +2,28 @@
 
 A command-line IRC bot.
 
-kameloso sits and listens in the channels you specify and reacts to certain events. It is a passive thing and does not respond to keyboard input. It is only known to actually work on [Freenode](https://freenode.net), but other servers *may* work, as long as they use `NickServ` for authentication. As some of Freenode's replies are non-standard, the bot may behave incorrectly on other servers.
+kameloso sits and listens in the channels you specify and reacts to certain events. It is a passive thing and does not respond to keyboard input. It is only known to actually work on [Freenode](https://freenode.net), but other servers *may* work, as long as they use `NickServ` for authentication. Some of Freenode's replies are non-standard however, and so the bot may behave in unforeseen ways. This software is beta quality, if that.
 
 Current functionality includes:
 
-* printing of IRC events as they are parsed and handled, with optional colouring
+* bedazzling coloured terminal output
+* printing of IRC events as they are parsed and handled
 * repeating text! amazing
 * 8ball! because why not
 * storing, loading and printing quotes from users
 * saving notes to offline users that get played back when they come online
 * looking up titles of pasted URLs
-* sed-replacement of the last message sent (s/this/that/ replacement)
+* sed-replacement of the last message sent (`s/this/that/` replacement)
 
 ## Fails to build with OpenSSL 1.1.0
 
+The library `dlang-requests` has [not yet been updated](https://github.com/ikod/dlang-requests/issues/45) to work with the modern **1.1.0** version of OpenSSL and so this project will not fully build. A workaround is to just not build the `webtitles` plugin that is importing the offending library, by compiling with `dub -c nowebtitles`.
+
+A better workaround is to modify the `dlang-requests`'s project file to point to the old library. However, this assumes that you still have the old library installed.
+
 ### Linux
-The library `dlang-requests` has not yet been updated to work with the modern **1.1.0** version of OpenSSL, and so this project will not build unless you manually modify its project file to point to the old library. This assumes that you still have the old library installed. The package name is `openssl-1.0` in Arch linux and it can peacefully live next to the new `openssl`.
+
+In Arch linux the package name is `openssl-1.0`, and it can peacefully live next to the new `openssl`.
 
 Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
 
@@ -26,12 +32,15 @@ Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and fi
                 "crypto"
             ],
 
-Change them to look like thisa and the rest of this guide should work.
+Change them to look like this and the rest of this guide should work.
 
             "libs-posix": [
                 ":libssl.so.1.0.0",
                 ":libcrypto.so.1.0.0"
             ],
+
+### Windows
+Windows is equally affected but for now the easy way out is to not compile said `webtitles` plugin. The default Windows build will skip it along with all colouring features, since the colouring is Bash-specific.
 
 ## Getting Started
 
@@ -72,10 +81,9 @@ The bot needs the `NickServ` login name of the administrator/master of the bot, 
 
     $ ./kameloso --writeconfig
 
-
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login before it will listen to anything you do.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login in the configuration file before it will listen to anything you do.
 
          you | kameloso: say herp
     kameloso | herp
@@ -94,9 +102,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 ## TODO
 
-* rethink logging - should we writeln or use our own logging functions?
+* rethink logging - should we *really* writeln, or use our own logging functions?
 * "online" help; listing of verbs/commands
-* random colours on nicks, based on their hash?
 * improve command-line argument handling (issues [#4](https://github.com/zorael/kameloso/issues/4) and [#5](https://github.com/zorael/kameloso/issues/5) etc)
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
 
