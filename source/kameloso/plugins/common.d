@@ -210,8 +210,8 @@ mixin template IrcPluginBasics()
      +/
     void status()
     {
-        writeln(Foreground.lightcyan, "--[ ", typeof(this).stringof);
-        printObject(state);
+        writeln(Foreground.lightgreen, "--[ ", typeof(this).stringof);
+        printObject(state.bot);
     }
 
     // teardown
