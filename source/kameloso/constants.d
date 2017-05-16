@@ -61,8 +61,7 @@ enum Timeout
     titleCache = 600,
 }
 
-
-/// These are used in combination with the scopeguard function, to generate scopeguard mixins.
+/// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
 enum : ubyte
 {
     entry   = 1 << 0,
