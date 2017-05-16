@@ -15,9 +15,6 @@ private:
 /// All plugin state variables gathered in a struct
 IrcPluginState state;
 
-/// Cache buffer of recently looked-up URIs
-//TitleLookup[string] cache;
-
 /// Thread ID of the working thread that does the lookups
 Tid workerThread;
 
