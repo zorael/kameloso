@@ -25,6 +25,24 @@ void updateBot()
     state.mainThread.send(cast(shared)botCopy);
 }
 
+@Label("onSelfjoin")
+@(IrcEvent.Type.SELFJOIN)
+void onSelfjoin(const IrcEvent event)
+{
+    state.bot.channels ~= event.channel;
+    updateBot();
+}
+
+@Label("onSelfPart")
+@(IrcEvent.Type.SELFPART)
+void onSelfpart(const IrcEvent event)
+{
+    import std.algorithm.mutation : remove;
+
+    state.bot.channels = state.bot.channels.remove(event.channel);
+    updateBot();
+}
+
 
 // onNotice
 /++
@@ -58,14 +76,33 @@ void onNotice(const IrcEvent event)
 
         if (event.content.beginsWith(cast(string)NickServLines.acceptance))
         {
-            if (!state.bot.homes.length || state.bot.finishedLogin) return;
+            if (state.bot.finishedLogin) return;
 
-            import std.algorithm.iteration : joiner;
+            joinChannels();
+        }
+    }
+}
 
-            state.mainThread.send(ThreadMessage.Sendline(),
-                    "JOIN :%s".format(state.bot.homes.joiner(",")));
-            state.bot.finishedLogin = true;
+void joinChannels()
+{
+    import std.algorithm.iteration : joiner;
+    import std.format : format;
+
+    with (state)
+    {
+        if (bot.homes.length)
+        {
+            bot.finishedLogin = true;
             updateBot();
+
+            mainThread.send(ThreadMessage.Sendline(),
+                "JOIN :%s".format(bot.homes.joiner(",")));
+        }
+
+        if (bot.channels.length)
+        {
+            mainThread.send(ThreadMessage.Sendline(),
+                "JOIN :%s".format(bot.channels.joiner(",")));
         }
     }
 }
@@ -115,10 +152,7 @@ void onEndOfMotd()
     }
     else
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "JOIN :%s".format(state.bot.homes.joiner(",")));
-        state.bot.finishedLogin = true;
-        updateBot();
+        joinChannels();
     }
 }
 

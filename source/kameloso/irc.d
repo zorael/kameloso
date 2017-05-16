@@ -463,9 +463,11 @@ struct IrcBot
     string password;
     string master;
     @Separator(",")
-    string[] homes = [];
+    string[] homes;
     @Separator(",")
-    string[] friends  = [];
+    string[] friends;
+    @Unconfigurable
+    string[] channels;
     @Unconfigurable
     string server;
     @Unconfigurable
@@ -473,7 +475,7 @@ struct IrcBot
 
     string toString()
     {
-        return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s chans:%s friends:%s server:%s"
+        return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s homes:%s friends:%s server:%s"
                .format(nickname, user, login, password, ident, master, homes, friends, server);
     }
 }
