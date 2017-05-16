@@ -175,6 +175,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
         event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
         event.channel = slice;
+        if (event.content.length)
+        {
+            // TODO: remove me later but keep for now
+            writeln("WHY DOES A JOIN EVENT HAVE CONTENT?");
+            writeln(Foreground.lightred, event.raw);
+        }
         break;
 
     case PART:

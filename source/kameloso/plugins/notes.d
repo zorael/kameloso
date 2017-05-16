@@ -235,7 +235,12 @@ auto getNotes(const string nickname)
 
     try
     {
-        if (notes.isNull) return noteArray;
+        if (notes.isNull)
+        {
+            // TODO: remove me later but keep for now
+            writeln(Foreground.red, "WHY IS NOTES NULL.");
+            return noteArray;
+        }
 
         if (const arr = nickname in notes)
         {
