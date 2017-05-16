@@ -861,7 +861,7 @@ struct IrcEvent
 
             sink.formattedWrite("[%s] %s", type.to!string, sender);
 
-            if (special)        sink.formattedWrite('*');
+            if (special)        sink.formattedWrite("*");
             if (target.length)  sink.formattedWrite(" (%s)",  target);
             if (channel.length) sink.formattedWrite(" [%s]",  channel);
             if (content.length) sink.formattedWrite(`: "%s"`, content);
