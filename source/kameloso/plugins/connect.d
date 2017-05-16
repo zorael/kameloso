@@ -25,6 +25,14 @@ void updateBot()
     state.mainThread.send(cast(shared)botCopy);
 }
 
+@Label("onSelfjoin")
+@(IrcEvent.Type.SELFJOIN)
+void onSelfjoin(const IrcEvent event)
+{
+    state.bot.channels ~= event.channel;
+    updateBot();
+}
+
 
 // onNotice
 /++
