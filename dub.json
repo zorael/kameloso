@@ -11,6 +11,7 @@
             "name": "kameloso",
             "targetType": "executable",
             "platforms": [ "linux" ],
+            "versions": [ "Webtitles" ],
             "dependencies": {
                 "requests": "~>0.4.0"
             },
@@ -28,7 +29,7 @@
             "name": "staticnickcolours",
             "targetType": "executable",
             "platforms": [ "linux" ],
-            "versions": [ "StaticNickColours" ],
+            "versions": [ "Webtitles", "StaticNickColours" ],
             "dependencies": {
                 "requests": "~>0.4.0"
             },
@@ -46,7 +47,10 @@
             "name": "nocolours-linux",
             "targetType": "executable",
             "platforms": [ "linux" ],
-            "versions": [ "NoColours" ],
+            "versions": [ "Webtitles", "NoColours" ],
+            "dependencies": {
+                "requests": "~>0.4.0"
+            },
             "libs": [
                 "phobos2"
             ],

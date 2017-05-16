@@ -11,7 +11,7 @@ public import kameloso.plugins.chatbot;
 public import kameloso.plugins.notes;
 public import kameloso.plugins.sedreplace;
 
-version(Linux)
+version(Webtitles)
 {
     public import kameloso.plugins.webtitles;
 }

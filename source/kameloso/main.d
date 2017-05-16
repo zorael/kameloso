@@ -226,7 +226,7 @@ void initPlugins(IrcBot bot, Tid tid)
         new ConnectPlugin(state),
     ];
 
-    version(Linux)
+    version(Webtitles)
     {
         plugins ~= new Webtitles(state);
     }
