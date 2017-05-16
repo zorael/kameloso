@@ -5,7 +5,6 @@ import kameloso.common;
 import kameloso.stringutils;
 import kameloso.plugins.connect;
 
-import std.stdio  : writeln, writefln;
 import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
 import std.algorithm.iteration : joiner;
