@@ -13,7 +13,16 @@
             "platforms": [ "linux" ],
             "dependencies": {
                 "requests": "~>0.4.0"
-            }
+            },
+            "libs": [
+                "phobos2"
+            ],
+            "lflags": [
+                "-g",
+                "-O1",
+                "--sort-common",
+                "--gc-sections"
+            ]
         },
         {
             "name": "staticnickcolours",
@@ -22,10 +31,34 @@
             "versions": [ "StaticNickColours" ],
             "dependencies": {
                 "requests": "~>0.4.0"
-            }
+            },
+            "libs": [
+                "phobos2"
+            ],
+            "lflags": [
+                "-g",
+                "-O1",
+                "--sort-common",
+                "--gc-sections"
+            ]
         },
         {
-            "name": "nocolours",
+            "name": "nocolours-linux",
+            "targetType": "executable",
+            "platforms": [ "linux" ],
+            "versions": [ "NoColours" ],
+            "libs": [
+                "phobos2"
+            ],
+            "lflags": [
+                "-g",
+                "-O1",
+                "--sort-common",
+                "--gc-sections"
+            ]
+        },
+        {
+            "name": "nocolours-windows",
             "targetType": "executable",
             "platforms": [ "linux", "windows" ],
             "versions": [ "NoColours" ]
@@ -35,14 +68,5 @@
     "debugInfo": true,
     "debugInfoC": true,
     "alwaysStackFrame": true,
-    "inline": false,
-    "libs": [
-        "phobos2"
-    ],
-    "lflags": [
-        "-g",
-        "-O1",
-        "--sort-common",
-        "--gc-sections"
-    ]
+    "inline": false
 }
