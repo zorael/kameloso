@@ -16,10 +16,10 @@
             }
         },
         {
-            "name": "nonickcolours",
+            "name": "staticnickcolours",
             "targetType": "executable",
             "platforms": [ "linux" ],
-            "versions": [ "NoNickColours" ],
+            "versions": [ "StaticNickColours" ],
             "dependencies": {
                 "requests": "~>0.4.0"
             }

@@ -886,9 +886,15 @@ struct IrcEvent
 
                 Foreground senderColour;
 
-                version(RandomNickColours)
+                version(StaticNickColours)
                 {
-                    pragma(msg, "Doing random nick colours");
+                    pragma(msg, "Version: Static nick colours");
+
+                    senderColour = C.sender;
+                }
+                else
+                {
+                    pragma(msg, "Version: Random nick colours");
 
                     import std.traits : EnumMembers;
 
@@ -899,10 +905,7 @@ struct IrcEvent
 
                     senderColour = foregrounds[colourIndex];
                 }
-                else
-                {
-                    senderColour = C.sender;
-                }
+
 
                 sink.formattedWrite("%s[%s]%s %s",  // is the space visible? can do default_
                     colourise(C.type), type.to!string,
