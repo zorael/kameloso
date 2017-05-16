@@ -1,5 +1,7 @@
 module kameloso.plugins.webtitles;
 
+version(Linux):
+
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;
