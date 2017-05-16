@@ -300,7 +300,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         {
                             import std.algorithm.searching : canFind;
 
-                            if (!state.bot.channels.canFind(event.channel))
+                            if (!state.bot.homes.canFind(event.channel))
                             {
                                 static if (verbose)
                                 {

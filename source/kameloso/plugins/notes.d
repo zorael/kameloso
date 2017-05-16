@@ -84,7 +84,7 @@ void onNames(const IrcEvent event)
     import std.algorithm.searching : canFind;
     import std.datetime : Clock;
 
-    if (!state.bot.channels.canFind(event.channel))
+    if (!state.bot.homes.canFind(event.channel))
     {
         return;
     }

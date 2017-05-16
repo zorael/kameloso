@@ -85,9 +85,8 @@ void onCommandQuit(const IrcEvent event)
 @(IrcEvent.Type.CHAN)
 @(IrcEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "addchan")
 @Prefix(NickPrefixPolicy.required, "addhome")
-void onCommandAddChan(const IrcEvent event)
+void onCommandAddHome(const IrcEvent event)
 {
     import std.algorithm.searching : canFind;
     import std.string : strip;
@@ -100,20 +99,20 @@ void onCommandAddChan(const IrcEvent event)
         return;
     }
 
-    if (!state.bot.channels.canFind(channel))
+    if (!state.bot.homes.canFind(channel))
     {
         state.mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
     }
 
     writeln(Foreground.lightcyan, "Adding channel: ", channel);
-    state.bot.channels ~= channel;
+    state.bot.homes ~= channel;
     updateBot();
 }
 
 
 // onCommandDelChan
 /++
- +  Removes a channel from the list of currently active channels.
+ +  Removes a channel from the list of currently active home channels.
  +
  +  Params:
  +      event = the triggering IrcEvent.
@@ -137,15 +136,15 @@ void onCommandDelChan(const IrcEvent event)
         return;
     }
 
-    immutable chanIndex = state.bot.channels.countUntil(channel);
+    immutable chanIndex = state.bot.homes.countUntil(channel);
 
     if (chanIndex == -1)
     {
-        writefln(Foreground.lightred, "Channel %s was not in bot.channels", channel);
+        writefln(Foreground.lightred, "Channel %s was not in bot.homes", channel);
         return;
     }
 
-    state.bot.channels = state.bot.channels.remove(chanIndex);
+    state.bot.homes = state.bot.homes.remove(chanIndex);
     state.mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
     updateBot();
 }

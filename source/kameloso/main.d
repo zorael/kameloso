@@ -221,13 +221,17 @@ void initPlugins(IrcBot bot, Tid tid)
     [
         new Printer(state),
         new Pinger(state),
-        new Webtitles(state),
         new SedReplacePlugin(state),
         new AdminPlugin(state),
         new NotesPlugin(state),
         new Chatbot(state),
         new ConnectPlugin(state),
     ];
+
+    version(Linux)
+    {
+        plugins ~= new Webtitles(state);
+    }
 }
 
 
@@ -247,7 +251,7 @@ int main(string[] args)
     printObject(server);
     writeln();
 
-    if (!bot.channels.length && !bot.master.length && !bot.friends.length)
+    if (!bot.homes.length && !bot.master.length && !bot.friends.length)
     {
         import std.path : baseName;
 
