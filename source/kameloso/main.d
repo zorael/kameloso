@@ -12,8 +12,6 @@ import std.concurrency;
 
 version(Windows)
 {
-    version = NoColours;
-
     shared static this()
     {
         import core.sys.windows.windows;
