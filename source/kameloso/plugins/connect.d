@@ -33,6 +33,16 @@ void onSelfjoin(const IrcEvent event)
     updateBot();
 }
 
+@Label("onSelfPart")
+@(IrcEvent.Type.SELFPART)
+void onSelfpart(const IrcEvent event)
+{
+    import std.algorithm.mutation : remove;
+
+    state.bot.channels = state.bot.channels.remove(event.channel);
+    updateBot();
+}
+
 
 // onNotice
 /++
