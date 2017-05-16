@@ -26,6 +26,11 @@
             ]
         },
         {
+            "name": "nowebtitles",
+            "targetType": "executable",
+            "platforms": [ "linux", "windows" ]
+        },
+        {
             "name": "staticnickcolours",
             "targetType": "executable",
             "platforms": [ "linux" ],
