@@ -857,6 +857,8 @@ struct IrcEvent
 
         version(NoColours)
         {
+            pragma(msg, "Version: No nick colours");
+
             sink.formattedWrite("[%s] %s", type.to!string, sender);
 
             if (special)        sink.formattedWrite('*');

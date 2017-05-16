@@ -229,7 +229,7 @@ mixin template ColouredWriteln()
 
     version(NoColours)
     {
-        pragma(msg, "Not doing colours");
+        pragma(msg, "Version: No Colours");
 
         pragma(inline)
         void writeln(Code, Args...)(Code code, Args args)
@@ -266,7 +266,7 @@ mixin template ColouredWriteln()
     }
     else
     {
-        pragma(msg, "Doing colours");
+        pragma(msg, "Version: Colours");
 
         pragma(inline)
         void writeln(Code, Args...)(Code code, Args args)
