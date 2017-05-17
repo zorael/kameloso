@@ -69,7 +69,7 @@ void onPing(const IrcEvent event)
         teardown();
     }
 
-    state.mainThread.send(ThreadMessage.Pong(), event.sender);
+    // state.mainThread.send(ThreadMessage.Pong(), event.sender);
 }
 
 
