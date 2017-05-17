@@ -161,7 +161,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     {
         writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE -----------");
         writeln(event.raw);
-        writeln(event);
         writeln(Foreground.lightred, "------------------------------------------------");
     }
 
