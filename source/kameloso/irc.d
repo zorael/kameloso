@@ -637,6 +637,7 @@ struct IrcEvent
         CONNECTINGFROM, // = 378        // <nickname> :is connecting from *@<address> <ip>
         TOCONNECTTYPE, // = 513,        // <nickname> :To connect type /QUOTE PONG <number>
         HASTHISNICK, // = 307           // <nickname> :has identified for this nick
+        INVALIDCHARACTERS, // = 455     // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -827,6 +828,7 @@ struct IrcEvent
         445 : Type.ERR_SUMMONDISABLED,
         446 : Type.ERR_USERSDISABLED,
         451 : Type.ERR_NOTREGISTERED,
+        455 : Type.INVALIDCHARACTERS,
         461 : Type.ERR_NEEDMOREPARAMS,
         462 : Type.ERR_ALREADYREGISTERED,
         463 : Type.ERR_NOPERMFORHOST,
