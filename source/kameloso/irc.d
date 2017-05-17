@@ -864,7 +864,7 @@ struct IrcEvent
 
         version(NoColours)
         {
-            pragma(msg, "Version: No nick colours");
+            pragma(msg, "Version: No nick colours (Sink: %s".format(Sink.stringof));
 
             sink.formattedWrite("[%s] %s", type.to!string, sender);
 
@@ -895,13 +895,13 @@ struct IrcEvent
 
                 version(StaticNickColours)
                 {
-                    pragma(msg, "Version: Static nick colours");
+                    pragma(msg, "Version: Static nick colours (Sink: %s)".format(Sink.stringof));
 
                     senderColour = C.sender;
                 }
                 else
                 {
-                    pragma(msg, "Version: Random nick colours");
+                    pragma(msg, "Version: Random nick colours (Sink: %s)".format(Sink.stringof));
 
                     import std.traits : EnumMembers;
 
