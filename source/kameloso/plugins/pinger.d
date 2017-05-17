@@ -29,6 +29,10 @@ void pinger(Tid mainThread)
 {
     import core.time : seconds;
 
+    mixin(scopeguard(entry|exit));
+
+    register("pinger", thisTid);
+
     bool halt;
     while (!halt)
     {
@@ -54,6 +58,20 @@ void pinger(Tid mainThread)
     }
 }
 
+@Label("onping")
+@(IrcEvent.Type.PING)
+void onPing(const IrcEvent event)
+{
+    // We don't need to ping, server is pinging
+    if (pingerThread != Tid.init)
+    {
+        writeln(Foreground.lightcyan, "Server is pinging, don't need to ping ourselves");
+        teardown();
+    }
+
+    state.mainThread.send(ThreadMessage.Pong(), event.sender);
+}
+
 
 // initialise
 /++
@@ -71,9 +89,15 @@ void initialise()
  +/
 void teardown()
 {
+    //if (locate("pinger") == Tid.init) return;
+    if (pingerThread == Tid.init) return;
+
     pingerThread.send(ThreadMessage.Teardown());
+    pingerThread = Tid.init;
 }
 
+
+mixin OnEventImpl!__MODULE__;
 
 public:
 

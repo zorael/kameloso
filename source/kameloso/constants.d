@@ -1,5 +1,6 @@
 module kameloso.constants;
 
+enum kamelosoVersion = "0.4.0";
 
 /// Hardcoded default filenames
 enum Files
@@ -10,10 +11,15 @@ enum Files
 }
 
 /// NickServ's lines begin with these
-enum NickServLines
+enum NickServAcceptance
 {
-    challenge = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
-    acceptance = "You are now identified for",
+    freenode = "You are now identified for",
+    misc = "Password accepted - you are now recognized." }
+
+enum NickServChallenges
+{
+    freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
+    misc = "Password accepted - you are now recognized."
 }
 
 

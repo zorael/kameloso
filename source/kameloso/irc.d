@@ -71,6 +71,8 @@ IrcEvent parseBasic(IrcEvent event, const char[] raw)
  +/
 void parsePrefix(ref IrcEvent event, ref string slice)
 {
+    import std.algorithm.searching : endsWith;
+
     auto prefix = slice.nom(' ');
 
     with(event)
@@ -78,7 +80,9 @@ void parsePrefix(ref IrcEvent event, ref string slice)
     {
         // user!~ident@address
         prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
-        special = (address == "services.");
+        special = (address == "services.") ||
+                  (address == "rizon.net") ||
+                  (address.endsWith(".rizon.net"));
     }
     else
     {
@@ -172,9 +176,14 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case JOIN:
+        import std.string : munch;
+
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
+        // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
         event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
         event.channel = slice;
+        event.channel.munch(":");
+
         if (event.content.length)
         {
             // TODO: remove me later but keep for now
@@ -399,20 +408,45 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
         break;
 
+    case HASTHISNICK: // 307
+        // :irc.x2x.cc 307 kameloso^^ py-ctcp :has identified for this nick
+        // :irc.x2x.cc 307 kameloso^^ wob^2 :has identified for this nick
+        slice.nom(' '); // bot nick
+        event.target = slice.nom(" :");
+        event.aux = event.target;
+        event.content = slice;
+
+        break;
+
     case PONG:
         event.target  = string.init;
         event.content = string.init;
         break;
 
     case ERR_NOTREGISTERED:
-        // :niven.freenode.net 451 * :You have not registered
-        slice.formattedRead("* :%s", &event.content);
+        if (slice[0] == '*')
+        {
+            // :niven.freenode.net 451 * :You have not registered
+            slice.formattedRead("* :%s", &event.content);
+        }
+        else
+        {
+            // :irc.harblwefwoi.org 451 WHOIS :You have not registered
+            slice.formattedRead("%s :%s", &event.aux, &event.content);
+        }
         break;
 
     case WELCOME:
         // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
         slice.formattedRead("%s :%s", &event.target, &event.content);
         bot.nickname = event.target;
+        break;
+
+    case TOCONNECTTYPE:
+        // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
+        slice.formattedRead("%s :To connect type %s", &event.target, &event.aux);
+        event.aux.nom("/QUOTE ");
+        event.content = event.aux.nom(" ");
         break;
 
     default:
@@ -427,6 +461,16 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
 
         slice.formattedRead("%s :%s", &event.target, &event.content);
+
+        import std.algorithm.searching : endsWith;
+
+        if (event.content.endsWith(" "))
+        {
+            import std.string : stripRight;
+
+            event.content = event.content.stripRight(); // wise?
+        }
+
         break;
     }
 
@@ -476,6 +520,7 @@ struct IrcBot
     @Unconfigurable
     string server;
     @Unconfigurable
+    bool attemptedLogin;
     bool finishedLogin;
 
     string toString()
@@ -536,6 +581,8 @@ struct IrcEvent
         WHOISLOGIN, // = 330            // "<nickname> <login> :is logged in as"
         CHANNELFORWARD, // = 470        // <#original> <#new> :Forwarding to another channel
         CONNECTINGFROM, // = 378        // <nickname> :is connecting from *@<address> <ip>
+        TOCONNECTTYPE, // = 513,        // <nickname> :To connect type /QUOTE PONG <number>
+        HASTHISNICK, // = 307           // <nickname> :has identified for this nick
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -842,6 +889,8 @@ struct IrcEvent
         671 : Type.WHOISSECURECONN,
         330 : Type.WHOISLOGIN,
         378 : Type.CONNECTINGFROM,
+        513 : Type.TOCONNECTTYPE,
+        307 : Type.HASTHISNICK,
     ];
 
     Type type;
@@ -953,16 +1002,23 @@ IrcEvent toIrcEvent(const char[] raw)
     event.time = Clock.currTime.toUnixTime;
     event.raw = raw.idup;
 
-    if (raw[0] != ':') return event.parseBasic(raw);
+    try
+    {
+        if (raw[0] != ':') return event.parseBasic(raw);
 
-    auto slice = event.raw[1..$]; // advance past first colon
+        auto slice = event.raw[1..$]; // advance past first colon
 
-    // First pass: prefixes. This is the sender
-    parsePrefix(event, slice);
-    // Second pass: typestring. This is what kind of action the event is of
-    parseTypestring(event, slice);
-    // Third pass: specialcases. This splits up the remaining bits into useful strings, like content
-    parseSpecialcases(event, slice);
+        // First pass: prefixes. This is the sender
+        parsePrefix(event, slice);
+        // Second pass: typestring. This is what kind of action the event is of
+        parseTypestring(event, slice);
+        // Third pass: specialcases. This splits up the remaining bits into useful strings, like content
+        parseSpecialcases(event, slice);
+    }
+    catch (Exception e)
+    {
+        writeln(Foreground.lightred, e.msg);
+    }
 
     return event;
 }
@@ -999,6 +1055,7 @@ IrcUser userFromEvent(const IrcEvent event)
         break;
 
     case WHOISLOGIN:
+    case HASTHISNICK:
         // WHOISLOGIN is shaped differently, no addres or ident
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
         with (user)
@@ -1012,7 +1069,8 @@ IrcUser userFromEvent(const IrcEvent event)
         if (!event.sender.canFind('@'))
         {
             writefln(Foreground.lightred,
-                "There was a server %s event and we naïvely tried to build a user from it");
+                "There was a server %s event and we naïvely tried to build a user from it",
+                event.type);
             goto case WHOISLOGIN;
         }
 
@@ -1212,4 +1270,15 @@ unittest
      assert(e11.target == "kameloso^");
      assert(e11.channel == "#flerrp");
      assert(e11.aux == "+v");
+
+     /+
+     [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
+     :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
+     +/
+     const e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIrcEvent();
+     assert(e12.sender == "irc.uworld.se");
+     assert(e12.type == IrcEvent.Type.TOCONNECTTYPE);
+     assert(e12.target == "kameloso");
+     assert(e12.aux == "3705964477");
+     assert(e12.content == "PONG");
 }

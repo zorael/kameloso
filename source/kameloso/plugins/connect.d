@@ -7,11 +7,14 @@ import kameloso.plugins.common;
 import kameloso.stringutils;
 
 import std.concurrency : send;
+import std.format : format;
 
 private:
 
 /// All plugin state variables gathered in a struct
 IrcPluginState state;
+
+bool serverPingedAtConnect;
 
 
 // updateBot TODO: deduplicate
@@ -38,6 +41,13 @@ void onSelfjoin(const IrcEvent event)
 void onSelfpart(const IrcEvent event)
 {
     import std.algorithm.mutation : remove;
+    import std.algorithm.searching : canFind;
+
+    if (state.bot.channels.canFind(event.channel))
+    {
+        writeln(Foreground.lightred, "Tried to remove a channel that wasn't there: ", event.channel);
+        return;
+    }
 
     state.bot.channels = state.bot.channels.remove(event.channel);
     updateBot();
@@ -57,8 +67,6 @@ void onSelfpart(const IrcEvent event)
 @(IrcEvent.Type.NOTICE)
 void onNotice(const IrcEvent event)
 {
-    import std.format : format;
-
     if (!state.bot.server.length && event.content.beginsWith("***"))
     {
         state.bot.server = event.sender;
@@ -68,15 +76,22 @@ void onNotice(const IrcEvent event)
             "NICK %s".format(state.bot.nickname));
         state.mainThread.send(ThreadMessage.Sendline(),
             "USER %s * 8 : %s".format(state.bot.ident, state.bot.user));
+        state.mainThread.send(ThreadMessage.Pong());
     }
     else if (event.isFromNickserv)
     {
         // There's no point authing if there's no bot password
         if (!state.bot.password.length) return;
 
-        if (event.content.beginsWith(cast(string)NickServLines.acceptance))
+        import std.traits : EnumMembers;
+
+        foreach (acceptanceLine; EnumMembers!NickServAcceptance)
         {
-            if (state.bot.finishedLogin) return;
+            if ((state.bot.finishedLogin) ||
+               (!event.content.beginsWith(acceptanceLine)))
+            {
+                return;
+            }
 
             joinChannels();
         }
@@ -86,7 +101,6 @@ void onNotice(const IrcEvent event)
 void joinChannels()
 {
     import std.algorithm.iteration : joiner;
-    import std.format : format;
 
     with (state)
     {
@@ -125,6 +139,39 @@ void onWelcome(const IrcEvent event)
 }
 
 
+@Label("toconnecttype")
+@(IrcEvent.Type.TOCONNECTTYPE)
+void onToConnectType(const IrcEvent event)
+{
+    if (serverPingedAtConnect) return;
+
+    state.mainThread.send(ThreadMessage.Sendline(),
+        "%s :%s".format(event.content, event.aux));
+}
+
+
+@Label("onping")
+@(IrcEvent.Type.PING)
+void onPing(const IrcEvent event)
+{
+    serverPingedAtConnect = true;
+}
+
+
+@Label("version")
+@(IrcEvent.Type.QUERY)
+void onVersion(const IrcEvent event)
+{
+    enum versionQuery = cast(char)1 ~ "VERSION" ~ cast(char)1;
+
+    if (event.content == versionQuery)
+    {
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :kameloso bot %s".format(event.sender, kamelosoVersion));
+    }
+}
+
+
 // onEndOfMotd
 /++
  +  Joins channels at the end of the MOTD, and tries to authenticate with NickServ if applicable.
@@ -136,12 +183,14 @@ void onWelcome(const IrcEvent event)
 void onEndOfMotd()
 {
     import std.algorithm.iteration : joiner;
-    import std.format : format;
 
     // FIXME: Deadlock if a password exists but there is no challenge
     // the fix is a timeout
-    if (state.bot.password.length)
+    if (state.bot.password.length && !state.bot.attemptedLogin)
     {
+        state.bot.attemptedLogin = true;
+        updateBot();
+
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG NickServ@services. :IDENTIFY %s %s"
             .format(state.bot.login, state.bot.password));
@@ -166,8 +215,6 @@ void onEndOfMotd()
 @(IrcEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {
-    import std.format : format;
-
     state.bot.nickname ~= altNickSign;
     updateBot();
 

@@ -526,6 +526,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(Label("whoislogin"))
     @(IrcEvent.Type.WHOISLOGIN)
+    @(IrcEvent.Type.HASTHISNICK)
     void onWhoisLogin(const IrcEvent event)
     {
         state.users[event.target] = userFromEvent(event);
