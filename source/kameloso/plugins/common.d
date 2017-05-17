@@ -49,7 +49,7 @@ enum FilterResult { fail, pass, whois }
 
 /// Whether an annotated event ignores, allows or requires the event to be prefixed with
 /// the bot's nickname
-enum NickPrefixPolicy { ignored, allowed, required }
+enum NickPrefixPolicy { ignored, allowed, required, hardRequired }
 
 
 /// What level of privilege is needed to trigger an event
@@ -350,7 +350,9 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     }
                                     goto case allowed;
                                 }
+                                goto case hardRequired;
 
+                            case hardRequired:
                                 if (event.content.beginsWith(state.bot.nickname) &&
                                    (event.content.length > state.bot.nickname.length))
                                 {
