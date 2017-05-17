@@ -76,27 +76,9 @@ void onNotice(const IrcEvent event)
             "NICK %s".format(state.bot.nickname));
         state.mainThread.send(ThreadMessage.Sendline(),
             "USER %s * 8 : %s".format(state.bot.ident, state.bot.user));
-        state.mainThread.send(ThreadMessage.Pong());
-    }
-    else if (event.isFromNickserv)
-    {
-        // There's no point authing if there's no bot password
-        if (!state.bot.password.length) return;
-
-        import std.traits : EnumMembers;
-
-        foreach (acceptanceLine; EnumMembers!NickServAcceptance)
-        {
-            if ((state.bot.finishedLogin) ||
-               (!event.content.beginsWith(acceptanceLine)))
-            {
-                return;
-            }
-
-            joinChannels();
-        }
     }
 }
+
 
 void joinChannels()
 {
@@ -180,29 +162,42 @@ void onVersion(const IrcEvent event)
  +/
 @Label("endofmotd")
 @(IrcEvent.Type.RPL_ENDOFMOTD)
+@(IrcEvent.Type.ERR_NOMOTD)
 void onEndOfMotd()
 {
-    import std.algorithm.iteration : joiner;
-
     // FIXME: Deadlock if a password exists but there is no challenge
     // the fix is a timeout
-    if (state.bot.password.length && !state.bot.attemptedLogin)
-    {
-        state.bot.attemptedLogin = true;
-        updateBot();
 
-        state.mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG NickServ@services. :IDENTIFY %s %s"
-            .format(state.bot.login, state.bot.password));
-
-        // Don't show the bot's password in the clear, fake it
-        writefln(Foreground.white, "--> PRIVMSG NickServ@services. :IDENTIFY %s hunter2",
-            state.bot.login);
-    }
-    else
+    if (!state.bot.password.length)
     {
         joinChannels();
     }
+}
+
+
+@Label("onchallenge")
+@(IrcEvent.Type.NICKSERVCHALLENGE)
+void onChallenge()
+{
+    state.bot.attemptedLogin = true;
+    updateBot();
+
+    state.mainThread.send(ThreadMessage.Quietline(),
+        "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
+
+    // fake it
+    writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
+}
+
+
+@Label("onacceptance")
+@(IrcEvent.Type.NICKSERVACCEPTANCE)
+void onAcceptance(const IrcEvent event)
+{
+    if (state.bot.finishedLogin) return;
+
+    state.bot.finishedLogin = true;
+    joinChannels();
 }
 
 

@@ -171,14 +171,56 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case NOTICE:
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
+
+        slice.formattedRead("%s :%s", &event.target, &event.content);
+
+        if (event.target == "*") event.special = true;
+        else if ((event.ident == "service") && (event.address == "rizon.net")) event.special = true;
+
+        event.target = string.init;
+
         if (!bot.server.length && event.content.beginsWith("***"))
         {
             bot.server = event.sender;
         }
 
-        slice.formattedRead("%s :%s", &event.target, &event.content);
-        if (!event.special && (event.target == "*")) event.special = true;
-        event.target = string.init;
+        if (event.isFromNickserv)
+        {
+            writeln("IIS FROM NICKSERV");
+            event.special = true;  // by definition
+
+            enum NickServAcceptance
+            {
+                freenode = "You are now identified for",
+                rizon = "Password accepted - you are now recognized." }
+
+            /*enum NickServChallenge
+            {
+                freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
+                misc = "This nickname is registered and protected.  If it is your"
+            }
+
+            enum NickServInstruction
+            {
+                freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
+                misc = "nick, type /msg NickServ IDENTIFY password.  Otherwise,"
+            }*/
+
+            import std.algorithm.searching : canFind;
+
+            if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
+                (event.content.canFind("/msg NickServ identify")))
+            {
+                writeln("set to NICKSERVCHALLENGE");
+                event.type = NICKSERVCHALLENGE;
+            }
+            else if ((event.content.beginsWith(NickServAcceptance.freenode)) ||
+                    (event.content == NickServAcceptance.rizon))
+            {
+                writeln("set to NICKSERVACCEPTANCE");
+                event.type = NICKSERVACCEPTANCE;
+            }
+        }
         break;
 
     case JOIN:
@@ -572,6 +614,8 @@ struct IrcEvent
         SELFQUIT, SELFJOIN, SELFPART,
         SELFMODE, SELFNICK, SELFKICK,
         TOPIC,
+        NICKSERVCHALLENGE,
+        NICKSERVACCEPTANCE,
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -1097,10 +1141,27 @@ IrcUser userFromEvent(const IrcEvent event)
 /// This simply looks at an event and decides whether it is from NickServ
 bool isFromNickserv(const IrcEvent event)
 {
-    return event.special
-        && (event.sender  == "NickServ")
-        && (event.ident   == "NickServ")
-        && (event.address == "services.");
+    import std.algorithm.searching : endsWith;
+
+    with (event)
+    {
+        if (sender != "NickServ") return false;
+
+        if ((ident == "NickServ") && (address == "services.")) return true;  // Freenode
+        if ((ident == "service")  && (address == "rizon.net")) return true;  // Rizon
+        if (((ident == "NickServ") || (ident == "services")) && bot.server.endsWith(address))
+        {
+            writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
+            return true; // sensible
+        }
+        if ((ident == "NickServ") || (ident == "services"))
+        {
+            writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
+            return true;  // NAÏVE
+        }
+
+        return false;
+    }
 }
 
 

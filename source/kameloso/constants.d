@@ -10,18 +10,6 @@ enum Files
     notes  = "notes.json",
 }
 
-/// NickServ's lines begin with these
-enum NickServAcceptance
-{
-    freenode = "You are now identified for",
-    misc = "Password accepted - you are now recognized." }
-
-enum NickServChallenges
-{
-    freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
-    misc = "Password accepted - you are now recognized."
-}
-
 
 // ControlCharacter
 /++
