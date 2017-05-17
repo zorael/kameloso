@@ -137,20 +137,16 @@ void onToConnectType(const IrcEvent event)
 void onPing(const IrcEvent event)
 {
     serverPingedAtConnect = true;
+    state.mainThread.send(ThreadMessage.Pong(), event.sender);
 }
 
 
 @Label("version")
-@(IrcEvent.Type.QUERY)
+@(IrcEvent.Type.VERSION_QUERY)
 void onVersion(const IrcEvent event)
 {
-    enum versionQuery = cast(char)1 ~ "VERSION" ~ cast(char)1;
-
-    if (event.content == versionQuery)
-    {
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :kameloso bot %s".format(event.sender, kamelosoVersion));
-    }
+    state.mainThread.send(ThreadMessage.Sendline(),
+        "PRIVMSG %s :kameloso bot %s".format(event.sender, kamelosoVersion));
 }
 
 
