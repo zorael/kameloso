@@ -2,11 +2,11 @@
 
 A command-line IRC bot.
 
-kameloso sits and listens in the channels you specify and reacts to certain events. It is a passive thing and does not respond to keyboard input. It is only known to actually work on [Freenode](https://freenode.net), but other servers *may* work, as long as they use `NickServ` for authentication. Some of Freenode's replies are non-standard however, and so the bot may behave in unforeseen ways. This software is beta quality, if that.
+kameloso sits and listens in the channels you specify and reacts to certain events, like bots do. It is a passive thing and does not respond to keyboard input. It works on Freenode and Rizon-like servers; QuakeNet syntax is way too foreign and support is not planned.
 
 Current functionality includes:
 
-* bedazzling coloured terminal output
+* bedazzling coloured terminal output, like it's the 90s
 * printing of IRC events as they are parsed and handled
 * repeating text! amazing
 * 8ball! because why not
@@ -17,13 +17,15 @@ Current functionality includes:
 
 ## Fails to build with OpenSSL 1.1.0
 
-The library `dlang-requests` has [not yet been updated](https://github.com/ikod/dlang-requests/issues/45) to work with the modern **1.1.0** version of OpenSSL and so this project will not fully build. A workaround is to just not build the `webtitles` plugin that is importing the offending library, by compiling with `dub -c nowebtitles`.
+The library `dlang-requests` has [not yet been updated](https://github.com/ikod/dlang-requests/issues/45) to work with the modern **1.1.0** version of OpenSSL and so this project will not fully build if you have the upgraded library. A workaround is to just not build the `webtitles` plugin that is importing the offending library, by compiling with `dub -c nowebtitles`.
 
-A better workaround is to modify the `dlang-requests`'s project file to point to the old library. However, this assumes that you still have the old library installed.
+A better but more involved workaround is to modify the `dlang-requests`'s project file to point to the old library. However, this assumes that you still have the old library installed.
 
 ### Linux
 
-In Arch linux the package name is `openssl-1.0`, and it can peacefully live next to the new `openssl`.
+Ubuntu should [still](http://packages.ubuntu.com/zesty/openssl) be running with the old version.
+
+In Arch linux and its derivatives, the package name of the old library is [`openssl-1.0`](https://www.archlinux.org/packages/extra/x86_64/openssl-1.0) and it can peacefully live next to the new [`openssl`](https://www.archlinux.org/packages/core/x86_64/openssl).
 
 Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
 
@@ -50,13 +52,13 @@ These instructions will get you a copy of the project up and running on your loc
 
 You need a D compiler and the official `dub` package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
 
-kameloso can be built using the reference compiler [dmd](https://dlang.org/download.html) and the LLVM-based [ldc](https://github.com/ldc-developers/ldc/releases), but the GCC-based [gdc](https://gdcproject.org/downloads) comes with a version of the standard library that is too old.
+kameloso can be built using the reference compiler [dmd](https://dlang.org/download.html) and the LLVM-based [ldc](https://github.com/ldc-developers/ldc/releases), but the GCC-based [gdc](https://gdcproject.org/downloads) comes with a version of the standard library that is too old, at time of writing.
 
-It's *possible* to build it without `dub` but it is non-trivial.
+It's *possible* to build it without `dub` but it is non-trivial if you want the `webtitles` functionality.
 
 ### Downloading
 
-Github offers downloads in ZIP format, but it's easiest to use `git` and clone the repository that way.
+GitHub offers downloads in ZIP format, but it's easiest to use `git` and clone the repository that way.
 
     $ git clone https://github.com/zorael/kameloso.git
     $ cd kameloso
@@ -65,9 +67,7 @@ Github offers downloads in ZIP format, but it's easiest to use `git` and clone t
 
     $ dub build
 
-This will compile it in the default `debug` mode, which adds some extra code. You can build it in `release` mode by passing that as an argument to `dub`. Ignore the deprecation messages of symbols not being visible from module traits, they're harmless.
-
-    $ dub build -b release
+This will compile it in the default `debug` mode, which adds some extra code and debugging symbols. You can build it in `release` mode by passing `-b release` as an argument to `dub`. Refer to the output of `dub build --help` for more build types. Ignore the deprecation messages when compiling; they're harmless.
 
 Unit tests are built into the language, but you need to compile in `unittest` mode for them to run.
 
@@ -89,9 +89,9 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | herp
          you | kameloso: 8ball
     kameloso | It is decidedly so
-         you | kameloso: quote zorael This is a quote
+         you | kameloso: quote you This is a quote
     kameloso | Quote saved. (1 on record)
-         you | kameloso: quote zorael
+         you | kameloso: quote you
     kameloso | zorael | This is a quote
          you | kameloso: note OfflinePerson Why so offline?
     kameloso | Note added
@@ -106,6 +106,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * "online" help; listing of verbs/commands
 * improve command-line argument handling (issues [#4](https://github.com/zorael/kameloso/issues/4) and [#5](https://github.com/zorael/kameloso/issues/5) etc)
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
+* add more unittests
+* update documentation
 
 ## Built With
 
