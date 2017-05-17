@@ -175,7 +175,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 import std.string : indexOf;
                 enum __%sdotPos  = __FUNCTION__.indexOf('.');
                 enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
-                writefln("[%%s] %s", __%sfunName);
+                writefln(Foreground.white, "[%%s] %s", __%sfunName);
             }.format(state, state, state, state, state);
         }
     }
