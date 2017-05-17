@@ -341,6 +341,17 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 }
 
 
+@Label("writeconfig")
+@(IrcEvent.Type.CHAN)
+@(IrcEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.required, "writeconfig")
+void onWriteConfig(const IrcEvent event)
+{
+    state.mainThread.send(ThreadMessage.WriteConfig());
+}
+
+
 mixin BasicEventHandlers!__MODULE__;
 mixin OnEventImpl!__MODULE__;
 

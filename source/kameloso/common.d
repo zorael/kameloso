@@ -28,6 +28,7 @@ struct ThreadMessage
     struct Whois {}
     struct Teardown {}
     struct Status {}
+    struct WriteConfig {}
 }
 
 

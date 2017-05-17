@@ -192,13 +192,7 @@ Quit handleArguments(string[] args)
 
     if (shouldWriteConfig)
     {
-        writeln("Writing configuration to ", configFileFromArgs);
-        configFileFromArgs.writeConfig(bot, server);
-        writeln();
-        printObject(bot);
-        writeln();
-        printObject(server);
-        writeln();
+        configFileFromArgs.writeConfigToDisk();
         return Quit.yes;
     }
 
@@ -230,6 +224,18 @@ void initPlugins(IrcBot bot, Tid tid)
     {
         plugins ~= new Webtitles(state);
     }
+}
+
+
+void writeConfigToDisk(const string configFile)
+{
+    writeln("Writing configuration to ", configFile);
+    configFile.writeConfig(bot, server);
+    writeln();
+    printObject(bot);
+    writeln();
+    printObject(server);
+    writeln();
 }
 
 
