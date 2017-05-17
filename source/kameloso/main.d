@@ -86,6 +86,7 @@ Quit checkMessages()
             },
             (ThreadMessage.Ping)
             {
+                writeln(Foreground.white, "--> PING :", bot.server);
                 conn.sendline("PING :", bot.server);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
@@ -117,7 +118,13 @@ Quit checkMessages()
             },
             (ThreadMessage.Pong)
             {
+                writeln(Foreground.white, "--> PONG :", bot.server);
                 conn.sendline("PONG :", bot.server);
+            },
+            (ThreadMessage.Pong, string target)
+            {
+                writeln(Foreground.white, "--> PONG :", target);
+                conn.sendline("PONG :", target);
             },
             (ThreadMessage.Quit, string reason)
             {
@@ -337,7 +344,8 @@ Quit loopGenerator(Generator!string generator)
                 mixin(scopeguard(failure, "onEvent loop"));
                 plugin.onEvent(event);
 
-                if (event.type == IrcEvent.Type.WHOISLOGIN)
+                if ((event.type == IrcEvent.Type.WHOISLOGIN) ||
+                    (event.type == IrcEvent.Type.HASTHISNICK))
                 {
                     const savedEvent = event.target in replayQueue;
                     if (!savedEvent) continue;

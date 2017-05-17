@@ -157,7 +157,8 @@ pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure
 if (isSomeString!T)
 {
-    if ((needle.length > haystack.length) || !haystack.length) {
+    if ((needle.length > haystack.length) || !haystack.length)
+    {
         return false;
     }
 
@@ -185,6 +186,21 @@ unittest
     assert(":Lorem ipsum".beginsWith(""));
 }
 
+/*pragma(inline)
+bool endsWith(T)(const T haystack, const T needle) pure
+{
+    if ((needle.length > haystack.length) || !haystack.length)
+    {
+        return false;
+    }
+
+    return (haystack[$-needle.length..$] == needle);
+}
+unittest
+{
+    assert("ctcp-scanner.rizon.net".endsWith(".rizon.net"));
+    assert("ctcp-scanner.rizon.net".endsWith(""));
+}*/
 
 // arrayify
 /++
