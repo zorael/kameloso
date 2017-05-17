@@ -153,7 +153,13 @@ void parseTypestring(ref IrcEvent event, ref string slice)
  +/
 void parseSpecialcases(ref IrcEvent event, ref string slice)
 {
-    mixin(scopeguard(failure));
+    scope(failure)
+    {
+        writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE -----------");
+        writeln(event.raw);
+        writeln(event);
+        writeln(Foreground.lightred, "------------------------------------------------");
+    }
 
     with (IrcEvent.Type)
     switch (event.type)
