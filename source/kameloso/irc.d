@@ -184,7 +184,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         slice.formattedRead("%s :%s", &event.target, &event.content);
 
         if (event.target == "*") event.special = true;
-        else if ((event.ident == "service") && (event.address == "rizon.net")) event.special = true;
+        else if ((event.ident == "service") && (event.address == "rizon.net"))
+        {
+            event.special = true;
+        }
 
         event.target = string.init;
 
