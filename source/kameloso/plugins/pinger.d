@@ -1,3 +1,5 @@
+__EOF__
+
 module kameloso.plugins.pinger;
 
 import kameloso.common;

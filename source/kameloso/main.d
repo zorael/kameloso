@@ -208,12 +208,12 @@ void initPlugins(IrcBot bot, Tid tid)
     plugins = cast(IrcPlugin[])
     [
         new Printer(state),
-        new Pinger(state),
         new SedReplacePlugin(state),
         new AdminPlugin(state),
         new NotesPlugin(state),
         new Chatbot(state),
         new ConnectPlugin(state),
+        //new Pinger(state),
     ];
 
     version(Webtitles)
