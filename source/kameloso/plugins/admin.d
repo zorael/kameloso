@@ -265,7 +265,7 @@ void onCommandResetTerminal()
 void onCommandPrintAll()
 {
     printAll = !printAll;
-    writeln(Foreground.lightcyan, "Printing all: ", printAll);
+    writeln(Foreground.green, "Printing all: ", printAll);
 }
 
 
@@ -288,7 +288,7 @@ void onAnyEvent(const IrcEvent event)
     // Bypass the roundtrip
     import std.stdio : realWriteln = writeln;
 
-    if (printAll) realWriteln(event.raw);
+    if (printAll) realWriteln("printAll: '", event.raw, "'");
 }
 
 
