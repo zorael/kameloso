@@ -178,9 +178,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
         event.target = string.init;
 
-        if (!bot.server.length && event.content.beginsWith("***"))
+        if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
-            bot.server = event.sender;
+            bot.server.resolvedAddress = event.sender;
         }
 
         if (event.isFromNickserv)
@@ -562,22 +562,51 @@ struct IrcBot
     string quitReason = "beep boop I am a bot";
     string password;
     string master;
+
     @Separator(",")
-    string[] homes;
-    @Separator(",")
-    string[] friends;
+    {
+        string[] homes;
+        string[] friends;
+    }
+
     @Unconfigurable
-    string[] channels;
-    @Unconfigurable
-    string server;
-    @Unconfigurable
-    bool attemptedLogin;
-    bool finishedLogin;
+    {
+        string[] channels;
+        IrcServer server;
+        bool attemptedLogin;
+        bool finishedLogin;
+    }
 
     string toString()
     {
         return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s homes:%s friends:%s server:%s"
-               .format(nickname, user, login, password, ident, master, homes, friends, server);
+               .format(nickname, user, login, password, ident, master, homes, friends, server.resolvedAddress);
+    }
+}
+
+
+/// IRC server information.
+struct IrcServer
+{
+    enum Family
+    {
+        freenode,
+        rizon,
+        quakenet,
+    }
+
+    string address = "irc.freenode.net";
+    ushort port = 6667;
+
+    @Unconfigurable
+    {
+        Family family;
+        string resolvedAddress;
+    }
+
+    string toString()
+    {
+        return "[SERVER] (family.%s) %s:%d (%s)".format(family, address, port, resolvedAddress);
     }
 }
 

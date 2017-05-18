@@ -28,9 +28,6 @@ private:
 /// State variables and configuration for the IRC bot.
 IrcBot bot;
 
-/// IRC server address and port.
-IrcServer server;
-
 /// A runtime array of all plugins. We iterate this when we have an IrcEvent to react to.
 IrcPlugin[] plugins;
 
@@ -42,14 +39,6 @@ Connection conn;
 
 /// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
-
-
-/// IRC server information.
-struct IrcServer
-{
-    string address = "irc.freenode.net";
-    ushort port = 6667;
-}
 
 
 // checkMessages
@@ -86,8 +75,8 @@ Quit checkMessages()
             },
             (ThreadMessage.Ping)
             {
-                writeln(Foreground.white, "--> PING :", bot.server);
-                conn.sendline("PING :", bot.server);
+                writeln(Foreground.white, "--> PING :", bot.server.resolvedAddress);
+                conn.sendline("PING :", bot.server.resolvedAddress);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
             {
@@ -118,8 +107,8 @@ Quit checkMessages()
             },
             (ThreadMessage.Pong)
             {
-                writeln(Foreground.white, "--> PONG :", bot.server);
-                conn.sendline("PONG :", bot.server);
+                writeln(Foreground.white, "--> PONG :", bot.server.resolvedAddress);
+                conn.sendline("PONG :", bot.server.resolvedAddress);
             },
             (ThreadMessage.Pong, string target)
             {
@@ -179,8 +168,8 @@ Quit handleArguments(string[] args)
         "i|ident",       "IDENT string", &bot.ident,
         "p|password",    "NickServ password", &bot.password,
         "m|master",      "NickServ login of bot master, who gets access to administrative functions", &bot.master,
-        "s|server",      "Server address", &server.address,
-        "P|port",        "Server port", &server.port,
+        "s|server",      "Server address", &bot.server.address,
+        "P|port",        "Server port", &bot.server.port,
         "c|config",      "Read configuration from file (default %s)".format(Files.config), &configFileFromArgs,
         "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
         //"v|verbose+", "Increase verbosity", &bot.verbosity,
@@ -195,7 +184,7 @@ Quit handleArguments(string[] args)
     }
 
     configFileFromArgs = (configFileFromArgs.length) ? configFileFromArgs : Files.config;
-    configFileFromArgs.readConfig(bot, server);
+    configFileFromArgs.readConfig(bot, bot.server);
 
     if (shouldWriteConfig)
     {
@@ -237,11 +226,11 @@ void initPlugins(IrcBot bot, Tid tid)
 void writeConfigToDisk(const string configFile)
 {
     writeln("Writing configuration to ", configFile);
-    configFile.writeConfig(bot, server);
+    configFile.writeConfig(bot, bot.server);
     writeln();
     printObject(bot);
     writeln();
-    printObject(server);
+    printObject(bot.server);
     writeln();
 }
 
@@ -259,7 +248,7 @@ int main(string[] args)
     // Print the current settings to show what's going on.
     printObject(bot);
     writeln();
-    printObject(server);
+    printObject(bot.server);
     writeln();
 
     if (!bot.homes.length && !bot.master.length && !bot.friends.length)
@@ -277,7 +266,7 @@ int main(string[] args)
     do
     {
         conn.reset();
-        conn.resolve(server.address, server.port);
+        conn.resolve(bot.server.address, bot.server.port);
         conn.connect();
 
         if (!conn.connected)
@@ -288,7 +277,7 @@ int main(string[] args)
 
         // Reset fields in the bot that should not survive a reconnect
         bot.finishedLogin = false;
-        bot.server = string.init;
+        bot.server.resolvedAddress = string.init;
 
         initPlugins(bot, thisTid);
 
