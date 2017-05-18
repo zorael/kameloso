@@ -407,7 +407,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, e.msg);
+            writeln(Foreground.lightred, "parseSpecialCases: ", e.msg);
         }
         break;
 
@@ -1128,7 +1128,7 @@ IrcEvent toIrcEvent(const char[] raw)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, e.msg);
+        writeln(Foreground.lightred, "toIrcEvent: ", e);
     }
 
     return event;
