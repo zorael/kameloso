@@ -6,14 +6,14 @@ kameloso sits and listens in the channels you specify and reacts to certain even
 
 Current functionality includes:
 
-* bedazzling coloured terminal output, like it's the 90s
+* bedazzling coloured terminal output like it's the 90s
 * printing of IRC events as they are parsed and handled
 * repeating text! amazing
 * 8ball! because why not
 * storing, loading and printing quotes from users
 * saving notes to offline users that get played back when they come online
 * looking up titles of pasted URLs
-* sed-replacement of the last message sent (`s/this/that/` replacement)
+* sed-replacement of the last message sent (`s/this/that/` substitution)
 
 ## Fails to build with OpenSSL 1.1.0
 
