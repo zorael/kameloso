@@ -2,7 +2,7 @@
 
 A command-line IRC bot.
 
-kameloso sits and listens in the channels you specify and reacts to certain events, like bots do. It is a passive thing and does not respond to keyboard input. It works on Freenode and Rizon-like servers; QuakeNet syntax is way too foreign and support is not planned.
+kameloso sits and listens in the channels you specify and reacts to certain events, like bots do. It is a passive thing and does not respond to keyboard input. It works on Freenode, Rizon-like and QuakeNet servers. QuakeNet support just sort of happened and remains beta-level.
 
 Current functionality includes:
 
