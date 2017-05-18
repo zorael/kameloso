@@ -209,7 +209,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 misc = "nick, type /msg NickServ IDENTIFY password.  Otherwise,"
             }*/
 
-            enum NickServAcceptance
+            enum AuthServiceAcceptance
             {
                 freenode = "You are now identified for",
                 rizon = "Password accepted - you are now recognized.",
@@ -221,19 +221,17 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
                 (event.content.canFind("/msg NickServ identify")))
             {
-                writeln(Foreground.green, "set to NICKSERVCHALLENGE");
-                event.type = NICKSERVCHALLENGE;
+                event.type = AUTHCHALLENGE;
             }
             else
             {
-                with (NickServAcceptance)
+                with (AuthServiceAcceptance)
                 {
                     if ((event.content.beginsWith(freenode)) ||
                         (event.content == rizon) ||
                         (event.content.beginsWith(quakenet)))
                     {
-                        writeln(Foreground.green, "set to NICKSERVACCEPTANCE");
-                        event.type = NICKSERVACCEPTANCE;
+                        event.type = AUTHACCEPTANCE;
                     }
                 }
             }
@@ -673,8 +671,8 @@ struct IrcEvent
         SELFMODE, SELFNICK, SELFKICK,
         TOPIC,
         VERSION_QUERY,
-        NICKSERVCHALLENGE,
-        NICKSERVACCEPTANCE,
+        AUTHCHALLENGE,
+        AUTHACCEPTANCE,
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -1199,7 +1197,7 @@ IrcUser userFromEvent(const IrcEvent event)
 }
 
 
-/// This simply looks at an event and decides whether it is from NickServ
+/// This simply looks at an event and decides whether it is from NickServ/Q
 bool isFromAuthService(const IrcEvent event)
 {
     import std.algorithm.searching : endsWith;

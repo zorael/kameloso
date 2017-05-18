@@ -192,7 +192,7 @@ void onEndOfMotd()
 
 
 @Label("onchallenge")
-@(IrcEvent.Type.NICKSERVCHALLENGE)
+@(IrcEvent.Type.AUTHCHALLENGE)
 void onChallenge()
 {
     state.bot.attemptedLogin = true;
@@ -207,7 +207,7 @@ void onChallenge()
 
 
 @Label("onacceptance")
-@(IrcEvent.Type.NICKSERVACCEPTANCE)
+@(IrcEvent.Type.AUTHACCEPTANCE)
 void onAcceptance(const IrcEvent event)
 {
     if (state.bot.finishedLogin) return;
