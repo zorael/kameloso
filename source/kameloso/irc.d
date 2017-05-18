@@ -49,7 +49,17 @@ IrcEvent parseBasic(IrcEvent event, const char[] raw)
         event.content = slice;
         break;
 
+    case "NOTICE":
+        // quakenet
+        // NOTICE AUTH :*** Couldn't look up your hostname
+        bot.server.family = IrcServer.Family.quakenet;
+        event.type = IrcEvent.Type.NOTICE;
+        event.sender = "irc.quakenet.org";
+        event.content = event.raw;
+        break;
+
     default:
+        writeln(Foreground.lightred, "Unknown basic type: ", raw);
         break;
     }
 
@@ -183,15 +193,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             bot.server.resolvedAddress = event.sender;
         }
 
-        if (event.isFromNickserv)
+        if (event.isFromAuthService)
         {
-            writeln("IIS FROM NICKSERV");
             event.special = true;  // by definition
-
-            enum NickServAcceptance
-            {
-                freenode = "You are now identified for",
-                rizon = "Password accepted - you are now recognized." }
 
             /*enum NickServChallenge
             {
@@ -205,19 +209,33 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 misc = "nick, type /msg NickServ IDENTIFY password.  Otherwise,"
             }*/
 
+            enum NickServAcceptance
+            {
+                freenode = "You are now identified for",
+                rizon = "Password accepted - you are now recognized.",
+                quakenet = "You are now logged in as",
+            }
+
             import std.algorithm.searching : canFind;
 
             if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
                 (event.content.canFind("/msg NickServ identify")))
             {
-                writeln("set to NICKSERVCHALLENGE");
+                writeln(Foreground.green, "set to NICKSERVCHALLENGE");
                 event.type = NICKSERVCHALLENGE;
             }
-            else if ((event.content.beginsWith(NickServAcceptance.freenode)) ||
-                    (event.content == NickServAcceptance.rizon))
+            else
             {
-                writeln("set to NICKSERVACCEPTANCE");
-                event.type = NICKSERVACCEPTANCE;
+                with (NickServAcceptance)
+                {
+                    if ((event.content.beginsWith(freenode)) ||
+                        (event.content == rizon) ||
+                        (event.content.beginsWith(quakenet)))
+                    {
+                        writeln(Foreground.green, "set to NICKSERVACCEPTANCE");
+                        event.type = NICKSERVACCEPTANCE;
+                    }
+                }
             }
         }
         break;
@@ -511,7 +529,15 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             writeln();
         }
 
-        slice.formattedRead("%s :%s", &event.target, &event.content);
+        if (slice.canFind(":"))
+        {
+            slice.formattedRead("%s :%s", &event.target, &event.content);
+        }
+        else
+        {
+            // :port80b.se.quakenet.org 221 kameloso +i
+            slice.formattedRead("%s %s", &event.target, &event.aux);
+        }
 
         import std.algorithm.searching : endsWith;
 
@@ -1174,29 +1200,37 @@ IrcUser userFromEvent(const IrcEvent event)
 
 
 /// This simply looks at an event and decides whether it is from NickServ
-bool isFromNickserv(const IrcEvent event)
+bool isFromAuthService(const IrcEvent event)
 {
     import std.algorithm.searching : endsWith;
 
     with (event)
     {
-        if (sender != "NickServ") return false;
-
-        if ((ident == "NickServ") && (address == "services.")) return true;  // Freenode
-        if ((ident == "service")  && (address == "rizon.net")) return true;  // Rizon
-        if (((ident == "NickServ") || (ident == "services")) && bot.server.endsWith(address))
+        if (sender == "NickServ")
         {
-            writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
-            return true; // sensible
+            if ((ident == "NickServ") && (address == "services.")) return true;  // Freenode
+            if ((ident == "service")  && (address == "rizon.net")) return true;  // Rizon
+            if (((ident == "NickServ") || (ident == "services")) &&
+                bot.server.resolvedAddress.endsWith(address))
+            {
+                writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
+                return true; // sensible
+            }
+            if ((ident == "NickServ") || (ident == "services"))
+            {
+                writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
+                return true;  // NAÏVE
+            }
         }
-        if ((ident == "NickServ") || (ident == "services"))
+        else if ((sender == "Q") && (ident == "TheQBot") && (address == "CServe.quakenet.org"))
         {
-            writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
-            return true;  // NAÏVE
+            // Quakenet
+            writeln(Foreground.lightcyan, "100% that it's QuakeNet's C");
+            return true;
         }
-
-        return false;
     }
+
+    return false;
 }
 
 

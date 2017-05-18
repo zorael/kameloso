@@ -67,9 +67,16 @@ void onSelfpart(const IrcEvent event)
 @(IrcEvent.Type.NOTICE)
 void onNotice(const IrcEvent event)
 {
-    if (!state.bot.server.length && event.content.beginsWith("***"))
+    if (state.bot.server.resolvedAddress.length) return;
+
+    if (event.sender == "irc.quakenet.org")
     {
-        state.bot.server = event.sender;
+        state.bot.server.family = IrcServer.Family.quakenet;
+    }
+
+    if (event.content.beginsWith("***"))
+    {
+        state.bot.server.resolvedAddress = event.sender;
         updateBot();
 
         state.mainThread.send(ThreadMessage.Sendline(),
@@ -116,6 +123,13 @@ void joinChannels()
 @(IrcEvent.Type.WELCOME)
 void onWelcome(const IrcEvent event)
 {
+    if (state.bot.server.family == IrcServer.Family.quakenet)
+    {
+        // Only now does quakenet servers show what the resolved address is
+        // Don't update bot now, do it below
+        state.bot.server.resolvedAddress = event.sender;
+    }
+
     state.bot.nickname = event.target;
     updateBot();
 }
@@ -167,6 +181,12 @@ void onEndOfMotd()
     if (!state.bot.password.length)
     {
         joinChannels();
+    }
+    else if (state.bot.server.family == IrcServer.Family.quakenet)
+    {
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
+            .format(state.bot.login, state.bot.password));
     }
 }
 
