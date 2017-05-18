@@ -363,6 +363,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         slice.formattedRead("%s %s :%s", &event.channel, &event.target, &event.content);
         break;
 
+    case INVITE:
+        // :zorael!~NaN@2001:41d0:2:80b4:: INVITE kameloso :#hirrsteff
+        event.channel = slice;
+        break;
+
     case ERR_INVITEONLYCHAN:
     case RPL_ENDOFNAMES: // 366
     case RPL_TOPIC: // 332

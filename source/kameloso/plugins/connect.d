@@ -234,6 +234,17 @@ void onNickInUse()
 }
 
 
+@Label("oninvite")
+@(IrcEvent.Type.INVITE)
+void onInvite(const IrcEvent event)
+{
+    // should we just blindly follow invites?
+
+    state.mainThread.send(ThreadMessage.Sendline(),
+        "JOIN :" ~ event.channel);
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
