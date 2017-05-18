@@ -288,7 +288,7 @@ void onAnyEvent(const IrcEvent event)
     // Bypass the roundtrip
     import std.stdio : realWriteln = writeln;
 
-    if (printAll) realWriteln("printAll: '", event.raw, "'");
+    if (printAll) writeln(Foreground.green, "printAll: '", event.raw, "'");
 }
 
 
