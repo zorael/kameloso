@@ -576,6 +576,12 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         writeln(Foreground.lightred, "------------------------------------------------------");
         writeln();
     }
+    if ((event.target == bot.nickname) &&
+        ((event.type != IrcEvent.Type.WELCOME) ||
+         (event.type == IrcEvent.Type.MODE)))
+    {
+        event.target = string.init;
+    }
 }
 
 public:
