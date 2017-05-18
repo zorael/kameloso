@@ -63,11 +63,14 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
                 {
                 foreach (memberstring; __traits(derivedMembers, Things[i]))
                 {
-                    case memberstring:
-                        import std.typecons : Unqual;
-                        alias MemberType = Unqual!(typeof(__traits(getMember, thing, memberstring)));
-                        things[i].setMember(entry, value);
-                        continue mid;
+                    static if (is(typeof(__traits(getMember, thing, memberstring))))
+                    {
+                        case memberstring:
+                            import std.typecons : Unqual;
+                            alias MemberType = Unqual!(typeof(__traits(getMember, thing, memberstring)));
+                            things[i].setMember(entry, value);
+                            continue mid;
+                    }
                 }
                 default:
                     break;
