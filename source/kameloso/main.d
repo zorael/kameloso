@@ -286,6 +286,7 @@ int main(string[] args)
 
         // Reset fields in the bot that should not survive a reconnect
         bot.finishedLogin = false;
+        bot.attemptedLogin = false;
         bot.server.resolvedAddress = string.init;
 
         initPlugins(bot, thisTid);
