@@ -238,7 +238,7 @@ void onNickInUse()
 @(IrcEvent.Type.INVITE)
 void onInvite(const IrcEvent event)
 {
-    // should we just blindly follow invites?
+    if (!state.settings.joinOnInvite) return;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "JOIN :" ~ event.channel);
