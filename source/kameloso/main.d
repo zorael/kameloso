@@ -28,6 +28,8 @@ private:
 /// State variables and configuration for the IRC bot.
 IrcBot bot;
 
+Settings settings;
+
 /// A runtime array of all plugins. We iterate this when we have an IrcEvent to react to.
 IrcPlugin[] plugins;
 
@@ -100,6 +102,12 @@ Quit checkMessages()
                 .bot = cast(IrcBot)bot;
 
                 foreach (plugin; plugins) plugin.newBot(.bot);
+            },
+            (Settings settings)
+            {
+                .settings = settings;
+
+                foreach (plugin; plugins) plugin.newSettings(.settings);
             },
             (ThreadMessage.Status)
             {
@@ -203,6 +211,7 @@ void initPlugins(IrcBot bot, Tid tid)
 
     IrcPluginState state;
     state.bot = bot;
+    state.settings = settings;
     state.mainThread = tid;
 
     plugins = cast(IrcPlugin[])

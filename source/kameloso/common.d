@@ -60,6 +60,14 @@ enum memberSatisfies(alias Template, T, string name) = Template!(__traits(getMem
 enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
 
 
+struct Settings
+{
+    bool joinOnInvite = true;
+    bool monochrome = false;
+    bool randomNickColours = true;
+}
+
+
 /++
  +  Prints out a struct object, with all its printable members with all their printable values.
  +  This is not only convenient for deubgging but also usable to print out current settings

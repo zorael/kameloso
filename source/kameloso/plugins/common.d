@@ -1,6 +1,7 @@
 module kameloso.plugins.common;
 
 import kameloso.irc;
+import kameloso.common : Settings;
 import std.typecons : Flag;
 
 
@@ -15,6 +16,8 @@ import std.typecons : Flag;
 interface IrcPlugin
 {
     void newBot(IrcBot);
+
+    void newSettings(Settings);
 
     void status();
 
@@ -37,6 +40,7 @@ struct IrcPluginState
     import std.concurrency : Tid;
 
     IrcBot bot;
+    Settings settings;
     Tid mainThread;
     IrcUser[string] users;
     bool delegate()[string] queue;
@@ -200,6 +204,12 @@ mixin template IrcPluginBasics()
     void newBot(IrcBot bot)
     {
         state.bot = bot;
+    }
+
+    // newState
+    void newSettings(Settings settings)
+    {
+        state.settings = settings;
     }
 
     // status
