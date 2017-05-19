@@ -69,38 +69,76 @@ void onAnyEvent(const IrcEvent event)
         break;
 
     default:
+        import std.conv : to;
         import std.datetime;
-        import std.conv : text;
+        import std.format : formattedWrite;
 
         const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time)).timeOfDay.toString;
 
-
-        /*  hot spot so let's optimize it a bit
-            import std.format : formattedWrite;
-            reusableAppender.formattedWrite("[%s] ", timestamp);
-        */
+        with (Foreground)
+        with (event)
         with (reusableAppender)
         {
-            version(NoColours)
+            if (state.settings.monochrome)
             {
-                put('[');
-                put(timestamp);
-                put("] ");
+                reusableAppender.formattedWrite("[%s] [%s] %s",
+                    timestamp, type.to!string, sender);
+
+                if (special)        reusableAppender.formattedWrite("*");
+                if (target.length)  reusableAppender.formattedWrite(" (%s)",  target);
+                if (channel.length) reusableAppender.formattedWrite(" [%s]",  channel);
+                if (content.length) reusableAppender.formattedWrite(`: "%s"`, content);
+                if (aux.length)     reusableAppender.formattedWrite(" <%s>",  aux);
+                if (num > 0)        reusableAppender.formattedWrite(" (#%d)", num);
             }
             else
             {
-                put(colourise(Foreground.white));
-                put('[');
-                put(timestamp);
-                put(']');
-                put(colourise(Foreground.default_));
-                put(" ");
+                enum C
+                {
+                    type    = lightblue,
+                    sender  = lightgreen,
+                    special = lightyellow,
+                    target  = cyan,
+                    channel = yellow,
+                    content = default_,
+                    aux     = white,
+                    num     = darkgrey,
+                }
+
+                Foreground senderColour;
+
+                if (state.settings.randomNickColours) // && (sender != state.bot.server.resolvedAddress))
+                {
+                    import std.traits : EnumMembers;
+
+                    static immutable Foreground[17] foregrounds = [ EnumMembers!Foreground ];
+
+                    auto colourIndex = hashOf(sender) % 16;
+                    if (colourIndex == 1) colourIndex = 16;  // map black to white
+
+                    senderColour = foregrounds[colourIndex];
+                }
+                else
+                {
+                    senderColour = C.sender;
+                }
+
+                reusableAppender.formattedWrite("%s[%s]%s %s[%s]%s %s",
+                    colourise(Foreground.white), timestamp, colourise(Foreground.default_),
+                    colourise(C.type), type.to!string,
+                    colourise(senderColour), sender);
+
+                if (special)        reusableAppender.formattedWrite("%s*",      colourise(C.special));
+                if (target.length)  reusableAppender.formattedWrite(" %s(%s)",  colourise(C.target), target);
+                if (channel.length) reusableAppender.formattedWrite(" %s[%s]",  colourise(C.channel), channel);
+                if (content.length) reusableAppender.formattedWrite(`%s: "%s"`, colourise(C.content), content); // CHEATS
+                if (aux.length)     reusableAppender.formattedWrite(" %s<%s>",  colourise(C.aux), aux);
+                if (num > 0)        reusableAppender.formattedWrite(" %s(#%d)", colourise(C.num), num);
+
+                reusableAppender.formattedWrite(colourise(Foreground.default_));
             }
 
-            event.put(reusableAppender);
-
             writeln(reusableAppender.data);
-
             reusableAppender.clear();
         }
     }
