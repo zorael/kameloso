@@ -535,8 +535,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         {
             writeln();
             writeln(Foreground.lightred, "--------------- UNCAUGHT NUMERIC --------------");
-            writeln(event.raw);
-            writeln(event);
+            printObject(event);
             writeln(Foreground.lightred, "-----------------------------------------------");
             writeln();
         }
@@ -567,8 +566,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     {
         writeln();
         writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
-        writeln(event.raw);
-        writeln(event);
+        printObject(event);
         writeln(Foreground.lightred, "-----------------------------------------------------");
         writeln();
     }
@@ -579,12 +577,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     {
         writeln();
         writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
-        writeln(event.raw);
-        writeln(event);
         printObject(event);
         writeln(Foreground.lightred, "------------------------------------------------------");
         writeln();
     }
+
     if ((event.target == bot.nickname) &&
         ((event.type != IrcEvent.Type.WELCOME) ||
          (event.type == IrcEvent.Type.MODE)))
