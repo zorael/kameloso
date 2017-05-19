@@ -43,7 +43,7 @@ void onSelfpart(const IrcEvent event)
     import std.algorithm.mutation : remove;
     import std.algorithm.searching : canFind;
 
-    if (state.bot.channels.canFind(event.channel))
+    if (!state.bot.channels.canFind(event.channel))
     {
         writeln(Foreground.lightred, "Tried to remove a channel that wasn't there: ", event.channel);
         return;
