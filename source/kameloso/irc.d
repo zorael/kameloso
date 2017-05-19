@@ -367,8 +367,14 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case INVITE:
-        // :zorael!~NaN@2001:41d0:2:80b4:: INVITE kameloso :#hirrsteff
-        event.channel = slice;
+        // (freenode) :zorael!~NaN@2001:41d0:2:80b4:: INVITE kameloso :#hirrsteff
+        // (quakenet) :zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff
+        slice.formattedRead("%s %s", &event.target, &event.channel);
+
+        if (event.channel[0] == ':')
+        {
+            event.channel = event.channel[1..$];
+        }
         break;
 
     case ERR_INVITEONLYCHAN:
