@@ -539,7 +539,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(Label("whoislogin"))
     @(IrcEvent.Type.WHOISLOGIN)
     @(IrcEvent.Type.HASTHISNICK)
-    void onWhoisLogin(const IrcEvent event)
+    void onWhoisLoginMixin(const IrcEvent event)
     {
         state.users[event.target] = userFromEvent(event);
     }
@@ -561,7 +561,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(Label("endofwhois"))
     @(IrcEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWhois(const IrcEvent event)
+    void onEndOfWhoisMixin(const IrcEvent event)
     {
         state.queue.remove(event.target);
     }
@@ -579,7 +579,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(Label("part/quit"))
     @(IrcEvent.Type.PART)
     @(IrcEvent.Type.QUIT)
-    void onLeave(const IrcEvent event)
+    void onLeaveMixin(const IrcEvent event)
     {
         state.users.remove(event.sender);
     }
@@ -593,7 +593,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(Label("selfnick"))
     @(IrcEvent.Type.SELFNICK)
-    void onSelfNick(const IrcEvent event)
+    void onSelfnickMixin(const IrcEvent event)
     {
         if (state.bot.nickname == event.content)
         {
