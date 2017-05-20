@@ -10,7 +10,7 @@ public import kameloso.plugins.chatbot;
 public import kameloso.plugins.notes;
 public import kameloso.plugins.sedreplace;
 
-version(linux)
+version(Posix)
 {
     public import kameloso.plugins.pipeline;
 }
