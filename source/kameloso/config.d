@@ -306,9 +306,11 @@ if (Things.length > 1)
     import std.array : Appender;
     Appender!string all;
 
+    enum entryPadding = longestMemberName!Things.length + 2;
+
     foreach (i, thing; Things)
     {
-        all.put(things[i].configText);
+        all.put(things[i].configText!entryPadding);
         all.put("\n");
     }
 
@@ -324,7 +326,7 @@ if (Things.length > 1)
  +  Params:
  +      thing = A struct object, whose members should be "serialised".
  +/
-string configText(Thing)(const Thing thing)
+string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 {
     import std.format : format, formattedWrite;
     import std.array : Appender;
@@ -334,9 +336,8 @@ string configText(Thing)(const Thing thing)
 
     sink.formattedWrite("[%s]\n", Thing.stringof); // Section header
 
-    enum distance = (longestMemberName!Thing.length + 4);
-    enum pattern = "%%-%ds  %%s\n".format(distance);
-    enum patternCommented = "# %%-%ds(unset)\n".format(distance);
+    enum pattern = "%%-%ds  %%s\n".format(entryPadding);
+    enum patternCommented = "# %%-%ds(unset)\n".format(entryPadding + 2);
 
     foreach (name; __traits(allMembers, Thing))
     {
