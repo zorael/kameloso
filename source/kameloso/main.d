@@ -194,7 +194,7 @@ Quit handleArguments(string[] args)
     }
 
     configFileFromArgs = (configFileFromArgs.length) ? configFileFromArgs : Files.config;
-    configFileFromArgs.readConfig(bot, bot.server);
+    configFileFromArgs.readConfig(bot, bot.server, settings);
 
     if (shouldWriteConfig)
     {
@@ -237,11 +237,13 @@ void initPlugins()
 void writeConfigToDisk(const string configFile)
 {
     writeln("Writing configuration to ", configFile);
-    configFile.writeConfig(bot, bot.server);
+    configFile.writeConfig(bot, bot.server, settings);
     writeln();
     printObject(bot);
     writeln();
     printObject(bot.server);
+    writeln();
+    printObject(settings);
     writeln();
 }
 
@@ -260,6 +262,8 @@ int main(string[] args)
     printObject(bot);
     writeln();
     printObject(bot.server);
+    writeln();
+    printObject(settings);
     writeln();
 
     if (!bot.homes.length && !bot.master.length && !bot.friends.length)
