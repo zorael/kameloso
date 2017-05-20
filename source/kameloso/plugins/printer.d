@@ -105,7 +105,7 @@ void onAnyEvent(const IrcEvent event)
                     num     = darkgrey,
                 }
 
-                Foreground senderColour;
+                Foreground senderColour = C.sender;
 
                 if (state.settings.randomNickColours) // && (sender != state.bot.server.resolvedAddress))
                 {
@@ -118,14 +118,14 @@ void onAnyEvent(const IrcEvent event)
 
                     senderColour = foregrounds[colourIndex];
                 }
-                else
-                {
-                    senderColour = C.sender;
-                }
+
+                Foreground typeColour = C.type;
+
+                if (type == QUERY) typeColour = lightgreen;
 
                 reusableAppender.formattedWrite("%s[%s]%s %s[%s]%s %s",
-                    colourise(Foreground.white), timestamp, colourise(Foreground.default_),
-                    colourise(C.type), type.to!string,
+                    colourise(white), timestamp, colourise(default_),
+                    colourise(typeColour), type.to!string,
                     colourise(senderColour), sender);
 
                 if (special)        reusableAppender.formattedWrite("%s*",      colourise(C.special));
