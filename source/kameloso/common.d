@@ -45,24 +45,6 @@ struct Separator
 /// UDA used to convey "this member should not be printed in clear text"
 struct Hidden {}
 
-
-/++
- +  Helper/syntactic sugar for static if constraints.
- +/
-template memberSatisfies(string trait, T, string name) {
-	import std.format : format;
-
-	mixin(`enum memberSatisfies = __traits(%s, __traits(getMember, T, "%s"));`
-          .format(trait, name));
-}
-
-/// Ditto
-enum memberSatisfies(alias Template, T, string name) = Template!(__traits(getMember, T, name));
-
-/// Ditto
-enum memberIsType(T, string name) = !is(typeof(__traits(getMember, T, name)));
-
-
 struct Settings
 {
     bool joinOnInvite = true;
