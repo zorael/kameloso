@@ -135,6 +135,44 @@ void printObjects(Things...)(Things things)
 }
 
 
+// longestMemberName
+/++
+ +  Gets the name of the longest member in a struct.
+ +
+ +  This is used for formatting configuration files, so that columns line up.
+ +
+ +  Params:
+ +      T = the struct type to inspect for member name lengths.
+ +/
+template longestMemberName(Things...)
+{
+    enum longestMemberName = ()
+    {
+        import std.traits : hasUDA;
+
+        string longest;
+
+        foreach (T; Things)
+        {
+            foreach (name; __traits(allMembers, T))
+            {
+                static if (is(typeof(__traits(getMember, T, name))) &&
+                           isSomeVariable!(__traits(getMember, T, name)) &&
+                           !hasUDA!(__traits(getMember, T, name), Hidden))
+                {
+                    if (name.length > longest.length)
+                    {
+                        longest = name;
+                    }
+                }
+            }
+        }
+
+        return longest;
+    }();
+}
+
+
 // scopeguard
 /++
  +  Generates a string mixin of scopeguards. This is a convenience function to automate

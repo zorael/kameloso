@@ -249,43 +249,6 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
 }
 
 
-// longestMemberName
-/++
- +  Gets the name of the longest member in a struct.
- +
- +  This is used for formatting configuration files, so that columns line up.
- +
- +  Params:
- +      T = the struct type to inspect for member name lengths.
- +/
-template longestMemberName(Things...)
-{
-    enum longestMemberName = ()
-    {
-        string longest;
-
-        foreach (T; Things)
-        {
-            foreach (name; __traits(allMembers, T))
-            {
-                static if (is(typeof(__traits(getMember, T, name))) &&
-                           isSomeVariable!(__traits(getMember, T, name)) &&
-                           !hasUDA!(__traits(getMember, T, name), Hidden)) // &&
-                           //!hasUDA!(__traits(getMember, T, name), Unconfigurable))
-                {
-                    if (name.length > longest.length)
-                    {
-                        longest = name;
-                    }
-                }
-            }
-        }
-
-        return longest;
-    }();
-}
-
-
 // configText
 /++
  +  Takes a compile-time variadic list of struct objects and passes them each by each to
