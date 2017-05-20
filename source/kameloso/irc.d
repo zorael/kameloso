@@ -381,9 +381,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     case RPL_ENDOFNAMES: // 366
     case RPL_TOPIC: // 332
     case CHANNELURL: // 328
+    case NEEDAUTHTOJOIN:
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
         // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
+        // :cherryh.freenode.net 477 kameloso^ #archlinux :Cannot join channel (+r) - you need to be identified with services
         slice.formattedRead("%s %s :%s", &event.target, &event.channel, &event.content);
         break;
 
@@ -732,6 +734,7 @@ struct IrcEvent
         HELP_TOPICS, // 704             // <nickname> index :Help topics available to users:
         HELP_ENTRIES, // 705            // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         HELP_END, // 706                // <nickname> index :End of /HELP.
+        NEEDAUTHTOJOIN, // 477          // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1044,6 +1047,7 @@ struct IrcEvent
         474 : Type.ERR_BANNEDFROMCHAN,
         475 : Type.ERR_BADCHANNELKEY,
         476 : Type.ERR_BADCHANMASK,
+        477 : Type.NEEDAUTHTOJOIN,
         481 : Type.ERR_NOPRIVILEGES,
         482 : Type.ERR_CHANOPRIVSNEEDED,
         483 : Type.ERR_CANTKILLSERVER,
