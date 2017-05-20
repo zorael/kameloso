@@ -236,7 +236,8 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 }
 
 
-mixin template ColouredWriteln()
+mixin template ColouredWriteln(alias settings)
+if (is(typeof(settings) : Settings))
 {
     import std.stdio : realWrite = write, realWritefln = writefln, realWriteln = writeln;
 
@@ -285,7 +286,11 @@ mixin template ColouredWriteln()
         void writeln(Code, Args...)(Code code, Args args)
         if (isAColourCode!Code)
         {
-            realWriteln(colourise(code), args, colourise(typeof(code).default_));
+            if (settings.monochrome) realWriteln(args);
+            else
+            {
+                realWriteln(colourise(code), args, colourise(typeof(code).default_));
+            }
         }
 
         pragma(inline)
@@ -299,10 +304,14 @@ mixin template ColouredWriteln()
         void writefln(Code, Args...)(Code code, string pattern, Args args)
         if (isAColourCode!Code)
         {
-            import std.conv : text;
+            if (settings.monochrome) realWritefln(pattern, args);
+            else
+            {
+                import std.conv : text;
 
-            immutable newPattern = text(colourise(code), pattern, colourise(typeof(code).default_));
-            realWritefln(newPattern, args);
+                immutable newPattern = text(colourise(code), pattern, colourise(typeof(code).default_));
+                realWritefln(newPattern, args);
+            }
         }
 
         pragma(inline)
@@ -319,5 +328,5 @@ mixin template ColouredWriteln()
     }
 }
 
-
-mixin ColouredWriteln;
+// FIXME: scope creep
+mixin ColouredWriteln!(kameloso.main.settings);
