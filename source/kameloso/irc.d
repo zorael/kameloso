@@ -90,9 +90,11 @@ void parsePrefix(ref IrcEvent event, ref string slice)
     {
         // user!~ident@address
         prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
+
         special = (address == "services.") ||
-                  (address == "rizon.net") ||
-                  (address.endsWith(".rizon.net"));
+                  ((ident == "service") && (address == "rizon.net")) ||
+                  (address.endsWith(".rizon.net")) ||
+                  (address.endsWith(".quakenet.org"));
     }
     else
     {
