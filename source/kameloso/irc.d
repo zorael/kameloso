@@ -137,7 +137,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
         catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
-            writeln(event.raw);
+            printObjects(event);
         }
     }
     else
@@ -146,7 +146,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
         catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
-            writeln(event.raw);
+            printObjects(event);
         }
     }
 }
@@ -169,7 +169,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     scope(failure)
     {
         writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE -----------");
-        writeln(event.raw);
+        printObjects(event);
         writeln(Foreground.lightred, "------------------------------------------------");
     }
 
