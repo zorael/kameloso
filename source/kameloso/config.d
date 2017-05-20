@@ -261,24 +261,28 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
  +  Params:
  +      T = the struct type to inspect for member name lengths.
  +/
-template longestMemberName(T)
+template longestMemberName(Things...)
 {
     enum longestMemberName = ()
     {
         string longest;
 
-        foreach (name; __traits(allMembers, T))
+        foreach (T; Things)
         {
-            static if (!memberIsType!(T, name) &&
-                    !memberSatisfies!(isSomeFunction, T, name) &&
-                    !memberSatisfies!("isTemplate", T, name) &&
-                    !memberSatisfies!("isAssociativeArray", T, name) &&
-                    !memberSatisfies!("isStaticArray", T, name) &&
-                    !hasUDA!(__traits(getMember, T, name), Unconfigurable))
+            foreach (name; __traits(allMembers, T))
             {
-                if (name.length > longest.length)
+                static if (!memberIsType!(T, name) &&
+                        !memberSatisfies!(isSomeFunction, T, name) &&
+                        !memberSatisfies!("isTemplate", T, name) &&
+                        !memberSatisfies!("isAssociativeArray", T, name) &&
+                        !memberSatisfies!("isStaticArray", T, name) &&
+                        !hasUDA!(__traits(getMember, T, name), Hidden)) // &&
+                        //!hasUDA!(__traits(getMember, T, name), Unconfigurable))
                 {
-                    longest = name;
+                    if (name.length > longest.length)
+                    {
+                        longest = name;
+                    }
                 }
             }
         }
