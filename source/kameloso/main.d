@@ -308,13 +308,15 @@ Quit loopGenerator(Generator!string generator)
 {
     import core.thread : Fiber;
 
-    auto quit = Quit.no;
-    do
+    Quit quit;
+
+    while (!quit)
     {
         if (generator.state == Fiber.State.TERM)
         {
             // listening Generator disconnected; reconnect
             generator.reset();
+
             return Quit.no;
         }
 
@@ -332,7 +334,6 @@ Quit loopGenerator(Generator!string generator)
 
             foreach (plugin; plugins)
             {
-                mixin(scopeguard(failure, "onEvent loop"));
                 plugin.onEvent(event);
 
                 if ((event.type == IrcEvent.Type.WHOISLOGIN) ||
@@ -343,7 +344,7 @@ Quit loopGenerator(Generator!string generator)
 
                     if (!spammedAboutReplaying)
                     {
-                        writeln(Foreground.green, "Replaying event:");
+                        writeln(Foreground.white, "Replaying event:");
                         printObjects(*savedEvent);
                         spammedAboutReplaying = true;
                     }
@@ -352,7 +353,8 @@ Quit loopGenerator(Generator!string generator)
                 }
             }
 
-            if (event.type == IrcEvent.Type.WHOISLOGIN)
+            if ((event.type == IrcEvent.Type.WHOISLOGIN) ||
+                (event.type == IrcEvent.Type.HASTHISNICK))
             {
                 replayQueue.remove(event.target);
             }
@@ -360,7 +362,6 @@ Quit loopGenerator(Generator!string generator)
 
         quit = checkMessages();
     }
-    while (!quit);
 
     return Quit.yes;
 }
