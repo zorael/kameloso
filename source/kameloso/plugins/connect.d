@@ -238,7 +238,11 @@ void onNickInUse()
 @(IrcEvent.Type.INVITE)
 void onInvite(const IrcEvent event)
 {
-    if (!state.settings.joinOnInvite) return;
+    if (!state.settings.joinOnInvite)
+    {
+        writeln(Foreground.lightcyan, "settings.joinOnInvite is false so not joining");
+        return;
+    }
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "JOIN :" ~ event.channel);
