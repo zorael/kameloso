@@ -538,6 +538,15 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.content = event.aux.nom(" ");
         break;
 
+    case HELP_TOPICS:
+    case HELP_ENTRIES:
+    case HELP_END:
+        // :leguin.freenode.net 704 kameloso^ index :Help topics available to users:
+        // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
+        // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
+        slice.formattedRead("%s :%s", &event.aux, &event.content);
+        break;
+
     default:
         if (event.type == NUMERIC)
         {
@@ -717,6 +726,9 @@ struct IrcEvent
         TOCONNECTTYPE, // = 513,        // <nickname> :To connect type /QUOTE PONG <number>
         HASTHISNICK, // = 307           // <nickname> :has identified for this nick
         INVALIDCHARACTERS, // = 455     // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
+        HELP_TOPICS, // 704             // <nickname> index :Help topics available to users:
+        HELP_ENTRIES, // 705            // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
+        HELP_END, // 706                // <nickname> index :End of /HELP.
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1038,6 +1050,9 @@ struct IrcEvent
         502 : Type.ERR_USERSDONTMATCH,
         513 : Type.TOCONNECTTYPE,
         671 : Type.WHOISSECURECONN,
+        704 : Type.HELP_TOPICS,
+        705 : Type.HELP_ENTRIES,
+        706 : Type.HELP_END,
     ];
 
     Type type;
