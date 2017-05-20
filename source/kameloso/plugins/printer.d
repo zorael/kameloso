@@ -12,7 +12,7 @@ private:
 /// All plugin state variables gathered in a struct
 IrcPluginState state;
 
-
+Settings settings;
 // reusableAppender
 /+
  +  Appender to reuse as sink to fill when printing events.
