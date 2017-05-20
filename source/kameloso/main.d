@@ -239,12 +239,7 @@ void writeConfigToDisk(const string configFile)
     writeln("Writing configuration to ", configFile);
     configFile.writeConfig(bot, bot.server, settings);
     writeln();
-    printObject(bot);
-    writeln();
-    printObject(bot.server);
-    writeln();
-    printObject(settings);
-    writeln();
+    printObjects(bot, bot.server, settings);
 }
 
 
@@ -259,12 +254,7 @@ int main(string[] args)
     if (handleArguments(args) == Quit.yes) return 0;
 
     // Print the current settings to show what's going on.
-    printObject(bot);
-    writeln();
-    printObject(bot.server);
-    writeln();
-    printObject(settings);
-    writeln();
+    printObjects(bot, bot.server, settings);
 
     if (!bot.homes.length && !bot.master.length && !bot.friends.length)
     {
@@ -358,7 +348,7 @@ Quit loopGenerator(Generator!string generator)
                     if (!spammedAboutReplaying)
                     {
                         writeln(Foreground.green, "Replaying event:");
-                        printObject(*savedEvent);
+                        printObjects(*savedEvent);
                         spammedAboutReplaying = true;
                     }
 

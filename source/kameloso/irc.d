@@ -530,7 +530,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         if (slice.indexOf(" :To connect type ") == -1)
         {
             writeln(Foreground.lightred, "Unknown variant of TOCONNECTTYPE");
-            printObject(event);
+            printObjects(event);
         }
 
         slice.formattedRead("%s :To connect type %s", &event.target, &event.aux);
@@ -552,7 +552,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         {
             writeln();
             writeln(Foreground.lightred, "--------------- UNCAUGHT NUMERIC --------------");
-            printObject(event);
+            printObjects(event);
             writeln(Foreground.lightred, "-----------------------------------------------");
             writeln();
         }
@@ -583,7 +583,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     {
         writeln();
         writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
-        printObject(event);
+        printObjects(event);
         writeln(Foreground.lightred, "-----------------------------------------------------");
         writeln();
     }
@@ -594,7 +594,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     {
         writeln();
         writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
-        printObject(event);
+        printObjects(event);
         writeln(Foreground.lightred, "------------------------------------------------------");
         writeln();
     }

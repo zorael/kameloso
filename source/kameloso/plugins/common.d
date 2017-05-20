@@ -211,7 +211,6 @@ mixin template IrcPluginBasics()
      +/
     void newBot(IrcBot bot)
     {
-        //state.bot = bot;
         static if (__traits(compiles, .state.bot = bot))
         {
             .state.bot = bot;
@@ -221,7 +220,6 @@ mixin template IrcPluginBasics()
     // newState
     void newSettings(Settings settings)
     {
-        //state.settings = settings;
         static if (__traits(compiles, .settings = settings))
         {
             .state.settings = settings;
@@ -238,9 +236,9 @@ mixin template IrcPluginBasics()
     {
         writeln(Foreground.lightgreen, "--[ ", typeof(this).stringof);
 
-        static if (__traits(compiles, printObject(state.bot)))
+        static if (__traits(compiles, printObjects(state.bot)))
         {
-            printObject(state.bot);
+            printObjects(state.bot);
         }
     }
 

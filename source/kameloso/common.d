@@ -82,39 +82,55 @@ struct Settings
  +      file = source filename iff message provided, defaults to __FILE__.
  +      line = source file linenumber iff message provided, defaults to __LINE__.
  +/
-void printObject(T)(T thing, string message = string.init,
-                    string file = __FILE__, int line = __LINE__)
+void printObjects(Things...)(Things things)/*, string message = string.init,
+                    string file = __FILE__, int line = __LINE__)*/
 {
-    import std.traits : isSomeFunction;
+    import std.format : format;
+    import std.traits : isSomeFunction, hasUDA;
+    import kameloso.config : longestMemberName;
 
-    if (message.length)
+    /*if (message.length)
     {
         // Optional header
 	    writefln("---------- [%s:%d] %s", file, line, message);
-    }
+    }*/
 
-	foreach (name; __traits(allMembers, T))
+    enum entryPadding = longestMemberName!Things.length;
+    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
+    enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
+
+    foreach (thing; things)
     {
-		static if (!memberIsType!(T,name) &&
-                   !memberSatisfies!(isSomeFunction,T,name) &&
-                   !memberSatisfies!("isTemplate",T,name) &&
-                   !memberSatisfies!("isAssociativeArray",T,name) &&
-                   !memberSatisfies!("isStaticArray",T,name) &&
-                   !hasUDA!(__traits(getMember, T, name), Hidden))
-		{
-			enum typestring = typeof(__traits(getMember, T, name)).stringof;
-			auto value = __traits(getMember, thing, name);
+        alias T = typeof(thing);
 
-			static if (is(typeof(value) : string))
+        //writefln(Foreground.white, "--- [%s:%d] %s", __FILE__, __LINE__, T.stringof);
+        writeln(Foreground.white, "-- ", T.stringof);
+
+        foreach (name; __traits(allMembers, T))
+        {
+            static if (!memberIsType!(T, name) &&
+                    !memberSatisfies!(isSomeFunction, T, name) &&
+                    !memberSatisfies!("isTemplate", T, name) &&
+                    !memberSatisfies!("isAssociativeArray", T, name) &&
+                    !memberSatisfies!("isStaticArray", T, name) &&
+                    !hasUDA!(__traits(getMember, T, name), Hidden))
             {
-				writefln(`%8s %-10s "%s"(%d)`, typestring, name, value, value.length);
-			}
-			else
-            {
-				writefln("%8s %-11s %s", typestring, name, value);
-			}
-		}
-	}
+                enum typestring = typeof(__traits(getMember, T, name)).stringof;
+                auto value = __traits(getMember, thing, name);
+
+                static if (is(typeof(value) : string))
+                {
+                    writefln(stringPattern, typestring, name, value, value.length);
+                }
+                else
+                {
+                    writefln(normalPattern, typestring, name, value);
+                }
+            }
+        }
+
+        writeln();
+    }
 }
 
 
