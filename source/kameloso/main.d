@@ -222,6 +222,7 @@ void initPlugins(IrcBot bot, Tid tid)
         new NotesPlugin(state),
         new Chatbot(state),
         new ConnectPlugin(state),
+        new Pipeline(state),
         //new Pinger(state),
     ];
 
