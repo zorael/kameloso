@@ -391,7 +391,9 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
                 }
                 else
                 {
-                    if (value != typeof(value).init)
+                    // bool.init is false, can't treat that as unset
+
+                    if (is(MemberType : bool) || (value != typeof(value).init))
                     {
                         sink.formattedWrite(pattern, name, value);
                     }
