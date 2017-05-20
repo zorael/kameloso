@@ -214,18 +214,22 @@ void initPlugins()
 
     plugins = cast(IrcPlugin[])
     [
-        new Printer(state, settings),
-        new SedReplacePlugin(state, settings),
-        new AdminPlugin(state, settings),
-        new NotesPlugin(state, settings),
-        new Chatbot(state, settings),
-        new ConnectPlugin(state, settings),
-        new Pipeline(state, settings),
+        new Printer(state),
+        new SedReplacePlugin(state),
+        new AdminPlugin(state),
+        new NotesPlugin(state),
+        new Chatbot(state),
+        new ConnectPlugin(state),
     ];
 
     version(Webtitles)
     {
-        plugins ~= new Webtitles(state, settings);
+        plugins ~= new Webtitles(state);
+    }
+
+    version(Posix)
+    {
+        plugins ~= new Pipeline(state);
     }
 }
 

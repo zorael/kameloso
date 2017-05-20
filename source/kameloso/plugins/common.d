@@ -182,16 +182,15 @@ mixin template IrcPluginBasics()
      +      origState = the aggregate of all plugin state variables, making this the
      +          "original state" of the plugin.
      +/
-    this(IrcPluginState state, Settings settings)
+    this(IrcPluginState state)
     {
         static if (__traits(compiles, .state = state))
         {
             .state = state;
         }
-
-        static if (__traits(compiles, .settings = settings))
+        else static if (__traits(compiles, .settings = state.settings))
         {
-            .settings = settings;
+            .settings = state.settings;
         }
 
         static if (__traits(compiles, .initialise()))
@@ -220,9 +219,13 @@ mixin template IrcPluginBasics()
     // newState
     void newSettings(Settings settings)
     {
-        static if (__traits(compiles, .settings = settings))
+        static if (__traits(compiles, .state.settings = settings))
         {
             .state.settings = settings;
+        }
+        else static if (__traits(compiles, .settings = settings))
+        {
+            .settings = settings;
         }
     }
 
