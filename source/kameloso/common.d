@@ -70,7 +70,24 @@ struct Settings
     bool randomNickColours = true;
 }
 
+template isSomeVariable(alias var)
+{
+    import std.traits : isSomeFunction;
 
+    static if (is(typeof(var)))
+    {
+        alias T = typeof(var);
+
+        enum isSomeVariable = !isSomeFunction!T &&
+            !__traits(isTemplate, T) &&
+            !__traits(isAssociativeArray, T) &&
+            !__traits(isStaticArray, T);
+    }
+    else
+    {
+        enum isSomeVariable = false;
+    }
+}
 /++
  +  Prints out a struct object, with all its printable members with all their printable values.
  +  This is not only convenient for deubgging but also usable to print out current settings
@@ -99,24 +116,20 @@ void printObjects(Things...)(Things things)
     {
         alias T = typeof(thing);
 
-        //writefln(Foreground.white, "--- [%s:%d] %s", __FILE__, __LINE__, T.stringof);
+        //writefln(Foreground.white, "-- [%s:%d] %s", __FILE__, __LINE__, T.stringof);
         writeln(Foreground.white, "-- ", T.stringof);
 
         foreach (name; __traits(allMembers, T))
         {
-            static if (!memberIsType!(T, name) &&
-                    !memberSatisfies!(isSomeFunction, T, name) &&
-                    !memberSatisfies!("isTemplate", T, name) &&
-                    !memberSatisfies!("isAssociativeArray", T, name) &&
-                    !memberSatisfies!("isStaticArray", T, name) &&
-                    !hasUDA!(__traits(getMember, T, name), Hidden))
+            static if (is(typeof(__traits(getMember, T, name))) &&
+                       isSomeVariable!(__traits(getMember, T, name)) &&
+                       !hasUDA!(__traits(getMember, T, name), Hidden))
             {
                 enum typestring = typeof(__traits(getMember, T, name)).stringof;
-                auto value = __traits(getMember, thing, name);
+                const value = __traits(getMember, thing, name);
 
                 static if (is(typeof(value) : string))
                 {
-                    //writefln(stringPattern, typestring, name, value, value.length);
                     writefln(stringPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), name,
@@ -126,7 +139,6 @@ void printObjects(Things...)(Things things)
                 }
                 else
                 {
-                    //writefln(normalPattern, typestring, name, value);
                     writefln(normalPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), name,

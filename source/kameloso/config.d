@@ -168,11 +168,8 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
 
     foreach (const name; __traits(allMembers, Thing))
     {
-        static if (!memberIsType!(Thing, name) &&
-                   !memberSatisfies!(isSomeFunction, Thing, name) &&
-                   !memberSatisfies!("isTemplate", Thing, name) &&
-                   !memberSatisfies!("isAssociativeArray", Thing, name) &&
-                   !memberSatisfies!("isStaticArray", Thing, name) &&
+        static if (is(typeof(__traits(getMember, Thing, name))) &&
+                   isSomeVariable!(__traits(getMember, Thing, name)) &&
                    !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
         alias MemberType = typeof(__traits(getMember, Thing, name));
@@ -271,13 +268,10 @@ template longestMemberName(Things...)
         {
             foreach (name; __traits(allMembers, T))
             {
-                static if (!memberIsType!(T, name) &&
-                        !memberSatisfies!(isSomeFunction, T, name) &&
-                        !memberSatisfies!("isTemplate", T, name) &&
-                        !memberSatisfies!("isAssociativeArray", T, name) &&
-                        !memberSatisfies!("isStaticArray", T, name) &&
-                        !hasUDA!(__traits(getMember, T, name), Hidden)) // &&
-                        //!hasUDA!(__traits(getMember, T, name), Unconfigurable))
+                static if (is(typeof(__traits(getMember, T, name))) &&
+                           isSomeVariable!(__traits(getMember, T, name)) &&
+                           !hasUDA!(__traits(getMember, T, name), Hidden)) // &&
+                           //!hasUDA!(__traits(getMember, T, name), Unconfigurable))
                 {
                     if (name.length > longest.length)
                     {
@@ -341,11 +335,8 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 
     foreach (name; __traits(allMembers, Thing))
     {
-        static if (!memberIsType!(Thing, name) &&
-                   !memberSatisfies!(isSomeFunction, Thing, name) &&
-                   !memberSatisfies!("isTemplate", Thing, name) &&
-                   !memberSatisfies!("isAssociativeArray", Thing, name) &&
-                   !memberSatisfies!("isStaticArray", Thing, name) &&
+        static if (is(typeof(__traits(getMember, Thing, name))) &&
+                   isSomeVariable!(__traits(getMember, Thing, name)) &&
                    !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
             alias MemberType = typeof(__traits(getMember, Thing, name));
