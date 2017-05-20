@@ -315,7 +315,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case MODE:
-        const targetOrChannel = slice.nom(' ');
+        immutable targetOrChannel = slice.nom(' ');
 
         if (targetOrChannel.beginsWith('#'))
         {
@@ -436,7 +436,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.target  = slice.nom(' ');
         event.content = slice.nom(" *");
         slice.nom(" :");
-        event.aux = slice.stripLeft;
+        event.aux = slice.stripLeft();
         break;
 
     case RPL_WHOISCHANNELS: // 319
@@ -543,7 +543,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             writeln();
         }
 
-        if (slice.canFind(":"))
+        if (slice.canFind(" :"))
         {
             slice.formattedRead("%s :%s", &event.target, &event.content);
         }
