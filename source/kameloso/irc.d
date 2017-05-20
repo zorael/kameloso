@@ -525,6 +525,14 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case TOCONNECTTYPE:
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
+        import std.string : indexOf;
+
+        if (slice.indexOf(" :To connect type ") == -1)
+        {
+            writeln(Foreground.lightred, "Unknown variant of TOCONNECTTYPE");
+            printObject(event);
+        }
+
         slice.formattedRead("%s :To connect type %s", &event.target, &event.aux);
         event.aux.nom("/QUOTE ");
         event.content = event.aux.nom(" ");
