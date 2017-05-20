@@ -234,7 +234,7 @@ void initPlugins()
 
 void writeConfigToDisk(const string configFile)
 {
-    writeln("Writing configuration to ", configFile);
+    writeln(Foreground.lightcyan, "Writing configuration to ", configFile);
     configFile.writeConfig(bot, bot.server, settings);
     writeln();
     printObjects(bot, bot.server, settings);
