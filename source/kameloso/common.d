@@ -82,22 +82,18 @@ struct Settings
  +      file = source filename iff message provided, defaults to __FILE__.
  +      line = source file linenumber iff message provided, defaults to __LINE__.
  +/
-void printObjects(Things...)(Things things)/*, string message = string.init,
-                    string file = __FILE__, int line = __LINE__)*/
+void printObjects(Things...)(Things things)
 {
-    import std.format : format;
-    import std.traits : isSomeFunction, hasUDA;
     import kameloso.config : longestMemberName;
 
-    /*if (message.length)
-    {
-        // Optional header
-	    writefln("---------- [%s:%d] %s", file, line, message);
-    }*/
+    import std.format : format;
+    import std.traits : isSomeFunction, hasUDA;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
-    enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
+    //enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
+    //enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
+    enum stringPattern = `%%s%%9s %%s%%-%ds %%s"%%s"%%s(%%d)%%s`.format(entryPadding+2);
+    enum normalPattern = `%%s%%9s %%s%%-%ds  %%s%%s%%s`.format(entryPadding+2);
 
     foreach (thing; things)
     {
@@ -120,11 +116,22 @@ void printObjects(Things...)(Things things)/*, string message = string.init,
 
                 static if (is(typeof(value) : string))
                 {
-                    writefln(stringPattern, typestring, name, value, value.length);
+                    //writefln(stringPattern, typestring, name, value, value.length);
+                    writefln(stringPattern,
+                        colourise(Foreground.cyan), typestring,
+                        colourise(Foreground.white), name,
+                        colourise(Foreground.lightgreen), value,
+                        colourise(Foreground.darkgrey), value.length,
+                        colourise(Foreground.default_));
                 }
                 else
                 {
-                    writefln(normalPattern, typestring, name, value);
+                    //writefln(normalPattern, typestring, name, value);
+                    writefln(normalPattern,
+                        colourise(Foreground.cyan), typestring,
+                        colourise(Foreground.white), name,
+                        colourise(Foreground.lightgreen), value,
+                        colourise(Foreground.default_));
                 }
             }
         }
