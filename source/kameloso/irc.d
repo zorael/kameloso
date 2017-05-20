@@ -127,7 +127,6 @@ void parseTypestring(ref IrcEvent event, ref string slice)
 
         try
         {
-
             const number = event.typestring.to!uint;
             event.num = number;
             event.type = IrcEvent.typenums[number];
@@ -200,18 +199,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         {
             event.special = true;  // by definition
 
-            /*enum NickServChallenge
-            {
-                freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
-                misc = "This nickname is registered and protected.  If it is your"
-            }
-
-            enum NickServInstruction
-            {
-                freenode = "This nickname is registered. Please choose a different nickname, or identify via /msg NickServ identify <password>.",
-                misc = "nick, type /msg NickServ IDENTIFY password.  Otherwise,"
-            }*/
-
             enum AuthServiceAcceptance
             {
                 freenode = "You are now identified for",
@@ -249,13 +236,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
         event.channel = slice;
         event.channel.munch(":");
-
-        if (event.content.length)
-        {
-            // TODO: remove me later but keep for now
-            writeln("WHY DOES A JOIN EVENT HAVE CONTENT?");
-            writeln(Foreground.lightred, event.raw);
-        }
         break;
 
     case PART:
@@ -315,7 +295,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
 
         if (slice.beginsWith(ControlCharacter.action) &&
-            (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
+           (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
         {
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
@@ -442,9 +422,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
         // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
         // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
-        /*event.target = slice.nom(' ');
-        event.aux = slice.nom(" :");
-        event.content = slice;*/
         slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
         break;
 
