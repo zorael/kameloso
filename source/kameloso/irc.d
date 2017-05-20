@@ -549,6 +549,11 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         slice.formattedRead("%s :%s", &event.aux, &event.content);
         break;
 
+    case CANTCHANGENICK:
+        // :cherryh.freenode.net 435 kameloso^ kameloso^^ #d3d9 :Cannot change nickname while banned on channel
+        slice.formattedRead("%s %s %s :%s", &event.target, &event.aux, &event.channel, &event.content);
+        break;
+
     default:
         if (event.type == NUMERIC)
         {
@@ -735,6 +740,7 @@ struct IrcEvent
         HELP_ENTRIES, // 705            // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         HELP_END, // 706                // <nickname> index :End of /HELP.
         NEEDAUTHTOJOIN, // 477          // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
+        CANTCHANGENICK, // 435          // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1024,6 +1030,7 @@ struct IrcEvent
         431 : Type.ERR_NONICKNAMEGIVEN,
         432 : Type.ERR_ERRONEOUSNICKNAME,
         433 : Type.ERR_NICKNAMEINUSE,
+        435 : Type.CANTCHANGENICK,
         436 : Type.ERR_NICKCOLLISION,
         441 : Type.ERR_USERNOTINCHANNEL,
         442 : Type.ERR_NOTONCHANNEL,
