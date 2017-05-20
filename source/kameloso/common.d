@@ -42,6 +42,9 @@ struct Separator
 	string token = ",";
 }
 
+/// UDA used to convey "this member should not be printed in clear text"
+struct Hidden {}
+
 
 /++
  +  Helper/syntactic sugar for static if constraints.
@@ -96,7 +99,8 @@ void printObject(T)(T thing, string message = string.init,
                    !memberSatisfies!(isSomeFunction,T,name) &&
                    !memberSatisfies!("isTemplate",T,name) &&
                    !memberSatisfies!("isAssociativeArray",T,name) &&
-                   !memberSatisfies!("isStaticArray",T,name))
+                   !memberSatisfies!("isStaticArray",T,name) &&
+                   !hasUDA!(__traits(getMember, T, name), Hidden))
 		{
 			enum typestring = typeof(__traits(getMember, T, name)).stringof;
 			auto value = __traits(getMember, thing, name);

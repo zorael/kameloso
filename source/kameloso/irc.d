@@ -619,8 +619,12 @@ struct IrcBot
     string user       = "kameloso!";
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
-    string password;
     string master;
+
+    @Hidden
+    {
+        string password;
+    }
 
     @Separator(",")
     {
