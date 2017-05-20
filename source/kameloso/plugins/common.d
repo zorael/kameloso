@@ -182,9 +182,17 @@ mixin template IrcPluginBasics()
      +      origState = the aggregate of all plugin state variables, making this the
      +          "original state" of the plugin.
      +/
-    this(IrcPluginState origState)
+    this(IrcPluginState state, Settings settings)
     {
-        state = origState;
+        static if (__traits(compiles, .state = state))
+        {
+            .state = state;
+        }
+
+        static if (__traits(compiles, .settings = settings))
+        {
+            .settings = settings;
+        }
 
         static if (__traits(compiles, .initialise()))
         {
@@ -203,13 +211,21 @@ mixin template IrcPluginBasics()
      +/
     void newBot(IrcBot bot)
     {
-        state.bot = bot;
+        //state.bot = bot;
+        static if (__traits(compiles, .state.bot = bot))
+        {
+            .state.bot = bot;
+        }
     }
 
     // newState
     void newSettings(Settings settings)
     {
-        state.settings = settings;
+        //state.settings = settings;
+        static if (__traits(compiles, .settings = settings))
+        {
+            .state.settings = settings;
+        }
     }
 
     // status
@@ -221,7 +237,11 @@ mixin template IrcPluginBasics()
     void status()
     {
         writeln(Foreground.lightgreen, "--[ ", typeof(this).stringof);
-        printObject(state.bot);
+
+        static if (__traits(compiles, printObject(state.bot)))
+        {
+            printObject(state.bot);
+        }
     }
 
     // teardown

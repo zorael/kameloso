@@ -207,30 +207,29 @@ Quit handleArguments(string[] args)
 
 
 /// Resets and initialises all plugins.
-void initPlugins(IrcBot bot, Tid tid)
+void initPlugins()
 {
     foreach (plugin; plugins) plugin.teardown();
 
     IrcPluginState state;
     state.bot = bot;
     state.settings = settings;
-    state.mainThread = tid;
+    state.mainThread = thisTid;
 
     plugins = cast(IrcPlugin[])
     [
-        new Printer(state),
-        new SedReplacePlugin(state),
-        new AdminPlugin(state),
-        new NotesPlugin(state),
-        new Chatbot(state),
-        new ConnectPlugin(state),
-        new Pipeline(state),
-        //new Pinger(state),
+        new Printer(state, settings),
+        new SedReplacePlugin(state, settings),
+        new AdminPlugin(state, settings),
+        new NotesPlugin(state, settings),
+        new Chatbot(state, settings),
+        new ConnectPlugin(state, settings),
+        new Pipeline(state, settings),
     ];
 
     version(Webtitles)
     {
-        plugins ~= new Webtitles(state);
+        plugins ~= new Webtitles(state, settings);
     }
 }
 
@@ -292,7 +291,7 @@ int main(string[] args)
         bot.attemptedLogin = false;
         bot.server.resolvedAddress = string.init;
 
-        initPlugins(bot, thisTid);
+        initPlugins();
 
         auto generator = new Generator!string(() => listenFiber(conn));
         quit = loopGenerator(generator);
