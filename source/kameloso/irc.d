@@ -679,7 +679,6 @@ struct IrcUser
 {
     string nickname, ident, address, login;
     bool special;
-    // SysTime lastWhois;
 
     string toString()
     {

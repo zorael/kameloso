@@ -33,8 +33,6 @@ void pinger(Tid mainThread)
 
     mixin(scopeguard(entry|exit));
 
-    register("pinger", thisTid);
-
     bool halt;
     while (!halt)
     {
