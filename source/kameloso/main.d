@@ -19,8 +19,6 @@ shared static this()
     // international characters like åäö.
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
-
-    settings.monochrome = true;
 }
 
 private:
