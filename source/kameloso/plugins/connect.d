@@ -210,7 +210,7 @@ void onChallenge()
 
 @Label("onacceptance")
 @(IrcEvent.Type.AUTHACCEPTANCE)
-void onAcceptance(const IrcEvent event)
+void onAcceptance()
 {
     if (state.bot.finishedLogin) return;
 
