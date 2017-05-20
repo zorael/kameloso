@@ -87,6 +87,7 @@ void printObjects(Things...)(Things things)
 
     import std.format : format;
     import std.traits : isSomeFunction, hasUDA;
+    import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
     //enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
@@ -99,7 +100,7 @@ void printObjects(Things...)(Things things)
         alias T = typeof(thing);
 
         //writefln(Foreground.white, "-- [%s:%d] %s", __FILE__, __LINE__, T.stringof);
-        writeln(Foreground.white, "-- ", T.stringof);
+        writeln(Foreground.white, "-- ", Unqual!T.stringof);
 
         foreach (name; __traits(allMembers, T))
         {
