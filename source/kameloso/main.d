@@ -172,13 +172,15 @@ Quit handleArguments(string[] args)
         "n|nickname",    "Bot nickname", &bot.nickname,
         "u|user",        "Username when logging onto server (not nickname)", &bot.user,
         "i|ident",       "IDENT string", &bot.ident,
-        "p|password",    "NickServ password", &bot.password,
-        "m|master",      "NickServ login of bot master, who gets access to administrative functions", &bot.master,
+        "q|quitReason",  "Quit reason string", &bot.quitReason,
+        "l|login",       "Auth service login name, if applicable", &bot.login,
+        "p|password",    "Auth service password", &bot.password,
+        "m|master",      "Auth login of the bot's master, who gets " ~
+                         "access to administrative functions", &bot.master,
         "s|server",      "Server address", &bot.server.address,
         "P|port",        "Server port", &bot.server.port,
         "c|config",      "Read configuration from file (default %s)".format(Files.config), &configFileFromArgs,
         "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
-        //"v|verbose+", "Increase verbosity", &bot.verbosity,
     );
 
     if (helpInfo.helpWanted)
