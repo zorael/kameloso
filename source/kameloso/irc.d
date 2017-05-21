@@ -144,7 +144,8 @@ void parseTypestring(ref IrcEvent event, ref string slice)
     }
     else
     {
-        try event.type = event.typestring.to!(IrcEvent.Type);
+        //try event.type = event.typestring.to!(IrcEvent.Type);
+        try event.type = event.typestring.toEnum!(IrcEvent.Type);
         catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
