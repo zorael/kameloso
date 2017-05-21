@@ -294,17 +294,7 @@ Enum toEnum(Enum)(const string enumstring)
 if (is(Enum == enum))
 {
 	enum enumSwitch = () {
-		import std.conv : to;
-        //import std.traits : EnumMembers;
-
 		string enumSwitch = "with (Enum) switch (enumstring)\n{";
-
-		/*foreach (enumMember; EnumMembers!Enum)
-		{
-            enum memberstring = enumMember.to!string;
-			enumSwitch ~= `case "` ~ memberstring ~ `":`;
-			enumSwitch ~= "return " ~ memberstring ~ ";\n";
-		}*/
 
         foreach (memberstring; __traits(allMembers, Enum))
         {
