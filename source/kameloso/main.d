@@ -167,26 +167,35 @@ Quit handleArguments(string[] args)
     bool shouldWriteConfig;
     string configFileFromArgs;
     string homes, channels;
+    GetoptResult helpInfo;
 
-    auto helpInfo = args.getopt(
-        config.caseSensitive,
-        "n|nickname",    "Bot nickname", &bot.nickname,
-        "u|user",        "Username when logging onto server (not nickname)", &bot.user,
-        "i|ident",       "IDENT string", &bot.ident,
-        "q|quitReason",  "Quit reason string", &bot.quitReason,
-        "l|login",       "Auth service login name, if applicable", &bot.login,
-        "p|password",    "Auth service password", &bot.password,
-        "m|master",      "Auth login of the bot's master, who gets " ~
-                         "access to administrative functions", &bot.master,
-        "h|home",        "Home channels to operate in, comma-separated" ~
-                         " (remember to escape or enquote the #s!)", &homes,
-        "C|channel",     "Non-home channels to idle in, comma-separated" ~
-                         " (ditto)", &channels,
-        "s|server",      "Server address", &bot.server.address,
-        "P|port",        "Server port", &bot.server.port,
-        "c|config",      "Read configuration from file (default %s)".format(Files.config), &configFileFromArgs,
-        "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
-    );
+    try
+    {
+        helpInfo = args.getopt(
+            config.caseSensitive,
+            "n|nickname",    "Bot nickname", &bot.nickname,
+            "u|user",        "Username when logging onto server (not nickname)", &bot.user,
+            "i|ident",       "IDENT string", &bot.ident,
+            "q|quitReason",  "Quit reason string", &bot.quitReason,
+            "l|login",       "Auth service login name, if applicable", &bot.login,
+            "p|password",    "Auth service password", &bot.password,
+            "m|master",      "Auth login of the bot's master, who gets " ~
+                            "access to administrative functions", &bot.master,
+            "h|home",        "Home channels to operate in, comma-separated" ~
+                            " (remember to escape or enquote the #s!)", &homes,
+            "C|channel",     "Non-home channels to idle in, comma-separated" ~
+                            " (ditto)", &channels,
+            "s|server",      "Server address", &bot.server.address,
+            "P|port",        "Server port", &bot.server.port,
+            "c|config",      "Read configuration from file (default %s)".format(Files.config), &configFileFromArgs,
+            "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
+        );
+    }
+    catch (Exception e)
+    {
+        writeln(Foreground.lightred, e.msg);
+        return Quit.yes;
+    }
 
     if (helpInfo.helpWanted)
     {
