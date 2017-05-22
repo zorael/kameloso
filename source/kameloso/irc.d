@@ -617,11 +617,11 @@ struct IrcBot
     {
         string[] homes;
         string[] friends;
+        string[] channels;
     }
 
     @Unconfigurable
     {
-        string[] channels;
         IrcServer server;
         bool attemptedLogin;
         bool finishedLogin;
