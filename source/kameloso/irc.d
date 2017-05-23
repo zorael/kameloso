@@ -123,7 +123,57 @@ void parsePrefix(ref IrcEvent event, ref string slice)
         sender = prefix;
     }
 }
+unittest
+{
+    import std.conv : to;
+    IrcEvent e1;
+    with (e1)
+    {
+        raw = ":zorael!~NaN@some.address.org PRIVMSG kameloso :this is fake";
+        string slice1 = raw[1..$];  // mutable
+        e1.parsePrefix(slice1);
+        assert((sender == "zorael"), sender);
+        assert((ident == "~NaN"), ident);
+        assert((address == "some.address.org"), address);
+        assert(!special, special.to!string);
+    }
 
+    IrcEvent e2;
+    with (e2)
+    {
+        raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
+        string slice2 = raw[1..$];  // mutable
+        e2.parsePrefix(slice2);
+        assert((sender == "NickServ"), sender);
+        assert((ident == "NickServ"), ident);
+        assert((address == "services."), address);
+        assert(special, special.to!string);
+    }
+
+    IrcEvent e3;
+    with (e3)
+    {
+        raw = ":kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp";
+        string slice3 = raw[1..$];  // mutable
+        e3.parsePrefix(slice3);
+        assert((sender == "kameloso^^"), sender);
+        assert((ident == "~NaN"), ident);
+        assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
+        assert(!special, special.to!string);
+    }
+
+    IrcEvent e4;
+    with (e4)
+    {
+        raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
+        string slice4 = raw[1..$];
+        e4.parsePrefix(slice4);
+        assert((sender == "Q"), sender);
+        assert((ident == "TheQBot"), ident);
+        assert((address == "CServe.quakenet.org"), address);
+        assert(special, special.to!string);
+    }
+}
 
 // parseTypestring
 /++
