@@ -197,14 +197,29 @@ void onEndOfMotd()
 @(IrcEvent.Type.AUTHCHALLENGE)
 void onChallenge()
 {
+    if (state.bot.attemptedLogin || state.bot.finishedLogin) return;
+
     state.bot.attemptedLogin = true;
     updateBot();
 
-    state.mainThread.send(ThreadMessage.Quietline(),
-        "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
+    if (state.bot.server.family == IrcServer.Family.freenode)
+    {
+        state.mainThread.send(ThreadMessage.Quietline(),
+            "PRIVMSG NickServ :IDENTIFY %s %s"
+            .format(state.bot.login, state.bot.password));
 
-    // fake it
-    writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
+        // fake it
+        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
+            state.bot.login, " hunter2");
+    }
+    else
+    {
+        state.mainThread.send(ThreadMessage.Quietline(),
+            "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
+
+        // ditto
+        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ", state.bot.password);
+    }
 }
 
 
