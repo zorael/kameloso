@@ -30,7 +30,7 @@ IrcBot bot;
  +  Returns:
  +      the finished IrcEvent.
  +/
-IrcEvent parseBasic(IrcEvent event, const char[] raw)
+void parseBasic(ref IrcEvent event)
 {
     mixin(scopeguard(failure));
 
@@ -59,7 +59,7 @@ IrcEvent parseBasic(IrcEvent event, const char[] raw)
         break;
 
     default:
-        writeln(Foreground.lightred, "Unknown basic type: ", raw);
+        writeln(Foreground.lightred, "Unknown basic type: ", event.raw);
         break;
     }
 
@@ -1083,7 +1083,11 @@ IrcEvent toIrcEvent(const char[] raw)
 
     try
     {
-        if (raw[0] != ':') return event.parseBasic(raw);
+        if (raw[0] != ':')
+        {
+            event.parseBasic();
+            return event;
+        }
 
         auto slice = event.raw[1..$]; // advance past first colon
 
