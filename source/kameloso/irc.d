@@ -225,6 +225,48 @@ void parseTypestring(ref IrcEvent event, ref string slice)
         }
     }
 }
+unittest
+{
+    import std.conv : to;
+
+    IrcEvent e1;
+    with (e1)
+    {
+        raw = /*":port80b.se.quakenet.org */"421 kameloso åäö :Unknown command";
+        string slice = raw;  // mutable
+        e1.parseTypestring(slice);
+        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((num == 421), num.to!string);
+    }
+
+    IrcEvent e2;
+    with (e2)
+    {
+        raw = /*":port80b.se.quakenet.org */"353 kameloso = #garderoben :@kameloso'";
+        string slice = raw;  // mutable
+        e2.parseTypestring(slice);
+        assert((type == IrcEvent.Type.RPL_NAMREPLY), type.to!string);
+        assert((num == 353), num.to!string);
+    }
+
+    IrcEvent e3;
+    with (e3)
+    {
+        raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
+        string slice = raw;
+        e3.parseTypestring(slice);
+        assert((type == IrcEvent.Type.PRIVMSG), type.to!string);
+    }
+
+    IrcEvent e4;
+    with (e4)
+    {
+        raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
+        string slice = raw;
+        e4.parseTypestring(slice);
+        assert((type == IrcEvent.Type.PART), type.to!string);
+    }
+}
 
 
 // parseSpecialcases
