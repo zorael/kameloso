@@ -311,3 +311,44 @@ if (is(Enum == enum))
 
 	assert(false);
 }
+
+
+// https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+string enumToString(Enum)(Enum value)
+if (is(Enum == enum))
+{
+    switch (value)
+    {
+
+    foreach (m; __traits(allMembers, Enum))
+    {
+        case mixin("Enum." ~ m) : return m;
+    }
+
+    default:
+        string result = "cast(" ~ Enum.stringof ~ ")";
+        uint val = value;
+        enum headLength = Enum.stringof.length + "cast()".length;
+
+        uint log10Val =
+            (val < 10) ? 0 :
+            (val < 100) ? 1 :
+            (val < 1_000) ? 2 :
+            (val < 10_000) ? 3 :
+            (val < 100_000) ? 4 :
+            (val < 1_000_000) ? 5 :
+            (val < 10_000_000) ? 6 :
+            (val < 100_000_000) ? 7 :
+            (val < 1_000_000_000) ? 8 : 9;
+
+        result.length += log10Val + 1;
+
+        for (uint i; i != log10Val + 1; ++i)
+        {
+            cast(char)result[headLength + log10Val - i] = cast(char)('0' + (val % 10));
+            val /= 10;
+        }
+
+        return cast(string) result;
+    }
+}
