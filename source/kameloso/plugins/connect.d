@@ -223,7 +223,7 @@ void onChallenge()
             "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
 
         // ditto
-        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ", state.bot.password);
+        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
     }
 }
 
