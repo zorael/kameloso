@@ -754,6 +754,7 @@ struct IrcServer
 {
     enum Family
     {
+        unset,
         freenode,
         rizon,
         quakenet,
