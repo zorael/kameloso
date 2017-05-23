@@ -7,8 +7,6 @@ import kameloso.plugins.connect;
 
 import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
-import std.algorithm.iteration : joiner;
-import std.concurrency : Tid;
 
 
 private:
@@ -324,8 +322,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 rizon = "Password accepted - you are now recognized.",
                 quakenet = "You are now logged in as",
             }
-
-            import std.algorithm.searching : canFind;
 
             if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
                 (event.content.canFind("/msg NickServ identify")))
