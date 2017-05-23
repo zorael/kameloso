@@ -1299,24 +1299,62 @@ bool isFromAuthService(const IrcEvent event)
             if (((ident == "NickServ") || (ident == "services")) &&
                 bot.server.resolvedAddress.endsWith(address))
             {
-                writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
+                // writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
                 return true; // sensible
             }
             if ((ident == "NickServ") || (ident == "services"))
             {
-                writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
+                // writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
                 return true;  // NAÏVE
             }
         }
         else if ((sender == "Q") && (ident == "TheQBot") && (address == "CServe.quakenet.org"))
         {
             // Quakenet
-            writeln(Foreground.lightcyan, "100% that it's QuakeNet's C");
+            // writeln(Foreground.lightcyan, "100% that it's QuakeNet's C");
             return true;
         }
     }
 
     return false;
+}
+unittest
+{
+    IrcEvent e1;
+    with (e1)
+    {
+        raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
+        string slice = raw[1..$];  // mutable
+        e1.parsePrefix(slice);
+        assert(e1.isFromAuthService);
+    }
+
+    IrcEvent e2;
+    with (e2)
+    {
+        raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
+        string slice = raw[1..$];
+        e2.parsePrefix(slice);
+        assert(e2.isFromAuthService);
+    }
+
+    IrcEvent e3;
+    with (e3)
+    {
+        raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
+        string slice = raw[1..$];
+        e3.parsePrefix(slice);
+        assert(e3.isFromAuthService);
+    }
+
+    IrcEvent e4;
+    with (e4)
+    {
+        raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
+        string slice = raw[1..$];
+        e4.parsePrefix(slice);
+        assert(!e3.isFromAuthService);
+    }
 }
 
 
