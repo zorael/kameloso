@@ -292,7 +292,10 @@ int main(string[] args)
         return 1;
     }
 
-    auto quit = Quit.no;
+    // save the original nickname *once*, outside the connection loop
+    bot.origNickname = bot.nickname;
+
+    Quit quit;
     do
     {
         conn.reset();

@@ -214,6 +214,11 @@ void onChallenge()
     }
     else
     {
+        if (state.bot.nickname != state.bot.origNickname)
+        {
+            writeln(Foreground.lightred, "Nickname has changed, auth may not work");
+        }
+
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
 

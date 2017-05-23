@@ -737,6 +737,7 @@ struct IrcBot
     @Unconfigurable
     {
         IrcServer server;
+        string origNickname;
         bool attemptedLogin;
         bool finishedLogin;
     }
