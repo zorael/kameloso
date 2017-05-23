@@ -587,8 +587,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     }
 
     if ((event.target == bot.nickname) &&
-        ((event.type != IrcEvent.Type.WELCOME) ||
-         (event.type != IrcEvent.Type.MODE) ||
+        ((event.type != IrcEvent.Type.WELCOME) &&
+         (event.type != IrcEvent.Type.MODE) &&
          (event.type != IrcEvent.Type.CHANMODE)))
     {
         event.target = string.init;
