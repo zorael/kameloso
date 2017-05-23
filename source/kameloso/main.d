@@ -113,12 +113,12 @@ Quit checkMessages()
             },
             (ThreadMessage.Pong)
             {
-                writeln(Foreground.white, "--> PONG :", bot.server.resolvedAddress);
+                writeln(Foreground.white, "--> PONG :resolvedAddress:", bot.server.resolvedAddress);
                 conn.sendline("PONG :", bot.server.resolvedAddress);
             },
             (ThreadMessage.Pong, string target)
             {
-                writeln(Foreground.white, "--> PONG :", target);
+                // writeln(Foreground.white, "--> PONG :", target);
                 conn.sendline("PONG :", target);
             },
             (ThreadMessage.Quit, string reason)
