@@ -200,30 +200,12 @@ void onEndOfMotd()
 @(IrcEvent.Type.AUTHCHALLENGE)
 void onChallenge(const IrcEvent event)
 {
+    printObjects(event);
     if (state.bot.attemptedLogin || state.bot.finishedLogin) return;
 
-    with (IrcServer.Family)
-    switch (event.address)
+    if (state.bot.server.family != IrcServer.Family.quakenet)
     {
-    case "services.":
-        state.bot.server.family = freenode;
-        writeln(Foreground.cyan, "FREENODE");
-        break;
-
-    case "rizon.net":
-        state.bot.server.family = rizon;
-        writeln(Foreground.cyan, "RIZON");
-        break;
-
-    case "CServe.quakenet.org":
-        writeln(Foreground.cyan, state.bot.server.family);
-        state.bot.server.family = quakenet;
-        writeln(Foreground.cyan, "QUAKENET");
-
-    default:
-        writeln(Foreground.lightred, "Could not tell what kind of server this is...");
-        printObjects(event);
-        break;
+        state.bot.server.family = getFamily(event);
     }
 
     state.bot.attemptedLogin = true;
@@ -263,6 +245,31 @@ void onAcceptance()
 
     state.bot.finishedLogin = true;
     joinChannels();
+}
+
+
+IrcServer.Family getFamily(const IrcEvent event)
+{
+    with (IrcServer.Family)
+    switch (event.address)
+    {
+    case "services.":
+        writeln(Foreground.cyan, "FREENODE");
+        return freenode;
+
+    case "rizon.net":
+        writeln(Foreground.cyan, "RIZON");
+        return rizon;
+
+    case "CServe.quakenet.org":
+        writeln(Foreground.cyan, "QUAKENET");
+        return quakenet;
+
+    default:
+        writeln(Foreground.lightred, "Could not tell what kind of server this is...");
+        printObjects(event);
+        return unset;
+    }
 }
 
 
