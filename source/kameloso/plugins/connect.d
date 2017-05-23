@@ -195,9 +195,33 @@ void onEndOfMotd()
 
 @Label("onchallenge")
 @(IrcEvent.Type.AUTHCHALLENGE)
-void onChallenge()
+void onChallenge(const IrcEvent event)
 {
     if (state.bot.attemptedLogin || state.bot.finishedLogin) return;
+
+    with (IrcServer.Family)
+    switch (event.address)
+    {
+    case "services.":
+        state.bot.server.family = freenode;
+        writeln(Foreground.cyan, "FREENODE");
+        break;
+
+    case "rizon.net":
+        state.bot.server.family = rizon;
+        writeln(Foreground.cyan, "RIZON");
+        break;
+
+    case "CServe.quakenet.org":
+        writeln(Foreground.cyan, state.bot.server.family);
+        state.bot.server.family = quakenet;
+        writeln(Foreground.cyan, "QUAKENET");
+
+    default:
+        writeln(Foreground.lightred, "Could not tell what kind of server this is...");
+        printObjects(event);
+        break;
+    }
 
     state.bot.attemptedLogin = true;
     updateBot();
