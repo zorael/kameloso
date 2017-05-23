@@ -62,8 +62,30 @@ void parseBasic(ref IrcEvent event)
         writeln(Foreground.lightred, "Unknown basic type: ", event.raw);
         break;
     }
+}
+unittest
+{
+    import std.conv : to;
 
-    return event;
+    IrcEvent e1;
+    with (e1)
+    {
+        raw = "PING :irc.server.address";
+        e1.parseBasic();
+        assert((type == IrcEvent.Type.PING), type.to!string);
+        assert((sender == "irc.server.address"), sender);
+    }
+
+    IrcEvent e2;
+    with (e2)
+    {
+        // quakenet
+        raw = "NOTICE AUTH :*** Couldn't look up your hostname";
+        e2.parseBasic();
+        assert((type == IrcEvent.Type.NOTICE), type.to!string);
+        assert((sender == "irc.quakenet.org"), sender);
+        assert((content == "*** Couldn't look up your hostname"));
+    }
 }
 
 
