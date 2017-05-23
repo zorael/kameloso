@@ -197,8 +197,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
 
     if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
     {
-        // typestring is a number (ascii 48 is 0, 58 is 9)
-
+        // typestring is a number (ascii 48 is 0, 57 is 9)
         try
         {
             const number = event.typestring.to!uint;
