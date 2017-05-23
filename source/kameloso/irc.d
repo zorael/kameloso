@@ -47,6 +47,9 @@ void parseBasic(ref IrcEvent event)
     case "ERROR":
         event.type = IrcEvent.Type.ERROR;
         event.content = slice;
+        writeln(Foreground.lightred, "--------------------[ ERROR MESSAGE, PLEASE TAKE NOTE ]----------------");
+        printObjects(event);
+        writeln(Foreground.lightred, "-----------------------------------------------------------------------");
         break;
 
     case "NOTICE":
