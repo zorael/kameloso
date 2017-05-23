@@ -186,9 +186,12 @@ void onEndOfMotd()
     }
     else if (state.bot.server.family == IrcServer.Family.quakenet)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
+        state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
             .format(state.bot.login, state.bot.password));
+
+        writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
+            state.bot.login, " hunter2");
     }
 }
 
