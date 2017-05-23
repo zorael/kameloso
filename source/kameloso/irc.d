@@ -1357,7 +1357,7 @@ unittest
         raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
         string slice = raw[1..$];
         e4.parsePrefix(slice);
-        assert(!e3.isFromAuthService);
+        assert(!e4.isFromAuthService);
     }
 }
 
