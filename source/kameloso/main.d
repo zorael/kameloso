@@ -267,7 +267,11 @@ void writeConfigToDisk(const string configFile)
 public:
 
 
-/// Main!
+version (unittest)
+void main() {
+    writeln("Tests passed!");
+}
+else
 int main(string[] args)
 {
     writefln(Foreground.white, "kameloso IRC bot, built %s\n", __TIMESTAMP__);
