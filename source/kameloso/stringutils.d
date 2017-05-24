@@ -212,20 +212,11 @@ unittest
  +
  +/
 pragma(inline)
-string stripPrefix(CheckIfBeginsWith checkBegins = CheckIfBeginsWith.yes)
-    (const string line, const string prefix)
+string stripPrefix(const string line, const string prefix)
 {
     import std.string : stripLeft, munch;
 
     string slice = line.stripLeft();
-
-    static if (checkBegins)
-    {
-        if (!slice.beginsWith(prefix))
-        {
-            return line;
-        }
-    }
 
     slice = slice[(prefix.length+1)..$];
     slice.munch(":?! ");

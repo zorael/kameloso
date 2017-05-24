@@ -414,9 +414,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     continue;
                                 }
 
-                                mutEvent.content = event.content
-                                    .stripPrefix!(CheckIfBeginsWith.no)(state.bot.nickname);
-                                break;
+                                mutEvent.content = event.content.stripPrefix(state.bot.nickname);
+                                break; 
                             }
 
                             static if (configuredPrefix.string_.length)
