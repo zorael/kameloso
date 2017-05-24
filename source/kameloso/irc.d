@@ -1292,7 +1292,43 @@ IrcUser userFromEvent(const IrcEvent event)
 
     return user;
 }
+unittest
+{
+    import std.conv : to;
 
+    immutable e1 = ":zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff"
+                   .toIrcEvent();
+    immutable u1 = userFromEvent(e1);
+    with (u1)
+    {
+        assert((nickname == "zorael"), nickname);
+        assert((ident == "~zorael"), ident);
+        assert((address == "ns3363704.ip-94-23-253.eu"), address);
+        assert(!special);
+    }
+
+    immutable e2 = ":asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as"
+                   .toIrcEvent();
+    assert((e2.type == IrcEvent.Type.WHOISLOGIN), e2.type.to!string);
+    immutable u2 = userFromEvent(e2);
+    with (u2)
+    {
+        assert((nickname == "xurael"), nickname);
+        assert((login == "zorael"), login);
+        assert(!special);
+    }
+
+    immutable e3 = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered."
+                   .toIrcEvent();
+    immutable u3 = userFromEvent(e3);
+    with (u3)
+    {
+        assert((nickname == "NickServ"), nickname);
+        assert((ident == "NickServ"), ident);
+        assert((address == "services."), address);
+        assert(special);
+    }
+}
 
 /// This simply looks at an event and decides whether it is from NickServ/Q
 bool isFromAuthService(const IrcEvent event)
