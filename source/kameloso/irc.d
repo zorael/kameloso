@@ -1206,7 +1206,7 @@ IrcEvent toIrcEvent(const char[] raw)
     {
         if (raw[0] != ':')
         {
-            event.parseBasic();
+            parseBasic(event);
             return event;
         }
 

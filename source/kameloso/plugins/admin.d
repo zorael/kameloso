@@ -285,7 +285,7 @@ void onCommandPrintAll()
 @(Chainable.yes)
 void onAnyEvent(const IrcEvent event)
 {
-    if (printAll) writeln(Foreground.green, "printAll: '", event.raw, "'");
+    if (printAll) writeln(Foreground.cyan, event.raw, "$");
 }
 
 
