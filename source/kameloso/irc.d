@@ -141,7 +141,7 @@ unittest
         assert((sender == "zorael"), sender);
         assert((ident == "~NaN"), ident);
         assert((address == "some.address.org"), address);
-        assert(!special, special.to!string);
+        assert(!special);
     }
 
     IrcEvent e2;
@@ -153,7 +153,7 @@ unittest
         assert((sender == "NickServ"), sender);
         assert((ident == "NickServ"), ident);
         assert((address == "services."), address);
-        assert(special, special.to!string);
+        assert(special);
     }
 
     IrcEvent e3;
@@ -165,7 +165,7 @@ unittest
         assert((sender == "kameloso^^"), sender);
         assert((ident == "~NaN"), ident);
         assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
-        assert(!special, special.to!string);
+        assert(!special);
     }
 
     IrcEvent e4;
@@ -177,9 +177,10 @@ unittest
         assert((sender == "Q"), sender);
         assert((ident == "TheQBot"), ident);
         assert((address == "CServe.quakenet.org"), address);
-        assert(special, special.to!string);
+        assert(special);
     }
 }
+
 
 // parseTypestring
 /++
