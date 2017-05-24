@@ -434,7 +434,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 }
                                 else
                                 {
-                                    contextPrefix = mutEvent.content.nom!(Decode.yes)(" ").toLower();
+                                    contextPrefix = mutEvent.content.nom(" ").toLower();
                                 }
 
                                 matches = (contextPrefix == configuredPrefixLowercase);

@@ -4,8 +4,6 @@ import std.traits   : isSomeString;
 import std.typecons : Flag;
 import std.datetime;
 
-/// Flag denoting whether to decode strings or not.
-alias Decode = Flag!"decode";
 
 /// Flag denoting whether stripPrefix should assume the text begins with the supplied prefix
 alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
@@ -24,20 +22,12 @@ alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Decode decode = Decode.no, T, C)(ref T[] arr, C separator)
+string nom(T, C)(ref T[] arr, C separator)
 {
-    static if (decode)
-    {
-        // We must always decode user-written text not sent by the server
-        // std.string.indexOf decodes
-        import std.string : indexOf;
-        immutable index = arr.indexOf(separator);
-    }
-    else
-    {
-        import std.algorithm.searching : countUntil;
-        immutable index = arr.countUntil(separator);
-    }
+    // We must always decode user-written text not sent by the server
+    import std.string : indexOf;
+
+    immutable index = arr.indexOf(separator);
 
     if (index == -1)
     {

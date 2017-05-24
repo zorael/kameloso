@@ -304,7 +304,7 @@ void onCommanAdddQuote(const IrcEvent event)
     import std.format : format;
 
     string slice = event.content;  // need mutable
-    immutable nickname = slice.nom!(Decode.yes)(' ').stripModeSign;
+    immutable nickname = slice.nom(' ').stripModeSign;
 
     if (!nickname.length || !slice.length) return;
 

@@ -198,7 +198,7 @@ void onCommandFakejoin(const IrcEvent event)
     if (nickname.indexOf(' ') != -1)
     {
         // contains more than one word
-        newEvent.sender = nickname.nom!(Decode.yes)(" ");
+        newEvent.sender = nickname.nom(" ");
     }
     else
     {
