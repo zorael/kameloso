@@ -2,18 +2,21 @@
 
 A command-line IRC bot.
 
-kameloso sits and listens in the channels you specify and reacts to certain events, like bots do. It is a passive thing and does not respond to keyboard input. It works on Freenode, Rizon-like and QuakeNet servers. QuakeNet support just sort of happened and remains beta-level.
+kameloso sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not respond to keyboard input, though text can be sent manually by other means.
+
+It works on Freenode, Rizon-like, QuakeNet and Undernet servers. More *may* work, depending on the authentication service used and the server family's set of non-standard events.
 
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
-* printing of IRC events as they are parsed and handled
+* printing of IRC events after they are parsed, all formatted and nice
 * repeating text! amazing
 * 8ball! because why not
 * storing, loading and printing quotes from users
 * saving notes to offline users that get played back when they come online
 * looking up titles of pasted URLs
 * sed-replacement of the last message sent (`s/this/that/` substitution)
+* piping text from the terminal to the server
 
 ## Fails to build with OpenSSL 1.1.0
 
@@ -25,7 +28,7 @@ A better but more involved workaround is to modify the `dlang-requests`'s projec
 
 Ubuntu should [still](http://packages.ubuntu.com/zesty/openssl) be running with the old version.
 
-In Arch linux and its derivatives, the package name of the old library is [`openssl-1.0`](https://www.archlinux.org/packages/extra/x86_64/openssl-1.0) and it can peacefully live next to the new [`openssl`](https://www.archlinux.org/packages/core/x86_64/openssl).
+In Arch linux and its derivatives, the package name of the old library is [`openssl-1.0`](https://www.archlinux.org/packages/extra/x86_64/openssl-1.0) and it can peacefully live next to the updated [`openssl`](https://www.archlinux.org/packages/core/x86_64/openssl).
 
 Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
 
@@ -42,7 +45,7 @@ Change them to look like this and the rest of this guide should work.
             ],
 
 ### Windows
-Windows is equally affected but for now the easy way out is to not compile said `webtitles` plugin. The default Windows build will skip it along with all colouring features, since the colouring is Bash-specific.
+Windows is equally affected but for now the easy way out is to not compile said `webtitles` plugin. The default Windows build will skip it automatically.
 
 ## Getting Started
 
@@ -67,7 +70,7 @@ GitHub offers downloads in ZIP format, but it's easiest to use `git` and clone t
 
     $ dub build
 
-This will compile it in the default `debug` mode, which adds some extra code and debugging symbols. You can build it in `release` mode by passing `-b release` as an argument to `dub`. Refer to the output of `dub build --help` for more build types. Ignore the deprecation messages when compiling; they're harmless.
+This will compile it in the default `debug` mode, which adds some extra code and debugging symbols. You can build it in `release` mode by passing `-b release` as an argument to `dub`. Refer to the output of `dub build --help` for more build types.
 
 Unit tests are built into the language, but you need to compile in `unittest` mode for them to run.
 
@@ -77,7 +80,7 @@ The tests are run at the *start* of the program, not during compilation.
 
 ## How to use
 
-The bot needs the `NickServ` login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the `NickServ`/`Q` login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
@@ -108,6 +111,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
 * add more unittests
 * update documentation
+* fix ctrl+c leaving behind fifos
 
 ## Built With
 
