@@ -2,8 +2,6 @@ module kameloso.irc;
 
 import kameloso.constants;
 import kameloso.common;
-import kameloso.stringutils;
-import kameloso.plugins.connect;
 
 import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
@@ -104,6 +102,7 @@ unittest
  +/
 void parsePrefix(ref IrcEvent event, ref string slice)
 {
+    import kameloso.stringutils : nom;
     import std.algorithm.searching : endsWith;
 
     auto prefix = slice.nom(' ');
@@ -190,6 +189,7 @@ unittest
  +/
 void parseTypestring(ref IrcEvent event, ref string slice)
 {
+    import kameloso.stringutils : nom, toEnum;
     import std.conv : to;
 
     event.typestring = slice.nom(' ');
@@ -283,6 +283,8 @@ unittest
  +/
 void parseSpecialcases(ref IrcEvent event, ref string slice)
 {
+    import kameloso.stringutils;
+
     scope(failure)
     {
         writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE -----------");
@@ -1187,7 +1189,6 @@ struct IrcEvent
  +/
 IrcEvent toIrcEvent(const char[] raw)
 {
-    import std.exception : enforce;
     import std.datetime;
 
     IrcEvent event;
