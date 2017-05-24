@@ -183,8 +183,12 @@ void onEndOfMotd()
     if (!state.bot.password.length)
     {
         joinChannels();
+        return;
     }
-    else if (state.bot.server.family == IrcServer.Family.quakenet)
+
+    if (state.bot.attemptedLogin) return;
+
+    if (state.bot.server.family == IrcServer.Family.quakenet)
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
@@ -192,6 +196,35 @@ void onEndOfMotd()
 
         writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
             state.bot.login, " hunter2");
+    }
+    else if (state.bot.nickname != state.bot.origNickname)
+    {
+        writeln(Foreground.lightred, "Probably need to AUTH manually");
+
+        if (state.bot.server.family == IrcServer.Family.freenode)
+        {
+            state.mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG NickServ IDENTIFY %s %s"
+                .format(state.bot.login, state.bot.password));
+
+            writeln(Foreground.white, "--> PRIVMSG NickServ IDENTIFY ",
+                state.bot.login, " hunter2");
+        }
+        else
+        {
+            writeln(Foreground.lightred, "Would try to auth but the service " ~
+                "wouldn't understand being passed both login and password...");
+            writeln(Foreground.lightred, "DEBUG: trying anyway");
+
+            // Remove me later
+
+            state.mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG NickServ identify %s %s"
+                .format(state.bot.login, state.bot.password));
+
+            writeln(Foreground.white, "--> PRIVMSG NickServ identify ",
+                state.bot.login, " hunter2");
+        }
     }
 }
 
