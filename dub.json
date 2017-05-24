@@ -2,7 +2,7 @@
     "name": "kameloso",
     "description": "IRC bot",
     "authors": [ "JR" ],
-    "copyright": "Copyright © 2016, JR",
+    "copyright": "Copyright © 2017, JR",
     "license": "LGPL-2.1",
     "buildRequirements": [ "silenceDeprecations" ],
     "configurations":
@@ -11,16 +11,18 @@
             "name": "kameloso",
             "targetType": "executable",
             "versions": [ "Webtitles" ],
-            "libs": [ "phobos2" ],
+            "platforms": [ "posix" ],
+            "libs-posix": [ "phobos2" ],
             "dependencies":
             {
                 "requests": "~>0.4.0"
-            },
+            }
         },
         {
             "name": "nowebtitles",
             "targetType": "executable",
-            "libs": [ "phobos2" ]
+            "platforms": [ "posix", "windows" ],
+            "libs-posix": [ "phobos2" ]
         }
     ]
 }
