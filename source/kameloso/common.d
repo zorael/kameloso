@@ -52,7 +52,7 @@ struct Settings
     bool randomNickColours = true;
 }
 
-template isSomeVariable(alias var)
+template isConfigurableVariable(alias var)
 {
     import std.traits : isSomeFunction;
 
@@ -60,16 +60,32 @@ template isSomeVariable(alias var)
     {
         alias T = typeof(var);
 
-        enum isSomeVariable = !isSomeFunction!T &&
+        enum isConfigurableVariable = !isSomeFunction!T &&
             !__traits(isTemplate, T) &&
             !__traits(isAssociativeArray, T) &&
             !__traits(isStaticArray, T);
     }
     else
     {
-        enum isSomeVariable = false;
+        enum isConfigurableVariable = false;
     }
 }
+unittest
+{
+    int i;
+    char[] c;
+    char[8] c2;
+    struct S {}
+    class C {}
+
+    static assert(isConfigurableVariable!i);
+    static assert(isConfigurableVariable!c);
+    static assert(isConfigurableVariable!c2);
+    static assert(!isConfigurableVariable!S);
+    static assert(!isConfigurableVariable!C);
+}
+
+
 /++
  +  Prints out a struct object, with all its printable members with all their printable values.
  +  This is not only convenient for deubgging but also usable to print out current settings
@@ -105,7 +121,7 @@ void printObjects(Things...)(Things things)
         foreach (name; __traits(allMembers, T))
         {
             static if (is(typeof(__traits(getMember, T, name))) &&
-                       isSomeVariable!(__traits(getMember, T, name)) &&
+                       isConfigurableVariable!(__traits(getMember, T, name)) &&
                        !hasUDA!(__traits(getMember, T, name), Hidden))
             {
                 enum typestring = typeof(__traits(getMember, T, name)).stringof;
@@ -158,7 +174,7 @@ template longestMemberName(Things...)
             foreach (name; __traits(allMembers, T))
             {
                 static if (is(typeof(__traits(getMember, T, name))) &&
-                           isSomeVariable!(__traits(getMember, T, name)) &&
+                           isConfigurableVariable!(__traits(getMember, T, name)) &&
                            !hasUDA!(__traits(getMember, T, name), Hidden))
                 {
                     if (name.length > longest.length)

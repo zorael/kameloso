@@ -169,7 +169,7 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
     foreach (const name; __traits(allMembers, Thing))
     {
         static if (is(typeof(__traits(getMember, Thing, name))) &&
-                   isSomeVariable!(__traits(getMember, Thing, name)) &&
+                   isConfigurableVariable!(__traits(getMember, Thing, name)) &&
                    !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
         alias MemberType = typeof(__traits(getMember, Thing, name));
@@ -299,7 +299,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
     foreach (name; __traits(allMembers, Thing))
     {
         static if (is(typeof(__traits(getMember, Thing, name))) &&
-                   isSomeVariable!(__traits(getMember, Thing, name)) &&
+                   isConfigurableVariable!(__traits(getMember, Thing, name)) &&
                    !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
         {
             alias MemberType = typeof(__traits(getMember, Thing, name));
