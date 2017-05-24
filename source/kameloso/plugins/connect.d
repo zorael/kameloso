@@ -200,7 +200,6 @@ void onEndOfMotd()
 @(IrcEvent.Type.AUTHCHALLENGE)
 void onChallenge(const IrcEvent event)
 {
-    printObjects(event);
     if (state.bot.attemptedLogin || state.bot.finishedLogin) return;
 
     if (state.bot.server.family != IrcServer.Family.quakenet)
