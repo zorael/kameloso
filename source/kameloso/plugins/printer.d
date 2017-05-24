@@ -93,7 +93,7 @@ void onAnyEvent(const IrcEvent event)
             }
             else
             {
-                enum C
+                enum DefaultColour
                 {
                     type    = lightblue,
                     sender  = lightgreen,
@@ -105,7 +105,7 @@ void onAnyEvent(const IrcEvent event)
                     num     = darkgrey,
                 }
 
-                Foreground senderColour = C.sender;
+                Foreground senderColour = DefaultColour.sender;
 
                 if (state.settings.randomNickColours) // && (sender != state.bot.server.resolvedAddress))
                 {
@@ -119,7 +119,7 @@ void onAnyEvent(const IrcEvent event)
                     senderColour = foregrounds[colourIndex];
                 }
 
-                Foreground typeColour = C.type;
+                Foreground typeColour = DefaultColour.type;
 
                 if (type == QUERY) typeColour = lightgreen;
 
@@ -128,12 +128,18 @@ void onAnyEvent(const IrcEvent event)
                     colourise(typeColour), type.to!string,
                     colourise(senderColour), sender);
 
-                if (special)        reusableAppender.formattedWrite("%s*",      colourise(C.special));
-                if (target.length)  reusableAppender.formattedWrite(" %s(%s)",  colourise(C.target), target);
-                if (channel.length) reusableAppender.formattedWrite(" %s[%s]",  colourise(C.channel), channel);
-                if (content.length) reusableAppender.formattedWrite(`%s: "%s"`, colourise(C.content), content); // CHEATS
-                if (aux.length)     reusableAppender.formattedWrite(" %s<%s>",  colourise(C.aux), aux);
-                if (num > 0)        reusableAppender.formattedWrite(" %s(#%d)", colourise(C.num), num);
+                if (special)        reusableAppender.formattedWrite("%s*",
+                                        colourise(DefaultColour.special));
+                if (target.length)  reusableAppender.formattedWrite(" %s(%s)",
+                                        colourise(DefaultColour.target), target);
+                if (channel.length) reusableAppender.formattedWrite(" %s[%s]",
+                                        colourise(DefaultColour.channel), channel);
+                if (content.length) reusableAppender.formattedWrite(`%s: "%s"`,
+                                        colourise(DefaultColour.content), content); // CHEATS
+                if (aux.length)     reusableAppender.formattedWrite(" %s<%s>",
+                                        colourise(DefaultColour.aux), aux);
+                if (num > 0)        reusableAppender.formattedWrite(" %s(#%d)",
+                                        colourise(DefaultColour.num), num);
 
                 reusableAppender.formattedWrite(colourise(Foreground.default_));
             }
