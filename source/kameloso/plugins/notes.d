@@ -89,8 +89,9 @@ void onNames(const IrcEvent event)
         return;
     }
 
-    foreach (immutable nickname; event.content.splitter)
+    foreach (immutable prefixedNickname; event.content.splitter)
     {
+        immutable nickname = prefixedNickname.stripModeSign();
         if (nickname == state.bot.nickname) continue;
 
         IrcEvent fakeEvent;
