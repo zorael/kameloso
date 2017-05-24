@@ -80,7 +80,7 @@ unittest
 
     static assert(isConfigurableVariable!i);
     static assert(isConfigurableVariable!c);
-    static assert(isConfigurableVariable!c2);
+    static assert(!isConfigurableVariable!c2); // should static arrays pass?
     static assert(!isConfigurableVariable!S);
     static assert(!isConfigurableVariable!C);
 }
