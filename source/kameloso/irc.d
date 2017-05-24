@@ -743,7 +743,7 @@ struct IrcBot
         bool finishedLogin;
     }
 
-    string toString()
+    string toString() const
     {
         return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s homes:%s friends:%s server:%s"
                .format(nickname, user, login, password, ident, master, homes, friends, server.resolvedAddress);
@@ -771,7 +771,7 @@ struct IrcServer
         string resolvedAddress;
     }
 
-    string toString()
+    string toString() const
     {
         return "[SERVER] (family.%s) %s:%d (%s)".format(family, address, port, resolvedAddress);
     }
@@ -784,7 +784,7 @@ struct IrcUser
     string nickname, ident, address, login;
     bool special;
 
-    string toString()
+    string toString() const
     {
         return "[%s] ident:'%s' @ address:'%s' : login:'%s' (special:%s)"
                .format(nickname, ident, address, login, special);
