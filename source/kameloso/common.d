@@ -151,6 +151,9 @@ void printObjects(Things...)(Things things)
     }
 }
 
+deprecated("Use printObjects instead")
+alias printObject = printObjects;
+
 
 // longestMemberName
 /++
