@@ -30,8 +30,9 @@ void parseBasic(ref IrcEvent event)
 {
     mixin(scopeguard(failure));
 
+    string raw = event.raw;
     string slice;
-    event.raw.formattedRead("%s :%s", &event.typestring, &slice);
+    raw.formattedRead("%s :%s", &event.typestring, &slice);
 
     switch (event.typestring)
     {
@@ -49,12 +50,14 @@ void parseBasic(ref IrcEvent event)
         break;
 
     case "NOTICE":
-        // quakenet
+        // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
+        // Unsure how formattedRead is doing this...
         bot.server.family = IrcServer.Family.quakenet;  // only available locally
         event.type = IrcEvent.Type.NOTICE;
         event.sender = "irc.quakenet.org";
-        event.content = event.raw;
+        event.content = raw;
+        event.aux = slice;
         break;
 
     default:
@@ -71,6 +74,7 @@ unittest
     {
         raw = "PING :irc.server.address";
         e1.parseBasic();
+        assert((raw == "PING :irc.server.address"), raw);
         assert((type == IrcEvent.Type.PING), type.to!string);
         assert((sender == "irc.server.address"), sender);
     }
@@ -81,6 +85,7 @@ unittest
         // quakenet
         raw = "NOTICE AUTH :*** Couldn't look up your hostname";
         e2.parseBasic();
+        assert((raw == "NOTICE AUTH :*** Couldn't look up your hostname"), raw);
         assert((type == IrcEvent.Type.NOTICE), type.to!string);
         assert((sender == "irc.quakenet.org"), sender);
         assert((content == "*** Couldn't look up your hostname"));
