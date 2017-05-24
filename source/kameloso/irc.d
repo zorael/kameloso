@@ -201,7 +201,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
         // typestring is a number (ascii 48 is 0, 57 is 9)
         try
         {
-            const number = event.typestring.to!uint;
+            immutable number = event.typestring.to!uint;
             event.num = number;
             event.type = IrcEvent.typenums[number];
 
@@ -396,7 +396,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case PRIVMSG:
-        const targetOrChannel = slice.nom(" :");
+        immutable targetOrChannel = slice.nom(" :");
 
         if (targetOrChannel.isValidChannel)
         {
@@ -1419,7 +1419,7 @@ unittest
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
     :tepper.freenode.net NOTICE * :*** Checking Ident
      +/
-    const e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".toIrcEvent();
+    immutable e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".toIrcEvent();
     with (e1)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1431,7 +1431,7 @@ unittest
     [ERR_NICKNAMEINUSE] tepper.freenode.net (kameloso): "Nickname is already in use." (#433)
     :tepper.freenode.net 433 * kameloso :Nickname is already in use.
      +/
-    const e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".toIrcEvent();
+    immutable e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".toIrcEvent();
     with (e2)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1445,8 +1445,8 @@ unittest
     [WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)
     :tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
      +/
-    const e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
-               .toIrcEvent();
+    immutable e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
+                   .toIrcEvent();
     with (e3)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1461,7 +1461,7 @@ unittest
     [RPL_ENDOFMOTD] tepper.freenode.net (kameloso^): "End of /MOTD command." (#376)
     :tepper.freenode.net 376 kameloso^ :End of /MOTD command.
      +/
-    const e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".toIrcEvent();
+    immutable e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".toIrcEvent();
     with (e4)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1475,7 +1475,7 @@ unittest
     [SELFMODE] kameloso^ (kameloso^) <+i>
     :kameloso^ MODE kameloso^ :+i
      +/
-    const e5 = ":kameloso^ MODE kameloso^ :+i".toIrcEvent();
+    immutable e5 = ":kameloso^ MODE kameloso^ :+i".toIrcEvent();
     with (e5)
     {
         assert((sender == "kameloso^"), sender);
@@ -1487,8 +1487,8 @@ unittest
     [QUERY] zorael (kameloso^): "sudo privmsg zorael :derp"
     :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp
      +/
-    const e6 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp"
-                .toIrcEvent();
+    immutable e6 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp"
+                   .toIrcEvent();
     with (e6)
     {
         assert((sender == "zorael"), sender);
@@ -1501,8 +1501,8 @@ unittest
     [RPL_WHOISUSER] tepper.freenode.net (zorael): "~NaN ns3363704.ip-94-23-253.eu" <jr> (#311)
     :tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr
      +/
-    const e7 = ":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr"
-               .toIrcEvent();
+    immutable e7 = ":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr"
+                   .toIrcEvent();
     with (e7)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1516,8 +1516,8 @@ unittest
     [WHOISLOGIN] tepper.freenode.net (zurael): "is logged in as" <zorael> (#330)
     :tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as
      +/
-    const e8 = ":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as"
-               .toIrcEvent();
+    immutable e8 = ":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as"
+                   .toIrcEvent();
     with (e8)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1532,7 +1532,7 @@ unittest
     [PONG] tepper.freenode.net
     :tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net
      +/
-    const e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIrcEvent();
+    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIrcEvent();
     with (e9)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -1544,8 +1544,8 @@ unittest
     [QUIT] wonderworld: "Remote host closed the connection"
     :wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection
      +/
-    const e10 = ":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection"
-                .toIrcEvent();
+    immutable e10 = ":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection"
+                    .toIrcEvent();
     with (e10)
     {
         assert((sender == "wonderworld"), sender);
@@ -1558,7 +1558,7 @@ unittest
     [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
-     const e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIrcEvent();
+     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIrcEvent();
      with (e11)
      {
         assert((sender == "zorael"), sender);
@@ -1572,7 +1572,7 @@ unittest
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
      :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
      +/
-     const e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIrcEvent();
+     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIrcEvent();
      with (e12)
      {
         assert((sender == "irc.uworld.se"), sender);
