@@ -1222,7 +1222,7 @@ IrcEvent toIrcEvent(const char[] raw)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "toIrcEvent: ", e);
+        writeln(Foreground.lightred, "toIrcEvent: ", e.msg);
     }
 
     return event;

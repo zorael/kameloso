@@ -212,7 +212,7 @@ void setMember(Thing)(ref Thing thing, const string memberstring, const string v
                             catch (Exception e)
                             {
                                 writefln("Caught Exception trying to convert '%s' to %s: %s",
-                                        value, MemberType.stringof, e);
+                                        value, MemberType.stringof, e.msg);
                             }
                         }
                     }
