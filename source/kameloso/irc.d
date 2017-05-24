@@ -51,7 +51,7 @@ void parseBasic(ref IrcEvent event)
     case "NOTICE":
         // quakenet
         // NOTICE AUTH :*** Couldn't look up your hostname
-        bot.server.family = IrcServer.Family.quakenet;
+        bot.server.family = IrcServer.Family.quakenet;  // only available locally
         event.type = IrcEvent.Type.NOTICE;
         event.sender = "irc.quakenet.org";
         event.content = event.raw;
@@ -126,6 +126,7 @@ void parsePrefix(ref IrcEvent event, ref string slice)
 unittest
 {
     import std.conv : to;
+
     IrcEvent e1;
     with (e1)
     {
@@ -600,7 +601,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.content = string.init;
         break;
 
-    case ERR_NOTREGISTERED:
+    case ERR_NOTREGISTERED: // 451
         if (slice[0] == '*')
         {
             // :niven.freenode.net 451 * :You have not registered
@@ -613,13 +614,13 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         break;
 
-    case WELCOME:
+    case WELCOME: // 001
         // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
         slice.formattedRead("%s :%s", &event.target, &event.content);
         bot.nickname = event.target;
         break;
 
-    case TOCONNECTTYPE:
+    case TOCONNECTTYPE: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
         import std.string : indexOf;
 
@@ -634,16 +635,16 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         event.content = event.aux.nom(" ");
         break;
 
-    case HELP_TOPICS:
-    case HELP_ENTRIES:
-    case HELP_END:
+    case HELP_TOPICS: // 704
+    case HELP_ENTRIES: // 705
+    case HELP_END: // 706
         // :leguin.freenode.net 704 kameloso^ index :Help topics available to users:
         // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
         slice.formattedRead("%s :%s", &event.aux, &event.content);
         break;
 
-    case CANTCHANGENICK:
+    case CANTCHANGENICK: // 435
         // :cherryh.freenode.net 435 kameloso^ kameloso^^ #d3d9 :Cannot change nickname while banned on channel
         slice.formattedRead("%s %s %s :%s", &event.target, &event.aux, &event.channel, &event.content);
         break;
