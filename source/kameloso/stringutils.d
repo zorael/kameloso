@@ -4,8 +4,6 @@ import std.traits   : isSomeString;
 import std.typecons : Flag;
 import std.datetime;
 
-public import std.typecons : Yes, No;
-
 
 /// Flag denoting whether stripPrefix should assume the text begins with the supplied prefix
 alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";

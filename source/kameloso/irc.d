@@ -5,7 +5,6 @@ import kameloso.common;
 
 import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
-import std.typecons : Yes, No;
 
 
 private:
@@ -113,7 +112,7 @@ void parsePrefix(ref IrcEvent event, ref string slice)
     import kameloso.stringutils : nom;
     import std.algorithm.searching : endsWith;
 
-    auto prefix = slice.nom!(Yes.ubytes)(' ');
+    auto prefix = slice.nom(' ');
 
     with(event)
     if (prefix.canFind('!'))
@@ -202,7 +201,7 @@ void parseTypestring(ref IrcEvent event, ref string slice)
     import kameloso.stringutils : nom, toEnum;
     import std.conv : to;
 
-    event.typestring = slice.nom!(Yes.ubytes)(' ');
+    event.typestring = slice.nom(' ');
 
     assert(event.typestring.length, "Event typestring has no length! '%s'".format(event.raw));
 
@@ -400,13 +399,13 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
         if (event.content.beginsWith("Quit: "))
         {
-            event.content.nom!(Yes.ubytes)("Quit: ");
+            event.content.nom("Quit: ");
         }
 
         break;
 
     case PRIVMSG:
-        immutable targetOrChannel = slice.nom!(Yes.ubytes)(" :");
+        immutable targetOrChannel = slice.nom(" :");
 
         if (targetOrChannel.isValidChannel)
         {
@@ -440,7 +439,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         break;
 
     case MODE:
-        immutable targetOrChannel = slice.nom!(Yes.ubytes)(' ');
+        immutable targetOrChannel = slice.nom(' ');
 
         if (targetOrChannel.beginsWith('#'))
         {
@@ -498,8 +497,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case RPL_NAMREPLY: // 353
         // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
-        event.target  = slice.nom!(Yes.ubytes)(' ');
-        slice.nom!(Yes.ubytes)(' ');
+        event.target  = slice.nom(' ');
+        slice.nom(' ');
         slice.formattedRead("%s :%s", &event.channel, &event.content);
         break;
 
@@ -521,7 +520,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case CONNECTINGFROM: // 378
         //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
-        slice.nom!(Yes.ubytes)(' ');
+        slice.nom(' ');
         try
         {
             slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
@@ -557,10 +556,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // Hard to use formattedRead here
         import std.string : stripLeft;
 
-        slice.nom!(Yes.ubytes)(' ');
-        event.target  = slice.nom!(Yes.ubytes)(' ');
-        event.content = slice.nom!(Yes.ubytes)(" *");
-        slice.nom!(Yes.ubytes)(" :");
+        slice.nom(' ');
+        event.target  = slice.nom(' ');
+        event.content = slice.nom(" *");
+        slice.nom(" :");
         event.aux = slice.stripLeft();
         break;
 
@@ -579,27 +578,27 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 318 kameloso^ zorael :End of /WHOIS list.
         // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
         // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
-        slice.nom!(Yes.ubytes)(' ');
+        slice.nom(' ');
         slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
 
     case RPL_WHOISSERVER: // 312
         // :asimov.freenode.net 312 kameloso^ zorael sinisalo.freenode.net :SE
-        slice.nom!(Yes.ubytes)(' ');
+        slice.nom(' ');
         slice.formattedRead("%s %s :%s", &event.target, &event.content, &event.aux);
         break;
 
     case WHOISLOGIN: // 330
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
-        slice.nom!(Yes.ubytes)(' ');
+        slice.nom(' ');
         slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
         break;
 
     case HASTHISNICK: // 307
         // :irc.x2x.cc 307 kameloso^^ py-ctcp :has identified for this nick
         // :irc.x2x.cc 307 kameloso^^ wob^2 :has identified for this nick
-        slice.nom!(Yes.ubytes)(' '); // bot nick
-        event.target = slice.nom!(Yes.ubytes)(" :");
+        slice.nom(' '); // bot nick
+        event.target = slice.nom(" :");
         event.aux = event.target;
         event.content = slice;
 
@@ -640,8 +639,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
 
         slice.formattedRead("%s :To connect type %s", &event.target, &event.aux);
-        event.aux.nom!(Yes.ubytes)("/QUOTE ");
-        event.content = event.aux.nom!(Yes.ubytes)(' ');
+        event.aux.nom("/QUOTE ");
+        event.content = event.aux.nom(" ");
         break;
 
     case HELP_TOPICS: // 704
