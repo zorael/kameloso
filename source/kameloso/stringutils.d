@@ -217,6 +217,10 @@ unittest
 {
     assert("foo,bar,baz".arrayify     == [ "foo", "bar", "baz" ]);
     assert("foo|bar|baz".arrayify!"|" == [ "foo", "bar", "baz" ]);
+    assert("foo bar baz".arrayify!" " == [ "foo", "bar", "baz" ]);
+    assert("only one entry".arrayify  == [ "only one entry" ]);
+    assert("not one entry".arrayify!" "  == [ "not", "one", "entry" ]);
+    assert("".arrayify == []);
 }
 
 
