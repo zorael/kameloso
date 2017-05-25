@@ -171,6 +171,8 @@ if (isSomeString!T)
 unittest
 {
     assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
+    assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
+    assert("Lorem ipsum sit amet".beginsWith(""));
 }
 
 
@@ -186,8 +188,7 @@ if (isSomeString!T)
 unittest
 {
     assert(":Lorem ipsum".beginsWith(':'));
-    assert(":Lorem ipsum".beginsWith(":Lo"));
-    assert(":Lorem ipsum".beginsWith(""));
+    assert(!":Lorem ipsum".beginsWith(';'));
 }
 
 
