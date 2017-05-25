@@ -237,7 +237,11 @@ string stripPrefix(const string line, const string prefix)
 
     string slice = line.stripLeft();
 
-    slice = slice[(prefix.length+1)..$];
+    if (prefix.length)
+    {
+        slice = slice[(prefix.length+1)..$];
+    }
+
     slice.munch(":?! ");
 
     return slice;
