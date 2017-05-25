@@ -79,7 +79,21 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom!(Yes.ubytes)(" :");
+        assert(lorem == "Lorem ipsum", lorem);
+        assert(line == "sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
         string lorem = line.nom(':');
+        assert(lorem == "Lorem ipsum ", lorem);
+        assert(line == "sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom!(Yes.ubytes)(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
@@ -93,9 +107,37 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom!(Yes.ubytes)(' ');
+        assert(lorem == "Lorem", lorem);
+        assert(line == "ipsum :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
         string lorem = line.nom("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom!(Yes.ubytes)("");
+        assert(!lorem.length, lorem);
+        assert(line == "Lorem ipsum :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom("Lorem ipsum");
+        assert(!lorem.length, lorem);
+        assert(line == " :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom!(Yes.ubytes)("Lorem ipsum");
+        assert(!lorem.length, lorem);
+        assert(line == " :sit amet", line);
     }
 }
 
