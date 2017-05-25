@@ -320,7 +320,8 @@ unittest
 Enum toEnum(Enum)(const string enumstring)
 if (is(Enum == enum))
 {
-	enum enumSwitch = () {
+	enum enumSwitch = ()
+    {
 		string enumSwitch = "with (Enum) switch (enumstring)\n{";
 
         foreach (memberstring; __traits(allMembers, Enum))
@@ -336,7 +337,7 @@ if (is(Enum == enum))
 
 	mixin(enumSwitch);
 
-	assert(false);
+	assert(false, "No such member " ~ enumstring);
 }
 
 
