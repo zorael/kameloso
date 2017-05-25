@@ -396,3 +396,15 @@ if (is(Enum == enum))
         return cast(string) result;
     }
 }
+unittest
+{
+    import kameloso.irc : IrcEvent;
+
+    with (IrcEvent)
+    with (IrcEvent.Type)
+    {
+        assert(enumToString(QUERY) == "QUERY");
+        assert(enumToString(PRIVMSG) == "PRIVMSG");
+        assert(enumToString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
+    }
+}
