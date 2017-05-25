@@ -415,7 +415,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 }
 
                                 mutEvent.content = event.content.stripPrefix(state.bot.nickname);
-                                break; 
+                                break;
                             }
 
                             static if (configuredPrefix.string_.length)
