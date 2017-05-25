@@ -339,6 +339,22 @@ if (is(Enum == enum))
 
 	assert(false, "No such member " ~ enumstring);
 }
+unittest
+{
+    import kameloso.irc   : IrcEvent;
+    import std.exception  : assertThrown;
+    import core.exception : AssertError;
+
+    with (IrcEvent)
+    with (IrcEvent.Type)
+    {
+        assert("QUERY".toEnum!Type == QUERY);
+        assert("PRIVMSG".toEnum!Type == PRIVMSG);
+        assert("RPL_ENDOFMOTD".toEnum!Type == RPL_ENDOFMOTD);
+        assert("UNSET".toEnum!Type == UNSET);
+        assertThrown!AssertError("DOESNTEXIST".toEnum!Type);
+    }
+}
 
 
 // https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
