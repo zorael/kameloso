@@ -57,15 +57,29 @@ unittest
     {
         string line = "Lorem ipsum :sit amet";
         string lorem = line.nom(" :");
-        assert(lorem == "Lorem ipsum");
-        assert(line == "sit amet");
+        assert(lorem == "Lorem ipsum", lorem);
+        assert(line == "sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
         string lorem = line.nom(':');
-        assert(lorem == "Lorem ipsum ");
-        assert(line == "sit amet");
+        assert(lorem == "Lorem ipsum ", lorem);
+        assert(line == "sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom(' ');
+        assert(lorem == "Lorem", lorem);
+        assert(line == "ipsum :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        string lorem = line.nom("");
+        assert(!lorem.length, lorem);
+        assert(line == "Lorem ipsum :sit amet", line);
     }
 }
 
