@@ -185,13 +185,6 @@ public:
 
         socket.send("\n");
     }
-
-    /// Proxy calls to Socket.receive.
-    /*pragma(inline, true)
-    auto receive(T)(T[] buffer)
-    {
-        return socket.receive(buffer);
-    }*/
 }
 
 
