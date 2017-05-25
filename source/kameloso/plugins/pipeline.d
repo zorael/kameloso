@@ -37,46 +37,50 @@ void pipereader(shared IrcPluginState newState)
         return;
     }
 
-    scope(exit) remove(fifo.name);
+    scope(exit)
+    {
+        writeln(Foreground.yellow, "Deleting FIFO from disk");
+        remove(fifo.name);
+    }
 
     bool halt;
 
     while (!halt)
     {
-        try
+        eofLoop:
+        while (!fifo.eof)
         {
-            while (!fifo.eof)
+            foreach (const line; fifo.byLineCopy)
             {
-                foreach (const line; fifo.byLineCopy)
-                {
-                    if (!line.length) continue;
+                if (!line.length) break eofLoop;
 
-                    state.mainThread.send(ThreadMessage.Sendline(), line);
-                }
+                state.mainThread.send(ThreadMessage.Sendline(), line);
             }
-
-            receiveTimeout(0.seconds,
-                (ThreadMessage.Teardown)
-                {
-                    halt = true;
-                },
-                (OwnerTerminated e)
-                {
-                    halt = true;
-                },
-                (Variant v)
-                {
-                    writeln(Foreground.lightred, "pipeline received Variant: ", v);
-                }
-            );
-
-            fifo.reopen(fifo.name);
         }
-        catch (Exception e)
+
+        receiveTimeout(0.seconds,
+            (ThreadMessage.Teardown)
+            {
+                halt = true;
+            },
+            (OwnerTerminated e)
+            {
+                halt = true;
+            },
+            (Variant v)
+            {
+                writeln(Foreground.lightred, "pipeline received Variant: ", v);
+            }
+        );
+
+        if (!halt)
         {
-            writeln(Foreground.lightred, e.msg);
+            try fifo.reopen(fifo.name);
+            catch (Exception e)
+            {
+                writeln(Foreground.lightred, e.msg);
+            }
         }
-
     }
 }
 
@@ -87,6 +91,8 @@ void createFIFO()
     import std.process : execute;
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
+
+    writeln(Foreground.yellow, "Creating FIFO: ", filename);
 
     if (!filename.exists)
     {
@@ -130,13 +136,10 @@ void teardown()
 
     if (filename.exists && !filename.isDir)
     {
-        // Just write anything to the pipe to let the pipereader thread cycle
+        // Tell the reader of the pipe to exit
         fifo = File(filename, "w");
         fifo.writeln();
-    }
-    else
-    {
-        writeln(Foreground.lightcyan, "No FIFO found, you may have to CTRL+C out");
+        fifo.flush();
     }
 }
 
