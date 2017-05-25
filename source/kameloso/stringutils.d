@@ -135,7 +135,7 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.ubytes)("Lorem ipsum");
+        string lorem = line.nom!(Yes.decode)("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
     }
