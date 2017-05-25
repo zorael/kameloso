@@ -50,6 +50,8 @@ void parseBasic(ref IrcEvent event)
         break;
 
     case "NOTICE":
+        import std.string : stripRight;
+
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
@@ -57,7 +59,7 @@ void parseBasic(ref IrcEvent event)
         event.type = IrcEvent.Type.NOTICE;
         event.sender = "irc.quakenet.org";
         event.content = raw;
-        event.aux = slice;
+        event.aux = slice.stripRight();
         break;
 
     default:
