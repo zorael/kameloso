@@ -299,6 +299,22 @@ string timeSince(const Duration duration)
 
     return sink.data;
 }
+unittest
+{
+    import std.stdio;
+
+    immutable dur1 = 789383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
+    assert(dur1.timeSince == "9 days, 3 hours and 16 minutes");
+
+    immutable dur2 = 3620.seconds;  // 1 hour and 20 secs
+    assert(dur2.timeSince == "1 hour");
+
+    immutable dur3 = 30.seconds;  // 30 secs
+    assert(dur3.timeSince == "30 seconds");
+
+    immutable dur4 = 1.seconds;
+    assert(dur4.timeSince == "1 second");
+}
 
 
 Enum toEnum(Enum)(const string enumstring)
