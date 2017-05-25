@@ -22,12 +22,28 @@ alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(T, C)(ref T[] arr, C separator)
+string nom(Flag!"ubytes" ubytes = No.ubytes, T, C)(ref T[] arr, C separator)
 {
-    // We must always decode user-written text not sent by the server
-    import std.string : indexOf;
+    static if (ubytes)
+    {
+        // Only do this if we know it's not user text
+        import std.algorithm.searching : countUntil;
+        import std.string : representation;
 
-    immutable index = arr.indexOf(separator);
+        static if (isSomeString!C)
+        {
+            immutable index = arr.representation.countUntil(separator.representation);
+        }
+        else
+        {
+            immutable index = arr.representation.countUntil(cast(ubyte)separator);
+        }
+    }
+    else
+    {
+        import std.string : indexOf;
+        immutable index = arr.indexOf(separator);
+    }
 
     if (index == -1)
     {
