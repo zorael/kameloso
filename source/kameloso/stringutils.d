@@ -4,10 +4,10 @@ import std.traits   : isSomeString;
 import std.typecons : Flag;
 import std.datetime;
 
+public import std.typecons : Yes, No;
 
 /// Flag denoting whether stripPrefix should assume the text begins with the supplied prefix
 alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
-
 
 // nom
 /++
@@ -22,9 +22,14 @@ alias CheckIfBeginsWith = Flag!"checkIfBeginsWith";
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Flag!"ubytes" ubytes = No.ubytes, T, C)(ref T[] arr, C separator)
+string nom(Flag!"decode" decode = Flag!"decode".no, T, C)(ref T[] arr, C separator)
 {
-    static if (ubytes)
+    static if (decode)
+    {
+        import std.string : indexOf;
+        immutable index = arr.indexOf(separator);
+    }
+    else
     {
         // Only do this if we know it's not user text
         import std.algorithm.searching : countUntil;
@@ -38,11 +43,6 @@ string nom(Flag!"ubytes" ubytes = No.ubytes, T, C)(ref T[] arr, C separator)
         {
             immutable index = arr.representation.countUntil(cast(ubyte)separator);
         }
-    }
-    else
-    {
-        import std.string : indexOf;
-        immutable index = arr.indexOf(separator);
     }
 
     if (index == -1)
@@ -79,7 +79,7 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.ubytes)(" :");
+        string lorem = line.nom!(Yes.decode)(" :");
         assert(lorem == "Lorem ipsum", lorem);
         assert(line == "sit amet", line);
     }
@@ -93,7 +93,7 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.ubytes)(':');
+        string lorem = line.nom!(Yes.decode)(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
@@ -107,7 +107,7 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.ubytes)(' ');
+        string lorem = line.nom!(Yes.decode)(' ');
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
@@ -121,7 +121,7 @@ unittest
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.ubytes)("");
+        string lorem = line.nom!(Yes.decode)("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
     }
