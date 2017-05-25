@@ -204,10 +204,10 @@ void onEndOfMotd()
         if (state.bot.server.family == IrcServer.Family.freenode)
         {
             state.mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ IDENTIFY %s %s"
+                "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(state.bot.login, state.bot.password));
 
-            writeln(Foreground.white, "--> PRIVMSG NickServ IDENTIFY ",
+            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
                 state.bot.login, " hunter2");
         }
         else
@@ -219,10 +219,10 @@ void onEndOfMotd()
             // Remove me later
 
             state.mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ identify %s %s"
+                "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(state.bot.login, state.bot.password));
 
-            writeln(Foreground.white, "--> PRIVMSG NickServ identify ",
+            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
                 state.bot.login, " hunter2");
         }
     }
