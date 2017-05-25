@@ -246,6 +246,13 @@ string stripPrefix(const string line, const string prefix)
 
     return slice;
 }
+unittest
+{
+    assert("say: lorem ipsum".stripPrefix("say") == "lorem ipsum");
+    assert("note!!!! zorael hello".stripPrefix("note") == "zorael hello");
+    assert("sudo quit :derp".stripPrefix("sudo") == "quit :derp");
+    assert("8ball predicate?".stripPrefix("") == "8ball predicate?");
+}
 
 
 // timeSince
