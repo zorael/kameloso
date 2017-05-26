@@ -42,16 +42,13 @@ void parseBasic(ref IrcEvent event)
         break;
 
     case "ERROR":
+        // ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)
         event.type = IrcEvent.Type.ERROR;
         event.content = slice;
-        writeln(Foreground.lightred, "--------------------[ ERROR MESSAGE, PLEASE TAKE NOTE ]----------------");
-        printObjects(event);
-        writeln(Foreground.lightred, "-----------------------------------------------------------------------");
         break;
 
     case "NOTICE":
         import std.string : stripRight;
-
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
