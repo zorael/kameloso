@@ -89,6 +89,17 @@ unittest
         assert((sender == "irc.quakenet.org"), sender);
         assert((content == "*** Couldn't look up your hostname"));
     }
+
+    IrcEvent e3;
+    with (e3)
+    {
+        raw = "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)";
+        e3.parseBasic();
+        assert((raw == "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), raw);
+        assert((type == IrcEvent.Type.ERROR), type.to!string);
+        assert(!sender.length, sender);
+        assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
+    }
 }
 
 
