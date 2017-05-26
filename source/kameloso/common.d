@@ -316,44 +316,7 @@ if (is(typeof(settings) : Settings))
 {
     import std.stdio : realWrite = write, realWritefln = writefln, realWriteln = writeln;
 
-    version(NoColours)
-    {
-        pragma(msg, "Version: No Colours");
-
-        pragma(inline)
-        void writeln(Code, Args...)(Code code, Args args)
-        if (isAColourCode!Code)
-        {
-            realWriteln(args);
-        }
-
-        pragma(inline)
-        void writeln(Args...)(Args args)
-        if (!Args.length || !isAColourCode!(Args[0]))
-        {
-            realWriteln(args);
-        }
-
-        pragma(inline)
-        void writefln(Code, Args...)(Code code, string pattern, Args args)
-        if (isAColourCode!Code)
-        {
-            realWritefln(pattern, args);
-        }
-
-        pragma(inline)
-        void writefln(Args...)(string pattern, Args args)
-        {
-            realWritefln(pattern, args);
-        }
-
-        pragma(inline)
-        void writefln()
-        {
-            realWriteln();
-        }
-    }
-    else
+    version (Colours)
     {
         pragma(msg, "Version: Colours");
 
@@ -387,6 +350,41 @@ if (is(typeof(settings) : Settings))
                 immutable newPattern = text(colourise(code), pattern, colourise(typeof(code).default_));
                 realWritefln(newPattern, args);
             }
+        }
+
+        pragma(inline)
+        void writefln(Args...)(string pattern, Args args)
+        {
+            realWritefln(pattern, args);
+        }
+
+        pragma(inline)
+        void writefln()
+        {
+            realWriteln();
+        }
+    }
+    else
+    {
+        pragma(inline)
+        void writeln(Code, Args...)(Code code, Args args)
+        if (isAColourCode!Code)
+        {
+            realWriteln(args);
+        }
+
+        pragma(inline)
+        void writeln(Args...)(Args args)
+        if (!Args.length || !isAColourCode!(Args[0]))
+        {
+            realWriteln(args);
+        }
+
+        pragma(inline)
+        void writefln(Code, Args...)(Code code, string pattern, Args args)
+        if (isAColourCode!Code)
+        {
+            realWritefln(pattern, args);
         }
 
         pragma(inline)

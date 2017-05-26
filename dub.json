@@ -10,7 +10,7 @@
         {
             "name": "kameloso",
             "targetType": "executable",
-            "versions": [ "Webtitles" ],
+            "versions": [ "Webtitles", "Colours" ],
             "platforms": [ "posix" ],
             "libs-posix": [ "phobos2" ],
             "dependencies":
@@ -21,8 +21,14 @@
         {
             "name": "nowebtitles",
             "targetType": "executable",
-            "platforms": [ "posix", "windows" ],
+            "versions": [ "Colours" ],
+            "platforms": [ "posix" ],
             "libs-posix": [ "phobos2" ]
+        },
+        {
+            "name": "nowebtitles-nocolours",
+            "targetType": "executable",
+            "platforms": [ "windows" ]
         }
     ]
 }
