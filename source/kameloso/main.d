@@ -10,7 +10,7 @@ import kameloso.plugins;
 import std.datetime : SysTime;
 import std.concurrency;
 
-version(Windows)
+version (Windows)
 shared static this()
 {
     import core.sys.windows.windows;
@@ -243,12 +243,12 @@ void initPlugins()
         new ConnectPlugin(state),
     ];
 
-    version(Webtitles)
+    version (Webtitles)
     {
         plugins ~= new Webtitles(state);
     }
 
-    version(Posix)
+    version (Posix)
     {
         plugins ~= new Pipeline(state);
     }

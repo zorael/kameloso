@@ -1,6 +1,6 @@
 module kameloso.plugins.webtitles;
 
-version(Webtitles):
+version (Webtitles):
 
 pragma(msg, "Version: Webtitles");
 

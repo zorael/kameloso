@@ -10,12 +10,12 @@ public import kameloso.plugins.chatbot;
 public import kameloso.plugins.notes;
 public import kameloso.plugins.sedreplace;
 
-version(Posix)
+version (Posix)
 {
     public import kameloso.plugins.pipeline;
 }
 
-version(Webtitles)
+version (Webtitles)
 {
     public import kameloso.plugins.webtitles;
 }
