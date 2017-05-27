@@ -7,8 +7,8 @@ import kameloso.config;
 import kameloso.irc;
 import kameloso.plugins;
 
-import std.datetime : SysTime;
 import std.concurrency;
+import std.datetime : SysTime;
 
 version (Windows)
 shared static this()
@@ -58,7 +58,7 @@ alias Quit = Flag!"quit";
  +/
 Quit checkMessages()
 {
-    import core.time  : seconds;
+    import core.time : seconds;
 
     scope (failure)
     {
@@ -216,7 +216,8 @@ Quit handleArguments(string[] args)
                             " (ditto)", &channels,
             "s|server",      "Server address", &bot.server.address,
             "P|port",        "Server port", &bot.server.port,
-            "c|config",      "Read configuration from file (default %s)".format(Files.config), &configFileFromArgs,
+            "c|config",      "Read configuration from file (default %s)"
+                             .format(Files.config), &configFileFromArgs,
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
         );
     }
@@ -303,7 +304,8 @@ void main() {
 else
 int main(string[] args)
 {
-    writefln(Foreground.white, "kameloso IRC bot, built %s\n", __TIMESTAMP__);
+    writefln(Foreground.white, "kameloso IRC bot v%s, built %s\n",
+             kamelosoVersion, __TIMESTAMP__);
 
     if (handleArguments(args) == Quit.yes) return 0;
 
@@ -316,7 +318,7 @@ int main(string[] args)
 
         writeln("No master nor channels configured!");
         writefln("Use %s --writeconfig to generate a configuration file.",
-            args[0].baseName);
+                 args[0].baseName);
 
         return 1;
     }
