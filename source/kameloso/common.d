@@ -41,7 +41,6 @@ struct ThreadMessage
 /// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
-
 /// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
@@ -51,6 +50,12 @@ struct Separator
 /// UDA used to convey "this member should not be printed in clear text"
 struct Hidden {}
 
+
+/++
+ +  Aggregate struct containing runtime bot setting variables.
+ +
+ +  Kept inside one struct they're nicely gathered and easy to pass around.
+ +/
 struct Settings
 {
     bool joinOnInvite = true;
@@ -58,6 +63,13 @@ struct Settings
     bool randomNickColours = true;
 }
 
+
+/++
+ +  Eponymous template bool of whether a variable can be configured via the
+ +  functions in kameloso.config.
+ +
+ +  Currently it does not support static arrays.
+ +/
 template isConfigurableVariable(alias var)
 {
     import std.traits : isSomeFunction;

@@ -111,12 +111,12 @@ void doWhois(IrcPluginState state, const IrcEvent event)
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    const eventCopy = event;
-    state.mainThread.send(ThreadMessage.Whois(), cast(shared)eventCopy);
+    IrcEvent eventCopy = event;
+    state.mainThread.send(ThreadMessage.Whois(), /*cast(shared)*/eventCopy);
 }
 
 
-/// filterUser
+// filterUser
 /++
  +  Decides whether a nick is known good, known bad, or needs WHOIS.
  +
@@ -145,7 +145,7 @@ FilterResult filterUser(const IrcPluginState state, const IrcEvent event)
 
 // IrcPluginBasics
 /++
- +  The basics of any plugin.
+ +  Mixin with the basics of any plugin.
  +
  +  Uses compile-time introspection to call top-level functions to extend behaviour;
  +      .initialise

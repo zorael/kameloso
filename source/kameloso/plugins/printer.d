@@ -13,6 +13,7 @@ private:
 IrcPluginState state;
 
 Settings settings;
+
 // reusableAppender
 /+
  +  Appender to reuse as sink to fill when printing events.

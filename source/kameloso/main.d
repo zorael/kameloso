@@ -26,6 +26,7 @@ private:
 /// State variables and configuration for the IRC bot.
 IrcBot bot;
 
+/// Runtime settings for bot behaviour.
 Settings settings;
 
 /// A runtime array of all plugins. We iterate this when we have an IrcEvent to react to.
@@ -40,9 +41,8 @@ Connection conn;
 /// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
 
-
 /++
- +  Flag denoting whether the program should exit.
+ +  Flag denoting whether the program should exit or not, after a function returns it.
  +/
 alias Quit = Flag!"quit";
 
@@ -110,7 +110,7 @@ Quit checkMessages()
     }
 
     /// Receive an updated bot, inherit it into .bot and propagate it to
-    /// all other plugins.
+    /// all plugins.
     void updateBot(shared IrcBot bot)
     {
         .bot = cast(IrcBot)bot;
@@ -118,26 +118,26 @@ Quit checkMessages()
         foreach (plugin; plugins) plugin.newBot(.bot);
     }
 
+    /// Receive new settings, inherit them into .settings and propagate
+    /// them to all plugins.
     void updateSettings(Settings settings)
     {
-        // Catch new settings, inherit them into .settings and propagate
-        // them to all plugins.
         .settings = settings;
 
         foreach (plugin; plugins) plugin.newSettings(.settings);
     }
 
+    /// Respond to PING with PONG to the supplied text as target.
     void pong(ThreadMessage.Pong, string target)
     {
-        // Respond to PING with the supplied text as target.
         // writeln(Foreground.white, "--> PONG :", target);
         conn.sendline("PONG :", target);
     }
 
+    /// Quit the server with the supplied reason.
     void quitServer(ThreadMessage.Quit, string reason)
     {
-        // Quit the server with the supplied reason.
-        // This should automatically close the connection.
+        // This will automatically close the connection.
         // Set quit to yes to propagate the decision down the stack.
         const line = reason.length ? reason : bot.quitReason;
 
@@ -223,6 +223,7 @@ Quit handleArguments(string[] args)
     }
     catch (Exception e)
     {
+        // User misspelled or supplied an invalid argument; error out and quit
         writeln(Foreground.lightred, e.msg);
         return Quit.yes;
     }
