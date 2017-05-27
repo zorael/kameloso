@@ -17,6 +17,7 @@ Current functionality includes:
 * looking up titles of pasted URLs
 * sed-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
+* mIRC colour coding
 
 ## Fails to build with OpenSSL 1.1.0
 
@@ -112,6 +113,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * add more unittests
 * update documentation
 * fix ctrl+c leaving behind fifos
+* some functions don't honor settings and just print colours regardless
 
 ## Built With
 
