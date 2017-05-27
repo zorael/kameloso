@@ -282,7 +282,8 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 }
 
 
-enum bool isAColourCode(T) = is(T : Foreground) || is(T : Background) || is(T : Format) || is(T : Reset);
+enum bool isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
+                             is(T : Format) || is(T : Reset);
 
 import std.meta : allSatisfy;
 
