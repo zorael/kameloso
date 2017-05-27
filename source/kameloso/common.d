@@ -114,6 +114,19 @@ unittest
  +/
 void printObjects(Things...)(Things things)
 {
+    version (Coloured)
+    {
+        printObjectsColoured(things);
+    }
+    else
+    {
+        printObjectsMonochrome(things);
+    }
+}
+
+
+void printObjectsColoured(Things...)(Things things)
+{
     import kameloso.config : longestMemberName;
 
     import std.format : format;
@@ -121,8 +134,6 @@ void printObjects(Things...)(Things things)
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    //enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
-    //enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
     enum stringPattern = `%%s%%9s %%s%%-%ds %%s"%%s"%%s(%%d)%%s`.format(entryPadding+2);
     enum normalPattern = `%%s%%9s %%s%%-%ds  %%s%%s%%s`.format(entryPadding+2);
 
@@ -166,8 +177,49 @@ void printObjects(Things...)(Things things)
     }
 }
 
-deprecated("Use printObjects instead")
-alias printObject = printObjects;
+
+void printObjectsMonochrome(Things...)(Things things)
+{
+    import kameloso.config : longestMemberName;
+
+    import std.format : format;
+    import std.traits : isSomeFunction, hasUDA;
+    import std.typecons : Unqual;
+    import std.stdio : realWritefln = writefln, realWriteln = writeln;
+
+    enum entryPadding = longestMemberName!Things.length;
+    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
+    enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
+
+    foreach (thing; things)
+    {
+        alias T = typeof(thing);
+
+        realWriteln("-- ", Unqual!T.stringof);
+
+        foreach (name; __traits(allMembers, T))
+        {
+            static if (is(typeof(__traits(getMember, T, name))) &&
+                       isConfigurableVariable!(__traits(getMember, T, name)) &&
+                       !hasUDA!(__traits(getMember, T, name), Hidden))
+            {
+                enum typestring = typeof(__traits(getMember, T, name)).stringof;
+                const value = __traits(getMember, thing, name);
+
+                static if (is(typeof(value) : string))
+                {
+                    realWritefln!stringPattern(typestring, name, value, value.length);
+                }
+                else
+                {
+                    realWritefln!normalPattern(typestring, name, value);
+                }
+            }
+        }
+
+        writeln();
+    }
+}
 
 
 // longestMemberName
