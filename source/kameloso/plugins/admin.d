@@ -312,25 +312,6 @@ void onAnyEvent(const IrcEvent event)
 }
 
 
-// onCommandStatus
-/++
- +  Propagates a request via the main thread to have all plugins print their IrcPluginState
- +  struct to the terminal.
- +
- +  It doesn't print its own at this point; it merely sets the ball running so it will,
- +  in the end, receive the message to do so itself.
- +/
-@Label("status")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "status")
-void onCommandStatus()
-{
-    state.mainThread.send(ThreadMessage.Status());
-}
-
-
 // onCommandJoinPart
 /++
  +  Joins or parts a supplied channel.
