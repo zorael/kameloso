@@ -39,8 +39,10 @@ enum appenderBufferSize = 600;
  +/
 @Label("any")
 @(IrcEvent.Type.ANY)
-void onAnyEvent(const IrcEvent event)
+void onAnyEvent(const IrcEvent origEvent)
 {
+    IrcEvent event = origEvent; // need a mutable copy
+
     with (IrcEvent.Type)
     switch (event.type)
     {
@@ -93,6 +95,14 @@ void onAnyEvent(const IrcEvent event)
             }
             else
             {
+                version (Colours)
+                {
+                    if (!state.settings.monochrome)
+                    {
+                        event.mapEffects();
+                    }
+                }
+
                 enum DefaultColour
                 {
                     type    = lightblue,
@@ -148,6 +158,126 @@ void onAnyEvent(const IrcEvent event)
             reusableAppender.clear();
         }
     }
+}
+
+
+version (Colours)
+void mapEffects(ref IrcEvent event)
+{
+    import std.string : representation;
+    import std.algorithm.searching : canFind;
+
+    alias I = IrcControlCharacter;
+    alias B = BashEffectToken;
+
+    if (event.content.representation.canFind(I.colour))
+    {
+        // Colour is mIRC 3
+        event.mapColours();
+    }
+
+    if (event.content.representation.canFind(I.bold))
+    {
+        // Bold is bash 1, mIRC 2
+        event.mapEffectImpl!(B.bold, I.bold)();
+    }
+
+    if (event.content.representation.canFind(I.italics))
+    {
+        // Italics is bash 3 (not really), mIRC 29
+        event.mapEffectImpl!(B.italics, I.italics)();
+    }
+
+    if (event.content.representation.canFind(I.underlined))
+    {
+        // Underlined is bash 4, mIRC 31
+        event.mapEffectImpl!(B.underlined, I.underlined)();
+    }
+}
+
+
+version (Colours)
+void mapColours(ref IrcEvent event)
+{
+    import std.regex;
+
+    enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
+    static engine = ctRegex!colourPattern;
+
+    /*alias F = Foreground;
+    Foreground[16] colourMap = // literal map
+    [
+         0 : F.white,
+         1 : F.black,
+         2 : F.blue,
+         3 : F.green,
+         4 : F.lightred,
+         5 : F.darkgrey,  // should be brown
+         6 : F.magenta,
+         7 : F.yellow,
+         8 : F.lightyellow,
+         9 : F.lightgreen,
+        10 : F.cyan,
+        11 : F.lightcyan,
+        12 : F.lightblue,
+        13 : F.lightmagenta,
+        14 : F.default_,
+        15 : F.lightgrey,
+    ];*/
+
+    alias F = Foreground;
+    Foreground[16] weechatMap =
+    [
+         0 : F.white,
+         1 : F.darkgrey,
+         2 : F.lightblue,
+         3 : F.lightgreen,
+         4 : F.lightred,
+         5 : F.lightred,
+         6 : F.magenta,
+         7 : F.lightyellow,
+         8 : F.lightyellow,
+         9 : F.lightgreen,
+        10 : F.lightcyan,
+        11 : F.lightcyan,
+        12 : F.lightblue,
+        13 : F.lightmagenta,
+        14 : F.darkgrey,
+        15 : F.white,
+    ];
+
+    immutable originalContent = event.content;
+
+    foreach (hit; originalContent.matchAll(engine))
+    {
+        import std.conv : to;
+
+        immutable index = hit[1].to!size_t;
+
+        if (index > 15)
+        {
+            writeln("mIRC colour code out of bounds: ", index);
+            continue;
+        }
+
+        immutable bashColourCode = weechatMap[index];
+        string bashColourToken = "\033[" ~ bashColourCode ~ "m";
+
+        event.content = event.content.replaceAll(hit[0].regex, bashColourToken);
+    }
+}
+
+version (Colours)
+void mapEffectImpl(ubyte bashColourCode, ubyte mircToken)(ref IrcEvent event)
+{
+    import std.regex;
+    import std.conv : to;
+
+    static engine = ctRegex!([cast(char)mircToken]);
+    enum bashToken = "\033[" ~ bashColourCode.to!string ~ "m";
+
+    event.content = event.content.replaceAll(engine, bashToken);
+    event.content ~= "\033[0m";
 }
 
 
