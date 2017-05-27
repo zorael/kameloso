@@ -208,8 +208,7 @@ Quit handleArguments(string[] args)
 
     if (helpInfo.helpWanted)
     {
-        defaultGetoptPrinter("kameloso IRC bot, built %s\n"
-                             .format(__TIMESTAMP__), helpInfo.options);
+        defaultGetoptPrinter("Command-line arguments available:\n", helpInfo.options);
         writeln();
         return Quit.yes;
     }
