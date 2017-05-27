@@ -60,9 +60,95 @@ Quit checkMessages()
 {
     import core.time  : seconds;
 
-    mixin(scopeguard(failure));
+    scope (failure)
+    {
+        writeln(Foreground.lightred, "[main.checkMessages] FAILURE");
+        foreach (plugin; plugins) plugin.teardown();
+    }
 
     Quit quit;
+
+    /// Echo a line to the terminal and send it to the server
+    void sendline(ThreadMessage.Sendline, string line)
+    {
+        writeln(Foreground.white, "--> ", line);
+        conn.sendline(line);
+    }
+
+    /// Send a line to the server without echoing it
+    void quietline(ThreadMessage.Quietline, string line)
+    {
+        conn.sendline(line);
+    }
+
+    /// Send a ping "to" the server address saved in the bot.server struct
+    void ping(ThreadMessage.Ping)
+    {
+        writeln(Foreground.white, "--> PING :", bot.server.resolvedAddress);
+        conn.sendline("PING :", bot.server.resolvedAddress);
+    }
+
+    /// Send a WHOIS call to the server, and buffer the requests.
+    void whois(ThreadMessage.Whois, IrcEvent event)
+    {
+        import std.datetime : Clock;
+
+        // We buffer the request so only one goes out for a particular nickname
+        // at any one given time.Identical requests are likely to go out several
+        // at a time in bursts, and we only need one reply. So limit the calls.
+
+        const then = (event.sender in whoisCalls);
+        if (!then) return;
+
+        const now = Clock.currTime;
+        if ((now - *then) < Timeout.whois.seconds) return;
+
+        writeln(Foreground.white, "--> WHOIS :", event.sender);
+        conn.sendline("WHOIS :", event.sender);
+        whoisCalls[event.sender] = Clock.currTime;
+        replayQueue[event.sender] = event;
+    }
+
+    /// Receive an updated bot, inherit it into .bot and propagate it to
+    /// all other plugins.
+    void updateBot(shared IrcBot bot)
+    {
+        .bot = cast(IrcBot)bot;
+
+        foreach (plugin; plugins) plugin.newBot(.bot);
+    }
+
+    void updateSettings(Settings settings)
+    {
+        // Catch new settings, inherit them into .settings and propagate
+        // them to all plugins.
+        .settings = settings;
+
+        foreach (plugin; plugins) plugin.newSettings(.settings);
+    }
+
+    void pong(ThreadMessage.Pong, string target)
+    {
+        // Respond to PING with the supplied text as target.
+        // writeln(Foreground.white, "--> PONG :", target);
+        conn.sendline("PONG :", target);
+    }
+
+    void quitServer(ThreadMessage.Quit, string reason)
+    {
+        // Quit the server with the supplied reason.
+        // This should automatically close the connection.
+        // Set quit to yes to propagate the decision down the stack.
+        const line = reason.length ? reason : bot.quitReason;
+
+        writeln(Foreground.white, "--> QUIT :", line);
+        conn.sendline("QUIT :", line);
+
+        foreach (plugin; plugins) plugin.teardown();
+
+        quit = Quit.yes;
+    }
+
     bool receivedSomething;
 
     do
@@ -70,84 +156,13 @@ Quit checkMessages()
         // Use the bool of whether anything was received at all to decide if the loop should
         // continue. That way we neatly exhaust the mailbox before returning.
         receivedSomething = receiveTimeout(0.seconds,
-            (ThreadMessage.Sendline, string line)
-            {
-                // Catch a line, echo it to the terminal and send it to the server
-                writeln(Foreground.white, "--> ", line);
-                conn.sendline(line);
-            },
-            (ThreadMessage.Quietline, string line)
-            {
-                // Catch a line and send a line to the server without echoing it
-                conn.sendline(line);
-            },
-            (ThreadMessage.Ping)
-            {
-                // Send a ping "to"" the server address saved in the bot.server struct
-                writeln(Foreground.white, "--> PING :", bot.server.resolvedAddress);
-                conn.sendline("PING :", bot.server.resolvedAddress);
-            },
-            (ThreadMessage.Whois, shared IrcEvent event)
-            {
-                import std.datetime : Clock;
-
-                // Send a WHOIS call to the server, and buffer the requests so only one
-                // goes out for a particular nickname at any one given time.
-                // Identical requests are likely to go out several at a time, and we
-                // only need one reply. So limit the calls.
-
-                const now = Clock.currTime;
-                const then = (event.sender in whoisCalls);
-
-                if (then && ((now - *then) < Timeout.whois.seconds)) return;
-
-                writeln(Foreground.white, "--> WHOIS :", event.sender);
-                conn.sendline("WHOIS :", event.sender);
-                whoisCalls[event.sender] = Clock.currTime;
-                replayQueue[event.sender] = event;
-            },
-            (shared IrcBot bot)
-            {
-                // Catch an IrcBot, inherit it into .bot and and propagate it to
-                // all plugins.
-
-                .bot = cast(IrcBot)bot;
-
-                foreach (plugin; plugins) plugin.newBot(.bot);
-            },
-            (Settings settings)
-            {
-                // Catch new settings, inherit them into .settings and propagate
-                // them to all plugins.
-                .settings = settings;
-
-                foreach (plugin; plugins) plugin.newSettings(.settings);
-            },
-            (ThreadMessage.Status)
-            {
-                // Ask all plugins to print their plugin state.
-                foreach (plugin; plugins) plugin.status();
-            },
-            (ThreadMessage.Pong, string target)
-            {
-                // Respond to PING with the supplied text as target.
-                // writeln(Foreground.white, "--> PONG :", target);
-                conn.sendline("PONG :", target);
-            },
-            (ThreadMessage.Quit, string reason)
-            {
-                // Quit the server with the supplied reason.
-                // This should automatically close the connection.
-                // Set quit to yes to propagate the decision down the stack.
-                const line = reason.length ? reason : bot.quitReason;
-
-                writeln(Foreground.white, "--> QUIT :", line);
-                conn.sendline("QUIT :", line);
-
-                foreach (plugin; plugins) plugin.teardown();
-
-                quit = Quit.yes;
-            },
+            &sendline,
+            &ping,
+            &whois,
+            &updateBot,
+            &quietline,
+            &pong,
+            &quitServer,
             (Variant v)
             {
                 // Caught an unhandled message
