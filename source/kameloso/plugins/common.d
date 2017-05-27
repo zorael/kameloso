@@ -111,8 +111,8 @@ void doWhois(IrcPluginState state, const IrcEvent event)
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    IrcEvent eventCopy = event;
-    state.mainThread.send(ThreadMessage.Whois(), /*cast(shared)*/eventCopy);
+    IrcEvent eventCopy = event;  // need mutable or the send will fail
+    state.mainThread.send(ThreadMessage.Whois(), eventCopy);
 }
 
 
