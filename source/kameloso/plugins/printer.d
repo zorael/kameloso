@@ -204,15 +204,15 @@ void mapColours(ref IrcEvent event)
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
 
-    /*alias F = Foreground;
-    Foreground[16] colourMap = // literal map
+    alias F = Foreground;
+    Foreground[16] weechatForegroundMap =
     [
          0 : F.white,
-         1 : F.black,
+         1 : F.darkgrey,
          2 : F.blue,
          3 : F.green,
          4 : F.lightred,
-         5 : F.darkgrey,  // should be brown
+         5 : F.red,
          6 : F.magenta,
          7 : F.yellow,
          8 : F.lightyellow,
@@ -221,29 +221,29 @@ void mapColours(ref IrcEvent event)
         11 : F.lightcyan,
         12 : F.lightblue,
         13 : F.lightmagenta,
-        14 : F.default_,
-        15 : F.lightgrey,
-    ];*/
-
-    alias F = Foreground;
-    Foreground[16] weechatMap =
-    [
-         0 : F.white,
-         1 : F.darkgrey,
-         2 : F.lightblue,
-         3 : F.lightgreen,
-         4 : F.lightred,
-         5 : F.lightred,
-         6 : F.magenta,
-         7 : F.lightyellow,
-         8 : F.lightyellow,
-         9 : F.lightgreen,
-        10 : F.lightcyan,
-        11 : F.lightcyan,
-        12 : F.lightblue,
-        13 : F.lightmagenta,
         14 : F.darkgrey,
-        15 : F.white,
+        15 : F.lightgrey,
+    ];
+
+    alias B = Background;
+    Background[16] weechatBackgroundMap =
+    [
+         0 : B.white,
+         1 : B.black,
+         2 : B.blue,
+         3 : B.green,
+         4 : B.red,
+         5 : B.red,
+         6 : B.magenta,
+         7 : B.yellow,
+         8 : B.yellow,
+         9 : B.green,
+        10 : B.cyan,
+        11 : B.cyan,
+        12 : B.blue,
+        13 : B.magenta,
+        14 : B.black,
+        15 : B.lightgrey,
     ];
 
     immutable originalContent = event.content;
@@ -252,18 +252,37 @@ void mapColours(ref IrcEvent event)
     {
         import std.conv : to;
 
-        immutable index = hit[1].to!size_t;
+        if (!hit[1].length) continue;
 
-        if (index > 15)
+        Appender!string colourToken;
+        colourToken.reserve(8);
+        immutable fgIndex = hit[1].to!size_t;
+
+        if (fgIndex > 15)
         {
-            writeln("mIRC colour code out of bounds: ", index);
+            writeln("mIRC foreground colour code out of bounds: ", fgIndex);
             continue;
         }
 
-        immutable bashColourCode = weechatMap[index];
-        string bashColourToken = "\033[" ~ bashColourCode ~ "m";
+        colourToken ~= "\033[";
+        colourToken ~= cast(string)weechatForegroundMap[fgIndex];
 
-        event.content = event.content.replaceAll(hit[0].regex, bashColourToken);
+        if (hit[2].length)
+        {
+            immutable bgIndex = hit[2].to!size_t;
+
+            if (bgIndex > 15)
+            {
+                writeln("mIRC background colour code out of bounds: ", bgIndex);
+                continue;
+            }
+
+            colourToken ~= ';';
+            colourToken ~= cast(string)weechatBackgroundMap[bgIndex];
+        }
+
+        colourToken ~= 'm';
+        event.content = event.content.replaceAll(hit[0].regex, colourToken.data);
     }
 
     event.content ~= "\033[0m";
