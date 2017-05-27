@@ -436,9 +436,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             event.type = EMOTE;
             event.content = (slice.length > 8) ? slice[8..$] : string.init;
         }
-        else if (slice == cast(char)1 ~ "VERSION" ~ cast(char)1)
+        else if (slice == (IrcControlCharacter.ctcp ~ "VERSION" ~ IrcControlCharacter.ctcp))
         {
-            event.type = VERSION_QUERY;
+            event.type = CTCP_VERSION;
         }
         else
         {
@@ -842,7 +842,7 @@ struct IrcEvent
         SELFQUIT, SELFJOIN, SELFPART,
         SELFMODE, SELFNICK, SELFKICK,
         TOPIC,
-        VERSION_QUERY,
+        CTCP_VERSION,
         AUTHCHALLENGE,
         AUTHACCEPTANCE,
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"

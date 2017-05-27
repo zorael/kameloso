@@ -149,7 +149,7 @@ void onPing(const IrcEvent event)
 
 
 @Label("version")
-@(IrcEvent.Type.VERSION_QUERY)
+@(IrcEvent.Type.CTCP_VERSION)
 void onVersion(const IrcEvent event)
 {
     state.mainThread.send(ThreadMessage.Sendline(),

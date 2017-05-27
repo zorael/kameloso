@@ -18,6 +18,7 @@ enum IrcControlCharacter
     colour = 3,
     italics = 29,
     underlined = 31,
+    ctcp = 1,
 }
 
 enum BashColourToken = '\033';
