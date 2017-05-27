@@ -21,8 +21,11 @@ bool serverPingedAtConnect;
 @(IrcEvent.Type.SELFJOIN)
 void onSelfjoin(const IrcEvent event)
 {
-    state.bot.channels ~= event.channel;
-    updateBot();
+    if (!state.bot.channels.canFind(event.channel))
+    {
+        state.bot.channels ~= event.channel;
+        updateBot();
+    }
 }
 
 
