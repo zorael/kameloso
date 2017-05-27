@@ -1,6 +1,6 @@
 module kameloso.constants;
 
-enum kamelosoVersion = "0.4.1";
+enum kamelosoVersion = "0.4.4";
 
 /// Hardcoded default filenames
 enum Files
