@@ -1649,4 +1649,28 @@ unittest
         assert((aux == "3705964477"), aux);
         assert((content == "PONG"), content);
      }
+
+    /+
+    [20:55:14] [ERR_UNKNOWNCOMMAND] karatkievich.freenode.net (kameloso^) <systemd,#kde,#kubuntu,#archlinux, ...>
+    :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...
+    +/
+    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...".toIrcEvent();
+    with (e13)
+    {
+        assert((sender == "karatkievich.freenode.net"), sender);
+        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((aux == "systemd,#kde,#kubuntu,#archlinux ..."), aux);
+    }
+
+    /+
+    :asimov.freenode.net 421 kameloso^ sudo :Unknown command
+    +/
+    immutable e14 = ":asimov.freenode.net 421 kameloso^ sudo :Unknown command".toIrcEvent();
+    with (e14)
+    {
+        assert((sender == "asimov.freenode.net"), sender);
+        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((content == "Unknown command"), content);
+        assert((aux == "sudo"), aux);
+    }
 }
