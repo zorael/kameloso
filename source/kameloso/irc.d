@@ -428,7 +428,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             event.target = targetOrChannel;
         }
 
-        if (slice.beginsWith(ControlCharacter.action) &&
+        if (slice.beginsWith(IrcControlCharacter.action) &&
            (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
         {
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content

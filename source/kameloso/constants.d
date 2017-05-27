@@ -11,24 +11,28 @@ enum Files
 }
 
 
-// ControlCharacter
-/++
- +  Various magic numbers.
- +
- +  action is the first character in a /me message.
- +  bold makes the text bold. More info needed.
- +  colour starts colour codes.
- +  termReset outputs a byte that restores the local terminal if it has entered "binary" mode.
- +/
-enum ControlCharacter : ubyte
+enum IrcControlCharacter
 {
-    action      = 1,
-    bold        = 2,
-    colour      = 3,
-    termReset   = 15
+    action = 1,
+    bold = 2,
+    colour = 3,
+    italics = 29,
+    underlined = 31,
 }
 
 enum BashColourToken = '\033';
+enum TerminalResetToken = 15;
+
+enum BashEffectToken
+{
+    bold = 1,
+    dim  = 2,
+    italics = 3,
+    underlined = 4,
+    blink   = 5,
+    reverse = 7,
+    hidden  = 8,
+}
 
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';

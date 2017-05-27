@@ -247,7 +247,7 @@ void onCommandDelFriend(const IrcEvent event)
 void onCommandResetTerminal()
 {
     import std.stdio : write;
-    write(ControlCharacter.termReset);
+    write(TerminalResetToken);
 }
 
 
