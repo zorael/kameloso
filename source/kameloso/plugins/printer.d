@@ -270,13 +270,13 @@ void mapColours(ref IrcEvent event)
 }
 
 version (Colours)
-void mapEffectImpl(ubyte bashColourCode, ubyte mircToken)(ref IrcEvent event)
+void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IrcEvent event)
 {
     import std.regex;
     import std.conv : to;
 
     static engine = ctRegex!([cast(char)mircToken]);
-    enum bashToken = "\033[" ~ bashColourCode.to!string ~ "m";
+    enum bashToken = "\033[" ~ bashEffectCode.to!string ~ "m";
 
     event.content = event.content.replaceAll(engine, bashToken);
     event.content ~= "\033[0m";
