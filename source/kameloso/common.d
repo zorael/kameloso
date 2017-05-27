@@ -12,14 +12,28 @@ import kameloso.constants;
  +/
 struct ThreadMessage
 {
+    /// Concurrency message type asking for a to-server PONG event.
     struct Pong {}
+
+    /// Concurrency message type asking for a to-server PING event.
     struct Ping {}
+
+    /// Concurrency message type asking to verbosely send a line to the server.
     struct Sendline {}
+
+    /// Concurrency message type asking to quietly send a line to the server.
     struct Quietline {}
+
+    /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
+
+    /// Concurrency message type asking for WHOIS information on a user.
     struct Whois {}
+
+    /// Concurrency message type asking for a plugin to shut down cleanly.
     struct Teardown {}
-    struct Status {}
+
+    /// Concurrency message type asking for current settings to be saved to disk.
     struct WriteConfig {}
 }
 
