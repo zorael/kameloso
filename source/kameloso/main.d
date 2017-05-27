@@ -98,10 +98,9 @@ Quit checkMessages()
         // at a time in bursts, and we only need one reply. So limit the calls.
 
         const then = (event.sender in whoisCalls);
-        if (!then) return;
-
         const now = Clock.currTime;
-        if ((now - *then) < Timeout.whois.seconds) return;
+
+        if (then && (now - *then) < Timeout.whois.seconds) return;
 
         writeln(Foreground.white, "--> WHOIS :", event.sender);
         conn.sendline("WHOIS :", event.sender);
