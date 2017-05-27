@@ -2,14 +2,6 @@ module kameloso.common;
 
 import kameloso.constants;
 
-import std.typecons : Flag;
-
-
-/++
- +  Flag denoting whether the program should exit.
- +/
-alias Quit = Flag!"quit";
-
 
 /++
  +  Aggregate of thread message types.

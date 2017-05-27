@@ -41,6 +41,12 @@ Connection conn;
 SysTime[string] whoisCalls;
 
 
+/++
+ +  Flag denoting whether the program should exit.
+ +/
+alias Quit = Flag!"quit";
+
+
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was received.
