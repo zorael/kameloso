@@ -114,7 +114,7 @@ unittest
  +/
 void printObjects(Things...)(Things things)
 {
-    version (Coloured)
+    version (Colours)
     {
         printObjectsColoured(things);
     }
