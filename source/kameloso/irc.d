@@ -539,11 +539,26 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         }
         break;
 
+    case ERR_UNKNOWNCOMMAND: // 421
+        import std.string : indexOf;
+
+        if (slice.indexOf(':') == -1)
+        {
+            // :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra,#lubuntu,#xubuntu,#gnome,#fluxbuntu,#flerrp,#ubuntu,##linux,#systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra,#lubuntu,#xubuntu,#gnome,#fluxbuntu,#flerrp,#ubuntu,##linux,#systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra
+            event.target = slice.nom(' ');
+            event.aux = slice;
+        }
+        else
+        {
+            // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
+            slice.formattedRead("%s %s :%s", &event.target, &event.aux, &event.content);
+        }
+        break;
+
     case RPL_LUSEROP: // 252
     case RPL_LUSERUNKNOWN: // 253
     case RPL_LUSERCHANNELS: // 254
     case RPL_WHOISIDLE: //  317
-    case ERR_UNKNOWNCOMMAND: // 421
     case ERR_ERRONEOUSNICKNAME: // 432
     case ERR_NEEDMOREPARAMS: // 461
     case USERCOUNTLOCAL: // 265
@@ -551,7 +566,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         // :asimov.freenode.net 252 kameloso^ 31 :IRC Operators online
         // :asimov.freenode.net 253 kameloso^ 13 :unknown connection(s)
         // :asimov.freenode.net 254 kameloso^ 54541 :channels formed
-        // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
         // :asimov.freenode.net 432 kameloso^ @nickname :Erroneous Nickname
         // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
         // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
