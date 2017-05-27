@@ -111,9 +111,6 @@ unittest
  +
  +  Params:
  +      thing = The struct object to enumerate.
- +      message = A compile-time optional message header to the printed list.
- +      file = source filename iff message provided, defaults to __FILE__.
- +      line = source file linenumber iff message provided, defaults to __LINE__.
  +/
 void printObjects(Things...)(Things things)
 {
