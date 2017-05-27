@@ -122,11 +122,6 @@ Quit checkMessages()
                 // Ask all plugins to print their plugin state.
                 foreach (plugin; plugins) plugin.status();
             },
-            (ThreadMessage.Pong)
-            {
-                writeln(Foreground.white, "--> PONG :resolvedAddress:", bot.server.resolvedAddress);
-                conn.sendline("PONG :", bot.server.resolvedAddress);
-            },
             (ThreadMessage.Pong, string target)
             {
                 // Respond to PING with the supplied text as target.
