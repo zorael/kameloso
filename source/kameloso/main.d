@@ -66,25 +66,30 @@ Quit checkMessages()
         receivedSomething = receiveTimeout(0.seconds,
             (ThreadMessage.Sendline, string line)
             {
+                // Catch a line, echo it to the terminal and send it to the server
                 writeln(Foreground.white, "--> ", line);
                 conn.sendline(line);
             },
             (ThreadMessage.Quietline, string line)
             {
+                // Catch a line and send a line to the server without echoing it
                 conn.sendline(line);
             },
             (ThreadMessage.Ping)
             {
+                // Send a ping "to"" the server address saved in the bot.server struct
                 writeln(Foreground.white, "--> PING :", bot.server.resolvedAddress);
                 conn.sendline("PING :", bot.server.resolvedAddress);
             },
             (ThreadMessage.Whois, shared IrcEvent event)
             {
                 import std.datetime : Clock;
-                import std.conv : to;
 
-                // Several plugins may (will) ask to WHOIS someone at the same time,
-                // so keep track on when we WHOISed whom, to limit it
+                // Send a WHOIS call to the server, and buffer the requests so only one
+                // goes out for a particular nickname at any one given time.
+                // Identical requests are likely to go out several at a time, and we
+                // only need one reply. So limit the calls.
+
                 const now = Clock.currTime;
                 const then = (event.sender in whoisCalls);
 
@@ -97,18 +102,24 @@ Quit checkMessages()
             },
             (shared IrcBot bot)
             {
+                // Catch an IrcBot, inherit it into .bot and and propagate it to
+                // all plugins.
+
                 .bot = cast(IrcBot)bot;
 
                 foreach (plugin; plugins) plugin.newBot(.bot);
             },
             (Settings settings)
             {
+                // Catch new settings, inherit them into .settings and propagate
+                // them to all plugins.
                 .settings = settings;
 
                 foreach (plugin; plugins) plugin.newSettings(.settings);
             },
             (ThreadMessage.Status)
             {
+                // Ask all plugins to print their plugin state.
                 foreach (plugin; plugins) plugin.status();
             },
             (ThreadMessage.Pong)
@@ -118,13 +129,15 @@ Quit checkMessages()
             },
             (ThreadMessage.Pong, string target)
             {
+                // Respond to PING with the supplied text as target.
                 // writeln(Foreground.white, "--> PONG :", target);
                 conn.sendline("PONG :", target);
             },
             (ThreadMessage.Quit, string reason)
             {
-                // This should automatically close the connection
-                // Set quit to yes to propagate the decision down the stack
+                // Quit the server with the supplied reason.
+                // This should automatically close the connection.
+                // Set quit to yes to propagate the decision down the stack.
                 const line = reason.length ? reason : bot.quitReason;
 
                 writeln(Foreground.white, "--> QUIT :", line);
@@ -136,6 +149,7 @@ Quit checkMessages()
             },
             (Variant v)
             {
+                // Caught an unhandled message
                 writeln(Foreground.lightred, "Main thread received unknown Variant");
                 writeln(Foreground.lightred, v);
             }
