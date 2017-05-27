@@ -16,6 +16,8 @@ IrcPluginState state;
 /// Toggles whether onAnyEvent prints the raw strings of all incoming IRC events
 bool printAll;
 
+bool printBytes;
+
 
 // updateBot TODO: deduplicate
 /++
@@ -269,6 +271,17 @@ void onCommandPrintAll()
 }
 
 
+@Label("toggleprintbytes")
+@(IrcEvent.Type.CHAN)
+@(IrcEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.required, "printbytes")
+void onCommandPrintBytes()
+{
+    printBytes = !printBytes;
+    writeln(Foreground.green, "Printing bytes: ", printBytes);
+}
+
 // onAnyEvent
 /++
  +  Prints all incoming IRC events raw if the flag to do so has been set with onCommandPrintAll,
@@ -286,6 +299,16 @@ void onCommandPrintAll()
 void onAnyEvent(const IrcEvent event)
 {
     if (printAll) writeln(Foreground.cyan, event.raw, "$");
+
+    if (printBytes)
+    {
+        import std.string : representation;
+
+        foreach (i, c; event.content.representation)
+        {
+            writefln("[%d] %s : %03d", i, cast(char)c, c);
+        }
+    }
 }
 
 
