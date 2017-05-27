@@ -17,18 +17,6 @@ IrcPluginState state;
 bool serverPingedAtConnect;
 
 
-// updateBot TODO: deduplicate
-/++
- +  Takes a copy of the current bot state and concurrency-sends it to the main thread,
- +  propagating any changes up the stack and then down to all other plugins.
- +/
-void updateBot()
-{
-    const botCopy = state.bot;
-    state.mainThread.send(cast(shared)botCopy);
-}
-
-
 @Label("onSelfjoin")
 @(IrcEvent.Type.SELFJOIN)
 void onSelfjoin(const IrcEvent event)

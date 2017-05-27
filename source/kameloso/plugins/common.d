@@ -625,4 +625,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             state.bot.nickname = event.content;
         }
     }
+
+    // updateBot
+    /++
+    +  Takes a copy of the current bot state and concurrency-sends it to the main thread,
+    +  propagating any changes up the stack and then down to all other plugins.
+    +/
+    void updateBot()
+    {
+        import std.concurrency : send;
+
+        const botCopy = state.bot;
+        state.mainThread.send(cast(shared)botCopy);
+    }
 }
