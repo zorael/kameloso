@@ -265,6 +265,8 @@ void mapColours(ref IrcEvent event)
 
         event.content = event.content.replaceAll(hit[0].regex, bashColourToken);
     }
+
+    event.content ~= "\033[0m";
 }
 
 version (Colours)
