@@ -136,7 +136,7 @@ void onCommandAddNote(const IrcEvent event)
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Note added".format(event.channel));
 
-    Files.notes.saveNotes();
+    saveNotes(state.settings.notesFile);
 }
 
 
@@ -171,7 +171,7 @@ void onCommandPrintNotes()
 void onCommandReloadQuotes()
 {
     writeln(Foreground.lightcyan, "Reloading notes");
-    notes = loadNotes(Files.notes);
+    notes = loadNotes(state.settings.notesFile);
 }
 
 
@@ -292,7 +292,7 @@ void clearNotes(const string nickname)
         {
             writeln(Foreground.lightcyan, "Clearing stored notes for ", nickname);
             notes.object.remove(nickname);
-            Files.notes.saveNotes();
+            saveNotes(state.settings.notesFile);
         }
     }
     catch (Exception e)
@@ -411,7 +411,7 @@ JSONValue loadNotes(const string filename)
 void initialise()
 {
     writeln(Foreground.lightcyan, "Initialising notes ...");
-    notes = Files.notes.loadNotes();
+    notes = loadNotes(state.settings.notesFile);
 }
 
 
