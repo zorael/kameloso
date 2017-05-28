@@ -438,8 +438,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             import std.string : indexOf;
 
             slice = slice[1..$-1];
-            event.content = slice;
             immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
+            event.content = slice;
 
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
