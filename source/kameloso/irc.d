@@ -911,6 +911,8 @@ struct IrcEvent
         NEEDAUTHTOJOIN, // 477          // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
         CANTCHANGENICK, // 435          // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
         YOURHIDDENHOST, // 396 ,        // <nickname> <host> :is now your hidden host
+        MESSAGENEEDSADDRESS, // 487     // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
+        NICKCHANUNAVAILABLE, // 437     // <nickname> <channel> :Nick/channel is temporarily unavailable
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1203,6 +1205,7 @@ struct IrcEvent
         433 : Type.ERR_NICKNAMEINUSE,
         435 : Type.CANTCHANGENICK,
         436 : Type.ERR_NICKCOLLISION,
+        437 : Type.NICKCHANUNAVAILABLE,
         441 : Type.ERR_USERNOTINCHANNEL,
         442 : Type.ERR_NOTONCHANNEL,
         443 : Type.ERR_USERONCHANNEL,
@@ -1229,6 +1232,7 @@ struct IrcEvent
         481 : Type.ERR_NOPRIVILEGES,
         482 : Type.ERR_CHANOPRIVSNEEDED,
         483 : Type.ERR_CANTKILLSERVER,
+        487 : Type.MESSAGENEEDSADDRESS,
         491 : Type.ERR_NOOPERHOST,
         492 : Type.ERR_NOSERVICEHOST,
         501 : Type.ERR_UNKNOWNMODEFLAG,
