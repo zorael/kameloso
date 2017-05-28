@@ -430,21 +430,50 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             event.target = targetOrChannel;
         }
 
-        if (slice.beginsWith(IrcControlCharacter.action) &&
-           (slice.length > 2) && slice[1..$].beginsWith("ACTION"))
+        if (slice.length < 3) break;
+
+        if ((slice[0] == IrcControlCharacter.ctcp) &&
+            (slice[$-1] == IrcControlCharacter.ctcp))
         {
+            import std.string : indexOf;
+
+            slice = slice[1..$-1];
+            event.content = slice;
+            immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
+
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
-            event.type = EMOTE;
-            event.content = (slice.length > 8) ? slice[8..$] : string.init;
-        }
-        else if (slice == (IrcControlCharacter.ctcp ~ "VERSION" ~ IrcControlCharacter.ctcp))
-        {
-            event.type = CTCP_VERSION;
-        }
-        else
-        {
-            event.content = slice;
+            // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :(1)VERSION(1)
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :TIME
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :CLIENTINFO
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :DCC
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :SOURCE
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :USERINFO
+            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :FINGER
+
+            import std.traits : EnumMembers;
+
+            top:
+            switch (ctcpEvent)
+            {
+            foreach (type; EnumMembers!(IrcEvent.Type))
+            {
+                import std.conv : to;
+                enum typestring = type.to!string;
+
+                static if (typestring.length > 5 && typestring[0..5] == "CTCP_")
+                {
+                    case typestring[5..$]:
+                        mixin("event.type = " ~ typestring ~ ";");
+                        break top;
+                }
+            }
+            default:
+                writeln(Foreground.red, "-------------------- UNKNOWN CTCP EVENT -----------");
+                printObjects(event);
+                break;
+            }
         }
         break;
 
