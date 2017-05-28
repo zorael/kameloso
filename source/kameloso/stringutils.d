@@ -383,10 +383,10 @@ if (is(Enum == enum))
            enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-        numSwitch ~= `default: assert("No such member");}`;
+        enumSwitch ~= `default: assert("No such member");}`;
 
         return enumSwitch;
-    }());
+    }();
 
     mixin(enumSwitch);
 
