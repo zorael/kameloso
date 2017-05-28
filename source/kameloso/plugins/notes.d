@@ -352,7 +352,7 @@ void addNote(const string nickname, const string sender, const string line)
  +  Saves all notes to disk.
  +
  +  Params:
- +      filename = the filename to save to, usually Files.notes.
+ +      filename = the filename to save to.
  +/
 void saveNotes(const string filename)
 {
@@ -376,7 +376,7 @@ void saveNotes(const string filename)
  +  Loads notes from disk into the in-memory storage.
  +
  +  Params:
- +      filename = the filename to read, usually Files.notes.
+ +      filename = the filename to read.
  +/
 JSONValue loadNotes(const string filename)
 {
