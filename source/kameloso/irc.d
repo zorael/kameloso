@@ -844,7 +844,9 @@ struct IrcEvent
         SELFQUIT, SELFJOIN, SELFPART,
         SELFMODE, SELFNICK, SELFKICK,
         TOPIC,
-        CTCP_VERSION,
+        CTCP_VERSION, CTCP_TIME, CTCP_PING,
+        CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
+        CTCP_USERINFO, CTCP_FINGER,
         AUTHCHALLENGE,
         AUTHACCEPTANCE,
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
