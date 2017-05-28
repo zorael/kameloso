@@ -828,6 +828,8 @@ struct IrcServer
         freenode,
         rizon,
         quakenet,
+        undernet,
+        gamesurge,
     }
 
     string address = "irc.freenode.net";
