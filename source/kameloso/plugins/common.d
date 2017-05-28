@@ -369,7 +369,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 break;
 
                             case allowed:
-                                mutEvent.content = event.content.stripPrefix(state.bot.nickname);
+                                if (event.content.beginsWith(state.bot.nickname))
+                                {
+                                    mutEvent.content = event.content.stripPrefix(state.bot.nickname);
+                                }
                                 break;
 
                             case required:
@@ -414,6 +417,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     continue;
                                 }
 
+                                // event.content guaranteed to begin with state.bot.nickname
                                 mutEvent.content = event.content.stripPrefix(state.bot.nickname);
                                 break;
                             }
