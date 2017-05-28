@@ -92,7 +92,7 @@ void addQuote(const string nickname, const string line)
  +  This should be done whenever a new quote is added to the database.
  +
  +  Params:
- +      filename = filename of the JSON storage, usually Files.quotes.
+ +      filename = filename of the JSON storage.
  +/
 void saveQuotes(const string filename)
 {
@@ -309,7 +309,7 @@ void onCommanAdddQuote(const IrcEvent event)
     if (!nickname.length || !slice.length) return;
 
     nickname.addQuote(slice);
-    Files.quotes.saveQuotes();
+    saveQuotes(state.settings.quotesFile);
 
     immutable target = (event.channel.length) ? event.channel : event.sender;
 
@@ -350,7 +350,7 @@ void onCommandPrintQuotes()
 void onCommandReloadQuotes()
 {
     writeln(Foreground.lightcyan, "Reloading quotes");
-    quotes = loadQuotes(Files.quotes);
+    quotes = loadQuotes(state.settings.quotesFile);
 }
 
 
@@ -361,7 +361,7 @@ void onCommandReloadQuotes()
 void initialise()
 {
     writeln(Foreground.lightcyan, "Initialising quotes ...");
-    quotes = loadQuotes(Files.quotes);
+    quotes = loadQuotes(state.settings.quotesFile);
 }
 
 
