@@ -508,21 +508,28 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     import std.meta   : AliasSeq;
                     import std.traits : Parameters;
 
-                    static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
+                    try
                     {
-                        fun(contextPrefix, mutEvent);
+                        static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
+                        {
+                            fun(contextPrefix, mutEvent);
+                        }
+                        else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
+                        {
+                            fun(mutEvent);
+                        }
+                        else static if (!Parameters!fun.length)
+                        {
+                            fun();
+                        }
+                        else
+                        {
+                            static assert(false, "Unknown function signature: " ~ typeof(fun).stringof);
+                        }
                     }
-                    else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
+                    catch (Exception e)
                     {
-                        fun(mutEvent);
-                    }
-                    else static if (!Parameters!fun.length)
-                    {
-                        fun();
-                    }
-                    else
-                    {
-                        static assert(false, "Unknown function signature: " ~ typeof(fun).stringof);
+                        writeln(Foreground.lightred, e.msg);
                     }
 
                     static if (hasUDA!(fun, Chainable) &&
