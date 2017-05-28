@@ -61,6 +61,15 @@ struct Settings
     bool joinOnInvite = true;
     bool monochrome = false;
     bool randomNickColours = true;
+
+    string notesFile = "notes.json";
+    string quotesFile = "quotes.json";
+
+    @Unconfigurable
+    {
+        @Hidden
+        string configFile = "kameloso.conf";
+    }
 }
 
 
