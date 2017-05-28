@@ -809,10 +809,10 @@ struct IrcBot
         bool finishedLogin;
     }
 
-    string toString() const
+    void toString(scope void delegate(const(char)[]) sink) const
     {
-        return "[BOT] nick:%s user:%s (l:%s p:%s), ident:%s master:%s homes:%s friends:%s server:%s"
-               .format(nickname, user, login, password, ident, master, homes, friends, server.resolvedAddress);
+        sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
+             .format(nickname, login, ident, homes, channels, friends, server));
     }
 }
 
@@ -837,9 +837,9 @@ struct IrcServer
         string resolvedAddress;
     }
 
-    string toString() const
+    void toString(scope void delegate(const(char)[]) sink) const
     {
-        return "[SERVER] (family.%s) %s:%d (%s)".format(family, address, port, resolvedAddress);
+        sink("[Family.%s] %s:%d (%s)".format(family, address, port, resolvedAddress));
     }
 }
 
@@ -850,10 +850,10 @@ struct IrcUser
     string nickname, ident, address, login;
     bool special;
 
-    string toString() const
+    void toString(scope void delegate(const(char)[]) sink) const
     {
-        return "[%s] ident:'%s' @ address:'%s' : login:'%s' (special:%s)"
-               .format(nickname, ident, address, login, special);
+        sink("%s:%s!~%s@%s%s".format(nickname, login, ident, address,
+                                     special ? " (*)" : string.init));
     }
 }
 
