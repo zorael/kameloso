@@ -269,6 +269,7 @@ void initPlugins()
         new NotesPlugin(state),
         new Chatbot(state),
         new ConnectPlugin(state),
+        new CtcpPlugin(state),
     ];
 
     version (Webtitles)
