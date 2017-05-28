@@ -466,6 +466,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 {
                     case typestring[5..$]:
                         mixin("event.type = " ~ typestring ~ ";");
+                        event.aux = typestring[5..$];
                         break top;
                 }
             }
