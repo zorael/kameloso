@@ -194,7 +194,6 @@ Quit handleArguments(string[] args)
     import std.format : format;
 
     bool shouldWriteConfig;
-    string configFileFromArgs;
     string homes, channels;
     GetoptResult helpInfo;
 
@@ -217,7 +216,7 @@ Quit handleArguments(string[] args)
             "s|server",      "Server address", &bot.server.address,
             "P|port",        "Server port", &bot.server.port,
             "c|config",      "Read configuration from file (default %s)"
-                             .format(Files.config), &configFileFromArgs,
+                             .format(Settings.init.configFile), &settings.configFile,
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
         );
     }
@@ -235,8 +234,7 @@ Quit handleArguments(string[] args)
         return Quit.yes;
     }
 
-    configFileFromArgs = (configFileFromArgs.length) ? configFileFromArgs : Files.config;
-    configFileFromArgs.readConfig(bot, bot.server, settings);
+    settings.configFile.readConfig(bot, bot.server, settings);
 
     import kameloso.stringutils : arrayify;
 
@@ -245,7 +243,7 @@ Quit handleArguments(string[] args)
 
     if (shouldWriteConfig)
     {
-        configFileFromArgs.writeConfigToDisk();
+        writeConfigToDisk();
         return Quit.yes;
     }
 
@@ -285,10 +283,10 @@ void initPlugins()
 }
 
 
-void writeConfigToDisk(const string configFile)
+void writeConfigToDisk()
 {
-    writeln(Foreground.lightcyan, "Writing configuration to ", configFile);
-    configFile.writeConfig(bot, bot.server, settings);
+    writeln(Foreground.lightcyan, "Writing configuration to ", settings.configFile);
+    settings.configFile.writeConfig(bot, bot.server, settings);
     writeln();
     printObjects(bot, bot.server, settings);
 }
