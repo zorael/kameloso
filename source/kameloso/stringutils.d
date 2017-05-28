@@ -293,11 +293,8 @@ string stripPrefix(const string line, const string prefix)
 
     string slice = line.stripLeft();
 
-    if (prefix.length)
-    {
-        slice = slice[(prefix.length+1)..$];
-    }
-
+    // the onus is on the caller that slice begins with prefix
+    slice.nom(prefix);
     slice.munch(":?! ");
 
     return slice;
