@@ -414,12 +414,14 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
     case PRIVMSG:
         immutable targetOrChannel = slice.nom(" :");
+        event.content = slice;
 
         if (targetOrChannel.isValidChannel)
         {
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
             event.type = CHAN;
             event.channel = targetOrChannel;
+            break;
         }
         else
         {
