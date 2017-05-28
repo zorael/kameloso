@@ -12,74 +12,55 @@ private:
 /// All plugin state variables gathered in a struct
 IrcPluginState state;
 
-
-@Label("ctcpversion")
+@Label("ctcps")
 @(IrcEvent.Type.CTCP_VERSION)
-void onCtcpVersion(const IrcEvent event)
-{
-    with (IrcControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "VERSION kameloso:%s:linux" ~ ctcp)
-        .format(event.sender, kamelosoVersion));
-}
-
-
-@Label("ctcpfinger")
 @(IrcEvent.Type.CTCP_FINGER)
-void onCtcpFinger(const IrcEvent event)
-{
-    with (IrcControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "FINGER kameloso %s" ~ ctcp)
-        .format(event.sender, kamelosoVersion));
-}
-
-
-@Label("ctcpsource")
 @(IrcEvent.Type.CTCP_SOURCE)
-void onCtcpSource(const IrcEvent event)
-{
-    with (IrcControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "SOURCE %s" ~ ctcp)
-        .format(event.sender, kamelosoSource));
-}
-
-
-@Label("ctcpping")
 @(IrcEvent.Type.CTCP_PING)
-void onCtcpPing(const IrcEvent event)
-{
-    with (IrcControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "PING %s" ~ ctcp)
-        .format(event.sender, event.content));
-}
-
-
-@Label("ctcptime")
 @(IrcEvent.Type.CTCP_TIME)
-void onCtcpTime(const IrcEvent event)
-{
-    import std.datetime : Clock;
-
-    // "New implementations SHOULD default to UTC time for privacy reasons."
-
-    with (IrcControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "TIME %s" ~ ctcp)
-        .format(event.sender, Clock.currTime.toUTC));
-}
-
-
-@Label("ctcpuserinfo")
 @(IrcEvent.Type.CTCP_USERINFO)
-void onCtcpUserinfo(const IrcEvent event)
+void onCtcps(const IrcEvent event)
 {
+    import std.format : format;
+
+    string line;
+
+    with (IrcEvent.Type)
+    switch (event.type)
+    {
+    case CTCP_VERSION:
+        line = "VERSION kameloso:%s:linux".format(kamelosoVersion);
+        break;
+
+    case CTCP_FINGER:
+        line = "FINGER kameloso " ~ kamelosoVersion;
+        break;
+
+    case CTCP_SOURCE:
+        line = "SOURCE " ~ kamelosoSource;
+        break;
+
+    case CTCP_PING:
+        line = "PING " ~ event.content;
+        break;
+
+    case CTCP_TIME:
+        import std.datetime : Clock;
+
+        line = "TIME " ~ Clock.currTime.toUTC().toString();
+        break;
+
+    case CTCP_USERINFO:
+        line = "USERINFO %s (%s)".format(state.bot.nickname, state.bot.user);
+        break;
+
+    default:
+        assert(0);
+    }
+
     with (IrcControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "USERINFO %s (%s)" ~ ctcp)
-        .format(event.sender, state.bot.nickname, state.bot.user));
+        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(event.sender));
 }
 
 
@@ -99,9 +80,10 @@ void onCtcpClientinfo(const IrcEvent event)
         {
             static if (isSomeFunction!(fun))
             {
-                immutable type = getUDAs!(fun, IrcEvent.Type)[0];
-
-                allTypes = allTypes ~ type.to!string[5..$] ~ " ";
+                foreach (type; getUDAs!(fun, IrcEvent.Type))
+                {
+                    allTypes = allTypes ~ type.to!string[5..$] ~ " ";
+                }
             }
         }
 
