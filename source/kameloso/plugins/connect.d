@@ -148,15 +148,6 @@ void onPing(const IrcEvent event)
 }
 
 
-@Label("version")
-@(IrcEvent.Type.CTCP_VERSION)
-void onVersion(const IrcEvent event)
-{
-    state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :kameloso bot %s".format(event.sender, kamelosoVersion));
-}
-
-
 // onEndOfMotd
 /++
  +  Joins channels at the end of the MOTD, and tries to authenticate with NickServ if applicable.
