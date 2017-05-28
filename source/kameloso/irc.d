@@ -1425,6 +1425,12 @@ bool isFromAuthService(const IrcEvent event)
             // writeln(Foreground.lightcyan, "100% that it's QuakeNet's C");
             return true;
         }
+        else if ((sender == "AuthServ") && (ident == "AuthServ") && (address == "Services.GameSurge.net"))
+        {
+            // GameSurge
+            // AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :No help on that topic.
+            return true;
+        }
     }
 
     return false;
