@@ -62,9 +62,10 @@ void onNotice(const IrcEvent event)
 {
     if (state.bot.server.resolvedAddress.length) return;
 
-    if (event.sender == "irc.quakenet.org")
+    if (event.sender == "(server)")
     {
         state.bot.server.family = IrcServer.Family.quakenet;
+        updateBot();
     }
 
     if (event.content.beginsWith("***"))
