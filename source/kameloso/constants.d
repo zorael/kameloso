@@ -56,9 +56,9 @@ enum Timeout
 enum : ubyte
 {
     entry   = 1 << 0,
-	exit    = 1 << 1,
-	success = 1 << 2,
-	failure = 1 << 3,
+    exit    = 1 << 1,
+    success = 1 << 2,
+    failure = 1 << 3,
 }
 
 enum Format

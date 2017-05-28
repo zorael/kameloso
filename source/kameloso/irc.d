@@ -1055,7 +1055,7 @@ struct IrcEvent
             {
                 auto hits = line.matchFirst(pattern);
                 if (hits.length < 2) continue;
-				arr[hits[2].to!size_t] = hits[1];
+                arr[hits[2].to!size_t] = hits[1];
             }
 
             foreach (i, val; arr)

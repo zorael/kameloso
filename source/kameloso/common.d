@@ -44,7 +44,7 @@ struct Unconfigurable {}
 /// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
-	string token = ",";
+    string token = ",";
 }
 
 /// UDA used to convey "this member should not be printed in clear text"
@@ -282,11 +282,11 @@ template longestMemberName(Things...)
  +/
 string scopeguard(ubyte states = exit, string scopeName = string.init)
 {
-	import std.array : Appender;
+    import std.array : Appender;
     Appender!string app;
 
     string scopeString(const string state)
-	{
+    {
         import std.string : toLower, format;
 
         if (scopeName.length)
@@ -319,7 +319,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
     }
 
     string entryString(const string state)
-	{
+    {
         import std.string : toLower, format;
 
         if (scopeName.length)

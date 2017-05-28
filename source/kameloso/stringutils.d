@@ -373,24 +373,24 @@ unittest
 Enum toEnum(Enum)(const string enumstring)
 if (is(Enum == enum))
 {
-	enum enumSwitch = ()
+    enum enumSwitch = ()
     {
-		string enumSwitch = "with (Enum) switch (enumstring)\n{";
+       string enumSwitch = "with (Enum) switch (enumstring)\n{";
 
         foreach (memberstring; __traits(allMembers, Enum))
         {
             enumSwitch ~= `case "` ~ memberstring ~ `":`;
-			enumSwitch ~= "return " ~ memberstring ~ ";\n";
+           enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-		enumSwitch ~= `default: assert("No such member");}`;
+        numSwitch ~= `default: assert("No such member");}`;
 
-		return enumSwitch;
-	}();
+        return enumSwitch;
+    }());
 
-	mixin(enumSwitch);
+    mixin(enumSwitch);
 
-	assert(false, "No such member " ~ enumstring);
+    assert(false, "No such member " ~ enumstring);
 }
 unittest
 {
