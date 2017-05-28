@@ -457,6 +457,10 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             top:
             switch (ctcpEvent)
             {
+            case "ACTION":
+                // ignore, handled elsewhere
+                break;
+
             foreach (type; EnumMembers!(IrcEvent.Type))
             {
                 import std.conv : to;
