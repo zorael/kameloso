@@ -1707,4 +1707,17 @@ unittest
         assert((content == "Unknown command"), content);
         assert((aux == "sudo"), aux);
     }
+
+    /+
+    :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
+    +/
+    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~ IrcControlCharacter.ctcp ~
+                     "PING 1495974267 590878" ~ IrcControlCharacter.ctcp).toIrcEvent();
+    with (e15)
+    {
+        assert((sender == "wob^2"), sender);
+        assert((type == IrcEvent.Type.CTCP_PING), type.to!string);
+        assert((content == "1495974267 590878"), content);
+        assert((aux == "PING"), aux);
+    }
 }
