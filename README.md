@@ -4,7 +4,7 @@ A command-line IRC bot.
 
 kameloso sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not respond to keyboard input, though text can be sent manually by other means.
 
-It works on Freenode, Rizon-like, QuakeNet and Undernet servers. More *may* work, depending on the authentication service used and the server family's set of non-standard events.
+It works on Freenode, Rizon and QuakeNet, with tentative support for Undernet, GameSurge, EFnet and DALnet servers. It cannot even connect to UnrealIRCd and Twitch servers. Others *may* work; it depends on which authentication service they use and generally the server families' own sets of non-standard events.
 
 Current functionality includes:
 
