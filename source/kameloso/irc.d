@@ -908,6 +908,7 @@ struct IrcEvent
         HELP_END, // 706                // <nickname> index :End of /HELP.
         NEEDAUTHTOJOIN, // 477          // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
         CANTCHANGENICK, // 435          // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
+        YOURHIDDENHOST, // 396 ,        // <nickname> <host> :is now your hidden host
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1178,6 +1179,7 @@ struct IrcEvent
         393 : Type.RPL_USERS,
         394 : Type.RPL_ENDOFUSERS,
         395 : Type.RPL_NOUSERS,
+        396 : Type.YOURHIDDENHOST,
         401 : Type.ERR_NOSUCHNICK,
         402 : Type.ERR_NOSUCHSERVER,
         403 : Type.ERR_NOSUCHCHANNEL,
