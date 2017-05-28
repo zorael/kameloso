@@ -202,7 +202,7 @@ Quit handleArguments(string[] args)
         helpInfo = args.getopt(
             config.caseSensitive,
             "n|nickname",    "Bot nickname", &bot.nickname,
-            "u|user",        "Username when logging onto server (not nickname)", &bot.user,
+            "u|user",        "Username when registering onto server (not nickname)", &bot.user,
             "i|ident",       "IDENT string", &bot.ident,
             "q|quitReason",  "Quit reason string", &bot.quitReason,
             "l|login",       "Auth service login name, if applicable", &bot.login,
