@@ -335,13 +335,6 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         {
             event.special = true;  // by definition
 
-            enum AuthServiceAcceptance
-            {
-                freenode = "You are now identified for",
-                rizon = "Password accepted - you are now recognized.",
-                quakenet = "You are now logged in as",
-            }
-
             if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
                 (event.content.canFind("/msg NickServ identify")))
             {
@@ -349,11 +342,20 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             }
             else
             {
+                enum AuthServiceAcceptance
+                {
+                    freenode = "You are now identified for",
+                    rizon = "Password accepted - you are now recognized.",
+                    quakenet = "You are now logged in as",
+                    gamesurge = "I recognize you.",
+                }
+
                 with (AuthServiceAcceptance)
                 {
                     if ((event.content.beginsWith(freenode)) ||
+                        (event.content.beginsWith(quakenet)) ||
                         (event.content == rizon) ||
-                        (event.content.beginsWith(quakenet)))
+                        (event.content == gamesurge))
                     {
                         event.type = AUTHACCEPTANCE;
                     }
