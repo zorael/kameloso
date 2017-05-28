@@ -97,7 +97,7 @@ public:
 
             default:
                 writeln(Foreground.lightred, e.msg);
-                assert(false);
+                assert(0);
             }
         }
         catch (Exception e)
