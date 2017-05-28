@@ -2,15 +2,6 @@ module kameloso.constants;
 
 enum kamelosoVersion = "0.4.4";
 
-/// Hardcoded default filenames
-enum Files
-{
-    config = "kameloso.conf",
-    quotes = "quotes.json",
-    notes  = "notes.json",
-}
-
-
 enum IrcControlCharacter
 {
     action = 1,
