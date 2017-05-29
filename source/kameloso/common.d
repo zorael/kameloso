@@ -326,37 +326,35 @@ unittest
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis)
 {
-    foreach (immutable memberstring; __traits(derivedMembers, Thing))
+    foreach (immutable i, ref member; intoThis.tupleof)
     {
-        static if (is(typeof(__traits(getMember, Thing, memberstring))))
+        static if (is(typeof(member)))
         {
-            alias MemberType = typeof(__traits(getMember, Thing, memberstring));
+            alias MemberType = typeof(member);
 
-            static if (is(MemberType == struct) || (is(MemberType == class)))
+            static if (is(MemberType == struct) || is(MemberType == class))
             {
                 // Recurse
-                __traits(getMember, meldThis, memberstring).meldInto(__traits(getMember, intoThis, memberstring));
+                meldThis.tupleof[i].meldInto2(member);
             }
             else static if (isAssignableType!MemberType)
             {
-                import std.format : format;
-
                 static if (overwrite)
                 {
                     static if (is(MemberType == float))
                     {
                         import std.math : isNaN;
 
-                        if (!__traits(getMember, meldThis, memberstring).isNaN)
+                        if (!meldThis.tupleof[i].isNaN)
                         {
-                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                            member = meldThis.tupleof[i];
                         }
                     }
                     else
                     {
-                        if (__traits(getMember, meldThis, memberstring) != MemberType.init)
+                        if (meldThis.tupleof[i] != MemberType.init)
                         {
-                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                            member = meldThis.tupleof[i];
                         }
                     }
                 }
@@ -366,16 +364,16 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                     {
                         import std.math : isNaN;
 
-                        if (__traits(getMember, intoThis, memberstring).isNaN)
+                        if (member.isNaN)
                         {
-                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                            member = meldThis.tupleof[i];
                         }
                     }
                     else
                     {
-                        if (__traits(getMember, intoThis, memberstring) == MemberType.init)
+                        if ((member == MemberType.init) || (member == Thing.init.tupleof[i]))
                         {
-                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                            member = meldThis.tupleof[i];
                         }
                     }
                 }
