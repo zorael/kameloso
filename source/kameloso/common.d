@@ -361,6 +361,38 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
         }
     }
 }
+unittest
+{
+    import std.conv : to;
+
+    struct Foo
+    {
+        string abc;
+        string def;
+        int i;
+        float f;
+    }
+
+    Foo f1; // = new Foo;
+    f1.abc = "ABC";
+    f1.def = "DEF";
+
+    Foo f2; // = new Foo;
+    f2.abc = "this won't get copied";
+    f2.def = "neither will this";
+    f2.i = 42;
+    f2.f = 3.14f;
+
+    f2.meldInto(f1);
+
+    with (f1)
+    {
+        assert((abc == "ABC"), abc);
+        assert((def == "DEF"), def);
+        assert((i == 42), i.to!string);
+        assert((f == 3.14f), f.to!string);
+    }
+}
 
 
 // scopeguard
