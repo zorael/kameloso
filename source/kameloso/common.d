@@ -323,6 +323,9 @@ unittest
 
     void boo(int i) {}
 
+    enum Baz { abc, def, ghi }
+    Baz baz;
+
     assert(isAssignableType!int);
     assert(!isAssignableType!(const int));
     assert(!isAssignableType!(immutable int));
@@ -330,6 +333,8 @@ unittest
     assert(isAssignableType!Foo);
     assert(isAssignableType!Bar);
     assert(!isAssignableType!boo);  // room for improvement: @property
+    assert(isAssignableType!Baz);
+    assert(!isAssignableType!baz);
 }
 
 
