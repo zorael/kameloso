@@ -414,6 +414,28 @@ unittest
         assert((i == 42), i.to!string);
         assert((f == 3.14f), f.to!string);
     }
+
+    Foo f3; // new Foo;
+    f3.abc = "abc";
+    f3.def = "def";
+    f3.i = 100_135;
+    f3.f = 99.9f;
+
+    Foo f4; // new Foo;
+    f4.abc = "OVERWRITTEN";
+    f4.def = "OVERWRITTEN TOO";
+    f4.i = 0;
+    f4.f = 0.1f;
+
+    f4.meldInto!(Yes.overwrite)(f3);
+
+    with (f3)
+    {
+        assert((abc == "OVERWRITTEN"), abc);
+        assert((def == "OVERWRITTEN TOO"), def);
+        assert((i == 100_135), i.to!string); // 0 is int.init
+        assert((f == 0.1f), f.to!string);
+    }
 }
 
 
