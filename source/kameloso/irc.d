@@ -820,8 +820,8 @@ struct IrcBot
     {
         IrcServer server;
         string origNickname;
-        bool attemptedLogin;
-        bool finishedLogin;
+        bool startedRegistering;
+        bool finishedRegistering;
     }
 
     void toString(scope void delegate(const(char)[]) sink) const

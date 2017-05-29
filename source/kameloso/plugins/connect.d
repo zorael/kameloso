@@ -89,7 +89,7 @@ void joinChannels()
     {
         if (bot.homes.length)
         {
-            bot.finishedLogin = true;
+            bot.finishedRegistering = true;
             updateBot();
 
             mainThread.send(ThreadMessage.Sendline(),
@@ -169,7 +169,7 @@ void onEndOfMotd()
         return;
     }
 
-    if (state.bot.attemptedLogin) return;
+    if (state.bot.startedRegistering) return;
 
     if (state.bot.server.family == IrcServer.Family.quakenet)
     {
@@ -216,14 +216,14 @@ void onEndOfMotd()
 @(IrcEvent.Type.AUTHCHALLENGE)
 void onChallenge(const IrcEvent event)
 {
-    if (state.bot.attemptedLogin || state.bot.finishedLogin) return;
+    if (state.bot.startedRegistering || state.bot.finishedRegistering) return;
 
     if (state.bot.server.family != IrcServer.Family.quakenet)
     {
         state.bot.server.family = getFamily(event);
     }
 
-    state.bot.attemptedLogin = true;
+    state.bot.startedRegistering = true;
     updateBot();
 
     if (state.bot.server.family == IrcServer.Family.freenode)
@@ -256,9 +256,9 @@ void onChallenge(const IrcEvent event)
 @(IrcEvent.Type.AUTHACCEPTANCE)
 void onAcceptance()
 {
-    if (state.bot.finishedLogin) return;
+    if (state.bot.finishedRegistering) return;
 
-    state.bot.finishedLogin = true;
+    state.bot.finishedRegistering = true;
     joinChannels();
 }
 
