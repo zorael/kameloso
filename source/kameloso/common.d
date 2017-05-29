@@ -305,6 +305,33 @@ unittest
 }
 
 
+void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
+    (ref Thing meldThis, ref Thing intoThis)
+{
+    foreach (immutable memberstring; __traits(derivedMembers, Thing))
+    {
+        static if (is(typeof(__traits(getMember, Thing, memberstring))))
+        {
+            alias MemberType = typeof(__traits(getMember, Thing, memberstring));
+
+            static if (is(MemberType == struct))
+            {
+                __traits(getMember, meldThis, memberstring).meldInto(__traits(getMember, intoThis, memberstring));
+            }
+            else static if (isAssignableType!MemberType)
+            {
+                if (__traits(getMember, intoThis, memberstring) == MemberType.init)
+                {
+                    import std.format : format;
+
+                    mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                }
+            }
+        }
+    }
+}
+
+
 // scopeguard
 /++
  +  Generates a string mixin of scopeguards. This is a convenience function to automate
