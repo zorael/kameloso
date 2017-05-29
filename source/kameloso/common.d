@@ -341,20 +341,42 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
             {
                 import std.format : format;
 
-                static if (is(MemberType == float))
+                static if (overwrite)
                 {
-                    import std.math : isNaN;
-
-                    if (__traits(getMember, intoThis, memberstring).isNaN)
+                    static if (is(MemberType == float))
                     {
-                        mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        import std.math : isNaN;
+
+                        if (!__traits(getMember, meldThis, memberstring).isNaN)
+                        {
+                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        }
+                    }
+                    else
+                    {
+                        if (__traits(getMember, meldThis, memberstring) != MemberType.init)
+                        {
+                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        }
                     }
                 }
                 else
                 {
-                    if (__traits(getMember, intoThis, memberstring) == MemberType.init)
+                    static if (is(MemberType == float))
                     {
-                        mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        import std.math : isNaN;
+
+                        if (__traits(getMember, intoThis, memberstring).isNaN)
+                        {
+                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        }
+                    }
+                    else
+                    {
+                        if (__traits(getMember, intoThis, memberstring) == MemberType.init)
+                        {
+                            mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                        }
                     }
                 }
             }
