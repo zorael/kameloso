@@ -324,7 +324,7 @@ unittest
 
 
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
-    (ref Thing meldThis, ref Thing intoThis)
+    (Thing meldThis, ref Thing intoThis)
 {
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
