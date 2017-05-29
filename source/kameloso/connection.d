@@ -209,7 +209,7 @@ void listenFiber(Connection conn)
     import std.algorithm.searching : countUntil;
 
     auto buffer = new ubyte[](BufferSize.socketReceive);
-    SysTime timeLastReceived;
+    SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
     while (true)
