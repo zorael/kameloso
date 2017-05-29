@@ -1,7 +1,7 @@
 module kameloso.common;
 
 import kameloso.constants;
-
+import std.typecons : Flag, Yes, No;
 
 /++
  +  Aggregate of thread message types.
@@ -266,6 +266,42 @@ template longestMemberName(Things...)
 
         return longest;
     }();
+}
+
+
+template isAssignableType(T)
+if (!is(typeof(T)))
+{
+    import std.traits;
+    enum bool isAssignableType = isType!T &&
+        !isSomeFunction!T &&
+        !is(T == const) &&
+        !is(T == immutable);
+}
+
+enum isAssignableType(alias symbol) = false;
+
+unittest
+{
+    struct Foo
+    {
+        string bar, baz;
+    }
+
+    class Bar
+    {
+        int i;
+    }
+
+    void boo(int i) {}
+
+    assert(isAssignableType!int);
+    assert(!isAssignableType!(const int));
+    assert(!isAssignableType!(immutable int));
+    assert(isAssignableType!(string[]));
+    assert(isAssignableType!Foo);
+    assert(isAssignableType!Bar);
+    assert(!isAssignableType!boo);  // room for improvement: @property
 }
 
 
