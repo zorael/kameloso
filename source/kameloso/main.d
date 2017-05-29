@@ -234,8 +234,18 @@ Quit handleArguments(string[] args)
         return Quit.yes;
     }
 
+    // Read settings into temporary Bot and Settings structs, then meld them into the
+    // real ones into which command-line arguments will have been applied.
 
+    IrcBot botFromConfig;
+    Settings settingsFromConfig;
 
+    settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
+
+    botFromConfig.meldInto(bot);
+    settingsFromConfig.meldInto(settings);
+
+    // If --writeconfig was supplied we should just write and quit
 
     if (shouldWriteConfig)
     {
