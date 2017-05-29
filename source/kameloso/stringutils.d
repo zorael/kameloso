@@ -20,7 +20,7 @@ public import std.typecons : Yes, No;
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Flag!"decode" decode = Flag!"decode".no, T, C)(ref T[] arr, C separator)
+string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, C separator)
 {
     static if (decode)
     {
