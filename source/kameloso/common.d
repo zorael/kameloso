@@ -332,8 +332,9 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
         {
             alias MemberType = typeof(__traits(getMember, Thing, memberstring));
 
-            static if (is(MemberType == struct))
+            static if (is(MemberType == struct) || (is(MemberType == class)))
             {
+                // Recurse
                 __traits(getMember, meldThis, memberstring).meldInto(__traits(getMember, intoThis, memberstring));
             }
             else static if (isAssignableType!MemberType)
