@@ -54,24 +54,29 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
             immutable value = line.stripLeft();
 
             mid:
-            foreach (i, thing; things)
+            foreach (immutable i, thing; things)
             {
-                enum Thing = typeof(thing).stringof;
+                import std.typecons : Unqual;
+
+                enum Thing = Unqual!(typeof(thing)).stringof;
+
                 if (currentSection != Thing) continue;
 
                 switch (entry)
                 {
-                foreach (memberstring; __traits(derivedMembers, Things[i]))
+
+                foreach (immutable n, ref member; things[i].tupleof)
                 {
-                    static if (is(typeof(__traits(getMember, thing, memberstring))))
+                    static if (is(typeof(member)))
                     {
+                        enum memberstring = __traits(identifier, Things[i].tupleof[n]);
+
                         case memberstring:
-                            import std.typecons : Unqual;
-                            alias MemberType = Unqual!(typeof(__traits(getMember, thing, memberstring)));
                             things[i].setMember(entry, value);
                             continue mid;
                     }
                 }
+
                 default:
                     break;
                 }
