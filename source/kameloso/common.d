@@ -339,11 +339,23 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
             }
             else static if (isAssignableType!MemberType)
             {
-                if (__traits(getMember, intoThis, memberstring) == MemberType.init)
-                {
-                    import std.format : format;
+                import std.format : format;
 
-                    mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                static if (is(MemberType == float))
+                {
+                    import std.math : isNaN;
+
+                    if (__traits(getMember, intoThis, memberstring).isNaN)
+                    {
+                        mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                    }
+                }
+                else
+                {
+                    if (__traits(getMember, intoThis, memberstring) == MemberType.init)
+                    {
+                        mixin("intoThis.%s = meldThis.%s;".format(memberstring, memberstring));
+                    }
                 }
             }
         }
