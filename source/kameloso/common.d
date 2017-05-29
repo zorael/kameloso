@@ -335,7 +335,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
             static if (is(MemberType == struct) || is(MemberType == class))
             {
                 // Recurse
-                meldThis.tupleof[i].meldInto2(member);
+                meldThis.tupleof[i].meldInto(member);
             }
             else static if (isAssignableType!MemberType)
             {
