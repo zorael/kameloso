@@ -12,7 +12,7 @@ import std.json  : JSONValue;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 /// The in-memory JSON storage of all user quotes. It is in the JSON form of string[][string],
 /// where the first key is the nickname.
@@ -155,15 +155,15 @@ JSONValue loadQuotes(const string filename)
  +  If it was sent in a query, respond in a private message in kind.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("say")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPrefixPolicy.required, "say")
 @Prefix(NickPrefixPolicy.required, "säg")
-void onCommandSay(const IrcEvent event)
+void onCommandSay(const IRCEvent event)
 {
     import std.format : format;
 
@@ -189,14 +189,14 @@ void onCommandSay(const IrcEvent event)
  +  was a private message.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("8ball")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPrefixPolicy.required, "8ball")
-void onCommand8ball(const IrcEvent event)
+void onCommand8ball(const IRCEvent event)
 {
     import std.format : format;
     import std.random : uniform;
@@ -242,14 +242,14 @@ void onCommand8ball(const IrcEvent event)
  +  event occured in.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("quote")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPrefixPolicy.required, "quote")
-void onCommandQuote(const IrcEvent event)
+void onCommandQuote(const IRCEvent event)
 {
     import std.string : strip, indexOf;
     import std.format : format;
@@ -292,14 +292,14 @@ void onCommandQuote(const IrcEvent event)
  +  It is added to the in-memory JSON storage which then gets immediately written to disk.
  +
  +  Params:
- +      event = The triggering IrcEvent.
+ +      event = The triggering IRCEvent.
  +/
 @Label("addquote")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPrefixPolicy.required, "addquote")
-void onCommanAdddQuote(const IrcEvent event)
+void onCommanAdddQuote(const IRCEvent event)
 {
     import std.format : format;
 
@@ -326,8 +326,8 @@ void onCommanAdddQuote(const IrcEvent event)
  +  This is for debugging purposes.
  +/
 @Label("printquotes")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "printquotes")
 void onCommandPrintQuotes()
@@ -343,8 +343,8 @@ void onCommandPrintQuotes()
  +  This is both for debugging purposes and to simply allow for live manual editing of quotes.
  +/
 @Label("reloadquotes")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
@@ -376,7 +376,7 @@ public:
  +  Chatbot plugin to provide common chat functionality. Administrative actions have been
  +  broken out into a plugin of its own.
  +/
-final class Chatbot : IrcPlugin
+final class Chatbot : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

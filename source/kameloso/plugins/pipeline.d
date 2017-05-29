@@ -13,7 +13,7 @@ import std.stdio : File;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 /// Thread ID of the thread reading the named pipe
 Tid fifoThread;
@@ -22,12 +22,12 @@ Tid fifoThread;
 File fifo;
 
 
-void pipereader(shared IrcPluginState newState)
+void pipereader(shared IRCPluginState newState)
 {
     import core.time : seconds;
     import std.file  : remove;
 
-    state = cast(IrcPluginState)newState;
+    state = cast(IRCPluginState)newState;
 
     createFIFO();
 
@@ -111,8 +111,8 @@ void createFIFO()
 
 
 @Label("welcome")
-@(IrcEvent.Type.WELCOME)
-void onWelcome(const IrcEvent event)
+@(IRCEvent.Type.WELCOME)
+void onWelcome(const IRCEvent event)
 {
     state.bot.nickname = event.target;
     fifoThread = spawn(&pipereader, cast(shared)state);
@@ -156,7 +156,7 @@ mixin OnEventImpl!__MODULE__;
  *  to the server. It is for debugging purposes until such time we figure out a
  *  way to properly input lines via the terminal.
  +/
-final class Pipeline : IrcPlugin
+final class Pipeline : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

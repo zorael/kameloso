@@ -394,12 +394,12 @@ if (is(Enum == enum))
 }
 unittest
 {
-    import kameloso.irc   : IrcEvent;
+    import kameloso.irc   : IRCEvent;
     import std.exception  : assertThrown;
     import core.exception : AssertError;
 
-    with (IrcEvent)
-    with (IrcEvent.Type)
+    with (IRCEvent)
+    with (IRCEvent.Type)
     {
         assert("QUERY".toEnum!Type == QUERY);
         assert("PRIVMSG".toEnum!Type == PRIVMSG);
@@ -451,10 +451,10 @@ if (is(Enum == enum))
 }
 unittest
 {
-    import kameloso.irc : IrcEvent;
+    import kameloso.irc : IRCEvent;
 
-    with (IrcEvent)
-    with (IrcEvent.Type)
+    with (IRCEvent)
+    with (IRCEvent.Type)
     {
         assert(enumToString(QUERY) == "QUERY");
         assert(enumToString(PRIVMSG) == "PRIVMSG");

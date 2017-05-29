@@ -10,7 +10,7 @@ import std.algorithm.searching : canFind;
 private:
 
 /// State variables and configuration for the IRC bot.
-IrcBot bot;
+IRCBot bot;
 
 
 // parseBasic
@@ -20,13 +20,13 @@ IrcBot bot;
  +  They syntactically differ from other events in that they are not prefixed by its sender.
  +
  +  Params:
-+       event = an unfinished IrcEvent.
++       event = an unfinished IRCEvent.
  +      raw = the raw IRC string to parse.
  +
  +  Returns:
- +      the finished IrcEvent.
+ +      the finished IRCEvent.
  +/
-void parseBasic(ref IrcEvent event)
+void parseBasic(ref IRCEvent event)
 {
     mixin(scopeguard(failure));
 
@@ -37,13 +37,13 @@ void parseBasic(ref IrcEvent event)
     switch (event.typestring)
     {
     case "PING":
-        event.type = IrcEvent.Type.PING;
+        event.type = IRCEvent.Type.PING;
         event.sender = slice;
         break;
 
     case "ERROR":
         // ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)
-        event.type = IrcEvent.Type.ERROR;
+        event.type = IRCEvent.Type.ERROR;
         event.content = slice;
         break;
 
@@ -52,8 +52,8 @@ void parseBasic(ref IrcEvent event)
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
-        bot.server.family = IrcServer.Family.quakenet;  // only available locally
-        event.type = IrcEvent.Type.NOTICE;
+        bot.server.family = IRCServer.Family.quakenet;  // only available locally
+        event.type = IRCEvent.Type.NOTICE;
         event.sender = "(server)";
         event.content = raw;
         event.aux = slice.stripRight();
@@ -68,35 +68,35 @@ unittest
 {
     import std.conv : to;
 
-    IrcEvent e1;
+    IRCEvent e1;
     with (e1)
     {
         raw = "PING :irc.server.address";
         e1.parseBasic();
         assert((raw == "PING :irc.server.address"), raw);
-        assert((type == IrcEvent.Type.PING), type.to!string);
+        assert((type == IRCEvent.Type.PING), type.to!string);
         assert((sender == "irc.server.address"), sender);
     }
 
-    IrcEvent e2;
+    IRCEvent e2;
     with (e2)
     {
         // quakenet
         raw = "NOTICE AUTH :*** Couldn't look up your hostname";
         e2.parseBasic();
         assert((raw == "NOTICE AUTH :*** Couldn't look up your hostname"), raw);
-        assert((type == IrcEvent.Type.NOTICE), type.to!string);
+        assert((type == IRCEvent.Type.NOTICE), type.to!string);
         assert((sender == "(server)"), sender);
         assert((content == "*** Couldn't look up your hostname"));
     }
 
-    IrcEvent e3;
+    IRCEvent e3;
     with (e3)
     {
         raw = "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)";
         e3.parseBasic();
         assert((raw == "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), raw);
-        assert((type == IrcEvent.Type.ERROR), type.to!string);
+        assert((type == IRCEvent.Type.ERROR), type.to!string);
         assert(!sender.length, sender);
         assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
     }
@@ -105,17 +105,17 @@ unittest
 
 // parsePrefix
 /++
- +  Takes a slice of a raw IRC string and starts parsing it into an IrcEvent struct.
+ +  Takes a slice of a raw IRC string and starts parsing it into an IRCEvent struct.
  +  This function only focuses on the prefix; the sender, be it nickname and ident
  +  or server address.
  +
- +  The IrcEvent is not finished at the end of this function.
+ +  The IRCEvent is not finished at the end of this function.
  +
  +  Params:
- +      ref event = A reference to the IrcEvent to start working on.
+ +      ref event = A reference to the IRCEvent to start working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parsePrefix(ref IrcEvent event, ref string slice)
+void parsePrefix(ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : nom;
     import std.algorithm.searching : endsWith;
@@ -142,7 +142,7 @@ unittest
 {
     import std.conv : to;
 
-    IrcEvent e1;
+    IRCEvent e1;
     with (e1)
     {
         raw = ":zorael!~NaN@some.address.org PRIVMSG kameloso :this is fake";
@@ -154,7 +154,7 @@ unittest
         assert(!special);
     }
 
-    IrcEvent e2;
+    IRCEvent e2;
     with (e2)
     {
         raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
@@ -166,7 +166,7 @@ unittest
         assert(special);
     }
 
-    IrcEvent e3;
+    IRCEvent e3;
     with (e3)
     {
         raw = ":kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp";
@@ -178,7 +178,7 @@ unittest
         assert(!special);
     }
 
-    IrcEvent e4;
+    IRCEvent e4;
     with (e4)
     {
         raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
@@ -194,17 +194,17 @@ unittest
 
 // parseTypestring
 /++
- +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
+ +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
  +  This function only focuses on the typestring; the part that tells what kind of event
  +  happened, like PRIVMSG or MODE or NICK or KICK, etc.
  +
- +  The IrcEvent is not finished at the end of this function.
+ +  The IRCEvent is not finished at the end of this function.
  +
  +  Params:
- +      ref event = A reference to the IrcEvent to continue working on.
+ +      ref event = A reference to the IRCEvent to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseTypestring(ref IrcEvent event, ref string slice)
+void parseTypestring(ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : nom, toEnum;
     import std.conv : to;
@@ -220,9 +220,9 @@ void parseTypestring(ref IrcEvent event, ref string slice)
         {
             immutable number = event.typestring.to!uint;
             event.num = number;
-            event.type = IrcEvent.typenums[number];
+            event.type = IRCEvent.typenums[number];
 
-            with (IrcEvent.Type)
+            with (IRCEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
         }
         catch (Exception e)
@@ -233,8 +233,8 @@ void parseTypestring(ref IrcEvent event, ref string slice)
     }
     else
     {
-        //try event.type = event.typestring.to!(IrcEvent.Type);
-        try event.type = event.typestring.toEnum!(IrcEvent.Type);
+        //try event.type = event.typestring.to!(IRCEvent.Type);
+        try event.type = event.typestring.toEnum!(IRCEvent.Type);
         catch (Exception e)
         {
             writefln("------------------ %s ----------------", e.msg);
@@ -246,59 +246,59 @@ unittest
 {
     import std.conv : to;
 
-    IrcEvent e1;
+    IRCEvent e1;
     with (e1)
     {
         raw = /*":port80b.se.quakenet.org */"421 kameloso åäö :Unknown command";
         string slice = raw;  // mutable
         e1.parseTypestring(slice);
-        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
         assert((num == 421), num.to!string);
     }
 
-    IrcEvent e2;
+    IRCEvent e2;
     with (e2)
     {
         raw = /*":port80b.se.quakenet.org */"353 kameloso = #garderoben :@kameloso'";
         string slice = raw;  // mutable
         e2.parseTypestring(slice);
-        assert((type == IrcEvent.Type.RPL_NAMREPLY), type.to!string);
+        assert((type == IRCEvent.Type.RPL_NAMREPLY), type.to!string);
         assert((num == 353), num.to!string);
     }
 
-    IrcEvent e3;
+    IRCEvent e3;
     with (e3)
     {
         raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
         string slice = raw;
         e3.parseTypestring(slice);
-        assert((type == IrcEvent.Type.PRIVMSG), type.to!string);
+        assert((type == IRCEvent.Type.PRIVMSG), type.to!string);
     }
 
-    IrcEvent e4;
+    IRCEvent e4;
     with (e4)
     {
         raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
         string slice = raw;
         e4.parseTypestring(slice);
-        assert((type == IrcEvent.Type.PART), type.to!string);
+        assert((type == IRCEvent.Type.PART), type.to!string);
     }
 }
 
 
 // parseSpecialcases
 /++
- +  Takes a slice of a raw IRC string and continues parsing it into an IrcEvent struct.
+ +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
  +  This function only focuses on specialcasing the remaining line, dividing it into fields
  +  like target, channel, content, etc.
  +
- +  The IrcEvent is finished at the end of this function. Beware its length.
+ +  The IRCEvent is finished at the end of this function. Beware its length.
  +
  +  Params:
- +      ref event = A reference to the IrcEvent to finish working on.
+ +      ref event = A reference to the IRCEvent to finish working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseSpecialcases(ref IrcEvent event, ref string slice)
+void parseSpecialcases(ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils;
 
@@ -309,7 +309,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         writeln(Foreground.lightred, "------------------------------------------------");
     }
 
-    with (IrcEvent.Type)
+    with (IRCEvent.Type)
     switch (event.type)
     {
     case NOTICE:
@@ -434,8 +434,8 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
         if (slice.length < 3) break;
 
-        if ((slice[0] == IrcControlCharacter.ctcp) &&
-            (slice[$-1] == IrcControlCharacter.ctcp))
+        if ((slice[0] == IRCControlCharacter.ctcp) &&
+            (slice[$-1] == IRCControlCharacter.ctcp))
         {
             import std.string : indexOf;
 
@@ -457,9 +457,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
             import std.traits : EnumMembers;
 
             /++
-             +  This iterates through all IrcEvent.Types that begin with "CTCP_" and
+             +  This iterates through all IRCEvent.Types that begin with "CTCP_" and
              +  generates switch cases for the string of each. Inside it will assign
-             +  event.type to the corresponding IrcEvent.Type. Like so, except
+             +  event.type to the corresponding IRCEvent.Type. Like so, except
              +  automatically generated through compile-time introspection:
              +
              +      case "CTCP_PING":
@@ -475,7 +475,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
                 // ignore, handled elsewhere
                 break;
 
-            foreach (type; EnumMembers!(IrcEvent.Type))
+            foreach (type; EnumMembers!(IRCEvent.Type))
             {
                 import std.conv : to;
                 enum typestring = type.to!string;
@@ -770,7 +770,7 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
         writeln();
     }
 
-    if ((event.type != IrcEvent.Type.TOPIC) &&
+    if ((event.type != IRCEvent.Type.TOPIC) &&
         ((event.target.length && (event.target[0] == '#')) ||
         (event.channel.length && event.channel[0] != '#')))
     {
@@ -782,9 +782,9 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
     }
 
     if ((event.target == bot.nickname) &&
-        ((event.type != IrcEvent.Type.WELCOME) &&
-         (event.type != IrcEvent.Type.MODE) &&
-         (event.type != IrcEvent.Type.CHANMODE)))
+        ((event.type != IRCEvent.Type.WELCOME) &&
+         (event.type != IRCEvent.Type.MODE) &&
+         (event.type != IRCEvent.Type.CHANMODE)))
     {
         event.target = string.init;
     }
@@ -794,13 +794,18 @@ public:
 
 
 /// A simple struct to collect all the relevant settings, options and state needed
-struct IrcBot
+struct IRCBot
 {
-    string nickname   = "kameloso";
+    string nickname;
+    string user;
+    string ident;
+    string auth;
+    string quitReason;
+    /*string nickname   = "kameloso";
     string user       = "kameloso!";
     string ident      = "NaN";
     string auth       = "kameloso";
-    string quitReason = "beep boop I am a bot";
+    string quitReason = "beep boop I am a bot";*/
     string master;
 
     @Hidden
@@ -818,7 +823,7 @@ struct IrcBot
 
     @Unconfigurable
     {
-        IrcServer server;
+        IRCServer server;
         string origNickname;
         bool startedRegistering;
         bool finishedRegistering;
@@ -833,7 +838,7 @@ struct IrcBot
 
 
 /// IRC server information.
-struct IrcServer
+struct IRCServer
 {
     enum Family
     {
@@ -848,8 +853,10 @@ struct IrcServer
     }
 
     Family family;
-    string address = "irc.freenode.net";
-    ushort port = 6667;
+    string address;
+    ushort port;
+    /*string address = "irc.freenode.net";
+    ushort port = 6667;*/
 
     @Unconfigurable
     {
@@ -864,7 +871,7 @@ struct IrcServer
 
 
 /// Likewise a collection of string fields that represents a single user
-struct IrcUser
+struct IRCUser
 {
     string nickname, ident, address, login;
     bool special;
@@ -877,12 +884,12 @@ struct IrcUser
 }
 
 
-// IrcEvent
+// IRCEvent
 /++
- +  The IrcEvent struct is a parsed construct with fields extracted from raw server strings.
+ +  The IRCEvent struct is a parsed construct with fields extracted from raw server strings.
  +  Since structs are not polymorphic the Type enum dictates what kind of event it is.
  +/
-struct IrcEvent
+struct IRCEvent
 {
     /// Taken from https://tools.ietf.org/html/rfc1459 with some additions
     enum Type
@@ -1269,23 +1276,23 @@ struct IrcEvent
 }
 
 
-// toIrcEvent
+// toIRCEvent
 /++
  +  Takes a raw IRC string and passes it to the different parsing functions to get a finished
- +  IrcEvent. Parsing goes through several phases (prefix, typestring, specialcases) and
+ +  IRCEvent. Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them.
  +
  +  Params:
  +      raw = The raw IRC string to parse.
  +
  +  Returns:
- +      A finished IrcEvent.
+ +      A finished IRCEvent.
  +/
-IrcEvent toIrcEvent(const char[] raw)
+IRCEvent toIRCEvent(const char[] raw)
 {
     import std.datetime;
 
-    IrcEvent event;
+    IRCEvent event;
 
     event.time = Clock.currTime.toUnixTime;
     event.raw = raw.idup;
@@ -1309,7 +1316,7 @@ IrcEvent toIrcEvent(const char[] raw)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "toIrcEvent: ", e.msg);
+        writeln(Foreground.lightred, "toIRCEvent: ", e.msg);
     }
 
     return event;
@@ -1318,19 +1325,19 @@ IrcEvent toIrcEvent(const char[] raw)
 
 // userFromEvent
 /++
- +  Takes an IrcEvent and builds an IrcUser from its fields.
+ +  Takes an IRCEvent and builds an IRCUser from its fields.
  +
  +  Params:
- +      event = IrcEvent to extract an IrcUser out of.
+ +      event = IRCEvent to extract an IRCUser out of.
  +
  +  Returns:
- +      A freshly generated IrcUser.
+ +      A freshly generated IRCUser.
  +/
-IrcUser userFromEvent(const IrcEvent event)
+IRCUser userFromEvent(const IRCEvent event)
 {
-    IrcUser user;
+    IRCUser user;
 
-    with (IrcEvent.Type)
+    with (IRCEvent.Type)
     switch (event.type)
     {
     case RPL_WHOISUSER:
@@ -1384,7 +1391,7 @@ unittest
     import std.conv : to;
 
     immutable e1 = ":zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff"
-                   .toIrcEvent();
+                   .toIRCEvent();
     immutable u1 = userFromEvent(e1);
     with (u1)
     {
@@ -1395,8 +1402,8 @@ unittest
     }
 
     immutable e2 = ":asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as"
-                   .toIrcEvent();
-    assert((e2.type == IrcEvent.Type.WHOISLOGIN), e2.type.to!string);
+                   .toIRCEvent();
+    assert((e2.type == IRCEvent.Type.WHOISLOGIN), e2.type.to!string);
     immutable u2 = userFromEvent(e2);
     with (u2)
     {
@@ -1406,7 +1413,7 @@ unittest
     }
 
     immutable e3 = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered."
-                   .toIrcEvent();
+                   .toIRCEvent();
     immutable u3 = userFromEvent(e3);
     with (u3)
     {
@@ -1418,7 +1425,7 @@ unittest
 }
 
 /// This simply looks at an event and decides whether it is from NickServ/Q
-bool isFromAuthService(const IrcEvent event)
+bool isFromAuthService(const IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
@@ -1458,7 +1465,7 @@ bool isFromAuthService(const IrcEvent event)
 }
 unittest
 {
-    IrcEvent e1;
+    IRCEvent e1;
     with (e1)
     {
         raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
@@ -1467,7 +1474,7 @@ unittest
         assert(e1.isFromAuthService);
     }
 
-    IrcEvent e2;
+    IRCEvent e2;
     with (e2)
     {
         raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
@@ -1476,7 +1483,7 @@ unittest
         assert(e2.isFromAuthService);
     }
 
-    IrcEvent e3;
+    IRCEvent e3;
     with (e3)
     {
         raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
@@ -1485,7 +1492,7 @@ unittest
         assert(e3.isFromAuthService);
     }
 
-    IrcEvent e4;
+    IRCEvent e4;
     with (e4)
     {
         raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
@@ -1556,11 +1563,11 @@ unittest
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
     :tepper.freenode.net NOTICE * :*** Checking Ident
      +/
-    immutable e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".toIrcEvent();
+    immutable e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident".toIRCEvent();
     with (e1)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.NOTICE), type.to!string);
+        assert((type == IRCEvent.Type.NOTICE), type.to!string);
         assert((content == "*** Checking Ident"), content);
     }
 
@@ -1568,11 +1575,11 @@ unittest
     [ERR_NICKNAMEINUSE] tepper.freenode.net (kameloso): "Nickname is already in use." (#433)
     :tepper.freenode.net 433 * kameloso :Nickname is already in use.
      +/
-    immutable e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".toIrcEvent();
+    immutable e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use.".toIRCEvent();
     with (e2)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.ERR_NICKNAMEINUSE), type.to!string);
+        assert((type == IRCEvent.Type.ERR_NICKNAMEINUSE), type.to!string);
         // assert((target == "kameloso"), target);
         assert((content == "Nickname is already in use."), content);
         assert((num == 433), num.to!string);
@@ -1583,11 +1590,11 @@ unittest
     :tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
      +/
     immutable e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
-                   .toIrcEvent();
+                   .toIRCEvent();
     with (e3)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.WELCOME), type.to!string);
+        assert((type == IRCEvent.Type.WELCOME), type.to!string);
         assert((target == "kameloso^"), target);
         assert((content == "Welcome to the freenode Internet Relay Chat Network kameloso^"),
                content);
@@ -1598,11 +1605,11 @@ unittest
     [RPL_ENDOFMOTD] tepper.freenode.net (kameloso^): "End of /MOTD command." (#376)
     :tepper.freenode.net 376 kameloso^ :End of /MOTD command.
      +/
-    immutable e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".toIrcEvent();
+    immutable e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command.".toIRCEvent();
     with (e4)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.RPL_ENDOFMOTD), type.to!string);
+        assert((type == IRCEvent.Type.RPL_ENDOFMOTD), type.to!string);
         //assert((target == "kameloso^"), target);
         assert((content == "End of /MOTD command."), content);
         assert((num == 376), num.to!string);
@@ -1612,11 +1619,11 @@ unittest
     [SELFMODE] kameloso^ (kameloso^) <+i>
     :kameloso^ MODE kameloso^ :+i
      +/
-    immutable e5 = ":kameloso^ MODE kameloso^ :+i".toIrcEvent();
+    immutable e5 = ":kameloso^ MODE kameloso^ :+i".toIRCEvent();
     with (e5)
     {
         assert((sender == "kameloso^"), sender);
-        assert((type == IrcEvent.Type.SELFMODE), type.to!string);
+        assert((type == IRCEvent.Type.SELFMODE), type.to!string);
         assert((aux == "+i"), aux);
     }
 
@@ -1625,11 +1632,11 @@ unittest
     :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp
      +/
     immutable e6 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp"
-                   .toIrcEvent();
+                   .toIRCEvent();
     with (e6)
     {
         assert((sender == "zorael"), sender);
-        assert((type == IrcEvent.Type.QUERY), type.to!string); // Will this work?
+        assert((type == IRCEvent.Type.QUERY), type.to!string); // Will this work?
         //assert((target == "kameloso^", target);
         assert((content == "sudo privmsg zorael :derp"), content);
     }
@@ -1639,11 +1646,11 @@ unittest
     :tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr
      +/
     immutable e7 = ":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr"
-                   .toIrcEvent();
+                   .toIRCEvent();
     with (e7)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.RPL_WHOISUSER), type.to!string);
+        assert((type == IRCEvent.Type.RPL_WHOISUSER), type.to!string);
         assert((content == "~NaN ns3363704.ip-94-23-253.eu"), content);
         assert((aux == "jr"), aux);
         assert((num == 311), num.to!string);
@@ -1654,11 +1661,11 @@ unittest
     :tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as
      +/
     immutable e8 = ":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as"
-                   .toIrcEvent();
+                   .toIRCEvent();
     with (e8)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.WHOISLOGIN), type.to!string);
+        assert((type == IRCEvent.Type.WHOISLOGIN), type.to!string);
         assert((target == "zurael"), target);
         assert((content == "is logged in as"), content);
         assert((aux == "zorael"), aux);
@@ -1669,11 +1676,11 @@ unittest
     [PONG] tepper.freenode.net
     :tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net
      +/
-    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIrcEvent();
+    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIRCEvent();
     with (e9)
     {
         assert((sender == "tepper.freenode.net"), sender);
-        assert((type == IrcEvent.Type.PONG), type.to!string);
+        assert((type == IRCEvent.Type.PONG), type.to!string);
         assert(!target.length, target); // More than the server and type is never parsed
     }
 
@@ -1682,11 +1689,11 @@ unittest
     :wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection
      +/
     immutable e10 = ":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection"
-                    .toIrcEvent();
+                    .toIRCEvent();
     with (e10)
     {
         assert((sender == "wonderworld"), sender);
-        assert((type == IrcEvent.Type.QUIT), type.to!string);
+        assert((type == IRCEvent.Type.QUIT), type.to!string);
         assert(!target.length, target);
         assert((content == "Remote host closed the connection"), content);
     }
@@ -1695,11 +1702,11 @@ unittest
     [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
-     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIrcEvent();
+     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIRCEvent();
      with (e11)
      {
         assert((sender == "zorael"), sender);
-        assert((type == IrcEvent.Type.CHANMODE), type.to!string);
+        assert((type == IRCEvent.Type.CHANMODE), type.to!string);
         assert((target == "kameloso^"), target);
         assert((channel == "#flerrp"), channel);
         assert((aux == "+v"), aux);
@@ -1709,11 +1716,11 @@ unittest
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
      :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
      +/
-     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIrcEvent();
+     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIRCEvent();
      with (e12)
      {
         assert((sender == "irc.uworld.se"), sender);
-        assert((type == IrcEvent.Type.TOCONNECTTYPE), type.to!string);
+        assert((type == IRCEvent.Type.TOCONNECTTYPE), type.to!string);
         // assert((target == "kameloso"), target);
         assert((aux == "3705964477"), aux);
         assert((content == "PONG"), content);
@@ -1723,22 +1730,22 @@ unittest
     [20:55:14] [ERR_UNKNOWNCOMMAND] karatkievich.freenode.net (kameloso^) <systemd,#kde,#kubuntu,#archlinux, ...>
     :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...
     +/
-    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...".toIrcEvent();
+    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...".toIRCEvent();
     with (e13)
     {
         assert((sender == "karatkievich.freenode.net"), sender);
-        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
         assert((aux == "systemd,#kde,#kubuntu,#archlinux ..."), aux);
     }
 
     /+
     :asimov.freenode.net 421 kameloso^ sudo :Unknown command
     +/
-    immutable e14 = ":asimov.freenode.net 421 kameloso^ sudo :Unknown command".toIrcEvent();
+    immutable e14 = ":asimov.freenode.net 421 kameloso^ sudo :Unknown command".toIRCEvent();
     with (e14)
     {
         assert((sender == "asimov.freenode.net"), sender);
-        assert((type == IrcEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
         assert((content == "Unknown command"), content);
         assert((aux == "sudo"), aux);
     }
@@ -1746,12 +1753,12 @@ unittest
     /+
     :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
     +/
-    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~ IrcControlCharacter.ctcp ~
-                     "PING 1495974267 590878" ~ IrcControlCharacter.ctcp).toIrcEvent();
+    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~ IRCControlCharacter.ctcp ~
+                     "PING 1495974267 590878" ~ IRCControlCharacter.ctcp).toIRCEvent();
     with (e15)
     {
         assert((sender == "wob^2"), sender);
-        assert((type == IrcEvent.Type.CTCP_PING), type.to!string);
+        assert((type == IRCEvent.Type.CTCP_PING), type.to!string);
         assert((content == "1495974267 590878"), content);
         assert((aux == "PING"), aux);
     }

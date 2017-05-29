@@ -289,7 +289,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(256); // An IrcBot weighs in at a rough minimum of 128 characters
+    sink.reserve(256); // An IRCBot weighs in at a rough minimum of 128 characters
 
     sink.formattedWrite("[%s]\n", Thing.stringof); // Section header
 

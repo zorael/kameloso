@@ -12,14 +12,14 @@ import std.format : format;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 bool serverPingedAtConnect;
 
 
 @Label("onSelfjoin")
-@(IrcEvent.Type.SELFJOIN)
-void onSelfjoin(const IrcEvent event)
+@(IRCEvent.Type.SELFJOIN)
+void onSelfjoin(const IRCEvent event)
 {
     if (!state.bot.channels.canFind(event.channel))
     {
@@ -30,8 +30,8 @@ void onSelfjoin(const IrcEvent event)
 
 
 @Label("onSelfPart")
-@(IrcEvent.Type.SELFPART)
-void onSelfpart(const IrcEvent event)
+@(IRCEvent.Type.SELFPART)
+void onSelfpart(const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
     import std.algorithm.searching : canFind;
@@ -54,19 +54,22 @@ void onSelfpart(const IrcEvent event)
  +  This may be Freenode-specific and may need extension to work with other servers.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("notice")
-@(IrcEvent.Type.NOTICE)
-void onNotice(const IrcEvent event)
+@(IRCEvent.Type.NOTICE)
+void onNotice(const IRCEvent event)
 {
-    if (state.bot.server.resolvedAddress.length) return;
+    if (state.bot.startedRegistering) return;
+
+    state.bot.startedRegistering = true;
 
     if (event.sender == "(server)")
     {
-        state.bot.server.family = IrcServer.Family.quakenet;
-        updateBot();
+        state.bot.server.family = IRCServer.Family.quakenet;
     }
+
+    updateBot();
 
     if (event.content.beginsWith("***"))
     {
@@ -111,13 +114,13 @@ void joinChannels()
  +  all other plugins.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("welcome")
-@(IrcEvent.Type.WELCOME)
-void onWelcome(const IrcEvent event)
+@(IRCEvent.Type.WELCOME)
+void onWelcome(const IRCEvent event)
 {
-    if (state.bot.server.family == IrcServer.Family.quakenet)
+    if (state.bot.server.family == IRCServer.Family.quakenet)
     {
         // Only now does quakenet servers show what the resolved address is
         // Don't update bot now, do it below
@@ -130,8 +133,8 @@ void onWelcome(const IrcEvent event)
 
 
 @Label("toconnecttype")
-@(IrcEvent.Type.TOCONNECTTYPE)
-void onToConnectType(const IrcEvent event)
+@(IRCEvent.Type.TOCONNECTTYPE)
+void onToConnectType(const IRCEvent event)
 {
     if (serverPingedAtConnect) return;
 
@@ -141,8 +144,8 @@ void onToConnectType(const IrcEvent event)
 
 
 @Label("onping")
-@(IrcEvent.Type.PING)
-void onPing(const IrcEvent event)
+@(IRCEvent.Type.PING)
+void onPing(const IRCEvent event)
 {
     serverPingedAtConnect = true;
     state.mainThread.send(ThreadMessage.Pong(), event.sender);
@@ -156,8 +159,8 @@ void onPing(const IrcEvent event)
  +  This may be Freenode-specific and may need extension to work with other servers.
  +/
 @Label("endofmotd")
-@(IrcEvent.Type.RPL_ENDOFMOTD)
-@(IrcEvent.Type.ERR_NOMOTD)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd()
 {
     // FIXME: Deadlock if a password exists but there is no challenge
@@ -171,7 +174,7 @@ void onEndOfMotd()
 
     if (state.bot.startedRegistering) return;
 
-    if (state.bot.server.family == IrcServer.Family.quakenet)
+    if (state.bot.server.family == IRCServer.Family.quakenet)
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
@@ -184,7 +187,7 @@ void onEndOfMotd()
     {
         writeln(Foreground.lightred, "Probably need to AUTH manually");
 
-        if (state.bot.server.family == IrcServer.Family.freenode)
+        if (state.bot.server.family == IRCServer.Family.freenode)
         {
             state.mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
@@ -213,12 +216,12 @@ void onEndOfMotd()
 
 
 @Label("onchallenge")
-@(IrcEvent.Type.AUTHCHALLENGE)
-void onChallenge(const IrcEvent event)
+@(IRCEvent.Type.AUTHCHALLENGE)
+void onChallenge(const IRCEvent event)
 {
     if (state.bot.startedRegistering || state.bot.finishedRegistering) return;
 
-    if (state.bot.server.family != IrcServer.Family.quakenet)
+    if (state.bot.server.family != IRCServer.Family.quakenet)
     {
         state.bot.server.family = getFamily(event);
     }
@@ -226,7 +229,7 @@ void onChallenge(const IrcEvent event)
     state.bot.startedRegistering = true;
     updateBot();
 
-    if (state.bot.server.family == IrcServer.Family.freenode)
+    if (state.bot.server.family == IRCServer.Family.freenode)
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG NickServ :IDENTIFY %s %s"
@@ -253,7 +256,7 @@ void onChallenge(const IrcEvent event)
 
 
 @Label("onacceptance")
-@(IrcEvent.Type.AUTHACCEPTANCE)
+@(IRCEvent.Type.AUTHACCEPTANCE)
 void onAcceptance()
 {
     if (state.bot.finishedRegistering) return;
@@ -263,9 +266,9 @@ void onAcceptance()
 }
 
 
-IrcServer.Family getFamily(const IrcEvent event)
+IRCServer.Family getFamily(const IRCEvent event)
 {
-    with (IrcServer.Family)
+    with (IRCServer.Family)
     switch (event.address)
     {
     case "services.":
@@ -294,7 +297,7 @@ IrcServer.Family getFamily(const IrcEvent event)
  +  via the main thread to all other plugins.
  +/
 @Label("nickinuse")
-@(IrcEvent.Type.ERR_NICKNAMEINUSE)
+@(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {
     state.bot.nickname ~= altNickSign;
@@ -306,8 +309,8 @@ void onNickInUse()
 
 
 @Label("oninvite")
-@(IrcEvent.Type.INVITE)
-void onInvite(const IrcEvent event)
+@(IRCEvent.Type.INVITE)
+void onInvite(const IRCEvent event)
 {
     if (!state.settings.joinOnInvite)
     {
@@ -332,7 +335,7 @@ public:
  +  a matter of sending USER and NICK at the starting "handshake", but also incorporates
  +  logic to authenticate with NickServ.
  +/
-final class ConnectPlugin : IrcPlugin
+final class ConnectPlugin : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

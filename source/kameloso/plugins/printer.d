@@ -10,7 +10,7 @@ import std.array : Appender;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 Settings settings;
 
@@ -36,15 +36,15 @@ enum appenderBufferSize = 600;
  +  Use the reusableAppender to slightly optimise the procedure by constantly reusing memory.
  +
  +  Params:
- +      event = the IrcEvent to print.
+ +      event = the IRCEvent to print.
  +/
 @Label("any")
-@(IrcEvent.Type.ANY)
-void onAnyEvent(const IrcEvent origEvent)
+@(IRCEvent.Type.ANY)
+void onAnyEvent(const IRCEvent origEvent)
 {
-    IrcEvent event = origEvent; // need a mutable copy
+    IRCEvent event = origEvent; // need a mutable copy
 
-    with (IrcEvent.Type)
+    with (IRCEvent.Type)
     switch (event.type)
     {
     case RPL_NAMREPLY:
@@ -163,12 +163,12 @@ void onAnyEvent(const IrcEvent origEvent)
 
 
 version (Colours)
-void mapEffects(ref IrcEvent event)
+void mapEffects(ref IRCEvent event)
 {
     import std.string : representation;
     import std.algorithm.searching : canFind;
 
-    alias I = IrcControlCharacter;
+    alias I = IRCControlCharacter;
     alias B = BashEffectToken;
 
     if (event.content.representation.canFind(I.colour))
@@ -198,7 +198,7 @@ void mapEffects(ref IrcEvent event)
 
 
 version (Colours)
-void mapColours(ref IrcEvent event)
+void mapColours(ref IRCEvent event)
 {
     import std.regex;
 
@@ -290,7 +290,7 @@ void mapColours(ref IrcEvent event)
 }
 
 version (Colours)
-void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IrcEvent event)
+void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 {
     import std.regex;
     import std.conv : to;
@@ -321,12 +321,12 @@ public:
 
 // Printer
 /++
- +  The Printer plugin takes all IrcEvents and prints them to the local terminal.
+ +  The Printer plugin takes all IRCEvents and prints them to the local terminal.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split off into
  +  its own plugin.
  +/
-final class Printer : IrcPlugin
+final class Printer : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

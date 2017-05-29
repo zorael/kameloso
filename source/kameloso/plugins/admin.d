@@ -11,7 +11,7 @@ import std.concurrency : send;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 /// Toggles whether onAnyEvent prints the raw strings of all incoming IRC events
 bool printAll;
@@ -24,14 +24,14 @@ bool printBytes;
  +  Sends supplied text to the server, verbatim.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("sudo")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "sudo")
-void onCommandSudo(const IrcEvent event)
+void onCommandSudo(const IRCEvent event)
 {
     if (state.users[event.sender].login != state.bot.master)
     {
@@ -51,14 +51,14 @@ void onCommandSudo(const IrcEvent event)
  +  otherwise it falls back to the default as specified in the configuration file.
  +
  +  Params:
- +      event = tshe triggering IrcEvent.
+ +      event = tshe triggering IRCEvent.
  +/
 @Label("quit")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "quit")
-void onCommandQuit(const IrcEvent event)
+void onCommandQuit(const IRCEvent event)
 {
     state.mainThread.send(ThreadMessage.Quit(), event.content);
 }
@@ -69,14 +69,14 @@ void onCommandQuit(const IrcEvent event)
  +  Add a channel to the list of currently active channels.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("addchan")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "addhome")
-void onCommandAddHome(const IrcEvent event)
+void onCommandAddHome(const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
     import std.string : strip;
@@ -105,15 +105,15 @@ void onCommandAddHome(const IrcEvent event)
  +  Removes a channel from the list of currently active home channels.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("delchan")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "delchan")
 @Prefix(NickPrefixPolicy.required, "delhome")
-void onCommandDelChan(const IrcEvent event)
+void onCommandDelChan(const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
     import std.string : strip;
@@ -147,14 +147,14 @@ void onCommandDelChan(const IrcEvent event)
  +  This is at a 'friends' level, as opposed to 'anyone' and 'master'.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("addfriend")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "addfriend")
-void onCommandAddFriend(const IrcEvent event)
+void onCommandAddFriend(const IRCEvent event)
 {
     import std.string : indexOf, strip;
 
@@ -182,14 +182,14 @@ void onCommandAddFriend(const IrcEvent event)
  +  Remove a nickname from the list of users who may trigger the bot.
  +
  +  Params:
- +      event = The triggering IrcEvent.
+ +      event = The triggering IRCEvent.
  +/
 @Label("delfriend")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "delfriend")
-void onCommandDelFriend(const IrcEvent event)
+void onCommandDelFriend(const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
     import std.string : indexOf, strip;
@@ -230,8 +230,8 @@ void onCommandDelFriend(const IrcEvent event)
  +  binary file.
  +/
 @Label("resetterm")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "resetterm")
 void onCommandResetTerminal()
@@ -248,8 +248,8 @@ void onCommandResetTerminal()
  +  This is for debugging purposes.
  +/
 @Label("toggleprintall")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "printall")
 void onCommandPrintAll()
@@ -260,8 +260,8 @@ void onCommandPrintAll()
 
 
 @Label("toggleprintbytes")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "printbytes")
 void onCommandPrintBytes()
@@ -276,15 +276,15 @@ void onCommandPrintBytes()
  +  by way of the 'printall' verb.
  +
  +  It is annotated with Chainable.yes to allow other functions to not halt the triggering
- +  process, allowing other functions to trigger on the same IrcEvent.
+ +  process, allowing other functions to trigger on the same IRCEvent.
  +
  +  Params:
  +      event = the event whose raw IRC string to print.
  +/
 @Label("print")
-@(IrcEvent.Type.ANY)
+@(IRCEvent.Type.ANY)
 @(Chainable.yes)
-void onAnyEvent(const IrcEvent event)
+void onAnyEvent(const IRCEvent event)
 {
     if (printAll) writeln(Foreground.cyan, event.raw, "$");
 
@@ -306,15 +306,15 @@ void onAnyEvent(const IrcEvent event)
  +
  +  Params:
  +      prefix = a prefix string of either "join" or "part".
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("join/part")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "join")
 @Prefix(NickPrefixPolicy.required, "part")
-void onCommandJoinPart(const string prefix, const IrcEvent event)
+void onCommandJoinPart(const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter, joiner;
     import std.format : format;
@@ -331,11 +331,11 @@ void onCommandJoinPart(const string prefix, const IrcEvent event)
 
 
 @Label("writeconfig")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "writeconfig")
-void onWriteConfig(const IrcEvent event)
+void onWriteConfig(const IRCEvent event)
 {
     state.mainThread.send(ThreadMessage.WriteConfig());
 }
@@ -353,7 +353,7 @@ public:
  +
  +  It was historically part of Chatbot.
  +/
-final class AdminPlugin : IrcPlugin
+final class AdminPlugin : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

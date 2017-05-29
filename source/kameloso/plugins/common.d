@@ -5,29 +5,29 @@ import kameloso.common : Settings;
 import std.typecons : Flag;
 
 
-// IrcPlugin
+// IRCPlugin
 /++
- +  Interface that all IrcPlugins must adhere to.
+ +  Interface that all IRCPlugins must adhere to.
  +
  +  There will obviously be more functions but only these are absolutely needed.
  +  It is neccessary so that all plugins may be kept in one array, and foreached through
  +  when new events have been generated.
  +/
-interface IrcPlugin
+interface IRCPlugin
 {
-    void newBot(IrcBot);
+    void newBot(IRCBot);
 
     void newSettings(Settings);
 
     void status();
 
-    void onEvent(const IrcEvent);
+    void onEvent(const IRCEvent);
 
     void teardown();
 }
 
 
-// IrcPluginState
+// IRCPluginState
 /++
  +  An aggregate of all variables that make up the state of a given plugin.
  +
@@ -35,14 +35,14 @@ interface IrcPlugin
  +  This allows for making more or less all functions top-level functions, since any state
  +  could be passed to it with variables of this type.
  +/
-struct IrcPluginState
+struct IRCPluginState
 {
     import std.concurrency : Tid;
 
-    IrcBot bot;
+    IRCBot bot;
     Settings settings;
     Tid mainThread;
-    IrcUser[string] users;
+    IRCUser[string] users;
     bool delegate()[string] queue;
 }
 
@@ -104,14 +104,14 @@ struct Label
  +  of concurrency message passing overhead.
  +
  +  Params:
- +      event = A complete IrcEvent to queue for later processing.
+ +      event = A complete IRCEvent to queue for later processing.
  +/
-void doWhois(IrcPluginState state, const IrcEvent event)
+void doWhois(IRCPluginState state, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    IrcEvent eventCopy = event;  // need mutable or the send will fail
+    IRCEvent eventCopy = event;  // need mutable or the send will fail
     state.mainThread.send(ThreadMessage.Whois(), eventCopy);
 }
 
@@ -125,7 +125,7 @@ void doWhois(IrcPluginState state, const IrcEvent event)
  +  If the user's NickServ login is in the list of friends (or equals the bot's master's),
  +  return pass. Else, return fail and deny use.
  +/
-FilterResult filterUser(const IrcPluginState state, const IrcEvent event)
+FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -143,7 +143,7 @@ FilterResult filterUser(const IrcPluginState state, const IrcEvent event)
 }
 
 
-// IrcPluginBasics
+// IRCPluginBasics
 /++
  +  Mixin with the basics of any plugin.
  +
@@ -152,27 +152,27 @@ FilterResult filterUser(const IrcPluginState state, const IrcEvent event)
  +      .onEvent
  +      .teardown
  +/
-mixin template IrcPluginBasics()
+mixin template IRCPluginBasics()
 {
     // onEvent
     /++
-     +  Pass on the supplied IrcEvent to the top-level .onEvent.
+     +  Pass on the supplied IRCEvent to the top-level .onEvent.
      +
      +  Compile-time intropection detects whether it exists or not, and compiles optimised
      +  code with no run-time checks.
      +
      +  Params:
-     +      event = the triggering IrcEvent.
+     +      event = the triggering IRCEvent.
      +/
-    void onEvent(const IrcEvent event)
+    void onEvent(const IRCEvent event)
     {
-        static if (__traits(compiles, .onEvent(IrcEvent.init)))
+        static if (__traits(compiles, .onEvent(IRCEvent.init)))
         {
             .onEvent(event);
         }
     }
 
-    // this(IrcPluginState)
+    // this(IRCPluginState)
     /++
      +  Basic constructor for a plugin.
      +
@@ -182,7 +182,7 @@ mixin template IrcPluginBasics()
      +      origState = the aggregate of all plugin state variables, making this the
      +          "original state" of the plugin.
      +/
-    this(IrcPluginState state)
+    this(IRCPluginState state)
     {
         static if (__traits(compiles, .state = state))
         {
@@ -201,14 +201,14 @@ mixin template IrcPluginBasics()
 
     // newBot
     /++
-     +  Inherits a new IrcBot.
+     +  Inherits a new IRCBot.
      +
      +  Invoked on all plugins when changes has been made to the bot.
      +
      +  Params:
      +      bot = the new bot to inherit
      +/
-    void newBot(IrcBot bot)
+    void newBot(IRCBot bot)
     {
         static if (__traits(compiles, .state.bot = bot))
         {
@@ -263,11 +263,11 @@ mixin template IrcPluginBasics()
 
 // OnEventImpl
 /++
- +  Dispatches IrcEvents to event handlers based on their UDAs.
+ +  Dispatches IRCEvents to event handlers based on their UDAs.
  +
- +  Any top-level function with a signature of (void), (IrcEvent) or (string, IrcEvent)
- +  can be annotated with IrcEvent.Type UDAs, and onEvent will dispatch the correlating
- +  events to them as it is called. Merely annotating a function with IrcEvent.Type is
+ +  Any top-level function with a signature of (void), (IRCEvent) or (string, IRCEvent)
+ +  can be annotated with IRCEvent.Type UDAs, and onEvent will dispatch the correlating
+ +  events to them as it is called. Merely annotating a function with IRCEvent.Type is
  +  enough to "register" it as an event handler for that type.
  +
  +  This produces optimised code with only very few runtime checks.
@@ -280,18 +280,18 @@ mixin template IrcPluginBasics()
 mixin template OnEventImpl(string module_, bool debug_ = false)
 {
     /// Ditto
-    void onEvent(const IrcEvent event)
+    void onEvent(const IRCEvent event)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.stringutils;
         import std.traits : getSymbolsByUDA, getUDAs, hasUDA, isSomeFunction;
 
-        foreach (fun; getSymbolsByUDA!(thisModule, IrcEvent.Type))
+        foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
         {
             static if (isSomeFunction!fun)
             {
-                foreach (eventTypeUDA; getUDAs!(fun, IrcEvent.Type))
+                foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
                 {
                     static if (hasUDA!(fun, Label))
                     {
@@ -313,7 +313,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         enum verbose = false;
                     }
 
-                    static if (eventTypeUDA == IrcEvent.Type.ANY)
+                    static if (eventTypeUDA == IRCEvent.Type.ANY)
                     {
                         // UDA is ANY, let pass
                     }
@@ -324,10 +324,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             continue;
                         }
 
-                        static if ((eventTypeUDA == IrcEvent.Type.CHAN) ||
-                                (eventTypeUDA == IrcEvent.Type.JOIN) ||
-                                (eventTypeUDA == IrcEvent.Type.PART) ||
-                                (eventTypeUDA == IrcEvent.Type.QUIT))
+                        static if ((eventTypeUDA == IRCEvent.Type.CHAN) ||
+                                (eventTypeUDA == IRCEvent.Type.JOIN) ||
+                                (eventTypeUDA == IRCEvent.Type.PART) ||
+                                (eventTypeUDA == IRCEvent.Type.QUIT))
                         {
                             import std.algorithm.searching : canFind;
 
@@ -342,7 +342,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         }
                     }
 
-                    IrcEvent mutEvent = event;  // mutable
+                    IRCEvent mutEvent = event;  // mutable
                     string contextPrefix;
 
                     static if (hasUDA!(fun, Prefix))
@@ -376,7 +376,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 break;
 
                             case required:
-                                if (event.type == IrcEvent.Type.QUERY)
+                                if (event.type == IRCEvent.Type.QUERY)
                                 {
                                     static if (verbose)
                                     {
@@ -510,11 +510,11 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                     try
                     {
-                        static if (is(Parameters!fun : AliasSeq!(const string, const IrcEvent)))
+                        static if (is(Parameters!fun : AliasSeq!(const string, const IRCEvent)))
                         {
                             fun(contextPrefix, mutEvent);
                         }
-                        else static if (is(Parameters!fun : AliasSeq!(const IrcEvent)))
+                        else static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
                         {
                             fun(mutEvent);
                         }
@@ -550,7 +550,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
 // BasicEventHandlers
 /++
- +  Rudimentary IrcEvent handlers.
+ +  Rudimentary IRCEvent handlers.
  +
  +  Almost any plugin will need handlers for WHOISLOGIN, RPL_ENDOFWHOIS, PART, QUIT, and SELFNICK.
  +  This mixin provides those. If more elaborate ones are needed, additional functions can be
@@ -565,12 +565,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  This function populates the user array.
      +
      +  Params:
-     +      event = the triggering IrcEvent.
+     +      event = the triggering IRCEvent.
      +/
     @(Label("whoislogin"))
-    @(IrcEvent.Type.WHOISLOGIN)
-    @(IrcEvent.Type.HASTHISNICK)
-    void onWhoisLoginMixin(const IrcEvent event)
+    @(IRCEvent.Type.WHOISLOGIN)
+    @(IRCEvent.Type.HASTHISNICK)
+    void onWhoisLoginMixin(const IRCEvent event)
     {
         state.users[event.target] = userFromEvent(event);
     }
@@ -588,11 +588,11 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  any valid events should have already been replayed.
      +
      +  Params:
-     +      event = the triggering IrcEvent.
+     +      event = the triggering IRCEvent.
      +/
     @(Label("endofwhois"))
-    @(IrcEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWhoisMixin(const IrcEvent event)
+    @(IRCEvent.Type.RPL_ENDOFWHOIS)
+    void onEndOfWhoisMixin(const IRCEvent event)
     {
         state.queue.remove(event.target);
     }
@@ -605,12 +605,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  will have disappeared. A new WHOIS must be made then.
      +
      +  Params:
-     +      event = the triggering IrcEvent.
+     +      event = the triggering IRCEvent.
      +/
     @(Label("part/quit"))
-    @(IrcEvent.Type.PART)
-    @(IrcEvent.Type.QUIT)
-    void onLeaveMixin(const IrcEvent event)
+    @(IRCEvent.Type.PART)
+    @(IRCEvent.Type.QUIT)
+    void onLeaveMixin(const IRCEvent event)
     {
         state.users.remove(event.sender);
     }
@@ -620,11 +620,11 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Inherit a new nickname.
      +
      +  Params:
-     +      event = the triggering IrcEvent.
+     +      event = the triggering IRCEvent.
      +/
     @(Label("selfnick"))
-    @(IrcEvent.Type.SELFNICK)
-    void onSelfnickMixin(const IrcEvent event)
+    @(IRCEvent.Type.SELFNICK)
+    void onSelfnickMixin(const IRCEvent event)
     {
         if (state.bot.nickname == event.content)
         {

@@ -24,16 +24,16 @@ shared static this()
 private:
 
 /// State variables and configuration for the IRC bot.
-IrcBot bot;
+IRCBot bot;
 
 /// Runtime settings for bot behaviour.
 Settings settings;
 
-/// A runtime array of all plugins. We iterate this when we have an IrcEvent to react to.
-IrcPlugin[] plugins;
+/// A runtime array of all plugins. We iterate this when we have an IRCEvent to react to.
+IRCPlugin[] plugins;
 
-/// A 1-buffer of IrcEvents to replay when a WHOIS call returns.
-IrcEvent[string] replayQueue;
+/// A 1-buffer of IRCEvents to replay when a WHOIS call returns.
+IRCEvent[string] replayQueue;
 
 /// The socket we use to connect to the server.
 Connection conn;
@@ -89,7 +89,7 @@ Quit checkMessages()
     }
 
     /// Send a WHOIS call to the server, and buffer the requests.
-    void whois(ThreadMessage.Whois, IrcEvent event)
+    void whois(ThreadMessage.Whois, IRCEvent event)
     {
         import std.datetime : Clock;
 
@@ -110,9 +110,9 @@ Quit checkMessages()
 
     /// Receive an updated bot, inherit it into .bot and propagate it to
     /// all plugins.
-    void updateBot(shared IrcBot bot)
+    void updateBot(shared IRCBot bot)
     {
-        .bot = cast(IrcBot)bot;
+        .bot = cast(IRCBot)bot;
 
         foreach (plugin; plugins) plugin.newBot(.bot);
     }
@@ -237,7 +237,7 @@ Quit handleArguments(string[] args)
     // Read settings into temporary Bot and Settings structs, then meld them into the
     // real ones into which command-line arguments will have been applied.
 
-    IrcBot botFromConfig;
+    IRCBot botFromConfig;
     Settings settingsFromConfig;
 
     settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
@@ -262,12 +262,12 @@ void initPlugins()
 {
     foreach (plugin; plugins) plugin.teardown();
 
-    IrcPluginState state;
+    IRCPluginState state;
     state.bot = bot;
     state.settings = settings;
     state.mainThread = thisTid;
 
-    plugins = cast(IrcPlugin[])
+    plugins = cast(IRCPlugin[])
     [
         new Printer(state),
         new SedReplacePlugin(state),
@@ -275,7 +275,7 @@ void initPlugins()
         new NotesPlugin(state),
         new Chatbot(state),
         new ConnectPlugin(state),
-        new CtcpPlugin(state),
+        new CTCPPlugin(state),
     ];
 
     version (Webtitles)
@@ -363,7 +363,7 @@ int main(string[] args)
 // loopGenerator
 /++
  +  This loops over the Generator fiber that's reading from the socket. Full lines are
- +  yielded in the Generator to be caught here, consequently parsed into IrcEvents, and then
+ +  yielded in the Generator to be caught here, consequently parsed into IRCEvents, and then
  +  dispatched to all the plugins.
  +
  +  Params:
@@ -396,7 +396,7 @@ Quit loopGenerator(Generator!string generator)
             if (!line.length) break;
 
             // Hopefully making the event immutable means less gets copied?
-            immutable event = line.toIrcEvent();
+            immutable event = line.toIRCEvent();
 
             bool spammedAboutReplaying;
 
@@ -404,8 +404,8 @@ Quit loopGenerator(Generator!string generator)
             {
                 plugin.onEvent(event);
 
-                if ((event.type == IrcEvent.Type.WHOISLOGIN) ||
-                    (event.type == IrcEvent.Type.HASTHISNICK))
+                if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
+                    (event.type == IRCEvent.Type.HASTHISNICK))
                 {
                     const savedEvent = event.target in replayQueue;
                     if (!savedEvent) continue;
@@ -421,8 +421,8 @@ Quit loopGenerator(Generator!string generator)
                 }
             }
 
-            if ((event.type == IrcEvent.Type.WHOISLOGIN) ||
-                (event.type == IrcEvent.Type.HASTHISNICK))
+            if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
+                (event.type == IRCEvent.Type.HASTHISNICK))
             {
                 replayQueue.remove(event.target);
             }

@@ -11,7 +11,7 @@ import std.regex : ctRegex;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 /// A Line[string] 1-buffer of the previous line every user said, with nickname as key
 Line[string] prevlines;
@@ -83,11 +83,11 @@ string sedReplace(const string originalLine, const string expression)
  +  the previous message.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("chan")
-@(IrcEvent.Type.CHAN)
-void onMessage(const IrcEvent event)
+@(IRCEvent.Type.CHAN)
+void onMessage(const IRCEvent event)
 {
     import kameloso.stringutils : beginsWith;
     import std.datetime : Clock, seconds;
@@ -136,7 +136,7 @@ public:
  + message comes in with a sed-replace-like pattern in it, tries to apply it on the original
  + message as a regex replace.
  +/
-final class SedReplacePlugin : IrcPlugin
+final class SedReplacePlugin : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

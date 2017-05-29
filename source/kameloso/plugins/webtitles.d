@@ -15,7 +15,7 @@ import std.regex : ctRegex;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 /// Thread ID of the working thread that does the lookups
 Tid workerThread;
@@ -63,14 +63,14 @@ struct TitleLookup
  +  It uses a simple regex and exhaustively tries to match every URI it can detect.
  +
  +  Params:
- +      event = the triggering IrcEvent.
+ +      event = the triggering IRCEvent.
  +/
 @Label("message")
-@(IrcEvent.Type.CHAN)
-@(IrcEvent.Type.QUERY)  // ?
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)  // ?
 @(PrivilegeLevel.friend)
 @(Chainable.yes)
-void onMessage(const IrcEvent event)
+void onMessage(const IRCEvent event)
 {
     import std.regex : matchAll;
 
@@ -334,7 +334,7 @@ public:
  +  and streams the web page itself, looking for the web page's title (in its <title> tags).
  +  This is then reported to the originating channel.
  +/
-final class Webtitles : IrcPlugin
+final class Webtitles : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }

@@ -10,22 +10,22 @@ import std.concurrency : send;
 private:
 
 /// All plugin state variables gathered in a struct
-IrcPluginState state;
+IRCPluginState state;
 
 @Label("ctcps")
-@(IrcEvent.Type.CTCP_VERSION)
-@(IrcEvent.Type.CTCP_FINGER)
-@(IrcEvent.Type.CTCP_SOURCE)
-@(IrcEvent.Type.CTCP_PING)
-@(IrcEvent.Type.CTCP_TIME)
-@(IrcEvent.Type.CTCP_USERINFO)
-void onCtcps(const IrcEvent event)
+@(IRCEvent.Type.CTCP_VERSION)
+@(IRCEvent.Type.CTCP_FINGER)
+@(IRCEvent.Type.CTCP_SOURCE)
+@(IRCEvent.Type.CTCP_PING)
+@(IRCEvent.Type.CTCP_TIME)
+@(IRCEvent.Type.CTCP_USERINFO)
+void onCTCPs(const IRCEvent event)
 {
     import std.format : format;
 
     string line;
 
-    with (IrcEvent.Type)
+    with (IRCEvent.Type)
     switch (event.type)
     {
     case CTCP_VERSION:
@@ -58,17 +58,17 @@ void onCtcps(const IrcEvent event)
         assert(0);
     }
 
-    with (IrcControlCharacter)
+    with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
         ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(event.sender));
 }
 
 
 @Label("ctcpclientinfo")
-@(IrcEvent.Type.CTCP_CLIENTINFO)
-void onCtcpClientinfo(const IrcEvent event)
+@(IRCEvent.Type.CTCP_CLIENTINFO)
+void onCTCPClientinfo(const IRCEvent event)
 {
-    enum string allCtcpTypes = ()
+    enum string allCTCPTypes = ()
     {
         import std.conv   : to;
         import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
@@ -76,11 +76,11 @@ void onCtcpClientinfo(const IrcEvent event)
 
         string allTypes;
 
-        foreach (fun; getSymbolsByUDA!(mixin(__MODULE__), IrcEvent.Type))
+        foreach (fun; getSymbolsByUDA!(mixin(__MODULE__), IRCEvent.Type))
         {
             static if (isSomeFunction!(fun))
             {
-                foreach (type; getUDAs!(fun, IrcEvent.Type))
+                foreach (type; getUDAs!(fun, IRCEvent.Type))
                 {
                     allTypes = allTypes ~ type.to!string[5..$] ~ " ";
                 }
@@ -92,10 +92,10 @@ void onCtcpClientinfo(const IrcEvent event)
 
     // Don't forget to add ACTION, it's handed elsewhere
 
-    with (IrcControlCharacter)
+    with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
         ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
-        .format(event.sender, allCtcpTypes));
+        .format(event.sender, allCTCPTypes));
 }
 
 
@@ -115,7 +115,7 @@ mixin OnEventImpl!__MODULE__;
  *      https://modern.ircdocs.horse/ctcp.html
  *      http://www.irchelp.org/protocol/ctcpspec.html
  +/
-final class CtcpPlugin : IrcPlugin
+final class CTCPPlugin : IRCPlugin
 {
-    mixin IrcPluginBasics;
+    mixin IRCPluginBasics;
 }
