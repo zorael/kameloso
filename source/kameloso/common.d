@@ -267,6 +267,24 @@ template longestMemberName(Things...)
         return longest;
     }();
 }
+unittest
+{
+    struct Foo
+    {
+        string veryLongName;
+        int i;
+    }
+
+    struct Bar
+    {
+        string evenLongerName;
+        float f;
+    }
+
+    assert(longestMemberName!Foo == "veryLongName");
+    assert(longestMemberName!Bar == "evenLongerName");
+    assert(longestMemberName!(Foo, Bar) == "evenLongerName");
+}
 
 
 template isAssignableType(T)
