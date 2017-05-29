@@ -295,13 +295,19 @@ template isAssignableType(T)
 if (!is(typeof(T)))
 {
     import std.traits;
+
     enum bool isAssignableType = isType!T &&
         !isSomeFunction!T &&
         !is(T == const) &&
         !is(T == immutable);
 }
 
-enum isAssignableType(alias symbol) = false;
+template isAssignableType(alias symbol)
+{
+    import std.traits;
+
+    enum bool isAssignableType = isType!symbol && is(symbol == enum);
+}
 
 unittest
 {
