@@ -104,12 +104,16 @@ unittest
     char[8] c2;
     struct S {}
     class C {}
+    enum E { foo }
+    E e;
 
     static assert(isConfigurableVariable!i);
     static assert(isConfigurableVariable!c);
     static assert(!isConfigurableVariable!c2); // should static arrays pass?
     static assert(!isConfigurableVariable!S);
     static assert(!isConfigurableVariable!C);
+    static assert(!isConfigurableVariable!E);
+    static assert(isConfigurableVariable!e);
 }
 
 
