@@ -296,13 +296,14 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
     enum pattern = "%%-%ds  %%s\n".format(entryPadding);
     enum patternCommented = "# %%-%ds(unset)\n".format(entryPadding + 2);
 
-    foreach (name; __traits(allMembers, Thing))
+    foreach (immutable i, ref member; thing.tupleof)
     {
-        static if (is(typeof(__traits(getMember, Thing, name))) &&
-                   isConfigurableVariable!(__traits(getMember, Thing, name)) &&
-                   !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
+        static if (is(typeof(member)) &&
+                   isConfigurableVariable!(member) &&
+                   !hasUDA!(member, Unconfigurable))
         {
-            alias MemberType = typeof(__traits(getMember, Thing, name));
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
+            alias MemberType = typeof(member);
 
             static if ((is(MemberType == struct) || is(MemberType == class)))
             {
@@ -315,32 +316,32 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
                 {
                     import std.traits : getUDAs;
 
-                    static assert (hasUDA!(__traits(getMember, Thing, name), Separator),
+                    static assert (hasUDA!(thing.tupleof[i], Separator),
                         "%s.%s is not annotated with a Separator"
-                        .format(T.stringof, name));
+                        .format(Thing.stringof, memberstring));
 
-                    enum separator = getUDAs!(__traits(getMember, Thing, name), Separator)[0].token;
+                    enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
                     static assert(separator.length, "Invalid separator (empty)");
 
                     // Array; use std.format.format to get a Separator-separated line
                     enum arrayPattern = "%%-(%%s%s%%)".format(separator);
-                    immutable value = arrayPattern.format(__traits(getMember, thing, name));
+                    immutable value = arrayPattern.format(member);
                 }
                 else
                 {
                     // Simple assignment
-                    immutable value = __traits(getMember, thing, name);
+                    immutable value = member;
                 }
 
                 static if (is(MemberType : string))
                 {
                     if (value.length)
                     {
-                        sink.formattedWrite(pattern, name, value);
+                        sink.formattedWrite(pattern, memberstring, value);
                     }
                     else
                     {
-                        sink.formattedWrite(patternCommented, name);
+                        sink.formattedWrite(patternCommented, memberstring);
                     }
                 }
                 else
@@ -349,11 +350,11 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 
                     if (is(MemberType : bool) || (value != typeof(value).init))
                     {
-                        sink.formattedWrite(pattern, name, value);
+                        sink.formattedWrite(pattern, memberstring, value);
                     }
                     else
                     {
-                        sink.formattedWrite(patternCommented, name);
+                        sink.formattedWrite(patternCommented, memberstring);
                     }
                 }
             }
