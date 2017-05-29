@@ -115,7 +115,6 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * fix ctrl+c leaving behind fifos
 * some functions don't honor settings and just print colours regardless
 * fix Twitch at least, we're simply being too reactive
-* getopt needs two passes, one prerun to pick up which config file to use
 
 ## Built With
 
