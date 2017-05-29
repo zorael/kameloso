@@ -210,9 +210,9 @@ Quit handleArguments(string[] args)
             "m|master",      "Auth login of the bot's master, who gets " ~
                             "access to administrative functions", &bot.master,
             "h|home",        "Home channels to operate in, comma-separated" ~
-                            " (remember to escape or enquote the #s!)", &homes,
+                            " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~
-                            " (ditto)", &channels,
+                            " (ditto)", &bot.channels,
             "s|server",      "Server address", &bot.server.address,
             "P|port",        "Server port", &bot.server.port,
             "c|config",      "Read configuration from file (default %s)"
@@ -234,12 +234,8 @@ Quit handleArguments(string[] args)
         return Quit.yes;
     }
 
-    settings.configFile.readConfig(bot, bot.server, settings);
 
-    import kameloso.stringutils : arrayify;
 
-    if (homes.length) bot.homes = homes.arrayify;
-    if (channels.length) bot.channels = channels.arrayify;
 
     if (shouldWriteConfig)
     {
