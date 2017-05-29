@@ -843,14 +843,16 @@ struct IrcServer
         quakenet,
         undernet,
         gamesurge,
+        twitch,
+        unreal,
     }
 
+    Family family;
     string address = "irc.freenode.net";
     ushort port = 6667;
 
     @Unconfigurable
     {
-        Family family;
         string resolvedAddress;
     }
 
