@@ -456,6 +456,18 @@ void parseSpecialcases(ref IrcEvent event, ref string slice)
 
             import std.traits : EnumMembers;
 
+            /++
+             +  This iterates through all IrcEvent.Types that begin with "CTCP_" and
+             +  generates switch cases for the string of each. Inside it will assign
+             +  event.type to the corresponding IrcEvent.Type. Like so, except
+             +  automatically generated through compile-time introspection:
+             +
+             +      case "CTCP_PING":
+             +          event.type = CTCP_PING;
+             +          break;
+             +/
+
+
             top:
             switch (ctcpEvent)
             {
