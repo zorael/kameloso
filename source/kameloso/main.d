@@ -205,8 +205,8 @@ Quit handleArguments(string[] args)
             "u|user",        "Username when registering onto server (not nickname)", &bot.user,
             "i|ident",       "IDENT string", &bot.ident,
             "q|quitReason",  "Quit reason string", &bot.quitReason,
-            "l|login",       "Auth service login name, if applicable", &bot.login,
-            "p|password",    "Auth service password", &bot.password,
+            "a|auth",        "Auth service login name, if applicable", &bot.auth,
+            "p|password",    "Auth service password", &bot.authPassword,
             "m|master",      "Auth login of the bot's master, who gets " ~
                             "access to administrative functions", &bot.master,
             "h|home",        "Home channels to operate in, comma-separated" ~

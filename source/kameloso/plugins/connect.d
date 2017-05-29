@@ -163,7 +163,7 @@ void onEndOfMotd()
     // FIXME: Deadlock if a password exists but there is no challenge
     // the fix is a timeout
 
-    if (!state.bot.password.length)
+    if (!state.bot.authPassword.length)
     {
         joinChannels();
         return;
@@ -175,10 +175,10 @@ void onEndOfMotd()
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
-            .format(state.bot.login, state.bot.password));
+            .format(state.bot.auth, state.bot.authPassword));
 
         writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
-            state.bot.login, " hunter2");
+            state.bot.auth, " hunter2");
     }
     else if (state.bot.nickname != state.bot.origNickname)
     {
@@ -188,10 +188,10 @@ void onEndOfMotd()
         {
             state.mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(state.bot.login, state.bot.password));
+                .format(state.bot.auth, state.bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                state.bot.login, " hunter2");
+                state.bot.auth, " hunter2");
         }
         else
         {
@@ -203,10 +203,10 @@ void onEndOfMotd()
 
             state.mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(state.bot.login, state.bot.password));
+                .format(state.bot.auth, state.bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                state.bot.login, " hunter2");
+                state.bot.auth, " hunter2");
         }
     }
 }
@@ -230,11 +230,11 @@ void onChallenge(const IrcEvent event)
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG NickServ :IDENTIFY %s %s"
-            .format(state.bot.login, state.bot.password));
+            .format(state.bot.auth, state.bot.authPassword));
 
         // fake it
         writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-            state.bot.login, " hunter2");
+            state.bot.auth, " hunter2");
     }
     else
     {
@@ -244,7 +244,7 @@ void onChallenge(const IrcEvent event)
         }
 
         state.mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG NickServ :IDENTIFY " ~ state.bot.password);
+            "PRIVMSG NickServ :IDENTIFY " ~ state.bot.authPassword);
 
         // ditto
         writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");

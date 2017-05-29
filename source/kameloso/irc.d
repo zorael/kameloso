@@ -797,15 +797,16 @@ public:
 struct IrcBot
 {
     string nickname   = "kameloso";
-    string login      = "kameloso";
     string user       = "kameloso!";
     string ident      = "NaN";
+    string auth       = "kameloso";
     string quitReason = "beep boop I am a bot";
     string master;
 
     @Hidden
     {
-        string password;
+        string authPassword;
+        string loginPassword;
     }
 
     @Separator(",")
@@ -826,7 +827,7 @@ struct IrcBot
     void toString(scope void delegate(const(char)[]) sink) const
     {
         sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
-             .format(nickname, login, ident, homes, channels, friends, server));
+             .format(nickname, auth, ident, homes, channels, friends, server));
     }
 }
 
