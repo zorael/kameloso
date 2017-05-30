@@ -786,9 +786,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 
     if ((event.target == bot.nickname) &&
-        ((event.type != IRCEvent.Type.WELCOME) &&
-         (event.type != IRCEvent.Type.MODE) &&
-         (event.type != IRCEvent.Type.CHANMODE)))
+        (event.type != IRCEvent.Type.MODE) &&
+        (event.type != IRCEvent.Type.CHANMODE) &&
+        (event.type != IRCEvent.Type.WELCOME))
     {
         event.target = string.init;
     }
@@ -1339,7 +1339,7 @@ struct IRCEvent
  +/
 IRCEvent toIRCEvent(const string raw)
 {
-    import std.datetime;
+    import std.datetime : Clock;
 
     IRCEvent event;
 
