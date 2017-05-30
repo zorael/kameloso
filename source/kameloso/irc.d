@@ -848,7 +848,7 @@ struct IRCServer
 {
     enum Family
     {
-        unset,
+        unknown,
         freenode,
         rizon,
         quakenet,
