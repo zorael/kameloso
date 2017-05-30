@@ -58,6 +58,11 @@ void parseBasic(ref IRCEvent event)
         event.aux = slice.stripRight();
         break;
 
+    case "PONG":
+        // PONG :tmi.twitch.tv
+        event.sender = slice;
+        break;
+
     default:
         writeln(Foreground.lightred, "Unknown basic type: ", event.raw);
         break;
