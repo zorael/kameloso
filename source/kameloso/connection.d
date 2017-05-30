@@ -89,10 +89,12 @@ public:
             {
             case "getaddrinfo error: Name or service not known":
                 // Assume net down, wait and try again
+
                 writeln(Foreground.lightred, e.msg);
                 writefln(Foreground.lightred, "Network down? Retrying in %d seconds",
                     Timeout.resolve);
                 Thread.sleep(Timeout.resolve.seconds);
+
                 return resolve(address, port);
 
             default:
@@ -132,7 +134,7 @@ public:
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
                 writeln(Foreground.white, "Connected!");
-                //break;
+
                 return;
             }
             catch (SocketException e)
