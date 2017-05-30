@@ -268,31 +268,6 @@ void onAcceptance()
 }
 
 
-IRCServer.Family getFamily(const IRCEvent event)
-{
-    with (IRCServer.Family)
-    switch (event.address)
-    {
-    case "services.":
-        writeln(Foreground.cyan, "FREENODE");
-        return freenode;
-
-    case "rizon.net":
-        writeln(Foreground.cyan, "RIZON");
-        return rizon;
-
-    case "CServe.quakenet.org":
-        writeln(Foreground.cyan, "QUAKENET");
-        return quakenet;
-
-    default:
-        writeln(Foreground.lightred, "Could not tell what kind of server this is...");
-        printObjects(event);
-        return unset;
-    }
-}
-
-
 // onNickInUse
 /++
  +  Appends a single character to the end of the bot's nickname, and propagates the change
