@@ -57,16 +57,18 @@ void joinChannels()
         {
             bot.finishedAuth = true;
             updateBot();
-
-            mainThread.send(ThreadMessage.Sendline(),
-                "JOIN :%s".format(bot.homes.joiner(",")));
         }
-
-        if (bot.channels.length)
+        else if (!bot.channels.length)
         {
-            mainThread.send(ThreadMessage.Sendline(),
-                "JOIN :%s".format(bot.channels.joiner(",")));
+            writeln(Foreground.red, "No channels, no purpose...");
+            return;
         }
+
+        import std.algorithm.sorting : merge;
+
+        // FIXME: line should split if it reaches 512 characters
+        mainThread.send(ThreadMessage.Sendline(),
+            "JOIN :%s".format(merge(bot.homes, bot.channels).joiner(",")));
     }
 }
 
