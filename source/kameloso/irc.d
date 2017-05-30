@@ -1288,7 +1288,7 @@ struct IRCEvent
  +  Returns:
  +      A finished IRCEvent.
  +/
-IRCEvent toIRCEvent(const char[] raw)
+IRCEvent toIRCEvent(const string raw)
 {
     import std.datetime;
 
