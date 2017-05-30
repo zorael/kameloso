@@ -242,6 +242,8 @@ Quit handleArguments(string[] args)
 
     settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
 
+    botFromConfig.server.resolveFamily();
+
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
 
@@ -266,6 +268,7 @@ void initPlugins()
     state.bot = bot;
     state.settings = settings;
     state.mainThread = thisTid;
+    state.bot.server.resolveFamily();  // neccessary?
 
     plugins = cast(IRCPlugin[])
     [
