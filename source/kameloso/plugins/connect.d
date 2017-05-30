@@ -166,50 +166,57 @@ void onEndOfMotd()
     // FIXME: Deadlock if a password exists but there is no challenge
     // the fix is a timeout
 
-    if (!state.bot.authPassword.length)
+    with (state)
     {
-        joinChannels();
-        return;
-    }
-
-    if (state.bot.startedRegistering) return;
-
-    if (state.bot.server.family == IRCServer.Family.quakenet)
-    {
-        state.mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
-            .format(state.bot.auth, state.bot.authPassword));
-
-        writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
-            state.bot.auth, " hunter2");
-    }
-    else if (state.bot.nickname != state.bot.origNickname)
-    {
-        writeln(Foreground.lightred, "Probably need to AUTH manually");
-
-        if (state.bot.server.family == IRCServer.Family.freenode)
+        if (!bot.authPassword.length)
         {
-            state.mainThread.send(ThreadMessage.Quietline(),
+            joinChannels();
+            return;
+        }
+
+        if (bot.startedAuth) return;
+
+        with (IRCServer.Family)
+        switch (bot.server.family)
+        {
+        case quakenet:
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
+                .format(bot.auth, bot.authPassword));
+
+            writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
+                bot.auth, " hunter2");
+
+            break;
+
+        case rizon:
+        case freenode:
+            mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(state.bot.auth, state.bot.authPassword));
+                .format(bot.auth, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                state.bot.auth, " hunter2");
-        }
-        else
-        {
+                bot.auth, " hunter2");
+
+            break;
+
+        default:
+            /*writeln(Foreground.lightred, "Probably need to AUTH manually");
+
             writeln(Foreground.lightred, "Would try to auth but the service " ~
                 "wouldn't understand being passed both login and password...");
-            writeln(Foreground.lightred, "DEBUG: trying anyway");
+            writeln(Foreground.lightred, "DEBUG: trying anyway");*/
 
-            // Remove me later
+            writeln(Foreground.lightred, "Unsure of what server family this is.");
 
-            state.mainThread.send(ThreadMessage.Quietline(),
+            mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(state.bot.auth, state.bot.authPassword));
+                .format(bot.auth, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                state.bot.auth, " hunter2");
+                bot.auth, " hunter2");
+
+            break;
         }
     }
 }
