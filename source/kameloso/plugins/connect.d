@@ -331,6 +331,38 @@ void onRegistrationEvent(const IRCEvent event)
 }
 
 
+void register()
+{
+    with (state)
+    {
+        if (bot.startedRegistering) return;
+
+        bot.startedRegistering = true;
+        updateBot();
+
+        mainThread.send(ThreadMessage.Quietline(), "CAP LS");
+
+        if (bot.loginPassword.length)
+        {
+            mainThread.send(ThreadMessage.Quietline(),
+                "PASS " ~ bot.loginPassword);
+        }
+        else
+        {
+            if (bot.server.family == IRCServer.Family.twitch)
+            {
+                writeln(Foreground.lightred, "You *need* a password to join this server");
+            }
+        }
+
+        mainThread.send(ThreadMessage.Sendline(),
+            "USER %s * 8 : %s".format(bot.ident, bot.user));
+        mainThread.send(ThreadMessage.Sendline(),
+            "NICK %s".format(bot.nickname));
+    }
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
