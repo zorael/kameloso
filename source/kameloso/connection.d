@@ -240,7 +240,9 @@ void listenFiber(Connection conn)
                 // Nothing received
             case "Interrupted system call":
                 // Unlucky callgrind_control -d timing
-            case "A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.":
+            case "A connection attempt failed because the connected party did not " ~
+                 "properly respond after a period of time, or established connection " ~
+                 "failed because connected host has failed to respond.":
                 // Timed out read in Windows
                 yield(string.init);
                 continue;
