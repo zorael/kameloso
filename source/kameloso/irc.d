@@ -54,7 +54,6 @@ void parseBasic(ref IRCEvent event)
         // Unsure how formattedRead is doing this...
         bot.server.family = IRCServer.Family.quakenet;  // only available locally
         event.type = IRCEvent.Type.NOTICE;
-        event.sender = "(server)";
         event.content = raw;
         event.aux = slice.stripRight();
         break;
@@ -86,7 +85,7 @@ unittest
         e2.parseBasic();
         assert((raw == "NOTICE AUTH :*** Couldn't look up your hostname"), raw);
         assert((type == IRCEvent.Type.NOTICE), type.to!string);
-        assert((sender == "(server)"), sender);
+        assert(!sender.length, sender);
         assert((content == "*** Couldn't look up your hostname"));
     }
 
