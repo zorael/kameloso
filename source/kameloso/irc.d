@@ -873,6 +873,49 @@ struct IRCServer
     {
         sink("[Family.%s] %s:%d (%s)".format(family, address, port, resolvedAddress));
     }
+
+    void resolveFamily()
+    {
+        with (Family)
+        {
+            if (family != unknown) return;
+
+            import std.algorithm.searching : endsWith;
+
+            if (address.endsWith(".freenode.net"))
+            {
+                family = freenode;
+            }
+            else if (address.endsWith(".rizon.net"))
+            {
+                family = rizon;
+            }
+            else if (address.endsWith(".quakenet.org"))
+            {
+                family = quakenet;
+            }
+            else if (address.endsWith(".undernet.org"))
+            {
+                family = undernet;
+            }
+            else if (address.endsWith(".gamesurge.org"))
+            {
+                family = gamesurge;
+            }
+            else if (address.endsWith(".twitch.tv"))
+            {
+                family = twitch;
+            }
+            else if (address.endsWith(".unrealircd.org"))
+            {
+                family = unreal;
+            }
+            else
+            {
+                family = unknown;
+            }
+        }
+    }
 }
 
 
