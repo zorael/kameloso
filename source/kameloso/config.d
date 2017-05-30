@@ -165,88 +165,90 @@ void writeConfig(T...)(const string configFile, T things)
  +      memberstring = the string name of one of thing's members.
  +      value = the value to assign, in string form.
  +/
-void setMember(Thing)(ref Thing thing, const string memberstring, const string value)
+void setMember(Thing)(ref Thing thing, const string memberToSet, const string value)
 {
     top:
-    switch (memberstring)
+    switch (memberToSet)
     {
 
-    foreach (const name; __traits(allMembers, Thing))
+    foreach (immutable i, ref member; thing.tupleof)
     {
-        static if (is(typeof(__traits(getMember, Thing, name))) &&
-                   isConfigurableVariable!(__traits(getMember, Thing, name)) &&
-                   !hasUDA!(__traits(getMember, Thing, name), Unconfigurable))
+        static if (is(typeof(member)) &&
+                   isConfigurableVariable!member &&
+                   !hasUDA!(member, Unconfigurable))
         {
-        alias MemberType = typeof(__traits(getMember, Thing, name));
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
+            alias MemberType = typeof(member);
 
-        case name:
-            static if (is(MemberType == struct) || is(MemberType == class))
-            {
-                // Can't reconstruct nested structs/classes
-                return;
-            }
-            else static if (isArray!MemberType && !is(MemberType : string))
-            {
-                import std.format : format;
-                import std.traits : getUDAs;
-
-                static assert((hasUDA!(__traits(getMember, Thing, name), Separator)),
-                        "%s %s.%s is not properly annotated with a separator token"
-                        .format(MemberType.stringof, T.stringof, name));
-
-                __traits(getMember, thing, name) = MemberType.init;
-
-                static if (getUDAs!(__traits(getMember, Thing, name), Separator).length > 0)
+            case memberstring:
+                static if (is(MemberType == struct) || is(MemberType == class))
                 {
-                    import std.algorithm.iteration : splitter;
+                    // Can't reconstruct nested structs/classes
+                    return;
+                }
+                else static if (isArray!MemberType && !is(MemberType : string))
+                {
+                    import std.format : format;
+                    import std.traits : getUDAs;
 
-                    foreach (entry; value.splitter(getUDAs!(__traits(getMember, Thing, name), Separator)[0].token))
+                    static assert(hasUDA!(thing.tupleof[i], Separator),
+                            "%s %s.%s is not properly annotated with a separator token"
+                            .format(MemberType.stringof, Thing.stringof, memberstring));
+
+                    //thing.tupleof[i] = MemberType.init;
+                    thing.tupleof[i].length = 0;
+
+                    static if (getUDAs!(thing.tupleof[i], Separator).length > 0)
                     {
-                        static if (is(MemberType : string[]))
-                        {
-                            import std.string : strip;
+                        import std.algorithm.iteration : splitter;
 
-                            // Reconstruct it by appending each field in turn
-                            __traits(getMember, thing, name) ~= entry.strip();
-                        }
-                        else
+                        foreach (entry; value.splitter(getUDAs!(thing.tupleof[i], Separator)[0].token))
                         {
-                            import std.conv : to;
-
-                            try __traits(getMember, thing, name) ~= value.to!MemberType;
-                            catch (Exception e)
+                            static if (is(MemberType : string[]))
                             {
-                                writefln("Caught Exception trying to convert '%s' to %s: %s",
-                                        value, MemberType.stringof, e.msg);
+                                import std.string : strip;
+
+                                // Reconstruct it by appending each field in turn
+                                thing.tupleof[i] ~= entry.strip();
+                            }
+                            else
+                            {
+                                import std.conv : to;
+
+                                try member ~= value.to!MemberType;
+                                catch (Exception e)
+                                {
+                                    writefln("Caught Exception trying to convert '%s' to %s: %s",
+                                            value, MemberType.stringof, e.msg);
+                                }
                             }
                         }
+
+                        break top;
                     }
-                    break top;
                 }
-            }
-            else static if (is(MemberType : string))
-            {
-                // Simple assignment
-                __traits(getMember, thing, name) = value;
-
-                return;
-            }
-            else
-            {
-                import std.conv : to;
-
-                // Trust to std.conv.to for conversion
-                try __traits(getMember, thing, name) = value.to!MemberType;
-                catch (Exception e)
+                else static if (is(MemberType : string))
                 {
-                    writefln("Caught Exception trying to convert '%s' to %s: %s",
-                            value, MemberType.stringof, e.msg);
+                    // Simple assignment
+                    thing.tupleof[i] = value;
+                    return;
                 }
+                else
+                {
+                    import std.conv : to;
 
-                return;
+                    // Trust to std.conv.to for conversion
+                    try thing.tupleof[i] = value.to!MemberType;
+                    catch (Exception e)
+                    {
+                        writefln("Caught Exception trying to convert '%s' to %s: %s",
+                                value, MemberType.stringof, e.msg);
+                    }
+
+                    return;
+                }
             }
         }
-    }
 
     default:
         break;
