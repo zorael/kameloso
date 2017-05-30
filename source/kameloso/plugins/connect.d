@@ -311,6 +311,9 @@ void register()
         {
             mainThread.send(ThreadMessage.Quietline(),
                 "PASS " ~ bot.loginPassword);
+
+            // fake it
+            writeln(Foreground.white, "--> PASS hunter2");
         }
         else
         {
