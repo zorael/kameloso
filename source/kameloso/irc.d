@@ -739,10 +739,10 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     default:
-        if (event.type == NUMERIC)
+        if ((event.type == NUMERIC) || (event.type == UNSET))
         {
             writeln();
-            writeln(Foreground.lightred, "--------------- UNCAUGHT NUMERIC --------------");
+            writeln(Foreground.lightred, "--------- UNCAUGHT NUMERIC OR UNSET -----------");
             printObjects(event);
             writeln(Foreground.lightred, "-----------------------------------------------");
             writeln();
