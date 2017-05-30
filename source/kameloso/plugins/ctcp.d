@@ -5,8 +5,6 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
-import std.concurrency : send;
-
 private:
 
 /// All plugin state variables gathered in a struct
@@ -21,6 +19,7 @@ IRCPluginState state;
 @(IRCEvent.Type.CTCP_USERINFO)
 void onCTCPs(const IRCEvent event)
 {
+    import std.concurrency : send;
     import std.format : format;
 
     string line;
@@ -68,6 +67,8 @@ void onCTCPs(const IRCEvent event)
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(const IRCEvent event)
 {
+    import std.concurrency : send;
+
     enum string allCTCPTypes = ()
     {
         import std.conv   : to;
