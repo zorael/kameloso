@@ -1295,7 +1295,9 @@ IRCEvent toIRCEvent(const string raw)
     IRCEvent event;
 
     event.time = Clock.currTime.toUnixTime;
-    event.raw = raw.idup;
+
+    // We don't need to .idup here; it has already been done in the Generator
+    event.raw = raw; // .idup;
 
     try
     {
