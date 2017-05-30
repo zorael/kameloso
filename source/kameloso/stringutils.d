@@ -390,7 +390,7 @@ if (is(Enum == enum))
 
     mixin(enumSwitch);
 
-    assert(false, "No such member " ~ enumstring);
+    assert(0, "No such member " ~ enumstring);
 }
 unittest
 {
