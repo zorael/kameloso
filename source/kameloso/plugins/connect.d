@@ -362,6 +362,11 @@ void register()
     }
 }
 
+void initialise()
+{
+    register();
+}
+
 
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
