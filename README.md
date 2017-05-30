@@ -83,7 +83,7 @@ The tests are run at the *start* of the program, not during compilation.
 
 ## How to use
 
-The bot needs the `NickServ`/`Q` login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the `NickServ`/`Q`/`AuthServ` login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
@@ -116,7 +116,6 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * update documentation
 * fix ctrl+c leaving behind fifos
 * some functions don't honor settings and just print colours regardless
-* fix Twitch at least, we're simply being too reactive
 * JSON config file? but random ordering of entries, no lined-up columns
 
 ## Built With
