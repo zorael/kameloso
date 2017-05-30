@@ -831,6 +831,8 @@ struct IRCBot
         string origNickname;
         bool startedRegistering;
         bool finishedRegistering;
+        bool startedAuth;
+        bool finishedAuth;
     }
 
     void toString(scope void delegate(const(char)[]) sink) const
