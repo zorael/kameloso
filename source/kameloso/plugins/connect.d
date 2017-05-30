@@ -120,10 +120,10 @@ void joinChannels()
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {
-    if (state.bot.server.family == IRCServer.Family.quakenet)
+    state.bot.finishedRegistering = true;
+
+    if (!state.bot.server.resolvedAddress.length)
     {
-        // Only now does quakenet servers show what the resolved address is
-        // Don't update bot now, do it below
         state.bot.server.resolvedAddress = event.sender;
     }
 
