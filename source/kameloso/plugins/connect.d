@@ -300,6 +300,37 @@ void onInvite(const IRCEvent event)
 }
 
 
+@Label("onregistrationevent")
+@(IRCEvent.Type.NOTICE)
+@(IRCEvent.Type.CAP)
+void onRegistrationEvent(const IRCEvent event)
+{
+    if (state.bot.finishedRegistering) return;
+
+    if ((event.type == IRCEvent.Type.CAP) && (event.aux == "LS"))
+    {
+        /++
+         + The END subcommand signals to the server that capability negotiation
+         + is complete and requests that the server continue with client registration.
+         + If the client is already registered, this command MUST be ignored by the server.
+         +
+         + Clients that support capabilities but do not wish to enter negotiation SHOULD
+         + send CAP END upon connection to the server.
+         +
+         + http://ircv3.net/specs/core/capability-negotiation-3.1.html
+         +/
+
+        state.mainThread.send(ThreadMessage.Quietline(), "CAP END");
+    }
+
+    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    {
+        state.bot.server.resolvedAddress = event.sender;
+        updateBot();
+    }
+}
+
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
 
