@@ -728,6 +728,11 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         slice.formattedRead("%s %s %s :%s", &event.target, &event.aux, &event.channel, &event.content);
         break;
 
+    case CAP:
+        // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
+        slice.formattedRead("* %s :%s", &event.aux, &event.content);
+        break;
+
     default:
         if (event.type == NUMERIC)
         {
@@ -902,7 +907,7 @@ struct IRCEvent
         MODE, CHANMODE, USERMODE,
         SELFQUIT, SELFJOIN, SELFPART,
         SELFMODE, SELFNICK, SELFKICK,
-        TOPIC,
+        TOPIC, CAP,
         CTCP_VERSION, CTCP_TIME, CTCP_PING,
         CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
         CTCP_USERINFO, CTCP_FINGER,

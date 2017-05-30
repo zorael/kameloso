@@ -68,6 +68,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case USERCOUNTGLOBAL:
     case USERCOUNTLOCAL:
     case CONNECTIONRECORD:
+    // case CAP:
         // These event types are too spammy; ignore
         break;
 
