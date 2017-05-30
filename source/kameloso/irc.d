@@ -503,7 +503,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     case MODE:
         immutable targetOrChannel = slice.nom(' ');
 
-        if (targetOrChannel.beginsWith('#'))
+        if (targetOrChannel.isValidChannel)
         {
             event.channel = targetOrChannel;
 
