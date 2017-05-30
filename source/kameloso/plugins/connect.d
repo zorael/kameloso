@@ -47,43 +47,6 @@ void onSelfpart(const IRCEvent event)
 }
 
 
-// onNotice
-/++
- +  Performs login and channel-joining when connecting.
- +
- +  This may be Freenode-specific and may need extension to work with other servers.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
-@Label("notice")
-@(IRCEvent.Type.NOTICE)
-void onNotice(const IRCEvent event)
-{
-    if (state.bot.startedRegistering) return;
-
-    state.bot.startedRegistering = true;
-
-    if (event.sender == "(server)")
-    {
-        state.bot.server.family = IRCServer.Family.quakenet;
-    }
-
-    updateBot();
-
-    if (event.content.beginsWith("***"))
-    {
-        state.bot.server.resolvedAddress = event.sender;
-        updateBot();
-
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "NICK %s".format(state.bot.nickname));
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "USER %s * 8 : %s".format(state.bot.ident, state.bot.user));
-    }
-}
-
-
 void joinChannels()
 {
     import std.algorithm.iteration : joiner;
