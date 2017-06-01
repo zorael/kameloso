@@ -1,7 +1,11 @@
 module kameloso.constants;
 
-enum kamelosoVersion = "0.4.7";
-enum kamelosoSource = "https://github.com/zorael/kameloso";
+enum kamelosoInfo
+{
+    version_ = "0.4.7",
+    built = __TIMESTAMP__,
+    source = "https://github.com/zorael/kameloso",
+}
 
 enum IRCControlCharacter
 {

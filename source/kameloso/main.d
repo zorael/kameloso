@@ -327,8 +327,11 @@ void main() {
 else
 int main(string[] args)
 {
-    writefln(Foreground.white, "kameloso IRC bot v%s, built %s\n",
-             kamelosoVersion, __TIMESTAMP__);
+    writefln(Foreground.white,
+             "kameloso IRC bot v%s, built %s\ngit clone %s\n",
+             cast(string)kamelosoInfo.version_,
+             cast(string)kamelosoInfo.built,
+             cast(string)kamelosoInfo.source);
 
     if (handleArguments(args) == Quit.yes) return 0;
 
