@@ -201,17 +201,19 @@ Quit handleArguments(string[] args)
 
     try
     {
+        arraySep = ",";
+
         helpInfo = args.getopt(
             config.caseSensitive,
             "n|nickname",    "Bot nickname", &bot.nickname,
             "u|user",        "Username when registering onto server (not nickname)", &bot.user,
             "i|ident",       "IDENT string", &bot.ident,
-            "q|quitReason",  "Quit reason string", &bot.quitReason,
+            "pass",          "Registration password (not auth or nick services)", &bot.loginPassword,
             "a|auth",        "Auth service login name, if applicable", &bot.auth,
-            "p|password",    "Auth service password", &bot.authPassword,
+            "p|authpassword","Auth service password", &bot.authPassword,
             "m|master",      "Auth login of the bot's master, who gets " ~
                             "access to administrative functions", &bot.master,
-            "h|home",        "Home channels to operate in, comma-separated" ~
+            "H|home",        "Home channels to operate in, comma-separated" ~
                             " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~
                             " (ditto)", &bot.channels,
@@ -328,7 +330,7 @@ else
 int main(string[] args)
 {
     writefln(Foreground.white,
-             "kameloso IRC bot v%s, built %s\ngit clone %s\n",
+             "kameloso IRC bot v%s, built %s\n$ git clone %s\n",
              cast(string)kamelosoInfo.version_,
              cast(string)kamelosoInfo.built,
              cast(string)kamelosoInfo.source);
