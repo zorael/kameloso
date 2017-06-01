@@ -114,6 +114,8 @@ Quit checkMessages()
     {
         .bot = cast(IRCBot)bot;
 
+        kameloso.irc.loadBot(.bot);
+
         foreach (plugin; plugins) plugin.newBot(.bot);
     }
 
@@ -269,6 +271,8 @@ void initPlugins()
     state.settings = settings;
     state.mainThread = thisTid;
     state.bot.server.resolveNetwork();  // neccessary?
+
+    kameloso.irc.loadBot(state.bot);
 
     plugins = cast(IRCPlugin[])
     [
