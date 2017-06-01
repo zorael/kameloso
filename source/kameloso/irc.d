@@ -1716,14 +1716,29 @@ bool isValidChannel(const string line)
 
     if ((line.length <= 1) || (line.length > maxChannelLength)) return false;
 
-    return ((line[0] == '#') || (line[0] == '&')) &&
-           ((line[1..$].indexOf('#') == -1) &&
-            (line[1..$].indexOf('&') == -1));
+    /*return ((line[0] == '#') || (line[0] == '&')) &&
+           ((line[2..$].indexOf('#') == -1) &&
+            (line[2..$].indexOf('&') == -1));*/
+
+    if ((line[0] == '#') || (line[0] == '&'))
+    {
+        if (line.length > 3)
+        {
+           return (line[2..$].indexOf('#') == -1) &&
+                  (line[2..$].indexOf('&') == -1);
+        }
+
+        return true;
+    }
+
+    return false;
 }
 unittest
 {
     assert("#channelName".isValidChannel);
     assert("&otherChannel".isValidChannel);
+    assert("##freenode".isValidChannel);
+    assert(!"###froonode".isValidChannel);
     assert(!"#not a channel".isValidChannel);
     assert(!"notAChannelEither".isValidChannel);
     assert(!"#".isValidChannel);
