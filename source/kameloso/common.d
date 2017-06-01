@@ -152,35 +152,34 @@ void printObjectsColoured(Things...)(Things things)
 
     foreach (thing; things)
     {
-        alias T = typeof(thing);
+        writeln(Foreground.white, "-- ", Unqual!(typeof(thing)).stringof);
 
-        //writefln(Foreground.white, "-- [%s:%d] %s", __FILE__, __LINE__, T.stringof);
-        writeln(Foreground.white, "-- ", Unqual!T.stringof);
-
-        foreach (name; __traits(allMembers, T))
+        foreach (immutable i, member; thing.tupleof)
         {
-            static if (is(typeof(__traits(getMember, T, name))) &&
-                       isConfigurableVariable!(__traits(getMember, T, name)) &&
-                       !hasUDA!(__traits(getMember, T, name), Hidden))
+            static if (is(typeof(member)) &&
+                       isConfigurableVariable!member &&
+                       !hasUDA!(thing.tupleof[i], Hidden) &&
+                       !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                enum typestring = typeof(__traits(getMember, T, name)).stringof;
-                const value = __traits(getMember, thing, name);
+                alias MemberType = typeof(member);
+                enum typestring = MemberType.stringof;
+                enum memberstring = __traits(identifier, thing.tupleof[i]);
 
                 static if (is(typeof(value) : string))
                 {
                     writefln(stringPattern,
                         colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), name,
-                        colourise(Foreground.lightgreen), value,
-                        colourise(Foreground.darkgrey), value.length,
+                        colourise(Foreground.white), memberstring,
+                        colourise(Foreground.lightgreen), member,
+                        colourise(Foreground.darkgrey), member.length,
                         colourise(Foreground.default_));
                 }
                 else
                 {
                     writefln(normalPattern,
                         colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), name,
-                        colourise(Foreground.lightgreen), value,
+                        colourise(Foreground.white), memberstring,
+                        colourise(Foreground.lightgreen), member,
                         colourise(Foreground.default_));
                 }
             }
@@ -206,26 +205,26 @@ void printObjectsMonochrome(Things...)(Things things)
 
     foreach (thing; things)
     {
-        alias T = typeof(thing);
+        realWriteln("-- ", Unqual!(typeof(thing)).stringof);
 
-        realWriteln("-- ", Unqual!T.stringof);
-
-        foreach (name; __traits(allMembers, T))
+        foreach (immutable i, member; thing.tupleof)
         {
-            static if (is(typeof(__traits(getMember, T, name))) &&
-                       isConfigurableVariable!(__traits(getMember, T, name)) &&
-                       !hasUDA!(__traits(getMember, T, name), Hidden))
+            static if (is(typeof(member)) &&
+                       isConfigurableVariable!member &&
+                       !hasUDA!(thing.tupleof[i], Hidden) &&
+                       !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                enum typestring = typeof(__traits(getMember, T, name)).stringof;
-                const value = __traits(getMember, thing, name);
+                alias MemberType = typeof(member);
+                enum typestring = MemberType.stringof;
+                enum memberstring = __traits(identifier, thing.tupleof[i]);
 
                 static if (is(typeof(value) : string))
                 {
-                    realWritefln!stringPattern(typestring, name, value, value.length);
+                    realWritefln!stringPattern(typestring, memberstring, member, member.length);
                 }
                 else
                 {
-                    realWritefln!normalPattern(typestring, name, value);
+                    realWritefln!normalPattern(typestring, memberstring, member);
                 }
             }
         }
