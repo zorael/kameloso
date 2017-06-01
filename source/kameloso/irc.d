@@ -981,7 +981,7 @@ struct IRCServer
             {
                 network = undernet;
             }
-            else if (address.endsWith(".gamesurge.org"))
+            else if (address.endsWith(".gamesurge.net"))
             {
                 network = gamesurge;
             }
