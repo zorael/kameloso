@@ -12,6 +12,8 @@ private:
 /// State variables and configuration for the IRC bot.
 IRCBot bot;
 
+uint maxNickLength = 9;
+uint maxChannelLength = 200;
 
 // parseBasic
 /++
@@ -1580,9 +1582,11 @@ bool isValidChannel(const string line)
         return false;
     }
 
-    if ((line.length <= 1) || (line.length > 200)) return false;
+    if ((line.length <= 1) || (line.length > maxChannelLength)) return false;
 
-    return ((line[0] == '#') || (line[0] == '&'));
+    return ((line[0] == '#') || (line[0] == '&')) &&
+           ((line[1..$].indexOf('#') == -1) &&
+            (line[1..$].indexOf('&') == -1));
 }
 unittest
 {
