@@ -4,6 +4,7 @@
     "authors": [ "JR" ],
     "copyright": "Copyright © 2017, JR",
     "license": "LGPL-2.1",
+    "mainSourceFile": "source/kameloso/main.d",
     "buildRequirements": [ "silenceDeprecations" ],
     "configurations":
     [
