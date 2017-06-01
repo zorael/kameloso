@@ -69,11 +69,14 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
                 {
                     static if (is(typeof(member)))
                     {
-                        enum memberstring = __traits(identifier, Things[i].tupleof[n]);
+                        static if (!hasUDA!(Things[i].tupleof[n], Unconfigurable))
+                        {
+                            enum memberstring = __traits(identifier, Things[i].tupleof[n]);
 
-                        case memberstring:
-                            things[i].setMember(entry, value);
-                            continue mid;
+                            case memberstring:
+                                things[i].setMember(entry, value);
+                                continue mid;
+                        }
                     }
                 }
 
@@ -268,6 +271,8 @@ string configText(Things...)(const Things things)
 if (Things.length > 1)
 {
     import std.array : Appender;
+    import std.traits : hasUDA;
+
     Appender!string all;
 
     enum entryPadding = longestMemberName!Things.length + 2;
@@ -307,7 +312,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
     {
         static if (is(typeof(member)) &&
                    isConfigurableVariable!(member) &&
-                   !hasUDA!(member, Unconfigurable))
+                   !hasUDA!(Thing.tupleof[i], Unconfigurable))
         {
             enum memberstring = __traits(identifier, thing.tupleof[i]);
             alias MemberType = typeof(member);
