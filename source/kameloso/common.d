@@ -218,7 +218,7 @@ void printObjectsMonochrome(Things...)(Things things)
                 enum typestring = MemberType.stringof;
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                static if (is(typeof(value) : string))
+                static if (is(MemberType : string))
                 {
                     realWritefln!stringPattern(typestring, memberstring, member, member.length);
                 }
@@ -229,7 +229,7 @@ void printObjectsMonochrome(Things...)(Things things)
             }
         }
 
-        writeln();
+        realWriteln();
     }
 }
 
