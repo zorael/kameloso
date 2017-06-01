@@ -233,7 +233,10 @@ Quit handleArguments(string[] args)
 
     if (helpInfo.helpWanted)
     {
-        defaultGetoptPrinter("Command-line arguments available:\n", helpInfo.options);
+        defaultGetoptPrinter(colourise(Foreground.lightgreen) ~
+                            "Command-line arguments available:\n" ~
+                            colourise(Foreground.default_),
+                            helpInfo.options);
         writeln();
         return Quit.yes;
     }
