@@ -2046,4 +2046,17 @@ unittest
         assert((content == "1495974267 590878"), content);
         assert((aux == "PING"), aux);
     }
+
+    /+
+    :beLAban!~beLAban@onlywxs PRIVMSG ##networking :start at cpasdcas
+    +/
+    immutable e16 = ":beLAban!~beLAban@onlywxs PRIVMSG ##networking :start at cpasdcas"
+                    .toIRCEvent();
+    with (e16)
+    {
+        assert((sender == "beLAban"), sender);
+        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((channel == "##networking"), channel);
+        assert((content == "start at cpasdcas"), content);
+    }
 }
