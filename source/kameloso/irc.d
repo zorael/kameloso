@@ -15,6 +15,9 @@ IRCBot bot;
 uint maxNickLength = 9;
 uint maxChannelLength = 200;
 
+IRCParserHooks hooks;
+
+
 // parseBasic
 /++
  +  Parses the most basic of IRC events; PING and ERROR.
@@ -610,14 +613,11 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
                     if (thisNetwork != bot.server.network)
                     {
-                        import std.concurrency : send, thisTid;
-
                         writeln(Foreground.lightgreen, "NEW NETWORK? ",
                             value, " OLD ", bot.server.network);
-                        bot.server.network = thisNetwork;
 
-                        // FIXME: scope creep
-                        thisTid.send(cast(shared)bot);
+                        bot.server.network = thisNetwork;
+                        hooks.onNewBot(bot);
                     }
                 }
                 catch (Exception e)
@@ -941,6 +941,20 @@ void loadBot(IRCBot bot)
     .bot = bot;
 }
 
+void registerParserHooks(const IRCParserHooks hooks)
+{
+    .hooks = hooks;
+}
+
+struct IRCParserHooks
+{
+    /// Function to call when bot has changed and the change needs to propagate.
+    static void function(const IRCBot) onNewBot;
+
+    //static void function(const IRCServer) onNewServer;
+
+    //static void function(const IRCServer) onNewNetwork;
+}
 
 /// A simple struct to collect all the relevant settings, options and state needed
 struct IRCBot

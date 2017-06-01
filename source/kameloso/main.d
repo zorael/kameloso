@@ -272,7 +272,18 @@ void initPlugins()
     state.mainThread = thisTid;
     state.bot.server.resolveNetwork();  // neccessary?
 
+    static void onNewBotFunction(const IRCBot bot)
+    {
+        import std.concurrency : send, thisTid;
+
+        thisTid.send(cast(shared)bot);
+    }
+
+    IRCParserHooks hooks;
+    hooks.onNewBot = &onNewBotFunction;
+
     kameloso.irc.loadBot(state.bot);
+    kameloso.irc.registerParserHooks(hooks);
 
     plugins = cast(IRCPlugin[])
     [
