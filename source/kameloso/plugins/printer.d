@@ -52,7 +52,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case PING:
     case PONG:
     case SERVERINFO:
-    case SERVERINFO_2:
+    case RPL_ISUPPORT:
     case TOPICSETTIME:
     case WHOISSECURECONN:
     case RPL_LUSERCLIENT:
