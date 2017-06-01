@@ -1088,7 +1088,7 @@ struct IRCEvent
         CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
         CTCP_USERINFO, CTCP_FINGER,
         AUTHCHALLENGE,
-        AUTHACCEPTANCE,
+        AUTHACCEPTANCE, // = 900        // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -1107,14 +1107,15 @@ struct IRCEvent
         TOCONNECTTYPE, // = 513,        // <nickname> :To connect type /QUOTE PONG <number>
         HASTHISNICK, // = 307           // <nickname> :has identified for this nick
         INVALIDCHARACTERS, // = 455     // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
-        HELP_TOPICS, // 704             // <nickname> index :Help topics available to users:
-        HELP_ENTRIES, // 705            // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
-        HELP_END, // 706                // <nickname> index :End of /HELP.
-        NEEDAUTHTOJOIN, // 477          // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
-        CANTCHANGENICK, // 435          // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
-        YOURHIDDENHOST, // 396 ,        // <nickname> <host> :is now your hidden host
-        MESSAGENEEDSADDRESS, // 487     // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
-        NICKCHANUNAVAILABLE, // 437     // <nickname> <channel> :Nick/channel is temporarily unavailable
+        HELP_TOPICS, // = 704           // <nickname> index :Help topics available to users:
+        HELP_ENTRIES, // = 705          // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
+        HELP_END, // = 706              // <nickname> index :End of /HELP.
+        NEEDAUTHTOJOIN, // = 477        // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
+        CANTCHANGENICK, // = 435        // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
+        YOURHIDDENHOST, // = 396 ,      // <nickname> <host> :is now your hidden host
+        MESSAGENEEDSADDRESS, // = 487   // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
+        NICKCHANUNAVAILABLE, // = 437   // <nickname> <channel> :Nick/channel is temporarily unavailable
+        YOURUNIQUEID, // = 042,         // <nickname> <id> :your unique ID
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1283,13 +1284,14 @@ struct IRCEvent
     */
 
     /// typenums is reverse mapping of Types to their numeric form, to speed up conversion
-    static immutable Type[768] typenums =
+    static immutable Type[1024] typenums =
     [
         001 : Type.WELCOME,
         002 : Type.SERVERINFO,
         003 : Type.SERVERINFO,
         004 : Type.RPL_ISUPPORT,
         005 : Type.RPL_ISUPPORT,
+         42 : Type.YOURUNIQUEID,
         200 : Type.RPL_TRACELINK,
         201 : Type.RPL_TRACECONNECTING,
         202 : Type.RPL_TRACEHANDSHAKE,
@@ -1444,6 +1446,7 @@ struct IRCEvent
         704 : Type.HELP_TOPICS,
         705 : Type.HELP_ENTRIES,
         706 : Type.HELP_END,
+        900 : Type.AUTHACCEPTANCE,
     ];
 
     Type type;
