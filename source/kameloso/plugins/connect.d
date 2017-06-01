@@ -187,41 +187,6 @@ void onEndOfMotd()
 }
 
 
-@Label("onchallenge")
-@(IRCEvent.Type.AUTHCHALLENGE)
-void onChallenge(const IRCEvent event)
-{
-    if (state.bot.startedAuth || state.bot.finishedAuth) return;
-
-    state.bot.startedAuth = true;
-    updateBot();
-
-    if (state.bot.server.network == IRCServer.Network.freenode)
-    {
-        state.mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG NickServ :IDENTIFY %s %s"
-            .format(state.bot.auth, state.bot.authPassword));
-
-        // fake it
-        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-            state.bot.auth, " hunter2");
-    }
-    else
-    {
-        if (state.bot.nickname != state.bot.origNickname)
-        {
-            writeln(Foreground.lightred, "Nickname has changed, auth may not work");
-        }
-
-        state.mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG NickServ :IDENTIFY " ~ state.bot.authPassword);
-
-        // ditto
-        writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
-    }
-}
-
-
 @Label("onacceptance")
 @(IRCEvent.Type.AUTHACCEPTANCE)
 void onAcceptance()
