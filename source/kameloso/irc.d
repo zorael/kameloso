@@ -813,8 +813,19 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case CAP:
-        // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
-        slice.formattedRead("* %s :%s", &event.aux, &event.content);
+        import std.string : indexOf;
+
+        if (slice.indexOf('*') != -1)
+        {
+            // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
+            slice.formattedRead("* %s :%s", &event.aux, &event.content);
+        }
+        else
+        {
+            // :genesis.ks.us.irchighway.net CAP 867AAF66L LS :away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names
+            string id;  // what do we do with you
+            slice.formattedRead("%s %s :%s", &id, &event.aux, &event.content);
+        }
         break;
 
     default:
