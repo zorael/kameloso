@@ -563,10 +563,13 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case RPL_NAMREPLY: // 353
+        import std.string : stripRight;
+
         // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
         event.target  = slice.nom(' ');
         slice.nom(' ');
         slice.formattedRead("%s :%s", &event.channel, &event.content);
+        event.content = event.content.stripRight();
         break;
 
     case RPL_MOTD: // 372
