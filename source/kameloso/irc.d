@@ -1010,8 +1010,10 @@ struct IRCUser
 
     void toString(scope void delegate(const(char)[]) sink) const
     {
-        sink("%s:%s!~%s@%s%s".format(nickname, login, ident, address,
-                                     special ? " (*)" : string.init));
+        import std.format : formattedWrite;
+
+        sink.formattedWrite("%s:%s!~%s@%s%s",
+            nickname, login, ident, address, special ? " (*)" : string.init);
     }
 }
 
