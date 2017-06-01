@@ -155,7 +155,30 @@ void onEndOfMotd()
             break;
 
         case rizon:
+        case swiftirc:
+            // Only accepts password, no auth nickname
+
+            if (bot.nickname != bot.origNickname)
+            {
+                writefln(Foreground.lightred,
+                    "Cannot auth on this network when you have changed your nickame (%s != %s)",
+                    bot.nickname, bot.origNickname);
+
+                joinChannels();
+                return;
+            }
+
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG NickServ :IDENTIFY " ~ bot.authPassword);
+
+            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
+
+            break;
+
         case freenode:
+        case irchighway:
+            // Accepts auth login
+
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(bot.auth, bot.authPassword));
@@ -165,6 +188,11 @@ void onEndOfMotd()
 
             break;
 
+        case efnet:
+        case ircnet:
+            // No registration available
+            return;
+
         default:
             /*writeln(Foreground.lightred, "Probably need to AUTH manually");
 
@@ -172,7 +200,7 @@ void onEndOfMotd()
                 "wouldn't understand being passed both login and password...");
             writeln(Foreground.lightred, "DEBUG: trying anyway");*/
 
-            writeln(Foreground.lightred, "Unsure of what server network this is.");
+            writeln(Foreground.lightred, "Unsure of what AUTH approach to use.");
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
