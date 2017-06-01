@@ -572,9 +572,86 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
 
-    case SERVERINFO_2: // 004
+    case RPL_ISUPPORT: // 004-005
+        import std.algorithm.iteration : splitter;
+        import std.conv : to;
+        import std.string : indexOf, toLower;
+        // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
+        // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
         // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
         slice.formattedRead("%s %s", &event.target, &event.content);
+
+        if (event.content.indexOf(" :") != -1)
+        {
+            event.aux = event.content.nom(" :");
+        }
+
+        foreach (value; event.aux.splitter(' '))
+        {
+            if (value.indexOf('=') == -1) continue;
+
+            immutable key = value.nom('=');
+
+            /// http://www.irc.org/tech_docs/005.html
+
+            switch (key)
+            {
+            case "CHANTYPES":
+                // TODO: Logic here to register channel prefix signs
+                break;
+
+            case "NETWORK":
+                writeln(Foreground.cyan, "NETWORK: ", value);
+
+                try
+                {
+                    immutable thisNetwork = value.toLower.to!(IRCServer.Network);
+                    writeln(Foreground.lightgreen, thisNetwork);
+
+                    if (thisNetwork != bot.server.network)
+                    {
+                        import std.concurrency : send, thisTid;
+
+                        writeln(Foreground.lightgreen, "NEW NETWORK? ",
+                            value, " OLD ", bot.server.network);
+                        bot.server.network = thisNetwork;
+
+                        // FIXME: scope creep
+                        thisTid.send(cast(shared)bot);
+                    }
+                }
+                catch (Exception e)
+                {
+                    writeln(Foreground.lightred, e.msg);
+                }
+
+                break;
+
+            case "NICKLEN":
+                writeln(Foreground.cyan, "NICK LENGTH: ", value);
+
+                try maxNickLength = value.to!uint;
+                catch (Exception e)
+                {
+                    writeln(Foreground.lightred, e.msg);
+                }
+                break;
+
+            case "CHANNELLEN":
+                writeln(Foreground.cyan, "CHAN LENGTH: ", value);
+
+                try maxChannelLength = value.to!uint;
+                catch (Exception e)
+                {
+                    writeln(Foreground.lightred, e.msg);
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+
         break;
 
     case TOPICSETTIME: // 333
@@ -968,7 +1045,7 @@ struct IRCEvent
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
         WELCOME, // = 001,              // ":Welcome to <server name> <user>"
         SERVERINFO, // = 002-003        // (server information)
-        SERVERINFO_2, // = 004-005      // (server information, different syntax)
+        RPL_ISUPPORT, // = 004-005      // (server information, different syntax)
         TOPICSETTIME, // = 333          // "#channel user!~ident@address 1476294377"
         USERCOUNTLOCAL, // = 265        // "Current local users n, max m"
         USERCOUNTGLOBAL, // = 266       // "Current global users n, max m"
@@ -1162,8 +1239,8 @@ struct IRCEvent
         001 : Type.WELCOME,
         002 : Type.SERVERINFO,
         003 : Type.SERVERINFO,
-        004 : Type.SERVERINFO_2,
-        005 : Type.SERVERINFO_2,
+        004 : Type.RPL_ISUPPORT,
+        005 : Type.RPL_ISUPPORT,
         200 : Type.RPL_TRACELINK,
         201 : Type.RPL_TRACECONNECTING,
         202 : Type.RPL_TRACEHANDSHAKE,
