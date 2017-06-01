@@ -141,8 +141,8 @@ void onEndOfMotd()
 
         if (bot.startedAuth) return;
 
-        with (IRCServer.Family)
-        switch (bot.server.family)
+        with (IRCServer.Network)
+        switch (bot.server.network)
         {
         case quakenet:
             mainThread.send(ThreadMessage.Quietline(),
@@ -172,7 +172,7 @@ void onEndOfMotd()
                 "wouldn't understand being passed both login and password...");
             writeln(Foreground.lightred, "DEBUG: trying anyway");*/
 
-            writeln(Foreground.lightred, "Unsure of what server family this is.");
+            writeln(Foreground.lightred, "Unsure of what server network this is.");
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
@@ -196,7 +196,7 @@ void onChallenge(const IRCEvent event)
     state.bot.startedAuth = true;
     updateBot();
 
-    if (state.bot.server.family == IRCServer.Family.freenode)
+    if (state.bot.server.network == IRCServer.Network.freenode)
     {
         state.mainThread.send(ThreadMessage.Quietline(),
             "PRIVMSG NickServ :IDENTIFY %s %s"
@@ -317,7 +317,7 @@ void register()
         }
         else
         {
-            if (bot.server.family == IRCServer.Family.twitch)
+            if (bot.server.network == IRCServer.Network.twitch)
             {
                 writeln(Foreground.lightred, "You *need* a password to join this server");
             }

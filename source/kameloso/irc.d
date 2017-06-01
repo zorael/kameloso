@@ -52,7 +52,7 @@ void parseBasic(ref IRCEvent event)
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
-        bot.server.family = IRCServer.Family.quakenet;  // only available locally
+        bot.server.network = IRCServer.Network.quakenet;  // only available locally
         event.type = IRCEvent.Type.NOTICE;
         event.content = raw;
         event.aux = slice.stripRight();
@@ -851,7 +851,7 @@ struct IRCBot
 /// IRC server information.
 struct IRCServer
 {
-    enum Family
+    enum Network
     {
         unknown,
         freenode,
@@ -863,11 +863,9 @@ struct IRCServer
         unreal,
     }
 
-    Family family;
-    string address;
-    ushort port;
-    /*string address = "irc.freenode.net";
-    ushort port = 6667;*/
+    Network network;
+    string address = "irc.freenode.net";
+    ushort port = 6667;
 
     @Unconfigurable
     {
@@ -876,48 +874,48 @@ struct IRCServer
 
     void toString(scope void delegate(const(char)[]) sink) const
     {
-        sink("[Family.%s] %s:%d (%s)".format(family, address, port, resolvedAddress));
+        sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
     }
 
-    void resolveFamily()
+    void resolveNetwork()
     {
-        with (Family)
+        with (Network)
         {
-            if (family != unknown) return;
+            if (network != unknown) return;
 
             import std.algorithm.searching : endsWith;
 
             if (address.endsWith(".freenode.net"))
             {
-                family = freenode;
+                network = freenode;
             }
             else if (address.endsWith(".rizon.net"))
             {
-                family = rizon;
+                network = rizon;
             }
             else if (address.endsWith(".quakenet.org"))
             {
-                family = quakenet;
+                network = quakenet;
             }
             else if (address.endsWith(".undernet.org"))
             {
-                family = undernet;
+                network = undernet;
             }
             else if (address.endsWith(".gamesurge.org"))
             {
-                family = gamesurge;
+                network = gamesurge;
             }
             else if (address.endsWith(".twitch.tv"))
             {
-                family = twitch;
+                network = twitch;
             }
             else if (address.endsWith(".unrealircd.org"))
             {
-                family = unreal;
+                network = unreal;
             }
             else
             {
-                family = unknown;
+                network = unknown;
             }
         }
     }
