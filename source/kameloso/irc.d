@@ -940,6 +940,7 @@ struct IRCServer
         gamesurge,
         twitch,
         unreal,
+        efnet,
     }
 
     Network network;
