@@ -356,11 +356,7 @@ int main(string[] args)
         conn.resolve(bot.server.address, bot.server.port);
         conn.connect();
 
-        if (!conn.connected)
-        {
-            writeln("Failed to connect.");
-            return 1;
-        }
+        if (!conn.connected) return 1;
 
         // Reset fields in the bot that should not survive a reconnect
         bot.startedRegistering = false;
