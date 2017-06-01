@@ -880,21 +880,21 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
 public:
 
+void loadBot(IRCBot bot)
+{
+    .bot = bot;
+}
+
 
 /// A simple struct to collect all the relevant settings, options and state needed
 struct IRCBot
 {
-    string nickname;
-    string user;
-    string ident;
-    string auth;
-    string quitReason;
-    /*string nickname   = "kameloso";
+    string nickname   = "kameloso";
     string user       = "kameloso!";
     string ident      = "NaN";
-    string auth       = "kameloso";
-    string quitReason = "beep boop I am a bot";*/
+    string quitReason = "beep boop I am a bot";
     string master;
+    string auth;
 
     @Hidden
     {
