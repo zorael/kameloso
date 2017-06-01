@@ -1686,7 +1686,7 @@ bool isValidNickname(const string nickname)
 
     if (!nickname.length || (nickname.length > maxNickLength)) return false;
 
-    enum validCharactersPattern = r"^[a-zA-Z0-9_\\\[\]{}\^`-]+$";
+    enum validCharactersPattern = r"^([a-zA-Z0-9_\\\[\]{}\^`|-]+)$";
     static engine = ctRegex!validCharactersPattern;
 
     auto characterMatches = nickname.matchAll(engine);
@@ -1702,9 +1702,9 @@ unittest
         "kameloso",
         "kameloso^",
         "zorael-",
-        "hirrsteff{}",
+        "hirr{}",
         "asdf`",
-        "[afk]somebody",
+        "[afk]me",
         "a-zA-Z0-9",
         `\`,
     ];
@@ -1712,7 +1712,7 @@ unittest
     const invalidNicknames =
     [
         "",
-        //"1234567890", // length > 9
+        "1234567890", // length > 9
         "åäöÅÄÖ",
         "\n",
         "¨",
