@@ -1022,6 +1022,9 @@ struct IRCServer
         twitch,
         unreal,
         efnet,
+        ircnet,
+        swiftirc,
+        irchighway,
     }
 
     Network network;
