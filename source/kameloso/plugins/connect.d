@@ -141,10 +141,14 @@ void onEndOfMotd()
 
         if (bot.startedAuth) return;
 
+        bot.startedAuth = true;
+
         with (IRCServer.Network)
         switch (bot.server.network)
         {
         case quakenet:
+            // Special service nick (Q), otherwise takes both auth login and password
+
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
                 .format(bot.auth, bot.authPassword));
