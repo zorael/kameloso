@@ -907,6 +907,31 @@ IRCServer.Network networkOf(const string address)
         return unknown;
     }
 }
+unittest
+{
+    import std.conv : to;
+
+    with (IRCServer.Network)
+    {
+        immutable n1 = networkOf("irc.freenode.net");
+        assert(n1 == freenode, n1.to!string);
+
+        immutable n2 = networkOf("harbl.hhorlb.rizon.net");
+        assert(n2 == rizon, n2.to!string);
+
+        immutable n3 = networkOf("under.net.undernet.org");
+        assert(n3 == undernet, n3.to!string);
+
+        immutable n4 = networkOf("irc.irc.irc.gamesurge.net");
+        assert(n4 == gamesurge, n4.to!string);
+
+        immutable n5 = networkOf("irc.chat.twitch.tv");
+        assert(n5 == twitch, n5.to!string);
+
+        immutable n6 = networkOf("irc.unrealircd.org");
+        assert(n6 == unreal, n6.to!string);
+    }
+}
 
 
 public:
