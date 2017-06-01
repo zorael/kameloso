@@ -1598,6 +1598,63 @@ unittest
     assert(!"".isValidChannel);
 }
 
+/// isValidNickname checks if a string looks like a nickname.
+bool isValidNickname(const string nickname)
+{
+    import std.regex;
+    import std.string : representation;
+
+    // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
+
+    if (!nickname.length || (nickname.length > maxNickLength)) return false;
+
+    enum validCharactersPattern = r"^[a-zA-Z0-9_\\\[\]{}\^`-]+$";
+    static engine = ctRegex!validCharactersPattern;
+
+    auto characterMatches = nickname.matchAll(engine);
+
+    //if (characterMatches.hit.length) return true; // assert error
+    if (characterMatches.pre.length || characterMatches.post.length) return false;
+    else return true;
+}
+unittest
+{
+    const validNicknames =
+    [
+        "kameloso",
+        "kameloso^",
+        "zorael-",
+        "hirrsteff{}",
+        "asdf`",
+        "[afk]somebody",
+        "a-zA-Z0-9",
+        `\`,
+    ];
+
+    const invalidNicknames =
+    [
+        "",
+        //"1234567890", // length > 9
+        "åäöÅÄÖ",
+        "\n",
+        "¨",
+        "@pelle",
+        "+calvin",
+        "&hobbes",
+        "#channel",
+        "$deity",
+    ];
+
+    foreach (nickname; validNicknames)
+    {
+        assert(nickname.isValidNickname, nickname);
+    }
+
+    foreach (nickname; invalidNicknames)
+    {
+        assert(!nickname.isValidNickname, nickname);
+    }
+}
 
 // stripModeSign
 /++
