@@ -878,6 +878,37 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 }
 
+
+IRCServer.Network networkOf(const string address)
+{
+    with (IRCServer.Network)
+    {
+        import std.algorithm.searching : endsWith;
+
+        immutable IRCServer.Network[string] networkMap =
+        [
+            ".freenode.net"   : freenode,
+            ".rizon.net"      : rizon,
+            ".quakenet.org"   : quakenet,
+            ".undernet.org"   : undernet,
+            ".gamesurge.net"  : gamesurge,
+            ".twitch.tv"      : twitch,
+            ".unrealircd.org" : unreal,
+        ];
+
+        foreach (addressTail, net; networkMap)
+        {
+            if (address.endsWith(addressTail))
+            {
+                return networkMap[addressTail];
+            }
+        }
+
+        return unknown;
+    }
+}
+
+
 public:
 
 void loadBot(IRCBot bot)
@@ -959,45 +990,7 @@ struct IRCServer
 
     void resolveNetwork()
     {
-        with (Network)
-        {
-            if (network != unknown) return;
-
-            import std.algorithm.searching : endsWith;
-
-            if (address.endsWith(".freenode.net"))
-            {
-                network = freenode;
-            }
-            else if (address.endsWith(".rizon.net"))
-            {
-                network = rizon;
-            }
-            else if (address.endsWith(".quakenet.org"))
-            {
-                network = quakenet;
-            }
-            else if (address.endsWith(".undernet.org"))
-            {
-                network = undernet;
-            }
-            else if (address.endsWith(".gamesurge.net"))
-            {
-                network = gamesurge;
-            }
-            else if (address.endsWith(".twitch.tv"))
-            {
-                network = twitch;
-            }
-            else if (address.endsWith(".unrealircd.org"))
-            {
-                network = unreal;
-            }
-            else
-            {
-                network = unknown;
-            }
-        }
+        network = networkOf(address);
     }
 }
 
