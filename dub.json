@@ -28,7 +28,8 @@
         {
             "name": "nowebtitles-nocolours",
             "targetType": "executable",
-            "platforms": [ "windows" ]
+            "platforms": [ "posix", "windows" ],
+            "libs-posix": [ "phobos2" ]
         }
     ]
 }
