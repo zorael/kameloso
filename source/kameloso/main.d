@@ -244,10 +244,10 @@ Quit handleArguments(string[] args)
 
     settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
 
-    botFromConfig.server.resolveNetwork();
-
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
+
+    bot.server.resolveNetwork();
 
     // If --writeconfig was supplied we should just write and quit
 
