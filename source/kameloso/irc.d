@@ -445,8 +445,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         if ((slice[0] == IRCControlCharacter.ctcp) &&
             (slice[$-1] == IRCControlCharacter.ctcp))
         {
-            import std.string : indexOf;
-
             slice = slice[1..$-1];
             immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
             event.content = slice;
@@ -580,7 +578,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     case RPL_ISUPPORT: // 004-005
         import std.algorithm.iteration : splitter;
         import std.conv : to;
-        import std.string : indexOf, toLower;
+        import std.string : toLower;
+
         // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
         // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
         // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
@@ -675,8 +674,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case ERR_UNKNOWNCOMMAND: // 421
-        import std.string : indexOf;
-
         if (slice.indexOf(':') == -1)
         {
             // :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra,#lubuntu,#xubuntu,#gnome,#fluxbuntu,#flerrp,#ubuntu,##linux,#systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra,#lubuntu,#xubuntu,#gnome,#fluxbuntu,#flerrp,#ubuntu,##linux,#systemd,#kde,#kubuntu,#archlinux,#hirrsteff,#xorg,#steamlug,#d3d9,##networking,#manjaro,#antergos,#freenode,#chakra
@@ -787,8 +784,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
     case TOCONNECTTYPE: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
-        import std.string : indexOf;
-
         if (slice.indexOf(" :To connect type ") == -1)
         {
             writeln(Foreground.lightred, "Unknown variant of TOCONNECTTYPE");
@@ -815,8 +810,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case CAP:
-        import std.string : indexOf;
-
         if (slice.indexOf('*') != -1)
         {
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
@@ -1693,8 +1686,6 @@ unittest
 /// isValidChannel only checks whether a string *looks* like a channel.
 bool isValidChannel(const string line)
 {
-    import std.string : indexOf;
-
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
      +  length up to 200 characters.  Apart from the the requirement that the
