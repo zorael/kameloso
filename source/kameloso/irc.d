@@ -96,7 +96,7 @@ unittest
     IRCEvent e2;
     with (e2)
     {
-        // quakenet
+        // QuakeNet and others not having the sending server as prefix
         raw = "NOTICE AUTH :*** Couldn't look up your hostname";
         e2.parseBasic();
         assert((raw == "NOTICE AUTH :*** Couldn't look up your hostname"), raw);
@@ -143,6 +143,7 @@ void parsePrefix(ref IRCEvent event, ref string slice)
         // user!~ident@address
         prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
 
+        // FIXME: This obviously doesn't scale
         special = (address == "services.") ||
                   ((ident == "service") && (address == "rizon.net")) ||
                   (address.endsWith(".rizon.net")) ||
@@ -330,6 +331,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
         slice.formattedRead("%s :%s", &event.target, &event.content);
 
+        // FIXME: This obviously doesn't scale either
         if (event.target == "*") event.special = true;
         else if ((event.ident == "service") && (event.address == "rizon.net"))
         {
@@ -354,6 +356,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             }
             else
             {
+                // FIXME: This obviously doesn't scale either
+
                 enum AuthServiceAcceptance
                 {
                     freenode = "You are now identified for",
@@ -455,7 +459,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
-            // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :(1)VERSION(1)
+            // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :VERSION
             // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :TIME
             // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
             // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :CLIENTINFO
@@ -1812,7 +1816,7 @@ unittest
     const invalidNicknames =
     [
         "",
-        "1234567890", // length > 9
+        "1234567890", // length > 9, max per standard
         "åäöÅÄÖ",
         "\n",
         "¨",
