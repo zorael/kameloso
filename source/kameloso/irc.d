@@ -221,8 +221,6 @@ void parseTypestring(ref IRCEvent event, ref string slice)
 
     event.typestring = slice.nom(' ');
 
-    assert(event.typestring.length, "Event typestring has no length! '%s'".format(event.raw));
-
     if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
     {
         // typestring is a number (ascii 48 is 0, 57 is 9)
@@ -243,7 +241,6 @@ void parseTypestring(ref IRCEvent event, ref string slice)
     }
     else
     {
-        //try event.type = event.typestring.to!(IRCEvent.Type);
         try event.type = event.typestring.toEnum!(IRCEvent.Type);
         catch (Exception e)
         {
