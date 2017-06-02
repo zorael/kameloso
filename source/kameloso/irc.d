@@ -300,10 +300,10 @@ unittest
 // parseSpecialcases
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
- +  This function only focuses on specialcasing the remaining line, dividing it into fields
- +  like target, channel, content, etc.
+ +  This function only focuses on specialcasing the remaining line, dividing it
+ +  into fields like target, channel, content, etc.
  +
- +  The IRCEvent is finished at the end of this function. Beware its length.
+ +  The IRCEvent is finished at the end of this function.
  +
  +  Params:
  +      ref event = A reference to the IRCEvent to finish working on.
