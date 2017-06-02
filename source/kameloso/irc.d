@@ -5,6 +5,7 @@ import kameloso.common;
 
 import std.format : format, formattedRead;
 import std.algorithm.searching : canFind;
+import std.string : indexOf;
 
 
 private:
