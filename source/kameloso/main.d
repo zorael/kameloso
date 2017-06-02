@@ -420,7 +420,7 @@ Quit loopGenerator(Generator!string generator)
 
         generator.call();
 
-        foreach (const line; generator)
+        foreach (immutable line; generator)
         {
             // Empty line yielded means nothing received
             if (!line.length) break;
