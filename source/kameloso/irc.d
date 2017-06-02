@@ -1001,12 +1001,12 @@ struct IRCBot
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
     string master;
-    string auth;
+    string authLogin;
 
     @Hidden
     {
         string authPassword;
-        string loginPassword;
+        string pass;
     }
 
     @Separator(",")
@@ -1029,7 +1029,7 @@ struct IRCBot
     void toString(scope void delegate(const(char)[]) sink) const
     {
         sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
-             .format(nickname, auth, ident, homes, channels, friends, server));
+             .format(nickname, authLogin, ident, homes, channels, friends, server));
     }
 }
 

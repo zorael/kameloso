@@ -151,10 +151,10 @@ void onEndOfMotd()
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
-                .format(bot.auth, bot.authPassword));
+                .format(bot.authLogin, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
-                bot.auth, " hunter2");
+                bot.authLogin, " hunter2");
 
             break;
 
@@ -185,10 +185,10 @@ void onEndOfMotd()
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(bot.auth, bot.authPassword));
+                .format(bot.authLogin, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                bot.auth, " hunter2");
+                bot.authLogin, " hunter2");
 
             break;
 
@@ -208,10 +208,10 @@ void onEndOfMotd()
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(bot.auth, bot.authPassword));
+                .format(bot.authLogin, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                bot.auth, " hunter2");
+                bot.authLogin, " hunter2");
 
             break;
         }
@@ -304,10 +304,10 @@ void register()
 
         mainThread.send(ThreadMessage.Quietline(), "CAP LS");
 
-        if (bot.loginPassword.length)
+        if (bot.pass.length)
         {
             mainThread.send(ThreadMessage.Quietline(),
-                "PASS " ~ bot.loginPassword);
+                "PASS " ~ bot.pass);
 
             // fake it
             writeln(Foreground.white, "--> PASS hunter2");

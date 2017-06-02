@@ -208,8 +208,8 @@ Quit handleArguments(string[] args)
             "n|nickname",    "Bot nickname", &bot.nickname,
             "u|user",        "Username when registering onto server (not nickname)", &bot.user,
             "i|ident",       "IDENT string", &bot.ident,
-            "pass",          "Registration password (not auth or nick services)", &bot.loginPassword,
-            "a|auth",        "Auth service login name, if applicable", &bot.auth,
+            "pass",          "Registration password (not auth or nick services)", &bot.pass,
+            "a|auth",        "Auth service login name, if applicable", &bot.authLogin,
             "p|authpassword","Auth service password", &bot.authPassword,
             "m|master",      "Auth login of the bot's master, who gets " ~
                             "access to administrative functions", &bot.master,
@@ -369,6 +369,8 @@ int main(string[] args)
         // Reset fields in the bot that should not survive a reconnect
         bot.startedRegistering = false;
         bot.finishedRegistering = false;
+        bot.startedAuth = false;
+        bot.finishedAuth = false;
         bot.server.resolvedAddress = string.init;
 
         initPlugins();
