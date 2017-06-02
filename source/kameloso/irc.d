@@ -1777,7 +1777,7 @@ unittest
 /// isValidNickname checks if a string looks like a nickname.
 bool isValidNickname(const string nickname)
 {
-    import std.regex;
+    import std.regex : ctRegex, matchAll;
     import std.string : representation;
 
     // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
