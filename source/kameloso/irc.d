@@ -550,11 +550,11 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         }
         break;
 
-    case ERR_INVITEONLYCHAN:
+    case ERR_INVITEONLYCHAN: // 473
     case RPL_ENDOFNAMES: // 366
     case RPL_TOPIC: // 332
     case CHANNELURL: // 328
-    case NEEDAUTHTOJOIN:
+    case NEEDAUTHTOJOIN: // 477
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
         // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
@@ -573,7 +573,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case RPL_MOTD: // 372
-    case RPL_LUSERCLIENT:
+    case RPL_LUSERCLIENT: // 251
         // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
         slice.formattedRead("%s :%s", &event.target, &event.content);
         break;
