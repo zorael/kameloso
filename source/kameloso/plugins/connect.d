@@ -185,12 +185,21 @@ void onEndOfMotd()
         case irchighway:
             // Accepts auth login
 
+            string login = bot.authLogin;
+
+            if (!bot.authLogin.length)
+            {
+                writeln(Foreground.lightred,
+                    "No auth login on Freenode! Trying ", bot.origNickname);
+                login = bot.origNickname;
+            }
+
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(bot.authLogin, bot.authPassword));
+                .format(login, bot.authPassword));
 
             writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                bot.authLogin, " hunter2");
+                login, " hunter2");
 
             break;
 
