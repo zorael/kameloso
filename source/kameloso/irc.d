@@ -1080,7 +1080,7 @@ struct IRCServer
 }
 
 
-/// Likewise a collection of string fields that represents a single user
+/// An aggregate of string fields that represents a single user.
 struct IRCUser
 {
     string nickname, ident, address, login;
