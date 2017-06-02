@@ -1493,8 +1493,10 @@ struct IRCEvent
 
 // toIRCEvent
 /++
- +  Takes a raw IRC string and passes it to the different parsing functions to get a finished
- +  IRCEvent. Parsing goes through several phases (prefix, typestring, specialcases) and
+ +  Parser an IRC string into an IRCEvent.
+ +
+ +  It passes it to the different parsing functions to get a finished IRCEvent.
+ +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them.
  +
  +  Params:
@@ -1526,9 +1528,12 @@ IRCEvent toIRCEvent(const string raw)
 
         // First pass: prefixes. This is the sender
         parsePrefix(event, slice);
+
         // Second pass: typestring. This is what kind of action the event is of
         parseTypestring(event, slice);
-        // Third pass: specialcases. This splits up the remaining bits into useful strings, like content
+
+        // Third pass: specialcases. This splits up the remaining bits into
+        // useful strings, like sender, target and content
         parseSpecialcases(event, slice);
     }
     catch (Exception e)
