@@ -172,28 +172,28 @@ void mapEffects(ref IRCEvent event)
     alias I = IRCControlCharacter;
     alias B = BashEffectToken;
 
-    if (event.content.representation.canFind(I.colour))
+    if (event.content.representation.canFind(cast(ubyte)I.colour))
     {
         // Colour is mIRC 3
         event.mapColours();
     }
 
-    if (event.content.representation.canFind(I.bold))
+    if (event.content.representation.canFind(cast(ubyte)I.bold))
     {
         // Bold is bash 1, mIRC 2
-        event.mapEffectImpl!(B.bold, I.bold)();
+        event.mapEffectImpl!(cast(ubyte)B.bold, cast(ubyte)I.bold)();
     }
 
-    if (event.content.representation.canFind(I.italics))
+    if (event.content.representation.canFind(cast(ubyte)I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        event.mapEffectImpl!(B.italics, I.italics)();
+        event.mapEffectImpl!(cast(ubyte)B.italics, cast(ubyte)I.italics)();
     }
 
-    if (event.content.representation.canFind(I.underlined))
+    if (event.content.representation.canFind(cast(ubyte)I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        event.mapEffectImpl!(B.underlined, I.underlined)();
+        event.mapEffectImpl!(cast(ubyte)B.underlined, cast(ubyte)I.underlined)();
     }
 }
 
