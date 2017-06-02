@@ -210,7 +210,7 @@ unittest
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
  +  This function only focuses on the typestring; the part that tells what kind of event
- +  happened, like PRIVMSG or MODE or NICK or KICK, etc.
+ +  happened, like PRIVMSG or MODE or NICK or KICK, etc; in string format.
  +
  +  The IRCEvent is not finished at the end of this function.
  +
