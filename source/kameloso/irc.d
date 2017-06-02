@@ -1039,9 +1039,10 @@ struct IRCBot
 }
 
 
-/// IRC server information.
+/// Aggregate of all information and state pertaining to the connected IRC server.
 struct IRCServer
 {
+    /// A list of known networks as reported in the CAP LS message.
     enum Network
     {
         unknown,
