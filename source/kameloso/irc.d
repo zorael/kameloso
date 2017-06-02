@@ -963,6 +963,18 @@ void loadBot(IRCBot bot)
     .bot = bot;
 }
 
+
+// registerParserHooks
+/++
+ +  Takes an IRCParserHooks and stores it.
+ +
+ +  These contain function pointers which will be clled upon certain events,
+ +  currently only when the local IRCBot has been updated, and the change should
+ +  propagate down the stack.
+ +
+ +  Params:
+ +      hooks = a struct instance with function pointers.
+ +/
 void registerParserHooks(const IRCParserHooks hooks)
 {
     .hooks = hooks;
