@@ -4,7 +4,6 @@ import kameloso.constants;
 import kameloso.common;
 
 import std.format : format, formattedRead;
-import std.algorithm.searching : canFind;
 import std.string : indexOf;
 
 
@@ -138,7 +137,7 @@ void parsePrefix(ref IRCEvent event, ref string slice)
     auto prefix = slice.nom(' ');
 
     with(event)
-    if (prefix.canFind('!'))
+    if (prefix.indexOf('!') != -1)
     {
         // user!~ident@address
         prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
@@ -349,8 +348,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         {
             event.special = true;  // by definition
 
-            if ((event.content.canFind("/msg NickServ IDENTIFY")) ||
-                (event.content.canFind("/msg NickServ identify")))
+            if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
+                (event.content.indexOf("/msg NickServ identify") != -1))
             {
                 event.type = AUTHCHALLENGE;
             }
@@ -395,7 +394,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
         event.type = (event.sender == bot.nickname) ? SELFPART : PART;
 
-        if (slice.canFind(' '))
+        if (slice.indexOf(' ') != -1)
         {
             slice.formattedRead("%s :%s", &event.channel, &event.content);
             event.content = event.content.unquoted;
@@ -516,7 +515,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         {
             event.channel = targetOrChannel;
 
-            if (slice.canFind(' '))
+            if (slice.indexOf(' ') != -1)
             {
                 // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
                 // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
@@ -833,7 +832,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             writeln();
         }
 
-        if (slice.canFind(" :"))
+        if (slice.indexOf(" :") != -1)
         {
             slice.formattedRead("%s :%s", &event.target, &event.content);
         }
@@ -856,8 +855,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 
     if ((event.type != IRCEvent.Type.CHANMODE) &&
-        (event.target.canFind(' ') ||
-         event.channel.canFind(' ')))
+        (event.target.indexOf(' ') != -1) ||
+        (event.channel.indexOf(' ') != -1))
     {
         writeln();
         writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
