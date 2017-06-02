@@ -484,12 +484,12 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                 // ignore, handled elsewhere
                 break;
 
-            foreach (type; EnumMembers!(IRCEvent.Type))
+            foreach (immutable type; EnumMembers!(IRCEvent.Type))
             {
                 import std.conv : to;
                 enum typestring = type.to!string;
 
-                static if (typestring.length > 5 && typestring[0..5] == "CTCP_")
+                static if ((typestring.length > 5) && (typestring[0..5] == "CTCP_"))
                 {
                     case typestring[5..$]:
                         mixin("event.type = " ~ typestring ~ ";");
