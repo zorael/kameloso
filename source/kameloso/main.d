@@ -290,9 +290,8 @@ void initPlugins()
 
     IRCParserHooks hooks;
     hooks.onNewBot = &onNewBotFunction;
-
-    kameloso.irc.loadBot(state.bot);
     kameloso.irc.registerParserHooks(hooks);
+    kameloso.irc.loadBot(state.bot);
 
     // TODO: Somehow move this list somewhere else
     plugins = cast(IRCPlugin[])
