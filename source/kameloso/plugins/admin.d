@@ -43,6 +43,24 @@ void onCommandSudo(const IRCEvent event)
 }
 
 
+@Label("fake")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.required, "fake")
+void onCommandFake(const IRCEvent event)
+{
+    if (state.users[event.sender].login != state.bot.master)
+    {
+        writefln(Foreground.lightred, "Failsafe triggered: user is not master (%s)", event.sender);
+        return;
+    }
+
+    // Fake that this string was received from the server
+    state.mainThread.send(event.content);
+}
+
+
 // onCommandQuit
 /++
  +  Sends a QUIT event to the server.
