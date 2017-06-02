@@ -980,6 +980,12 @@ void registerParserHooks(const IRCParserHooks hooks)
     .hooks = hooks;
 }
 
+
+// IRCParserHooks
+/++
+ +  Aggregate struct conaining function pointers to be called when certain
+ +  events occur, currently only when the local IRCBot has been updated.
+ +/
 struct IRCParserHooks
 {
     /// Function to call when bot has changed and the change needs to propagate.
