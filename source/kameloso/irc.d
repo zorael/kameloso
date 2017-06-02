@@ -62,6 +62,7 @@ void parseBasic(ref IRCEvent event)
         event.type = IRCEvent.Type.NOTICE;
         event.content = raw;
         event.aux = slice.stripRight();
+        event.special = true;
         break;
 
     case "PONG":
