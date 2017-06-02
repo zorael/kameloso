@@ -427,7 +427,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         {
             event.content.nom("Quit: ");
         }
-
         break;
 
     case PRIVMSG:
@@ -1567,6 +1566,7 @@ IRCUser userFromEvent(const IRCEvent event)
         // These events are sent by the server, *describing* a user
         // :asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here
         string content = event.content;
+
         with (user)
         {
             nickname  = event.target;
