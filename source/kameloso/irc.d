@@ -998,7 +998,7 @@ struct IRCParserHooks
     //static void function(const IRCServer) onNewNetwork;
 }
 
-/// A simple struct to collect all the relevant settings, options and state needed
+/// Aggregate collecting all the relevant settings, options and state needed
 struct IRCBot
 {
     string nickname   = "kameloso";
