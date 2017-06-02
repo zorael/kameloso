@@ -852,7 +852,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
     }
 
-    if (event.target.canFind(' ') || event.channel.canFind(' '))
+    if ((event.type != IRCEvent.Type.CHANMODE) &&
+        (event.target.canFind(' ') ||
+         event.channel.canFind(' ')))
     {
         writeln();
         writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
@@ -862,8 +864,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 
     if ((event.type != IRCEvent.Type.TOPIC) &&
-        ((event.target.length && (event.target[0] == '#')) ||
-        (event.channel.length && event.channel[0] != '#')))
+        (event.target.indexOf(' ') != -1) ||
+        (event.channel.indexOf(' ') != -1))
     {
         writeln();
         writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
