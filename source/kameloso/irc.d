@@ -408,7 +408,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         if (event.type == SELFNICK)
         {
             bot.nickname = event.content;
-            // updateBot(); //? propagate?
+            hooks.onNewBot(bot);  // Propagate the new bot
         }
         break;
 
