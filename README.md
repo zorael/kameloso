@@ -117,6 +117,10 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * fix ctrl+c leaving behind fifos
 * some functions don't honor settings and just print colours regardless
 * JSON config file? but random ordering of entries, no lined-up columns
+* retest everything now after the big changes
+* revisit authentication events
+* revisit event.special
+* use PING as timeout on failed nick authentication?
 
 ## Built With
 
