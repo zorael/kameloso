@@ -161,7 +161,7 @@ void printObjectsColoured(Things...)(Things things)
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                alias MemberType = typeof(member);
+                alias MemberType = Unqual!(typeof(member));
                 enum typestring = MemberType.stringof;
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
@@ -214,7 +214,7 @@ void printObjectsMonochrome(Things...)(Things things)
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                alias MemberType = typeof(member);
+                alias MemberType = Unqual!(typeof(member));
                 enum typestring = MemberType.stringof;
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
