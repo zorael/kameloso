@@ -1650,7 +1650,8 @@ unittest
     }
 }
 
-/// This simply looks at an event and decides whether it is from NickServ/Q
+/// This simply looks at an event and decides whether it is from a nickname
+/// registration service.
 bool isFromAuthService(const IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
