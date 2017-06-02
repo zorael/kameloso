@@ -473,9 +473,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
              +
              +      case "CTCP_PING":
              +          event.type = CTCP_PING;
+             +          event.aux = "PING";
              +          break;
              +/
-
 
             top:
             switch (ctcpEvent)
