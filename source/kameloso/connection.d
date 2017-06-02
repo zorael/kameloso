@@ -268,14 +268,14 @@ void listenFiber(Connection conn)
         timeLastReceived = Clock.currTime;
 
         const ptrdiff_t end = (start + bytesReceived);
-        auto newline = buffer[0..end].countUntil('\n');
+        auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
         size_t pos;
 
         while (newline != -1)
         {
             yield((cast(char[])buffer[pos..pos+newline-1]).idup);
             pos += (newline + 1); // eat remaining newline
-            newline = buffer[pos..end].countUntil('\n');
+            newline = buffer[pos..end].countUntil(cast(ubyte)'\n');
         }
 
         yield(string.init);
