@@ -958,6 +958,8 @@ unittest
 
 public:
 
+/// Takes an IRCBot and stores it, so that certain operations in the parsing
+/// has the context it needs.
 void loadBot(IRCBot bot)
 {
     .bot = bot;
