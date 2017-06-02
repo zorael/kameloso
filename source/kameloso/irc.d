@@ -75,6 +75,7 @@ void parseBasic(ref IRCEvent event)
 
     default:
         writeln(Foreground.lightred, "Unknown basic type: ", event.raw);
+        writeln(Foreground.lightred, "Please report this.");
         break;
     }
 }
@@ -617,9 +618,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
                     if (thisNetwork != bot.server.network)
                     {
-                        writeln(Foreground.lightgreen, "NEW NETWORK? ",
-                            value, " OLD ", bot.server.network);
-
                         bot.server.network = thisNetwork;
                         hooks.onNewBot(bot);
                     }
@@ -628,12 +626,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                 {
                     writeln(Foreground.lightred, e.msg);
                 }
-
                 break;
 
             case "NICKLEN":
-                writeln(Foreground.cyan, "NICK LENGTH: ", value);
-
                 try maxNickLength = value.to!uint;
                 catch (Exception e)
                 {
@@ -642,8 +637,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                 break;
 
             case "CHANNELLEN":
-                writeln(Foreground.cyan, "CHAN LENGTH: ", value);
-
                 try maxChannelLength = value.to!uint;
                 catch (Exception e)
                 {
@@ -666,13 +659,14 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     case CONNECTINGFROM: // 378
         //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
         slice.nom(' ');
+
         try
         {
             slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, "parseSpecialCases: ", e.msg);
+            writeln(Foreground.lightred, e.msg);
         }
         break;
 
