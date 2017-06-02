@@ -855,8 +855,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 
     if ((event.type != IRCEvent.Type.CHANMODE) &&
-        (event.target.indexOf(' ') != -1) ||
-        (event.channel.indexOf(' ') != -1))
+        ((event.target.indexOf(' ') != -1) ||
+        (event.channel.indexOf(' ') != -1)))
     {
         writeln();
         writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
@@ -866,8 +866,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
     }
 
     if ((event.type != IRCEvent.Type.TOPIC) &&
-        (event.target.indexOf(' ') != -1) ||
-        (event.channel.indexOf(' ') != -1))
+        ((event.target.indexOf(' ') != -1) ||
+        (event.channel.indexOf(' ') != -1)))
     {
         writeln();
         writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
