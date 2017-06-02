@@ -120,7 +120,6 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * retest everything now after the big changes
 * revisit authentication events
 * revisit event.special
-* use PING as timeout on failed nick authentication?
 
 ## Built With
 
