@@ -887,6 +887,20 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 }
 
 
+// networkOf
+/++
+ +  Tries to guess the network of an IRC server based on its address.
+ +
+ +  This is done early on before connecting. After registering, we can (usually)
+ +  get the correct answer from the CAP LS event.
+ +
+ +  Params:
+ +      address = the IRC server address to evaluate.
+ +
+ +  Returns:
+ +      a member of the IRCServer.Network enum type signifying which network
+ +      the server was guessed to be part of.
+ +/
 IRCServer.Network networkOf(const string address)
 {
     with (IRCServer.Network)
