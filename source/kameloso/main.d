@@ -151,6 +151,14 @@ Quit checkMessages()
         quit = Quit.yes;
     }
 
+    /// Fake that a string was received from the server
+    void stringToEvent(string line)
+    {
+        immutable event = line.toIRCEvent();
+
+        foreach (plugin; plugins) plugin.onEvent(event);
+    }
+
     bool receivedSomething;
 
     do
@@ -165,6 +173,7 @@ Quit checkMessages()
             &quietline,
             &pong,
             &quitServer,
+            &stringToEvent,
             (Variant v)
             {
                 // Caught an unhandled message
