@@ -198,13 +198,13 @@ Quit handleArguments(string[] args)
     import std.format : format;
 
     bool shouldWriteConfig;
-    GetoptResult helpInfo;
+    GetoptResult getoptResults;
 
     try
     {
         arraySep = ",";
 
-        helpInfo = args.getopt(
+        getoptResults = args.getopt(
             config.caseSensitive,
             "n|nickname",    "Bot nickname", &bot.nickname,
             "u|user",        "Username when registering onto server (not nickname)", &bot.user,
@@ -232,12 +232,12 @@ Quit handleArguments(string[] args)
         return Quit.yes;
     }
 
-    if (helpInfo.helpWanted)
+    if (getoptResults.helpWanted)
     {
         defaultGetoptPrinter(colourise(Foreground.lightgreen) ~
                             "Command-line arguments available:\n" ~
                             colourise(Foreground.default_),
-                            helpInfo.options);
+                            getoptResults.options);
         writeln();
         return Quit.yes;
     }
