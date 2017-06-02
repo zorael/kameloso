@@ -42,7 +42,8 @@ Connection conn;
 SysTime[string] whoisCalls;
 
 /++
- +  Flag denoting whether the program should exit or not, after a function returns it.
+ +  Return value flag denoting whether the program should exit or not,
+ +  after a function returns it.
  +/
 alias Quit = Flag!"quit";
 
@@ -180,7 +181,7 @@ Quit checkMessages()
 
 // handleArguments
 /++
- +  Read command-line options.
+ +  Read command-line options and merge them with those in the configuration file.
  +
  +  The priority of options then becomes getopt over config file over hardcoded defaults.
  +
@@ -188,7 +189,8 @@ Quit checkMessages()
  +      The string[] args the program was called with.
  +
  +  Returns:
- +      Quit.yes or no depending on whether the arguments chosen mean the program should not proceed.
+ +      Quit.yes or no depending on whether the arguments chosen mean the program
+ +      should not proceed.
  +/
 Quit handleArguments(string[] args)
 {
@@ -312,7 +314,7 @@ void initPlugins()
     }
 }
 
-
+/// Writes the current configuration to the config file specified in the Settings.
 void writeConfigToDisk()
 {
     writeln(Foreground.lightcyan, "Writing configuration to ", settings.configFile);
