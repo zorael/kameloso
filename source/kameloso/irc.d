@@ -1845,7 +1845,8 @@ unittest
 // stripModeSign
 /++
  +  Takes a nickname and strips it of any prepended mode signs, like the @ in @nickname.
- +  The list of signs should be added to if more are discovered.
+ +
+ +  The list of signs should be added to when more are discovered.
  +
  +  Params:
  +      nickname = The signed nickname.
@@ -1863,7 +1864,7 @@ string stripModeSign(const string nickname)
         case '+':
         case '~':
         case '%':
-        case '&':
+        // case '&': // channel prefix?
             return nickname[1..$];
 
         default:
@@ -1875,6 +1876,7 @@ unittest
 {
     assert("@nickname".stripModeSign == "nickname");
     assert("+kameloso".stripModeSign == "kameloso");
+    assert(!"".stripModeSign.length);
 }
 
 
