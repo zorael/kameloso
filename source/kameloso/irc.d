@@ -762,7 +762,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         break;
 
     case PONG:
-        event.target  = string.init;
         event.content = string.init;
         break;
 
