@@ -116,6 +116,14 @@ void onPing(const IRCEvent event)
 {
     serverPingedAtConnect = true;
     state.mainThread.send(ThreadMessage.Pong(), event.sender);
+
+    if (state.bot.startedAuth && !state.bot.finishedAuth)
+    {
+        writeln(Foreground.lightred, "Auth timed out. Joining channels");
+        state.bot.finishedAuth = true;
+        joinChannels();
+        updateBot();
+    }
 }
 
 
