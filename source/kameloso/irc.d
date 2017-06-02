@@ -1789,7 +1789,9 @@ bool isValidNickname(const string nickname)
 
     auto characterMatches = nickname.matchAll(engine);
 
-    //if (characterMatches.hit.length) return true; // assert error
+    // Assertion error, https://issues.dlang.org/show_bug.cgi?id=17458
+    //if (characterMatches.hit.length) return true;
+
     if (characterMatches.pre.length || characterMatches.post.length) return false;
     else return true;
 }
