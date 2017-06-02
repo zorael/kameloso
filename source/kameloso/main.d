@@ -278,6 +278,9 @@ void initPlugins()
     state.mainThread = thisTid;
     state.bot.server.resolveNetwork();  // neccessary?
 
+    // Register function to run when the IRC parser wants to propagage
+    // a change to the IRCBot
+
     static void onNewBotFunction(const IRCBot bot)
     {
         import std.concurrency : send, thisTid;
@@ -291,6 +294,7 @@ void initPlugins()
     kameloso.irc.loadBot(state.bot);
     kameloso.irc.registerParserHooks(hooks);
 
+    // TODO: Somehow move this list somewhere else
     plugins = cast(IRCPlugin[])
     [
         new Printer(state),
@@ -328,6 +332,7 @@ public:
 
 version (unittest)
 void main() {
+    // Compiled with -b unittest, so run the tests and exit.
     writeln("Tests passed!");
 }
 else
@@ -355,7 +360,7 @@ int main(string[] args)
         return 1;
     }
 
-    // save the original nickname *once*, outside the connection loop
+    // Save the original nickname *once*, outside the connection loop
     bot.origNickname = bot.nickname;
 
     Quit quit;
@@ -407,7 +412,7 @@ Quit loopGenerator(Generator!string generator)
     {
         if (generator.state == Fiber.State.TERM)
         {
-            // listening Generator disconnected; reconnect
+            // Listening Generator disconnected; reconnect
             generator.reset();
 
             return Quit.no;
