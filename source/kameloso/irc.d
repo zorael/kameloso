@@ -13,9 +13,13 @@ private:
 /// State variables and configuration for the IRC bot.
 IRCBot bot;
 
+/// Max nickname length as per IRC specs, but not the de facto standard
 uint maxNickLength = 9;
+
+/// Max channel name length as per IRC specs
 uint maxChannelLength = 200;
 
+/// Function hooks to call upon certain pre-defined events
 IRCParserHooks hooks;
 
 
