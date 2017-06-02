@@ -198,7 +198,6 @@ Quit handleArguments(string[] args)
     import std.format : format;
 
     bool shouldWriteConfig;
-    string homes, channels;
     GetoptResult helpInfo;
 
     try
