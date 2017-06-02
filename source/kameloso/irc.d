@@ -25,16 +25,15 @@ IRCParserHooks hooks;
 
 // parseBasic
 /++
- +  Parses the most basic of IRC events; PING and ERROR.
+ +  Parses the most basic of IRC events; PING, ERROR, PONG, and occasionally NOTICE.
  +
- +  They syntactically differ from other events in that they are not prefixed by its sender.
+ +  They syntactically differ from other events in that they are not prefixed by
+ *  their sender.
+ *
+ +  The IRCEvent is finished at the end of this function.
  +
  +  Params:
-+       event = an unfinished IRCEvent.
- +      raw = the raw IRC string to parse.
- +
- +  Returns:
- +      the finished IRCEvent.
+ +      ref event = the IRCEvent to fill out the members of.
  +/
 void parseBasic(ref IRCEvent event)
 {
