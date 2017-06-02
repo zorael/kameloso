@@ -1730,7 +1730,7 @@ unittest
 }
 
 
-/// isValidChannel only checks whether a string *looks* like a channel.
+/// Checks whether a string *looks* like a channel.
 bool isValidChannel(const string line)
 {
     /++
@@ -1782,7 +1782,7 @@ unittest
     assert(!"".isValidChannel);
 }
 
-/// isValidNickname checks if a string looks like a nickname.
+/// Checks if a string *looks* like a nickname.
 bool isValidNickname(const string nickname)
 {
     import std.regex : ctRegex, matchAll;
