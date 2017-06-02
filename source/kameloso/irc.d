@@ -1095,12 +1095,14 @@ struct IRCUser
 
 // IRCEvent
 /++
- +  The IRCEvent struct is a parsed construct with fields extracted from raw server strings.
+ +  A single IRC event, parsed from server input.
+ +
+ +  The IRCEvent struct is aconstruct with fields extracted from raw server strings.
  +  Since structs are not polymorphic the Type enum dictates what kind of event it is.
  +/
 struct IRCEvent
 {
-    /// Taken from https://tools.ietf.org/html/rfc1459 with some additions
+    /// Taken from https://tools.ietf.org/html/rfc1459 with many additions
     enum Type
     {
         UNSET, ANY, ERROR, NUMERIC,
@@ -1283,6 +1285,7 @@ struct IRCEvent
     }
 
     /*
+        /// Run this to generate the Type[n] map.
         void generateTypenums()
         {
             import std.regex;
@@ -1312,7 +1315,7 @@ struct IRCEvent
         }
     */
 
-    /// typenums is reverse mapping of Types to their numeric form, to speed up conversion
+    /// Reverse mapping of Types to their numeric form, to speed up conversion
     static immutable Type[1024] typenums =
     [
         001 : Type.WELCOME,
