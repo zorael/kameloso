@@ -784,6 +784,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         {
             writeln(Foreground.lightred, "Unknown variant of TOCONNECTTYPE");
             printObjects(event);
+            break;
         }
 
         slice.formattedRead("%s :To connect type %s", &event.target, &event.aux);
