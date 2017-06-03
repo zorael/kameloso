@@ -9,8 +9,9 @@ import core.time : seconds;
 
 // Connection
 /++
- +  A struct containing functions and state needed to connect and maintain a connection.
- +  This is simply to decrease the amount of globals and make some convenience functions.
+ +  Functions and state needed to connect and maintain a connection.
+ +
+ +  This is simply to decrease the amount of globals and to create some convenience functions.
  +/
 struct Connection
 {
@@ -28,7 +29,7 @@ public:
     /// Implicitly proxy calls to the current Socket. This successfully proxies to Socket.receive.
     alias socket this;
 
-    /// Set to true if the connection is known to be active
+    /// Is the connection known to be active?
     bool connected;
 
     // reset
@@ -112,7 +113,9 @@ public:
     // connect
     /++
      +  Walks through the list of Addresses in ips and attempts to connect to each until
-     +  one succeeds. Success is determined by whether or not an exception was thrown during
+     +  one succeeds.
+     +
+     +  Success is determined by whether or not an exception was thrown during
      +  the attempt, and is kept track of with the connected boolean.
      +/
     void connect()
