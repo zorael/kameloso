@@ -1,5 +1,6 @@
 module kameloso.constants;
 
+/// Meta information about the program.
 enum kamelosoInfo
 {
     version_ = "0.4.7",
@@ -7,6 +8,7 @@ enum kamelosoInfo
     source = "https://github.com/zorael/kameloso",
 }
 
+/// Certain characters that signal specific meaning in an IRC context.
 enum IRCControlCharacter
 {
     action = 1,
@@ -17,24 +19,13 @@ enum IRCControlCharacter
     ctcp = 1,
 }
 
-enum BashColourToken = '\033';
+/// A character that resets a terminal that has entered "binary" mode.
 enum TerminalResetToken = 15;
-
-enum BashEffectToken
-{
-    bold = 1,
-    dim  = 2,
-    italics = 3,
-    underlined = 4,
-    blink   = 5,
-    reverse = 7,
-    hidden  = 8,
-}
 
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
 
-/// Buffer sizes in bytes
+/// Buffer sizes in bytes.
 enum BufferSize
 {
     socketOptionReceive = 1024,
@@ -43,7 +34,7 @@ enum BufferSize
     titleLookup = 8192,
 }
 
-/// Various timeouts in seconds
+/// Various timeouts in seconds.
 enum Timeout
 {
     retry = 5,
@@ -65,6 +56,23 @@ enum : ubyte
     failure = 1 << 3,
 }
 
+/// The token that preludes a Bash colouring code.
+enum BashColourToken = '\033';
+
+/// Effect codes that work like Bash colouring does, except for effects
+enum BashEffectToken
+{
+    bold = 1,
+    dim  = 2,
+    italics = 3,
+    underlined = 4,
+    blink   = 5,
+    reverse = 7,
+    hidden  = 8,
+
+}
+
+/// Format codes for Bash colouring
 enum Format
 {
     bright      = "1",
@@ -75,6 +83,7 @@ enum Format
     hidden      = "8",
 }
 
+/// Foreground colour codes for Bash colouring
 enum Foreground
 {
     default_     = "39",
@@ -96,6 +105,7 @@ enum Foreground
     white        = "97",
 }
 
+/// Background colour codes for Bash colouring
 enum Background
 {
     default_     = "49",
@@ -117,6 +127,7 @@ enum Background
     white        = "107",
 }
 
+/// Bash colour/effect reset codes
 enum Reset
 {
     all         = "0",
