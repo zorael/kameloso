@@ -29,6 +29,17 @@
             "name": "nowebtitles-nocolours",
             "platforms": [ "posix", "windows" ],
             "libs-posix": [ "phobos2" ]
+        },
+        {
+            "name": "unittest",
+            "buildType": "unittest",
+            "versions": [ "Webtitles", "Colours" ],
+            "platforms": [ "posix", "windows" ],
+            "libs-posix": [ "phobos2" ],
+            "dependencies":
+            {
+                "requests": "~>0.4.0"
+            }
         }
     ]
 }
