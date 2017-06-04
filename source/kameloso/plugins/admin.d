@@ -19,6 +19,66 @@ bool printAll;
 bool printBytes;
 
 
+@Label("test1")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.hardRequired, "test1")
+void onCommandHardTest1()
+{
+    writeln("master hardRequired test1");
+}
+
+@Label("test2")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@Prefix(NickPrefixPolicy.hardRequired, "test2")
+void onCommandHardTest2()
+{
+    writeln("friend hardRequired test2");
+}
+
+@Label("test3")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.allowed, "test3")
+void onCommandAllowedTest3()
+{
+    writeln("master allowed test3");
+}
+
+@Label("test4")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@Prefix(NickPrefixPolicy.allowed, "test4")
+void onCommandAllowedTest4()
+{
+    writeln("friend required test2");
+}
+
+@Label("test5")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPrefixPolicy.ignored, "test3")
+void onCommandAllowedTest5()
+{
+    writeln("master ignored test5");
+}
+
+@Label("test6")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@Prefix(NickPrefixPolicy.allowed, "test6")
+void onCommandAllowedTest6()
+{
+    writeln("friend ignored test6");
+}
+
 // onCommandSudo
 /++
  +  Sends supplied text to the server, verbatim.

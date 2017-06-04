@@ -6,11 +6,11 @@
     "license": "LGPL-2.1",
     "mainSourceFile": "source/kameloso/main.d",
     "buildRequirements": [ "silenceDeprecations" ],
+    "targetType": "executable",
     "configurations":
     [
         {
             "name": "kameloso",
-            "targetType": "executable",
             "versions": [ "Webtitles", "Colours" ],
             "platforms": [ "posix" ],
             "libs-posix": [ "phobos2" ],
@@ -21,14 +21,12 @@
         },
         {
             "name": "nowebtitles",
-            "targetType": "executable",
             "versions": [ "Colours" ],
             "platforms": [ "posix" ],
             "libs-posix": [ "phobos2" ]
         },
         {
             "name": "nowebtitles-nocolours",
-            "targetType": "executable",
             "platforms": [ "posix", "windows" ],
             "libs-posix": [ "phobos2" ]
         }
