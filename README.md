@@ -1,4 +1,4 @@
-# kameloso
+# kameloso [![Build Status](https://travis-ci.org/zorael/kameloso.svg?branch=master)](https://travis-ci.org/zorael/kameloso)
 
 A command-line IRC bot.
 
