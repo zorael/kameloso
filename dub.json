@@ -14,7 +14,7 @@
             "versions": [ "Webtitles", "Colours" ],
             "platforms": [ "posix" ],
             "libs-posix": [ "phobos2" ],
-            "dependencies":
+            "dependencies-posix":
             {
                 "requests": "~>0.4.0"
             }
@@ -22,7 +22,7 @@
         {
             "name": "nowebtitles",
             "versions": [ "Colours" ],
-            "platforms": [ "posix" ],
+            "platforms": [ "posix", "windows" ],
             "libs-posix": [ "phobos2" ]
         },
         {
@@ -33,10 +33,11 @@
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions": [ "Webtitles", "Colours" ],
+            "versions-posix": [ "Webtitles", "Colours" ],
+            "versions-window": [ "Colours" ],
             "platforms": [ "posix", "windows" ],
             "libs-posix": [ "phobos2" ],
-            "dependencies":
+            "dependencies-posix":
             {
                 "requests": "~>0.4.0"
             }

@@ -1,4 +1,9 @@
 language: d
 
 d:
-    dmd
+    - dmd
+    - ldc
+
+os:
+    - linux
+    - windows
