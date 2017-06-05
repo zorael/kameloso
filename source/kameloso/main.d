@@ -279,6 +279,14 @@ Quit handleArguments(string[] args)
 /// Resets and initialises all plugins.
 void initPlugins()
 {
+    /++
+     +  1. Teardown any old plugins
+     +  2. Set up new IRCPluginState
+     +  3. Set parser hooks
+     +  4. Instantiate all enabled plugins (list is in kameloso.plugins.package)
+     +  5. Additionlly add Webtitles and Pipeline if doing so works, i.e they're imported
+     +/
+
     foreach (plugin; plugins) plugin.teardown();
 
     IRCPluginState state;
@@ -287,7 +295,7 @@ void initPlugins()
     state.mainThread = thisTid;
     state.bot.server.resolveNetwork();  // neccessary?
 
-    // Register function to run when the IRC parser wants to propagage
+    // Register function to run when the IRC parser wants to propagate
     // a change to the IRCBot
 
     static void onNewBotFunction(const IRCBot bot)
@@ -302,6 +310,7 @@ void initPlugins()
     kameloso.irc.registerParserHooks(hooks);
     kameloso.irc.loadBot(state.bot);
 
+    // Zero out old plugins array and allocate room for new ones
     plugins.length = 0;
     plugins.reserve(EnabledPlugins.length + 2);
 
@@ -310,11 +319,13 @@ void initPlugins()
         plugins ~= new Plugin(state);
     }
 
+    // Add Webtitles if possible
     static if (__traits(compiles, new Webtitles(IRCPluginState.init)))
     {
         plugins ~= new Webtitles(state);
     }
 
+    // Add Pipeline if possible
     static if (__traits(compiles, new Pipeline(IRCPluginState.init)))
     {
         plugins ~= new Pipeline(state);
