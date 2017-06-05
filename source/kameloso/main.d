@@ -302,24 +302,20 @@ void initPlugins()
     kameloso.irc.registerParserHooks(hooks);
     kameloso.irc.loadBot(state.bot);
 
-    // TODO: Somehow move this list somewhere else
-    plugins = cast(IRCPlugin[])
-    [
-        new Printer(state),
-        new SedReplacePlugin(state),
-        new AdminPlugin(state),
-        new NotesPlugin(state),
-        new Chatbot(state),
-        new ConnectPlugin(state),
-        new CTCPPlugin(state),
-    ];
+    plugins.length = 0;
+    plugins.reserve(EnabledPlugins.length + 2);
 
-    version (Webtitles)
+    foreach (Plugin; EnabledPlugins)
+    {
+        plugins ~= new Plugin(state);
+    }
+
+    static if (__traits(compiles, new Webtitles(IRCPluginState.init)))
     {
         plugins ~= new Webtitles(state);
     }
 
-    version (Posix)
+    static if (__traits(compiles, new Pipeline(IRCPluginState.init)))
     {
         plugins ~= new Pipeline(state);
     }
