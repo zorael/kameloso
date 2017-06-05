@@ -19,8 +19,6 @@ interface IRCPlugin
 
     void newSettings(Settings);
 
-    void status();
-
     void onEvent(const IRCEvent);
 
     void teardown();
@@ -226,22 +224,6 @@ mixin template IRCPluginBasics()
         else static if (__traits(compiles, .settings = settings))
         {
             .settings = settings;
-        }
-    }
-
-    // status
-    /++
-     +  Prints the current state of the plugin.
-     +
-     +  This is for debugging purposes.
-     +/
-    void status()
-    {
-        writeln(Foreground.lightgreen, "--[ ", typeof(this).stringof);
-
-        static if (__traits(compiles, printObjects(state.bot)))
-        {
-            printObjects(state.bot);
         }
     }
 
