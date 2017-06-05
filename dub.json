@@ -13,7 +13,7 @@
             "name": "kameloso",
             "versions": [ "Webtitles", "Colours" ],
             "platforms": [ "posix" ],
-            "libs-posix": [ "phobos2" ],
+            "libs-posix-dmd": [ "phobos2" ],
             "dependencies-posix":
             {
                 "requests": "~>0.4.0"
@@ -23,12 +23,12 @@
             "name": "nowebtitles",
             "versions": [ "Colours" ],
             "platforms": [ "posix", "windows" ],
-            "libs-posix": [ "phobos2" ]
+            "libs-posix-dmd": [ "phobos2" ]
         },
         {
             "name": "nowebtitles-nocolours",
             "platforms": [ "posix", "windows" ],
-            "libs-posix": [ "phobos2" ]
+            "libs-posix-dmd": [ "phobos2" ]
         },
         {
             "name": "unittest",
@@ -36,7 +36,7 @@
             "versions-posix": [ "Webtitles", "Colours" ],
             "versions-window": [ "Colours" ],
             "platforms": [ "posix", "windows" ],
-            "libs-posix": [ "phobos2" ],
+            "libs-posix-dmd": [ "phobos2" ],
             "dependencies-posix":
             {
                 "requests": "~>0.4.0"
