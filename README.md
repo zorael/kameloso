@@ -1,4 +1,4 @@
-# kameloso [![Build Status](https://travis-ci.org/zorael/kameloso.svg?branch=master)](https://travis-ci.org/zorael/kameloso)
+# kameloso  [![Build Status](https://travis-ci.org/zorael/kameloso.svg?branch=master)](https://travis-ci.org/zorael/kameloso)
 
 A command-line IRC bot.
 
@@ -40,7 +40,7 @@ Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and fi
                 "crypto"
             ],
 
-Change them to look like this and the rest of this guide should work.
+Change them to look like this and the rest of this guide should work. This file will only be present after you've downloaded and tried to compile the project, with `dub`.
 
             "libs-posix": [
                 ":libssl.so.1.0.0",
