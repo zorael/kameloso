@@ -84,10 +84,10 @@ struct Settings
  +/
 template isConfigurableVariable(alias var)
 {
-    import std.traits : isSomeFunction;
-
     static if (is(typeof(var)))
     {
+        import std.traits : isSomeFunction;
+
         alias T = typeof(var);
 
         enum isConfigurableVariable = !isSomeFunction!T &&
