@@ -165,7 +165,7 @@ void printObjectsColoured(Things...)(Things things)
                 enum typestring = MemberType.stringof;
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                static if (is(typeof(value) : string))
+                static if (is(MemberType : string))
                 {
                     writefln(stringPattern,
                         colourise(Foreground.cyan), typestring,
