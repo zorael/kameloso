@@ -120,6 +120,12 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * retest everything now after the big changes
 * revisit authentication events
 * revisit event.special
+* does Chainable do anything at all?
+* AUTHCHALLENGE needec anymore?
+* add ExamplePlugin
+* non-member struct UDAs to enums?
+* investigate inverse channel behaviour (blacklists)
+* solve scope creep
 
 ## Built With
 
