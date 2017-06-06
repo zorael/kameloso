@@ -476,10 +476,10 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
             return
             q{
                 // scopeguard mixin
-                scope(%s)
+                scope(%1$s)
                 {
                     // import std.stdio : writeln;
-                    writeln(Foreground.white, "[%s] %s");
+                    writeln(Foreground.white, "[%2$s] %3$s");
                 }
             }.format(state.toLower, state, scopeName);
         }
@@ -488,15 +488,15 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
             return
             q{
                 // scopeguard mixin
-                scope(%s)
+                scope(%1$s)
                 {
                     // import std.stdio  : writefln;
                     import std.string : indexOf;
-                    enum __%sdotPos  = __FUNCTION__.indexOf('.');
-                    enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
-                    writefln(Foreground.white, "[%%s] %s", __%sfunName);
+                    enum __%2$sdotPos  = __FUNCTION__.indexOf('.');
+                    enum __%2$sfunName = __FUNCTION__[(__%2$sdotPos+1)..$];
+                    writefln(Foreground.white, "[%%s] %2$s", __%2$sfunName);
                 }
-            }.format(state.toLower, state, state, state, state, state);
+            }.format(state.toLower, state);
         }
     }
 
@@ -518,10 +518,10 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
             q{
                 // import std.stdio  : writefln;
                 import std.string : indexOf;
-                enum __%sdotPos  = __FUNCTION__.indexOf('.');
-                enum __%sfunName = __FUNCTION__[(__%sdotPos+1)..$];
-                writefln(Foreground.white, "[%%s] %s", __%sfunName);
-            }.format(state, state, state, state, state);
+                enum __%1$sdotPos  = __FUNCTION__.indexOf('.');
+                enum __%1$sfunName = __FUNCTION__[(__%1$sdotPos+1)..$];
+                writefln(Foreground.white, "[%%s] %1$s", __%1$sfunName);
+            }.format(state);
         }
     }
 
