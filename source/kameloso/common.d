@@ -6,9 +6,10 @@ import std.typecons : Flag, Yes, No;
 /++
  +  Aggregate of thread message types.
  +
- +  This is a way to make concurrency message passing easier. You could use string literals
- +  to differentiate between messages and then have big switches inside the catching function,
- +  but with these you can actually have separate functions for each.
+ +  This is a way to make concurrency message passing easier. You could use
+ +  string literals to differentiate between messages and then have big
+ +  switches inside the catching function, but with these you can actually
+ +  have separate functions for each.
  +/
 struct ThreadMessage
 {
@@ -51,6 +52,7 @@ struct Separator
 struct Hidden {}
 
 
+// Settings
 /++
  +  Aggregate struct containing runtime bot setting variables.
  +
@@ -73,6 +75,7 @@ struct Settings
 }
 
 
+// isConfigurableVariable
 /++
  +  Eponymous template bool of whether a variable can be configured via the
  +  functions in kameloso.config.
@@ -94,6 +97,7 @@ template isConfigurableVariable(alias var)
     }
     else
     {
+        // var is a type or something that cannot be called typeof on
         enum isConfigurableVariable = false;
     }
 }
@@ -117,10 +121,11 @@ unittest
 }
 
 
+// printObjects
 /++
- +  Prints out a struct object, with all its printable members with all their printable values.
- +  This is not only convenient for deubgging but also usable to print out current settings
- +  and state, where such is kept in structs.
+ +  Prints out a struct object, with all its printable members with all their
+ +  printable values. This is not only convenient for deubgging but also usable
+ +  to print out current settings and state, where such is kept in structs.
  +
  +  Params:
  +      thing = The struct object to enumerate.
@@ -138,6 +143,16 @@ void printObjects(Things...)(Things things)
 }
 
 
+// printObjectsColoured
+/++
+ +  Prints out a struct object, with all its printable members with all teir
+ +  printable values. Prints in colour.
+ +
+ +  Don't use this directly, instead use printObjects(Things...).
+ +
+ +  Params:
+ +      thing = The struct object to enumerate.
+ +/
 void printObjectsColoured(Things...)(Things things)
 {
     import kameloso.config : longestMemberName;
@@ -190,6 +205,16 @@ void printObjectsColoured(Things...)(Things things)
 }
 
 
+// printObjectsMonochrome
+/++
+ +  Prints out a struct object, with all its printable members with all teir
+ +  printable values. Prints without colouring the text.
+ +
+ +  Don't use this directly, instead use printObjects(Things...).
+ +
+ +  Params:
+ +      thing = The struct object to enumerate.
+ +/
 void printObjectsMonochrome(Things...)(Things things)
 {
     import kameloso.config : longestMemberName;
@@ -290,6 +315,11 @@ unittest
 }
 
 
+// isAssignableType
+/++
+ +  Eponymous template bool of whether a variable is "assignable"; if it is
+ +  an lvalue that isn't protected from being written to.
+ +/
 template isAssignableType(T)
 if (!is(typeof(T)))
 {
@@ -301,6 +331,7 @@ if (!is(typeof(T)))
         !is(T == immutable);
 }
 
+/// Ditto
 template isAssignableType(alias symbol)
 {
     import std.traits;
@@ -337,6 +368,22 @@ unittest
 }
 
 
+// meldInto
+/+
+ +  Takes two structs and melds them together, making the members a union of
+ +  the two.
+ +
+ +  It only overwrites members that are typeof(member).init, so only unset
+ +  members get their values overwritten by the melding struct. Supply a
+ +  template parameter Yes.overwrite to make it overwrite if the melding
+ +  struct's member is not typeof(member).init.
+ +
+ +  Params:
+ +      overwrite = flag denoting whether the second object should overwrite
+ +                  set values in the receiving object.
+ +      meldThis = struct to meld (sender).
+ +      intoThis = struct to meld (receiver).
+ +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis)
 {
@@ -453,14 +500,14 @@ unittest
 
 // scopeguard
 /++
- +  Generates a string mixin of scopeguards. This is a convenience function to automate
- +  basic scope(exit|success|failure) messages, as well as an optional entry message.
- +  Which scope to guard is passed by ORing the states.
+ +  Generates a string mixin of scopeguards. This is a convenience function
+ +  to automate basic scope(exit|success|failure) messages, as well as an
+ +  optional entry message. Which scope to guard is passed by ORing the states.
  +
  +  Params:
  +      states = Bitmsask of which states to guard, see the enum in kameloso.constants.
- +      scopeName = Optional scope name to print. Otherwise the current function name
- +                  will be used.
+ +      scopeName = Optional scope name to print. Otherwise the current function
+ +                  name will be used.
  +/
 string scopeguard(ubyte states = exit, string scopeName = string.init)
 {
@@ -533,12 +580,24 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
     return app.data;
 }
 
-
+/// Bool of whether a type is a colour code enum
 enum bool isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
                              is(T : Format) || is(T : Reset);
 
 import std.meta : allSatisfy;
 
+
+// colourise
+/++
+ +  Takes a mix of a Foreground, a Background, a Format and/or a Reset and
+ +  composes them into a colour code token.
+ +
+ +  This function creates an appender and fills it with the return value of
+ +  colourise(Sink, Codes...).
+ +
+ +  Params:
+ +      codes = a variadic list of codes.
+ +/
 string colourise(Codes...)(Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
@@ -552,6 +611,16 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 }
 
 
+// colourise
+/++
+ +  Takes a mix of a Foreground, a Background, a Format and/or a Reset and
+ +  composes them into a colour code token.
+ +
+ +  This is the composing function that fills its result into a sink.
+ +
+ +  Params:
+ +      codes = a variadic list of codes.
+ +/
 string colourise(Sink, Codes...)(Sink sink, Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
@@ -570,6 +639,17 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 }
 
 
+// ColouredWriteln
+/++
+ +  mixin template of colouring-aware writeln wrappers.
+ +
+ +  They make it easier to write coloured text by wrapping arguments in calls
+ +  to colourise, and ends strings with a resetting Foreground.default_.
+ +
+ +  Params:
+ +      settings = a Settings struct with settings regarding whether to do
+ +                 coloured output or not.
+ +/
 mixin template ColouredWriteln(alias settings)
 if (is(typeof(settings) : Settings))
 {
