@@ -353,12 +353,18 @@ void onCommandJoinPart(const string prefix, const IRCEvent event)
 }
 
 
+// onWriteConfig
+/++
+ +  Sends a concurrency message to writ e the current configuration to disk.
+ +
+ +  This includes current channels.
+ +/
 @Label("writeconfig")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "writeconfig")
-void onWriteConfig(const IRCEvent event)
+void onWriteConfig()
 {
     state.mainThread.send(ThreadMessage.WriteConfig());
 }
