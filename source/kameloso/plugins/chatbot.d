@@ -7,15 +7,18 @@ import kameloso.plugins.common;
 import kameloso.stringutils;
 
 import std.concurrency : send;
-import std.json  : JSONValue;
+import std.json : JSONValue;
 
 private:
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-/// The in-memory JSON storage of all user quotes. It is in the JSON form of string[][string],
-/// where the first key is the nickname.
+/++
+ +  The in-memory JSON storage of all user quotes.
+ +
+ +  It is in the JSON form of string[][string], where the first key is the nickname.
+ +/
 JSONValue quotes;
 
 
@@ -27,7 +30,8 @@ JSONValue quotes;
  +      nickname = nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      a random quote string. If no quote is available it returns an empty string instead.
+ +      a random quote string. If no quote is available it returns an empty
+ +      string instead.
  +/
 string getQuote(const string nickname)
 {
@@ -57,7 +61,7 @@ string getQuote(const string nickname)
 /++
  +  Adds a quote to the in-memory JSON storage.
  +
- +  It does not save it to disk; this has to be done separately at the calling site.
+ +  It does not save it to disk; this has to be done separately.
  +
  +  Params:
  +      nickname = nickname of the quoted user.
@@ -184,9 +188,9 @@ void onCommandSay(const IRCEvent event)
 /++
  +  Implements 8ball.
  +
- +  Randomises a response from the table kameloso.constants.eightballAnswers and sends
- +  it back to the channel in which the triggering event happened, or in a query if it
- +  was a private message.
+ +  Randomises a response from the table kameloso.constants.eightballAnswers
+ +  and sends it back to the channel in which the triggering event happened,
+ +  or in a query if it was a private message.
  +
  +  Params:
  +      event = the triggering IRCEvent.
@@ -238,8 +242,8 @@ void onCommand8ball(const IRCEvent event)
 /++
  +  Fetches and repeats a random quote of a supplied nickname.
  +
- +  The quote is read from in-memory JSON storage, and it is sent to the channel the triggering
- +  event occured in.
+ +  The quote is read from in-memory JSON storage, and it is sent to the
+ +  channel the triggering event occured in.
  +
  +  Params:
  +      event = the triggering IRCEvent.
@@ -283,7 +287,8 @@ void onCommandQuote(const IRCEvent event)
 /++
  +  Creates a new quote.
  +
- +  It is added to the in-memory JSON storage which then gets immediately written to disk.
+ +  It is added to the in-memory JSON storage which then gets immediately
+ +  written to disk.
  +
  +  Params:
  +      event = The triggering IRCEvent.
@@ -334,7 +339,8 @@ void onCommandPrintQuotes()
 /++
  +  Reloads the JSON quotes from disk.
  +
- +  This is both for debugging purposes and to simply allow for live manual editing of quotes.
+ +  This is both for debugging purposes and to simply allow for live manual
+ +  editing of quotes.
  +/
 @Label("reloadquotes")
 @(IRCEvent.Type.CHAN)
