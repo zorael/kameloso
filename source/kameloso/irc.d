@@ -662,7 +662,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
     case TOPICSETTIME: // 333
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
-        slice.formattedRead("%s %s %s %s", &event.target, &event.channel, &event.content, &event.aux);
+        slice.formattedRead("%s %s %s %s", &event.target, &event.channel,
+                            &event.content, &event.aux);
         break;
 
     case CONNECTINGFROM: // 378
@@ -671,7 +672,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
         try
         {
-            slice.formattedRead("%s :is connecting from *@%s %s", &event.target, &event.content, &event.aux);
+            slice.formattedRead("%s :is connecting from *@%s %s",
+                                &event.target, &event.content, &event.aux);
         }
         catch (Exception e)
         {
@@ -812,7 +814,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
     case CANTCHANGENICK: // 435
         // :cherryh.freenode.net 435 kameloso^ kameloso^^ #d3d9 :Cannot change nickname while banned on channel
-        slice.formattedRead("%s %s %s :%s", &event.target, &event.aux, &event.channel, &event.content);
+        slice.formattedRead("%s %s %s :%s", &event.target, &event.aux,
+                            &event.channel, &event.content);
         break;
 
     case CAP:
@@ -2007,7 +2010,8 @@ unittest
     [PONG] tepper.freenode.net
     :tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net
      +/
-    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net".toIRCEvent();
+    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net"
+                   .toIRCEvent();
     with (e9)
     {
         assert((sender == "tepper.freenode.net"), sender);
@@ -2033,7 +2037,8 @@ unittest
     [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
-     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^".toIRCEvent();
+     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^"
+                     .toIRCEvent();
      with (e11)
      {
         assert((sender == "zorael"), sender);
@@ -2047,7 +2052,8 @@ unittest
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
      :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
      +/
-     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477".toIRCEvent();
+     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477"
+                     .toIRCEvent();
      with (e12)
      {
         assert((sender == "irc.uworld.se"), sender);
@@ -2061,7 +2067,8 @@ unittest
     [20:55:14] [ERR_UNKNOWNCOMMAND] karatkievich.freenode.net (kameloso^) <systemd,#kde,#kubuntu,#archlinux, ...>
     :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...
     +/
-    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...".toIRCEvent();
+    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ..."
+                    .toIRCEvent();
     with (e13)
     {
         assert((sender == "karatkievich.freenode.net"), sender);
@@ -2084,8 +2091,9 @@ unittest
     /+
     :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
     +/
-    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~ IRCControlCharacter.ctcp ~
-                     "PING 1495974267 590878" ~ IRCControlCharacter.ctcp).toIRCEvent();
+    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~
+                     IRCControlCharacter.ctcp ~ "PING 1495974267 590878" ~
+                     IRCControlCharacter.ctcp).toIRCEvent();
     with (e15)
     {
         assert((sender == "wob^2"), sender);
