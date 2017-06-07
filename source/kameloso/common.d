@@ -432,7 +432,8 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                     }
                     else
                     {
-                        if ((member == MemberType.init) || (member == Thing.init.tupleof[i]))
+                        if ((member == MemberType.init) ||
+                            (member == Thing.init.tupleof[i]))
                         {
                             member = meldThis.tupleof[i];
                         }
