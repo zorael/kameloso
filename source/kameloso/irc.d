@@ -24,11 +24,11 @@ IRCParserHooks hooks;
 
 // parseBasic
 /++
- +  Parses the most basic of IRC events; PING, ERROR, PONG, and occasionally NOTICE.
+ +  Parses the most basic of IRC events; PING, ERROR, PONG and NOTICE.
  +
- +  They syntactically differ from other events in that they are not prefixed by
- *  their sender.
- *
+ +  They syntactically differ from other events in that they are not prefixed
+ +  by their sender.
+ +
  +  The IRCEvent is finished at the end of this function.
  +
  +  Params:
@@ -120,6 +120,7 @@ unittest
 // parsePrefix
 /++
  +  Takes a slice of a raw IRC string and starts parsing it into an IRCEvent struct.
+ +
  +  This function only focuses on the prefix; the sender, be it nickname and ident
  +  or server address.
  +
@@ -210,6 +211,7 @@ unittest
 // parseTypestring
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
+ +
  +  This function only focuses on the typestring; the part that tells what kind of event
  +  happened, like PRIVMSG or MODE or NICK or KICK, etc; in string format.
  +
@@ -301,6 +303,7 @@ unittest
 // parseSpecialcases
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an IRCEvent struct.
+ +
  +  This function only focuses on specialcasing the remaining line, dividing it
  +  into fields like target, channel, content, etc.
  +
@@ -469,10 +472,13 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             import std.traits : EnumMembers;
 
             /++
-             +  This iterates through all IRCEvent.Types that begin with "CTCP_" and
-             +  generates switch cases for the string of each. Inside it will assign
-             +  event.type to the corresponding IRCEvent.Type. Like so, except
-             +  automatically generated through compile-time introspection:
+             +  This iterates through all IRCEvent.Types that begin with
+             +  "CTCP_" and generates switch cases for the string of each.
+             +  Inside it will assign event.type to the corresponding
+             +  IRCEvent.Type.
+             +
+             +  Like so, except automatically generated through compile-time
+             +  introspection:
              +
              +      case "CTCP_PING":
              +          event.type = CTCP_PING;
@@ -490,6 +496,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             foreach (immutable type; EnumMembers!(IRCEvent.Type))
             {
                 import std.conv : to;
+
                 enum typestring = type.to!string;
 
                 static if ((typestring.length > 5) && (typestring[0..5] == "CTCP_"))
