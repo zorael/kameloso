@@ -331,7 +331,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             {
                                 static if (verbose)
                                 {
-                                    writeln(name, " ignore invalid channel ", event.channel);
+                                    writeln(name, " ignore invalid channel ",
+                                            event.channel);
                                 }
                                 return;
                             }
@@ -367,7 +368,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             case allowed:
                                 if (event.content.beginsWith(state.bot.nickname))
                                 {
-                                    mutEvent.content = event.content.stripPrefix(state.bot.nickname);
+                                    mutEvent.content = event.content
+                                                       .stripPrefix(state.bot.nickname);
                                 }
                                 break;
 
@@ -415,16 +417,14 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 }
 
                                 // event.content guaranteed to begin with state.bot.nickname
-                                mutEvent.content = event.content.stripPrefix(state.bot.nickname);
+                                mutEvent.content = event.content
+                                                   .stripPrefix(state.bot.nickname);
                                 break;
                             }
 
                             static if (configuredPrefix.string_.length)
                             {
                                 import std.string : indexOf, toLower;
-
-                                // case-sensitive check goes here
-                                enum configuredPrefixLowercase = configuredPrefix.string_.toLower();
 
                                 if (mutEvent.content.indexOf(" ") == -1)
                                 {
@@ -437,7 +437,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     contextPrefix = mutEvent.content.nom!(Yes.decode)(" ").toLower();
                                 }
 
-                                matches = (contextPrefix == configuredPrefixLowercase);
+                                // case-sensitive check goes here
+                                enum lowercasePrefix = configuredPrefix.string_.toLower();
+                                matches = (contextPrefix == lowercasePrefix);
+
                                 continue;
                             }
                             else
@@ -522,7 +525,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         }
                         else
                         {
-                            static assert(false, "Unknown function signature: " ~ typeof(fun).stringof);
+                            static assert(false, "Unknown function signature: " ~
+                                                 typeof(fun).stringof);
                         }
                     }
                     catch (Exception e)
