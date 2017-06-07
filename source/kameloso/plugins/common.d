@@ -475,7 +475,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             case fail:
                                 static if (verbose)
                                 {
-                                    writeln("%s: %s failed privilege check; continue",
+                                    writefln("%s: %s failed privilege check; continue",
                                             name, event.sender);
                                 }
                                 continue;
