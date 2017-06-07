@@ -33,12 +33,6 @@ bool printBytes;
 @Prefix(NickPrefixPolicy.required, "sudo")
 void onCommandSudo(const IRCEvent event)
 {
-    if (state.users[event.sender].login != state.bot.master)
-    {
-        writefln(Foreground.lightred, "Failsafe triggered: user is not master (%s)", event.sender);
-        return;
-    }
-
     state.mainThread.send(ThreadMessage.Sendline(), event.content);
 }
 
@@ -50,12 +44,6 @@ void onCommandSudo(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "fake")
 void onCommandFake(const IRCEvent event)
 {
-    if (state.users[event.sender].login != state.bot.master)
-    {
-        writefln(Foreground.lightred, "Failsafe triggered: user is not master (%s)", event.sender);
-        return;
-    }
-
     // Fake that this string was received from the server
     state.mainThread.send(event.content);
 }
