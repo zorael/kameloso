@@ -214,7 +214,9 @@ void setMember(Thing)(ref Thing thing, const string memberToSet, const string va
                     {
                         import std.algorithm.iteration : splitter;
 
-                        foreach (entry; value.splitter(getUDAs!(thing.tupleof[i], Separator)[0].token))
+                        enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
+
+                        foreach (entry; value.splitter(separator))
                         {
                             static if (is(MemberType : string[]))
                             {
