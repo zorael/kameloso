@@ -116,20 +116,19 @@ void onCommandAddHome(const IRCEvent event)
 }
 
 
-// onCommandDelChan
+// onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels.
  +
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("delchan")
+@Label("delhome")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "delchan")
 @Prefix(NickPrefixPolicy.required, "delhome")
-void onCommandDelChan(const IRCEvent event)
+void onCommandDelHome(const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
     import std.string : strip;
