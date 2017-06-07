@@ -9,12 +9,13 @@ public import std.typecons : Yes, No;
 
 // nom
 /++
- +  Finds the supplied separator token, returns the string up to that point, and advances
- +  the passed ref string to after the token.
+ +  Finds the supplied separator token, returns the string up to that point,
+ +  and advances the passed ref string to after the token.
  +
  +  Params:
  +      arr = The array to walk and advance.
- +      separator = The token that delimenates what should be returned and to where to advance.
+ +      separator = The token that delimenates what should be returned and to
+ +                  where to advance.
  +
  +  Returns:
  +      the string arr from the start up to the separator.
@@ -142,7 +143,8 @@ unittest
 
 // plurality
 /++
- +  Get the correct singular or plural form of a word depending on the numerical count of it.
+ +  Get the correct singular or plural form of a word depending on the
+ +  numerical count of it.
  +
  +  Params:
  +      num = The numerical count of the noun.
@@ -168,8 +170,7 @@ unittest
 
 // unquoted
 /++
- +  Removes one preceding and one trailing quote, unquoting a word. Potential improvements
- +  include making it recursively remove more than one pair of quotes.
+ +  Removes one preceding and one trailing quote, unquoting a word.
  +
  +  Params:
  +      line = the (potentially) quoted string.
@@ -204,7 +205,8 @@ unittest
 
 // beginsWith
 /++
- +  A cheaper variant of std.algorithm.searching.startsWith, since it is such a hot spot.
+ +  A cheaper variant of std.algorithm.searching.startsWith, since it is
+ +  such a hotspot.
  +
  +  Params:
  +      haystack = The original line to examine.
@@ -250,8 +252,8 @@ unittest
 
 // arrayify
 /++
- +  Takes a string and, with a separator token, splits it into discrete token and makes it
- +  into a dynamic array. If the fields are numbers, use std.algorithm.iteration.map;
+ +  Takes a string and, with a separator token, splits it into discrete token
+ +  and makes it into a dynamic array.
  +
  +  Params:
  +      separator = The string to use when delimenating fields.
@@ -284,7 +286,12 @@ unittest
 /++
  +  Strips a prefix word from a string.
  +
+ +  Params:
+ +      line = the prefixed string line.
+ +      prefix = the prefix to strip.
  +
+ +  Returns:
+ +      The passed line with the prefix sliced away.
  +/
 pragma(inline)
 string stripPrefix(const string line, const string prefix)
@@ -313,7 +320,10 @@ unittest
  +  Express how long time has passed in a Duration, in natural language.
  +
  +  Params:
- +      duration : a period of time
+ +      duration = a period of time
+ +
+ +  Returns:
+ +      A humanly-readable string of how long the passed duration is.
  +/
 pragma(inline)
 string timeSince(const Duration duration)
@@ -370,6 +380,19 @@ unittest
 }
 
 
+/++
+ +  Takes the member of an enum by string and returns that member.
+ +
+ +  It lowers to a big switch of the enum member strings. It is faster than
+ +  std.conv.to and generates less template bloat.
+ +
+ +  Params:
+ +      enumstring = the string name of an enum member.
+ +
+ +  Returns:
+ +      The enum member whose name matches the enumstring string.
+ +/
+pragma(inline)
 Enum toEnum(Enum)(const string enumstring)
 if (is(Enum == enum))
 {
@@ -410,7 +433,22 @@ unittest
 }
 
 
-// https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+/++
+ +  The inverse of toEnum, this function takes an enum member value and returns
+ +  its string identifier.
+ +
+ +  It lowers to a big switch of the enum members. It is faster than std.conv.to
+ +  and generates less template bloat.
+ +
+ +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+ +
+ +  Params:
+ +      value = an enum member whose string we want
+ +
+ +  Returns:
+ +      The string name of the passed enum value.
+ +/
+pragma(inline)
 string enumToString(Enum)(Enum value)
 if (is(Enum == enum))
 {
