@@ -509,6 +509,9 @@ unittest
  +      states = Bitmsask of which states to guard, see the enum in kameloso.constants.
  +      scopeName = Optional scope name to print. Otherwise the current function
  +                  name will be used.
+ +
+ +  Returns:
+ +      One or more scopeguards in string form. Mix them in to use.
  +/
 string scopeguard(ubyte states = exit, string scopeName = string.init)
 {
@@ -598,6 +601,9 @@ import std.meta : allSatisfy;
  +
  +  Params:
  +      codes = a variadic list of codes.
+ +
+ +  Returns:
+ +      A Bash code sequence of the passed codes.
  +/
 string colourise(Codes...)(Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
@@ -621,6 +627,9 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
  +
  +  Params:
  +      codes = a variadic list of codes.
+ +
+ +  Returns:
+ +      A Bash code sequence of the passed codes.
  +/
 string colourise(Sink, Codes...)(Sink sink, Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
