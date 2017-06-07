@@ -21,7 +21,7 @@ public import std.typecons : Yes, No;
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, C separator)
+string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separator)
 {
     static if (decode)
     {
@@ -155,7 +155,7 @@ unittest
  +      The singular string if num is 1 or -1, otherwise the plural string.
  +/
 pragma(inline)
-string plurality(int num, string singular, string plural) pure
+string plurality(const int num, const string singular, const string plural) pure
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
@@ -179,7 +179,7 @@ unittest
  +      A slice of the line argument that excludes the quotes.
  +/
 pragma(inline)
-string unquoted(string line) pure
+string unquoted(const string line) pure
 {
     if (line.length < 2)
     {
