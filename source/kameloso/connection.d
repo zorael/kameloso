@@ -11,7 +11,8 @@ import core.time : seconds;
 /++
  +  Functions and state needed to connect and maintain a connection.
  +
- +  This is simply to decrease the amount of globals and to create some convenience functions.
+ +  This is simply to decrease the amount of globals and to create some
+ +  convenience functions.
  +/
 struct Connection
 {
@@ -26,7 +27,10 @@ private:
     Address[] ips;
 
 public:
-    /// Implicitly proxy calls to the current Socket. This successfully proxies to Socket.receive.
+    /++
+     +  Implicitly proxy calls to the current Socket.
+     +  This successfully proxies to Socket.receive.
+     +/
     alias socket this;
 
     /// Is the connection known to be active?
@@ -48,7 +52,8 @@ public:
 
     // setOptions
     /++
-     +  Set up sockets with the SocketOptions needed. These include timeouts and buffer sizes.
+     +  Set up sockets with the SocketOptions needed. These include timeouts
+     +  and buffer sizes.
      +
      +  Params:
      +      socketToSetup = the (reference to the) socket to modify.
@@ -112,8 +117,8 @@ public:
 
     // connect
     /++
-     +  Walks through the list of Addresses in ips and attempts to connect to each until
-     +  one succeeds.
+     +  Walks through the list of Addresses in ips and attempts to connect to
+     +  each until one succeeds.
      +
      +  Success is determined by whether or not an exception was thrown during
      +  the attempt, and is kept track of with the connected boolean.
@@ -126,7 +131,8 @@ public:
 
         foreach (i, ip; ips)
         {
-            // Decide which kind of socket to use based on the AddressFamily of the resolved ip
+            // Decide which kind of socket to use based on the AddressFamily of
+            // the resolved ip; IPv4 or IPv6
             socket = (ip.addressFamily == AddressFamily.INET6) ? &socket6 : &socket4;
 
             try
@@ -171,9 +177,10 @@ public:
     /++
      +  Sends a line to the server.
      +
-     +  Sadly the IRC server requires lines to end with a newline, so we need to chain
-     +  one directly after the line itself. If several threads are allowed to write to the same
-     +  socket in parallel, this would be a race condition.
+     +  Sadly the IRC server requires lines to end with a newline, so we need
+     +  to chain one directly after the line itself. If several threads are
+     +  allowed to write to the same socket in parallel, this would be a race
+     +  condition.
      +
      +  Params:
      +      line = The string to send.
@@ -195,11 +202,13 @@ public:
 
 // listenFiber
 /++
- +  A Generator fiber. It maintains its own buffer into which it receives from the server,
- +  though not neccessarily full lines. It thus keeps filling the buffer until it finds a
- +  newline character, yields it back to the caller of the fiber, checks for more lines to
- +  yield, and if none yields string.init to wait for its turn to read from the sever again.
- +  The buffer logic is complex.
+ +  A Generator fiber.
+ +
+ +  It maintains its own buffer into which it receives from the server, though
+ +  not neccessarily full lines. It thus keeps filling the buffer until it
+ +  finds a newline character, yields it back to the caller of the fiber,
+ +  checks for more lines to yield, and if none yields string.init to wait for
+ +  its turn to read from the sever again. The buffer logic is complex.
  +
  +  Params:
  +      conn = A Connection struct via whose Socket it reads from the server.
