@@ -254,21 +254,15 @@ void onCommandQuote(const IRCEvent event)
     import std.string : strip, indexOf;
     import std.format : format;
 
-    immutable signedNickname = event.content.strip;
-
-    if (!signedNickname.length)
-    {
-        writeln(Foreground.lightred, "No one to quote....");
-        return;
-    }
-    else if (signedNickname.indexOf(" ") != -1)
-    {
-        writeln(Foreground.lightred, "Contains spaces, not a single nick...");
-        return;
-    }
-
     // stripModeSign to allow for quotes from @nickname and +dudebro
-    immutable nickname = signedNickname.stripModeSign;
+    immutable nickname = event.content.strip.stripModeSign();
+
+    if (!nickname.isValidNickname)
+    {
+        writeln(Foreground.lightred, "Invalid nickname: '", nickname, "'");
+        return;
+    }
+
     immutable quote = nickname.getQuote();
     immutable target = (event.channel.length) ? event.channel : event.sender;
 
