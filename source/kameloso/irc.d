@@ -319,9 +319,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
     scope(failure)
     {
-        writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE -----------");
+        writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE");
         printObjects(event);
-        writeln(Foreground.lightred, "------------------------------------------------");
+        writeln(Foreground.lightred, "------------------------------------");
     }
 
     with (IRCEvent.Type)
@@ -833,9 +833,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
             writeln();
-            writeln(Foreground.lightred, "--------- UNCAUGHT NUMERIC OR UNSET -----------");
+            writeln(Foreground.lightred, "--------- UNCAUGHT NUMERIC OR UNSET");
             printObjects(event);
-            writeln(Foreground.lightred, "-----------------------------------------------");
+            writeln(Foreground.lightred, "-----------------------------------");
             writeln();
         }
 
@@ -866,9 +866,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         (event.channel.indexOf(' ') != -1)))
     {
         writeln();
-        writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION --------------");
+        writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION");
         printObjects(event);
-        writeln(Foreground.lightred, "-----------------------------------------------------");
+        writeln(Foreground.lightred, "--------------------------------------");
         writeln();
     }
 
@@ -877,9 +877,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         (event.channel.indexOf(' ') != -1)))
     {
         writeln();
-        writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION --------------");
+        writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION");
         printObjects(event);
-        writeln(Foreground.lightred, "------------------------------------------------------");
+        writeln(Foreground.lightred, "---------------------------------------");
         writeln();
     }
 
