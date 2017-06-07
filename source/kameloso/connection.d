@@ -129,7 +129,7 @@ public:
 
         assert((ips.length > 0), "Tried to connect to an unresolved connection");
 
-        foreach (i, ip; ips)
+        foreach (immutable i, ip; ips)
         {
             // Decide which kind of socket to use based on the AddressFamily of
             // the resolved ip; IPv4 or IPv6
