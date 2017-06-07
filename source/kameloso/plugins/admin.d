@@ -13,7 +13,7 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-/// Toggles whether onAnyEvent prints the raw strings of all incoming IRC events
+/// Toggles whether onAnyEvent prints the raw strings of all incoming events
 bool printAll;
 
 bool printBytes;
@@ -53,8 +53,9 @@ void onCommandFake(const IRCEvent event)
 /++
  +  Sends a QUIT event to the server.
  +
- +  If any extra text is following the 'quit' prefix, it uses that as the quit reason,
- +  otherwise it falls back to the default as specified in the configuration file.
+ +  If any extra text is following the 'quit' prefix, it uses that as the quit
+ +  reason, otherwise it falls back to the default as specified in the
+ +  configuration file.
  +
  +  Params:
  +      event = tshe triggering IRCEvent.
@@ -231,9 +232,9 @@ void onCommandDelFriend(const IRCEvent event)
 /++
  +  Outputs the ASCII control character 15 to the terminal.
  +
- +  This helps with restoring it if the bot has accidentally printed a different control
- +  character putting it would-be binary mode, like what happens when you try to cat a
- +  binary file.
+ +  This helps with restoring it if the bot has accidentally printed a different
+ +  control character putting it would-be binary mode, like what happens when
+ +  you try to cat a binary file.
  +/
 @Label("resetterm")
 @(IRCEvent.Type.CHAN)
@@ -249,7 +250,7 @@ void onCommandResetTerminal()
 
 // onCommandPrintAll
 /++
- +  Toggles a flag to print all incoming IRC events raw.
+ +  Toggles a flag to print all incoming events raw.
  +
  +  This is for debugging purposes.
  +/
@@ -276,13 +277,15 @@ void onCommandPrintBytes()
     writeln(Foreground.green, "Printing bytes: ", printBytes);
 }
 
+
 // onAnyEvent
 /++
- +  Prints all incoming IRC events raw if the flag to do so has been set with onCommandPrintAll,
- +  by way of the 'printall' verb.
+ +  Prints all incoming events raw if the flag to do so has been set with
+ +  onCommandPrintAll, by way of the 'printall' verb. Also prints the content
+ +  of any incomings events, cast to bytes.
  +
- +  It is annotated with Chainable.yes to allow other functions to not halt the triggering
- +  process, allowing other functions to trigger on the same IRCEvent.
+ +  It is annotated with Chainable.yes to allow other functions to not halt the
+ +  triggering process, allowing other functions to trigger on the same IRCEvent.
  +
  +  Params:
  +      event = the event whose raw IRC string to print.
@@ -355,7 +358,7 @@ public:
 
 // AdminPlugin
 /++
- +  A plugin aimed for adḿinistrative use.
+ +  A plugin aimed for adḿinistrative use and debugging.
  +
  +  It was historically part of Chatbot.
  +/
