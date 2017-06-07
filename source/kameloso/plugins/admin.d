@@ -218,7 +218,8 @@ void onCommandDelFriend(const IRCEvent event)
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln(Foreground.lightred, "Only one nick at a time. Nickname must not contain spaces");
+        writeln(Foreground.lightred,
+                "Only one nick at a time. Nickname must not contain spaces");
         return;
     }
 
