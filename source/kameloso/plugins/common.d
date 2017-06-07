@@ -10,8 +10,8 @@ import std.typecons : Flag;
  +  Interface that all IRCPlugins must adhere to.
  +
  +  There will obviously be more functions but only these are absolutely needed.
- +  It is neccessary so that all plugins may be kept in one array, and foreached through
- +  when new events have been generated.
+ +  It is neccessary so that all plugins may be kept in one array, and foreached
+ +  through when new events have been generated.
  +/
 interface IRCPlugin
 {
@@ -29,9 +29,9 @@ interface IRCPlugin
 /++
  +  An aggregate of all variables that make up the state of a given plugin.
  +
- +  This neatly tidies up the amount of top-level variables in each plugin module.
- +  This allows for making more or less all functions top-level functions, since any state
- +  could be passed to it with variables of this type.
+ +  This neatly tidies up the amount of top-level variables in each plugin
+ +  module. This allows for making more or less all functions top-level
+ +  functions, since any state could be passed to it with variables of this type.
  +/
 struct IRCPluginState
 {
@@ -49,8 +49,8 @@ struct IRCPluginState
 enum FilterResult { fail, pass, whois }
 
 
-/// Whether an annotated event ignores, allows or requires the event to be prefixed with
-/// the bot's nickname
+/// Whether an annotated event ignores, allows or requires the event to be
+/// prefixed with the bot's nickname
 enum NickPrefixPolicy { ignored, allowed, required, hardRequired }
 
 
@@ -58,14 +58,15 @@ enum NickPrefixPolicy { ignored, allowed, required, hardRequired }
 enum PrivilegeLevel { anyone, friend, master }
 
 
-/// Flag denoting that an event function should be more verbose than usual, generating
-/// more terminal output.
+/// Flag denoting that an event function should be more verbose than usual,
+/// generating more terminal output.
 alias Verbose = Flag!"verbose";
 
-
-/// Flag denoting that the annotated event should never stop an event from being processed,
-/// but keep on running until it runs out of functions to iterate, or some other
-/// non-chaining function stops it.
+/++
+ +  Flag denoting that the annotated event should never stop an event from
+ +  being processed, but keep on running until it runs out of functions to
+ +  iterate, or some other non-chaining function stops it.
+ +/
 alias Chainable = Flag!"chainable";
 
 
@@ -74,8 +75,8 @@ alias Chainable = Flag!"chainable";
  +  Describes how an on-text function is triggered.
  +
  +  The prefix policy decides to what extent the actual prefix string_ is required.
- +  It isn't needed for functions that don't trigger on text messages; this is merely to
- +  collect and gather everything needed to have trigger "verb" commands.
+ +  It isn't needed for functions that don't trigger on text messages; this is
+ +  merely to gather everything needed to have trigger "verb" commands.
  +/
 struct Prefix
 {
@@ -98,8 +99,8 @@ struct Label
 /++
  +  Ask the main thread to do a WHOIS call.
  +
- +  This way the plugins don't need to know of the server connection at all, at the slight cost
- +  of concurrency message passing overhead.
+ +  This way the plugins don't need to know of the server connection at all,
+ +  at the slight cost of concurrency message passing overhead.
  +
  +  Params:
  +      event = A complete IRCEvent to queue for later processing.
@@ -120,8 +121,8 @@ void doWhois(IRCPluginState state, const IRCEvent event)
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
- +  If the user's NickServ login is in the list of friends (or equals the bot's master's),
- +  return pass. Else, return fail and deny use.
+ +  If the user's NickServ login is in the list of friends (or equals the bot's
+ +  master's), return pass. Else, return fail and deny use.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
@@ -156,8 +157,8 @@ mixin template IRCPluginBasics()
     /++
      +  Pass on the supplied IRCEvent to the top-level .onEvent.
      +
-     +  Compile-time intropection detects whether it exists or not, and compiles optimised
-     +  code with no run-time checks.
+     +  Compile-time intropection detects whether it exists or not, and compiles
+     +  into code optimised for the available handlers.
      +
      +  Params:
      +      event = the triggering IRCEvent.
@@ -177,17 +178,19 @@ mixin template IRCPluginBasics()
      +  It passes execution to the top-level .initialise() if it exists.
      +
      +  Params:
-     +      origState = the aggregate of all plugin state variables, making this the
-     +          "original state" of the plugin.
+     +      origState = the aggregate of all plugin state variables, making
+     +                  this the "original state" of the plugin.
      +/
     this(IRCPluginState state)
     {
         static if (__traits(compiles, .state = state))
         {
+            // Plugin has a state variable; assign to it
             .state = state;
         }
         else static if (__traits(compiles, .settings = state.settings))
         {
+            // No state variable but at least there are some Settings
             .settings = state.settings;
         }
 
@@ -214,7 +217,15 @@ mixin template IRCPluginBasics()
         }
     }
 
-    // newState
+    // newSettings
+    /++
+     +  Inherits a new Settings copy.
+     +
+     +  Invoked on all plugins when settings have been changed.
+     +
+     +  Params:
+     +      settings = new settings
+     +/
     void newSettings(Settings settings)
     {
         static if (__traits(compiles, .state.settings = settings))
@@ -247,16 +258,19 @@ mixin template IRCPluginBasics()
 /++
  +  Dispatches IRCEvents to event handlers based on their UDAs.
  +
- +  Any top-level function with a signature of (void), (IRCEvent) or (string, IRCEvent)
- +  can be annotated with IRCEvent.Type UDAs, and onEvent will dispatch the correlating
- +  events to them as it is called. Merely annotating a function with IRCEvent.Type is
- +  enough to "register" it as an event handler for that type.
+ +  Any top-level function with a signature of (void), (IRCEvent) or
+ +  (string, IRCEvent) can be annotated with IRCEvent.Type UDAs, and onEvent
+ +  will dispatch the correlating events to them as it is called.
+ +
+ +  Merely annotating a function with an IRCEvent.Type is enough to "register"
+ +  it as an event handler for that type.
  +
  +  This produces optimised code with only very few runtime checks.
  +
  +  Params:
- +      module_ = name of the current module. Even though this is a mixin we can't tell
- +          by merely using __MODULE__; it is always kameloso.plugins.common.
+ +      module_ = name of the current module. Even though this is a mixin we
+ +                can't tell by merely using __MODULE__; it is always
+ +                kameloso.plugins.common.
  +      debug_ = flag denoting that more verbose code should be compiled in.
  +/
 mixin template OnEventImpl(string module_, bool debug_ = false)
@@ -384,13 +398,14 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     case ' ':
                                     case '!':
                                     case '?':
-                                        // content begins with bot nickname, followed by this
-                                        // non-nick character
+                                        // content begins with bot nickname,
+                                        // followed by this non-nick character
                                         break;
 
                                     default:
-                                        // content begins with bot nickname, followed by something
-                                        // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
+                                        // content begins with bot nickname,
+                                        // followed by something allowed in nicks:
+                                        // [a-z] [A-Z] [0-9] _-\[]{}^`|
                                         continue;
                                     }
                                 }
@@ -438,7 +453,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             }
                         }
 
-                        // We can't label the innermost foreach! So we have to runtime-skip here...
+                        // We can't label the innermost foreach! So we have to
+                        // runtime-skip here...
                         if (!matches) continue;
                     }
 
@@ -534,13 +550,13 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 /++
  +  Rudimentary IRCEvent handlers.
  +
- +  Almost any plugin will need handlers for WHOISLOGIN, RPL_ENDOFWHOIS, PART, QUIT, and SELFNICK.
- +  This mixin provides those. If more elaborate ones are needed, additional functions can be
- +  written and annotated appropriately.
+ +  Almost any plugin will need handlers for WHOISLOGIN, RPL_ENDOFWHOIS, PART,
+ +  QUIT, and SELFNICK. This mixin provides those. If more elaborate ones are
+ +  needed, additional functions can be written and annotated appropriately.
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
-    // onWhoisLogin
+    // onWhoisLoginMixin
     /++
      +  Records a user's NickServ login.
      +
@@ -557,17 +573,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users[event.target] = userFromEvent(event);
     }
 
-    //onEndOfWhois
+    //onEndOfWhoisMixin
     /++
      +  Removes a user from the WHOIS queue.
      +
-     +  When doing a WHOIS with the goal of replaying an event, the event is placed in a queue.
-     +  If the reply lists a valid known-good NickServ login, it is replayed.
-     +  If it is not a known-good login or if there is no login at all, it would live there
-     +  forever, making up garbage.
+     +  When doing a WHOIS with the goal of replaying an event, the event is
+     +  placed in a queue. If the reply lists a valid known-good NickServ login,
+     +  it is replayed. If it is not a known-good login or if there is no login
+     +  at all, it would live there forever, making up garbage.
      +
-     +  As such, always remove the queued event at the end of the WHOIS. At that point,
-     +  any valid events should have already been replayed.
+     +  As such, always remove the queued event at the end of the WHOIS.
+     +  At that point, any valid events should have already been replayed.
      +
      +  Params:
      +      event = the triggering IRCEvent.
@@ -579,12 +595,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.queue.remove(event.target);
     }
 
-    // onLeave
+    // onLeaveMixin
     /++
      +  Remove a user from the user array.
      +
-     +  This automatically deauthenticates them from the bot's service, as all track of them
-     +  will have disappeared. A new WHOIS must be made then.
+     +  This automatically deauthenticates them from the bot's service, as all
+     +  track of them will have disappeared. A new WHOIS must be made then.
      +
      +  Params:
      +      event = the triggering IRCEvent.
@@ -597,7 +613,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender);
     }
 
-    // onSelfNick
+    // onSelfNickMixin
     /++
      +  Inherit a new nickname.
      +
@@ -621,9 +637,10 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
 
     // updateBot
     /++
-    +  Takes a copy of the current bot state and concurrency-sends it to the main thread,
-    +  propagating any changes up the stack and then down to all other plugins.
-    +/
+     +  Takes a copy of the current bot state and concurrency-sends it to the
+     +  main thread, propagating any changes up the stack and then down to all
+     +  other plugins.
+     +/
     void updateBot()
     {
         import std.concurrency : send;
