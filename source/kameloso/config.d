@@ -10,12 +10,16 @@ import std.traits : isArray, isSomeFunction, hasUDA;
 // walkConfigLines
 /++
  +  Walks a list of configuration lines, such as those read from a config file.
+ +  Sets the members of passed structs to the values of read lines by calling
+ +  setMember.
  +
- +  It ignores commented lines and calls setMember on the valid ones to reconstruct objects.
+ +  It ignores commented lines and calls setMember on the valid ones to
+ +  reconstruct objects.
  +
  +  Params:
  +      wholeFile = a range providing the configuration lines.
- +      ref things = a compile-time variadic list of structs whose members should be configured.
+ +      ref things = a compile-time variadic list of structs whose members
+ +                   should be configured.
  +/
 void walkConfigLines(Range, Things...)(Range range, ref Things things)
 {
@@ -97,7 +101,8 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
  +
  +  Params:
  +      configFile = the string name of a configuration file.
- +      ref things = a compile-time variadic list of structs whose members should be configured.
+ +      ref things = a compile-time variadic list of structs whose members
+ +                   should be configured.
  +/
 void readConfig(T...)(const string configFile, ref T things)
 {
@@ -129,14 +134,15 @@ void readConfig(T...)(const string configFile, ref T things)
 
 // writeConfig
 /++
- +  Takes a compile-time variadic list of struct objects, reads their contents and writes
- *  them to the configuration filename supplied. Not all fields can be serialised this way,
- *  but strings and integers can.
- *
- *  Params:
+ +  Takes a compile-time variadic list of struct objects, reads their contents
+ +  and writes them to the configuration filename supplied.
+ +
+ +  Not all fields can be serialised this way, but strings and integers can.
+ +
+ +  Params:
  +      configFile = the string name of a configuration file.
- +      things = a compile-time variadic list of structs whose members should be read and
- +               saved to disk.
+ +      things = a compile-time variadic list of structs whose members should
+ +               be read and saved to disk.
  +/
 void writeConfig(T...)(const string configFile, T things)
 {
@@ -155,13 +161,16 @@ void writeConfig(T...)(const string configFile, T things)
     f.write(things.configText);
 }
 
+
 // setMember
 /++
  +  Set the member of a struct to a supplied value, by string name.
  +
- +  This is a template-heavy thing but it is in principle fairly straight-forward.
- +  Foreach member of a struct, if member name is the supplied member string, use std.conv.to
- +  and set it to this value. No vaue is returned as the stuct object is passed by ref.
+ +  This is a template-heavy thing but it is in principle fairly straight-
+ +  forward. For each member of a struct, if member name is the supplied
+ +  member string, use std.conv.to and set it to this value.
+ +
+ +  No value is returned as the struct object is passed by ref.
  +
  +  Params:
  +      ref thing = the struct object whose member should be assigned to.
@@ -261,11 +270,16 @@ void setMember(Thing)(ref Thing thing, const string memberToSet, const string va
 
 // configText
 /++
- +  Takes a compile-time variadic list of struct objects and passes them each by each to
- +  the configText(T) that only takes one parameter. This is merely for convenience.
+ +  Takes a compile-time variadic list of struct objects and passes them each
+ +  by each to the configText(T) that only takes one parameter.
+ +
+ +  This is merely for convenience.
  +
  +  Params:
  +      things = A compile-time variadic list of things to "serialise".
+ +
+ +  Returns:
+ +      Config text for all the serialised Things.
  +/
 string configText(Things...)(const Things things)
 if (Things.length > 1)
@@ -289,11 +303,16 @@ if (Things.length > 1)
 
 // configText
 /++
- + The inverse of setMember, this walks through the members of a class and makes configuration
- + lines of their contents. This is later saved to disk as configuration files.
+ +  The inverse of setMember, this walks through the members of a class or
+ +  struct and makes configuration lines of their contents.
+ +
+ +  This is later saved to disk as configuration files.
  +
  +  Params:
  +      thing = A struct object, whose members should be "serialised".
+ +
+ +  Returns:
+ +      Config text for the serialised Thing.
  +/
 string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 {
@@ -301,7 +320,9 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(256); // An IRCBot weighs in at a rough minimum of 128 characters
+
+    // An IRCBot + IRCServer + Settings combo weighs in at around 700 bytes
+    sink.reserve(1024);
 
     sink.formattedWrite("[%s]\n", Thing.stringof); // Section header
 
