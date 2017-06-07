@@ -16,6 +16,7 @@ IRCPluginState state;
 /// Toggles whether onAnyEvent prints the raw strings of all incoming events
 bool printAll;
 
+/// Toggles whether onAnyEvent prints the raw bytes of the *contents* of events
 bool printBytes;
 
 
@@ -37,6 +38,15 @@ void onCommandSudo(const IRCEvent event)
 }
 
 
+// onCommandFake
+/++
+ +  Fake that a string was sent by the server.
+ +
+ +  Chance of infinite loop?
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("fake")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -44,7 +54,6 @@ void onCommandSudo(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "fake")
 void onCommandFake(const IRCEvent event)
 {
-    // Fake that this string was received from the server
     state.mainThread.send(event.content);
 }
 
@@ -266,6 +275,12 @@ void onCommandPrintAll()
 }
 
 
+// onCommandPrintBytes
+/++
+ +  Toggles a flag to print all incoming events as bytes.
+ +
+ +  This is for debugging purposes.
+ +/
 @Label("toggleprintbytes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
