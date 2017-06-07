@@ -52,7 +52,8 @@ alias Quit = Flag!"quit";
 /++
  +  Checks for concurrency messages and performs action based on what was received.
  +
- +  The return value tells the caller whether the received action means the bot should exit.
+ +  The return value tells the caller whether the received action means the bot
+ +  should exit or not.
  +
  +  Returns:
  +      Quit.yes or Quit.no, depending.
@@ -163,8 +164,11 @@ Quit checkMessages()
 
     do
     {
-        // Use the bool of whether anything was received at all to decide if the loop should
-        // continue. That way we neatly exhaust the mailbox before returning.
+        // Use the bool of whether anything was received at all to decide if
+        // the loop should continue. That way we neatly exhaust the mailbox
+        // before returning.
+
+        // BUG: except if quit is true, then it returns without exhausting
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &ping,
@@ -192,7 +196,8 @@ Quit checkMessages()
 /++
  +  Read command-line options and merge them with those in the configuration file.
  +
- +  The priority of options then becomes getopt over config file over hardcoded defaults.
+ +  The priority of options then becomes getopt over config file over hardcoded
+ +  defaults.
  +
  +  Params:
  +      The string[] args the program was called with.
@@ -251,17 +256,20 @@ Quit handleArguments(string[] args)
         return Quit.yes;
     }
 
-    // Read settings into temporary Bot and Settings structs, then meld them into the
-    // real ones into which command-line arguments will have been applied.
+    // Read settings into a temporary Bot and Settings struct, then meld them
+    // into the real ones into which the command-line arguments will have been
+    // applied.
 
     IRCBot botFromConfig;
     Settings settingsFromConfig;
 
+    // These arguments are by reference.
     settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
 
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
 
+    // Try to resolve which IRC network we're connecting to based on addresses
     bot.server.resolveNetwork();
 
     // If --writeconfig was supplied we should just write and quit
@@ -284,7 +292,8 @@ void initPlugins()
      +  2. Set up new IRCPluginState
      +  3. Set parser hooks
      +  4. Instantiate all enabled plugins (list is in kameloso.plugins.package)
-     +  5. Additionlly add Webtitles and Pipeline if doing so works, i.e they're imported
+     +  5. Additionlly add Webtitles and Pipeline if doing so compiles
+     +     (i.e they're imported)
      +/
 
     foreach (plugin; plugins) plugin.teardown();
@@ -407,9 +416,10 @@ int main(string[] args)
 
 // loopGenerator
 /++
- +  This loops over the Generator fiber that's reading from the socket. Full lines are
- +  yielded in the Generator to be caught here, consequently parsed into IRCEvents, and then
- +  dispatched to all the plugins.
+ +  This loops over the Generator fiber that's reading from the socket.
+ +
+ +  Full lines are yielded in the Generator to be caught here, consequently
+ +  parsed into IRCEvents, and then dispatched to all the plugins.
  +
  +  Params:
  +      generator = a string-returning Generator that's reading from the socket.
