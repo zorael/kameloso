@@ -13,8 +13,13 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-/// The in-memory JSON storage of all stored notes. It is in the JSON form of string[][string],
-/// where the first key is the nickname.
+
+/++
+ +  The in-memory JSON storage of all stored notes.
+ +
+ +  It is in the JSON form of string[][string], where the first key is
+ +  a nickname.
+ +/
 JSONValue notes;
 
 
@@ -71,7 +76,8 @@ void onJoin(const IRCEvent event)
 /++
  +  Sends notes to a channel upon joining it.
  +
- +  Only reacting to others joinng would mean someone never leaving would never get notes.
+ +  Only reacting to others joinng would mean someone never leaving would never
+ +  get notes. This may be extended to trigger when they say something, too.
  +
  +  Params:
  +      event = the triggering IRCEvent.
@@ -127,7 +133,8 @@ void onCommandAddNote(const IRCEvent event)
     import std.string : strip;
 
     string nickname, line;
-    string content = event.content;  // BUG: needs to be mutable or formattedRead won't work
+    // formattedRead advances a slice so we need a mutable copy of event.content
+    string content = event.content;
     immutable hits = content.formattedRead("%s %s", &nickname, &line);
 
     if (hits != 2) return;
@@ -180,6 +187,9 @@ void onCommandReloadQuotes()
  +  Fakes the supplied user joining a channel.
  +
  +  This is for debugging purposes.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
  +/
 @Label("fakejoin")
 @(IRCEvent.Type.CHAN)
@@ -219,7 +229,8 @@ void onCommandFakejoin(const IRCEvent event)
  +      nickname = the user whose notes to fetch.
  +
  +  Returns:
- +      a Voldemort Note[] array, where Note is a struct containing a note and metadata thereto.
+ +      a Voldemort Note[] array, where Note is a struct containing a note and
+ +      metadata thereof.
  +/
 auto getNotes(const string nickname)
 {
@@ -282,7 +293,11 @@ auto getNotes(const string nickname)
 
 // clearNotes
 /++
- +  Clears the note storage of any notes pertaining to the specified user, then saves it to disk.
+ +  Clears the note storage of any notes pertaining to the specified user,
+ +  then saves it to disk.
+ +
+ +  Params:
+ +      nickname = the nickname whose notes to clear.
  +/
 void clearNotes(const string nickname)
 {
@@ -371,6 +386,7 @@ void saveNotes(const string filename)
     f.write("\n");
 }
 
+
 // loadNotes
 /++
  +  Loads notes from disk into the in-memory storage.
@@ -407,6 +423,8 @@ JSONValue loadNotes(const string filename)
 // initialise
 /++
  +  Initialises the Notes plugin. Loads the notes from disk.
+ +
+ +  This is executed immediately after a successful connect.
  +/
 void initialise()
 {
@@ -423,8 +441,8 @@ public:
 
 // NotesPlugin
 /++
- +  The Notes plugin which allows people to leave messages to eachother, for offline
- +  communication and such.
+ +  The Notes plugin which allows people to leave messages to eachother,
+ +  for offline communication and such.
  +/
 final class NotesPlugin : IRCPlugin
 {
