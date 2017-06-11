@@ -266,7 +266,8 @@ void titleworker(shared Tid sMainThread)
                     try lookup = lookupTitle(url);
                     catch (Exception e)
                     {
-                        writeln(Foreground.lightred, "Exception looking up a title: ", e.msg);
+                        writeln(Foreground.lightred,
+                                "Exception looking up a title: ", e.msg);
                     }
                 }
 
