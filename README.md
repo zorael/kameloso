@@ -126,6 +126,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * non-member struct UDAs to enums?
 * investigate inverse channel behaviour (blacklists)
 * solve scope creep
+* the connect plugin is in a sorry state
 
 ## Built With
 
