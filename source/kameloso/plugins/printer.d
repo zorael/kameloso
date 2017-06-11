@@ -12,20 +12,25 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
+/// Runtime settings for bot behaviour
 Settings settings;
 
+
 // reusableAppender
-/+
+/++
  +  Appender to reuse as sink to fill when printing events.
  +
  +  It can't be Appender!string or it can't be cleared, so use Appender!(char[]).
- +  The content will be shortlived anyway so there's no risk of old lines creeping through.
- +  One workaround would be not to .clear() it, but to just set it to .init. However, the
- +  point of having a reusable Appender would be promptly lost.
+ +  The content will be shortlived anyway so there's no risk of old lines
+ +  creeping through. One workaround would be not to .clear() it, but to just
+ +  set it to .init. However, the point of having a reusable Appender would be
+ +  promptly lost.
  +/
 Appender!(char[]) reusableAppender;
 
-/// Longest length seen in the wild is 537, use a buffer slightly larger than that
+
+/// Appender buffer size. Longest length seen in the wild is 537, use a buffer
+/// slightly larger than that.
 enum appenderBufferSize = 600;
 
 
@@ -33,7 +38,8 @@ enum appenderBufferSize = 600;
 /++
  +  Print an event to the local terminal.
  +
- +  Use the reusableAppender to slightly optimise the procedure by constantly reusing memory.
+ +  Use the reusableAppender to slightly optimise the procedure by constantly
+ +  reusing memory.
  +
  +  Params:
  +      event = the IRCEvent to print.
@@ -147,7 +153,7 @@ void onAnyEvent(const IRCEvent origEvent)
                 if (channel.length) reusableAppender.formattedWrite(" %s[%s]",
                                         colourise(DefaultColour.channel), channel);
                 if (content.length) reusableAppender.formattedWrite(`%s: "%s"`,
-                                        colourise(DefaultColour.content), content); // CHEATS
+                                        colourise(DefaultColour.content), content);
                 if (aux.length)     reusableAppender.formattedWrite(" %s<%s>",
                                         colourise(DefaultColour.aux), aux);
                 if (num > 0)        reusableAppender.formattedWrite(" %s(#%d)",
@@ -163,6 +169,13 @@ void onAnyEvent(const IRCEvent origEvent)
 }
 
 
+// mapEffects
+/++
+ +  Map mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
+ +
+ +  Params:
+ +      ref event = the IRCEvent to modify for printing.
+ +/
 version (Colours)
 void mapEffects(ref IRCEvent event)
 {
@@ -198,6 +211,13 @@ void mapEffects(ref IRCEvent event)
 }
 
 
+// mapColours
+/++
+ +  Map mIRC effect color tokens to Bash ones.
+ +
+ +  Params:
+ +      ref event = the IRCEvent to modify for printing.
+ +/
 version (Colours)
 void mapColours(ref IRCEvent event)
 {
@@ -306,7 +326,7 @@ void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 
 // initialise
 /++
- +  Initialises the Printer plugin. Reserves space in the reusable Appenderk.
+ +  Initialises the Printer plugin. Reserves space in the reusable Appender.
  +/
 void initialise()
 {
@@ -324,8 +344,8 @@ public:
 /++
  +  The Printer plugin takes all IRCEvents and prints them to the local terminal.
  +
- +  This used to be part of the core program, but with UDAs it's easy to split off into
- +  its own plugin.
+ +  This used to be part of the core program, but with UDAs it's easy to split
+ +  off into its own plugin.
  +/
 final class Printer : IRCPlugin
 {
