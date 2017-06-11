@@ -14,9 +14,20 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-bool serverPingedAtConnect;
+/// Flag whether the server has sent at least one PING
+bool serverPinged;
 
 
+// onSelfJoin
+/++
+ +  Adds a channel to the list of joined channels in the IRCBot struct, and
+ +  propagates the event to all plugins.
+ +
+ +  Fires when the bot joins a channel.
+ +
+ +  Params:
+ +      event = the triggering IRCevent.
+ +/
 @Label("onSelfjoin")
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
@@ -31,7 +42,16 @@ void onSelfjoin(const IRCEvent event)
 }
 
 
-@Label("onSelfPart")
+// onSelfpart
+/++
+ +  Removes a channel from the list of joined channels.
+ +
+ +  Fires when the bot leaves a channel.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
+@Label("onSelfpart")
 @(IRCEvent.Type.SELFPART)
 void onSelfpart(const IRCEvent event)
 {
@@ -49,6 +69,10 @@ void onSelfpart(const IRCEvent event)
 }
 
 
+// joinChannels
+/++
+ +  Joins all channels listed as homes *and* channels in the IRCBot object.
+ +/
 void joinChannels()
 {
     import std.algorithm.iteration : joiner;
@@ -77,8 +101,8 @@ void joinChannels()
 
 // onWelcome
 /++
- +  Gets the final nickname from a WELCOME event and propagates it via the main thread to
- +  all other plugins.
+ +  Gets the final nickname from a WELCOME event and propagates it via the main
+ +  thread to all other plugins.
  +
  +  Params:
  +      event = the triggering IRCEvent.
@@ -99,6 +123,14 @@ void onWelcome(const IRCEvent event)
 }
 
 
+// onToConnectType
+/++
+ +  Responds to IRCEvent.Type.TOCONNECTTYPE events by sending the text supplied
+ +  as content in the IRCEvent, to the server.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("toconnecttype")
 @(IRCEvent.Type.TOCONNECTTYPE)
 void onToConnectType(const IRCEvent event)
@@ -110,6 +142,17 @@ void onToConnectType(const IRCEvent event)
 }
 
 
+// onPing
+/++
+ +  Pongs the server upon PING.
+ +
+ +  We make sure to ping with the sender as target, and not the neccessarily
+ +  the server as saved in the IRCServer struct. For example, TOCONNECTTYPE
+ +  generally wants you to ping a random number or string.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("onping")
 @(IRCEvent.Type.PING)
 void onPing(const IRCEvent event)
@@ -238,6 +281,13 @@ void onEndOfMotd()
 }
 
 
+// onAcceptance
+/++
+ +  Flag authentication as finished and join channels.
+ +
+ +  Fires when an authentication service sends a message with a known acceptance
+ +  text, signifying successful login.
+ +/
 @Label("onacceptance")
 @(IRCEvent.Type.AUTHACCEPTANCE)
 void onAcceptance()
@@ -251,8 +301,8 @@ void onAcceptance()
 
 // onNickInUse
 /++
- +  Appends a single character to the end of the bot's nickname, and propagates the change
- +  via the main thread to all other plugins.
+ +  Appends a single character to the end of the bot's nickname, and propagates
+ +  the change via the main thread to all other plugins.
  +/
 @Label("nickinuse")
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
@@ -266,6 +316,13 @@ void onNickInUse()
 }
 
 
+// onInvite
+/++
+ +  Join the supplied channels if not already in them.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("oninvite")
 @(IRCEvent.Type.INVITE)
 void onInvite(const IRCEvent event)
@@ -281,6 +338,14 @@ void onInvite(const IRCEvent event)
 }
 
 
+// onRegistrationEvent
+/++
+ +  Handle CAP exchange.
+ +
+ +  This is a neccessary step to register with some IRC server; the capabilities
+ +  have to be requested (CAP LS), and the negotiations need to be ended
+ +  (CAP END).
+ +/
 @Label("onregistrationevent")
 @(IRCEvent.Type.NOTICE)
 @(IRCEvent.Type.CAP)
@@ -291,14 +356,15 @@ void onRegistrationEvent(const IRCEvent event)
     if ((event.type == IRCEvent.Type.CAP) && (event.aux == "LS"))
     {
         /++
-         + The END subcommand signals to the server that capability negotiation
-         + is complete and requests that the server continue with client registration.
-         + If the client is already registered, this command MUST be ignored by the server.
+         +  The END subcommand signals to the server that capability negotiation
+         +  is complete and requests that the server continue with client
+         +  registration. If the client is already registered, this command
+         +  MUST be ignored by the server.
          +
-         + Clients that support capabilities but do not wish to enter negotiation SHOULD
-         + send CAP END upon connection to the server.
+         +  Clients that support capabilities but do not wish to enter negotiation
+         +  SHOULD send CAP END upon connection to the server.
          +
-         + http://ircv3.net/specs/core/capability-negotiation-3.1.html
+         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
          +/
 
         state.mainThread.send(ThreadMessage.Quietline(), "CAP END");
@@ -312,6 +378,10 @@ void onRegistrationEvent(const IRCEvent event)
 }
 
 
+// register
+/++
+ +  Register with/log onto an IRC server.
+ +/
 void register()
 {
     with (state)
@@ -346,6 +416,16 @@ void register()
     }
 }
 
+
+// initialise
+/++
+ +  Register with the server.
+ +
+ +  This initialisation event fires immediately after a successful connect, and
+ +  so instead of waiting for something from the server to trigger our
+ +  registration procedure (notably NOTICEs about our IDENT and hostname), we
+ +  preemptively register. It seems to work.
+ +/
 void initialise()
 {
     register();
@@ -360,9 +440,10 @@ public:
 
 // ConnectPlugin
 /++
- +  A collection of functions and state needed to connect to an IRC server. This is mostly
- +  a matter of sending USER and NICK at the starting "handshake", but also incorporates
- +  logic to authenticate with NickServ.
+ +  A collection of functions and state needed to connect to an IRC server.
+ +
+ +  This is mostly a matter of sending USER and NICK during registration,
+ +  but also incorporates logic to authenticate with nick auth services.
  +/
 final class ConnectPlugin : IRCPlugin
 {
