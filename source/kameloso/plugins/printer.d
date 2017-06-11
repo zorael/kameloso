@@ -83,7 +83,9 @@ void onAnyEvent(const IRCEvent origEvent)
         import std.datetime;
         import std.format : formattedWrite;
 
-        const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time)).timeOfDay.toString;
+        const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
+                          .timeOfDay
+                          .toString();
 
         with (Foreground)
         with (event)
@@ -125,16 +127,16 @@ void onAnyEvent(const IRCEvent origEvent)
 
                 Foreground senderColour = DefaultColour.sender;
 
-                if (state.settings.randomNickColours) // && (sender != state.bot.server.resolvedAddress))
+                if (state.settings.randomNickColours)
                 {
                     import std.traits : EnumMembers;
 
-                    static immutable Foreground[17] foregrounds = [ EnumMembers!Foreground ];
+                    static immutable Foreground[17] fg = [ EnumMembers!Foreground ];
 
                     auto colourIndex = hashOf(sender) % 16;
                     if (colourIndex == 1) colourIndex = 16;  // map black to white
 
-                    senderColour = foregrounds[colourIndex];
+                    senderColour = fg[colourIndex];
                 }
 
                 Foreground typeColour = DefaultColour.type;
