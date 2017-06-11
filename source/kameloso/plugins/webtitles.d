@@ -68,7 +68,6 @@ struct TitleLookup
  +/
 @Label("message")
 @(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)  // ?
 @(PrivilegeLevel.friend)
 @(Chainable.yes)
 void onMessage(const IRCEvent event)
