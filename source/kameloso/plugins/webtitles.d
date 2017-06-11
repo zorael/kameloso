@@ -43,8 +43,9 @@ static domainRegex = ctRegex!domainPattern;
 /++
  +  A record of a URI lookup.
  +
- +  This is both used to aggregate information about the lookup, as well as to add hysteresis
- +  to lookups, so we don't look the same one up over and over if they were pasted over and over.
+ +  This is both used to aggregate information about the lookup, as well as to
+ +  add hysteresis to lookups, so we don't look the same one up over and over
+ +  if they were pasted over and over.
  +/
 struct TitleLookup
 {
@@ -60,7 +61,7 @@ struct TitleLookup
 /++
  +  Parses a message to see if the message contains an URI.
  +
- +  It uses a simple regex and exhaustively tries to match every URI it can detect.
+ +  It uses a simple regex and exhaustively tries to match every URI it detects.
  +
  +  Params:
  +      event = the triggering IRCEvent.
@@ -92,11 +93,13 @@ void onMessage(const IRCEvent event)
 
 // streamUntil
 /++
- +  Streams text from a supplied stream until the supplied regex engine finds a match.
+ +  Streams text from a supplied stream until the supplied regex engine finds a
+ +  match. This is used to stream a web page while applying a regex engine that
+ +  looks for title tags.
  +
- +  This is used to stream a web page while applying a regex engine that looks for title tags.
- +  Since streamed content comes in unpredictable chunks, a Sink is used and gradually
- +  filled so that the entirety can be scanned if the title tag was split between two chunks.
+ +  Since streamed content comes in unpredictable chunks, a Sink is used and
+ +  gradually filled so that the entirety can be scanned if the title tag was
+ +  split between two chunks.
  +
  +  Params:
  +      Stream_ = template stream type.
@@ -120,10 +123,12 @@ string streamUntil(Stream_, Regex_, Sink)
         /*writefln("Received %d bytes, total received %d from document legth %d",
             stream.front.length, rq.contentReceived, rq.contentLength);*/
 
-
-        // matchFirst won't work directly on data, it's constrained to work with isSomeString
-        // types and data is const(ubyte[]). We can get away without doing idup and just
-        // casting to string here though, since sink.put below will copy
+        /++
+         +  matchFirst won't work directly on data, it's constrained to work
+         +  with isSomeString, and types and data are const(ubyte[]).
+         +  We can get away without doing idup and just casting to string here
+         +  though, since sink.put below will copy.
+         +/
         const hits = (cast(string)data).matchFirst(engine);
         sink.put(data);
 
@@ -226,8 +231,8 @@ TitleLookup lookupTitle(string url)
  +  It sits and waits for concurrency messages of URLs to look up.
  +
  +  Params:
- +      sMainThread = a shared copy of the mainThread Tid, to which every outgoing messages
- +          will be sent.
+ +      sMainThread = a shared copy of the mainThread Tid, to which every
+ +                    outgoing messages will be sent.
  +/
 void titleworker(shared Tid sMainThread)
 {
@@ -330,9 +335,9 @@ public:
 
 // Webtitles
 /++
- +  The Webtitles plugin catches HTTP URI links in an IRC channel, connects to its server and
- +  and streams the web page itself, looking for the web page's title (in its <title> tags).
- +  This is then reported to the originating channel.
+ +  The Webtitles plugin catches HTTP URI links in an IRC channel, connects to
+ +  its server and and streams the web page itself, looking for the web page's
+ +  title (in its <title> tags). This is then reported to the originating channel.
  +/
 final class Webtitles : IRCPlugin
 {
