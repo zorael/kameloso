@@ -181,18 +181,21 @@ void onPing(const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd()
 {
-    // FIXME: Deadlock if a password exists but there is no challenge
-    // the fix is a timeout
-
     with (state)
     {
         if (!bot.authPassword.length)
         {
+            // No password set up; join channels and be done
             joinChannels();
             return;
         }
 
-        if (bot.startedAuth) return;
+        // Auth started from elsewhere
+        if (bot.startedAuth)
+        {
+            writeln(Foreground.lightred, "auth started elsewhere...");
+            return;
+        }
 
         bot.startedAuth = true;
 
