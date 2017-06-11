@@ -22,6 +22,17 @@ Tid fifoThread;
 File fifo;
 
 
+// pipereader
+/++
+ +  Reads a fifo (named pipe) and relays lines received there to the main
+ +  thread, to send to the server.
+ +
+ +  It is to be run in a separate thread.
+ +
+ +  Params:
+ +      newState = a shared IRCPluginState, to provide the main thread's Tid
+ +                 for concurrency messages.
+ +/
 void pipereader(shared IRCPluginState newState)
 {
     import core.time : seconds;
@@ -85,6 +96,12 @@ void pipereader(shared IRCPluginState newState)
 }
 
 
+// createFIFO
+/++
+ +  Creates a fifo (named pipe) in the filesystem.
+ +
+ +  It will be named a hardcoded <bot nickname>@<server address>.
+ +/
 void createFIFO()
 {
     import std.file : exists, isDir;
@@ -110,6 +127,10 @@ void createFIFO()
 }
 
 
+// onWelcome
+/++
+ +  Spawns the pipereader thread.
+ +/
 @Label("welcome")
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
@@ -152,9 +173,9 @@ mixin OnEventImpl!__MODULE__;
 
 // Pipeline
 /++
- *  The Pipeline plugin reads from a local named pipe (FIFO) for messages to send
- *  to the server. It is for debugging purposes until such time we figure out a
- *  way to properly input lines via the terminal.
+ +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to send
+ +  to the server. It is for debugging purposes until such time we figure out a
+ +  way to properly input lines via the terminal.
  +/
 final class Pipeline : IRCPlugin
 {
