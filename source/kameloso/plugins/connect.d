@@ -60,7 +60,8 @@ void onSelfpart(const IRCEvent event)
 
     if (!state.bot.channels.canFind(event.channel))
     {
-        writeln(Foreground.lightred, "Tried to remove a channel that wasn't there: ", event.channel);
+        writeln(Foreground.lightred, "Tried to remove a channel that wasn't there: ",
+                event.channel);
         return;
     }
 
@@ -260,12 +261,6 @@ void onEndOfMotd()
             return;
 
         default:
-            /*writeln(Foreground.lightred, "Probably need to AUTH manually");
-
-            writeln(Foreground.lightred, "Would try to auth but the service " ~
-                "wouldn't understand being passed both login and password...");
-            writeln(Foreground.lightred, "DEBUG: trying anyway");*/
-
             writeln(Foreground.lightred, "Unsure of what AUTH approach to use.");
 
             mainThread.send(ThreadMessage.Quietline(),
