@@ -10,6 +10,17 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
+// onCTCPs
+/++
+ +  Handle CTCP requests.
+ +
+ +  This is a catch-all function handling 5/6 CTCP requests we support, instead
+ +  of having five different functions each dealing with one. Either design
+ +  works; both end up with a switch.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("ctcps")
 @(IRCEvent.Type.CTCP_VERSION)
 @(IRCEvent.Type.CTCP_FINGER)
@@ -63,6 +74,17 @@ void onCTCPs(const IRCEvent event)
 }
 
 
+// onCTCPClientinfo
+/++
+ +  Sends a list of which CTCP events we understand.
+ +
+ +  This builds a string of the names of all IRCEvent.Types that begin
+ +  with CTCP_, at compile-time. As such, as long as we name any new
+ +  such types CTCP_SOMETHING, this list will always be correct.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
 @Label("ctcpclientinfo")
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(const IRCEvent event)
@@ -108,13 +130,13 @@ mixin OnEventImpl!__MODULE__;
 
 // CTCP
 /++
- *  The CTCP plugin (client-to-client protocol) answers to special queries
- *  sometime made over the IRC protocol. These are generally of metadata about
- *  the client itself and its capbilities.
- *
- *  Information about these were gathered from the following sites:
- *      https://modern.ircdocs.horse/ctcp.html
- *      http://www.irchelp.org/protocol/ctcpspec.html
+ +  The CTCP plugin (client-to-client protocol) answers to special queries
+ +  sometime made over the IRC protocol. These are generally of metadata about
+ +  the client itself and its capbilities.
+ +
+ +  Information about these were gathered from the following sites:
+ +      https://modern.ircdocs.horse/ctcp.html
+ +      http://www.irchelp.org/protocol/ctcpspec.html
  +/
 final class CTCPPlugin : IRCPlugin
 {
