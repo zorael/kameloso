@@ -136,7 +136,7 @@ void onWelcome(const IRCEvent event)
 @(IRCEvent.Type.TOCONNECTTYPE)
 void onToConnectType(const IRCEvent event)
 {
-    if (serverPingedAtConnect) return;
+    if (serverPinged) return;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "%s :%s".format(event.content, event.aux));
@@ -158,7 +158,7 @@ void onToConnectType(const IRCEvent event)
 @(IRCEvent.Type.PING)
 void onPing(const IRCEvent event)
 {
-    serverPingedAtConnect = true;
+    serverPinged = true;
     state.mainThread.send(ThreadMessage.Pong(), event.sender);
 
     if (state.bot.startedAuth && !state.bot.finishedAuth)
