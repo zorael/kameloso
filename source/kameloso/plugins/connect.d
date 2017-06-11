@@ -173,9 +173,8 @@ void onPing(const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Joins channels at the end of the MOTD, and tries to authenticate with NickServ if applicable.
- +
- +  This may be Freenode-specific and may need extension to work with other servers.
+ +  Joins channels at the end of the MOTD, and tries to authenticate with
+ +  such services if applicable.
  +/
 @Label("endofmotd")
 @(IRCEvent.Type.RPL_ENDOFMOTD)
