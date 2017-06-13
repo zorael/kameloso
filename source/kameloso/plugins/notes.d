@@ -6,7 +6,7 @@ import kameloso.irc;
 import kameloso.plugins.common;
 
 import std.concurrency : send;
-import std.json   : JSONValue;
+import std.json : JSONValue;
 
 private:
 
@@ -234,7 +234,7 @@ void onCommandFakejoin(const IRCEvent event)
  +/
 auto getNotes(const string nickname)
 {
-    import std.datetime : SysTime, Clock;
+    import std.datetime : Clock, SysTime;
     import std.json : JSON_TYPE;
 
     struct Note

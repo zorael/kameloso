@@ -1,7 +1,7 @@
 module kameloso.plugins.common;
 
-import kameloso.irc;
 import kameloso.common : Settings;
+import kameloso.irc;
 import std.typecons : Flag;
 
 

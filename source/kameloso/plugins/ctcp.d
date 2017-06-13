@@ -94,8 +94,8 @@ void onCTCPClientinfo(const IRCEvent event)
     enum string allCTCPTypes = ()
     {
         import std.conv   : to;
-        import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
         import std.string : stripRight;
+        import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
 
         string allTypes;
 

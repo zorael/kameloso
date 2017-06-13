@@ -3,8 +3,8 @@ module kameloso.connection;
 import kameloso.common : writefln, writeln;
 import kameloso.constants;
 
-import std.socket;
 import core.time : seconds;
+import std.socket;
 
 
 // Connection
@@ -218,9 +218,9 @@ public:
  +/
 void listenFiber(Connection conn)
 {
-    import std.datetime : Clock, SysTime;
-    import std.concurrency : yield;
     import std.algorithm.searching : countUntil;
+    import std.concurrency : yield;
+    import std.datetime : Clock, SysTime;
 
     auto buffer = new ubyte[](BufferSize.socketReceive);
     SysTime timeLastReceived = Clock.currTime;

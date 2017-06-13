@@ -1,9 +1,9 @@
 module kameloso.main;
 
-import kameloso.constants;
 import kameloso.common;
-import kameloso.connection;
 import kameloso.config;
+import kameloso.connection;
+import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins;
 
@@ -208,8 +208,8 @@ Quit checkMessages()
  +/
 Quit handleArguments(string[] args)
 {
-    import std.getopt;
     import std.format : format;
+    import std.getopt;
 
     bool shouldWriteConfig;
     GetoptResult getoptResults;

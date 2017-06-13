@@ -100,8 +100,8 @@ void addQuote(const string nickname, const string line)
  +/
 void saveQuotes(const string filename)
 {
-    import std.stdio : File;
     import std.file  : exists, isFile, remove;
+    import std.stdio : File;
 
     if (filename.exists && filename.isFile)
     {
@@ -255,8 +255,8 @@ void onCommand8ball(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "quote")
 void onCommandQuote(const IRCEvent event)
 {
-    import std.string : strip, indexOf;
     import std.format : format;
+    import std.string : indexOf, strip;
 
     // stripModeSign to allow for quotes from @nickname and +dudebro
     immutable nickname = event.content.strip.stripModeSign();

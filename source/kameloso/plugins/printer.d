@@ -181,8 +181,8 @@ void onAnyEvent(const IRCEvent origEvent)
 version (Colours)
 void mapEffects(ref IRCEvent event)
 {
-    import std.string : representation;
     import std.algorithm.searching : canFind;
+    import std.string : representation;
 
     alias I = IRCControlCharacter;
     alias B = BashEffectToken;
@@ -315,8 +315,8 @@ void mapColours(ref IRCEvent event)
 version (Colours)
 void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 {
-    import std.regex;
-    import std.conv : to;
+    import std.conv  : to;
+    import std.regex : ctRegex, replaceAll;
 
     static engine = ctRegex!([cast(char)mircToken]);
     enum bashToken = "\033[" ~ bashEffectCode.to!string ~ "m";

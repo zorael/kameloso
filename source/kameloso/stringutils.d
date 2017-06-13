@@ -1,10 +1,10 @@
 module kameloso.stringutils;
 
+import std.datetime;
 import std.traits   : isSomeString;
 import std.typecons : Flag;
-import std.datetime;
 
-public import std.typecons : Yes, No;
+public import std.typecons : No, Yes;
 
 
 // nom
@@ -265,9 +265,9 @@ unittest
 pragma(inline)
 T[] arrayify(string separator = ",", T)(const T line)
 {
-    import std.algorithm.iteration : splitter, map;
-    import std.string : strip;
+    import std.algorithm.iteration : map, splitter;
     import std.array : array;
+    import std.string : strip;
 
     return line.splitter(separator).map!(a => a.strip).array;
 }
@@ -296,7 +296,7 @@ unittest
 pragma(inline)
 string stripPrefix(const string line, const string prefix)
 {
-    import std.string : stripLeft, munch;
+    import std.string : munch, stripLeft;
 
     string slice = line.stripLeft();
 
@@ -364,8 +364,6 @@ string timeSince(const Duration duration)
 }
 unittest
 {
-    import std.stdio;
-
     immutable dur1 = 789383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
     assert(dur1.timeSince == "9 days, 3 hours and 16 minutes");
 
@@ -418,8 +416,9 @@ if (is(Enum == enum))
 unittest
 {
     import kameloso.irc   : IRCEvent;
-    import std.exception  : assertThrown;
+
     import core.exception : AssertError;
+    import std.exception  : assertThrown;
 
     with (IRCEvent)
     with (IRCEvent.Type)

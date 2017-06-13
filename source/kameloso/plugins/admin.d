@@ -340,7 +340,7 @@ void onAnyEvent(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "part")
 void onCommandJoinPart(const string prefix, const IRCEvent event)
 {
-    import std.algorithm.iteration : splitter, joiner;
+    import std.algorithm.iteration : joiner, splitter;
     import std.format : format;
 
     if (!event.content.length)
