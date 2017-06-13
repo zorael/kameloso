@@ -69,74 +69,75 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
 
     return arr[0..index];
 }
+
 unittest
 {
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom(" :");
+        immutable lorem = line.nom(" :");
         assert(lorem == "Lorem ipsum", lorem);
         assert(line == "sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.decode)(" :");
+        immutable lorem = line.nom!(Yes.decode)(" :");
         assert(lorem == "Lorem ipsum", lorem);
         assert(line == "sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom(':');
+        immutable lorem = line.nom(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.decode)(':');
+        immutable lorem = line.nom!(Yes.decode)(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom(' ');
+        immutable lorem = line.nom(' ');
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.decode)(' ');
+        immutable lorem = line.nom!(Yes.decode)(' ');
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom("");
+        immutable lorem = line.nom("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.decode)("");
+        immutable lorem = line.nom!(Yes.decode)("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom("Lorem ipsum");
+        immutable lorem = line.nom("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
     }
 
     {
         string line = "Lorem ipsum :sit amet";
-        string lorem = line.nom!(Yes.decode)("Lorem ipsum");
+        immutable lorem = line.nom!(Yes.decode)("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
     }
@@ -476,7 +477,7 @@ if (is(Enum == enum))
         uint val = value;
         enum headLength = Enum.stringof.length + "cast()".length;
 
-        uint log10Val =
+        immutable log10Val =
             (val < 10) ? 0 :
             (val < 100) ? 1 :
             (val < 1_000) ? 2 :
