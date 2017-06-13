@@ -331,7 +331,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
     enum pattern = "%%-%ds  %%s\n".format(entryPadding);
     enum patternCommented = "#%s\n"; //%-%ds\n".format(entryPadding);
 
-    foreach (immutable i, ref member; thing.tupleof)
+    foreach (immutable i, member; thing.tupleof)
     {
         static if (!isType!member &&
                    isConfigurableVariable!(member) &&
