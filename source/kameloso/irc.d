@@ -79,6 +79,7 @@ void parseBasic(ref IRCEvent event)
         break;
     }
 }
+
 unittest
 {
     import std.conv : to;
@@ -155,6 +156,7 @@ void parsePrefix(ref IRCEvent event, ref string slice)
         sender = prefix;
     }
 }
+
 unittest
 {
     import std.conv : to;
@@ -257,6 +259,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
         }
     }
 }
+
 unittest
 {
     import std.conv : to;
@@ -939,6 +942,7 @@ IRCServer.Network networkOf(const string address)
         return unknown;
     }
 }
+
 unittest
 {
     import std.conv : to;
@@ -1527,7 +1531,7 @@ IRCEvent toIRCEvent(const string raw)
     event.time = Clock.currTime.toUnixTime;
 
     // We don't need to .idup here; it has already been done in the Generator
-    event.raw = raw; // .idup;
+    event.raw = raw;
 
     try
     {
@@ -1622,6 +1626,7 @@ IRCUser userFromEvent(const IRCEvent event)
 
     return user;
 }
+
 unittest
 {
     import std.conv : to;
@@ -1700,6 +1705,7 @@ bool isFromAuthService(const IRCEvent event)
 
     return false;
 }
+
 unittest
 {
     IRCEvent e1;
@@ -1763,10 +1769,6 @@ bool isValidChannel(const string line)
 
     if ((line.length <= 1) || (line.length > maxChannelLength)) return false;
 
-    /*return ((line[0] == '#') || (line[0] == '&')) &&
-           ((line[2..$].indexOf('#') == -1) &&
-            (line[2..$].indexOf('&') == -1));*/
-
     if ((line[0] == '#') || (line[0] == '&'))
     {
         if (line.length > 3)
@@ -1780,6 +1782,7 @@ bool isValidChannel(const string line)
 
     return false;
 }
+
 unittest
 {
     assert("#channelName".isValidChannel);
@@ -1813,6 +1816,7 @@ bool isValidNickname(const string nickname)
     if (characterMatches.pre.length || characterMatches.post.length) return false;
     else return true;
 }
+
 unittest
 {
     const validNicknames =
@@ -1882,6 +1886,7 @@ string stripModeSign(const string nickname)
             return nickname;
     }
 }
+
 unittest
 {
     assert("@nickname".stripModeSign == "nickname");
