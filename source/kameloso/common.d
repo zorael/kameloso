@@ -1,7 +1,9 @@
 module kameloso.common;
 
 import kameloso.constants;
-import std.typecons : Flag, Yes, No;
+import std.meta : allSatisfy;
+import std.traits : isType;
+import std.typecons : Flag, No, Yes;
 
 /++
  +  Aggregate of thread message types.
@@ -158,7 +160,7 @@ void printObjectsColoured(Things...)(Things things)
     import kameloso.config : longestMemberName;
 
     import std.format : format;
-    import std.traits : isSomeFunction, hasUDA;
+    import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
@@ -219,10 +221,10 @@ void printObjectsMonochrome(Things...)(Things things)
 {
     import kameloso.config : longestMemberName;
 
-    import std.format : format;
-    import std.traits : isSomeFunction, hasUDA;
+    import std.format   : format;
+    import std.stdio    : realWritefln = writefln, realWriteln = writeln;
+    import std.traits   : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
-    import std.stdio : realWritefln = writefln, realWriteln = writeln;
 
     enum entryPadding = longestMemberName!Things.length;
     enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
@@ -520,7 +522,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
     string scopeString(const string state)
     {
-        import std.string : toLower, format;
+        import std.string : format, toLower;
 
         if (scopeName.length)
         {
@@ -553,7 +555,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
     string entryString(const string state)
     {
-        import std.string : toLower, format;
+        import std.string : format, toLower;
 
         if (scopeName.length)
         {
