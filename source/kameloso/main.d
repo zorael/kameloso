@@ -364,9 +364,9 @@ int main(string[] args)
 {
     writefln(Foreground.white,
              "kameloso IRC bot v%s, built %s\n$ git clone %s\n",
-             cast(string)kamelosoInfo.version_,
-             cast(string)kamelosoInfo.built,
-             cast(string)kamelosoInfo.source);
+             cast(string)KamelosoInfo.version_,
+             cast(string)KamelosoInfo.built,
+             cast(string)KamelosoInfo.source);
 
     if (handleArguments(args) == Quit.yes) return 0;
 

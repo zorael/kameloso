@@ -1,7 +1,7 @@
 module kameloso.constants;
 
 /// Meta information about the program.
-enum kamelosoInfo
+enum KamelosoInfo
 {
     version_ = "0.4.7",
     built = __TIMESTAMP__,

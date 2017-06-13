@@ -39,15 +39,15 @@ void onCTCPs(const IRCEvent event)
     switch (event.type)
     {
     case CTCP_VERSION:
-        line = "VERSION kameloso:%s:linux".format(kamelosoInfo.version_);
+        line = "VERSION kameloso:%s:linux".format(KamelosoInfo.version_);
         break;
 
     case CTCP_FINGER:
-        line = "FINGER kameloso " ~ kamelosoInfo.version_;
+        line = "FINGER kameloso " ~ KamelosoInfo.version_;
         break;
 
     case CTCP_SOURCE:
-        line = "SOURCE " ~ kamelosoInfo.source;
+        line = "SOURCE " ~ KamelosoInfo.source;
         break;
 
     case CTCP_PING:
