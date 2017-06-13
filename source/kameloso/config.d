@@ -70,7 +70,7 @@ void walkConfigLines(Range_, Things...)(Range_ range, ref Things things)
 
                 foreach (immutable n, ref member; things[i].tupleof)
                 {
-                    static if (is(typeof(member)))
+                    static if (!isType!member)
                     {
                         static if (!hasUDA!(Things[i].tupleof[n], Unconfigurable))
                         {
@@ -184,7 +184,7 @@ void setMember(Thing)(ref Thing thing, const string memberToSet, const string va
 
     foreach (immutable i, ref member; thing.tupleof)
     {
-        static if (is(typeof(member)) &&
+        static if (!isType!member &&
                    isConfigurableVariable!member &&
                    !hasUDA!(member, Unconfigurable))
         {
@@ -331,7 +331,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 
     foreach (immutable i, ref member; thing.tupleof)
     {
-        static if (is(typeof(member)) &&
+        static if (!isType!member &&
                    isConfigurableVariable!(member) &&
                    !hasUDA!(Thing.tupleof[i], Unconfigurable))
         {
