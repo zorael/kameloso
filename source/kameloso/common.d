@@ -716,7 +716,7 @@ if (is(typeof(settings) : Settings))
     else
     {
         pragma(inline)
-        void writeln(Code, Args...)(Code code, Args args)
+        void writeln(Code, Args...)(Code ignore, Args args)
         if (isAColourCode!Code)
         {
             realWriteln(args);
@@ -730,7 +730,7 @@ if (is(typeof(settings) : Settings))
         }
 
         pragma(inline)
-        void writefln(Code, Args...)(Code code, string pattern, Args args)
+        void writefln(Code, Args...)(Code ignore, string pattern, Args args)
         if (isAColourCode!Code)
         {
             realWritefln(pattern, args);
