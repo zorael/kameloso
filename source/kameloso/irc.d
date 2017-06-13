@@ -1498,12 +1498,43 @@ struct IRCEvent
         900 : Type.AUTHACCEPTANCE,
     ];
 
+    /// The event type, signifying what *kind* of event this is.
     Type type;
+
+    /// The raw IRC string, untouched.
     string raw;
-    string sender, ident, address;
-    string typestring, channel, target, content, aux;
+
+    /// The name of whoever (or whatever) sent this event.
+    string sender;
+
+    /// The IDENT identification of the sender.
+    string ident;
+
+    /// The address of the sender.
+    string address;
+
+    /// The type in string form; a by-product of parsing.
+    string typestring;
+
+    /// The channel the event transpired in, or is otherwise related to.
+    string channel;
+
+    /// The target of the event. May be a nickname or a channel.
+    string target;
+
+    /// The main body of the event.
+    string content;
+
+    /// The auxiliary storage, containing type-specific extra bits of information.
+    string aux;
+
+    /// With a numeric event, the number of the event type.
     uint num;
+
+    /// A flag that we set when we're sure the event originated from the server or its services.
     bool special;
+
+    /// A timestamp of when the event occured.
     long time;
 }
 
