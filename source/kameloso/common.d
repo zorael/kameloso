@@ -88,7 +88,7 @@ struct Settings
  +/
 template isConfigurableVariable(alias var)
 {
-    static if (is(typeof(var)))
+    static if (!isType!var)
     {
         import std.traits : isSomeFunction;
 
@@ -175,7 +175,7 @@ void printObjectsColoured(Things...)(Things things)
 
         foreach (immutable i, member; thing.tupleof)
         {
-            static if (is(typeof(member)) &&
+            static if (!isType!member &&
                        isConfigurableVariable!member &&
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
@@ -238,7 +238,7 @@ void printObjectsMonochrome(Things...)(Things things)
 
         foreach (immutable i, member; thing.tupleof)
         {
-            static if (is(typeof(member)) &&
+            static if (!isType!member &&
                        isConfigurableVariable!member &&
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
@@ -284,7 +284,7 @@ template longestMemberName(Things...)
         {
             foreach (name; __traits(allMembers, T))
             {
-                static if (is(typeof(__traits(getMember, T, name))) &&
+                static if (!isType!(__traits(getMember, T, name)) &&
                            isConfigurableVariable!(__traits(getMember, T, name)) &&
                            !hasUDA!(__traits(getMember, T, name), Hidden))
                 {
@@ -393,7 +393,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
 {
     foreach (immutable i, ref member; intoThis.tupleof)
     {
-        static if (is(typeof(member)))
+        static if (!isType!member)
         {
             alias MemberType = typeof(member);
 
