@@ -319,29 +319,24 @@ unittest
 }
 
 
-// isAssignableType
+// isOfAssignableType
 /++
  +  Eponymous template bool of whether a variable is "assignable"; if it is
  +  an lvalue that isn't protected from being written to.
  +/
-template isAssignableType(T)
-if (!is(typeof(T)))
+template isOfAssignableType(T)
+if (isType!T)
 {
-    import std.traits;
+    import std.traits : isSomeFunction;
 
-    enum bool isAssignableType = isType!T &&
+    enum isOfAssignableType = isType!T &&
         !isSomeFunction!T &&
         !is(T == const) &&
         !is(T == immutable);
 }
 
 /// Ditto
-template isAssignableType(alias symbol)
-{
-    import std.traits;
-
-    enum bool isAssignableType = isType!symbol && is(symbol == enum);
-}
+enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
 
 unittest
 {
@@ -360,15 +355,15 @@ unittest
     enum Baz { abc, def, ghi }
     Baz baz;
 
-    assert(isAssignableType!int);
-    assert(!isAssignableType!(const int));
-    assert(!isAssignableType!(immutable int));
-    assert(isAssignableType!(string[]));
-    assert(isAssignableType!Foo);
-    assert(isAssignableType!Bar);
-    assert(!isAssignableType!boo);  // room for improvement: @property
-    assert(isAssignableType!Baz);
-    assert(!isAssignableType!baz);
+    assert(isOfAssignableType!int);
+    assert(!isOfAssignableType!(const int));
+    assert(!isOfAssignableType!(immutable int));
+    assert(isOfAssignableType!(string[]));
+    assert(isOfAssignableType!Foo);
+    assert(isOfAssignableType!Bar);
+    assert(!isOfAssignableType!boo);  // room for improvement: @property
+    assert(isOfAssignableType!Baz);
+    assert(!isOfAssignableType!baz);
 }
 
 
@@ -402,7 +397,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                 // Recurse
                 meldThis.tupleof[i].meldInto(member);
             }
-            else static if (isAssignableType!MemberType)
+            else static if (isOfAssignableType!MemberType)
             {
                 static if (overwrite)
                 {
