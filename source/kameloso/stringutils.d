@@ -6,6 +6,7 @@ import std.typecons : Flag;
 
 public import std.typecons : No, Yes;
 
+@safe:
 
 // nom
 /++
@@ -413,6 +414,8 @@ if (is(Enum == enum))
 
     assert(0, "No such member " ~ enumstring);
 }
+
+@system
 unittest
 {
     import kameloso.irc   : IRCEvent;
@@ -427,7 +430,7 @@ unittest
         assert("PRIVMSG".toEnum!Type == PRIVMSG);
         assert("RPL_ENDOFMOTD".toEnum!Type == RPL_ENDOFMOTD);
         assert("UNSET".toEnum!Type == UNSET);
-        assertThrown!AssertError("DOESNTEXIST".toEnum!Type);
+        assertThrown!AssertError("DOESNTEXIST".toEnum!Type);  // needs @system
     }
 }
 
