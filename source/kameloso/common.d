@@ -368,7 +368,7 @@ unittest
 
 
 // meldInto
-/+
+/++
  +  Takes two structs and melds them together, making the members a union of
  +  the two.
  +
