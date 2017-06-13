@@ -24,12 +24,12 @@ void walkConfigLines(Range_, Things...)(Range_ range, ref Things things)
 {
     string currentSection;
 
-    top:
     foreach (rawline; range)
     {
         import std.string : strip;
 
         string line = rawline.strip();
+
         if (!line.length) continue;
 
         switch (line[0])
@@ -232,8 +232,9 @@ void setMember(Thing)(ref Thing thing, const string memberToSet,
                                 try member ~= value.to!MemberType;
                                 catch (Exception e)
                                 {
-                                    writefln("Caught Exception trying to convert '%s' to %s: %s",
-                                            value, MemberType.stringof, e.msg);
+                                    writefln(Foreground.red,
+                                        "Caught Exception trying to convert '%s' to %s: %s",
+                                        value, MemberType.stringof, e.msg);
                                 }
                             }
                         }
