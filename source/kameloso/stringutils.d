@@ -27,6 +27,7 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     static if (decode)
     {
         import std.string : indexOf;
+
         immutable index = arr.indexOf(separator);
     }
     else
@@ -50,8 +51,8 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
         import kameloso.common : writefln;
         import kameloso.constants : Foreground;
 
-        writefln(Foreground.lightred, "--------- TRIED TO NOM TOO MUCH:'%s' with '%s'",
-            arr, separator);
+        writefln(Foreground.lightred, "-- TRIED TO NOM TOO MUCH:'%s' with '%s'",
+                 arr, separator);
         return string.init;
     }
 
@@ -160,6 +161,7 @@ string plurality(const int num, const string singular, const string plural) pure
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
+
 unittest
 {
     assert(10.plurality("one","many") == "many");
@@ -195,6 +197,7 @@ string unquoted(const string line) pure
         return line;
     }
 }
+
 unittest
 {
     assert(`"Lorem ipsum sit amet"`.unquoted == "Lorem ipsum sit amet");
@@ -227,6 +230,7 @@ if (isSomeString!T)
 
     return (haystack[0..needle.length] == needle);
 }
+
 unittest
 {
     assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
@@ -244,6 +248,7 @@ if (isSomeString!T)
 
     return (line[0] == charcode);
 }
+
 unittest
 {
     assert(":Lorem ipsum".beginsWith(':'));
@@ -272,6 +277,7 @@ T[] arrayify(string separator = ",", T)(const T line)
 
     return line.splitter(separator).map!(a => a.strip).array;
 }
+
 unittest
 {
     assert("foo,bar,baz".arrayify     == [ "foo", "bar", "baz" ]);
@@ -307,6 +313,7 @@ string stripPrefix(const string line, const string prefix)
 
     return slice;
 }
+
 unittest
 {
     assert("say: lorem ipsum".stripPrefix("say") == "lorem ipsum");
@@ -336,7 +343,8 @@ string timeSince(const Duration duration)
     sink.reserve(50);
 
     int days, hours, minutes, seconds;
-    duration.split!("days","hours","minutes","seconds")(days, hours, minutes, seconds);
+    duration.split!("days","hours","minutes","seconds")
+                   (days, hours, minutes, seconds);
 
     if (days)
     {
@@ -363,12 +371,13 @@ string timeSince(const Duration duration)
 
     return sink.data;
 }
+
 unittest
 {
-    immutable dur1 = 789383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
+    immutable dur1 = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
     assert(dur1.timeSince == "9 days, 3 hours and 16 minutes");
 
-    immutable dur2 = 3620.seconds;  // 1 hour and 20 secs
+    immutable dur2 = 3_620.seconds;  // 1 hour and 20 secs
     assert(dur2.timeSince == "1 hour");
 
     immutable dur3 = 30.seconds;  // 30 secs
@@ -489,6 +498,7 @@ if (is(Enum == enum))
         return cast(string) result;
     }
 }
+
 unittest
 {
     import kameloso.irc : IRCEvent;
