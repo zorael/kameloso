@@ -176,7 +176,8 @@ void writeConfig(T...)(const string configFile, T things)
  +      memberstring = the string name of one of thing's members.
  +      value = the value to assign, in string form.
  +/
-void setMember(Thing)(ref Thing thing, const string memberToSet, const string value)
+void setMember(Thing)(ref Thing thing, const string memberToSet,
+                      const string value) @safe
 {
     top:
     switch (memberToSet)
@@ -282,7 +283,7 @@ void setMember(Thing)(ref Thing thing, const string memberToSet, const string va
  +  Returns:
  +      Config text for all the serialised Things.
  +/
-string configText(Things...)(const Things things)
+string configText(Things...)(const Things things) @safe
 if (Things.length > 1)
 {
     import std.array : Appender;
@@ -314,7 +315,7 @@ if (Things.length > 1)
  +  Returns:
  +      Config text for the serialised Thing.
  +/
-string configText(size_t entryPadding = 20, Thing)(const Thing thing)
+string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
 {
     import std.array : Appender;
     import std.format : format, formattedWrite;
