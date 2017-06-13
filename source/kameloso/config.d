@@ -20,7 +20,7 @@ import std.traits : hasUDA, isArray, isType;
  +      ref things = a compile-time variadic list of structs whose members
  +                   should be configured.
  +/
-void walkConfigLines(Range, Things...)(Range range, ref Things things)
+void walkConfigLines(Range_, Things...)(Range_ range, ref Things things)
 {
     string currentSection;
 
