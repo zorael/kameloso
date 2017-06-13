@@ -6,6 +6,7 @@ import kameloso.constants;
 import std.format : format, formattedRead;
 import std.string : indexOf;
 
+@safe:
 
 private:
 
@@ -40,7 +41,7 @@ void parseBasic(ref IRCEvent event)
 
     string raw = event.raw;
     string slice;
-    raw.formattedRead("%s :%s", &event.typestring, &slice);
+    raw.formattedRead("%s :%s", event.typestring, slice);
 
     switch (event.typestring)
     {
@@ -828,7 +829,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         {
             // :genesis.ks.us.irchighway.net CAP 867AAF66L LS :away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names
             string id;  // what do we do with you
-            slice.formattedRead("%s %s :%s", &id, &event.aux, &event.content);
+            slice.formattedRead("%s %s :%s", id, event.aux, event.content);
         }
         break;
 
@@ -1000,7 +1001,7 @@ void registerParserHooks(const IRCParserHooks hooks)
 struct IRCParserHooks
 {
     /// Function to call when bot has changed and the change needs to propagate.
-    static void function(const IRCBot) onNewBot;
+    static void function(const IRCBot) @trusted onNewBot;
 
     //static void function(const IRCServer) onNewServer;
 
@@ -1040,7 +1041,7 @@ struct IRCBot
         bool finishedAuth;
     }
 
-    void toString(scope void delegate(const(char)[]) sink) const
+    void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
              .format(nickname, authLogin, ident, homes, channels, friends, server));
@@ -1077,7 +1078,7 @@ struct IRCServer
         string resolvedAddress;
     }
 
-    void toString(scope void delegate(const(char)[]) sink) const
+    void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
     }
@@ -1095,7 +1096,7 @@ struct IRCUser
     string nickname, ident, address, login;
     bool special;
 
-    void toString(scope void delegate(const(char)[]) sink) const
+    void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
 
