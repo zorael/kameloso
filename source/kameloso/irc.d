@@ -32,16 +32,21 @@ IRCParserHooks hooks;
  +
  +  The IRCEvent is finished at the end of this function.
  +
+ +  BUG: has to be @trusted so LDC can compile formattedRead.
+ +  We're taking the address of a local (slice).
+ +
  +  Params:
  +      ref event = the IRCEvent to fill out the members of.
  +/
-void parseBasic(ref IRCEvent event)
+void parseBasic(ref IRCEvent event) @trusted
 {
     mixin(scopeguard(failure));
 
     string raw = event.raw;
     string slice;
-    raw.formattedRead("%s :%s", event.typestring, slice);
+
+    raw.formattedRead("%s :%s", &event.typestring, &slice);
+    //raw.formattedRead("%s :%s", event.typestring, slice); // restore me later
 
     switch (event.typestring)
     {
@@ -313,11 +318,14 @@ unittest
  +
  +  The IRCEvent is finished at the end of this function.
  +
+ +  BUG: has to be @trusted so LDC can compile formattedRead.
+ +  We're taking the address of a local (id).
+ +
  +  Params:
  +      ref event = A reference to the IRCEvent to finish working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseSpecialcases(ref IRCEvent event, ref string slice)
+void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
 {
     import kameloso.stringutils;
 
@@ -831,8 +839,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         else
         {
             // :genesis.ks.us.irchighway.net CAP 867AAF66L LS :away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names
-            string id;  // what do we do with you
-            slice.formattedRead("%s %s :%s", id, event.aux, event.content);
+            string id;  // Passing &id is taking the address of a local...
+            slice.formattedRead("%s %s :%s", &id, &event.aux, &event.content);
+            // slice.formattedRead("%s %s :%s", id, event.aux, event.content);
         }
         break;
 
