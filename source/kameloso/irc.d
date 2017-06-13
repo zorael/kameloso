@@ -2060,8 +2060,9 @@ unittest
     [QUIT] wonderworld: "Remote host closed the connection"
     :wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection
      +/
-    immutable e10 = ":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection"
-                    .toIRCEvent();
+    immutable e10 = (":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de " ~
+                     "QUIT :Remote host closed the connection")
+                     .toIRCEvent();
     with (e10)
     {
         assert((sender == "wonderworld"), sender);
