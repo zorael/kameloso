@@ -5,6 +5,8 @@ import std.meta : allSatisfy;
 import std.traits : isType;
 import std.typecons : Flag, No, Yes;
 
+@safe:
+
 /++
  +  Aggregate of thread message types.
  +
@@ -672,7 +674,7 @@ if (is(typeof(settings) : Settings))
         pragma(msg, "Version: Colours");
 
         pragma(inline)
-        void writeln(Code, Args...)(Code code, Args args)
+        void writeln(Code, Args...)(Code code, Args args) @trusted
         if (isAColourCode!Code)
         {
             if (settings.monochrome) realWriteln(args);
