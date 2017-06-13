@@ -389,6 +389,7 @@ unittest
 }
 
 
+// toEnum
 /++
  +  Takes the member of an enum by string and returns that member.
  +
@@ -402,7 +403,7 @@ unittest
  +      The enum member whose name matches the enumstring string.
  +/
 pragma(inline)
-Enum toEnum(Enum)(const string enumstring)
+Enum toEnum(Enum)(const string enumstring) pure
 if (is(Enum == enum))
 {
     enum enumSwitch = ()
@@ -412,10 +413,10 @@ if (is(Enum == enum))
         foreach (memberstring; __traits(allMembers, Enum))
         {
             enumSwitch ~= `case "` ~ memberstring ~ `":`;
-           enumSwitch ~= "return " ~ memberstring ~ ";\n";
+            enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-        enumSwitch ~= `default: assert("No such member");}`;
+        enumSwitch ~= `default: assert(0, "No such member " ~ enumstring);}`;
 
         return enumSwitch;
     }();
@@ -445,6 +446,7 @@ unittest
 }
 
 
+// enumToString
 /++
  +  The inverse of toEnum, this function takes an enum member value and returns
  +  its string identifier.
@@ -461,7 +463,7 @@ unittest
  +      The string name of the passed enum value.
  +/
 pragma(inline)
-string enumToString(Enum)(Enum value)
+string enumToString(Enum)(Enum value) pure
 if (is(Enum == enum))
 {
     switch (value)
