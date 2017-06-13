@@ -3,8 +3,7 @@ module kameloso.config;
 import kameloso.common;
 import kameloso.constants;
 
-import std.range  : isInputRange;
-import std.traits : isArray, isSomeFunction, hasUDA;
+import std.traits : hasUDA, isArray, isType;
 
 
 // walkConfigLines
@@ -106,10 +105,10 @@ void walkConfigLines(Range, Things...)(Range range, ref Things things)
  +/
 void readConfig(T...)(const string configFile, ref T things)
 {
-    import std.file   : write, exists, isFile, readText;
-    import std.string : chomp;
-    import std.ascii  : newline;
     import std.algorithm.iteration : splitter;
+    import std.ascii  : newline;
+    import std.file   : exists, isFile, readText, write;
+    import std.string : chomp;
 
     if (!configFile.exists)
     {
@@ -287,7 +286,6 @@ string configText(Things...)(const Things things)
 if (Things.length > 1)
 {
     import std.array : Appender;
-    import std.traits : hasUDA;
 
     Appender!string all;
 
@@ -318,8 +316,8 @@ if (Things.length > 1)
  +/
 string configText(size_t entryPadding = 20, Thing)(const Thing thing)
 {
-    import std.format : format, formattedWrite;
     import std.array : Appender;
+    import std.format : format, formattedWrite;
 
     Appender!string sink;
 
