@@ -82,7 +82,7 @@ struct Settings
 // isConfigurableVariable
 /++
  +  Eponymous template bool of whether a variable can be configured via the
- +  functions in kameloso.config.
+ +  functions in kameloso.config or not.
  +
  +  Currently it does not support static arrays.
  +/
@@ -105,6 +105,7 @@ template isConfigurableVariable(alias var)
         enum isConfigurableVariable = false;
     }
 }
+
 unittest
 {
     int i;
@@ -299,6 +300,7 @@ template longestMemberName(Things...)
         return longest;
     }();
 }
+
 unittest
 {
     struct Foo
@@ -442,6 +444,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
         }
     }
 }
+
 unittest
 {
     import std.conv : to;
@@ -584,10 +587,8 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 }
 
 /// Bool of whether a type is a colour code enum
-enum bool isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
-                             is(T : Format) || is(T : Reset);
-
-import std.meta : allSatisfy;
+enum isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
+                        is(T : Format) || is(T : Reset);
 
 
 // colourise
