@@ -307,7 +307,7 @@ void initPlugins()
     // Register function to run when the IRC parser wants to propagate
     // a change to the IRCBot
 
-    static void onNewBotFunction(const IRCBot bot)
+    static void onNewBotFunction(const IRCBot bot) @trusted
     {
         import std.concurrency : send, thisTid;
 
