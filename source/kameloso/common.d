@@ -5,6 +5,13 @@ import std.meta : allSatisfy;
 import std.traits : isType;
 import std.typecons : Flag, No, Yes;
 
+Logger logger;
+
+shared static this()
+{
+    logger = new KamelosoLogger(LogLevel.all);
+}
+
 @safe:
 
 /++
@@ -829,7 +836,9 @@ final class KamelosoLogger : Logger
             sink.put(colourise(Foreground.default_, Reset.blink));
         }
 
-        writeln(sink.data);
+        import std.stdio : realWriteln = writeln;
+
+        realWriteln(sink.data);
         sink.clear();
     }
 }
