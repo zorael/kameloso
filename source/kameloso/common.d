@@ -753,6 +753,7 @@ if (is(typeof(settings) : Settings))
 // FIXME: scope creep
 mixin ColouredWriteln!(kameloso.main.settings);
 
+
 import std.experimental.logger;
 
 final class KamelosoLogger : Logger
@@ -776,17 +777,6 @@ final class KamelosoLogger : Logger
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger)
     {
-        /*
-        import std.string : lastIndexOf;
-        ptrdiff_t fnIdx = file.lastIndexOf('/') + 1;
-        ptrdiff_t funIdx = funcName.lastIndexOf('.') + 1;
-
-        auto lt = this.file_.lockingTextWriter();
-        systimeToISOString(lt, timestamp);
-        formattedWrite(lt, ":%s:%s:%u ", file[fnIdx .. $],
-            funcName[funIdx .. $], line);
-        */
-
         version(Colours)
         {
             sink.put(colourise(Foreground.white));
@@ -827,7 +817,6 @@ final class KamelosoLogger : Logger
 
     override protected void logMsgPart(const(char)[] msg)
     {
-        //formattedWrite(this.file_.lockingTextWriter(), "%s", msg);
         if (!msg.length) return;
 
         sink.put(msg);
@@ -842,8 +831,6 @@ final class KamelosoLogger : Logger
 
         writeln(sink.data);
         sink.clear();
-        //this.file_.lockingTextWriter().put("\n");
-        //this.file_.flush();
     }
 }
 
