@@ -752,3 +752,113 @@ if (is(typeof(settings) : Settings))
 
 // FIXME: scope creep
 mixin ColouredWriteln!(kameloso.main.settings);
+
+import std.experimental.logger;
+
+final class KamelosoLogger : Logger
+{
+    import std.datetime;
+    import std.format;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    this(LogLevel lv) @safe
+    {
+        super(lv);
+        sink.reserve(512);
+    }
+
+    /// This override is needed or it won't compile
+    override void writeLogMsg(ref LogEntry payload) {}
+
+    override protected void beginLogMsg(string file, int line, string funcName,
+        string prettyFuncName, string moduleName, LogLevel logLevel,
+        Tid threadId, SysTime timestamp, Logger logger)
+    {
+        /*
+        import std.string : lastIndexOf;
+        ptrdiff_t fnIdx = file.lastIndexOf('/') + 1;
+        ptrdiff_t funIdx = funcName.lastIndexOf('.') + 1;
+
+        auto lt = this.file_.lockingTextWriter();
+        systimeToISOString(lt, timestamp);
+        formattedWrite(lt, ":%s:%s:%u ", file[fnIdx .. $],
+            funcName[funIdx .. $], line);
+        */
+
+        version(Colours)
+        {
+            sink.put(colourise(Foreground.white));
+        }
+
+        sink.formattedWrite("[%s] ", (cast(DateTime)timestamp).timeOfDay.toString());
+
+        version(Colours)
+        with (LogLevel)
+        switch (logLevel)
+        {
+        case trace:
+            sink.put(colourise(Foreground.default_));
+            break;
+
+        case info:
+            sink.put(colourise(Foreground.lightgreen));
+            break;
+
+        case warning:
+            sink.put(colourise(Foreground.lightred));
+            break;
+
+        case error:
+            sink.put(colourise(Foreground.red, Format.blink));
+            break;
+
+        case fatal:
+            sink.put(colourise(Foreground.red));
+            sink.put(colourise(Format.blink));
+            break;
+
+        default:
+            sink.put(colourise(Foreground.default_));
+            break;
+        }
+    }
+
+    override protected void logMsgPart(const(char)[] msg)
+    {
+        //formattedWrite(this.file_.lockingTextWriter(), "%s", msg);
+        if (!msg.length) return;
+
+        sink.put(msg);
+    }
+
+    override protected void finishLogMsg()
+    {
+        version(Colours)
+        {
+            sink.put(colourise(Foreground.default_, Reset.blink));
+        }
+
+        writeln(sink.data);
+        sink.clear();
+        //this.file_.lockingTextWriter().put("\n");
+        //this.file_.flush();
+    }
+}
+
+unittest
+{
+    Logger log = new KamelosoLogger(LogLevel.all);
+
+    //log.log("herp");
+    //log.all("THIS IS ALL");
+    log.info("THIS IS INFO");
+    log.warning("THIS IS WARNING");
+    log.error("THIS IS ERROR");
+    //log.fatal("THIS IS FATAL");
+    log.trace("THIS IS TRACE");
+
+    /*log.error("error");
+    log.trace("trace");*/
+}
