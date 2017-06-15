@@ -613,7 +613,7 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
     Appender!string sink;
     sink.reserve(16);
 
-    sink.colourise(codes);
+    sink.colouriseImpl(codes);
     return sink.data;
 }
 
@@ -631,7 +631,7 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
  +  Returns:
  +      A Bash code sequence of the passed codes.
  +/
-string colourise(Sink, Codes...)(Sink sink, Codes codes)
+string colouriseImpl(Sink, Codes...)(Sink sink, Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(BashColourToken);
