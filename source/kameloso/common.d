@@ -801,6 +801,7 @@ final class KamelosoLogger : Logger
 
         case info:
             sink.put(colourise(Foreground.lightgreen));
+            //sink.put(colourise(Foreground.white)); // it is already white
             break;
 
         case warning:
@@ -808,7 +809,7 @@ final class KamelosoLogger : Logger
             break;
 
         case error:
-            sink.put(colourise(Foreground.red, Format.blink));
+            sink.put(colourise(Foreground.red));
             break;
 
         case fatal:
