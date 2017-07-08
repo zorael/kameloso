@@ -164,12 +164,6 @@ TitleLookup lookupTitle(const string url)
     Appender!string pageContent;
     pageContent.reserve(BufferSize.titleLookup);
 
-    if (!url.beginsWith("http"))
-    {
-        writeln(Foreground.lightred, "NEEDS HTTP. DOES THIS EVER HAPPEN?");
-        url = "http://" ~ url;
-    }
-
     logger.log("URL: ", url);
 
     Request rq;
