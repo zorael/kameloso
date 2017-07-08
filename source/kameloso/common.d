@@ -845,15 +845,15 @@ final class KamelosoLogger : Logger
 
 unittest
 {
-    Logger log = new KamelosoLogger(LogLevel.all);
+    Logger log_ = new KamelosoLogger(LogLevel.all);
 
-    //log.log("herp");
+    log_.log("herp");
     //log.all("THIS IS ALL");
-    log.info("THIS IS INFO");
-    log.warning("THIS IS WARNING");
-    log.error("THIS IS ERROR");
+    log_.info("THIS IS INFO");
+    log_.warning("THIS IS WARNING");
+    log_.error("THIS IS ERROR");
     //log.fatal("THIS IS FATAL");
-    log.trace("THIS IS TRACE");
+    log_.trace("THIS IS TRACE");
 
     /*log.error("error");
     log.trace("trace");*/
