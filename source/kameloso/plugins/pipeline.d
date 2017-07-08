@@ -8,6 +8,7 @@ import kameloso.irc;
 import kameloso.plugins.common;
 
 import std.concurrency;
+import std.experimental.logger;
 import std.stdio : File;
 
 private:
@@ -20,6 +21,9 @@ Tid fifoThread;
 
 /// Named pipe (FIFO) to send messages to the server through
 File fifo;
+
+/// Thread-local logger
+Logger localLogger;
 
 
 // pipereader
@@ -39,18 +43,19 @@ void pipereader(shared IRCPluginState newState)
     import std.file  : remove;
 
     state = cast(IRCPluginState)newState;
+    localLogger = new KamelosoLogger(LogLevel.all);
 
     createFIFO();
 
     if (!fifo.isOpen)
     {
-        logger.warning("Could not create FIFO. Pipereader will not function.");
+        localLogger.warning("Could not create FIFO. Pipereader will not function.");
         return;
     }
 
     scope(exit)
     {
-        logger.info("Deleting FIFO from disk");
+        localLogger.info("Deleting FIFO from disk");
         remove(fifo.name);
     }
 
@@ -80,7 +85,7 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                logger.error("pipeline received Variant: ", v);
+                localLogger.error("pipeline received Variant: ", v);
             }
         );
 
@@ -89,7 +94,7 @@ void pipereader(shared IRCPluginState newState)
             try fifo.reopen(fifo.name);
             catch (Exception e)
             {
-                logger.error(e.msg);
+                localLogger.error(e.msg);
             }
         }
     }
@@ -109,7 +114,7 @@ void createFIFO()
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
 
-    logger.info("Creating FIFO: ", filename);
+    localLogger.info("Creating FIFO: ", filename);
 
     if (!filename.exists)
     {
@@ -118,7 +123,7 @@ void createFIFO()
     }
     else if (filename.isDir)
     {
-        logger.error("wanted to create FIFO ", filename,
+        localLogger.error("wanted to create FIFO ", filename,
             " but a directory exists with the same name");
         return;
     }
