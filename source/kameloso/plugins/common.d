@@ -531,7 +531,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     }
                     catch (Exception e)
                     {
-                        writeln(Foreground.lightred, e.msg);
+                        logger.error(e.msg);
                     }
 
                     static if (hasUDA!(fun, Chainable) &&
@@ -630,11 +630,11 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     {
         if (state.bot.nickname == event.content)
         {
-            writeln(Foreground.lightred, "saw SELFNICK but already had that nick...");
+            logger.warning("saw SELFNICK but already had that nick...");
         }
         else
         {
-            writeln(Foreground.lightcyan, module_, ": new nickname");
+            logger.info(module_, ": new nickname");
             state.bot.nickname = event.content;
         }
     }
