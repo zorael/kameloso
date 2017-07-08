@@ -782,7 +782,7 @@ final class KamelosoLogger : Logger
 
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger)
+        Tid threadId, SysTime timestamp, Logger logger) @safe
     {
         version(Colours)
         {
@@ -822,14 +822,14 @@ final class KamelosoLogger : Logger
         }
     }
 
-    override protected void logMsgPart(const(char)[] msg)
+    override protected void logMsgPart(const(char)[] msg) @safe
     {
         if (!msg.length) return;
 
         sink.put(msg);
     }
 
-    override protected void finishLogMsg()
+    override protected void finishLogMsg() @safe
     {
         version(Colours)
         {
