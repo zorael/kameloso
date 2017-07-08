@@ -101,7 +101,7 @@ void onCommandAddHome(const IRCEvent event)
 
     if (!channel.isValidChannel)
     {
-        writeln(Foreground.lightred, "invalid channel: ", channel);
+        logger.warning("Invalid channel");
         return;
     }
 
@@ -110,7 +110,7 @@ void onCommandAddHome(const IRCEvent event)
         state.mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
     }
 
-    writeln(Foreground.lightcyan, "Adding channel: ", channel);
+    logger.info("Adding channel: ", channel);
     state.bot.homes ~= channel;
     updateBot();
 }
@@ -137,7 +137,7 @@ void onCommandDelHome(const IRCEvent event)
 
     if (!channel.isValidChannel)
     {
-        writeln(Foreground.lightred, "invalid channel: ", channel);
+        logger.warning("Invalid channel");
         return;
     }
 
@@ -145,7 +145,7 @@ void onCommandDelHome(const IRCEvent event)
 
     if (chanIndex == -1)
     {
-        writefln(Foreground.lightred, "Channel %s was not in bot.homes", channel);
+        logger.warningf("Channel %s was not in bot.homes", channel);
         return;
     }
 
@@ -177,17 +177,17 @@ void onCommandAddFriend(const IRCEvent event)
 
     if (!nickname.length)
     {
-        writeln(Foreground.lightred, "No nickname supplied...");
+        logger.warning("No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln(Foreground.lightred, "Nickname must not contain spaces");
+        logger.warning("Nickname must not contain spaces");
         return;
     }
 
     state.bot.friends ~= nickname;
-    writefln(Foreground.lightcyan, "%s added to friends", nickname);
+    logger.infof("%s added to friends", nickname);
     updateBot();
 }
 
@@ -213,13 +213,12 @@ void onCommandDelFriend(const IRCEvent event)
 
     if (!nickname.length)
     {
-        writeln(Foreground.lightred, "No nickname supplied...");
+        logger.warning("No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(" ") != -1)
     {
-        writeln(Foreground.lightred,
-                "Only one nick at a time. Nickname must not contain spaces");
+        logger.warning("Only one nick at a time. Nickname must not contain spaces");
         return;
     }
 
@@ -227,12 +226,12 @@ void onCommandDelFriend(const IRCEvent event)
 
     if (friendIndex == -1)
     {
-        writefln(Foreground.lightred, "No such friend");
+        logger.warning("No such friend");
         return;
     }
 
     state.bot.friends = state.bot.friends.remove(friendIndex);
-    writefln(Foreground.lightcyan, "%s removed from friends", nickname);
+    logger.infof("%s removed from friends", nickname);
     updateBot();
 }
 
@@ -271,7 +270,7 @@ void onCommandResetTerminal()
 void onCommandPrintAll()
 {
     printAll = !printAll;
-    writeln(Foreground.green, "Printing all: ", printAll);
+    logger.info("Printing all: ", printAll);
 }
 
 
@@ -289,7 +288,7 @@ void onCommandPrintAll()
 void onCommandPrintBytes()
 {
     printBytes = !printBytes;
-    writeln(Foreground.green, "Printing bytes: ", printBytes);
+    logger.info("Printing bytes: ", printBytes);
 }
 
 
@@ -345,7 +344,7 @@ void onCommandJoinPart(const string prefix, const IRCEvent event)
 
     if (!event.content.length)
     {
-        writeln(Foreground.lightred, "No channels supplied...");
+        logger.warning("No channels supplied...");
         return;
     }
 
