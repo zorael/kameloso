@@ -48,11 +48,9 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
 
     if (index == -1)
     {
-        import kameloso.common : writefln;
-        import kameloso.constants : Foreground;
+        import kameloso.common : logger;
 
-        writefln(Foreground.lightred, "-- TRIED TO NOM TOO MUCH:'%s' with '%s'",
-                 arr, separator);
+        logger.errorf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
         return string.init;
     }
 
