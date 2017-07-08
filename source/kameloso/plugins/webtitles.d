@@ -151,7 +151,7 @@ string streamUntil(Stream_, Regex_, Sink)
  +  Params:
  +      url = the web page address
  +/
-TitleLookup lookupTitle(string url)
+TitleLookup lookupTitle(const string url)
 {
     import kameloso.stringutils : beginsWith;
     import requests     : Request;
