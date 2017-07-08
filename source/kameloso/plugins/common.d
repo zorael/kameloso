@@ -511,11 +511,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                     try
                     {
-                        static if (is(Parameters!fun : AliasSeq!(const string, const IRCEvent)))
-                        {
-                            fun(contextPrefix, mutEvent);
-                        }
-                        else static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
+                        static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
                         {
                             fun(mutEvent);
                         }
