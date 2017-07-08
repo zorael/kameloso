@@ -1,6 +1,6 @@
 module kameloso.connection;
 
-import kameloso.common : writefln, writeln;
+import kameloso.common : logger;
 import kameloso.constants;
 
 import core.time : seconds;
@@ -87,7 +87,7 @@ public:
         try
         {
             ips = getAddress(address, port);
-            writefln(Foreground.white, "%s resolved into %d ips.", address, ips.length);
+            logger.infof("%s resolved into %d ips.", address, ips.length);
         }
         catch (SocketException e)
         {
@@ -96,21 +96,20 @@ public:
             case "getaddrinfo error: Name or service not known":
                 // Assume net down, wait and try again
 
-                writeln(Foreground.lightred, e.msg);
-                writefln(Foreground.lightred, "Network down? Retrying in %d seconds",
-                    Timeout.resolve);
+                logger.warning(e.msg);
+                logger.logf("Network down? Retrying in %d seconds", Timeout.resolve);
                 Thread.sleep(Timeout.resolve.seconds);
 
                 return resolve(address, port);
 
             default:
-                writeln(Foreground.lightred, e.msg);
+                logger.error(e.msg);
                 assert(0);
             }
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, e.msg);
+            logger.error(e.msg);
             assert(0);
         }
     }
@@ -137,22 +136,21 @@ public:
 
             try
             {
-                writefln(Foreground.white, "Connecting to %s ...", ip);
+                logger.infof("Connecting to %s ...", ip);
                 socket.connect(ip);
 
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
-                writeln(Foreground.white, "Connected!");
-
+                logger.info("Connected!");
                 return;
             }
             catch (SocketException e)
             {
-                writeln(Foreground.lightred, "Failed! ", e.msg);
+                logger.warning("Failed! ", e.msg);
             }
             catch (Exception e)
             {
-                writeln(Foreground.lightred, e.msg);
+                logger.error(e.msg);
                 assert(0);
             }
             finally
@@ -161,7 +159,7 @@ public:
 
                 if (i && (i < ips.length))
                 {
-                    writefln(Foreground.lightcyan, "Trying next ip in %d seconds.", Timeout.retry);
+                    logger.infof("Trying next ip in %d seconds", Timeout.retry);
                     Thread.sleep(Timeout.retry.seconds);
                 }
             }
@@ -169,7 +167,7 @@ public:
 
         if (!connected)
         {
-            writeln(Foreground.lightred, "Failed to connect!");
+            logger.error("Failed to connect!");
         }
     }
 
@@ -232,8 +230,8 @@ void listenFiber(Connection conn)
 
         if (!bytesReceived)
         {
-            writefln(Foreground.lightred, "ZERO RECEIVED! assuming dead connection (%s)",
-                lastSocketError);
+            logger.errorf("ZERO RECEIVED! assuming dead connection. last error: '%s'",
+                          lastSocketError);
             return;
         }
         else if (bytesReceived == Socket.ERROR)
@@ -243,8 +241,8 @@ void listenFiber(Connection conn)
             if (elapsed > Timeout.keepalive.seconds)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                writefln(Foreground.lightred, "NOTHING RECEIVED FOR %s (timeout %s)",
-                    elapsed, Timeout.keepalive.seconds);
+                logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
+                              elapsed, Timeout.keepalive.seconds);
                 return;
             }
 
@@ -265,12 +263,11 @@ void listenFiber(Connection conn)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
-                writeln(Foreground.lightred, "FATAL SOCKET ERROR");
-                writeln(Foreground.lightred, lastSocketError);
+                logger.errorf("FATAL SOCKET ERROR (%s)", lastSocketError);
                 return;
 
             default:
-                writeln(Foreground.lightred, "lastSocketError from Socket.ERROR:", lastSocketError);
+                logger.warningf("Socket.ERROR and last error %s", lastSocketError);
                 yield(string.init);
             }
 
@@ -300,20 +297,20 @@ void listenFiber(Connection conn)
 
         start = (end-pos);
 
-        // writefln("REMNANT:|%s|", cast(string)buffer[pos..end]);
+        // logger.logf("REMNANT:|%s|", cast(string)buffer[pos..end]);
 
         if (start >= pos)
         {
             if (start == end)
             {
-                writeln(Foreground.lightcyan, "OVERFLOW! Growing buffer but data was lost");
+                logger.warning("OVERFLOW! Growing buffer but data was lost");
                 const old = buffer.length;
                 buffer.length = cast(size_t)(buffer.length * 1.5);
-                writefln(Foreground.lightcyan, "old size:%d new:%d", old, buffer.length);
+                logger.logf("old size:%d new:%d (REPORT THIS)", old, buffer.length);
             }
 
-            // writeln("OVERLAP");
-            // writefln("start:%d pos:%d end:%d", start, pos, end);
+            // logger.warning("OVERLAP");
+            // logger.logf("start:%d pos:%d end:%d (REPORT THIS)", start, pos, end);
             auto mirror = new typeof(buffer)(start);
             mirror[0..start] = buffer[pos..end];
             buffer[0..start] = mirror[0..start];
