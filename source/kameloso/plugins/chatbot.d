@@ -111,7 +111,6 @@ void saveQuotes(const string filename)
     auto f = File(filename, "a");
 
     f.write(quotes.toPrettyString);
-    //f.writeln();
     f.write("\n");
 }
 
