@@ -94,6 +94,7 @@ public:
             switch (e.msg)
             {
             case "getaddrinfo error: Name or service not known":
+            case "getaddrinfo error: Temporary failure in name resolution":
                 // Assume net down, wait and try again
 
                 logger.warning(e.msg);
