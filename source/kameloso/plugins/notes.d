@@ -177,7 +177,7 @@ void onCommandPrintNotes()
 @Prefix(NickPrefixPolicy.required, "reloadnotes")
 void onCommandReloadQuotes()
 {
-    writeln(Foreground.lightcyan, "Reloading notes");
+    logger.log("Reloading notes");
     notes = loadNotes(state.settings.notesFile);
 }
 
@@ -200,7 +200,7 @@ void onCommandFakejoin(const IRCEvent event)
     import kameloso.stringutils;
     import std.string : indexOf;
 
-    writeln(Foreground.lightcyan, "Faking an event");
+    logger.info("Faking an event");
 
     IRCEvent newEvent = event;
     newEvent.type = IRCEvent.Type.JOIN;
@@ -272,13 +272,13 @@ auto getNotes(const string nickname)
         }
         else
         {
-            writeln(Foreground.lightcyan, "No notes available for nickname ", nickname);
+            logger.log("No notes available for nickname ", nickname);
             return noteArray;
         }
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "Exception when fetching notes: ", e.msg);
+        logger.error(e.msg);
         return noteArray;
     }
 }
@@ -298,14 +298,14 @@ void clearNotes(const string nickname)
     {
         if (nickname in notes)
         {
-            writeln(Foreground.lightcyan, "Clearing stored notes for ", nickname);
+            logger.log("Clearing stored notes for ", nickname);
             notes.object.remove(nickname);
             saveNotes(state.settings.notesFile);
         }
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "Exception when clearing notes: ", e.msg);
+        logger.error(e.msg);
     }
 }
 
@@ -326,7 +326,7 @@ void addNote(const string nickname, const string sender, const string line)
 
     if (!line.length)
     {
-        writeln(Foreground.lightred, "No message to create note from...");
+        logger.warning("No message to create note from");
         return;
     }
 
@@ -350,7 +350,7 @@ void addNote(const string nickname, const string sender, const string line)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "Exception when adding note: ", e.msg);
+        logger.error(e.msg);
     }
 }
 
@@ -421,7 +421,7 @@ JSONValue loadNotes(const string filename)
  +/
 void initialise()
 {
-    writeln(Foreground.lightcyan, "Initialising notes ...");
+    logger.log("Initialising notes ...");
     notes = loadNotes(state.settings.notesFile);
 }
 
