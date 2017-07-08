@@ -10,6 +10,7 @@ import kameloso.irc;
 import kameloso.plugins.common;
 
 import std.concurrency : send, Tid;
+import std.experimental.logger;
 import std.regex : ctRegex;
 
 private:
@@ -37,6 +38,9 @@ enum domainPattern = `(?:https?://)?([^/ ]+)/?.*`;
 
 /// Regex engine to catch domains
 static domainRegex = ctRegex!domainPattern;
+
+/// Thread-local logger
+Logger localLogger;
 
 
 // TitleLookup
@@ -164,7 +168,7 @@ TitleLookup lookupTitle(const string url)
     Appender!string pageContent;
     pageContent.reserve(BufferSize.titleLookup);
 
-    logger.log("URL: ", url);
+    localLogger.log("URL: ", url);
 
     Request rq;
     rq.useStreaming = true;
@@ -180,7 +184,7 @@ TitleLookup lookupTitle(const string url)
 
     if (!pageContent.data.length)
     {
-        logger.warning("Could not get content. Bad URL?");
+        localLogger.warning("Could not get content. Bad URL?");
         return lookup;
     }
 
@@ -190,12 +194,12 @@ TitleLookup lookupTitle(const string url)
 
         if (titleHits.length)
         {
-            logger.log("Found title in complete data (it was split)");
+            localLogger.log("Found title in complete data (it was split)");
             lookup.title = titleHits[1];
         }
         else
         {
-            logger.warning("No title...");
+            localLogger.warning("No title...");
             return lookup;
         }
     }
@@ -234,6 +238,7 @@ void titleworker(shared Tid sMainThread)
     import std.variant : Variant;
 
     Tid mainThread = cast(Tid)sMainThread;
+    localLogger = new KamelosoLogger(LogLevel.all);
 
     /// Cache buffer of recently looked-up URIs
     TitleLookup[string] cache;
