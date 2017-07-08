@@ -284,7 +284,7 @@ void mapColours(ref IRCEvent event)
 
         if (fgIndex > 15)
         {
-            writeln("mIRC foreground colour code out of bounds: ", fgIndex);
+            logger.warning("mIRC foreground colour code out of bounds: ", fgIndex);
             continue;
         }
 
@@ -297,7 +297,7 @@ void mapColours(ref IRCEvent event)
 
             if (bgIndex > 15)
             {
-                writeln("mIRC background colour code out of bounds: ", bgIndex);
+                logger.warning("mIRC background colour code out of bounds: ", bgIndex);
                 continue;
             }
 
