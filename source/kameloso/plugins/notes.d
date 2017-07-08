@@ -216,7 +216,6 @@ void onCommandFakejoin(const IRCEvent event)
         newEvent.sender = event.content;
     }
 
-    writeln(newEvent);
     return onJoin(newEvent);  // or onEvent?
 }
 
