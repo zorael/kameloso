@@ -765,6 +765,7 @@ import std.experimental.logger;
 
 final class KamelosoLogger : Logger
 {
+    import std.concurrency : Tid;
     import std.datetime;
     import std.format;
     import std.array : Appender;
