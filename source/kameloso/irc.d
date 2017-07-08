@@ -79,8 +79,8 @@ void parseBasic(ref IRCEvent event) @trusted
         break;
 
     default:
-        writeln(Foreground.lightred, "Unknown basic type: ", event.raw);
-        writeln(Foreground.lightred, "Please report this.");
+        logger.warning("Unknown basic type: ", event.raw);
+        logger.info("Please report this.");
         break;
     }
 }
@@ -250,7 +250,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
         }
         catch (Exception e)
         {
-            writefln("------------------ %s ----------------", e.msg);
+            logger.error(e.msg);
             printObjects(event);
         }
     }
@@ -259,7 +259,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
         try event.type = event.typestring.toEnum!(IRCEvent.Type);
         catch (Exception e)
         {
-            writefln("------------------ %s ----------------", e.msg);
+            logger.error(e.msg);
             printObjects(event);
         }
     }
@@ -331,9 +331,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
 
     scope(failure)
     {
-        writeln(Foreground.lightred, "--------- PARSE SPECIALCASES FAILURE");
+        logger.warning("--------- PARSE SPECIALCASES FAILURE");
         printObjects(event);
-        writeln(Foreground.lightred, "------------------------------------");
+        logger.warning("------------------------------------");
     }
 
     with (IRCEvent.Type)
@@ -520,7 +520,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
                 }
             }
             default:
-                writeln(Foreground.red, "-------------------- UNKNOWN CTCP EVENT -----------");
+                logger.warning("-------------------- UNKNOWN CTCP EVENT");
                 printObjects(event);
                 break;
             }
@@ -630,12 +630,10 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
                 break;
 
             case "NETWORK":
-                writeln(Foreground.cyan, "NETWORK: ", value);
-
                 try
                 {
                     immutable thisNetwork = value.toLower.to!(IRCServer.Network);
-                    writeln(Foreground.lightgreen, thisNetwork);
+                    logger.info("Detected network: ", thisNetwork);
 
                     if (thisNetwork != bot.server.network)
                     {
@@ -645,7 +643,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
                 }
                 catch (Exception e)
                 {
-                    writeln(Foreground.lightred, e.msg);
+                    logger.error(e.msg);
                 }
                 break;
 
@@ -653,7 +651,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
                 try maxNickLength = value.to!uint;
                 catch (Exception e)
                 {
-                    writeln(Foreground.lightred, e.msg);
+                    logger.error(e.msg);
                 }
                 break;
 
@@ -661,7 +659,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
                 try maxChannelLength = value.to!uint;
                 catch (Exception e)
                 {
-                    writeln(Foreground.lightred, e.msg);
+                    logger.error(e.msg);
                 }
                 break;
 
@@ -689,7 +687,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         }
         catch (Exception e)
         {
-            writeln(Foreground.lightred, e.msg);
+            logger.error(e.msg);
         }
         break;
 
@@ -805,7 +803,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
         if (slice.indexOf(" :To connect type ") == -1)
         {
-            writeln(Foreground.lightred, "Unknown variant of TOCONNECTTYPE");
+            logger.warning("Unknown variant of TOCONNECTTYPE");
             printObjects(event);
             break;
         }
@@ -849,9 +847,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
             writeln();
-            writeln(Foreground.lightred, "--------- UNCAUGHT NUMERIC OR UNSET");
+            logger.warning("--------- UNCAUGHT NUMERIC OR UNSET");
             printObjects(event);
-            writeln(Foreground.lightred, "-----------------------------------");
+            logger.warning("-----------------------------------");
             writeln();
         }
 
@@ -882,9 +880,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         (event.channel.indexOf(' ') != -1)))
     {
         writeln();
-        writeln(Foreground.lightred, "--------------- SPACES, NEEDS REVISION");
+        logger.warning("--------------- SPACES, NEEDS REVISION");
         printObjects(event);
-        writeln(Foreground.lightred, "--------------------------------------");
+        logger.warning("--------------------------------------");
         writeln();
     }
 
@@ -893,9 +891,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         (event.channel.indexOf(' ') != -1)))
     {
         writeln();
-        writeln(Foreground.lightred, "--------------- CHANNEL/TARGET REVISION");
+        logger.warning("--------------- CHANNEL/TARGET REVISION");
         printObjects(event);
-        writeln(Foreground.lightred, "---------------------------------------");
+        logger.warning("---------------------------------------");
         writeln();
     }
 
@@ -1595,7 +1593,7 @@ IRCEvent toIRCEvent(const string raw)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "toIRCEvent: ", e.msg);
+        logger.error(e.msg);
     }
 
     return event;
@@ -1720,19 +1718,19 @@ bool isFromAuthService(const IRCEvent event)
             if (((ident == "NickServ") || (ident == "services")) &&
                 bot.server.resolvedAddress.endsWith(address))
             {
-                // writeln(Foreground.lightcyan, "Sensible guess that it's the real NickServ");
+                // logger.info("Sensible guess that it's the real NickServ");
                 return true; // sensible
             }
             if ((ident == "NickServ") || (ident == "services"))
             {
-                // writeln(Foreground.lightcyan, "Naïve guess that it's the real NickServ");
+                // logger.info("Naïve guess that it's the real NickServ");
                 return true;  // NAÏVE
             }
         }
         else if ((sender == "Q") && (ident == "TheQBot") && (address == "CServe.quakenet.org"))
         {
             // Quakenet
-            // writeln(Foreground.lightcyan, "100% that it's QuakeNet's C");
+            // logger.info("100% that it's QuakeNet's C");
             return true;
         }
         else if ((sender == "AuthServ") && (ident == "AuthServ") && (address == "Services.GameSurge.net"))
