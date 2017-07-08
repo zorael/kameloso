@@ -44,13 +44,13 @@ void pipereader(shared IRCPluginState newState)
 
     if (!fifo.isOpen)
     {
-        writeln(Foreground.lightred, "Could not create FIFO. Pipereader will not function.");
+        logger.warning("Could not create FIFO. Pipereader will not function.");
         return;
     }
 
     scope(exit)
     {
-        writeln(Foreground.yellow, "Deleting FIFO from disk");
+        logger.info("Deleting FIFO from disk");
         remove(fifo.name);
     }
 
@@ -80,7 +80,7 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                writeln(Foreground.lightred, "pipeline received Variant: ", v);
+                logger.error("pipeline received Variant: ", v);
             }
         );
 
@@ -89,7 +89,7 @@ void pipereader(shared IRCPluginState newState)
             try fifo.reopen(fifo.name);
             catch (Exception e)
             {
-                writeln(Foreground.lightred, e.msg);
+                logger.error(e.msg);
             }
         }
     }
@@ -109,7 +109,7 @@ void createFIFO()
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
 
-    writeln(Foreground.yellow, "Creating FIFO: ", filename);
+    logger.info("Creating FIFO: ", filename);
 
     if (!filename.exists)
     {
@@ -118,7 +118,7 @@ void createFIFO()
     }
     else if (filename.isDir)
     {
-        writeln(Foreground.lightred, "wanted to create FIFO ", filename,
+        logger.error("wanted to create FIFO ", filename,
             " but a directory exists with the same name");
         return;
     }
