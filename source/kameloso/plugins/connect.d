@@ -56,16 +56,18 @@ void onSelfjoin(const IRCEvent event)
 void onSelfpart(const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
-    import std.algorithm.searching : canFind;
+    import std.algorithm.searching : countUntil;
 
-    if (!state.bot.channels.canFind(event.channel))
+    immutable index = state.bot.channels.countUntil(event.channel);
+
+    if (index == -1)
     {
         logger.warning("Tried to remove a channel that wasn't there: ",
                        event.channel);
         return;
     }
 
-    state.bot.channels = state.bot.channels.remove(event.channel);
+    state.bot.channels = state.bot.channels.remove(index);
     updateBot();
 }
 
