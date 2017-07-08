@@ -688,7 +688,7 @@ if (is(typeof(settings) : Settings))
         }
 
         pragma(inline)
-        void writeln(Args...)(Args args)
+        void writeln(Args...)(Args args) @trusted
         if (!Args.length || !isAColourCode!(Args[0]))
         {
             realWriteln(args);
