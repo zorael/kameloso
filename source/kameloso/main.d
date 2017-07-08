@@ -64,7 +64,7 @@ Quit checkMessages()
 
     scope (failure)
     {
-        writeln(Foreground.lightred, "[main.checkMessages] FAILURE");
+        logger.error("[main.checkMessages] FAILURE");
         foreach (plugin; plugins) plugin.teardown();
     }
 
@@ -181,8 +181,8 @@ Quit checkMessages()
             (Variant v)
             {
                 // Caught an unhandled message
-                writeln(Foreground.lightred, "Main thread received unknown Variant");
-                writeln(Foreground.lightred, v);
+                logger.warning("Main thread received unknown Variant");
+                logger.warning(v);
             }
         );
     }
@@ -242,7 +242,7 @@ Quit handleArguments(string[] args)
     catch (Exception e)
     {
         // User misspelled or supplied an invalid argument; error out and quit
-        writeln(Foreground.lightred, e.msg);
+        logger.error(e.msg);
         return Quit.yes;
     }
 
@@ -344,7 +344,7 @@ void initPlugins()
 /// Writes the current configuration to the config file specified in the Settings.
 void writeConfigToDisk()
 {
-    writeln(Foreground.lightcyan, "Writing configuration to ", settings.configFile);
+    logger.info("Writing configuration to ", settings.configFile);
     settings.configFile.writeConfig(bot, bot.server, settings);
     writeln();
     printObjects(bot, bot.server, settings);
@@ -357,7 +357,7 @@ public:
 version (unittest)
 void main() {
     // Compiled with -b unittest, so run the tests and exit.
-    writeln("Tests passed!");
+    logger.info("Tests passed!");
 }
 else
 int main(string[] args)
@@ -377,9 +377,9 @@ int main(string[] args)
     {
         import std.path : baseName;
 
-        writeln("No master nor channels configured!");
-        writefln("Use %s --writeconfig to generate a configuration file.",
-                 args[0].baseName);
+        logger.warning("No master nor channels configured!");
+        logger.logf("Use %s --writeconfig to generate a configuration file.",
+                     args[0].baseName);
 
         return 1;
     }
@@ -467,7 +467,7 @@ Quit loopGenerator(Generator!string generator)
 
                     if (!spammedAboutReplaying)
                     {
-                        writeln(Foreground.white, "Replaying event:");
+                        logger.log("Replaying event:");
                         printObjects(*savedEvent);
                         spammedAboutReplaying = true;
                     }
