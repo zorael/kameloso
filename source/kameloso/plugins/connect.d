@@ -60,8 +60,8 @@ void onSelfpart(const IRCEvent event)
 
     if (!state.bot.channels.canFind(event.channel))
     {
-        writeln(Foreground.lightred, "Tried to remove a channel that wasn't there: ",
-                event.channel);
+        logger.warning("Tried to remove a channel that wasn't there: ",
+                       event.channel);
         return;
     }
 
@@ -87,7 +87,7 @@ void joinChannels()
         }
         else if (!bot.channels.length)
         {
-            writeln(Foreground.red, "No channels, no purpose...");
+            logger.warning( "No channels, no purpose...");
             return;
         }
 
@@ -163,7 +163,7 @@ void onPing(const IRCEvent event)
 
     if (state.bot.startedAuth && !state.bot.finishedAuth)
     {
-        writeln(Foreground.lightred, "Auth timed out. Joining channels");
+        logger.info("Auth timed out. Joining channels");
         state.bot.finishedAuth = true;
         joinChannels();
         updateBot();
@@ -193,7 +193,7 @@ void onEndOfMotd()
         // Auth started from elsewhere
         if (bot.startedAuth)
         {
-            writeln(Foreground.lightred, "auth started elsewhere...");
+            logger.log("auth started elsewhere...");
             return;
         }
 
@@ -243,8 +243,7 @@ void onEndOfMotd()
 
             if (!bot.authLogin.length)
             {
-                writeln(Foreground.lightred,
-                    "No auth login on Freenode! Trying ", bot.origNickname);
+                logger.log("No auth login on Freenode! Trying ", bot.origNickname);
                 login = bot.origNickname;
             }
 
@@ -263,7 +262,7 @@ void onEndOfMotd()
             return;
 
         default:
-            writeln(Foreground.lightred, "Unsure of what AUTH approach to use.");
+            logger.log("Unsure of what AUTH approach to use.");
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
@@ -326,7 +325,7 @@ void onInvite(const IRCEvent event)
 {
     if (!state.settings.joinOnInvite)
     {
-        writeln(Foreground.lightcyan, "settings.joinOnInvite is false so not joining");
+        logger.log("settings.joinOnInvite is false so not joining");
         return;
     }
 
@@ -402,7 +401,7 @@ void register()
         {
             if (bot.server.network == IRCServer.Network.twitch)
             {
-                writeln(Foreground.lightred, "You *need* a password to join this server");
+                logger.warning("You *need* a password to join this server");
             }
         }
 
