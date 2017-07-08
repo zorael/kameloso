@@ -83,8 +83,7 @@ void onMessage(const IRCEvent event)
         immutable url = urlHit[0];
         immutable target = (event.channel.length) ? event.channel : event.sender;
 
-        writeln(Foreground.white, url);
-
+        logger.log(url);
         workerThread.send(url, target);
     }
 }
@@ -171,7 +170,7 @@ TitleLookup lookupTitle(string url)
         url = "http://" ~ url;
     }
 
-    writeln(Foreground.white, "URL: ", url);
+    logger.log("URL: ", url);
 
     Request rq;
     rq.useStreaming = true;
@@ -187,7 +186,7 @@ TitleLookup lookupTitle(string url)
 
     if (!pageContent.data.length)
     {
-        writeln(Foreground.lightred, "Could not get content. Bad URL?");
+        logger.warning("Could not get content. Bad URL?");
         return lookup;
     }
 
@@ -197,12 +196,12 @@ TitleLookup lookupTitle(string url)
 
         if (titleHits.length)
         {
-            writeln(Foreground.white, "Found title in complete data (it was split)");
+            logger.log("Found title in complete data (it was split)");
             lookup.title = titleHits[1];
         }
         else
         {
-            writeln(Foreground.lightred, "No title...");
+            logger.warning("No title...");
             return lookup;
         }
     }
@@ -266,8 +265,7 @@ void titleworker(shared Tid sMainThread)
                     try lookup = lookupTitle(url);
                     catch (Exception e)
                     {
-                        writeln(Foreground.lightred,
-                                "Exception looking up a title: ", e.msg);
+                        logger.error(e.msg);
                     }
                 }
 
@@ -296,8 +294,7 @@ void titleworker(shared Tid sMainThread)
             },
             (Variant v)
             {
-                writeln(Foreground.lightcyan, "Titleworker received Variant");
-                writeln(Foreground.lightcyan, v);
+                logger.error("titleworker received Variant: ", v);
             }
         );
     }
