@@ -112,12 +112,12 @@ void readConfig(T...)(const string configFile, ref T things)
 
     if (!configFile.exists)
     {
-        writeln(Foreground.lightred, "Config file does not exist");
+        logger.info("Config file does not exist");
         return;
     }
     else if (!configFile.isFile)
     {
-        writeln(Foreground.lightred, "Config file is not a file!");
+        logger.error("Config file is not a file!");
         return;
     }
 
