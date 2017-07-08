@@ -323,24 +323,65 @@ void onAnyEvent(const IRCEvent event)
 }
 
 
-// onCommandJoinPart
+// onCommandJoin
 /++
- +  Joins or parts a supplied channel.
+ +  Joins a supplied channel.
+ +
+ +  Simply defers to joinPartImpl with the prefix JOIN.
  +
  +  Params:
- +      prefix = a prefix string of either "join" or "part".
  +      event = the triggering IRCEvent.
  +/
-@Label("join/part")
+@Label("join")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "join")
+void onCommandJoin(const IRCEvent event)
+{
+    joinPartImpl("JOIN", event);
+}
+
+
+// onCommandPart
+/++
+ +  Parts from a supplied channel.
+ +
+ +  Simply defers to joinPartImpl with the prefix PART.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
+@Label("part")
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "part")
-void onCommandJoinPart(const string prefix, const IRCEvent event)
+void onCommandPart(const IRCEvent event)
+{
+    joinPartImpl("PART", event);
+}
+
+
+// joinPartImpl
+/++
+ +  Joins or parts a supplied channel.
+ +
+ +  Technically sends the action passed in the prefix variable with the list of
+ +  channels as its list of arguments.
+ +
+ +  Params:
+ +      prefix = the action string to send (JOIN or PART).
+ +      event = the triggering IRCEvent.
+ +/
+void joinPartImpl(const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
     import std.format : format;
+
+    // The prefix could be in lowercase. Do we care?
+    assert(((prefix == "JOIN") || (prefix == "PART")),
+           "Invalid prefix passed to joinPartlImpl: " ~ prefix);
 
     if (!event.content.length)
     {
