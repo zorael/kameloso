@@ -51,7 +51,7 @@ string getQuote(const string nickname)
     }
     catch (Exception e)
     {
-        writeln(Foreground.lightred, "Exception when fetching quote: ", e.msg);
+        logger.error(e.msg);
         return string.init;
     }
 }
@@ -84,7 +84,7 @@ void addQuote(const string nickname, const string line)
     catch (Exception e)
     {
         // No quotes at all
-        writeln(Foreground.lightred, "Exception when adding new quote: ", e.msg);
+        logger.error(e.msg);
     }
 }
 
@@ -133,14 +133,14 @@ JSONValue loadQuotes(const string filename)
 
     if (!filename.exists)
     {
-        writeln(Foreground.white, filename, " does not exist");
+        logger.info(filename, " does not exist");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
     }
     else if (!filename.isFile)
     {
-        writefln(Foreground.lightred, filename, " is not a file");
+        logger.error(filename, " is not a file");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
@@ -173,7 +173,7 @@ void onCommandSay(const IRCEvent event)
 
     if (!event.content.length)
     {
-        writeln(Foreground.lightred, "No text to send...");
+        logger.warning("No text to send...");
         return;
     }
 
@@ -263,7 +263,7 @@ void onCommandQuote(const IRCEvent event)
 
     if (!nickname.isValidNickname)
     {
-        writeln(Foreground.lightred, "Invalid nickname: '", nickname, "'");
+        logger.warningf("Invalid nickname: '%s'", nickname);
         return;
     }
 
@@ -349,7 +349,7 @@ void onCommandPrintQuotes()
 @Prefix(NickPrefixPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
-    writeln(Foreground.lightcyan, "Reloading quotes");
+    logger.log("Reloading quotes");
     quotes = loadQuotes(state.settings.quotesFile);
 }
 
@@ -360,7 +360,7 @@ void onCommandReloadQuotes()
  +/
 void initialise()
 {
-    writeln(Foreground.lightcyan, "Initialising quotes ...");
+    logger.log("Initialising quotes ...");
     quotes = loadQuotes(state.settings.quotesFile);
 }
 
