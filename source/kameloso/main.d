@@ -83,11 +83,6 @@ Quit checkMessages()
         conn.sendline(line);
     }
 
-    /// Send a ping "to" the server address saved in the bot.server struct
-    void ping(ThreadMessage.Ping)
-    {
-        writeln(Foreground.white, "--> PING :", bot.server.resolvedAddress);
-        conn.sendline("PING :", bot.server.resolvedAddress);
     }
 
     /// Send a WHOIS call to the server, and buffer the requests.
@@ -171,7 +166,6 @@ Quit checkMessages()
         // BUG: except if quit is true, then it returns without exhausting
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
-            &ping,
             &whois,
             &updateBot,
             &quietline,
