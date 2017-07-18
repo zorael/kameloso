@@ -34,7 +34,7 @@ enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 static urlRegex = ctRegex!stephenhay;
 
 /// Regex engine to match only the domain in a URI
-enum domainPattern = `(?:https?://)?([^/ ]+)/?.*`;
+enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
 
 /// Regex engine to catch domains
 static domainRegex = ctRegex!domainPattern;
