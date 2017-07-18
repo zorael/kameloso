@@ -176,47 +176,111 @@ TitleLookup lookupTitle(const string url)
     rq.bufferSize = BufferSize.titleLookup;
 
     auto rs = rq.get(url);
-    auto stream = rs.receiveAsRange();
-
     if (rs.code >= 400) return lookup;
 
-    lookup.title = stream.streamUntil(titleRegex, pageContent);
+    auto stream = rs.receiveAsRange();
+
+    lookup.title = getTitleFromStream(stream);
+
+    if (!lookup.title.length) return lookup;
+
+    lookup.domain = getDomainFromURL(url);
+    lookup.when = Clock.currTime;
+
+    return lookup;
+}
+
+
+// getDomainFromURL
+/++
+ +  Fetches the slice of the domain name from a URL.
+ +
+ +  Params:
+ +      url = an URL string.
+ +
+ +  Returns:
+ +      the domain part of the URL string, or an empty string if no matches.
+ +/
+string getDomainFromURL(const string url) @safe
+{
+    import std.regex : matchFirst;
+
+    auto domainHits = url.matchFirst(domainRegex);
+    return domainHits.length ? domainHits[1] : string.init;
+}
+
+@safe unittest
+{
+    immutable d1 = getDomainFromURL("http://www.youtube.com/watch?asoidjsd&asd=kokofruit");
+    assert((d1 == "youtube.com"), d1);
+
+    immutable d2 = getDomainFromURL("https://www.com");
+    assert((d2 == "com"), d2);
+
+    immutable d3 = getDomainFromURL("ftp://ftp.sunet.se");
+    assert(!d3.length, d3);
+
+    immutable d4 = getDomainFromURL("http://");
+    assert(!d4.length, d4);
+
+    immutable d5 = getDomainFromURL("invalid line");
+    assert(!d5.length, d5);
+
+    immutable d6 = getDomainFromURL("");
+    assert(!d6.length, d6);
+}
+
+
+// getTitleFromStream
+/++
+ +  Streams a web page off the network and looks for the content of the page's
+ +  <tilte> tag.
+ +
+ +  Params:
+ +      stream = the stream from which to stream the web page.
+ +
+ +  Returns:
+ +      a title string if a match was found, else an empty string.
+ +/
+string getTitleFromStream(Stream_)(ref Stream_ stream)
+{
+    import std.array : Appender, arrayReplace = replace;
+    import std.regex : matchFirst;
+    import std.string : removechars, strip;
+
+    Appender!string pageContent;
+    pageContent.reserve(BufferSize.titleLookup);
+
+    string title = stream.streamUntil(titleRegex, pageContent);
 
     if (!pageContent.data.length)
     {
         localLogger.warning("Could not get content. Bad URL?");
-        return lookup;
+        return string.init;
     }
 
-    if (!lookup.title.length)
+    if (!title.length)
     {
         auto titleHits = pageContent.data.matchFirst(titleRegex);
 
         if (titleHits.length)
         {
             localLogger.log("Found title in complete data (it was split)");
-            lookup.title = titleHits[1];
+            title = titleHits[1];
         }
         else
         {
             localLogger.warning("No title...");
-            return lookup;
+            return string.init;
         }
     }
 
-    lookup.title = lookup.title
+    // TODO: Add DOM translation, &nbsp; etc.
+
+    return title
         .removechars("\r")
         .arrayReplace("\n", " ")
         .strip;
-
-    auto domainHits = url.matchFirst(domainRegex);
-
-    if (!domainHits.length) return lookup;
-
-    lookup.domain = domainHits[1];
-    lookup.when = Clock.currTime;
-
-    return lookup;
 }
 
 
