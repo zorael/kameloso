@@ -83,8 +83,6 @@ Quit checkMessages()
         conn.sendline(line);
     }
 
-    }
-
     /// Send a WHOIS call to the server, and buffer the requests.
     void whois(ThreadMessage.Whois, IRCEvent event)
     {
