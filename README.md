@@ -104,16 +104,12 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
     kameloso | this is a raw IRC command
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
-    kameloso | [www.youtube.com] Danish language
+    kameloso | [youtube.com] Danish language
 
 ## TODO
 
-* rethink logging - should we *really* writeln, or use our own logging functions?
 * "online" help; listing of verbs/commands
-* improve command-line argument handling (issues [#4](https://github.com/zorael/kameloso/issues/4) and [#5](https://github.com/zorael/kameloso/issues/5) etc)
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
-* add more unittests
-* update documentation
 * fix ctrl+c leaving behind fifos
 * some functions don't honor settings and just print colours regardless
 * JSON config file? but random ordering of entries, no lined-up columns
@@ -121,12 +117,13 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * revisit authentication events
 * revisit event.special
 * does Chainable do anything at all?
-* AUTHCHALLENGE needec anymore?
+* AUTHCHALLENGE needed anymore?
 * add ExamplePlugin
 * non-member struct UDAs to enums?
 * investigate inverse channel behaviour (blacklists)
 * solve scope creep
 * the connect plugin is in a sorry state
+* per-plugin settings please
 
 ## Built With
 
