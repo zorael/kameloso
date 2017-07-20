@@ -1,6 +1,6 @@
 module kameloso.plugins.pipeline;
 
-version (Posix):
+version(Posix):
 
 import kameloso.common;
 import kameloso.constants;

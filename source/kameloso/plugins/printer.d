@@ -105,7 +105,7 @@ void onAnyEvent(const IRCEvent origEvent)
             }
             else
             {
-                version (Colours)
+                version(Colours)
                 {
                     if (!state.settings.monochrome)
                     {
@@ -178,7 +178,7 @@ void onAnyEvent(const IRCEvent origEvent)
  +  Params:
  +      ref event = the IRCEvent to modify for printing.
  +/
-version (Colours)
+version(Colours)
 void mapEffects(ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -220,7 +220,7 @@ void mapEffects(ref IRCEvent event)
  +  Params:
  +      ref event = the IRCEvent to modify for printing.
  +/
-version (Colours)
+version(Colours)
 void mapColours(ref IRCEvent event)
 {
     import std.regex;
@@ -312,7 +312,7 @@ void mapColours(ref IRCEvent event)
     event.content ~= "\033[0m";
 }
 
-version (Colours)
+version(Colours)
 void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 {
     import std.conv  : to;

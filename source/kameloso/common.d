@@ -144,7 +144,7 @@ unittest
  +/
 void printObjects(Things...)(Things things)
 {
-    version (Colours)
+    version(Colours)
     {
         printObjectsColoured(things);
     }
@@ -672,7 +672,7 @@ if (is(typeof(settings) : Settings))
 {
     import std.stdio : realWrite = write, realWritefln = writefln, realWriteln = writeln;
 
-    version (Colours)
+    version(Colours)
     {
         pragma(msg, "Version: Colours");
 

@@ -12,13 +12,13 @@ public import kameloso.plugins.notes;
 public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
 
-version (Posix)
+version(Posix)
 {
     // Implicitly enabled if imported
     public import kameloso.plugins.pipeline;
 }
 
-version (Webtitles)
+version(Webtitles)
 {
     // Implicitly enabled if imported
     public import kameloso.plugins.webtitles;

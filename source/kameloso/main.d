@@ -10,7 +10,7 @@ import kameloso.plugins;
 import std.concurrency;
 import std.datetime : SysTime;
 
-version (Windows)
+version(Windows)
 shared static this()
 {
     import core.sys.windows.windows;
@@ -346,7 +346,7 @@ void writeConfigToDisk()
 public:
 
 
-version (unittest)
+version(unittest)
 void main() {
     // Compiled with -b unittest, so run the tests and exit.
     logger.info("Tests passed!");
