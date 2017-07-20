@@ -158,11 +158,9 @@ string streamUntil(Stream_, Regex_, Sink)
 TitleLookup lookupTitle(const string url)
 {
     import kameloso.stringutils : beginsWith;
-    import requests     : Request;
-    import std.array    : Appender, arrayReplace = replace;
+    import requests : Request;
+    import std.array : Appender;
     import std.datetime : Clock;
-    import std.regex    : matchFirst;
-    import std.string   : removechars, strip;
 
     TitleLookup lookup;
     Appender!string pageContent;
