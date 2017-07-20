@@ -40,7 +40,7 @@ enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
 static domainRegex = ctRegex!domainPattern;
 
 /// Thread-local logger
-Logger localLogger;
+Logger tlsLogger;
 
 
 // TitleLookup
@@ -166,7 +166,7 @@ TitleLookup lookupTitle(const string url)
     Appender!string pageContent;
     pageContent.reserve(BufferSize.titleLookup);
 
-    localLogger.log("URL: ", url);
+    tlsLogger.log("URL: ", url);
 
     Request rq;
     rq.useStreaming = true;
@@ -253,7 +253,7 @@ string getTitleFromStream(Stream_)(ref Stream_ stream)
 
     if (!pageContent.data.length)
     {
-        localLogger.warning("Could not get content. Bad URL?");
+        tlsLogger.warning("Could not get content. Bad URL?");
         return string.init;
     }
 
@@ -263,12 +263,12 @@ string getTitleFromStream(Stream_)(ref Stream_ stream)
 
         if (titleHits.length)
         {
-            localLogger.log("Found title in complete data (it was split)");
+            tlsLogger.log("Found title in complete data (it was split)");
             title = titleHits[1];
         }
         else
         {
-            localLogger.warning("No title...");
+            tlsLogger.warning("No title...");
             return string.init;
         }
     }
@@ -300,7 +300,7 @@ void titleworker(shared Tid sMainThread)
     import std.variant : Variant;
 
     Tid mainThread = cast(Tid)sMainThread;
-    localLogger = new KamelosoLogger(LogLevel.all);
+    tlsLogger = new KamelosoLogger(LogLevel.all);
 
     /// Cache buffer of recently looked-up URIs
     TitleLookup[string] cache;

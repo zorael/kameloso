@@ -23,7 +23,7 @@ Tid fifoThread;
 File fifo;
 
 /// Thread-local logger
-Logger localLogger;
+Logger tlsLogger;
 
 
 // pipereader
@@ -43,19 +43,19 @@ void pipereader(shared IRCPluginState newState)
     import std.file  : remove;
 
     state = cast(IRCPluginState)newState;
-    localLogger = new KamelosoLogger(LogLevel.all);
+    tlsLogger = new KamelosoLogger(LogLevel.all);
 
     createFIFO();
 
     if (!fifo.isOpen)
     {
-        localLogger.warning("Could not create FIFO. Pipereader will not function.");
+        tlsLogger.warning("Could not create FIFO. Pipereader will not function.");
         return;
     }
 
     scope(exit)
     {
-        localLogger.info("Deleting FIFO from disk");
+        tlsLogger.info("Deleting FIFO from disk");
         remove(fifo.name);
     }
 
@@ -85,7 +85,7 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                localLogger.error("pipeline received Variant: ", v);
+                tlsLogger.error("pipeline received Variant: ", v);
             }
         );
 
@@ -94,7 +94,7 @@ void pipereader(shared IRCPluginState newState)
             try fifo.reopen(fifo.name);
             catch (Exception e)
             {
-                localLogger.error(e.msg);
+                tlsLogger.error(e.msg);
             }
         }
     }
@@ -114,7 +114,7 @@ void createFIFO()
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
 
-    localLogger.info("Creating FIFO: ", filename);
+    tlsLogger.info("Creating FIFO: ", filename);
 
     if (!filename.exists)
     {
@@ -123,7 +123,7 @@ void createFIFO()
     }
     else if (filename.isDir)
     {
-        localLogger.error("wanted to create FIFO ", filename,
+        tlsLogger.error("wanted to create FIFO ", filename,
             " but a directory exists with the same name");
         return;
     }
