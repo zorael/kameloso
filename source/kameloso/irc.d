@@ -1846,13 +1846,7 @@ bool isValidNickname(const string nickname)
     enum validCharactersPattern = r"^([a-zA-Z0-9_\\\[\]{}\^`|-]+)$";
     static engine = ctRegex!validCharactersPattern;
 
-    auto characterMatches = nickname.matchAll(engine);
-
-    // Assertion error, https://issues.dlang.org/show_bug.cgi?id=17458
-    //if (characterMatches.hit.length) return true;
-
-    if (characterMatches.pre.length || characterMatches.post.length) return false;
-    else return true;
+    return !nickname.matchAll(engine).empty;
 }
 
 unittest
