@@ -843,6 +843,11 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         }
         break;
 
+    case TOPIC:
+        // :zorael!~NaN@2001:41d0:2:80b4:: TOPIC #garderoben :en greps av hybris, sen var de bara fyra
+        slice.formattedRead("%s :%s", &event.channel, &event.content);
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
