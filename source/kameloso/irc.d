@@ -511,7 +511,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
 
                 enum typestring = type.to!string;
 
-                static if ((typestring.length > 5) && (typestring[0..5] == "CTCP_"))
+                static if (typestring.beginsWith("CTCP_"))
                 {
                     case typestring[5..$]:
                         mixin("event.type = " ~ typestring ~ ";");
