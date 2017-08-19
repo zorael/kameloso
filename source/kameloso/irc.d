@@ -902,6 +902,14 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         writeln();
     }
 
+    if (event.target.beginsWith('#'))
+    {
+        logger.warning("--------------- TARGET IS A CHANNEL?");
+        printObjects(event);
+        logger.warning("------------------------------------");
+        writeln();
+    }
+
     if ((event.target == bot.nickname) &&
         (event.type != IRCEvent.Type.MODE) &&
         (event.type != IRCEvent.Type.CHANMODE) &&
