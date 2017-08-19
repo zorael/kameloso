@@ -21,35 +21,6 @@ Current functionality includes:
 * piping text from the terminal to the server
 * mIRC colour coding
 
-## Fails to build with OpenSSL 1.1.0
-
-The library `dlang-requests` has [not yet been updated](https://github.com/ikod/dlang-requests/issues/45) to work with the modern **1.1.0** version of OpenSSL and so this project will not fully build if you have the upgraded library. A workaround is to just not build the `webtitles` plugin that is importing the offending library, by compiling with `dub -c nowebtitles`.
-
-A better but more involved workaround is to modify the `dlang-requests`'s project file to point to the old library. However, this assumes that you still have the old library installed.
-
-### Linux
-
-Ubuntu should [still](http://packages.ubuntu.com/zesty/openssl) be running with the old version.
-
-In Arch linux and its derivatives, the package name of the old library is [`openssl-1.0`](https://www.archlinux.org/packages/extra/x86_64/openssl-1.0) and it can peacefully live next to the updated [`openssl`](https://www.archlinux.org/packages/core/x86_64/openssl).
-
-Open `~/.dub/packages/requests-0.4.1/requests/dub.json` in a text editor, and find these lines:
-
-            "libs-posix": [
-                "ssl",
-                "crypto"
-            ],
-
-Change them to look like this and the rest of this guide should work. This file will only be present after you've downloaded and tried to compile the project, with `dub`.
-
-            "libs-posix": [
-                ":libssl.so.1.0.0",
-                ":libcrypto.so.1.0.0"
-            ],
-
-### Windows
-Windows is equally affected but for now the easy way out is to not compile said `webtitles` plugin. The default Windows build will skip it automatically.
-
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
