@@ -146,30 +146,48 @@ void onMessage(const IRCEvent event)
 
     immutable stripped = event.content.strip;
 
-    if (!stripped.beginsWith("s/"))
+    if (stripped.beginsWith("s") && (stripped.length > 2))
     {
-        // Normal message, store as previous line
+        switch (stripped[1])
+        {
+        case '/':
+        case '|':
+        case '#':
+            if (const line = event.sender in prevlines)
+            {
+                if ((Clock.currTime - line.when) > replaceTimeoutSeconds.seconds)
+                {
+                    // Entry is too old, remove it
+                    prevlines.remove(event.sender);
+                    return;
+                }
 
-        Line line;
-        line.content = stripped;
-        line.when = Clock.currTime;
-        prevlines[event.sender] = line;
+                immutable result = line.content.sedReplace(event.content);
+                if ((result == event.content) || !result.length) return;
 
-        return;
+                state.mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+
+                prevlines.remove(event.sender);
+            }
+
+            // Processed a sed-replace command (succesfully or not); return
+            return;
+
+        default:
+            // Drop down
+            break;
+        }
     }
 
-    if (const line = event.sender in prevlines)
-    {
-        if ((Clock.currTime - line.when) > replaceTimeoutSeconds.seconds) return;
+    // We're either here because !stripped.beginsWith("s") *or* stripped[1]
+    // is not '/', '|' nor '#'
+    // --> normal message, store as previous line
 
-        immutable result = line.content.sedReplace(event.content);
-        if ((result == event.content) || !result.length) return;
-
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
-
-        prevlines.remove(event.sender);
-    }
+    Line line;
+    line.content = stripped;
+    line.when = Clock.currTime;
+    prevlines[event.sender] = line;
 }
 
 
