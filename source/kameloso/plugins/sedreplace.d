@@ -21,12 +21,14 @@ Line[string] prevlines;
 enum replaceTimeoutSeconds = 3600;
 
 /// Regex pattern to find lines like "s/foo/bar/"
-enum sedPattern = `^s/([^/]+)/([^/]*)/(g?)$`;
-//enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
-//enum sedPattern3 = `^s|([^|]+)|([^|]*)|(g?)$`;
+enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
+enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
+enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
 
 /// ctRegex engine for the sed-replace pattern
-static sedRegex = ctRegex!sedPattern;
+static sedRegex  = ctRegex!sedPattern;
+static sedRegex2 = ctRegex!sedPattern2;
+static sedRegex3 = ctRegex!sedPattern3;
 
 
 /// An struct aggregate of a spoken line and the timestamp when it was said
@@ -58,7 +60,27 @@ string sedReplace(const string originalLine, const string expression)
 
     string result = originalLine;  // need mutable
 
-    foreach (const hit; expression.matchAll(sedRegex))
+    static auto regexEngineFor(const string line)
+    {
+        assert((line.length > 2), line);
+
+        switch (line[1])
+        {
+        case '/':
+            return sedRegex;
+
+        case '#':
+            return sedRegex2;
+
+        case '|':
+            return sedRegex3;
+
+        default:
+            goto case '/';
+        }
+    }
+
+    foreach (const hit; expression.matchAll(regexEngineFor(expression)))
     {
         const changeThis = hit[1];
         const toThis = hit[2];
@@ -75,6 +97,33 @@ string sedReplace(const string originalLine, const string expression)
     }
 
     return result;
+}
+
+unittest
+{
+    {
+        enum before = "abc 123 def 456";
+        immutable after = before.sedReplace("s/123/789/");
+        assert((after == "abc 789 def 456"), after);
+    }
+
+    {
+        enum before = "I am a fish";
+        immutable after = before.sedReplace("s|a|e|g");
+        assert((after == "I em e fish"), after);
+    }
+
+    {
+        enum before = "Lorem ipsum dolor sit amet";
+        immutable after = before.sedReplace("s###g");
+        assert((after == "Lorem ipsum dolor sit amet"), after);
+    }
+
+    {
+        enum before = "高所恐怖症";
+        immutable after = before.sedReplace("s/高所/閉所/");
+        assert((after == "閉所恐怖症"), after);
+    }
 }
 
 
