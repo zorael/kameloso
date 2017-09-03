@@ -18,7 +18,7 @@ IRCPluginState state;
 Line[string] prevlines;
 
 /// Lifetime of a Line in prevlines, in seconds
-enum replaceTimeoutSeconds = 60;
+enum replaceTimeoutSeconds = 3600;
 
 /// Regex pattern to find lines like "s/foo/bar/"
 enum sedPattern = `^s/([^/]+)/([^/]*)/(g?)$`;
