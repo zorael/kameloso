@@ -20,12 +20,12 @@ Line[string] prevlines;
 /// Lifetime of a Line in prevlines, in seconds
 enum replaceTimeoutSeconds = 3600;
 
-/// Regex pattern to find lines like "s/foo/bar/"
+/// Regex patterns to find lines like "s/foo/bar/"
 enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
 enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
 enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
 
-/// ctRegex engine for the sed-replace pattern
+/// ctRegex engines for the sed-replace pattern
 static sedRegex  = ctRegex!sedPattern;
 static sedRegex2 = ctRegex!sedPattern2;
 static sedRegex3 = ctRegex!sedPattern3;
