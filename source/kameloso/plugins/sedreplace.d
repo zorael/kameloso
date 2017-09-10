@@ -30,6 +30,10 @@ static sedRegex  = ctRegex!sedPattern;
 static sedRegex2 = ctRegex!sedPattern2;
 static sedRegex3 = ctRegex!sedPattern3;
 
+/// ctRegex engines to find and escape opening and closing brackets
+static openBracketRegex = ctRegex!`\[`;
+static closeBracketRegex = ctRegex!`\]`;
+
 
 /// An struct aggregate of a spoken line and the timestamp when it was said
 struct Line
@@ -59,6 +63,9 @@ string sedReplace(const string originalLine, const string expression)
     import std.regex : matchAll, regex, replaceAll, replaceFirst;
 
     string result = originalLine;  // need mutable
+
+    result = result.replaceAll(openBracketRegex, `\\[`);
+    result = result.replaceAll(closeBracketRegex, `\\]`);
 
     static auto regexEngineFor(const string line)
     {
