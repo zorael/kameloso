@@ -78,8 +78,6 @@ void onSelfpart(const IRCEvent event)
  +/
 void joinChannels()
 {
-    import std.algorithm.iteration : joiner;
-
     with (state)
     {
         if (bot.homes.length)
@@ -89,15 +87,17 @@ void joinChannels()
         }
         else if (!bot.channels.length)
         {
-            logger.warning( "No channels, no purpose...");
+            logger.warning("No channels, no purpose...");
             return;
         }
 
-        import std.algorithm.sorting : merge;
+        import std.algorithm.iteration : joiner;
+        import std.range : chain;
 
         // FIXME: line should split if it reaches 512 characters
+
         mainThread.send(ThreadMessage.Sendline(),
-            "JOIN :%s".format(merge(bot.homes, bot.channels).joiner(",")));
+            "JOIN :%s".format(chain(bot.homes, bot.channels).joiner(",")));
     }
 }
 
