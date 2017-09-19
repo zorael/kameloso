@@ -173,17 +173,24 @@ TitleLookup lookupTitle(const string url)
     rq.keepAlive = false;
     rq.bufferSize = BufferSize.titleLookup;
 
-    auto rs = rq.get(url);
-    if (rs.code >= 400) return lookup;
+    try
+    {
+        auto rs = rq.get(url);
+        if (rs.code >= 400) return lookup;
 
-    auto stream = rs.receiveAsRange();
+        auto stream = rs.receiveAsRange();
 
-    lookup.title = getTitleFromStream(stream);
+        lookup.title = getTitleFromStream(stream);
 
-    if (!lookup.title.length) return lookup;
+        if (!lookup.title.length) return lookup;
 
-    lookup.domain = getDomainFromURL(url);
-    lookup.when = Clock.currTime;
+        lookup.domain = getDomainFromURL(url);
+        lookup.when = Clock.currTime;
+    }
+    catch (Exception e)
+    {
+        tlsLogger.error(e.msg);
+    }
 
     return lookup;
 }
