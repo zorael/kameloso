@@ -16,7 +16,7 @@
             "libs-posix-dmd": [ "phobos2" ],
             "dependencies-posix":
             {
-                "requests": "~>0.5.0"
+                "requests": "~>0.5.2"
             }
         },
         {
