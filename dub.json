@@ -22,7 +22,7 @@
         {
             "name": "nowebtitles",
             "versions": [ "Colours" ],
-            "platforms": [ "posix", "windows" ],
+            "platforms": [ "posix" ],
             "libs-posix-dmd": [ "phobos2" ]
         },
         {
