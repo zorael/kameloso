@@ -190,6 +190,17 @@ TitleLookup lookupTitle(const string url)
     catch (Exception e)
     {
         tlsLogger.error(e.msg);
+
+        if (url.beginsWith("https://"))
+        {
+            import std.regex : replaceFirst;
+
+            static httpReplaceEngine = ctRegex!"^https";
+
+            logger.info("Rewriting into http");
+
+            return lookupTitle(url.replaceFirst(httpReplaceEngine, "http"));
+        }
     }
 
     return lookup;
