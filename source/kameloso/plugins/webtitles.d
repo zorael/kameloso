@@ -40,7 +40,7 @@ enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
 static domainRegex = ctRegex!domainPattern;
 
 /// Regex pattern to match YouTube urls
-enum youtubePattern = `://((?:www.)youtube.com)/`;
+enum youtubePattern = `https?://(www.)?youtube.com/watch`;
 
 /// Regex engine to match YouTube urls for replacement
 static youtubeRegex = ctRegex!youtubePattern;
@@ -188,23 +188,36 @@ TitleLookup lookupTitle(const string url)
 
         lookup.title = getTitleFromStream(stream);
 
-        if (!lookup.title.length) return lookup;
+        if (!lookup.title.length)
+        {
+            tlsLogger.info("zero-length title");
+            return lookup;
+        }
         else if (lookup.title == "YouTube" && (url.indexOf("youtube.com/watch?") != -1))
         {
             import std.regex : replaceFirst;
 
+            tlsLogger.info("Bland YouTube title...");
+
             // this better not lead to infinite recursion...
-            immutable onRepeatUrl = url.replaceFirst(youtubeRegex, "youtubeonrepeat.com");
+            immutable onRepeatUrl = url.replaceFirst(youtubeRegex,
+                "http://www.youtubeonrepeat.com/watch/");
+
+            tlsLogger.info(onRepeatUrl);
+
             TitleLookup onRepeatLookup = lookupTitle(onRepeatUrl);
 
-            if (onRepeatLookup.title.indexOf(" - YouTube On Repeat") == -1)
+            tlsLogger.info(onRepeatLookup.title);
+
+            if (onRepeatLookup.title.indexOf(" - Youtube On Repeat") == -1)
             {
                 // No luck, return old lookup
                 return lookup;
             }
 
-            // "Blahblah - YouTube On Repeat" --> "Blahblah  YouTube"
+            // "Blahblah - Youtube On Repeat" --> "Blahblah - Youtube"
             onRepeatLookup.title = onRepeatLookup.title[0..$-10];
+            onRepeatLookup.domain = "youtube.com";
             return onRepeatLookup;
         }
 
