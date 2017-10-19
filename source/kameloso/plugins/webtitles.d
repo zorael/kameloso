@@ -193,13 +193,8 @@ TitleLookup lookupTitle(const string url)
 
         if (url.beginsWith("https://"))
         {
-            import std.regex : replaceFirst;
-
-            static httpReplaceEngine = ctRegex!"^https";
-
-            logger.info("Rewriting into http");
-
-            return lookupTitle(url.replaceFirst(httpReplaceEngine, "http"));
+            // Try once more with HTTP instead of HTTPS, fixes some sites
+            return lookupTitle("http" ~ url[5..$]);
         }
     }
 
