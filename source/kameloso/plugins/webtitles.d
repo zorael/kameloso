@@ -39,6 +39,12 @@ enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
 /// Regex engine to catch domains
 static domainRegex = ctRegex!domainPattern;
 
+/// Regex pattern to match YouTube urls
+enum youtubePattern = `://((?:www.)youtube.com)/`;
+
+/// Regex engine to match YouTube urls for replacement
+static youtubeRegex = ctRegex!youtubePattern;
+
 /// Thread-local logger
 Logger tlsLogger;
 
@@ -183,6 +189,24 @@ TitleLookup lookupTitle(const string url)
         lookup.title = getTitleFromStream(stream);
 
         if (!lookup.title.length) return lookup;
+        else if (lookup.title == "YouTube" && (url.indexOf("youtube.com/watch?") != -1))
+        {
+            import std.regex : replaceFirst;
+
+            // this better not lead to infinite recursion...
+            immutable onRepeatUrl = url.replaceFirst(youtubeRegex, "youtubeonrepeat.com");
+            TitleLookup onRepeatLookup = lookupTitle(onRepeatUrl);
+
+            if (onRepeatLookup.title.indexOf(" - YouTube On Repeat") == -1)
+            {
+                // No luck, return old lookup
+                return lookup;
+            }
+
+            // "Blahblah - YouTube On Repeat" --> "Blahblah  YouTube"
+            onRepeatLookup.title = onRepeatLookup.title[0..$-10];
+            return onRepeatLookup;
+        }
 
         lookup.domain = getDomainFromURL(url);
         lookup.when = Clock.currTime;
