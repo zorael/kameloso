@@ -1684,8 +1684,7 @@ unittest
 
     immutable e1 = ":zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff"
                    .toIRCEvent();
-    immutable u1 = userFromEvent(e1);
-    with (u1)
+    with (userFromEvent(e1))
     {
         assert((nickname == "zorael"), nickname);
         assert((ident == "~zorael"), ident);
@@ -1696,8 +1695,7 @@ unittest
     immutable e2 = ":asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as"
                    .toIRCEvent();
     assert((e2.type == IRCEvent.Type.WHOISLOGIN), e2.type.to!string);
-    immutable u2 = userFromEvent(e2);
-    with (u2)
+    with (userFromEvent(e2))
     {
         assert((nickname == "xurael"), nickname);
         assert((login == "zorael"), login);
@@ -1706,8 +1704,7 @@ unittest
 
     immutable e3 = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered."
                    .toIRCEvent();
-    immutable u3 = userFromEvent(e3);
-    with (u3)
+    with (userFromEvent(e3))
     {
         assert((nickname == "NickServ"), nickname);
         assert((ident == "NickServ"), ident);
