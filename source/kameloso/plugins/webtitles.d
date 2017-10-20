@@ -40,7 +40,7 @@ enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
 static domainRegex = ctRegex!domainPattern;
 
 /// Regex pattern to match YouTube urls
-enum youtubePattern = `https?://(www.)?youtube.com/watch`;
+enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
 /// Regex engine to match YouTube urls for replacement
 static youtubeRegex = ctRegex!youtubePattern;
