@@ -216,7 +216,7 @@ TitleLookup lookupTitle(const string url)
             }
 
             // Truncate away " - ListenOnRepeat"
-            onRepeatLookup.title = onRepeatLookup.title[0..$-18];
+            onRepeatLookup.title = onRepeatLookup.title[0..$-17];
             onRepeatLookup.domain = "youtube.com";
             return onRepeatLookup;
         }
