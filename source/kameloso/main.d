@@ -88,6 +88,12 @@ Quit checkMessages()
     {
         import std.datetime : Clock;
 
+        if (bot.server.network == IRCServer.Network.twitch)
+        {
+            // Twitch doesn't support WHOIS
+            return;
+        }
+
         // We buffer the request so only one goes out for a particular nickname
         // at any one given time.Identical requests are likely to go out several
         // at a time in bursts, and we only need one reply. So limit the calls.
