@@ -374,7 +374,7 @@ void onRegistrationEvent(const IRCEvent event)
          +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
          +/
 
-        state.mainThread.send(ThreadMessage.Quietline(), "CAP END");
+        state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
     }
 
     if (event.sender.length && !state.bot.server.resolvedAddress.length)
@@ -398,7 +398,7 @@ void register()
         bot.startedRegistering = true;
         updateBot();
 
-        mainThread.send(ThreadMessage.Quietline(), "CAP LS");
+        mainThread.send(ThreadMessage.Sendline(), "CAP LS");
 
         if (bot.pass.length)
         {
