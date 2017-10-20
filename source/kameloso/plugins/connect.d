@@ -353,6 +353,15 @@ void onRegistrationEvent(const IRCEvent event)
 
     if ((event.type == IRCEvent.Type.CAP) && (event.aux == "LS"))
     {
+        // Specialcase some Twitch capabilities
+
+        if (state.bot.server.network == IRCServer.Network.twitch)
+        {
+            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/membership");
+            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/tags");
+            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/commands");
+        }
+
         /++
          +  The END subcommand signals to the server that capability negotiation
          +  is complete and requests that the server continue with client
