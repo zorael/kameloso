@@ -200,23 +200,23 @@ TitleLookup lookupTitle(const string url)
             tlsLogger.info("Bland YouTube title...");
 
             // this better not lead to infinite recursion...
-            immutable onRepeatUrl = url.replaceFirst(youtubeRegex,
-                "http://www.youtubeonrepeat.com/watch/");
+            immutable onRepeatURL = url.replaceFirst(youtubeRegex,
+                "https://www.listenonrepeat.com/watch/");
 
-            tlsLogger.info(onRepeatUrl);
+            tlsLogger.info(onRepeatURL);
 
-            TitleLookup onRepeatLookup = lookupTitle(onRepeatUrl);
+            TitleLookup onRepeatLookup = lookupTitle(onRepeatURL);
 
             tlsLogger.info(onRepeatLookup.title);
 
-            if (onRepeatLookup.title.indexOf(" - Youtube On Repeat") == -1)
+            if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
             {
                 // No luck, return old lookup
                 return lookup;
             }
 
-            // "Blahblah - Youtube On Repeat" --> "Blahblah - Youtube"
-            onRepeatLookup.title = onRepeatLookup.title[0..$-10];
+            // Truncate away " - ListenOnRepeat"
+            onRepeatLookup.title = onRepeatLookup.title[0..$-18];
             onRepeatLookup.domain = "youtube.com";
             return onRepeatLookup;
         }
