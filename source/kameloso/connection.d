@@ -221,7 +221,7 @@ void listenFiber(Connection conn)
     import std.concurrency : yield;
     import std.datetime : Clock, SysTime;
 
-    auto buffer = new ubyte[](BufferSize.socketReceive);
+    ubyte[BufferSize.socketReceive*2] buffer, mirror;
     SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
