@@ -2445,4 +2445,18 @@ unittest
         assert((channel == "##networking"), channel);
         assert((content == "start at cpasdcas"), content);
     }
+
+    /+
+    :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
+    +/
+    immutable e17 = (":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :" ~
+                     IRCControlCharacter.ctcp ~ "ACTION 123 test test content" ~
+                     IRCControlCharacter.ctcp).toIRCEvent();
+    with (e17)
+    {
+        assert((sender == "zorael"), sender);
+        assert((type == IRCEvent.Type.EMOTE), type.to!string);
+        assert((channel == "#flerrp"), channel);
+        assert((content == "123 test test content"), content);
+    }
 }
