@@ -1941,9 +1941,8 @@ IRCUser userFromEvent(const IRCEvent event)
         if (!event.ident.length)
         {
             // Server events don't have ident
-            writefln(Foreground.lightred,
-                "There was a server %s event and we naïvely tried to build a user from it",
-                event.type);
+            logger.warningf("There was a server %s event and we naïvely " ~
+                "tried to build a user from it", event.type);
             goto case WHOISLOGIN;
         }
 
