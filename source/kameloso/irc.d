@@ -502,7 +502,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
             switch (ctcpEvent)
             {
             case "ACTION":
-                // ignore, handled elsewhere
+                // We already sliced away the control characters and nommed the
+                // "ACTION" ctcpEvent string, so just set the type and break.
+                event.type = IRCEvent.Type.EMOTE;
                 break;
 
             foreach (immutable type; EnumMembers!(IRCEvent.Type))
