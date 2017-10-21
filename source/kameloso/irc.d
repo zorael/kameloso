@@ -1032,6 +1032,14 @@ unittest
     }
 }
 
+string decodeIRCv3String(const string line)
+{
+    import std.regex : ctRegex, replaceAll;
+
+    static spaces = ctRegex!`\\s`;
+
+    return line.replaceAll(spaces, " ");
+}
 
 public:
 
@@ -1615,6 +1623,9 @@ struct IRCEvent
 
     /// The auxiliary storage, containing type-specific extra bits of information.
     string aux;
+
+    /// IRCv3 message tags attached to this event.
+    string tags;
 
     /// With a numeric event, the number of the event type.
     uint num;
