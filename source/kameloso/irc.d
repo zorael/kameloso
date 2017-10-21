@@ -452,7 +452,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
             event.type = CHAN;
             event.channel = targetOrChannel;
-            break;
         }
         else
         {
