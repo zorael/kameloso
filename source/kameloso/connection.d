@@ -312,7 +312,7 @@ void listenFiber(Connection conn)
 
         if (start >= pos)
         {
-            if (start == end)
+            if (start == buffer.length)
             {
                 logger.warning("OVERFLOW! Growing buffer but data was lost");
                 const old = buffer.length;
