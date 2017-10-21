@@ -849,6 +849,48 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         slice.formattedRead("%s :%s", &event.channel, &event.content);
         break;
 
+    case USERSTATE:
+    case ROOMSTATE:
+    case GLOBALUSERSTATE: // ?
+        // :tmi.twitch.tv USERSTATE #zorael
+        // :tmi.twitch.tv ROOMSTATE #zorael
+        event.channel = slice;
+        break;
+
+    case USERNOTICE:
+        // :tmi.twitch.tv USERNOTICE #drdisrespectlive :ooooo weee, it's a meeeee, Moweee!
+        // :tmi.twitch.tv USERNOTICE #tsm_viss :Good luck at IEM hope you guys crush it!
+        // :tmi.twitch.tv USERNOTICE #lirik
+        if (slice.indexOf(" :") != -1)
+        {
+            event.channel = slice.nom(" :");
+            event.content = slice;
+        }
+        else
+        {
+            event.channel = slice;
+        }
+
+        event.role = Role.SERVER;
+        break;
+
+    case CLEARCHAT:
+        // :tmi.twitch.tv CLEARCHAT #zorael
+        // :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+        if (slice.indexOf(" :") != -1)
+        {
+            // Banned
+            event.channel = slice.nom(" :");
+            event.target = slice;
+        }
+        else
+        {
+            event.channel = slice;
+        }
+
+        event.role = Role.SERVER;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
@@ -1156,6 +1198,8 @@ struct IRCEvent
         CTCP_VERSION, CTCP_TIME, CTCP_PING,
         CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
         CTCP_USERINFO, CTCP_FINGER,
+        USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
+        CLEARCHAT, USERNOTICE,
         AUTHCHALLENGE,
         AUTHACCEPTANCE, // = 900        // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
