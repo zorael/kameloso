@@ -79,8 +79,27 @@ void parseBasic(ref IRCEvent event) @trusted
         break;
 
     default:
-        logger.warning("Unknown basic type: ", event.raw);
-        logger.info("Please report this.");
+        import kameloso.stringutils : beginsWith;
+
+        if (event.raw.beginsWith('@'))
+        {
+            import kameloso.stringutils : nom;
+            import std.algorithm.iteration : splitter;
+
+            // Reuse raw, but get rid of the prepended @
+            raw = event.raw[1..$];
+            // Save tags so we can restore it in our new event
+            immutable tags = raw.nom(" ");
+            event = toIRCEvent(raw);
+            event.tags = tags;
+            event.parseTwitchTags();
+        }
+        else
+        {
+            logger.warning("Unknown basic type: ", event.raw);
+            logger.info("Please report this.");
+        }
+
         break;
     }
 }
