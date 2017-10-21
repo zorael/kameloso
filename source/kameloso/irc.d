@@ -355,6 +355,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         logger.warning("------------------------------------");
     }
 
+    with (IRCEvent)
     with (IRCEvent.Type)
     switch (event.type)
     {
