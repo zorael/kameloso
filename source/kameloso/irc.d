@@ -1126,7 +1126,19 @@ void parseTwitchTags(ref IRCEvent event)
 
 // prioritiseTwoRoles
 /++
- +  FILLME
+ +  Compares a given IRCEvent.Role to a role string and decides which of the
+ +  two weighs the most; which takes precedence over the other.
+ +
+ +  This is used to decide what role a user has when they are of several at the
+ +  same time. A moderator might be a partner and a subscriber at the same
+ +  time, for instance.
+ +
+ +  Params:
+ +      current = The right-hand-side IRCEvent.Role to compare with.
+ +      newRole = A Role in lowercase, left-hand-side to compare with.
+ +
+ +  Returns:
+ +      the IRCEvent.Role with the highest priority of the two.
  +/
 IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRole)
 {
