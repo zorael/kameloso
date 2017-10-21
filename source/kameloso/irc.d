@@ -794,7 +794,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         event.target = slice.nom(" :");
         event.aux = event.target;
         event.content = slice;
-
         break;
 
     case PONG:

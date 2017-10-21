@@ -302,6 +302,7 @@ void listenFiber(Connection conn)
 
         if (pos >= end)
         {
+            // can be end or end+1
             start = 0;
             continue;
         }
