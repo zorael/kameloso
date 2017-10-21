@@ -963,6 +963,190 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
 }
 
 
+// parseTwitchTags
+/++
+ +  FILLME
+ +/
+void parseTwitchTags(ref IRCEvent event)
+{
+    import kameloso.stringutils : nom;
+    import std.algorithm.iteration : splitter;
+
+    // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
+
+    if (!event.tags.length) return;
+
+    with (IRCEvent)
+    foreach (tag; event.tags.splitter(";"))
+    {
+        immutable key = tag.nom("=");
+
+        if (!tag.length || (tag == "0")) continue;
+
+        switch (key)
+        {
+        case "display-name":
+            event.alias_ = tag;
+            continue;
+
+        case "badges":
+            foreach (badge; tag.splitter(","))
+            {
+                immutable slash = tag.indexOf('/');
+                assert(slash != -1);
+                event.role = prioritiseTwoRoles(event.role, tag[0..slash]);
+            }
+            break;
+
+        case "mod":
+            if (Role.MODERATOR > event.role)
+            {
+                logger.info("needed explicit mod mod! ", event.role);
+                event.role = Role.MODERATOR;
+            }
+            continue;
+
+        case "subscriber":
+            if (Role.SUBSCRIBER > event.role)
+            {
+                logger.info("needed explicit sub mod! ", event.role);
+                event.role = Role.SUBSCRIBER;
+            }
+            continue;
+
+        case "turbo":
+            if (Role.TURBO > event.role)
+            {
+                logger.info("needed explicit mod mod! ", event.role);
+                event.role = Role.TURBO;
+            }
+            continue;
+
+        case "ban-duration":
+            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            logger.trace("CAUGHT BAN! duration: ", tag);
+            event.aux = tag;
+            break;
+
+        case "ban-reason":
+            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            event.content = decodeIRCv3String(tag);
+            //logger.trace("CAUGHT ban reason: ", event.content);
+            break;
+
+        case "user-type":
+            if (tag == "mod")
+            {
+                if (Role.MODERATOR > event.role)
+                {
+                    logger.info("ROLE WAS NOT MOD AT (2): ", event.role);
+                    event.role = Role.MODERATOR;
+                }
+            }
+            else if (tag == "admin")
+            {
+                if (Role.ADMIN > event.role)
+                {
+                    logger.info("ROLE WAS NOT ADMIN AT (3): ", event.role);
+                    event.role = Role.ADMIN;
+                }
+            }
+            else
+            {
+                logger.info("don't know what to do with user type '", tag, "'");
+            }
+            break;
+
+        case "msg-param-sub-plan-name":
+            event.aux = decodeIRCv3String(tag);
+            break;
+
+        case "system-msg":
+            event.content = decodeIRCv3String(tag);
+            break;
+
+        case "emote-only":
+            event.type = Type.EMOTE;
+            continue;
+
+        //case "broadcaster-lang":
+        case "color":
+        //case "emotes":
+        //case "emote-sets":
+        //case "followers-only":
+        //case "mercury":
+        //case "r9k":
+        case "room-id":
+        case "slow":
+        //case "subs-only":
+        case "id":
+        case "sent-ts":
+        case "tmi-sent-ts":
+        case "user-id":
+        case "login":
+        //case "msg-id":
+        //case "msg-param-months":
+        //case "msg-param-sub-plan":
+        case "target-user-id":
+            // Silently ignore these events
+            continue;
+
+        default:
+            if (!tag.length || (tag == "0")) continue;
+        }
+
+        logger.trace(key, " = '", tag, "'");
+    }
+}
+
+
+// prioritiseTwoRoles
+/++
+ +  FILLME
+ +/
+IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRole)
+{
+    with (IRCEvent)
+    with (IRCEvent.Role)
+    switch (newRole)
+    {
+    case "subscriber":
+        if (SUBSCRIBER > current) return SUBSCRIBER;
+        break;
+
+    case "moderator":
+        if (MODERATOR > current) return MODERATOR;
+        break;
+
+    case "bits":
+        if (BITS > current) return BITS;
+        break;
+
+    case "partner":
+        if (PARTNER > current) return PARTNER;
+        break;
+
+    case "premium":
+        if (PREMIUM > current) return PREMIUM;
+        break;
+
+    case "turbo":
+        if (TURBO > current) return TURBO;
+        break;
+
+    case "broadcaster":
+        if (BROADCASTER > current) return BROADCASTER;
+        break;
+
+    default:
+        logger.warningf("don't know what to do with badge '%s'");
+        break;
+    }
+
+    return current;
+}
+
+
 // networkOf
 /++
  +  Tries to guess the network of an IRC server based on its address.
