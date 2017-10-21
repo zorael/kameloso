@@ -30,7 +30,7 @@ enum BufferSize
 {
     socketOptionReceive = 1024,
     socketOptionSend = 1024,
-    socketReceive = 2048, // "OVERFLOW! Growing buffer but data was lost, old size:1536 new:2304
+    socketReceive = 1024,
     titleLookup = 8192,
 }
 
