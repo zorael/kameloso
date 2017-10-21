@@ -1160,7 +1160,7 @@ struct IRCServer
 /// An aggregate of string fields that represents a single user.
 struct IRCUser
 {
-    string nickname, ident, address, login;
+    string nickname, alias_, ident, address, login;
     bool special;
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
@@ -1563,14 +1563,37 @@ struct IRCEvent
         900 : Type.AUTHACCEPTANCE,
     ];
 
+    enum Role
+    {
+        UNSET,
+        OTHER,
+        MEMBER,
+        BITS,
+        TURBO,
+        SUBSCRIBER,
+        PREMIUM,
+        PARTNER,
+        MODERATOR,
+        OPERATOR,
+        BROADCASTER,
+        ADMIN,
+        SERVER,
+    }
+
     /// The event type, signifying what *kind* of event this is.
     Type type;
+
+    /// The role of the sender in this context
+    Role role;
 
     /// The raw IRC string, untouched.
     string raw;
 
     /// The name of whoever (or whatever) sent this event.
     string sender;
+
+    /// The alias (display name) of whoever sent this event.
+    string alias_;
 
     /// The IDENT identification of the sender.
     string ident;
