@@ -314,15 +314,13 @@ void listenFiber(Connection conn)
         {
             if (start == buffer.length)
             {
-                logger.warning("OVERFLOW! Growing buffer but data was lost");
-                const old = buffer.length;
-                buffer.length = cast(size_t)(buffer.length * 1.5);
-                logger.logf("old size:%d new:%d (REPORT THIS)", old, buffer.length);
+                // [01:48:28] old size:22984114 new:34476171 (REPORT THIS)
+                logger.warning("----------------------------------------[ OVERFLOW!");
+                logger.warningf("START==END start:%d pos:%d end:%d len:%d", start, pos, end, buffer.length);
+                //buffer.length = cast(size_t)(buffer.length * 1.1);
             }
 
-            // logger.warning("OVERLAP");
-            // logger.logf("start:%d pos:%d end:%d (REPORT THIS)", start, pos, end);
-            auto mirror = new typeof(buffer)(start);
+            //logger.warningf("------------------[ OVERLAP CANNOT COPY WILL MIRROR start:%d pos:%d end:%d len:%d (REPORT THIS)", start, pos, end, buffer.length);
             mirror[0..start] = buffer[pos..end];
             buffer[0..start] = mirror[0..start];
         }
