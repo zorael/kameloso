@@ -231,9 +231,19 @@ void listenFiber(Connection conn)
 
         if (!bytesReceived)
         {
-            logger.errorf("ZERO RECEIVED! assuming dead connection. last error: '%s'",
-                          lastSocketError);
-            return;
+            logger.errorf("ZERO RECEIVED! last error: '%s'", lastSocketError);
+
+            switch (lastSocketError)
+            {
+            case "Resource temporarily unavailable":
+            case "Success":
+                logger.info("benign.");
+                break;
+
+            default:
+                logger.error("assuming dead and returning");
+                return;
+            }
         }
         else if (bytesReceived == Socket.ERROR)
         {
