@@ -1091,13 +1091,11 @@ void parseTwitchTags(ref IRCEvent event)
             switch (tag)
             {
             case "host_on":
-                logger.info("tag says HOSTSTART");
                 event.type = Type.HOSTSTART;
                 break;
 
             case "host_off":
             case "host_target_went_offline":
-                logger.info("tag says HOSTEND");
                 event.type = Type.HOSTEND;
                 break;
 
