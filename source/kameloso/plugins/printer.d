@@ -157,7 +157,7 @@ void onAnyEvent(const IRCEvent origEvent)
             if (special)        reusableAppender.formattedWrite("%s*",
                                     colourise(DefaultColour.special));
             if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.num), role.to!string);
+                                    colourise(DefaultColour.white), role.to!string);
             if (alias_.length && (alias_ != sender))
                                 reusableAppender.formattedWrite(" %s(%s)",
                                     colourise(senderColour), alias_);
