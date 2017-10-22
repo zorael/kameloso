@@ -1131,6 +1131,14 @@ void parseTwitchTags(ref IRCEvent event)
                 event.type = Type.HOSTEND;
                 break;
 
+            case "sub":
+                event.type = Type.SUB;
+                break;
+
+            case "resub":
+                event.type = Type.RESUB;
+                break;
+
             default:
                 logger.warning("unknown host state: ", tag);
                 break;
@@ -1494,6 +1502,7 @@ struct IRCEvent
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
+        SUB, RESUB,
         AUTHCHALLENGE,
         AUTHACCEPTANCE, // = 900        // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
