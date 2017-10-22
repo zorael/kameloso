@@ -1222,7 +1222,7 @@ IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRo
         break;
 
     default:
-        logger.warningf("don't know what to do with badge '%s'");
+        logger.warningf("don't know what to do with role '%s'", newRole);
         break;
     }
 
