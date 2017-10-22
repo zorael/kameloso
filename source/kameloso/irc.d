@@ -1195,8 +1195,9 @@ IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRo
         if (SUBSCRIBER > current) return SUBSCRIBER;
         break;
 
+    case "mod":
     case "moderator":
-        if (MODERATOR > current) return MODERATOR;
+        if (MOD > current) return MOD;
         break;
 
     case "bits":
@@ -1217,6 +1218,25 @@ IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRo
 
     case "broadcaster":
         if (BROADCASTER > current) return BROADCASTER;
+        break;
+
+    case "global_mod":
+        if (GLOBAL_MOD > current) return GLOBAL_MOD;
+        break;
+
+    case "admin":
+        if (ADMIN > current) return ADMIN;
+        break;
+
+    case "staff":
+        if (STAFF > current) return STAFF;
+        break;
+
+    case "server":
+        if (SERVER > current) return SERVER;
+        break;
+
+    case string.init:
         break;
 
     default:
@@ -1847,10 +1867,12 @@ struct IRCEvent
         SUBSCRIBER,
         PREMIUM,
         PARTNER,
-        MODERATOR,
+        MOD,
         OPERATOR,
         BROADCASTER,
         ADMIN,
+        GLOBAL_MOD,
+        STAFF,
         SERVER,
     }
 
