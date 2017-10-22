@@ -876,6 +876,32 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         event.channel = slice;
         break;
 
+    case HOSTTARGET:
+        // This should rarely if ever trigger
+
+        if (slice.indexOf(" :-") != -1)
+        {
+            event.type = HOSTEND;
+            goto case HOSTEND;
+        }
+        else
+        {
+            event.type = HOSTSTART;
+            goto case HOSTSTART;
+        }
+
+    case HOSTSTART:
+        // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
+        //:tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
+        slice.formattedRead("%s :%s %s", &event.channel, &event.content, &event.aux);
+        if (event.aux == "-") event.aux = string.init;
+        break;
+
+    case HOSTEND:
+        // :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
+        slice.formattedRead("%s :- %s", &event.channel, &event.aux);
+        break;
+
     case USERNOTICE:
         // :tmi.twitch.tv USERNOTICE #drdisrespectlive :ooooo weee, it's a meeeee, Moweee!
         // :tmi.twitch.tv USERNOTICE #tsm_viss :Good luck at IEM hope you guys crush it!
@@ -1092,6 +1118,27 @@ void parseTwitchTags(ref IRCEvent event)
         case "emote-only":
             event.type = Type.EMOTE;
             continue;
+
+        case "msg-id":
+            switch (tag)
+            {
+            case "host_on":
+                logger.info("tag says HOSTSTART");
+                event.type = Type.HOSTSTART;
+                break;
+
+            case "host_off":
+            case "host_target_went_offline":
+                logger.info("tag says HOSTEND");
+                event.type = Type.HOSTEND;
+                break;
+
+            default:
+                logger.warning("unknown host state: ", tag);
+                break;
+            }
+            break;
+            //continue;
 
         //case "broadcaster-lang":
         case "color":
@@ -1427,7 +1474,8 @@ struct IRCEvent
         CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
         CTCP_USERINFO, CTCP_FINGER,
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
-        CLEARCHAT, USERNOTICE,
+        CLEARCHAT, USERNOTICE, HOSTTARGET,
+        HOSTSTART, HOSTEND,
         AUTHCHALLENGE,
         AUTHACCEPTANCE, // = 900        // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
@@ -2475,4 +2523,43 @@ unittest
         assert((channel == "#flerrp"), channel);
         assert((content == "123 test test content"), content);
     }
+
+    /+
+    :tmi.twitch.tv HOSTTARGET #lirik :h1z1 -
+    +/
+    immutable e18 = ":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -".toIRCEvent();
+    with (e18)
+    {
+        assert((sender == "tmi.twitch.tv"), sender);
+        assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+        assert((channel == "#lirik"), channel);
+        assert((content == "h1z1"), content);
+        assert((!aux.length), aux);
+    }
+
+    /+
+    :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
+    +/
+    immutable e19 = ":tmi.twitch.tv HOSTTARGET #lirik :- 178".toIRCEvent();
+    with (e19)
+    {
+        assert((sender == "tmi.twitch.tv"), sender);
+        assert((type == IRCEvent.Type.HOSTEND), type.to!string);
+        assert((channel == "#lirik"), channel);
+        assert((aux == "178"), aux);
+    }
+
+    /+
+    :tmi.twitch.tv HOSTTARGET #lirik chu8 270
+    +/
+    immutable e20 = ":tmi.twitch.tv HOSTTARGET #lirik :chu8 270".toIRCEvent();
+    with (e20)
+    {
+        assert((sender == "tmi.twitch.tv"), sender);
+        assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+        assert((channel == "#lirik"), channel);
+        assert((content == "chu8"), content);
+        assert((aux == "270"), aux);
+    }
+
 }
