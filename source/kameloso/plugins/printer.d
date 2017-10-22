@@ -83,9 +83,9 @@ void onAnyEvent(const IRCEvent origEvent)
         import std.datetime;
         import std.format : formattedWrite;
 
-        const timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
-                          .timeOfDay
-                          .toString();
+        immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
+                              .timeOfDay
+                              .toString();
 
         with (Foreground)
         with (event)

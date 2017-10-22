@@ -1046,7 +1046,7 @@ void parseTwitchTags(ref IRCEvent event)
                 assert(slash != -1);
                 event.role = prioritiseTwoRoles(event.role, tag[0..slash]);
             }
-            break;
+            continue;
 
         case "mod":
             if (Role.MODERATOR > event.role)
@@ -1074,15 +1074,13 @@ void parseTwitchTags(ref IRCEvent event)
 
         case "ban-duration":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-            logger.trace("CAUGHT BAN! duration: ", tag);
             event.aux = tag;
-            break;
+            continue;
 
         case "ban-reason":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             event.content = decodeIRCv3String(tag);
-            //logger.trace("CAUGHT ban reason: ", event.content);
-            break;
+            continue;
 
         case "user-type":
             if (tag == "mod")
@@ -1105,7 +1103,7 @@ void parseTwitchTags(ref IRCEvent event)
             {
                 logger.info("don't know what to do with user type '", tag, "'");
             }
-            break;
+            continue;
 
         case "msg-param-sub-plan-name":
             event.aux = decodeIRCv3String(tag);
