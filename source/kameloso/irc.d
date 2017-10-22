@@ -1063,8 +1063,10 @@ void parseTwitchTags(ref IRCEvent event)
 
         case "ban-duration":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-            event.aux = tag;
-            continue;
+            // (Optional) Duration of the timeout, in seconds. If omitted,
+            // the ban is permanent.
+            event.aux = (tag.length) ? tag : "PERMANENT";
+            break;
 
         case "ban-reason":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
