@@ -1054,28 +1054,12 @@ void parseTwitchTags(ref IRCEvent event)
             break;
 
         case "mod":
-            if (Role.MODERATOR > event.role)
-            {
-                logger.info("needed explicit mod mod! ", event.role);
-                event.role = Role.MODERATOR;
-            }
-            continue;
-
         case "subscriber":
-            if (Role.SUBSCRIBER > event.role)
-            {
-                logger.info("needed explicit sub mod! ", event.role);
-                event.role = Role.SUBSCRIBER;
-            }
-            continue;
-
         case "turbo":
-            if (Role.TURBO > event.role)
-            {
-                logger.info("needed explicit mod mod! ", event.role);
-                event.role = Role.TURBO;
-            }
-            continue;
+            // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
+            if (tag == "0") break;
+            event.role = prioritiseTwoRoles(event.role, key);
+            break;
 
         case "ban-duration":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
@@ -1088,30 +1072,9 @@ void parseTwitchTags(ref IRCEvent event)
             break;
 
         case "user-type":
-            if (tag == "mod")
-            {
-                if (Role.MODERATOR > event.role)
-                {
-                    logger.info("ROLE WAS NOT MOD AT (2): ", event.role);
-                    event.role = Role.MODERATOR;
-                }
-            }
-            else if (tag == "admin")
-            {
-                if (Role.ADMIN > event.role)
-                {
-                    logger.info("ROLE WAS NOT ADMIN AT (3): ", event.role);
-                    event.role = Role.ADMIN;
-                }
-            }
-            else
-            {
-                logger.info("don't know what to do with user type '", tag, "'");
-            }
-            continue;
-
-        case "msg-param-sub-plan-name":
-            event.aux = decodeIRCv3String(tag);
+            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
+            // The broadcaster can have any of these.
+            event.role = prioritiseTwoRoles(event.role, tag);
             break;
 
         case "system-msg":
