@@ -1031,13 +1031,11 @@ void parseTwitchTags(ref IRCEvent event)
     {
         immutable key = tag.nom("=");
 
-        if (!tag.length || (tag == "0")) continue;
-
         switch (key)
         {
         case "display-name":
             event.alias_ = tag;
-            continue;
+            break;
 
         case "badges":
             // Comma-separated list of chat badges and the version of each
@@ -1053,7 +1051,7 @@ void parseTwitchTags(ref IRCEvent event)
                 assert(slash != -1);
                 event.role = prioritiseTwoRoles(event.role, tag[0..slash]);
             }
-            continue;
+            break;
 
         case "mod":
             if (Role.MODERATOR > event.role)
@@ -1087,7 +1085,7 @@ void parseTwitchTags(ref IRCEvent event)
         case "ban-reason":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             event.content = decodeIRCv3String(tag);
-            continue;
+            break;
 
         case "user-type":
             if (tag == "mod")
@@ -1122,7 +1120,7 @@ void parseTwitchTags(ref IRCEvent event)
 
         case "emote-only":
             event.type = Type.EMOTE;
-            continue;
+            break;
 
         case "msg-id":
             switch (tag)
@@ -1151,7 +1149,6 @@ void parseTwitchTags(ref IRCEvent event)
                 break;
             }
             break;
-            //continue;
 
         //case "broadcaster-lang":
         case "color":
@@ -1172,14 +1169,16 @@ void parseTwitchTags(ref IRCEvent event)
         //case "msg-param-months":
         //case "msg-param-sub-plan":
         case "target-user-id":
-            // Silently ignore these events
-            continue;
+            // The target's user ID
+
+            // Ignore these events
+            break;
 
         default:
-            if (!tag.length || (tag == "0")) continue;
+            // Verbosely
+            logger.trace(key, " = '", tag, "'");
+            break;
         }
-
-        logger.trace(key, " = '", tag, "'");
     }
 }
 
