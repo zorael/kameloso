@@ -1010,9 +1010,9 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
 
 // parseTwitchTags
 /++
- +  Parses an event's Twitch IRCv3 tags.
+ +  Parses a Twitch event's IRCv3 tags.
  +
- +  The event is passed by ref as some tags may neccessitate changes to it.
+ +  The event is passed by ref as many tags neccessitate changes to it.
  +
  +  Params:
  +      ref event = A reference to the IRCEvent whose tags should be parsed.
