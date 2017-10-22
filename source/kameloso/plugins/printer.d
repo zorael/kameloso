@@ -95,17 +95,14 @@ void onAnyEvent(const IRCEvent origEvent)
             reusableAppender.formattedWrite("[%s] [%s] ",
                 timestamp, type.to!string);
 
-            if (alias_.length && (alias_ != sender))
-            {
-                reusableAppender.formattedWrite("%s (%s)", sender, alias_);
-            }
-            else
-            {
-                import std.range : put;
-                put(reusableAppender, sender);
-            }
+            import std.range : put;
+            put(reusableAppender, sender);
 
             if (special)        reusableAppender.put('*');
+            if (role != Role.init)
+                                reusableAppender.formattedWrite(" [%s]", role.to!string);
+            if (alias_.length && (alias_ != sender))
+                                reusableAppender.formattedWrite(" (%s)", alias_);
             if (target.length)  reusableAppender.formattedWrite(" (%s)",  target);
             if (channel.length) reusableAppender.formattedWrite(" [%s]",  channel);
             if (content.length) reusableAppender.formattedWrite(`: "%s"`, content);
