@@ -28,9 +28,9 @@ enum altNickSign = '^';
 /// Buffer sizes in bytes.
 enum BufferSize
 {
-    socketOptionReceive = 1024,
+    socketOptionReceive = 2048,
     socketOptionSend = 1024,
-    socketReceive = 1024,
+    socketReceive = 2048,
     titleLookup = 8192,
 }
 
