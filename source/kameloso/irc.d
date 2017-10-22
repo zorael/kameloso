@@ -1040,6 +1040,13 @@ void parseTwitchTags(ref IRCEvent event)
             continue;
 
         case "badges":
+            // Comma-separated list of chat badges and the version of each
+            // badge (each in the format <badge>/<version>, such as admin/1).
+            // Valid badge values: admin, bits, broadcaster, global_mod,
+            // moderator, subscriber, staff, turbo.
+
+            event.rolestring = tag;
+
             foreach (badge; tag.splitter(","))
             {
                 immutable slash = tag.indexOf('/');
@@ -1920,6 +1927,9 @@ struct IRCEvent
 
     /// The auxiliary storage, containing type-specific extra bits of information.
     string aux;
+
+    /// The role in string form, may be of other values than the enum provides.
+    string rolestring;
 
     /// IRCv3 message tags attached to this event.
     string tags;
