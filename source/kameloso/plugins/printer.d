@@ -50,6 +50,7 @@ void onAnyEvent(const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
 
+    with (IRCEvent)
     with (IRCEvent.Type)
     switch (event.type)
     {
