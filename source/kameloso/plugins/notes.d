@@ -90,10 +90,7 @@ void onNames(const IRCEvent event)
     import std.algorithm.searching : canFind;
     import std.datetime : Clock;
 
-    if (!state.bot.homes.canFind(event.channel))
-    {
-        return;
-    }
+    if (!state.bot.homes.canFind(event.channel)) return;
 
     foreach (immutable prefixedNickname; event.content.splitter)
     {
