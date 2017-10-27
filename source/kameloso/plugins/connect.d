@@ -91,13 +91,20 @@ void joinChannels()
             return;
         }
 
-        import std.algorithm.iteration : joiner;
+        import std.algorithm.iteration : joiner, uniq;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
         import std.range : chain;
 
         // FIXME: line should split if it reaches 512 characters
+        // Needs .array or .dup, sort() will sort in-place and reorder homes
+        auto chanlist = chain(bot.homes, bot.channels)
+            .array
+            .sort()
+            .uniq
+            .joiner(",");
 
-        mainThread.send(ThreadMessage.Sendline(),
-            "JOIN :%s".format(chain(bot.homes, bot.channels).joiner(",")));
+        mainThread.send(ThreadMessage.Sendline(), "JOIN :%s".format(chanlist));
     }
 }
 
