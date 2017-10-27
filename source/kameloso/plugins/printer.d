@@ -164,35 +164,27 @@ void onAnyEvent(const IRCEvent origEvent)
             import std.range : put;
             import std.string : toLower;
 
+            bool aliasPrinted;
+
             if (alias_.length && (sender == alias_.toLower))
             {
                 put(reusableAppender, colourise(senderColour));
                 put(reusableAppender, alias_);
-
-                if (special)        reusableAppender.formattedWrite("%s*",
-                                    colourise(DefaultColour.special));
-                if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.white), role.to!string);
+                aliasPrinted = true;
             }
             else
             {
                 put(reusableAppender, colourise(senderColour));
                 put(reusableAppender, sender);
-                if (special)        reusableAppender.formattedWrite("%s*",
-                                    colourise(DefaultColour.special));
-                if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.white), role.to!string);
-                if (alias_.length)  reusableAppender.formattedWrite(" %s(%s)",
-                                    colourise(senderColour), sender);
             }
 
-            /*if (special)        reusableAppender.formattedWrite("%s*",
+            if (special)        reusableAppender.formattedWrite("%s*",
                                     colourise(DefaultColour.special));
             if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.white), role.to!string);*/
-            /*if (alias_.length && (alias_ != sender))
+                                    colourise(DefaultColour.white), role.to!string);
+            if (!aliasPrinted && alias_.length && (alias_ != sender))
                                 reusableAppender.formattedWrite(" %s(%s)",
-                                    colourise(senderColour), alias_);*/
+                                    colourise(senderColour), alias_);
             if (target.length)  reusableAppender.formattedWrite(" %s(%s)",
                                     colourise(DefaultColour.target), target);
             if (channel.length) reusableAppender.formattedWrite(" %s[%s]",
