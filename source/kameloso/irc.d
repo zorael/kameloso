@@ -5,6 +5,7 @@ import kameloso.constants;
 
 import std.format : format, formattedRead;
 import std.string : indexOf;
+import std.stdio;
 
 @safe:
 

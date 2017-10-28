@@ -3,6 +3,7 @@ module kameloso.config;
 import kameloso.common;
 import kameloso.constants;
 
+import std.stdio;
 import std.traits : hasUDA, isArray, isType;
 
 
@@ -232,8 +233,8 @@ void setMember(Thing)(ref Thing thing, const string memberToSet,
                                 try member ~= value.to!MemberType;
                                 catch (Exception e)
                                 {
-                                    writefln(Foreground.red,
-                                        "Caught Exception trying to convert '%s' to %s: %s",
+                                    logger.warningf("Caught Exception trying " ~
+                                        "to convert '%s' to %s: %s",
                                         value, MemberType.stringof, e.msg);
                                 }
                             }

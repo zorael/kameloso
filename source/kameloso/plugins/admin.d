@@ -7,6 +7,7 @@ import kameloso.plugins.common;
 import kameloso.stringutils;
 
 import std.concurrency : send;
+import std.stdio;
 
 private:
 
@@ -309,7 +310,7 @@ void onCommandPrintBytes()
 @(Chainable.yes)
 void onAnyEvent(const IRCEvent event)
 {
-    if (printAll) writeln(Foreground.cyan, event.raw, "$");
+    if (printAll) logger.trace(event.raw, '$');
 
     if (printBytes)
     {

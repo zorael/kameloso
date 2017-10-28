@@ -218,7 +218,7 @@ void onEndOfMotd()
                 "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
                 .format(bot.authLogin, bot.authPassword));
 
-            writeln(Foreground.white, "--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
+            logger.trace("--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
                 bot.authLogin, " hunter2");
 
             break;
@@ -229,8 +229,8 @@ void onEndOfMotd()
 
             if (bot.nickname != bot.origNickname)
             {
-                writefln(Foreground.lightred,
-                    "Cannot auth on this network when you have changed your nickame (%s != %s)",
+                logger.warningf("Cannot auth on this network when you have " ~
+                    "changed your nickname (%s != %s)",
                     bot.nickname, bot.origNickname);
 
                 joinChannels();
@@ -240,7 +240,7 @@ void onEndOfMotd()
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY " ~ bot.authPassword);
 
-            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY hunter2");
+            logger.trace("--> PRIVMSG NickServ :IDENTIFY hunter2");
 
             break;
 
@@ -260,8 +260,7 @@ void onEndOfMotd()
                 "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(login, bot.authPassword));
 
-            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
-                login, " hunter2");
+            logger.trace("--> PRIVMSG NickServ :IDENTIFY ", login, " hunter2");
 
             break;
 
@@ -277,7 +276,7 @@ void onEndOfMotd()
                 "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(bot.authLogin, bot.authPassword));
 
-            writeln(Foreground.white, "--> PRIVMSG NickServ :IDENTIFY ",
+            logger.trace("--> PRIVMSG NickServ :IDENTIFY ",
                 bot.authLogin, " hunter2");
 
             break;
@@ -413,7 +412,7 @@ void register()
                 "PASS " ~ bot.pass);
 
             // fake it
-            writeln(Foreground.white, "--> PASS hunter2");
+            logger.trace("--> PASS hunter2");
         }
         else
         {

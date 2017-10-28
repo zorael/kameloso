@@ -2,6 +2,7 @@ module kameloso.common;
 
 import kameloso.constants;
 import std.meta : allSatisfy;
+import std.stdio;
 import std.traits : isType;
 import std.typecons : Flag, No, Yes;
 
@@ -179,7 +180,7 @@ void printObjectsColoured(Things...)(Things things)
 
     foreach (thing; things)
     {
-        writeln(Foreground.white, "-- ", Unqual!(typeof(thing)).stringof);
+        logger.info("-- ", Unqual!(typeof(thing)).stringof);
 
         foreach (immutable i, member; thing.tupleof)
         {
@@ -538,8 +539,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%1$s)
                 {
-                    // import std.stdio : writeln;
-                    writeln(Foreground.white, "[%2$s] %3$s");
+                    logger.info("[%2$s] %3$s");
                 }
             }.format(state.toLower, state, scopeName);
         }
@@ -550,11 +550,10 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%1$s)
                 {
-                    // import std.stdio  : writefln;
                     import std.string : indexOf;
                     enum __%2$sdotPos  = __FUNCTION__.indexOf('.');
                     enum __%2$sfunName = __FUNCTION__[(__%2$sdotPos+1)..$];
-                    writefln(Foreground.white, "[%%s] %2$s", __%2$sfunName);
+                    logger.infof("[%%s %2$s", __%2$sfunName);
                 }
             }.format(state.toLower, state);
         }
@@ -568,19 +567,17 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                // import std.stdio : writeln;
-                writeln(Foreground.white, "[%s] %s");
+                logger.info("[%s] %s");
             }.format(scopeName, state);
         }
         else
         {
             return
             q{
-                // import std.stdio  : writefln;
                 import std.string : indexOf;
                 enum __%1$sdotPos  = __FUNCTION__.indexOf('.');
                 enum __%1$sfunName = __FUNCTION__[(__%1$sdotPos+1)..$];
-                writefln(Foreground.white, "[%%s] %1$s", __%1$sfunName);
+                logger.infof("[%%s %1$s", __%1$sfunName);
             }.format(state);
         }
     }

@@ -9,6 +9,7 @@ import kameloso.plugins;
 
 import std.concurrency;
 import std.datetime : SysTime;
+import std.stdio;
 
 version(Windows)
 shared static this()
@@ -73,7 +74,7 @@ Quit checkMessages()
     /// Echo a line to the terminal and send it to the server
     void sendline(ThreadMessage.Sendline, string line)
     {
-        writeln(Foreground.white, "--> ", line);
+        logger.trace("--> ", line);
         conn.sendline(line);
     }
 
@@ -103,7 +104,7 @@ Quit checkMessages()
 
         if (then && (now - *then) < Timeout.whois.seconds) return;
 
-        writeln(Foreground.white, "--> WHOIS :", event.sender);
+        logger.trace("--> WHOIS :", event.sender);
         conn.sendline("WHOIS :", event.sender);
         whoisCalls[event.sender] = Clock.currTime;
         replayQueue[event.sender] = event;
@@ -132,7 +133,6 @@ Quit checkMessages()
     /// Respond to PING with PONG to the supplied text as target.
     void pong(ThreadMessage.Pong, string target)
     {
-        // writeln(Foreground.white, "--> PONG :", target);
         conn.sendline("PONG :", target);
     }
 
@@ -143,7 +143,7 @@ Quit checkMessages()
         // Set quit to yes to propagate the decision down the stack.
         const line = reason.length ? reason : bot.quitReason;
 
-        writeln(Foreground.white, "--> QUIT :", line);
+        logger.trace("--> QUIT :", line);
         conn.sendline("QUIT :", line);
 
         foreach (plugin; plugins) plugin.teardown();
@@ -360,8 +360,7 @@ void main() {
 else
 int main(string[] args)
 {
-    writefln(Foreground.white,
-             "kameloso IRC bot v%s, built %s\n$ git clone %s\n",
+    logger.infof("kameloso IRC bot v%s, built %s\n$ git clone %s\n",
              cast(string)KamelosoInfo.version_,
              cast(string)KamelosoInfo.built,
              cast(string)KamelosoInfo.source);

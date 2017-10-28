@@ -6,6 +6,7 @@ import kameloso.irc;
 import kameloso.plugins.common;
 
 import std.array : Appender;
+import std.stdio;
 
 private:
 

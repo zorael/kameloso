@@ -7,6 +7,7 @@ import kameloso.plugins.common;
 
 import std.concurrency : send;
 import std.json : JSONValue;
+import std.stdio;
 
 private:
 
@@ -247,7 +248,7 @@ auto getNotes(const string nickname)
         {
             if (arr.type != JSON_TYPE.ARRAY)
             {
-                writefln(Foreground.lightred, "Invalid notes list for %s (type is %s)",
+                logger.warningf("Invalid notes list for %s (type is %s)",
                          nickname, arr.type);
 
                 clearNotes(nickname);
@@ -391,14 +392,14 @@ JSONValue loadNotes(const string filename)
 
     if (!filename.exists)
     {
-        writefln(Foreground.white, "%s does not exist", filename);
+        logger.info(filename, " does not exist");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
     }
     else if (!filename.isFile)
     {
-        writefln(Foreground.lightred, "%s is not a file", filename);
+        logger.warning(filename, " is not a file");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
