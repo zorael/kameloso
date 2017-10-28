@@ -191,7 +191,9 @@ public:
 
         foreach (const line; lines)
         {
-            socket.send(line);
+            import std.algorithm.comparison : min;
+
+            socket.send(line[0..min(line.length, 511)]);
         }
 
         socket.send("\n");
