@@ -58,11 +58,11 @@ struct Line
  +  Returns:
  +      the original line with the changes the replace pattern caused.
  +/
-string sedReplace(const string originalLine, const string expression)
+string sedReplace(const string originalLine, const string expression) @safe
 {
     import std.regex : matchAll;
 
-    static string doReplace(T)(T matches, const string originalLine)
+    static string doReplace(T)(T matches, const string originalLine) @safe
     {
         import std.regex : regex, replaceAll, replaceFirst;
         string result = originalLine;  // need mutable
