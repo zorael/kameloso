@@ -60,50 +60,51 @@ struct Line
  +/
 string sedReplace(const string originalLine, const string expression)
 {
-    import std.regex : matchAll, regex, replaceAll, replaceFirst;
+    import std.regex : matchAll;
 
-    string result = originalLine;  // need mutable
-
-    result = result.replaceAll(openBracketRegex, `\\[`);
-    result = result.replaceAll(closeBracketRegex, `\\]`);
-
-    static auto regexEngineFor(const string line)
+    static string doReplace(T)(T matches, const string originalLine)
     {
-        assert((line.length > 2), line);
+        import std.regex : regex, replaceAll, replaceFirst;
+        string result = originalLine;  // need mutable
 
-        switch (line[1])
+        result = result.replaceAll(openBracketRegex, `\\[`);
+        result = result.replaceAll(closeBracketRegex, `\\]`);
+
+        foreach (const hit; matches)
         {
-        case '/':
-            return sedRegex;
+            const changeThis = hit[1];
+            const toThis = hit[2];
+            immutable globalFlag = (hit[3].length > 0);
 
-        case '#':
-            return sedRegex2;
-
-        case '|':
-            return sedRegex3;
-
-        default:
-            goto case '/';
+            if (globalFlag)
+            {
+                result = result.replaceAll(changeThis.regex, toThis);
+            }
+            else
+            {
+                result = result.replaceFirst(changeThis.regex, toThis);
+            }
         }
+
+        return result;
     }
 
-    foreach (const hit; expression.matchAll(regexEngineFor(expression)))
+    assert((expression.length > 2), originalLine);
+
+    switch (expression[1])
     {
-        const changeThis = hit[1];
-        const toThis = hit[2];
-        immutable globalFlag = (hit[3].length > 0);
+    case '/':
+        return doReplace(expression.matchAll(sedRegex), originalLine);
 
-        if (globalFlag)
-        {
-            result = result.replaceAll(changeThis.regex, toThis);
-        }
-        else
-        {
-            result = result.replaceFirst(changeThis.regex, toThis);
-        }
+    case '#':
+        return doReplace(expression.matchAll(sedRegex2), originalLine);
+
+    case '|':
+        return doReplace(expression.matchAll(sedRegex3), originalLine);
+
+    default:
+        goto case '/';
     }
-
-    return result;
 }
 
 unittest
