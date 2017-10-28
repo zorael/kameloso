@@ -282,6 +282,17 @@ Quit handleArguments(string[] args)
 }
 
 
+void printVersionInfo()
+{
+    writeln(colourise(Foreground.white),
+        "kameloso IRC bot v%s, built %s\n$ git clone %s\n",
+        cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.built,
+        cast(string)KamelosoInfo.source,
+        colourise(Foreground.default_));
+}
+
+
 /// Resets and initialises all plugins.
 void initPlugins()
 {
@@ -360,10 +371,7 @@ void main() {
 else
 int main(string[] args)
 {
-    logger.infof("kameloso IRC bot v%s, built %s\n$ git clone %s\n",
-             cast(string)KamelosoInfo.version_,
-             cast(string)KamelosoInfo.built,
-             cast(string)KamelosoInfo.source);
+    printVersionInfo();
 
     if (handleArguments(args) == Quit.yes) return 0;
 
