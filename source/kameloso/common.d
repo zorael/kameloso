@@ -711,7 +711,7 @@ final class KamelosoLogger : Logger
             break;
 
         default:
-            sink.put(colourise(Foreground.default_));
+            sink.put(colourise(Foreground.white));
             break;
         }
     }
