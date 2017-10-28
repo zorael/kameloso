@@ -1156,7 +1156,7 @@ void parseTwitchTags(ref IRCEvent event)
         case "msg-param-months":
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
-            event.aux = tag;
+            event.aux = event.aux.length ? (tag ~ 'x' ~ event.aux) : tag;
             break;
 
         case "msg-param-sub-plan":
@@ -1166,7 +1166,7 @@ void parseTwitchTags(ref IRCEvent event)
             // levels of paid subscriptions, respectively (currently $4.99,
             // $9.99, and $24.99).
             // EVALUATE ME
-            logger.trace("sub plan: ", tag);
+            event.aux = event.aux.length ? (event.aux ~ 'x' ~ tag) : tag;
             break;
 
         case "msg-param-sub-plan-name":
