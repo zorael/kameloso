@@ -42,12 +42,6 @@ Connection conn;
 /// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
 
-/++
- +  Return value flag denoting whether the program should exit or not,
- +  after a function returns it.
- +/
-alias Quit = Flag!"quit";
-
 
 // checkMessages
 /++
@@ -57,9 +51,9 @@ alias Quit = Flag!"quit";
  +  should exit or not.
  +
  +  Returns:
- +      Quit.yes or Quit.no, depending.
+ +      Yes.quit or No.quit, depending.
  +/
-Quit checkMessages()
+Flag!"quit" checkMessages()
 {
     import core.time : seconds;
 
@@ -69,7 +63,7 @@ Quit checkMessages()
         foreach (plugin; plugins) plugin.teardown();
     }
 
-    Quit quit;
+    Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server
     void sendline(ThreadMessage.Sendline, string line)
@@ -148,7 +142,7 @@ Quit checkMessages()
 
         foreach (plugin; plugins) plugin.teardown();
 
-        quit = Quit.yes;
+        quit = Yes.quit;
     }
 
     /// Fake that a string was received from the server
@@ -201,10 +195,10 @@ Quit checkMessages()
  +      The string[] args the program was called with.
  +
  +  Returns:
- +      Quit.yes or no depending on whether the arguments chosen mean the program
+ +      Yes.quit or no depending on whether the arguments chosen mean the program
  +      should not proceed.
  +/
-Quit handleArguments(string[] args)
+Flag!"quit" handleArguments(string[] args)
 {
     import std.format : format;
     import std.getopt;
@@ -243,7 +237,7 @@ Quit handleArguments(string[] args)
     {
         // User misspelled or supplied an invalid argument; error out and quit
         logger.error(e.msg);
-        return Quit.yes;
+        return Yes.quit;
     }
 
     if (getoptResults.helpWanted)
@@ -256,7 +250,7 @@ Quit handleArguments(string[] args)
                             colourise(Foreground.default_),
                             getoptResults.options);
         writeln();
-        return Quit.yes;
+        return Yes.quit;
     }
 
     // Read settings into a temporary Bot and Settings struct, then meld them
@@ -285,10 +279,10 @@ Quit handleArguments(string[] args)
     if (shouldWriteConfig)
     {
         writeConfigToDisk();
-        return Quit.yes;
+        return Yes.quit;
     }
 
-    return Quit.no;
+    return No.quit;
 }
 
 
@@ -381,7 +375,7 @@ void main() {
 else
 int main(string[] args)
 {
-    if (handleArguments(args) == Quit.yes) return 0;
+    if (handleArguments(args) == Yes.quit) return 0;
 
     printVersionInfo();
     writeln();
@@ -403,7 +397,8 @@ int main(string[] args)
     // Save the original nickname *once*, outside the connection loop
     bot.origNickname = bot.nickname;
 
-    Quit quit;
+    Flag!"quit" quit;
+
     do
     {
         conn.reset();
@@ -441,13 +436,13 @@ int main(string[] args)
  +      generator = a string-returning Generator that's reading from the socket.
  +
  +  Returns:
- +      Quit.yes if circumstances mean the bot should exit, otherwise Quit.no.
+ +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
  +/
-Quit loopGenerator(Generator!string generator)
+Flag!"quit" loopGenerator(Generator!string generator)
 {
     import core.thread : Fiber;
 
-    Quit quit;
+    Flag!"quit" quit;
 
     while (!quit)
     {
@@ -456,7 +451,7 @@ Quit loopGenerator(Generator!string generator)
             // Listening Generator disconnected; reconnect
             generator.reset();
 
-            return Quit.no;
+            return No.quit;
         }
 
         generator.call();
@@ -502,5 +497,5 @@ Quit loopGenerator(Generator!string generator)
         quit = checkMessages();
     }
 
-    return Quit.yes;
+    return Yes.quit;
 }
