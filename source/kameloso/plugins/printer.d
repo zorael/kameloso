@@ -84,6 +84,7 @@ void onAnyEvent(const IRCEvent origEvent)
         import std.conv : to;
         import std.datetime;
         import std.format : formattedWrite;
+        import std.range : put;
 
         immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
                               .timeOfDay
@@ -93,15 +94,16 @@ void onAnyEvent(const IRCEvent origEvent)
         with (event)
         if (state.settings.monochrome)
         {
+
             reusableAppender.formattedWrite("[%s] [%s] ",
                 timestamp, type.to!string);
 
-            import std.range : put;
             put(reusableAppender, sender);
 
             if (special)        reusableAppender.put('*');
             if (role != Role.init)
-                                reusableAppender.formattedWrite(" [%s]", role.to!string);
+                                reusableAppender.formattedWrite(" [%s]",
+                                    role.to!string);
             if (alias_.length && (alias_ != sender))
                                 reusableAppender.formattedWrite(" (%s)", alias_);
             if (target.length)  reusableAppender.formattedWrite(" (%s)",  target);
@@ -114,10 +116,7 @@ void onAnyEvent(const IRCEvent origEvent)
         {
             version(Colours)
             {
-                if (!state.settings.monochrome)
-                {
-                    event.mapEffects();
-                }
+                if (!state.settings.monochrome) event.mapEffects();
             }
 
             enum DefaultColour
@@ -142,27 +141,15 @@ void onAnyEvent(const IRCEvent origEvent)
 
                 auto colourIndex = hashOf(sender) % 16;
                 if (colourIndex == 1) colourIndex = 16;  // map black to white
-
                 senderColour = fg[colourIndex];
             }
 
             Foreground typeColour = DefaultColour.type;
-
             if (type == QUERY) typeColour = lightgreen;
-
-            /*reusableAppender.formattedWrite("%s[%s]%s %s[%s]%s %s",
-                colourise(white), timestamp, colourise(default_),
-                colourise(typeColour), type.to!string,
-                colourise(senderColour), sender);*/
-
-            /*reusableAppender.formattedWrite!"%s[%s]%s %s[%s] "
-                (colourise(white), timestamp, colourise(default_),
-                colourise(typeColour), type.to!string);*/
 
             reusableAppender.formattedWrite!"%s[%s] %s[%s] "
                 (colourise(white), timestamp, colourise(typeColour), type.to!string);
 
-            import std.range : put;
             import std.string : toLower;
 
             bool aliasPrinted;
@@ -182,7 +169,8 @@ void onAnyEvent(const IRCEvent origEvent)
             if (special)        reusableAppender.formattedWrite("%s*",
                                     colourise(DefaultColour.special));
             if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.white), role.to!string);
+                                    colourise(DefaultColour.white),
+                                    role.to!string);
             if (!aliasPrinted && alias_.length && (alias_ != sender))
                                 reusableAppender.formattedWrite(" %s(%s)",
                                     colourise(senderColour), alias_);
@@ -321,7 +309,8 @@ void mapColours(ref IRCEvent event)
 
         if (fgIndex > 15)
         {
-            logger.warning("mIRC foreground colour code out of bounds: ", fgIndex);
+            logger.warning("mIRC foreground colour code out of bounds: ",
+                           fgIndex);
             continue;
         }
 
@@ -334,7 +323,8 @@ void mapColours(ref IRCEvent event)
 
             if (bgIndex > 15)
             {
-                logger.warning("mIRC background colour code out of bounds: ", bgIndex);
+                logger.warning("mIRC background colour code out of bounds: ",
+                               bgIndex);
                 continue;
             }
 

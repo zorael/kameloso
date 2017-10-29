@@ -41,7 +41,7 @@ struct Line
     import std.datetime : SysTime;
 
     string content;
-    SysTime when;
+    SysTime timestamp;
 }
 
 
@@ -82,7 +82,8 @@ string sedReplace(const string originalLine, const string expression) @safe
             }
             else
             {
-                result = result.replaceFirst(changeThis.regex, toThis);
+                // We only care about the first result
+                return result.replaceFirst(changeThis.regex, toThis);
             }
         }
 
@@ -103,7 +104,7 @@ string sedReplace(const string originalLine, const string expression) @safe
         return doReplace(expression.matchAll(sedRegex3), originalLine);
 
     default:
-        goto case '/';
+        return string.init;
     }
 }
 
@@ -152,7 +153,7 @@ void onMessage(const IRCEvent event)
     import std.format : format;
     import std.string : strip;
 
-    immutable stripped = event.content.strip;
+    immutable stripped = event.content.strip();
 
     if (stripped.beginsWith("s") && (stripped.length > 2))
     {
@@ -163,7 +164,8 @@ void onMessage(const IRCEvent event)
         case '#':
             if (const line = event.sender in prevlines)
             {
-                if ((Clock.currTime - line.when) > replaceTimeoutSeconds.seconds)
+                if ((Clock.currTime - line.timestamp) >
+                    replaceTimeoutSeconds.seconds)
                 {
                     // Entry is too old, remove it
                     prevlines.remove(event.sender);
@@ -174,7 +176,8 @@ void onMessage(const IRCEvent event)
                 if ((result == event.content) || !result.length) return;
 
                 state.mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s | %s".format(event.channel, event.sender, result));
+                    "PRIVMSG %s :%s | %s"
+                    .format(event.channel, event.sender, result));
 
                 prevlines.remove(event.sender);
             }
@@ -194,7 +197,7 @@ void onMessage(const IRCEvent event)
 
     Line line;
     line.content = stripped;
-    line.when = Clock.currTime;
+    line.timestamp = Clock.currTime;
     prevlines[event.sender] = line;
 }
 

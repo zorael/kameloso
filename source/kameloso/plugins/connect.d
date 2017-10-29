@@ -363,9 +363,12 @@ void onRegistrationEvent(const IRCEvent event)
 
         if (state.bot.server.network == IRCServer.Network.twitch)
         {
-            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/membership");
-            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/tags");
-            state.mainThread.send(ThreadMessage.Sendline(), "CAP REQ :twitch.tv/commands");
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "CAP REQ :twitch.tv/membership");
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "CAP REQ :twitch.tv/tags");
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "CAP REQ :twitch.tv/commands");
         }
 
         /++
