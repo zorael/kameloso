@@ -284,8 +284,8 @@ Quit handleArguments(string[] args)
 
 void printVersionInfo()
 {
-    writeln(colourise(Foreground.white),
-        "kameloso IRC bot v%s, built %s\n$ git clone %s\n",
+    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s",
+        colourise(Foreground.white),
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
