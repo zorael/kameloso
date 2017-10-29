@@ -242,7 +242,7 @@ Flag!"quit" handleArguments(string[] args)
 
     if (getoptResults.helpWanted)
     {
-        printVersionInfo();
+        printVersionInfo(Foreground.white);
         writeln();
 
         defaultGetoptPrinter(colourise(Foreground.lightgreen) ~
@@ -286,10 +286,10 @@ Flag!"quit" handleArguments(string[] args)
 }
 
 
-void printVersionInfo()
+void printVersionInfo(Foreground colourCode = Foreground.default_)
 {
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s",
-        colourise(Foreground.white),
+        colourise(colourCode),
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
@@ -377,7 +377,7 @@ int main(string[] args)
 {
     if (handleArguments(args) == Yes.quit) return 0;
 
-    printVersionInfo();
+    printVersionInfo(Foreground.white);
     writeln();
 
     // Print the current settings to show what's going on.
