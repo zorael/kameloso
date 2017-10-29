@@ -210,6 +210,7 @@ Quit handleArguments(string[] args)
     import std.getopt;
 
     bool shouldWriteConfig;
+    bool shouldShowVersion;
     GetoptResult getoptResults;
 
     try
@@ -235,6 +236,7 @@ Quit handleArguments(string[] args)
             "c|config",      "Read configuration from file (default %s)"
                              .format(Settings.init.configFile), &settings.configFile,
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
+            "version",       "Show version info", &shouldShowVersion,
         );
     }
     catch (Exception e)
@@ -246,6 +248,9 @@ Quit handleArguments(string[] args)
 
     if (getoptResults.helpWanted)
     {
+        printVersionInfo();
+        writeln();
+
         defaultGetoptPrinter(colourise(Foreground.lightgreen) ~
                             "Command-line arguments available:\n" ~
                             colourise(Foreground.default_),
@@ -272,6 +277,11 @@ Quit handleArguments(string[] args)
 
     // If --writeconfig was supplied we should just write and quit
 
+    if (shouldShowVersion)
+    {
+        printVersionInfo();
+        return Yes.quit;
+    }
     if (shouldWriteConfig)
     {
         writeConfigToDisk();
@@ -371,9 +381,10 @@ void main() {
 else
 int main(string[] args)
 {
-    printVersionInfo();
-
     if (handleArguments(args) == Quit.yes) return 0;
+
+    printVersionInfo();
+    writeln();
 
     // Print the current settings to show what's going on.
     printObjects(bot, bot.server, settings);
