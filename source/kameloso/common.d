@@ -178,13 +178,16 @@ void printObject(Thing)(Thing thing)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void formatObjectsColoured(Sink, Things...)(Sink sink, Things things)
+void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
+
+    // workaround formattedWrite taking Appender by value
+    version(LDC) sink.put(string.init);
 
     enum entryPadding = longestMemberName!Things.length;
 
@@ -243,13 +246,16 @@ void formatObjectsColoured(Sink, Things...)(Sink sink, Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void formatObjectsMonochrome(Sink, Things...)(Sink sink, Things things)
+void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
     import std.format   : format, formattedWrite;
     import std.traits   : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
+
+    // workaround formattedWrite taking Appender by value
+    version(LDC) sink.put(string.init);
 
     enum entryPadding = longestMemberName!Things.length;
 
