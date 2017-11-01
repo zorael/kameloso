@@ -293,7 +293,7 @@ Flag!"quit" handleArguments(string[] args)
 
 void printVersionInfo(Foreground colourCode = Foreground.default_)
 {
-    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s",
+    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         colourise(colourCode),
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
