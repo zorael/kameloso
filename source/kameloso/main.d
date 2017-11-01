@@ -16,8 +16,8 @@ shared static this()
 {
     import core.sys.windows.windows;
 
-    // If we don't set the right codepage, the normal Windows cmd terminal won't display
-    // international characters like åäö.
+    // If we don't set the right codepage, the normal Windows cmd terminal won't
+    // display international characters like åäö.
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 }
@@ -214,10 +214,13 @@ Flag!"quit" handleArguments(string[] args)
         getoptResults = args.getopt(
             config.caseSensitive,
             "n|nickname",    "Bot nickname", &bot.nickname,
-            "u|user",        "Username when registering onto server (not nickname)", &bot.user,
+            "u|user",        "Username when registering onto server (not nickname)",
+                &bot.user,
             "i|ident",       "IDENT string", &bot.ident,
-            "pass",          "Registration password (not auth or nick services)", &bot.pass,
-            "a|auth",        "Auth service login name, if applicable", &bot.authLogin,
+            "pass",          "Registration password (not auth or nick services)",
+                &bot.pass,
+            "a|auth",        "Auth service login name, if applicable",
+                &bot.authLogin,
             "p|authpassword","Auth service password", &bot.authPassword,
             "m|master",      "Auth login of the bot's master, who gets " ~
                             "access to administrative functions", &bot.master,
@@ -261,7 +264,8 @@ Flag!"quit" handleArguments(string[] args)
     Settings settingsFromConfig;
 
     // These arguments are by reference.
-    settings.configFile.readConfig(botFromConfig, botFromConfig.server, settingsFromConfig);
+    settings.configFile.readConfig(botFromConfig, botFromConfig.server,
+        settingsFromConfig);
 
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
@@ -276,6 +280,7 @@ Flag!"quit" handleArguments(string[] args)
         printVersionInfo();
         return Yes.quit;
     }
+
     if (shouldWriteConfig)
     {
         writeConfigToDisk();
