@@ -1,11 +1,21 @@
 module kameloso.common;
 
 import kameloso.constants;
+
+import std.experimental.logger;
 import std.meta : allSatisfy;
 import std.stdio;
 import std.traits : isType;
 import std.typecons : Flag, No, Yes;
 
+
+// logger
+/++
+ +  Instance of a KamelosoLogger, providing timestamped and coloured logging.
+ +
+ +  The member functions to use are log, trace, info, warning, error, and fatal.
+ +  It is not thread-safe, so instantiate a thread-local Logger if threading.
+ +/
 Logger logger;
 
 shared static this()
@@ -168,10 +178,10 @@ void printObject(Thing)(Thing thing)
 }
 
 
-// printObjectsColouredFormatter
+// formatObjectsColoured
 /++
- +  Prints out a struct object, with all its printable members with all teir
- +  printable values. Prints in colour.
+ +  Formats a struct object, with all its printable members with all their
+ +  printable values. Formats in colour.
  +
  +  Don't use this directly, instead use printObjects(Things...).
  +
@@ -210,7 +220,7 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 
                 static if (is(MemberType : string))
                 {
-                    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)\n"; //%s\n";
+                    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)\n";
                     sink.formattedWrite(stringPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), (entryPadding + 2),
@@ -220,7 +230,7 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                 }
                 else
                 {
-                    enum normalPattern = "%s%9s %s%-*s  %s%s\n"; //%s\n";
+                    enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                     sink.formattedWrite(normalPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), (entryPadding + 2),
@@ -275,10 +285,10 @@ unittest
 }
 
 
-// printObjectsMonochromeFormatter
+// formatObjectsMonochrome
 /++
- +  Prints out a struct object, with all its printable members with all teir
- +  printable values. Prints without colouring the text.
+ +  Formats a struct object, with all its printable members with all their
+ +  printable values. Formats without adding colours.
  +
  +  Don't use this directly, instead use printObjects(Things...).
  +
@@ -714,6 +724,7 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
     return sink.data;
 }
 else
+/// Dummy colourise for when version != Colours
 string colourise(Codes...)(Codes codes)
 {
     return string.init;
@@ -751,16 +762,18 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
     return sink.data;
 }
 
-
-import std.experimental.logger;
-
+// KamelosoLogger
+/++
+ +  Modified Logger to print timestamped and coloured logging messages.
+ +/
 final class KamelosoLogger : Logger
 {
     import std.concurrency : Tid;
     import std.datetime;
-    import std.format;
+    import std.format : formattedWrite;
     import std.array : Appender;
 
+    /// Appender sink to fill with content and print in one go
     Appender!(char[]) sink;
 
     this(LogLevel lv) @safe
@@ -770,8 +783,9 @@ final class KamelosoLogger : Logger
     }
 
     /// This override is needed or it won't compile
-    override void writeLogMsg(ref LogEntry payload) {}
+    override void writeLogMsg(ref LogEntry payload) const {}
 
+    /// Outputs the head of a logger message
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger) @safe
@@ -781,7 +795,9 @@ final class KamelosoLogger : Logger
             sink.put(colourise(Foreground.white));
         }
 
-        sink.formattedWrite("[%s] ", (cast(DateTime)timestamp).timeOfDay.toString());
+        sink.formattedWrite("[%s] ", (cast(DateTime)timestamp)
+            .timeOfDay
+            .toString());
 
         version(Colours)
         with (LogLevel)
@@ -793,7 +809,6 @@ final class KamelosoLogger : Logger
 
         case info:
             sink.put(colourise(Foreground.lightgreen));
-            //sink.put(colourise(Foreground.white)); // it is already white
             break;
 
         case warning:
@@ -805,8 +820,7 @@ final class KamelosoLogger : Logger
             break;
 
         case fatal:
-            sink.put(colourise(Foreground.red));
-            sink.put(colourise(Format.blink));
+            sink.put(colourise(Foreground.red, Format.blink));
             break;
 
         default:
@@ -815,6 +829,7 @@ final class KamelosoLogger : Logger
         }
     }
 
+    /// Outputs the message part of a logger message; the content
     override protected void logMsgPart(const(char)[] msg) @safe
     {
         if (!msg.length) return;
@@ -822,10 +837,12 @@ final class KamelosoLogger : Logger
         sink.put(msg);
     }
 
+    /// Outputs the tail of a logger message
     override protected void finishLogMsg() @safe
     {
         version(Colours)
         {
+            // Reset.blink in case a fatal message was thrown
             sink.put(colourise(Foreground.default_, Reset.blink));
         }
 

@@ -15,12 +15,16 @@ import std.typecons : Flag;
  +/
 interface IRCPlugin
 {
+    /// Executed on update to the internal IRCBot struct
     void newBot(IRCBot);
 
+    /// Executed on update to the internal Settings struct
     void newSettings(Settings);
 
+    /// Executed upon new IRC event parsed from the server
     void onEvent(const IRCEvent);
 
+    /// Executed during shutdown or plugin restart
     void teardown();
 }
 
@@ -39,8 +43,14 @@ struct IRCPluginState
 
     IRCBot bot;
     Settings settings;
+
+    /// Thread ID to the main thread
     Tid mainThread;
+
+    /// Hashmap of IRC user details
     IRCUser[string] users;
+
+    /// Queued events to execute when a username triggers it
     bool delegate()[string] queue;
 }
 
