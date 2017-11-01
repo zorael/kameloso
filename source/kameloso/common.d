@@ -686,7 +686,7 @@ string colourise(Codes...)(Codes codes)
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-string colouriseImpl(Sink, Codes...)(Sink sink, Codes codes)
+string colouriseImpl(Sink, Codes...)(auto ref Sink sink, Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(BashColourToken);
