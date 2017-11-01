@@ -191,8 +191,8 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = `%%s%%9s %%s%%-%ds %%s"%%s"%%s(%%d)%%s\n`.format(entryPadding+2);
-    enum normalPattern = `%%s%%9s %%s%%-%ds  %%s%%s%%s\n`.format(entryPadding+2);
+    enum stringPattern = "%%s%%9s %%s%%-%ds %%s\"%%s\"%%s(%%d)%%s\n".format(entryPadding+2);
+    enum normalPattern = "%%s%%9s %%s%%-%ds  %%s%%s%%s\n".format(entryPadding+2);
 
     foreach (thing; things)
     {
@@ -265,8 +265,8 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)\n`.format(entryPadding+2);
-    enum normalPattern = `%%9s %%-%ds  %%s\n`.format(entryPadding+2);
+    enum stringPattern = "%%9s %%-%ds \"%%s\"(%%d)\n".format(entryPadding+2);
+    enum normalPattern = "%%9s %%-%ds  %%s\n".format(entryPadding+2);
 
     foreach (thing; things)
     {
