@@ -235,6 +235,46 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
     }
 }
 
+unittest
+{
+    import std.array : Appender;
+    import std.string : indexOf;
+
+    struct StructName
+    {
+        int int_ = 12345;
+        string string_ = "foo";
+        bool bool_ = true;
+        float float_ = 3.14f;
+        double double_ = 99.9;
+    }
+
+    StructName s;
+    Appender!string sink;
+
+    //sink.reserve(256);  // ~239
+    sink.formatObjectsColoured(s);
+
+    assert((sink.data.length > 12), "Empty sink after coloured fill");
+
+    assert(sink.data.indexOf("-- StructName") != -1);
+    assert(sink.data.indexOf("int_") != -1);
+    assert(sink.data.indexOf("12345") != -1);
+
+    assert(sink.data.indexOf("string_") != -1);
+    assert(sink.data.indexOf(`"foo"`) != -1);
+
+    assert(sink.data.indexOf("bool_") != -1);
+    assert(sink.data.indexOf("true") != -1);
+
+    assert(sink.data.indexOf("float_") != -1);
+    assert(sink.data.indexOf("3.14") != -1);
+
+    assert(sink.data.indexOf("double_") != -1);
+    assert(sink.data.indexOf("99.9") != -1);
+    writeln(sink.data.length);
+}
+
 
 // printObjectsMonochromeFormatter
 /++
@@ -313,6 +353,7 @@ unittest
     sink.reserve(128);  // ~119
     sink.formatObjectsMonochrome(s);
 
+    assert((sink.data.length > 12), "Empty sink after monochrome fill");
     assert(sink.data ==
 `-- StructName
       int i    12345
