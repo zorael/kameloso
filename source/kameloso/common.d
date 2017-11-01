@@ -272,7 +272,6 @@ unittest
 
     assert(sink.data.indexOf("double_") != -1);
     assert(sink.data.indexOf("99.9") != -1);
-    writeln(sink.data.length);
 }
 
 
