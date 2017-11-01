@@ -830,9 +830,7 @@ final class KamelosoLogger : Logger
             sink.put(colourise(Foreground.default_, Reset.blink));
         }
 
-        import std.stdio : realWriteln = writeln;
-
-        realWriteln(sink.data);
+        writeln(sink.data);
         sink.clear();
     }
 }

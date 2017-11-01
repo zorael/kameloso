@@ -173,8 +173,7 @@ Flag!"quit" checkMessages()
             (Variant v)
             {
                 // Caught an unhandled message
-                logger.warning("Main thread received unknown Variant");
-                logger.warning(v);
+                logger.warning("Main thread received unknown Variant: ", v);
             }
         );
     }
@@ -375,7 +374,7 @@ public:
 version(unittest)
 void main() {
     // Compiled with -b unittest, so run the tests and exit.
-    logger.info("Tests passed!");
+    logger.info("All tests passed successfully!");
 }
 else
 int main(string[] args)
@@ -483,7 +482,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
 
                     if (!spammedAboutReplaying)
                     {
-                        logger.log("Replaying event:");
+                        logger.info("Replaying event:");
                         printObjects(*savedEvent);
                         spammedAboutReplaying = true;
                     }
