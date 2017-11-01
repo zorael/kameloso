@@ -136,39 +136,35 @@ unittest
 
 // printObjects
 /++
- +  Prints out a struct object, with all its printable members with all their
- +  printable values. This is not only convenient for deubgging but also usable
- +  to print out current settings and state, where such is kept in structs.
+ +  Prints out struct objects, with all their printable members with all their
+ +  printable values.
+ +
+ +  This is not only convenient for deubgging but also usable to print out
+ +  current settings and state, where such is kept in structs.
  +
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void printObjects(Things...)(Things things)
+void printObjects(Things...)(Things things) @trusted
 {
+    // writeln trusts lockingTextWriter so we will too.
+
     version(Colours)
     {
-        printObjectsColoured(things);
+        formatObjectsColoured(stdout.lockingTextWriter, things);
     }
     else
     {
-        printObjectsMonochrome(things);
+        formatObjectsMonochrome(stdout.lockingTextWriter, things);
     }
 }
 
+
+// printObject
+/// ditto
 void printObject(Thing)(Thing thing)
 {
     printObjects(thing);
-}
-
-void printObjectsColoured(Things...)(Things things)
-{
-    import std.array : Appender;
-    import std.stdio : writeln;
-
-    Appender!string sink;
-    sink.reserve(1024);
-    printObjectsColouredFormatter(sink, things);
-    writeln(sink.data);
 }
 
 
@@ -182,7 +178,7 @@ void printObjectsColoured(Things...)(Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things)
+void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
@@ -191,8 +187,6 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)%s\n";
-    enum normalPattern = "%s%9s %s%-*s  %s%s%s\n";
 
     foreach (thing; things)
     {
@@ -213,40 +207,29 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
 
                 static if (is(MemberType : string))
                 {
+                    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)\n"; //%s\n";
                     sink.formattedWrite(stringPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), (entryPadding + 2),
                         memberstring,
                         colourise(Foreground.lightgreen), member,
-                        colourise(Foreground.darkgrey), member.length,
-                        colourise(Foreground.default_));
+                        colourise(Foreground.darkgrey), member.length);
                 }
                 else
                 {
+                    enum normalPattern = "%s%9s %s%-*s  %s%s\n"; //%s\n";
                     sink.formattedWrite(normalPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), (entryPadding + 2),
                         memberstring,
-                        colourise(Foreground.lightgreen), member,
-                        colourise(Foreground.default_));
+                        colourise(Foreground.lightgreen), member);
                 }
             }
         }
 
+        sink.put(colourise(Foreground.default_));
         sink.put('\n');
     }
-}
-
-
-void printObjectsMonochrome(Things...)(Things things)
-{
-    import std.array : Appender;
-    import std.stdio : writeln;
-
-    Appender!string sink;
-    sink.reserve(1024);
-    printObjectsMonochromeFormatter(sink, things);
-    writeln(sink.data);
 }
 
 
@@ -260,7 +243,7 @@ void printObjectsMonochrome(Things...)(Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things things)
+void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
@@ -269,8 +252,6 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
-    enum normalPattern = "%9s %-*s  %s\n";
 
     foreach (thing; things)
     {
@@ -289,14 +270,16 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
 
                 static if (is(MemberType : string))
                 {
+                    enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
                     sink.formattedWrite(stringPattern, typestring,
-                        entryPadding+2, memberstring,
+                        (entryPadding + 2), memberstring,
                         member, member.length);
                 }
                 else
                 {
+                    enum normalPattern = "%9s %-*s  %s\n";
                     sink.formattedWrite(normalPattern, typestring,
-                        entryPadding+2, memberstring, member);
+                        (entryPadding + 2), memberstring, member);
                 }
             }
         }
@@ -305,6 +288,33 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
     }
 }
 
+unittest
+{
+    import std.array : Appender;
+
+    struct StructName
+    {
+        int i = 12345;
+        string s = "foo";
+        bool b = true;
+        float f = 3.14f;
+        double d = 99.9;
+    }
+
+    StructName s;
+    Appender!string sink;
+
+    sink.formatObjectsMonochrome(s);
+    assert(sink.data ==
+`-- StructName
+      int i    12345
+   string s   "foo"(3)
+     bool b    true
+    float f    3.14
+   double d    99.9
+
+`, "\n" ~ sink.data);
+}
 
 // longestMemberName
 /++
