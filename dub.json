@@ -7,40 +7,38 @@
     "mainSourceFile": "source/kameloso/main.d",
     "buildRequirements": [ "silenceDeprecations" ],
     "targetType": "executable",
+    "libs-posix-dmd": [ "phobos2" ],
+    "dependencies-posix":
+    {
+        "requests": "~>0.5.0"
+    },
     "configurations":
     [
         {
-            "name": "kameloso",
-            "versions": [ "Webtitles", "Colours" ],
+            "name": "posix",
             "platforms": [ "posix" ],
-            "libs-posix-dmd": [ "phobos2" ],
-            "dependencies-posix":
-            {
-                "requests": "~>0.5.2"
-            }
+            "versions": [ "Webtitles", "Colours" ]
+        },
+        {
+            "name": "windows",
+            "platforms": [ "windows" ]
         },
         {
             "name": "nowebtitles",
-            "versions": [ "Colours" ],
-            "platforms": [ "posix" ],
-            "libs-posix-dmd": [ "phobos2" ]
+            "versions": [ "Colours" ]
         },
         {
-            "name": "nowebtitles-nocolours",
-            "platforms": [ "posix", "windows" ],
-            "libs-posix-dmd": [ "phobos2" ]
+            "name": "nocolours",
+            "versions": [ "Webtitles" ]
+        },
+        {
+            "name": "nowebtitles-nocolours"
         },
         {
             "name": "unittest",
             "buildType": "unittest",
             "versions-posix": [ "Webtitles", "Colours" ],
-            "versions-window": [ "Colours" ],
-            "platforms": [ "posix", "windows" ],
-            "libs-posix-dmd": [ "phobos2" ],
-            "dependencies-posix":
-            {
-                "requests": "~>0.5.0"
-            }
+            "versions-windows": [ "Colours" ]
         }
     ]
 }
