@@ -155,8 +155,24 @@ void printObjects(Things...)(Things things)
     }
 }
 
+void printObject(Thing)(Thing thing)
+{
+    printObjects(thing);
+}
 
-// printObjectsColoured
+void printObjectsColoured(Things...)(Things things)
+{
+    import std.array : Appender;
+    import std.stdio : writeln;
+
+    Appender!string sink;
+    sink.reserve(1024);
+    printObjectsColouredFormatter(sink, things);
+    writeln(sink.data);
+}
+
+
+// printObjectsColouredFormatter
 /++
  +  Prints out a struct object, with all its printable members with all teir
  +  printable values. Prints in colour.
@@ -166,17 +182,17 @@ void printObjects(Things...)(Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void printObjectsColoured(Things...)(Things things)
+void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
-    import std.format : format;
+    import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = `%%s%%9s %%s%%-%ds %%s"%%s"%%s(%%d)%%s`.format(entryPadding+2);
-    enum normalPattern = `%%s%%9s %%s%%-%ds  %%s%%s%%s`.format(entryPadding+2);
+    enum stringPattern = `%%s%%9s %%s%%-%ds %%s"%%s"%%s(%%d)%%s\n`.format(entryPadding+2);
+    enum normalPattern = `%%s%%9s %%s%%-%ds  %%s%%s%%s\n`.format(entryPadding+2);
 
     foreach (thing; things)
     {
@@ -195,7 +211,7 @@ void printObjectsColoured(Things...)(Things things)
 
                 static if (is(MemberType : string))
                 {
-                    writefln(stringPattern,
+                    sink.formattedWrite(stringPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), memberstring,
                         colourise(Foreground.lightgreen), member,
@@ -204,7 +220,7 @@ void printObjectsColoured(Things...)(Things things)
                 }
                 else
                 {
-                    writefln(normalPattern,
+                    sink.formattedWrite(normalPattern,
                         colourise(Foreground.cyan), typestring,
                         colourise(Foreground.white), memberstring,
                         colourise(Foreground.lightgreen), member,
@@ -213,12 +229,24 @@ void printObjectsColoured(Things...)(Things things)
             }
         }
 
-        writeln();
+        sink.put('\n');
     }
 }
 
 
-// printObjectsMonochrome
+void printObjectsMonochrome(Things...)(Things things)
+{
+    import std.array : Appender;
+    import std.stdio : writeln;
+
+    Appender!string sink;
+    sink.reserve(1024);
+    printObjectsMonochromeFormatter(sink, things);
+    writeln(sink.data);
+}
+
+
+// printObjectsMonochromeFormatter
 /++
  +  Prints out a struct object, with all its printable members with all teir
  +  printable values. Prints without colouring the text.
@@ -228,18 +256,17 @@ void printObjectsColoured(Things...)(Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void printObjectsMonochrome(Things...)(Things things)
+void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
-    import std.format   : format;
-    import std.stdio    : realWritefln = writefln, realWriteln = writeln;
+    import std.format   : format, formattedWrite;
     import std.traits   : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)`.format(entryPadding+2);
-    enum normalPattern = `%%9s %%-%ds  %%s`.format(entryPadding+2);
+    enum stringPattern = `%%9s %%-%ds "%%s"(%%d)\n`.format(entryPadding+2);
+    enum normalPattern = `%%9s %%-%ds  %%s\n`.format(entryPadding+2);
 
     foreach (thing; things)
     {
@@ -258,16 +285,18 @@ void printObjectsMonochrome(Things...)(Things things)
 
                 static if (is(MemberType : string))
                 {
-                    realWritefln!stringPattern(typestring, memberstring, member, member.length);
+                    sink.formattedWrite(stringPattern, typestring, memberstring,
+                        member, member.length);
                 }
                 else
                 {
-                    realWritefln!normalPattern(typestring, memberstring, member);
+                    sink.formattedWrite(normalPattern, typestring, memberstring,
+                        member);
                 }
             }
         }
 
-        realWriteln();
+        sink.put('\n');
     }
 }
 
