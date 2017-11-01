@@ -841,14 +841,10 @@ unittest
 {
     Logger log_ = new KamelosoLogger(LogLevel.all);
 
-    log_.log("herp");
-    //log.all("THIS IS ALL");
-    log_.info("THIS IS INFO");
-    log_.warning("THIS IS WARNING");
-    log_.error("THIS IS ERROR");
-    //log.fatal("THIS IS FATAL");
-    log_.trace("THIS IS TRACE");
-
-    /*log.error("error");
-    log.trace("trace");*/
+    log_.log("log: log");
+    log_.info("log: info");
+    log_.warning("log: warning");
+    log_.error("log: error");
+    // log_.fatal("log: FATAL");  // crashes the program
+    log_.trace("log: trace");
 }
