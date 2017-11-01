@@ -252,7 +252,7 @@ unittest
     StructName s;
     Appender!string sink;
 
-    //sink.reserve(256);  // ~239
+    sink.reserve(256);  // ~239
     sink.formatObjectsColoured(s);
 
     assert((sink.data.length > 12), "Empty sink after coloured fill");
