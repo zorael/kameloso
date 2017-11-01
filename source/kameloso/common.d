@@ -191,8 +191,8 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = "%%s%%9s %%s%%-%ds %%s\"%%s\"%%s(%%d)%%s\n".format(entryPadding+2);
-    enum normalPattern = "%%s%%9s %%s%%-%ds  %%s%%s%%s\n".format(entryPadding+2);
+    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)%s\n";
+    enum normalPattern = "%s%9s %s%-*s  %s%s%s\n";
 
     foreach (thing; things)
     {
@@ -215,7 +215,8 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
                 {
                     sink.formattedWrite(stringPattern,
                         colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), memberstring,
+                        colourise(Foreground.white), (entryPadding + 2),
+                        memberstring,
                         colourise(Foreground.lightgreen), member,
                         colourise(Foreground.darkgrey), member.length,
                         colourise(Foreground.default_));
@@ -224,7 +225,8 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
                 {
                     sink.formattedWrite(normalPattern,
                         colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), memberstring,
+                        colourise(Foreground.white), (entryPadding + 2),
+                        memberstring,
                         colourise(Foreground.lightgreen), member,
                         colourise(Foreground.default_));
                 }
@@ -267,8 +269,8 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
     import std.typecons : Unqual;
 
     enum entryPadding = longestMemberName!Things.length;
-    enum stringPattern = "%%9s %%-%ds \"%%s\"(%%d)\n".format(entryPadding+2);
-    enum normalPattern = "%%9s %%-%ds  %%s\n".format(entryPadding+2);
+    enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
+    enum normalPattern = "%9s %-*s  %s\n";
 
     foreach (thing; things)
     {
@@ -287,13 +289,14 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
 
                 static if (is(MemberType : string))
                 {
-                    sink.formattedWrite(stringPattern, typestring, memberstring,
+                    sink.formattedWrite(stringPattern, typestring,
+                        entryPadding+2, memberstring,
                         member, member.length);
                 }
                 else
                 {
-                    sink.formattedWrite(normalPattern, typestring, memberstring,
-                        member);
+                    sink.formattedWrite(normalPattern, typestring,
+                        entryPadding+2, memberstring, member);
                 }
             }
         }

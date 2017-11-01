@@ -329,8 +329,8 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
 
     sink.formattedWrite("[%s]\n", Thing.stringof); // Section header
 
-    enum pattern = "%%-%ds  %%s\n".format(entryPadding);
-    enum patternCommented = "#%s\n"; //%-%ds\n".format(entryPadding);
+    enum pattern = "%-*s  %s\n";
+    enum patternCommented = "#%s\n";
 
     foreach (immutable i, member; thing.tupleof)
     {
@@ -360,7 +360,7 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
                     static assert(separator.length, "Invalid separator (empty)");
 
                     // Array; use std.format.format to get a Separator-separated line
-                    enum arrayPattern = "%%-(%%s%s%%)".format(separator);
+                    enum arrayPattern = "%-(%s" ~ separator ~ "%)";
                     immutable value = arrayPattern.format(member);
                 }
                 else
@@ -373,7 +373,8 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
                 {
                     if (value.length)
                     {
-                        sink.formattedWrite(pattern, memberstring, value);
+                        sink.formattedWrite(pattern, entryPadding,
+                            memberstring, value);
                     }
                     else
                     {
@@ -386,7 +387,8 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
 
                     if (is(MemberType : bool) || (value != typeof(value).init))
                     {
-                        sink.formattedWrite(pattern, memberstring, value);
+                        sink.formattedWrite(pattern, entryPadding,
+                            memberstring, value);
                     }
                     else
                     {
