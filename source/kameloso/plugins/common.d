@@ -624,15 +624,8 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.SELFNICK)
     void onSelfnickMixin(const IRCEvent event)
     {
-        if (state.bot.nickname == event.content)
-        {
-            logger.warning("saw SELFNICK but already had that nick...");
-        }
-        else
-        {
-            logger.info(module_, ": new nickname");
-            state.bot.nickname = event.content;
-        }
+        logger.info(module_, ": new nickname");
+        state.bot.nickname = event.content;
     }
 
     // updateBot
