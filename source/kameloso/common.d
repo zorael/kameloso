@@ -196,7 +196,9 @@ void printObjectsColouredFormatter(Sink, Things...)(ref Sink sink, Things things
 
     foreach (thing; things)
     {
-        logger.info("-- ", Unqual!(typeof(thing)).stringof);
+        sink.formattedWrite("%s-- %s\n",
+            colourise(Foreground.white),
+            Unqual!(typeof(thing)).stringof);
 
         foreach (immutable i, member; thing.tupleof)
         {
@@ -270,7 +272,7 @@ void printObjectsMonochromeFormatter(Sink, Things...)(ref Sink sink, Things thin
 
     foreach (thing; things)
     {
-        realWriteln("-- ", Unqual!(typeof(thing)).stringof);
+        sink.formattedWrite("-- %s\n", Unqual!(typeof(thing)).stringof);
 
         foreach (immutable i, member; thing.tupleof)
         {
@@ -638,6 +640,7 @@ enum isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
  +  Returns:
  +      A Bash code sequence of the passed codes.
  +/
+version(Colours)
 string colourise(Codes...)(Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
@@ -648,6 +651,11 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 
     sink.colouriseImpl(codes);
     return sink.data;
+}
+else
+string colourise(Codes...)(Codes codes)
+{
+    return string.init;
 }
 
 
@@ -664,6 +672,7 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
  +  Returns:
  +      A Bash code sequence of the passed codes.
  +/
+version(Colours)
 string colouriseImpl(Sink, Codes...)(Sink sink, Codes codes)
 if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
 {
