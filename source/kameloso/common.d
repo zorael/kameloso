@@ -178,7 +178,7 @@ void printObject(Thing)(Thing thing)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
+void formatObjectsColoured(Sink, Things...)(Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
@@ -243,7 +243,7 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
  +  Params:
  +      thing = The struct object to enumerate.
  +/
-void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
+void formatObjectsMonochrome(Sink, Things...)(Sink sink, Things things)
 {
     import kameloso.config : longestMemberName;
 
@@ -304,7 +304,9 @@ unittest
     StructName s;
     Appender!string sink;
 
+    sink.reserve(128);  // ~119
     sink.formatObjectsMonochrome(s);
+
     assert(sink.data ==
 `-- StructName
       int i    12345
