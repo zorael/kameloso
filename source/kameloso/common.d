@@ -746,7 +746,7 @@ string colourise(Codes...)(Codes codes)
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-string colourise(Sink, Codes...)(auto ref Sink sink, Codes codes)
+void colourise(Sink, Codes...)(auto ref Sink sink, Codes codes)
 if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(BashColourToken);
@@ -760,7 +760,6 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     }
 
     sink.put('m');
-    return sink.data;
 }
 
 
