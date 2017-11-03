@@ -776,26 +776,31 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
-    /// Appender sink to fill with content and print in one go
-    Appender!(char[]) sink;
+    // Appender sink to fill with content and print in one go
+    //Appender!(char[]) sink;
 
     this(LogLevel lv) @safe
     {
         super(lv);
-        sink.reserve(512);
+
+        /*static if (__traits(hasMember, sink, "reserve"))
+        {
+            sink.reserve(512);
+        }*/
     }
 
     /// This override is needed or it won't compile
     override void writeLogMsg(ref LogEntry payload) const {}
 
     /// Outputs the head of a logger message
-    override protected void beginLogMsg(string file, int line, string funcName,
+    protected void beginLogMsg(Sink)(auto ref Sink sink,
+        string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger) @safe
     {
         version(Colours)
         {
-            sink.put(colourise(Foreground.white));
+            sink.colourise(Foreground.white);
         }
 
         sink.formattedWrite("[%s] ", (cast(DateTime)timestamp)
@@ -807,50 +812,78 @@ final class KamelosoLogger : Logger
         switch (logLevel)
         {
         case trace:
-            sink.put(colourise(Foreground.default_));
+            sink.colourise(Foreground.default_);
             break;
 
         case info:
-            sink.put(colourise(Foreground.lightgreen));
+            sink.colourise(Foreground.lightgreen);
             break;
 
         case warning:
-            sink.put(colourise(Foreground.lightred));
+            sink.colourise(Foreground.lightred);
             break;
 
         case error:
-            sink.put(colourise(Foreground.red));
+            sink.colourise(Foreground.red);
             break;
 
         case fatal:
-            sink.put(colourise(Foreground.red, Format.blink));
+            sink.colourise(Foreground.red, Format.blink);
             break;
 
         default:
-            sink.put(colourise(Foreground.white));
+            sink.colourise(Foreground.white);
             break;
         }
     }
 
-    /// Outputs the message part of a logger message; the content
-    override protected void logMsgPart(const(char)[] msg) @safe
+    /// ditto
+    override protected void beginLogMsg(string file, int line, string funcName,
+        string prettyFuncName, string moduleName, LogLevel logLevel,
+        Tid threadId, SysTime timestamp, Logger logger) @trusted
     {
-        if (!msg.length) return;
+        return beginLogMsg(stdout.lockingTextWriter, file, line, funcName,
+            prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
+    }
 
+    /// Outputs the message part of a logger message; the content
+    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) @safe
+    {
         sink.put(msg);
     }
 
+    /// ditto
+    override protected void logMsgPart(const(char)[] msg) @trusted
+    {
+        if (!msg.length) return;
+
+        return logMsgPart(stdout.lockingTextWriter, msg);
+    }
+
     /// Outputs the tail of a logger message
-    override protected void finishLogMsg() @safe
+    protected void finishLogMsg(Sink)(auto ref Sink sink) @safe
     {
         version(Colours)
         {
             // Reset.blink in case a fatal message was thrown
-            sink.put(colourise(Foreground.default_, Reset.blink));
+            sink.colourise(Foreground.default_, Reset.blink);
         }
 
-        writeln(sink.data);
-        sink.clear();
+        static if (__traits(hasMember, sink, "data"))
+        {
+            writeln(sink.data);
+            sink.clear();
+        }
+        else
+        {
+            sink.put('\n');
+        }
+    }
+
+    /// ditto
+    override protected void finishLogMsg() @trusted
+    {
+        return finishLogMsg(stdout.lockingTextWriter);
     }
 }
 
