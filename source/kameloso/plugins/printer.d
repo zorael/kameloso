@@ -154,8 +154,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         Foreground typeColour = DefaultColour.type;
         if (type == IRCEvent.Type.QUERY) typeColour = lightgreen;
 
-        sink.formattedWrite!"%s[%s] %s[%s] "
-            (colourise(white), timestamp, colourise(typeColour), type.to!string);
+        sink.colourise(white);
+        sink.formattedWrite("[%s] ", timestamp);
+        sink.colourise(typeColour);
+        sink.formattedWrite("[%s] ", type.to!string);  // typestring?
 
         import std.string : toLower;
 
