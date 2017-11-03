@@ -326,20 +326,17 @@ unittest
 /++
  +  Express how long time has passed in a Duration, in natural language.
  +
+ +  Write the result to a passed output range sink.
+ +
  +  Params:
  +      duration = a period of time
  +
  +  Returns:
  +      A humanly-readable string of how long the passed duration is.
  +/
-pragma(inline)
-string timeSince(const Duration duration)
+void timeSince(Sink)(auto ref Sink sink, const Duration duration)
 {
-    import std.array  : Appender;
     import std.format : formattedWrite;
-
-    Appender!string sink;
-    sink.reserve(50);
 
     int days, hours, minutes, seconds;
     duration.split!("days","hours","minutes","seconds")
@@ -367,23 +364,50 @@ string timeSince(const Duration duration)
     {
         sink.formattedWrite("%d %s", seconds, seconds.plurality("second", "seconds"));
     }
+}
 
+/// ditto
+string timeSince(const Duration duration)
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(50);
+    sink.timeSince(duration);
     return sink.data;
 }
 
 unittest
 {
     immutable dur1 = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-    assert(dur1.timeSince == "9 days, 3 hours and 16 minutes");
+    assert((dur1.timeSince == "9 days, 3 hours and 16 minutes"), dur1.timeSince);
 
     immutable dur2 = 3_620.seconds;  // 1 hour and 20 secs
-    assert(dur2.timeSince == "1 hour");
+    assert((dur2.timeSince == "1 hour"), dur2.timeSince);
 
     immutable dur3 = 30.seconds;  // 30 secs
-    assert(dur3.timeSince == "30 seconds");
+    assert((dur3.timeSince == "30 seconds"), dur3.timeSince);
 
     immutable dur4 = 1.seconds;
-    assert(dur4.timeSince == "1 second");
+    assert((dur4.timeSince == "1 second"), dur4.timeSince);
+
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    immutable dur5 = 0.seconds;
+    sink.timeSince(dur5);
+    assert((sink.data == "0 seconds"), sink.data);
+    sink.clear();
+
+    immutable dur6 = 3_141_519_265.msecs;
+    sink.timeSince(dur6);
+    assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
+    sink.clear();
+
+    immutable dur7 = 3599.seconds;
+    sink.timeSince(dur7);
+    assert((sink.data == "59 minutes"), sink.data);
 }
 
 
