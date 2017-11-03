@@ -135,7 +135,9 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.colourise(white);
         sink.formattedWrite("[%s] ", timestamp);
         sink.colourise(typeColour);
-        sink.formattedWrite("[%s] ", type.to!string);  // typestring?
+
+        import kameloso.stringutils : enumToString;
+        sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
 
         import std.string : toLower;
 
