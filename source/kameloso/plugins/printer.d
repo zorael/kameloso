@@ -93,7 +93,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     import std.conv : to;
     import std.datetime;
     import std.format : formattedWrite;
-    import std.range : put;
 
     immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
                             .timeOfDay
@@ -107,7 +106,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.formattedWrite("[%s] [%s] ",
             timestamp, type.to!string);
 
-        sink.put(sender);//put(sink, sender);
+        sink.put(sender);
 
         if (special)        sink.put('*');
         if (role != Role.init)
@@ -164,36 +163,65 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         if (alias_.length && (sender == alias_.toLower))
         {
-            put(sink, colourise(senderColour));
-            put(sink, alias_);
+            sink.colourise(senderColour);
+            sink.put(alias_);
             aliasPrinted = true;
         }
         else
         {
-            put(sink, colourise(senderColour));
-            put(sink, sender);
+            sink.colourise(senderColour);
+            sink.put(sender);
         }
 
-        if (special)        sink.formattedWrite("%s*",
-                                colourise(DefaultColour.special));
-        if (role != Role.init) sink.formattedWrite(" %s[%s]",
-                                colourise(DefaultColour.white),
-                                role.to!string);
-        if (!aliasPrinted && alias_.length && (alias_ != sender))
-                            sink.formattedWrite(" %s(%s)",
-                                colourise(senderColour), alias_);
-        if (target.length)  sink.formattedWrite(" %s(%s)",
-                                colourise(DefaultColour.target), target);
-        if (channel.length) sink.formattedWrite(" %s[%s]",
-                                colourise(DefaultColour.channel), channel);
-        if (content.length) sink.formattedWrite(`%s: "%s"`,
-                                colourise(DefaultColour.content), content);
-        if (aux.length)     sink.formattedWrite(" %s<%s>",
-                                colourise(DefaultColour.aux), aux);
-        if (num > 0)        sink.formattedWrite(" %s(#%d)",
-                                colourise(DefaultColour.num), num);
+        if (special)
+        {
+            sink.colourise(DefaultColour.special);
+            sink.put('*');
+        }
 
-        sink.formattedWrite(colourise(Foreground.default_));
+        if (role != Role.init)
+        {
+            sink.colourise(Foreground.white);
+            sink.formattedWrite(" [%s]", role.to!string);
+        }
+
+        if (!aliasPrinted && alias_.length && (alias_ != sender))
+        {
+            sink.colourise(senderColour);
+            sink.formattedWrite(" (%s)", alias_);
+        }
+
+        if (target.length)
+        {
+            sink.colourise(DefaultColour.target);
+            sink.formattedWrite(" (%s)", target);
+        }
+
+        if (channel.length)
+        {
+            sink.colourise(DefaultColour.channel);
+            sink.formattedWrite(" [%s]", channel);
+        }
+
+        if (content.length)
+        {
+            sink.colourise(DefaultColour.content);
+            sink.formattedWrite(`: "%s"`, content);
+        }
+
+        if (aux.length)
+        {
+            sink.colourise(DefaultColour.aux);
+            sink.formattedWrite(" <%s>", aux);
+        }
+
+        if (num > 0)
+        {
+            sink.colourise(DefaultColour.num);
+            sink.formattedWrite(" (#%d)", num);
+        }
+
+        sink.colourise(Foreground.default_);
     }
 }
 
