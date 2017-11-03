@@ -81,9 +81,7 @@ void onAnyEvent(const IRCEvent origEvent)
         break;
 
     default:
-        reusableAppender.formatMessage(event);
-        writeln(reusableAppender.data);
-        reusableAppender.clear();
+        formatMessage(stdout.lockingTextWriter, event);
     }
 }
 
@@ -224,6 +222,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
 
         sink.colourise(Foreground.default_);
+
+        static if (!__traits(hasMember, Sink, "data"))
+        {
+            sink.put('\n');
+        }
     }
 }
 
