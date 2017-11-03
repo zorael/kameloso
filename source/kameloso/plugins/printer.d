@@ -17,30 +17,11 @@ IRCPluginState state;
 Settings settings;
 
 
-// reusableAppender
-/++
- +  Appender to reuse as sink to fill when printing events.
- +
- +  It can't be Appender!string or it can't be cleared, so use Appender!(char[]).
- +  The content will be shortlived anyway so there's no risk of old lines
- +  creeping through. One workaround would be not to .clear() it, but to just
- +  set it to .init. However, the point of having a reusable Appender would be
- +  promptly lost.
- +/
-Appender!(char[]) reusableAppender;
-
-
-/// Appender buffer size. Longest length seen in the wild is 537, use a buffer
-/// slightly larger than that.
-enum appenderBufferSize = 600;
-
-
 // onAnyEvent
 /++
  +  Print an event to the local terminal.
  +
- +  Use the reusableAppender to slightly optimise the procedure by constantly
- +  reusing memory.
+ +  Write directly to a LockingTextWriter.
  +
  +  Params:
  +      event = the IRCEvent to print.
@@ -100,7 +81,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     with (event)
     if (state.settings.monochrome)
     {
-
         sink.formattedWrite("[%s] [%s] ",
             timestamp, type.to!string);
 
@@ -387,16 +367,6 @@ void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 
     event.content = event.content.replaceAll(engine, bashToken);
     event.content ~= "\033[0m";
-}
-
-
-// initialise
-/++
- +  Initialises the Printer plugin. Reserves space in the reusable Appender.
- +/
-void initialise()
-{
-    reusableAppender.reserve(appenderBufferSize);
 }
 
 
