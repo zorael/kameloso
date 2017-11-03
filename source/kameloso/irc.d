@@ -345,7 +345,7 @@ unittest
  +      ref event = A reference to the IRCEvent to finish working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
+void parseSpecialcases(ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils;
 
