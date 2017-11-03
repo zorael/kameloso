@@ -69,9 +69,11 @@ void onAnyEvent(const IRCEvent origEvent)
 
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
-    import std.conv : to;
+    import kameloso.stringutils : enumToString;
+
     import std.datetime;
     import std.format : formattedWrite;
+    import std.string : toLower;
 
     immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
                             .timeOfDay
@@ -82,14 +84,14 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     if (state.settings.monochrome)
     {
         sink.formattedWrite("[%s] [%s] ",
-            timestamp, type.to!string);
+            timestamp, enumToString(type));
 
         sink.put(sender);
 
         if (special)        sink.put('*');
         if (role != Role.init)
-                            sink.formattedWrite(" [%s]", role.to!string);
-        if (alias_.length && (alias_ != sender))
+                            sink.formattedWrite(" [%s]", enumToString(role));
+        if (alias_.length && (sender != alias_.toLower))
                             sink.formattedWrite(" (%s)", alias_);
         if (target.length)  sink.formattedWrite(" (%s)",  target);
         if (channel.length) sink.formattedWrite(" [%s]",  channel);
@@ -135,11 +137,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.colourise(white);
         sink.formattedWrite("[%s] ", timestamp);
         sink.colourise(typeColour);
-
-        import kameloso.stringutils : enumToString;
         sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
-
-        import std.string : toLower;
 
         bool aliasPrinted;
 
@@ -164,7 +162,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         if (role != Role.init)
         {
             sink.colourise(Foreground.white);
-            sink.formattedWrite(" [%s]", role.to!string);
+            sink.formattedWrite(" [%s]", enumToString(role));
         }
 
         if (!aliasPrinted && alias_.length && (alias_ != sender))
