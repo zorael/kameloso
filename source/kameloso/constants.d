@@ -73,7 +73,7 @@ enum BashEffectToken
 }
 
 /// Format codes for Bash colouring
-enum Format
+enum BashFormat
 {
     bright      = "1",
     dim         = "2",
@@ -84,7 +84,7 @@ enum Format
 }
 
 /// Foreground colour codes for Bash colouring
-enum Foreground
+enum BashForeground
 {
     default_     = "39",
     black        = "30",
@@ -106,7 +106,7 @@ enum Foreground
 }
 
 /// Background colour codes for Bash colouring
-enum Background
+enum BashBackground
 {
     default_     = "49",
     black        = "40",
@@ -128,7 +128,7 @@ enum Background
 }
 
 /// Bash colour/effect reset codes
-enum Reset
+enum BashReset
 {
     all         = "0",
     bright      = "21",

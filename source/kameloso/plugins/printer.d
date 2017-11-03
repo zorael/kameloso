@@ -80,7 +80,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                             .timeOfDay
                             .toString();
 
-    with (Foreground)
+    with (BashForeground)
     with (event)
     if (state.settings.monochrome)
     {
@@ -119,20 +119,20 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             num     = darkgrey,
         }
 
-        Foreground senderColour = DefaultColour.sender;
+        BashForeground senderColour = DefaultColour.sender;
 
         if (state.settings.randomNickColours)
         {
             import std.traits : EnumMembers;
 
-            static immutable Foreground[17] fg = [ EnumMembers!Foreground ];
+            static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
 
             auto colourIndex = hashOf(sender) % 16;
             if (colourIndex == 1) colourIndex = 16;  // map black to white
             senderColour = fg[colourIndex];
         }
 
-        Foreground typeColour = DefaultColour.type;
+        BashForeground typeColour = DefaultColour.type;
         if (type == IRCEvent.Type.QUERY) typeColour = lightgreen;
 
         sink.colourise(white);
@@ -162,7 +162,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         if (role != Role.init)
         {
-            sink.colourise(Foreground.white);
+            sink.colourise(white);
             sink.formattedWrite(" [%s]", enumToString(role));
         }
 
@@ -202,7 +202,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.formattedWrite(" (#%d)", num);
         }
 
-        sink.colourise(Foreground.default_);
+        sink.colourise(default_);
 
         static if (!__traits(hasMember, Sink, "data"))
         {
@@ -271,8 +271,8 @@ void mapColours(ref IRCEvent event)
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
 
-    alias F = Foreground;
-    Foreground[16] weechatForegroundMap =
+    alias F = BashForeground;
+    BashForeground[16] weechatForegroundMap =
     [
          0 : F.white,
          1 : F.darkgrey,
@@ -292,8 +292,8 @@ void mapColours(ref IRCEvent event)
         15 : F.lightgrey,
     ];
 
-    alias B = Background;
-    Background[16] weechatBackgroundMap =
+    alias B = BashBackground;
+    BashBackground[16] weechatBackgroundMap =
     [
          0 : B.white,
          1 : B.black,

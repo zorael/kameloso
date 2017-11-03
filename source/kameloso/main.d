@@ -244,12 +244,12 @@ Flag!"quit" handleArguments(string[] args)
 
     if (getoptResults.helpWanted)
     {
-        printVersionInfo(Foreground.white);
+        printVersionInfo(BashForeground.white);
         writeln();
 
-        defaultGetoptPrinter(colourise(Foreground.lightgreen) ~
+        defaultGetoptPrinter(colourise(BashForeground.lightgreen) ~
                             "Command-line arguments available:\n" ~
-                            colourise(Foreground.default_),
+                            colourise(BashForeground.default_),
                             getoptResults.options);
         writeln();
         return Yes.quit;
@@ -290,14 +290,14 @@ Flag!"quit" handleArguments(string[] args)
 }
 
 
-void printVersionInfo(Foreground colourCode = Foreground.default_)
+void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         colourise(colourCode),
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
-        colourise(Foreground.default_));
+        colourise(BashForeground.default_));
 }
 
 
@@ -381,7 +381,7 @@ int main(string[] args)
 {
     if (handleArguments(args) == Yes.quit) return 0;
 
-    printVersionInfo(Foreground.white);
+    printVersionInfo(BashForeground.white);
     writeln();
 
     // Print the current settings to show what's going on.

@@ -205,10 +205,11 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 
     enum entryPadding = longestMemberName!Things.length;
 
+    with (BashForeground)
     foreach (thing; things)
     {
         sink.formattedWrite("%s-- %s\n",
-            colourise(Foreground.white),
+            colourise(white),
             Unqual!(typeof(thing)).stringof);
 
         foreach (immutable i, member; thing.tupleof)
@@ -226,25 +227,25 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                 {
                     enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)\n";
                     sink.formattedWrite(stringPattern,
-                        colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), (entryPadding + 2),
+                        colourise(cyan), typestring,
+                        colourise(white), (entryPadding + 2),
                         memberstring,
-                        colourise(Foreground.lightgreen), member,
-                        colourise(Foreground.darkgrey), member.length);
+                        colourise(lightgreen), member,
+                        colourise(darkgrey), member.length);
                 }
                 else
                 {
                     enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                     sink.formattedWrite(normalPattern,
-                        colourise(Foreground.cyan), typestring,
-                        colourise(Foreground.white), (entryPadding + 2),
+                        colourise(cyan), typestring,
+                        colourise(white), (entryPadding + 2),
                         memberstring,
-                        colourise(Foreground.lightgreen), member);
+                        colourise(lightgreen), member);
                 }
             }
         }
 
-        sink.put(colourise(Foreground.default_));
+        sink.put(colourise(default_));
         sink.put('\n');
     }
 }
@@ -700,14 +701,14 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
 
 /// Bool of whether a type is a colour code enum
-enum isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
-                        is(T : Format) || is(T : Reset);
+enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
+                        is(T : BashFormat) || is(T : BashReset);
 
 
 // colourise
 /++
- +  Takes a mix of a Foreground, a Background, a Format and/or a Reset and
- +  composes them into a colour code token.
+ +  Takes a mix of a BashForeground, a BashBackground, a BashFormat and/or a
+ +  BashReset and composes them into a colour code token.
  +
  +  This function creates an appender and fills it with the return value of
  +  colourise(Sink, Codes...).
@@ -740,8 +741,8 @@ string colourise(Codes...)(Codes codes)
 
 // colourise
 /++
- +  Takes a mix of a Foreground, a Background, a Format and/or a Reset and
- +  composes them into a colour code token.
+ +  Takes a mix of a BashForeground, a BashBackground, a BashFormat and/or a
+ +  BashReset and composes them into a colour code token.
  +
  +  This is the composing function that fills its result into a sink.
  +
@@ -806,7 +807,7 @@ final class KamelosoLogger : Logger
     {
         version(Colours)
         {
-            sink.colourise(Foreground.white);
+            sink.colourise(BashForeground.white);
         }
 
         sink.formattedWrite("[%s] ", (cast(DateTime)timestamp)
@@ -818,27 +819,27 @@ final class KamelosoLogger : Logger
         switch (logLevel)
         {
         case trace:
-            sink.colourise(Foreground.default_);
+            sink.colourise(BashForeground.default_);
             break;
 
         case info:
-            sink.colourise(Foreground.lightgreen);
+            sink.colourise(BashForeground.lightgreen);
             break;
 
         case warning:
-            sink.colourise(Foreground.lightred);
+            sink.colourise(BashForeground.lightred);
             break;
 
         case error:
-            sink.colourise(Foreground.red);
+            sink.colourise(BashForeground.red);
             break;
 
         case fatal:
-            sink.colourise(Foreground.red, Format.blink);
+            sink.colourise(BashForeground.red, BashFormat.blink);
             break;
 
         default:
-            sink.colourise(Foreground.white);
+            sink.colourise(BashForeground.white);
             break;
         }
     }
@@ -872,7 +873,7 @@ final class KamelosoLogger : Logger
         version(Colours)
         {
             // Reset.blink in case a fatal message was thrown
-            sink.colourise(Foreground.default_, Reset.blink);
+            sink.colourise(BashForeground.default_, BashReset.blink);
         }
 
         static if (__traits(hasMember, sink, "data"))
