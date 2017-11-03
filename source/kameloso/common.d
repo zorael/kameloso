@@ -752,9 +752,11 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     sink.put(BashColourToken);
     sink.put('[');
 
+    uint numCodes;
+
     foreach (const code; codes)
     {
-        if (sink.data.length > 2) sink.put(';');
+        if (++numCodes > 1) sink.put(';');
 
         sink.put(cast(string)code);
     }
