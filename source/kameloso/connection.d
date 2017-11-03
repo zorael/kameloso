@@ -324,12 +324,12 @@ void listenFiber(Connection conn)
             }
 
             //logger.warningf("------------------[ OVERLAP CANNOT COPY WILL MIRROR start:%d pos:%d end:%d len:%d (REPORT THIS)", start, pos, end, buffer.length);
-            mirror[0..start] = buffer[pos..end];
-            buffer[0..start] = mirror[0..start];
+            mirror.ptr[0..start] = buffer.ptr[pos..end];
+            buffer.ptr[0..start] = mirror.ptr[0..start];
         }
         else
         {
-            buffer[0..start] = buffer[pos..end];
+            buffer.ptr[0..start] = buffer.ptr[pos..end];
         }
     }
 }
