@@ -44,7 +44,7 @@ void walkConfigLines(Range_, Things...)(Range_ range, ref Things things)
             // Section header
             import std.format : formattedRead;
 
-            line.formattedRead("[%s]", &currentSection);
+            line.formattedRead("[%s]", currentSection);
 
             break;
 

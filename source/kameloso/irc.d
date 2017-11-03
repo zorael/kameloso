@@ -46,7 +46,7 @@ void parseBasic(ref IRCEvent event) @trusted
     string raw = event.raw;
     string slice;
 
-    raw.formattedRead("%s :%s", event.typestring, &slice);
+    raw.formattedRead("%s :%s", event.typestring, slice);
     //raw.formattedRead("%s :%s", event.typestring, slice); // restore me later
 
     switch (event.typestring)
@@ -168,7 +168,7 @@ void parsePrefix(ref IRCEvent event, ref string slice)
     if (prefix.indexOf('!') != -1)
     {
         // user!~ident@address
-        prefix.formattedRead("%s!%s@%s", &sender, &ident, &address);
+        prefix.formattedRead("%s!%s@%s", sender, ident, address);
 
         // FIXME: This obviously doesn't scale
         special = (address == "services.") ||
@@ -858,9 +858,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice) @trusted
         else
         {
             // :genesis.ks.us.irchighway.net CAP 867AAF66L LS :away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names
-            string id;  // Passing &id is taking the address of a local...
-            slice.formattedRead("%s %s :%s", &id, event.aux, event.content);
-            // slice.formattedRead("%s %s :%s", id, event.aux, event.content);
+            string id;
+            slice.formattedRead("%s %s :%s", id, event.aux, event.content);
         }
         break;
 
@@ -2107,7 +2106,7 @@ IRCUser userFromEvent(const IRCEvent event)
             nickname  = event.target;
             login     = event.aux;
             special   = event.special;
-            content.formattedRead("%s %s", &ident, &address);
+            content.formattedRead("%s %s", ident, address);
         }
         break;
 

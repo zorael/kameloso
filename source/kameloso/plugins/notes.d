@@ -133,7 +133,7 @@ void onCommandAddNote(const IRCEvent event)
     string nickname, line;
     // formattedRead advances a slice so we need a mutable copy of event.content
     string content = event.content;
-    immutable hits = content.formattedRead("%s %s", &nickname, &line);
+    immutable hits = content.formattedRead("%s %s", nickname, line);
 
     if (hits != 2) return;
 
