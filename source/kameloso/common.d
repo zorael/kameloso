@@ -19,12 +19,15 @@ import std.typecons : Flag, No, Yes;
  +/
 Logger logger;
 
+
 shared static this()
 {
     logger = new KamelosoLogger(LogLevel.all);
 }
 
+
 @safe:
+
 
 /++
  +  Aggregate of thread message types.
@@ -375,6 +378,7 @@ unittest
 `, "\n" ~ sink.data);
 }
 
+
 // longestMemberName
 /++
  +  Gets the name of the longest member in a struct.
@@ -447,6 +451,7 @@ if (isType!T)
         !is(T == const) &&
         !is(T == immutable);
 }
+
 
 /// Ditto
 enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
@@ -692,6 +697,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
     return app.data;
 }
+
 
 /// Bool of whether a type is a colour code enum
 enum isAColourCode(T) = is(T : Foreground) || is(T : Background) ||

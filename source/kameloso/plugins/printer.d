@@ -63,6 +63,7 @@ void onAnyEvent(const IRCEvent origEvent)
 
     default:
         formatMessage(stdout.lockingTextWriter, event);
+        break;
     }
 }
 
