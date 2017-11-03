@@ -141,7 +141,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
     auto user = event.sender in state.users;
 
     if (!user) return FilterResult.whois;
-    else if ((user.login == state.bot.master) || state.bot.friends.canFind(user.login))
+    else if ((user.login == state.bot.master) ||
+        state.bot.friends.canFind(user.login))
     {
         return FilterResult.pass;
     }
@@ -285,13 +286,11 @@ mixin template IRCPluginBasics()
  +/
 mixin template OnEventImpl(string module_, bool debug_ = false)
 {
-    /// Ditto
     void onEvent(const IRCEvent event)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.stringutils;
-        import std.traits : getSymbolsByUDA, getUDAs, hasUDA, isSomeFunction;
+        import std.traits;
 
         foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
         {
@@ -299,20 +298,17 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
             {
                 foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
                 {
-                    static if (hasUDA!(fun, Label))
-                    {
-                        import std.format : format;
+                    import kameloso.stringutils;
 
-                        enum name = "%s.%s(%s)"
-                            .format(module_, getUDAs!(fun, Label)[0].name, eventTypeUDA);
-                    }
-
+                    import std.stdio;
                     import std.typecons : Flag;
 
-                    static if (hasUDA!(fun, Verbose))
+                    enum name = "%s : %s (%s)".format(module_,
+                        __traits(identifier, fun), eventTypeUDA);
+
+                    static if (hasUDA!(fun, Flag!"verbose"))
                     {
-                        // import std.stdio : writefln, writeln;
-                        enum verbose = getUDAs!(fun, Verbose)[0] == Verbose.yes;
+                        enum bool verbose = getUDAs!(fun, Flag!"verbose")[0];
                     }
                     else
                     {
@@ -379,7 +375,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 if (event.content.beginsWith(state.bot.nickname))
                                 {
                                     mutEvent.content = event.content
-                                                       .stripPrefix(state.bot.nickname);
+                                        .stripPrefix(state.bot.nickname);
                                 }
                                 break;
 
@@ -388,7 +384,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 {
                                     static if (verbose)
                                     {
-                                        writeln(name, "but it is a query, consider allowed");
+                                        writeln(name, "but it is a query, " ~
+                                            "consider allowed");
                                     }
                                     goto case allowed;
                                 }
@@ -444,11 +441,16 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 }
                                 else
                                 {
-                                    contextPrefix = mutEvent.content.nom!(Yes.decode)(" ").toLower();
+                                    contextPrefix = mutEvent
+                                        .content
+                                        .nom!(Yes.decode)(" ")
+                                        .toLower();
                                 }
 
                                 // case-sensitive check goes here
-                                enum lowercasePrefix = configuredPrefix.string_.toLower();
+                                enum lowercasePrefix = configuredPrefix
+                                    .string_
+                                    .toLower();
                                 matches = (contextPrefix == lowercasePrefix);
 
                                 continue;
@@ -473,7 +475,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
-                        immutable privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+                        immutable privilegeLevel = getUDAs!(fun,
+                            PrivilegeLevel)[0];
 
                         with (PrivilegeLevel)
                         final switch (privilegeLevel)
@@ -487,7 +490,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (state.users[event.sender].login != state.bot.master))
+                                    (state.users[event.sender].login !=
+                                        state.bot.master))
                                 {
                                     static if (verbose)
                                     {
@@ -540,8 +544,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         logger.error(e.msg);
                     }
 
-                    static if (hasUDA!(fun, Chainable) &&
-                              (getUDAs!(fun, Chainable)[0] == Chainable.yes))
+                    static if (hasUDA!(fun, Flag!"chainable") &&
+                              (getUDAs!(fun, Flag!"chainable")[0]))
                     {
                         continue;
                     }
