@@ -6,6 +6,7 @@ import std.experimental.logger;
 import std.meta : allSatisfy;
 import std.stdio;
 import std.traits : isType;
+import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
@@ -713,14 +714,14 @@ enum isAColourCode(T) = is(T : Foreground) || is(T : Background) ||
  +/
 version(Colours)
 string colourise(Codes...)(Codes codes)
-if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
+if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
 
     Appender!string sink;
     sink.reserve(16);
 
-    sink.colouriseImpl(codes);
+    sink.colourise(codes);
     return sink.data;
 }
 else
@@ -745,8 +746,8 @@ string colourise(Codes...)(Codes codes)
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-string colouriseImpl(Sink, Codes...)(auto ref Sink sink, Codes codes)
-if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
+string colourise(Sink, Codes...)(auto ref Sink sink, Codes codes)
+if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(BashColourToken);
     sink.put('[');
@@ -761,6 +762,7 @@ if ((Codes.length > 0) && allSatisfy!(isAColourCode, Codes))
     sink.put('m');
     return sink.data;
 }
+
 
 // KamelosoLogger
 /++
