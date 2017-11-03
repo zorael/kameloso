@@ -256,7 +256,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
 
     event.typestring = slice.nom(' ');
 
-    if ((event.typestring[0] > 47) && (event.typestring[0] < 58))
+    if ((event.typestring[0] >= '0') && (event.typestring[0] <= '9'))
     {
         // typestring is a number (ascii 48 is 0, 57 is 9)
         try
