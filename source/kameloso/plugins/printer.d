@@ -81,115 +81,119 @@ void onAnyEvent(const IRCEvent origEvent)
         break;
 
     default:
-        import std.conv : to;
-        import std.datetime;
-        import std.format : formattedWrite;
-        import std.range : put;
+        reusableAppender.formatMessage(event);
+        writeln(reusableAppender.data);
+        reusableAppender.clear();
+    }
+}
 
-        immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
-                              .timeOfDay
-                              .toString();
 
-        with (Foreground)
-        with (event)
-        if (state.settings.monochrome)
+void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
+{
+    import std.conv : to;
+    import std.datetime;
+    import std.format : formattedWrite;
+    import std.range : put;
+
+    immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
+                            .timeOfDay
+                            .toString();
+
+    with (Foreground)
+    with (event)
+    if (state.settings.monochrome)
+    {
+
+        sink.formattedWrite("[%s] [%s] ",
+            timestamp, type.to!string);
+
+        sink.put(sender);//put(sink, sender);
+
+        if (special)        sink.put('*');
+        if (role != Role.init)
+                            sink.formattedWrite(" [%s]", role.to!string);
+        if (alias_.length && (alias_ != sender))
+                            sink.formattedWrite(" (%s)", alias_);
+        if (target.length)  sink.formattedWrite(" (%s)",  target);
+        if (channel.length) sink.formattedWrite(" [%s]",  channel);
+        if (content.length) sink.formattedWrite(`: "%s"`, content);
+        if (aux.length)     sink.formattedWrite(" <%s>",  aux);
+        if (num > 0)        sink.formattedWrite(" (#%d)", num);
+    }
+    else
+    {
+        version(Colours)
         {
+            if (!state.settings.monochrome) event.mapEffects();
+        }
 
-            reusableAppender.formattedWrite("[%s] [%s] ",
-                timestamp, type.to!string);
+        enum DefaultColour
+        {
+            type    = lightblue,
+            sender  = lightgreen,
+            special = lightyellow,
+            target  = cyan,
+            channel = yellow,
+            content = default_,
+            aux     = white,
+            num     = darkgrey,
+        }
 
-            put(reusableAppender, sender);
+        Foreground senderColour = DefaultColour.sender;
 
-            if (special)        reusableAppender.put('*');
-            if (role != Role.init)
-                                reusableAppender.formattedWrite(" [%s]",
-                                    role.to!string);
-            if (alias_.length && (alias_ != sender))
-                                reusableAppender.formattedWrite(" (%s)", alias_);
-            if (target.length)  reusableAppender.formattedWrite(" (%s)",  target);
-            if (channel.length) reusableAppender.formattedWrite(" [%s]",  channel);
-            if (content.length) reusableAppender.formattedWrite(`: "%s"`, content);
-            if (aux.length)     reusableAppender.formattedWrite(" <%s>",  aux);
-            if (num > 0)        reusableAppender.formattedWrite(" (#%d)", num);
+        if (state.settings.randomNickColours)
+        {
+            import std.traits : EnumMembers;
+
+            static immutable Foreground[17] fg = [ EnumMembers!Foreground ];
+
+            auto colourIndex = hashOf(sender) % 16;
+            if (colourIndex == 1) colourIndex = 16;  // map black to white
+            senderColour = fg[colourIndex];
+        }
+
+        Foreground typeColour = DefaultColour.type;
+        if (type == IRCEvent.Type.QUERY) typeColour = lightgreen;
+
+        sink.formattedWrite!"%s[%s] %s[%s] "
+            (colourise(white), timestamp, colourise(typeColour), type.to!string);
+
+        import std.string : toLower;
+
+        bool aliasPrinted;
+
+        if (alias_.length && (sender == alias_.toLower))
+        {
+            put(sink, colourise(senderColour));
+            put(sink, alias_);
+            aliasPrinted = true;
         }
         else
         {
-            version(Colours)
-            {
-                if (!state.settings.monochrome) event.mapEffects();
-            }
-
-            enum DefaultColour
-            {
-                type    = lightblue,
-                sender  = lightgreen,
-                special = lightyellow,
-                target  = cyan,
-                channel = yellow,
-                content = default_,
-                aux     = white,
-                num     = darkgrey,
-            }
-
-            Foreground senderColour = DefaultColour.sender;
-
-            if (state.settings.randomNickColours)
-            {
-                import std.traits : EnumMembers;
-
-                static immutable Foreground[17] fg = [ EnumMembers!Foreground ];
-
-                auto colourIndex = hashOf(sender) % 16;
-                if (colourIndex == 1) colourIndex = 16;  // map black to white
-                senderColour = fg[colourIndex];
-            }
-
-            Foreground typeColour = DefaultColour.type;
-            if (type == QUERY) typeColour = lightgreen;
-
-            reusableAppender.formattedWrite!"%s[%s] %s[%s] "
-                (colourise(white), timestamp, colourise(typeColour), type.to!string);
-
-            import std.string : toLower;
-
-            bool aliasPrinted;
-
-            if (alias_.length && (sender == alias_.toLower))
-            {
-                put(reusableAppender, colourise(senderColour));
-                put(reusableAppender, alias_);
-                aliasPrinted = true;
-            }
-            else
-            {
-                put(reusableAppender, colourise(senderColour));
-                put(reusableAppender, sender);
-            }
-
-            if (special)        reusableAppender.formattedWrite("%s*",
-                                    colourise(DefaultColour.special));
-            if (role != Role.init) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.white),
-                                    role.to!string);
-            if (!aliasPrinted && alias_.length && (alias_ != sender))
-                                reusableAppender.formattedWrite(" %s(%s)",
-                                    colourise(senderColour), alias_);
-            if (target.length)  reusableAppender.formattedWrite(" %s(%s)",
-                                    colourise(DefaultColour.target), target);
-            if (channel.length) reusableAppender.formattedWrite(" %s[%s]",
-                                    colourise(DefaultColour.channel), channel);
-            if (content.length) reusableAppender.formattedWrite(`%s: "%s"`,
-                                    colourise(DefaultColour.content), content);
-            if (aux.length)     reusableAppender.formattedWrite(" %s<%s>",
-                                    colourise(DefaultColour.aux), aux);
-            if (num > 0)        reusableAppender.formattedWrite(" %s(#%d)",
-                                    colourise(DefaultColour.num), num);
-
-            reusableAppender.formattedWrite(colourise(Foreground.default_));
+            put(sink, colourise(senderColour));
+            put(sink, sender);
         }
 
-        writeln(reusableAppender.data);
-        reusableAppender.clear();
+        if (special)        sink.formattedWrite("%s*",
+                                colourise(DefaultColour.special));
+        if (role != Role.init) sink.formattedWrite(" %s[%s]",
+                                colourise(DefaultColour.white),
+                                role.to!string);
+        if (!aliasPrinted && alias_.length && (alias_ != sender))
+                            sink.formattedWrite(" %s(%s)",
+                                colourise(senderColour), alias_);
+        if (target.length)  sink.formattedWrite(" %s(%s)",
+                                colourise(DefaultColour.target), target);
+        if (channel.length) sink.formattedWrite(" %s[%s]",
+                                colourise(DefaultColour.channel), channel);
+        if (content.length) sink.formattedWrite(`%s: "%s"`,
+                                colourise(DefaultColour.content), content);
+        if (aux.length)     sink.formattedWrite(" %s<%s>",
+                                colourise(DefaultColour.aux), aux);
+        if (num > 0)        sink.formattedWrite(" %s(#%d)",
+                                colourise(DefaultColour.num), num);
+
+        sink.formattedWrite(colourise(Foreground.default_));
     }
 }
 
