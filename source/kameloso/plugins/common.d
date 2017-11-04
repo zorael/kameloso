@@ -98,13 +98,6 @@ struct Prefix
 }
 
 
-/// A short name tag to annotate an on-event function with, labeling it.
-struct Label
-{
-    string name;
-}
-
-
 // doWhois
 /++
  +  Ask the main thread to do a WHOIS call.
@@ -579,7 +572,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Params:
      +      event = the triggering IRCEvent.
      +/
-    @(Label("whoislogin"))
     @(IRCEvent.Type.WHOISLOGIN)
     @(IRCEvent.Type.HASTHISNICK)
     void onWhoisLoginMixin(const IRCEvent event)
@@ -602,7 +594,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Params:
      +      event = the triggering IRCEvent.
      +/
-    @(Label("endofwhois"))
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWhoisMixin(const IRCEvent event)
     {
@@ -619,7 +610,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Params:
      +      event = the triggering IRCEvent.
      +/
-    @(Label("part/quit"))
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
     void onLeaveMixin(const IRCEvent event)
@@ -634,7 +624,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Params:
      +      event = the triggering IRCEvent.
      +/
-    @(Label("selfnick"))
     @(IRCEvent.Type.SELFNICK)
     void onSelfnickMixin(const IRCEvent event)
     {

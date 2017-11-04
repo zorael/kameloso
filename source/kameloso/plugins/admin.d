@@ -28,7 +28,6 @@ bool printBytes;
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("sudo")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -48,7 +47,6 @@ void onCommandSudo(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("fake")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -70,7 +68,6 @@ void onCommandFake(const IRCEvent event)
  +  Params:
  +      event = tshe triggering IRCEvent.
  +/
-@Label("quit")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -88,7 +85,6 @@ void onCommandQuit(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("addchan")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -124,7 +120,6 @@ void onCommandAddHome(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("delhome")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -165,7 +160,6 @@ void onCommandDelHome(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("addfriend")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -200,7 +194,6 @@ void onCommandAddFriend(const IRCEvent event)
  +  Params:
  +      event = The triggering IRCEvent.
  +/
-@Label("delfriend")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -245,7 +238,6 @@ void onCommandDelFriend(const IRCEvent event)
  +  control character putting it would-be binary mode, like what happens when
  +  you try to cat a binary file.
  +/
-@Label("resetterm")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -263,7 +255,6 @@ void onCommandResetTerminal()
  +
  +  This is for debugging purposes.
  +/
-@Label("toggleprintall")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -281,7 +272,6 @@ void onCommandPrintAll()
  +
  +  This is for debugging purposes.
  +/
-@Label("toggleprintbytes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -305,7 +295,6 @@ void onCommandPrintBytes()
  +  Params:
  +      event = the event whose raw IRC string to print.
  +/
-@Label("print")
 @(IRCEvent.Type.ANY)
 @(Chainable.yes)
 void onAnyEvent(const IRCEvent event)
@@ -333,7 +322,6 @@ void onAnyEvent(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("join")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -353,7 +341,6 @@ void onCommandJoin(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("part")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -401,7 +388,6 @@ void joinPartImpl(const string prefix, const IRCEvent event)
  +
  +  This includes current channels.
  +/
-@Label("writeconfig")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)

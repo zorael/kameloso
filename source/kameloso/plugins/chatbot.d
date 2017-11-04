@@ -161,7 +161,6 @@ JSONValue loadQuotes(const string filename)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("say")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -195,7 +194,6 @@ void onCommandSay(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("8ball")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -248,7 +246,6 @@ void onCommand8ball(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("quote")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -293,7 +290,6 @@ void onCommandQuote(const IRCEvent event)
  +  Params:
  +      event = The triggering IRCEvent.
  +/
-@Label("addquote")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
@@ -324,7 +320,6 @@ void onCommanAdddQuote(const IRCEvent event)
  +
  +  This is for debugging purposes.
  +/
-@Label("printquotes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -342,7 +337,6 @@ void onCommandPrintQuotes()
  +  This is both for debugging purposes and to simply allow for live manual
  +  editing of quotes.
  +/
-@Label("reloadquotes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)

@@ -33,7 +33,6 @@ JSONValue notes;
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("onjoin")
 @(IRCEvent.Type.JOIN)
 void onJoin(const IRCEvent event)
 {
@@ -83,7 +82,6 @@ void onJoin(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("names")
 @(IRCEvent.Type.RPL_NAMREPLY)
 void onNames(const IRCEvent event)
 {
@@ -120,7 +118,6 @@ void onNames(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("addnote")
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
 @Prefix(NickPrefixPolicy.required, "addnote")
@@ -151,7 +148,6 @@ void onCommandAddNote(const IRCEvent event)
  +
  +  This is for debugging purposes.
  +/
-@Label("printnotes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -168,7 +164,6 @@ void onCommandPrintNotes()
  +
  +  This is for debugging purposes.
  +/
-@Label("reloadnotes")
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -189,7 +184,6 @@ void onCommandReloadQuotes()
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("fakejoin")
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
 @Prefix(NickPrefixPolicy.required, "fakejoin")

@@ -136,7 +136,6 @@ void createFIFO()
 /++
  +  Spawns the pipereader thread.
  +/
-@Label("welcome")
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {

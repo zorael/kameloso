@@ -26,7 +26,6 @@ Settings settings;
  +  Params:
  +      event = the IRCEvent to print.
  +/
-@Label("any")
 @(IRCEvent.Type.ANY)
 void onAnyEvent(const IRCEvent origEvent)
 {

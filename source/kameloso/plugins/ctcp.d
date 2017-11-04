@@ -21,7 +21,6 @@ IRCPluginState state;
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("ctcps")
 @(IRCEvent.Type.CTCP_VERSION)
 @(IRCEvent.Type.CTCP_FINGER)
 @(IRCEvent.Type.CTCP_SOURCE)
@@ -85,7 +84,6 @@ void onCTCPs(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("ctcpclientinfo")
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(const IRCEvent event)
 {

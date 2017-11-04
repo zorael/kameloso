@@ -144,7 +144,6 @@ unittest
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("chan")
 @(IRCEvent.Type.CHAN)
 void onMessage(const IRCEvent event)
 {

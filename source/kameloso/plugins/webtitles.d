@@ -76,7 +76,6 @@ struct TitleLookup
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("message")
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
 @(Chainable.yes)

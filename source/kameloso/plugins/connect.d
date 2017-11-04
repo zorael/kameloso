@@ -28,7 +28,6 @@ bool serverPinged;
  +  Params:
  +      event = the triggering IRCevent.
  +/
-@Label("onSelfjoin")
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
@@ -51,7 +50,6 @@ void onSelfjoin(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("onSelfpart")
 @(IRCEvent.Type.SELFPART)
 void onSelfpart(const IRCEvent event)
 {
@@ -117,7 +115,6 @@ void joinChannels()
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("welcome")
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {
@@ -141,7 +138,6 @@ void onWelcome(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("toconnecttype")
 @(IRCEvent.Type.TOCONNECTTYPE)
 void onToConnectType(const IRCEvent event)
 {
@@ -163,7 +159,6 @@ void onToConnectType(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("onping")
 @(IRCEvent.Type.PING)
 void onPing(const IRCEvent event)
 {
@@ -185,7 +180,6 @@ void onPing(const IRCEvent event)
  +  Joins channels at the end of the MOTD, and tries to authenticate with
  +  such services if applicable.
  +/
-@Label("endofmotd")
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd()
@@ -292,7 +286,6 @@ void onEndOfMotd()
  +  Fires when an authentication service sends a message with a known acceptance
  +  text, signifying successful login.
  +/
-@Label("onacceptance")
 @(IRCEvent.Type.AUTHACCEPTANCE)
 void onAcceptance()
 {
@@ -308,7 +301,6 @@ void onAcceptance()
  +  Appends a single character to the end of the bot's nickname, and propagates
  +  the change via the main thread to all other plugins.
  +/
-@Label("nickinuse")
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {
@@ -327,7 +319,6 @@ void onNickInUse()
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@Label("oninvite")
 @(IRCEvent.Type.INVITE)
 void onInvite(const IRCEvent event)
 {
@@ -350,7 +341,6 @@ void onInvite(const IRCEvent event)
  +  have to be requested (CAP LS), and the negotiations need to be ended
  +  (CAP END).
  +/
-@Label("onregistrationevent")
 @(IRCEvent.Type.NOTICE)
 @(IRCEvent.Type.CAP)
 void onRegistrationEvent(const IRCEvent event)
