@@ -68,9 +68,28 @@ void pipereader(shared IRCPluginState newState)
         {
             foreach (const line; fifo.byLineCopy)
             {
+                import kameloso.stringutils : beginsWith;
+                import std.string : toLower;
+
                 if (!line.length) break eofLoop;
 
-                state.mainThread.send(ThreadMessage.Sendline(), line);
+                if (line.toLower.beginsWith("quit"))
+                {
+                    if ((line.length > 6) && (line[4..6] == " :"))
+                    {
+                        state.mainThread.send(ThreadMessage.Quit(), line[7..$]);
+                    }
+                    else
+                    {
+                        state.mainThread.send(ThreadMessage.Quit(), line);
+                    }
+
+                    break eofLoop;
+                }
+                else
+                {
+                    state.mainThread.send(ThreadMessage.Sendline(), line);
+                }
             }
         }
 
