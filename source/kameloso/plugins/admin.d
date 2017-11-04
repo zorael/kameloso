@@ -289,14 +289,10 @@ void onCommandPrintBytes()
  +  onCommandPrintAll, by way of the 'printall' verb. Also prints the content
  +  of any incomings events, cast to bytes.
  +
- +  It is annotated with Chainable.yes to allow other functions to not halt the
- +  triggering process, allowing other functions to trigger on the same IRCEvent.
- +
  +  Params:
  +      event = the event whose raw IRC string to print.
  +/
 @(IRCEvent.Type.ANY)
-@(Chainable.yes)
 void onAnyEvent(const IRCEvent event)
 {
     if (printAll) logger.trace(event.raw, '$');

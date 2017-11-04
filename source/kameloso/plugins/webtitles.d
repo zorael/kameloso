@@ -78,7 +78,6 @@ struct TitleLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-@(Chainable.yes)
 void onMessage(const IRCEvent event)
 {
     import std.regex : matchAll;

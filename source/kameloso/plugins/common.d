@@ -2,8 +2,6 @@ module kameloso.plugins.common;
 
 import kameloso.common : Settings;
 import kameloso.irc;
-import std.typecons : Flag;
-
 
 // IRCPlugin
 /++
@@ -84,6 +82,10 @@ struct Prefix
     /// The prefix string, one word with no spaces
     string string_;
 }
+
+struct Terminate;
+
+struct Verbose;
 
 
 // doWhois
@@ -278,24 +280,15 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
         {
             static if (isSomeFunction!fun)
             {
+                import std.stdio;
+
+                enum verbose = hasUDA!(fun, Verbose);
+
                 foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
                 {
-                    import kameloso.stringutils;
-
-                    import std.stdio;
-                    import std.typecons : Flag;
 
                     enum name = "%s : %s (%s)".format(module_,
                         __traits(identifier, fun), eventTypeUDA);
-
-                    static if (hasUDA!(fun, Flag!"verbose"))
-                    {
-                        enum bool verbose = getUDAs!(fun, Flag!"verbose")[0];
-                    }
-                    else
-                    {
-                        enum verbose = false;
-                    }
 
                     static if (eventTypeUDA == IRCEvent.Type.ANY)
                     {
@@ -305,6 +298,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     {
                         if (eventTypeUDA != event.type)
                         {
+                            // The current event does not match this function's
+                            // particular UDA; continue to the next one
                             continue;
                         }
 
@@ -334,14 +329,17 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     {
                         bool matches;
 
-                        foreach (configuredPrefix; getUDAs!(fun, Prefix))
+                        foreach (prefixUDA; getUDAs!(fun, Prefix))
                         {
+                            import kameloso.stringutils;
+
                             if (matches)
                             {
                                 static if (verbose)
                                 {
                                     writeln(name, " MATCH! breaking");
                                 }
+
                                 break;
                             }
 
@@ -350,7 +348,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             with (state)
                             with (event)
                             with (NickPrefixPolicy)
-                            final switch (configuredPrefix.nickPrefixPolicy)
+                            final switch (prefixUDA.nickPrefixPolicy)
                             {
                             case ignored:
                                 break;
@@ -361,6 +359,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     mutEvent.content = content
                                         .stripPrefix(bot.nickname);
                                 }
+
                                 break;
 
                             case required:
@@ -371,8 +370,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                         writeln(name, "but it is a query, " ~
                                             "consider allowed");
                                     }
+
                                     goto case allowed;
                                 }
+
                                 goto case hardRequired;
 
                             case hardRequired:
@@ -391,66 +392,64 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     case ' ':
                                     case '!':
                                     case '?':
-                                        // content begins with bot nickname,
-                                        // followed by this non-nick character
+                                        // Content begins with bot nickname,
+                                        // followed by this non-nick character;
+                                        // indicative of a command
                                         break;
 
                                     default:
-                                        // content begins with bot nickname,
-                                        // followed by something allowed in nicks:
-                                        // [a-z] [A-Z] [0-9] _-\[]{}^`|
+                                        // Content begins with bot nickname,
+                                        // followed by something allowed in
+                                        // nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
+                                        // Hence we can't say it's aimed towards
+                                        // us, may be another nick
                                         continue;
                                     }
                                 }
                                 else
                                 {
+                                    // Message started with something unrelated
+                                    // (not bot nickname)
                                     continue;
                                 }
 
-                                // event.content guaranteed to begin with
-                                // state.bot.nickname
+                                // Event.content *guaranteed* to begin with
+                                // state.bot.nickname here
+
                                 mutEvent.content = content
-                                                   .stripPrefix(bot.nickname);
+                                    .stripPrefix(bot.nickname);
+
                                 break;
                             }
 
-                            static if (configuredPrefix.string_.length)
+                            static assert(prefixUDA.string_.length,
+                                name ~ " had an empty Prefix string");
+
+                            import kameloso.stringutils;
+
+                            import std.string : indexOf, toLower;
+
+                            if (mutEvent.content.indexOf(' ') == -1)
                             {
-                                import std.string : indexOf, toLower;
-
-                                if (mutEvent.content.indexOf(" ") == -1)
-                                {
-                                    // single word, not a prefix
-                                    contextPrefix = mutEvent.content;
-                                    mutEvent.content = string.init;
-                                }
-                                else
-                                {
-                                    contextPrefix = mutEvent
-                                        .content
-                                        .nom!(Yes.decode)(" ")
-                                        .toLower();
-                                }
-
-                                // case-sensitive check goes here
-                                enum lowercasePrefix = configuredPrefix
-                                    .string_
-                                    .toLower();
-                                matches = (contextPrefix == lowercasePrefix);
-
-                                continue;
+                                // single word, not a prefix
+                                contextPrefix = mutEvent.content;
+                                mutEvent.content = string.init;
                             }
                             else
                             {
-                                // Passed nick prefix tests
-                                // No real prefix configured
-                                // what the hell is this?
-
-                                writefln("%s CONFUSED on %s but setting " ~
-                                    "matches to true...", name, event.type);
-                                matches = true;
-                                break;
+                                contextPrefix = mutEvent
+                                    .content
+                                    .nom!(Yes.decode)(" ")
+                                    .toLower();
                             }
+
+                            // case-sensitive check goes here
+                            enum lowercasePrefix = prefixUDA
+                                .string_
+                                .toLower();
+
+                            matches = (contextPrefix == lowercasePrefix);
+                            continue;
                         }
 
                         // We can't label the innermost foreach! So we have to
@@ -506,11 +505,11 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         }
                     }
 
-                    import std.meta   : AliasSeq;
-                    import std.traits : Parameters;
-
                     try
                     {
+                        import std.meta   : AliasSeq;
+                        import std.traits : Parameters;
+
                         static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
                         {
                             fun(mutEvent);
@@ -527,15 +526,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     }
                     catch (Exception e)
                     {
-                        logger.error(e.msg);
+                        logger.error(name, " ", e.msg);
                     }
 
-                    static if (hasUDA!(fun, Flag!"chainable") &&
-                              (getUDAs!(fun, Flag!"chainable")[0]))
-                    {
-                        continue;
-                    }
-                    else
+                    static if (hasUDA!(fun, Terminate))
                     {
                         return;
                     }
