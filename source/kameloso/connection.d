@@ -219,12 +219,12 @@ public:
  +/
 void listenFiber(Connection conn)
 {
-    import core.stdc.string : memcpy;
+    import core.stdc.string : memmove;
     import std.algorithm.searching : countUntil;
     import std.concurrency : yield;
     import std.datetime : Clock, SysTime;
 
-    ubyte[BufferSize.socketReceive*2] buffer, mirror;
+    ubyte[BufferSize.socketReceive*2] buffer;
     SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
@@ -314,33 +314,6 @@ void listenFiber(Connection conn)
 
         // logger.logf("REMNANT:|%s|", cast(string)buffer[pos..end]);
 
-        if (start >= pos)
-        {
-            if (start == buffer.length)
-            {
-                // [01:48:28] old size:22984114 new:34476171 (REPORT THIS)
-                logger.warning("----------------------------------[ OVERFLOW!");
-                logger.warningf("START==END start:%d pos:%d end:%d len:%d",
-                    start, pos, end, buffer.length);
-                //buffer.length = cast(size_t)(buffer.length * 1.1);
-            }
-
-            logger.warningf("\nbuffer[0..%d] = buffer[%d..%d]; (mirrored once)\n",
-                start, pos, end);
-            /*mirror[0..start] = buffer[pos..end];
-            buffer[0..start] = mirror[0..start];*/
-            memcpy(cast(void*)mirror.ptr, cast(void*)(buffer.ptr + pos),
-                (ubyte.sizeof *start));
-            memcpy(cast(void*)buffer.ptr, cast(void*)mirror.ptr,
-                (ubyte.sizeof *start));
-
-        }
-        else
-        {
-            // logger.infof("buffer[0..%d] = buffer[%d..%d];", start, pos, end);
-            // buffer[0..start] = buffer[pos..end];
-            memcpy(cast(void*)buffer.ptr, cast(void*)(buffer.ptr + pos),
-                (ubyte.sizeof * start));
-        }
+        memmove(buffer.ptr, (buffer.ptr + pos), (ubyte.sizeof * start));
     }
 }
