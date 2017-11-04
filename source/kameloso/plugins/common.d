@@ -280,7 +280,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
         {
             static if (isSomeFunction!fun)
             {
-                import std.stdio;
+                import std.stdio : writeln, writefln;
 
                 enum verbose = hasUDA!(fun, Verbose) || debug_;
 
