@@ -68,25 +68,13 @@ enum NickPrefixPolicy { ignored, allowed, required, hardRequired }
 enum PrivilegeLevel { anyone, friend, master }
 
 
-/// Flag denoting that an event function should be more verbose than usual,
-/// generating more terminal output.
-alias Verbose = Flag!"verbose";
-
-/++
- +  Flag denoting that the annotated event should never stop an event from
- +  being processed, but keep on running until it runs out of functions to
- +  iterate, or some other non-chaining function stops it.
- +/
-alias Chainable = Flag!"chainable";
-
-
 // Prefix
 /++
  +  Describes how an on-text function is triggered.
  +
- +  The prefix policy decides to what extent the actual prefix string_ is required.
- +  It isn't needed for functions that don't trigger on text messages; this is
- +  merely to gather everything needed to have trigger "verb" commands.
+ +  The prefix policy decides to what extent the actual prefix string_ is
+ +  required. It isn't needed for functions that don't trigger on text messages;
+ +  this is merely to gather everything needed to have trigger "verb" commands.
  +/
 struct Prefix
 {
@@ -150,7 +138,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 /++
  +  Mixin with the basics of any plugin.
  +
- +  Uses compile-time introspection to call top-level functions to extend behaviour;
+ +  Uses compile-time introspection to call top-level functions to extend
+ +  behaviour;
  +      .initialise
  +      .onEvent
  +      .teardown
@@ -358,6 +347,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                             contextPrefix = string.init;
 
+                            with (state)
+                            with (event)
                             with (NickPrefixPolicy)
                             final switch (configuredPrefix.nickPrefixPolicy)
                             {
@@ -365,15 +356,15 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 break;
 
                             case allowed:
-                                if (event.content.beginsWith(state.bot.nickname))
+                                if (content.beginsWith(bot.nickname))
                                 {
-                                    mutEvent.content = event.content
-                                        .stripPrefix(state.bot.nickname);
+                                    mutEvent.content = content
+                                        .stripPrefix(bot.nickname);
                                 }
                                 break;
 
                             case required:
-                                if (event.type == IRCEvent.Type.QUERY)
+                                if (type == IRCEvent.Type.QUERY)
                                 {
                                     static if (verbose)
                                     {
@@ -385,16 +376,16 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 goto case hardRequired;
 
                             case hardRequired:
-                                if (event.content.beginsWith(state.bot.nickname) &&
-                                   (event.content.length > state.bot.nickname.length))
+                                if (content.beginsWith(bot.nickname) &&
+                                   (content.length > bot.nickname.length))
                                 {
                                     static if (verbose)
                                     {
-                                        writefln("%s trailing character is '%s'", name,
-                                            event.content[state.bot.nickname.length]);
+                                        writefln("%s trailing character '%s'",
+                                            name, content[bot.nickname.length]);
                                     }
 
-                                    switch (event.content[state.bot.nickname.length])
+                                    switch (content[bot.nickname.length])
                                     {
                                     case ':':
                                     case ' ':
@@ -416,9 +407,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     continue;
                                 }
 
-                                // event.content guaranteed to begin with state.bot.nickname
-                                mutEvent.content = event.content
-                                                   .stripPrefix(state.bot.nickname);
+                                // event.content guaranteed to begin with
+                                // state.bot.nickname
+                                mutEvent.content = content
+                                                   .stripPrefix(bot.nickname);
                                 break;
                             }
 
@@ -454,8 +446,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 // No real prefix configured
                                 // what the hell is this?
 
-                                writefln("%s CONFUSED on %s but setting matches to true...",
-                                         name, event.type);
+                                writefln("%s CONFUSED on %s but setting " ~
+                                    "matches to true...", name, event.type);
                                 matches = true;
                                 break;
                             }
@@ -488,8 +480,9 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 {
                                     static if (verbose)
                                     {
-                                        writefln("%s: %s passed privilege check but isn't master; continue",
-                                                 name, event.sender);
+                                        writefln("%s: %s passed privilege " ~
+                                            "check but isn't master; continue",
+                                            name, event.sender);
                                     }
                                     continue;
                                 }
@@ -501,8 +494,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             case fail:
                                 static if (verbose)
                                 {
-                                    writefln("%s: %s failed privilege check; continue",
-                                            name, event.sender);
+                                    writefln("%s: %s failed privilege check; " ~
+                                        "continue", name, event.sender);
                                 }
                                 continue;
                             }
@@ -528,8 +521,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         }
                         else
                         {
-                            static assert(false, "Unknown function signature: " ~
-                                                 typeof(fun).stringof);
+                            static assert(0, "Unknown function signature: " ~
+                                typeof(fun).stringof);
                         }
                     }
                     catch (Exception e)
