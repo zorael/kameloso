@@ -320,8 +320,9 @@ void mapColours(ref IRCEvent event)
 
         if (!hit[1].length) continue;
 
-        Appender!string colourToken;
-        colourToken.reserve(8);
+        Appender!string sink;
+        sink.reserve(8);
+
         immutable fgIndex = hit[1].to!size_t;
 
         if (fgIndex > 15)
@@ -331,8 +332,8 @@ void mapColours(ref IRCEvent event)
             continue;
         }
 
-        colourToken ~= "\033[";
-        colourToken ~= cast(string)weechatForegroundMap[fgIndex];
+        sink.put("\033[");
+        sink.put(cast(string)weechatForegroundMap[fgIndex]);
 
         if (hit[2].length)
         {
@@ -345,15 +346,15 @@ void mapColours(ref IRCEvent event)
                 continue;
             }
 
-            colourToken ~= ';';
-            colourToken ~= cast(string)weechatBackgroundMap[bgIndex];
+            sink.put(';');
+            sink.put(cast(string)weechatBackgroundMap[bgIndex]);
         }
 
-        colourToken ~= 'm';
-        event.content = event.content.replaceAll(hit[0].regex, colourToken.data);
+        sink.put('m');
+        event.content = event.content.replaceAll(hit[0].regex, sink.data);
     }
 
-    event.content ~= "\033[0m";
+    //event.content ~= "\033[0m";
 }
 
 version(Colours)
