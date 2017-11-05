@@ -11,6 +11,14 @@ import std.stdio;
 
 private:
 
+struct NotesOptions
+{
+    string notesFile = "notes.json";
+}
+
+/// All Notes plugin options gathered
+NotesOptions notesOptions;
+
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
@@ -138,7 +146,7 @@ void onCommandAddNote(const IRCEvent event)
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Note added".format(event.channel));
 
-    saveNotes(state.settings.notesFile);
+    saveNotes(notesOptions.notesFile);
 }
 
 
@@ -171,7 +179,7 @@ void onCommandPrintNotes()
 void onCommandReloadQuotes()
 {
     logger.log("Reloading notes");
-    notes = loadNotes(state.settings.notesFile);
+    notes = loadNotes(notesOptions.notesFile);
 }
 
 
@@ -291,7 +299,7 @@ void clearNotes(const string nickname)
         {
             logger.log("Clearing stored notes for ", nickname);
             notes.object.remove(nickname);
-            saveNotes(state.settings.notesFile);
+            saveNotes(notesOptions.notesFile);
         }
     }
     catch (Exception e)
@@ -413,8 +421,25 @@ JSONValue loadNotes(const string filename)
 void initialise()
 {
     logger.log("Initialising notes ...");
-    notes = loadNotes(state.settings.notesFile);
+    notes = loadNotes(notesOptions.notesFile);
 }
+
+void loadConfig(const string configFile)
+{
+    import kameloso.config : readConfig;
+    configFile.readConfig(notesOptions);
+}
+
+void writeConfig(const string configFile)
+{
+    import kameloso.config : replaceConfig;
+    configFile.replaceConfig(notesOptions);
+}
+
+/*void present()
+{
+    printObject(notesOptions);
+}*/
 
 
 mixin BasicEventHandlers;
