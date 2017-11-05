@@ -184,10 +184,10 @@ void onPing(const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd()
 {
+    with (IRCServer.Network)
     with (state)
     {
-        if (!bot.authPassword.length ||
-            bot.server.network == IRCServer.Network.efnet)
+        if (!bot.authPassword.length || bot.server.network == efnet)
         {
             // No password set up; join channels and be done
             // EFnet has no nick registration services
@@ -205,7 +205,6 @@ void onEndOfMotd()
 
         bot.startedAuth = true;
 
-        with (IRCServer.Network)
         switch (bot.server.network)
         {
         case quakenet:
