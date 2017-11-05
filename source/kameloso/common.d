@@ -81,11 +81,7 @@ struct Hidden {}
 struct Settings
 {
     bool joinOnInvite = true;
-    bool monochrome = false;
-    bool randomNickColours = true;
-
-    string notesFile = "notes.json";
-    string quotesFile = "quotes.json";
+    bool monochromeLogger = false;
 
     @Unconfigurable
     {
@@ -777,6 +773,8 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
+    bool monochrome;
+
     // Appender sink to fill with content and print in one go
     //Appender!(char[]) sink;
 
@@ -788,6 +786,13 @@ final class KamelosoLogger : Logger
         {
             sink.reserve(512);
         }*/
+    }
+
+    this(LogLevel lv, bool monochrome)
+    {
+        writeln("logger should be monochrome");
+        this.monochrome = monochrome;
+        super(lv);
     }
 
     /// This override is needed or it won't compile
