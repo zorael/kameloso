@@ -2211,35 +2211,73 @@ bool isFromAuthService(const IRCEvent event)
     import std.algorithm.searching : endsWith;
 
     with (event)
+    switch (sender)
     {
-        if (sender == "NickServ")
+    case "NickServ":
+        switch (ident)
         {
-            if ((ident == "NickServ") && (address == "services.")) return true;  // Freenode
-            if ((ident == "service")  && (address == "rizon.net")) return true;  // Rizon
-            if (((ident == "NickServ") || (ident == "services")) &&
-                bot.server.resolvedAddress.endsWith(address))
+        case "NickServ":
+            switch (address)
             {
-                // logger.info("Sensible guess that it's the real NickServ");
-                return true; // sensible
+            case "services.":
+                // Freenode
+                return true;
+
+            default:
+                // drop down to test generic (NickServ || services)
+                break;
             }
-            if ((ident == "NickServ") || (ident == "services"))
+
+        case "services":
+            if (address == "services.unrealircd.org") return true;
+            // drop down to test generic (NickServ || services)
+            break;
+
+        case "service":
+            switch (address)
             {
-                // logger.info("Naïve guess that it's the real NickServ");
-                return true;  // NAÏVE
+            case "rizon.net":
+            case "dal.net":
+                return true;
+
+            default:
+                logger.warning("Unhandled *NickServ!service* address, " ~
+                    "can't tell if special");
+                logger.trace(event.raw);
+                return false;
             }
+
+        default:
+            logger.warning("Unhandled *NickServ* ident, " ~
+                "can't tell if special");
+            logger.trace(event.raw);
+            return false;
         }
-        else if ((sender == "Q") && (ident == "TheQBot") && (address == "CServe.quakenet.org"))
+
+        // Can only be here if we dropped down
+        assert((ident == "NickServ") || (ident == "services"));
+
+        if (bot.server.resolvedAddress.endsWith(address))
         {
-            // Quakenet
-            // logger.info("100% that it's QuakeNet's C");
-            return true;
+            logger.info("Sensible guess that it's the real NickServ");
+            return true; // sensible
         }
-        else if ((sender == "AuthServ") && (ident == "AuthServ") && (address == "Services.GameSurge.net"))
+        else
         {
-            // GameSurge
-            // AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :No help on that topic.
-            return true;
+            logger.info("Naïve guess that it's the real NickServ");
+            return true;  // NAÏVE
         }
+
+    case "Q":
+        return ((ident == "TheQBot") && (address == "CServe.quakenet.org"));
+
+    case "AuthServ":
+        return ((ident == "AuthServ") && (address == "Services.GameSurge.net"));
+
+    default:
+        logger.warning("Unhandled service, can't tell if special");
+        logger.trace(event.raw);
+        break;
     }
 
     return false;
