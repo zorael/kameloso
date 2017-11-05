@@ -91,18 +91,40 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.formattedWrite("[%s] [%s] ",
             timestamp, enumToString(type));
 
-        sink.put(sender);
+        if (alias_.length && (sender == alias_.toLower))
+        {
+            sink.put(alias_);
+        }
+        else
+        {
+            sink.put(sender);
+        }
 
-        if (special)        sink.put('*');
+        if (special)
+        {
+            sink.put('*');
+        }
+
         if (role != Role.init)
-                            sink.formattedWrite(" [%s]", enumToString(role));
-        if (alias_.length && (sender != alias_.toLower))
-                            sink.formattedWrite(" (%s)", alias_);
+        {
+            sink.formattedWrite(" [%s]", enumToString(role));
+        }
+
+        if (alias_.length && (alias_ != sender))
+        {
+            sink.formattedWrite(" (%s)", alias_);
+        }
+
         if (target.length)  sink.formattedWrite(" (%s)",  target);
         if (channel.length) sink.formattedWrite(" [%s]",  channel);
         if (content.length) sink.formattedWrite(`: "%s"`, content);
         if (aux.length)     sink.formattedWrite(" <%s>",  aux);
         if (num > 0)        sink.formattedWrite(" (#%d)", num);
+
+        static if (!__traits(hasMember, Sink, "data"))
+        {
+            sink.put('\n');
+        }
     }
     else
     {
@@ -144,13 +166,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.colourise(typeColour);
         sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
 
-        bool aliasPrinted;
 
         if (alias_.length && (sender == alias_.toLower))
         {
             sink.colourise(senderColour);
             sink.put(alias_);
-            aliasPrinted = true;
         }
         else
         {
@@ -170,7 +190,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.formattedWrite(" [%s]", enumToString(role));
         }
 
-        if (!aliasPrinted && alias_.length && (alias_ != sender))
+        if (alias_.length && (alias_ != sender))
         {
             sink.colourise(senderColour);
             sink.formattedWrite(" (%s)", alias_);
