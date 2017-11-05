@@ -242,19 +242,6 @@ Flag!"quit" handleArguments(string[] args)
         return Yes.quit;
     }
 
-    if (getoptResults.helpWanted)
-    {
-        printVersionInfo(BashForeground.white);
-        writeln();
-
-        defaultGetoptPrinter(colourise(BashForeground.lightgreen) ~
-                            "Command-line arguments available:\n" ~
-                            colourise(BashForeground.default_),
-                            getoptResults.options);
-        writeln();
-        return Yes.quit;
-    }
-
     // Read settings into a temporary Bot and Settings struct, then meld them
     // into the real ones into which the command-line arguments will have been
     // applied.
@@ -268,6 +255,22 @@ Flag!"quit" handleArguments(string[] args)
 
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
+
+    // Give common.d a copy of Settings
+    kameloso.common.settings = settings;
+
+    if (getoptResults.helpWanted)
+    {
+        printVersionInfo(BashForeground.white);
+        writeln();
+
+        defaultGetoptPrinter(colourise(BashForeground.lightgreen) ~
+                            "Command-line arguments available:\n" ~
+                            colourise(BashForeground.default_),
+                            getoptResults.options);
+        writeln();
+        return Yes.quit;
+    }
 
     // We know Settings now so initialise the logger
     initLogger();
@@ -388,7 +391,7 @@ void initLogger()
     import std.experimental.logger;
 
     kameloso.common.logger = new KamelosoLogger(LogLevel.all,
-        settings.monochromeLogger);
+        settings.monochrome);
 }
 
 
