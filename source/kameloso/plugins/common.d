@@ -22,6 +22,15 @@ interface IRCPlugin
     /// Executed upon new IRC event parsed from the server
     void onEvent(const IRCEvent);
 
+    /// Executed when the plugin is requested to write its settings to disk
+    void writeConfig(const string);
+
+    /// Executed during setup to let plugins read settings from disk
+    void loadConfig(const string);
+
+    /// Executed when we want a plugin to print its settings and such
+    void present();
+
     /// Executed during shutdown or plugin restart
     void teardown();
 }
@@ -230,6 +239,51 @@ mixin template IRCPluginBasics()
         else static if (__traits(compiles, .settings = settings))
         {
             .settings = settings;
+        }
+    }
+
+    // writeConfig
+    /++
+     +  Writes configuration to disk.
+     +
+     +  Each plugin does it in turn, which might be tricky.
+     +/
+
+     void writeConfig(const string configFile)
+     {
+         import std.stdio;
+
+         static if (__traits(compiles, .writeConfig(string.init)))
+         {
+             .writeConfig(configFile);
+         }
+     }
+
+    // loadConfig
+    /++
+     +  Loads configuration from disk.
+     +
+     +  This should be safe and race-free.
+     +/
+    void loadConfig(const string configFile)
+    {
+        import std.stdio;
+
+        static if (__traits(compiles, .loadConfig(string.init)))
+        {
+            .loadConfig(configFile);
+        }
+    }
+
+    // present
+    /++
+     +  Print some information to the screen, usually settings
+     +/
+    void present()
+    {
+        static if (__traits(compiles, .present()))
+        {
+            .present();
         }
     }
 
