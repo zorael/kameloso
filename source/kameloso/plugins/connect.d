@@ -244,13 +244,14 @@ void onEndOfMotd()
 
         case freenode:
         case irchighway:
+        case unreal:
             // Accepts auth login
 
             string login = bot.authLogin;
 
             if (!bot.authLogin.length)
             {
-                logger.log("No auth login on Freenode! Trying ", bot.origNickname);
+                logger.log("No auth login specified! Trying ", bot.origNickname);
                 login = bot.origNickname;
             }
 
@@ -268,14 +269,20 @@ void onEndOfMotd()
             return;
 
         default:
-            logger.log("Unsure of what AUTH approach to use.");
+            logger.log("Unsure of what AUTH approach to use. Trying both.");
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s %s"
                 .format(bot.authLogin, bot.authPassword));
 
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG NickServ :IDENTIFY %s"
+                .format(bot.authPassword));
+
             logger.trace("--> PRIVMSG NickServ :IDENTIFY ",
                 bot.authLogin, " hunter2");
+
+            logger.trace("--> PRIVMSG NickServ :IDENTIFY hunter2");
 
             break;
         }
