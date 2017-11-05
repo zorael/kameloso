@@ -63,8 +63,6 @@ enum TerminalToken
 }
 
 
-enum bashColourToken = '\033';
-
 /// Effect codes that work like Bash colouring does, except for effects
 enum BashEffectToken
 {
