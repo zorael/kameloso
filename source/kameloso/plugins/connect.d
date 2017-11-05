@@ -425,13 +425,15 @@ void register()
             if (bot.server.network == IRCServer.Network.twitch)
             {
                 logger.warning("You *need* a password to join this server");
+                mainThread.send(ThreadMessage.Quit());
+                return;
             }
         }
 
         mainThread.send(ThreadMessage.Sendline(),
             "USER %s * 8 : %s".format(bot.ident, bot.user));
         mainThread.send(ThreadMessage.Sendline(),
-            "NICK %s".format(bot.nickname));
+            "NICK " ~ bot.nickname);
     }
 }
 
