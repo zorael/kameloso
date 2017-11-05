@@ -775,22 +775,8 @@ final class KamelosoLogger : Logger
 
     bool monochrome;
 
-    // Appender sink to fill with content and print in one go
-    //Appender!(char[]) sink;
-
-    this(LogLevel lv) @safe
+    this(LogLevel lv, bool monochrome = false)
     {
-        super(lv);
-
-        /*static if (__traits(hasMember, sink, "reserve"))
-        {
-            sink.reserve(512);
-        }*/
-    }
-
-    this(LogLevel lv, bool monochrome)
-    {
-        writeln("logger should be monochrome");
         this.monochrome = monochrome;
         super(lv);
     }
