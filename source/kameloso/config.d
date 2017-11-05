@@ -411,6 +411,19 @@ string configText(size_t entryPadding = 16, Thing)(const Thing thing) @safe
     return sink.data;
 }
 
+
+// replaceConfig
+/++
+ +  Replaces the saved settings for a plugin, in the configuration file.
+ +
+ +  It reads in the settings into an Appender sink, and omits the configuration
+ +  for the supplied plugin. Then it appends the new configuration block to the
+ +  end of the sink and writes it to disk.
+ +
+ +  Params:
+ +      configFile = filename of the configuration file
+ +      things = plugin option types whose saved settings should be replaced
+ +/
 void replaceConfig(Things...)(const string configFile, Things things)
 {
     import std.algorithm : splitter;
