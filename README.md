@@ -4,9 +4,9 @@ A command-line IRC bot.
 
 kameloso sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not respond to keyboard input, though text can be sent manually by other means.
 
-It works on Freenode, Rizon and QuakeNet, with less confident support for Undernet, GameSurge, EFnet, DALnet, IRCnet, SwiftIRC, IRCHighWay, Twitch and UnrealIRCd servers.
+It works on Freenode, Rizon and QuakeNet, with less confident support for Undernet, GameSurge, EFnet, DALnet, IRCnet, SwiftIRC, IRCHighWay, Twitch and UnrealIRCd servers. Definitions for those 12 servers exist and support varies from good to okay.
 
-To be honest most networks work at this point. Often a new one will just work right away, but sometimes there's a slight difference in how they behave and respond, and some changes will have to be made. It's usually fairly trivial modifications, like "does this network's `NickServ` just want a password, or a login *and* a password?".
+Often a new server network will just work right away, but sometimes there's a slight difference in how they behave and respond, and changes will have to be made. It's usually fairly trivial modifications, like "does this network's `NickServ` just want a password, or a login *and* a password?", or "is `NickServ` replaced with `AuthServ`?"
 
 Current functionality includes:
 
@@ -82,19 +82,14 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * "online" help; listing of verbs/commands
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
 * fix ctrl+c leaving behind fifos
-* some functions don't honor settings and just print colours regardless
 * JSON config file? but random ordering of entries, no lined-up columns
-* retest everything now after the big changes
-* revisit authentication events
-* revisit event.special
-* does Chainable do anything at all?
-* AUTHCHALLENGE needed anymore?
 * add ExamplePlugin
 * non-member struct UDAs to enums?
 * investigate inverse channel behaviour (blacklists)
 * solve scope creep
-* the connect plugin is in a sorry state
 * per-plugin settings please
+* revisit roles (badges) because this isn't working
+* test IRCv3 more
 
 ## Built With
 
