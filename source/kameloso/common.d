@@ -20,12 +20,6 @@ import std.typecons : Flag, No, Yes;
 Logger logger;
 
 
-shared static this()
-{
-    logger = new KamelosoLogger(LogLevel.all);
-}
-
-
 @safe:
 
 

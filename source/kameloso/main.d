@@ -269,6 +269,9 @@ Flag!"quit" handleArguments(string[] args)
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
 
+    // We know Settings now so initialise the logger
+    initLogger();
+
     // Try to resolve which IRC network we're connecting to based on addresses
     bot.server.resolveNetwork();
 
@@ -380,6 +383,14 @@ void writeConfigAndPrint(const string configFile)
     printObjects(bot, bot.server, settings);
 }
 
+void initLogger()
+{
+    import std.experimental.logger;
+
+    kameloso.common.logger = new KamelosoLogger(LogLevel.all,
+        settings.monochromeLogger);
+}
+
 
 public:
 
@@ -387,6 +398,7 @@ public:
 version(unittest)
 void main() {
     // Compiled with -b unittest, so run the tests and exit.
+    initLogger();
     logger.info("All tests passed successfully!");
 }
 else
