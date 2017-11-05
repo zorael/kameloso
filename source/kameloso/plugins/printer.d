@@ -263,19 +263,24 @@ void mapEffects(ref IRCEvent event)
     if (lineBytes.canFind(cast(ubyte)I.bold))
     {
         // Bold is bash 1, mIRC 2
-        event.mapEffectImpl!(cast(ubyte)B.bold, cast(ubyte)I.bold)();
+        //event.mapAlternatingEffectImpl!(cast(ubyte)B.bold, cast(ubyte)I.bold)();
+        event.mapAlternatingEffectImpl!(B.bold, I.bold)();
     }
 
     if (lineBytes.canFind(cast(ubyte)I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        event.mapEffectImpl!(cast(ubyte)B.italics, cast(ubyte)I.italics)();
+        /*event.mapAlternatingEffectImpl!(cast(ubyte)B.italics,
+            cast(ubyte)I.italics)();*/
+        event.mapAlternatingEffectImpl!(B.italics, I.italics)();
     }
 
     if (lineBytes.canFind(cast(ubyte)I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        event.mapEffectImpl!(cast(ubyte)B.underlined, cast(ubyte)I.underlined)();
+        /*event.mapAlternatingEffectImpl!(cast(ubyte)B.underlined,
+            cast(ubyte)I.underlined)();*/
+        event.mapAlternatingEffectImpl!(B.underlined, I.underlined)();
     }
 }
 
@@ -393,6 +398,60 @@ void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 
     event.content = event.content.replaceAll(engine, bashToken);
     event.content ~= "\033[0m";
+}
+
+version(Colours)
+void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
+{
+    import std.array : Appender;
+    import std.conv  : to;
+    import std.regex : ctRegex, matchAll, replaceAll;
+
+    enum bashToken = "\033[" ~ (cast(ubyte)bashEffectCode).to!string ~ "m";
+
+    alias m = mircToken;
+    enum pattern = "(?:"~m~")([^"~m~"]*)(?:"~m~")";
+    static immutable engine = ctRegex!pattern;
+
+    Appender!string sink;
+    sink.reserve(cast(size_t)(event.content.length * 1.1));
+
+    auto hits = event.content.matchAll(pattern);
+
+    while (hits.front.length)
+    {
+        sink.put(hits.front.pre);
+        sink.put(bashToken);
+        sink.put(hits.front[1]);
+        sink.put("\033[0m");
+
+        hits = hits.post.matchAll(pattern);
+    }
+
+    static singleEngine = ctRegex!([cast(char)mircToken]);
+    sink.put(hits.post.replaceAll(singleEngine, bashToken));
+    sink.put("\033[0m");
+
+    event.content = sink.data;
+}
+
+unittest
+{
+    import std.conv : to;
+
+    alias I = IRCControlCharacter;
+    alias B = BashEffectToken;
+
+    enum bBold = "\033[" ~ (cast(ubyte)B.bold).to!string ~ "m";
+    enum bReset = "\033[0m";
+
+    string line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
+    string line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bReset;
+
+    IRCEvent event;
+    event.content = line1;
+    event.mapEffects();
+    assert((event.content == line2), line1);
 }
 
 void loadConfig(const string configFile)
