@@ -186,9 +186,12 @@ void onEndOfMotd()
 {
     with (state)
     {
-        if (!bot.authPassword.length)
+        if (!bot.authPassword.length ||
+            bot.server.network == IRCServer.Network.efnet)
         {
             // No password set up; join channels and be done
+            // EFnet has no nick registration services
+            state.bot.finishedAuth = true;
             joinChannels();
             return;
         }
