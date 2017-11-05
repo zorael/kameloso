@@ -196,13 +196,6 @@ void onEndOfMotd()
             return;
         }
 
-        // Auth started from elsewhere
-        if (bot.startedAuth)
-        {
-            logger.log("auth started elsewhere...");
-            return;
-        }
-
         bot.startedAuth = true;
 
         switch (bot.server.network)
