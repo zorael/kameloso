@@ -108,31 +108,40 @@ void readConfig(T...)(const string configFile, ref T things)
 {
     import std.algorithm.iteration : splitter;
     import std.ascii  : newline;
+
+    configFile
+        .configReader
+        .splitter(newline)
+        .walkConfigLines(things);
+}
+
+
+string configReader(const string configFile)
+{
+    import std.algorithm.iteration : splitter;
+    import std.ascii  : newline;
     import std.file   : exists, isFile, readText, write;
     import std.string : chomp;
 
     if (!configFile.exists)
     {
         logger.info("Config file does not exist");
-        return;
+        return string.init;
     }
     else if (!configFile.isFile)
     {
         logger.error("Config file is not a file!");
-        return;
+        return string.init;
     }
 
     // Read the contents and split by newline
-    auto wholeFile = configFile
+    return configFile
         .readText
-        .chomp
-        .splitter(newline);
-
-    wholeFile.walkConfigLines(things);
+        .chomp;
 }
 
 
-// writeConfig
+// writeConfigToDisk
 /++
  +  Takes a compile-time variadic list of struct objects, reads their contents
  +  and writes them to the configuration filename supplied.
@@ -144,7 +153,7 @@ void readConfig(T...)(const string configFile, ref T things)
  +      things = a compile-time variadic list of structs whose members should
  +               be read and saved to disk.
  +/
-void writeConfig(T...)(const string configFile, T things)
+void writeConfigToDisk(T...)(const string configFile, T things)
 {
     import std.datetime : Clock;
     import std.file : exists, isFile, removeFile = remove;
@@ -317,7 +326,7 @@ if (Things.length > 1)
  +  Returns:
  +      Config text for the serialised Thing.
  +/
-string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
+string configText(size_t entryPadding = 16, Thing)(const Thing thing) @safe
 {
     import std.array : Appender;
     import std.format : format, formattedWrite;
@@ -400,4 +409,94 @@ string configText(size_t entryPadding = 20, Thing)(const Thing thing) @safe
     }
 
     return sink.data;
+}
+
+void replaceConfig(Things...)(const string configFile, Things things)
+{
+    import std.algorithm : splitter;
+    import std.array : Appender;
+    import std.datetime : Clock;
+
+    Appender!string sink;
+    sink.reserve(1024);  // 731 with Notes nd Printer settings enabled
+
+    auto configSource = configFile
+        .configReader
+        .splitter('\n');
+
+	configSource.walkConfigExcluding(sink, things);
+
+	sink.put(configText(things));
+
+    auto f = File(configFile, "w");
+
+    f.writefln("# kameloso bot config (%s)\n", Clock.currTime);
+    f.write(sink.data);
+}
+
+
+void walkConfigExcluding(Range_, Sink, Things...)(Range_ range,
+	auto ref Sink sink, Things things)
+{
+	import std.range : enumerate;
+	import std.string : strip;
+
+    string currentSection;
+	uint configLine;
+	bool skipping;
+
+    foreach (i, rawline; range.enumerate)
+    {
+        string line = rawline.strip();
+
+        if (!line.length)
+		{
+			skipping = false;
+			continue;
+		}
+
+		if (skipping) continue;
+
+        switch (line[0])
+        {
+        case '#':
+        case ';':
+            // Comment
+            sink.put(line);
+            sink.put('\n');
+			break;
+
+        case '[':
+            // Section header
+            import std.format : formattedRead;
+
+			immutable lineCopy = line;  // formattedRead will advance line
+            line.formattedRead("[%s]", currentSection);
+
+			foreach (Thing; Things)
+			{
+				// Is it one of Things?
+				if (currentSection == Thing.stringof)
+				{
+					skipping = true;
+				}
+			}
+
+			if (skipping) continue;
+
+			if (configLine > 0) sink.put('\n');
+			sink.put(lineCopy);
+			sink.put('\n');
+            break;
+
+        default:
+            sink.put(line);
+            sink.put('\n');
+            break;
+        }
+
+		++configLine;
+    }
+
+	sink.put('\n');
 }
