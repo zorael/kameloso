@@ -88,17 +88,14 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     with (event)
     if (printerOptions.monochrome)
     {
+        import std.algorithm : equal;
+        import std.uni : asLowerCase;
+
         sink.formattedWrite("[%s] [%s] ",
             timestamp, enumToString(type));
 
-        if (alias_.length && (sender == alias_.toLower))
-        {
-            sink.put(alias_);
-        }
-        else
-        {
-            sink.put(sender);
-        }
+        sink.put((alias_.length && alias_.asLowerCase.equal(sender)) ?
+            alias_ : sender);
 
         if (special)
         {
@@ -166,17 +163,12 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         sink.colourise(typeColour);
         sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
 
+        import std.algorithm : equal;
+        import std.uni : asLowerCase;
 
-        if (alias_.length && (sender == alias_.toLower))
-        {
-            sink.colourise(senderColour);
-            sink.put(alias_);
-        }
-        else
-        {
-            sink.colourise(senderColour);
-            sink.put(sender);
-        }
+        sink.colourise(senderColour);
+        sink.put((alias_.length && alias_.asLowerCase.equal(sender)) ?
+            alias_ : sender);
 
         if (special)
         {
