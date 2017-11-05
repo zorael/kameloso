@@ -187,7 +187,7 @@ void onEndOfMotd(const IRCEvent event)
     with (IRCServer.Network)
     with (state)
     {
-        if (!bot.authPassword.length || bot.server.network == efnet)
+        if (!bot.authPassword.length)
         {
             // No password set up; join channels and be done
             // EFnet has no nick registration services
@@ -266,8 +266,10 @@ void onEndOfMotd(const IRCEvent event)
 
         case efnet:
         case ircnet:
-            // No registration available
-            return;
+            // No registration available; join channels and be done
+            state.bot.finishedAuth = true;
+            joinChannels();
+            break;
 
         default:
             logger.log("Unsure of what AUTH approach to use. Trying both.");
