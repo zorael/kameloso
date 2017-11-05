@@ -382,6 +382,7 @@ void mapColours(ref IRCEvent event)
     //event.content ~= "\033[0m";
 }
 
+
 version(Colours)
 void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 {
@@ -394,6 +395,7 @@ void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
     event.content = event.content.replaceAll(engine, bashToken);
     event.content ~= "\033[0m";
 }
+
 
 version(Colours)
 void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
@@ -470,17 +472,20 @@ unittest
     assert((event.content == line2), line1);
 }
 
+
 void loadConfig(const string configFile)
 {
     import kameloso.config : readConfig;
     configFile.readConfig(printerOptions);
 }
 
+
 void writeConfig(const string configFile)
 {
     import kameloso.config : replaceConfig;
     configFile.replaceConfig(printerOptions);
 }
+
 
 void present()
 {

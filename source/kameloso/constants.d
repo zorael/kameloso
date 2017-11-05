@@ -73,7 +73,6 @@ enum BashEffectToken
     blink   = 5,
     reverse = 7,
     hidden  = 8,
-
 }
 
 /// Format codes for Bash colouring
