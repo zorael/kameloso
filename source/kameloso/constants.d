@@ -56,7 +56,7 @@ enum : ubyte
 enum TerminalToken
 {
     /// Character that preludes a Bash colouring code.
-    bashColour = '\033',
+    bashFormat = '\033',
 
     /// Character that resets a terminal that has entered "binary" mode.
     reset = 15,

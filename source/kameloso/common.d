@@ -757,7 +757,7 @@ version(Colours)
 void colourise(Sink, Codes...)(auto ref Sink sink, Codes codes)
 if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.bashColour);
+    sink.put(TerminalToken.bashFormat);
     sink.put('[');
 
     uint numCodes;
