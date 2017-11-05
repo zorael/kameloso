@@ -137,13 +137,13 @@ public:
 
             try
             {
-                setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO,
+                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
                     Timeout.receive.seconds*5);
 
                 logger.infof("Connecting to %s ...", ip);
                 socket.connect(ip);
 
-                setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO,
+                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
                     Timeout.receive.seconds);
 
                 // If we're here no exception was thrown, so we're connected
