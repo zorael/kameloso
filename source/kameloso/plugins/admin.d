@@ -244,8 +244,7 @@ void onCommandDelFriend(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "resetterm")
 void onCommandResetTerminal()
 {
-    import std.stdio : write;
-    write(TerminalResetToken);
+    write(TerminalToken.reset);
 }
 
 

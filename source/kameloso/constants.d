@@ -19,9 +19,6 @@ enum IRCControlCharacter
     ctcp = 1,
 }
 
-/// A character that resets a terminal that has entered "binary" mode.
-enum TerminalResetToken = 15;
-
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
 
@@ -56,8 +53,18 @@ enum : ubyte
     failure = 1 << 3,
 }
 
-/// The token that preludes a Bash colouring code.
-enum BashColourToken = '\033';
+/// Special terminal control characters
+enum TerminalToken
+{
+    /// Character that preludes a Bash colouring code.
+    bashColour = '\033',
+
+    /// Character that resets a terminal that has entered "binary" mode.
+    reset = 15,
+}
+
+
+enum bashColourToken = '\033';
 
 /// Effect codes that work like Bash colouring does, except for effects
 enum BashEffectToken
