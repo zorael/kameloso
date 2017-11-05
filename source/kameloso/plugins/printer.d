@@ -10,12 +10,17 @@ import std.stdio;
 
 private:
 
+struct PrinterOptions
+{
+    bool monochrome;
+    bool randomNickColours = true;
+}
+
+/// All Printer plugin options gathered
+PrinterOptions printerOptions;
+
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
-
-/// Runtime settings for bot behaviour
-Settings settings;
-
 
 // onAnyEvent
 /++
@@ -81,7 +86,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
     with (BashForeground)
     with (event)
-    if (state.settings.monochrome)
+    if (printerOptions.monochrome)
     {
         sink.formattedWrite("[%s] [%s] ",
             timestamp, enumToString(type));
@@ -103,7 +108,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     {
         version(Colours)
         {
-            if (!state.settings.monochrome) event.mapEffects();
+            if (!printerOptions.monochrome) event.mapEffects();
         }
 
         enum DefaultColour
@@ -120,7 +125,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         BashForeground senderColour = DefaultColour.sender;
 
-        if (state.settings.randomNickColours)
+        if (printerOptions.randomNickColours)
         {
             import std.traits : EnumMembers;
 
@@ -368,6 +373,23 @@ void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 
     event.content = event.content.replaceAll(engine, bashToken);
     event.content ~= "\033[0m";
+}
+
+void loadConfig(const string configFile)
+{
+    import kameloso.config : readConfig;
+    configFile.readConfig(printerOptions);
+}
+
+void writeConfig(const string configFile)
+{
+    import kameloso.config : replaceConfig;
+    configFile.replaceConfig(printerOptions);
+}
+
+void present()
+{
+    printObject(printerOptions);
 }
 
 
