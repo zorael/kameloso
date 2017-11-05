@@ -404,8 +404,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEven
 
     enum bashToken = "\033[" ~ (cast(ubyte)bashEffectCode).to!string ~ "m";
 
-    alias m = mircToken;
-    enum pattern = "(?:"~m~")([^"~m~"]*)(?:"~m~")";
+    enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
     static immutable engine = ctRegex!pattern;
 
     Appender!string sink;
@@ -418,15 +417,36 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEven
         sink.put(hits.front.pre);
         sink.put(bashToken);
         sink.put(hits.front[1]);
-        sink.put("\033[0m");
+
+        switch (bashEffectCode)
+        {
+        case 1:
+        case 2:
+            // Both 1 and 2 seem to be reset by 22?
+            sink.put("\033[22m");
+            break;
+
+        case 3:
+        ..
+        case 5:
+            sink.put("\033[2" ~ bashEffectCode.to!string ~ "m");
+            break;
+
+        default:
+            logger.warning("Unknown Bash effect code: ", bashEffectCode);
+            sink.put("\033[0m");
+            break;
+        }
 
         hits = hits.post.matchAll(pattern);
     }
 
-    static singleEngine = ctRegex!([cast(char)mircToken]);
-    sink.put(hits.post.replaceAll(singleEngine, bashToken));
-    sink.put("\033[0m");
+    // We've gone through them pair-wise, now see if there are any singles left
+    static singleTokenEngine = ctRegex!([cast(char)mircToken]);
+    sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
+    // End tags and commit
+    sink.put("\033[0m");
     event.content = sink.data;
 }
 
@@ -438,10 +458,11 @@ unittest
     alias B = BashEffectToken;
 
     enum bBold = "\033[" ~ (cast(ubyte)B.bold).to!string ~ "m";
-    enum bReset = "\033[0m";
+    enum bReset = "\033[22m";
+    enum bResetAll = "\033[0m";
 
     string line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
-    string line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bReset;
+    string line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bResetAll;
 
     IRCEvent event;
     event.content = line1;
