@@ -393,7 +393,7 @@ unittest
 
     import std.array : Appender;
 
-    Appender!string sink;
+    Appender!(char[]) sink;
     sink.reserve(64);  // workaround for LDC
 
     immutable dur5 = 0.seconds;
