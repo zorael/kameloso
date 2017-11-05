@@ -12,6 +12,14 @@ import std.stdio;
 
 private:
 
+struct ChatbotOptions
+{
+    string quotesFile = "quotes.json";
+}
+
+/// All ChatBot plugin options gathered
+ChatbotOptions chatbotOptions;
+
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
@@ -304,7 +312,7 @@ void onCommanAdddQuote(const IRCEvent event)
     if (!nickname.length || !slice.length) return;
 
     nickname.addQuote(slice);
-    saveQuotes(state.settings.quotesFile);
+    saveQuotes(chatbotOptions.quotesFile);
 
     immutable target = (event.channel.length) ? event.channel : event.sender;
 
@@ -344,7 +352,7 @@ void onCommandPrintQuotes()
 void onCommandReloadQuotes()
 {
     logger.log("Reloading quotes");
-    quotes = loadQuotes(state.settings.quotesFile);
+    quotes = loadQuotes(chatbotOptions.quotesFile);
 }
 
 
@@ -355,7 +363,7 @@ void onCommandReloadQuotes()
 void initialise()
 {
     logger.log("Initialising quotes ...");
-    quotes = loadQuotes(state.settings.quotesFile);
+    quotes = loadQuotes(chatbotOptions.quotesFile);
 }
 
 
