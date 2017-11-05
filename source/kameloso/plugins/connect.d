@@ -198,7 +198,7 @@ void onEndOfMotd(const IRCEvent event)
 
         bot.startedAuth = true;
 
-        switch (bot.server.network)
+        final switch (bot.server.network)
         {
         case quakenet:
             // Special service nick (Q), otherwise takes both auth login and password
@@ -266,17 +266,22 @@ void onEndOfMotd(const IRCEvent event)
 
         case efnet:
         case ircnet:
+        case undernet:
+        case twitch:
             // No registration available; join channels and be done
             state.bot.finishedAuth = true;
             joinChannels();
             break;
 
-        default:
-            logger.log("Unsure of what AUTH approach to use. Trying both.");
+        case unknown:
+            logger.log("Unsure of what AUTH approach to use.");
 
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(bot.authLogin, bot.authPassword));
+            if (bot.authLogin.length)
+            {
+                mainThread.send(ThreadMessage.Quietline(),
+                    "PRIVMSG NickServ :IDENTIFY %s %s"
+                    .format(bot.authLogin, bot.authPassword));
+            }
 
             mainThread.send(ThreadMessage.Quietline(),
                 "PRIVMSG NickServ :IDENTIFY %s"
