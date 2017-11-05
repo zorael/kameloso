@@ -219,6 +219,7 @@ void onEndOfMotd()
 
         case rizon:
         case swiftirc:
+        case dalnet:
             // Only accepts password, no auth nickname
 
             if (bot.nickname != bot.origNickname)
@@ -231,10 +232,13 @@ void onEndOfMotd()
                 return;
             }
 
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ :IDENTIFY " ~ bot.authPassword);
+            immutable nickserv = (bot.server.network == dalnet) ?
+                "NickServ@services.dal.net" : "NickServ";
 
-            logger.trace("--> PRIVMSG NickServ :IDENTIFY hunter2");
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG %s :IDENTIFY %s".format(nickserv, bot.authPassword));
+
+            logger.trace("--> PRIVMSG %s :IDENTIFY hunter2".format(nickserv));
 
             break;
 

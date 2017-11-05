@@ -1372,6 +1372,7 @@ IRCServer.Network networkOf(const string address)
             ".gamesurge.net"  : gamesurge,
             ".twitch.tv"      : twitch,
             ".unrealircd.org" : unreal,
+            ".dal.net"        : dalnet,
         ];
 
         foreach (addressTail, net; networkMap)
@@ -1522,6 +1523,7 @@ struct IRCServer
         ircnet,
         swiftirc,
         irchighway,
+        dalnet,
     }
 
     Network network;
