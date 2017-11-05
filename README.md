@@ -84,12 +84,12 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * fix ctrl+c leaving behind fifos
 * JSON config file? but random ordering of entries, no lined-up columns
 * add ExamplePlugin
-* non-member struct UDAs to enums?
+* non-member struct UDAs to enums? (currently structs)
 * investigate inverse channel behaviour (blacklists)
-* solve scope creep
-* per-plugin settings please
+* solve scope creep (almost now)
 * revisit roles (badges) because this isn't working
 * test IRCv3 more
+* prettify configuration files; width is weird by neccessity of current design
 
 ## Built With
 
