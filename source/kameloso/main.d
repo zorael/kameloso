@@ -282,7 +282,15 @@ Flag!"quit" handleArguments(string[] args)
 
     if (shouldWriteConfig)
     {
-        writeConfigToDisk();
+        initPlugins();
+        writeConfigAndPrint(settings.configFile);
+
+        foreach (plugin; plugins)
+        {
+            plugin.writeConfig(settings.configFile);
+            plugin.present();
+        }
+
         return Yes.quit;
     }
 
@@ -356,13 +364,18 @@ void initPlugins()
     {
         plugins ~= new Pipeline(state);
     }
+
+    foreach (plugin; plugins)
+    {
+        plugin.loadConfig(state.settings.configFile);
+    }
 }
 
 /// Writes the current configuration to the config file specified in the Settings.
-void writeConfigToDisk()
+void writeConfigAndPrint(const string configFile)
 {
-    logger.info("Writing configuration to ", settings.configFile);
-    settings.configFile.writeConfig(bot, bot.server, settings);
+    logger.info("Writing configuration to ", configFile);
+    configFile.writeConfigToDisk(bot, bot.server, settings);
     writeln();
     printObjects(bot, bot.server, settings);
 }
