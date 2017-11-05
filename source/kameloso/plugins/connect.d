@@ -283,19 +283,21 @@ void onEndOfMotd()
 }
 
 
-// onAcceptance
+// onAuthEnd
 /++
  +  Flag authentication as finished and join channels.
  +
- +  Fires when an authentication service sends a message with a known acceptance
- +  text, signifying successful login.
+ +  Fires when an authentication service sends a message with a known success,
+ +  invalid or rejected auth text, signifying completed login.
  +/
-@(IRCEvent.Type.AUTHACCEPTANCE)
-void onAcceptance()
+@(IRCEvent.Type.AUTH_SUCCESS)
+@(IRCEvent.Type.AUTH_FAILURE)
+void onAuthEnd()
 {
     if (state.bot.finishedAuth) return;
 
     state.bot.finishedAuth = true;
+    logger.info("Joining channels");
     joinChannels();
 }
 

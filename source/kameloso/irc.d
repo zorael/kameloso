@@ -387,29 +387,52 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
                 (event.content.indexOf("/msg NickServ identify") != -1))
             {
-                event.type = AUTHCHALLENGE;
+                event.type = AUTH_CHALLENGE;
+                break;
             }
-            else
+
+            // FIXME: This obviously doesn't scale either
+
+            enum AuthSuccess
             {
-                // FIXME: This obviously doesn't scale either
+                freenode = "You are now identified for",
+                rizon = "Password accepted - you are now recognized.",
+                quakenet = "You are now logged in as",
+                gamesurge = "I recognize you.",
+            }
 
-                enum AuthServiceAcceptance
+            with (event)
+            with (AuthSuccess)
+            {
+                if ((content.beginsWith(freenode)) ||
+                    (content.beginsWith(quakenet)) ||
+                    (content == rizon) ||
+                    (content == gamesurge))
                 {
-                    freenode = "You are now identified for",
-                    rizon = "Password accepted - you are now recognized.",
-                    quakenet = "You are now logged in as",
-                    gamesurge = "I recognize you.",
+                    type = AUTH_SUCCESS;
                 }
+            }
 
-                with (AuthServiceAcceptance)
+            enum AuthFailure
+            {
+                rizon = "Your nick isn't registered.",
+                quakenet = "Username or password incorrect.",
+                freenodeInvalid = "is not a registered nickname.",
+                freenodeRejected = "Invalid password for",
+                dalnet = "is not registered.",
+                unreal = "isn't registered.",
+            }
+
+            with (event)
+            with (AuthFailure)
+            {
+                if ((content == rizon) ||
+                    (content == quakenet) ||
+                    (content.indexOf(freenodeInvalid) != -1) ||
+                    (content.beginsWith(freenodeRejected)) ||
+                    (content.indexOf(dalnet) != -1))
                 {
-                    if ((event.content.beginsWith(freenode)) ||
-                        (event.content.beginsWith(quakenet)) ||
-                        (event.content == rizon) ||
-                        (event.content == gamesurge))
-                    {
-                        event.type = AUTHACCEPTANCE;
-                    }
+                    event.type = AUTH_FAILURE;
                 }
             }
         }
@@ -1592,8 +1615,9 @@ struct IRCEvent
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
         SUB, RESUB,
-        AUTHCHALLENGE,
-        AUTHACCEPTANCE, // = 900        // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
+        AUTH_CHALLENGE,
+        AUTH_FAILURE,
+        AUTH_SUCCESS, // = 900          // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -1952,7 +1976,7 @@ struct IRCEvent
         704 : Type.HELP_TOPICS,
         705 : Type.HELP_ENTRIES,
         706 : Type.HELP_END,
-        900 : Type.AUTHACCEPTANCE,
+        900 : Type.AUTH_SUCCESS,
     ];
 
     enum Role
