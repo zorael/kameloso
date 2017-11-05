@@ -421,6 +421,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                 freenodeRejected = "Invalid password for",
                 dalnet = "is not registered.",
                 unreal = "isn't registered.",
+                gamesurge = "Could not find your account -- did you register yet?",
             }
 
             with (event)
@@ -428,6 +429,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             {
                 if ((content == rizon) ||
                     (content == quakenet) ||
+                    (content == gamesurge) ||
                     (content.indexOf(freenodeInvalid) != -1) ||
                     (content.beginsWith(freenodeRejected)) ||
                     (content.indexOf(dalnet) != -1))
@@ -2275,6 +2277,9 @@ bool isFromAuthService(const IRCEvent event)
         return ((ident == "AuthServ") && (address == "Services.GameSurge.net"));
 
     default:
+        if (sender.endsWith(".GameSurge.net")) return true;
+        else if (address.endsWith(".GameSurge.net")) return true;
+
         logger.warning("Unhandled service, can't tell if special");
         logger.trace(event.raw);
         break;

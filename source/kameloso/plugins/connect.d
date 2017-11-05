@@ -182,7 +182,7 @@ void onPing(const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd()
+void onEndOfMotd(const IRCEvent event)
 {
     with (IRCServer.Network)
     with (state)
@@ -240,7 +240,9 @@ void onEndOfMotd()
         case freenode:
         case irchighway:
         case unreal:
+        case gamesurge:
             // Accepts auth login
+            // GameSurge is AuthServ
 
             string login = bot.authLogin;
 
@@ -250,11 +252,15 @@ void onEndOfMotd()
                 login = bot.origNickname;
             }
 
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ :IDENTIFY %s %s"
-                .format(login, bot.authPassword));
+            immutable service = (bot.server.network == gamesurge) ?
+                "AuthServ@Services.GameSurge.net" : "NickServ";
 
-            logger.trace("--> PRIVMSG NickServ :IDENTIFY ", login, " hunter2");
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG %s :IDENTIFY %s %s"
+                .format(service, login, bot.authPassword));
+
+            logger.trace("--> PRIVMSG %s :IDENTIFY %s hunter2"
+                .format(service, login));
 
             break;
 
