@@ -2224,6 +2224,7 @@ bool isFromAuthService(const IRCEvent event)
             {
             case "services.":
                 // Freenode
+                // :NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.
                 return true;
 
             default:
@@ -2254,6 +2255,7 @@ bool isFromAuthService(const IRCEvent event)
             {
             case "rizon.net":
             case "dal.net":
+                // :NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,
                 return true;
 
             default:
@@ -2285,9 +2287,11 @@ bool isFromAuthService(const IRCEvent event)
         }
 
     case "Q":
+        // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
         return ((ident == "TheQBot") && (address == "CServe.quakenet.org"));
 
     case "AuthServ":
+        // :AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :Could not find your account
         return ((ident == "AuthServ") && (address == "Services.GameSurge.net"));
 
     default:
