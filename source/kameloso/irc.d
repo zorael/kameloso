@@ -2232,7 +2232,20 @@ bool isFromAuthService(const IRCEvent event)
             }
 
         case "services":
-            if (address == "services.unrealircd.org") return true;
+            // :NickServ!services@services.unrealircd.org NOTICE kameloso :Nick kameloso isn't registered.
+            switch (address)
+            {
+            case "services.unrealircd.org":
+            case "services.irchighway.net":
+            case "swiftirc.net":
+                return true;
+
+            default:
+                logger.warning("Unhandled *NickServ!services* address, " ~
+                    "can't tell if special");
+                break;
+            }
+
             // drop down to test generic (NickServ || services)
             break;
 
@@ -2278,15 +2291,9 @@ bool isFromAuthService(const IRCEvent event)
         return ((ident == "AuthServ") && (address == "Services.GameSurge.net"));
 
     default:
-        if (sender.endsWith(".GameSurge.net")) return true;
-        else if (address.endsWith(".GameSurge.net")) return true;
-
-        logger.warning("Unhandled service, can't tell if special");
-        logger.trace(event.raw);
-        break;
+        // Not a known nick registration nick
+        return false;
     }
-
-    return false;
 }
 
 unittest
