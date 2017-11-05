@@ -263,23 +263,18 @@ void mapEffects(ref IRCEvent event)
     if (lineBytes.canFind(cast(ubyte)I.bold))
     {
         // Bold is bash 1, mIRC 2
-        //event.mapAlternatingEffectImpl!(cast(ubyte)B.bold, cast(ubyte)I.bold)();
         event.mapAlternatingEffectImpl!(B.bold, I.bold)();
     }
 
     if (lineBytes.canFind(cast(ubyte)I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        /*event.mapAlternatingEffectImpl!(cast(ubyte)B.italics,
-            cast(ubyte)I.italics)();*/
         event.mapAlternatingEffectImpl!(B.italics, I.italics)();
     }
 
     if (lineBytes.canFind(cast(ubyte)I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        /*event.mapAlternatingEffectImpl!(cast(ubyte)B.underlined,
-            cast(ubyte)I.underlined)();*/
         event.mapAlternatingEffectImpl!(B.underlined, I.underlined)();
     }
 }
