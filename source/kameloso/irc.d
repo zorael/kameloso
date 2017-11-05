@@ -432,7 +432,8 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                     (content == gamesurge) ||
                     (content.indexOf(freenodeInvalid) != -1) ||
                     (content.beginsWith(freenodeRejected)) ||
-                    (content.indexOf(dalnet) != -1))
+                    (content.indexOf(dalnet) != -1) ||
+                    (content.indexOf(unreal) != -1))
                 {
                     event.type = AUTH_FAILURE;
                 }
