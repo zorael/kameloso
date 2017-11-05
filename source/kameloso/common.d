@@ -19,6 +19,8 @@ import std.typecons : Flag, No, Yes;
  +/
 Logger logger;
 
+Settings settings;
+
 
 @safe:
 
@@ -81,7 +83,7 @@ struct Hidden {}
 struct Settings
 {
     bool joinOnInvite = true;
-    bool monochromeLogger = false;
+    bool monochrome = false;
 
     @Unconfigurable
     {
@@ -155,7 +157,14 @@ void printObjects(Things...)(Things things) @trusted
 
     version(Colours)
     {
-        formatObjectsColoured(stdout.lockingTextWriter, things);
+        if (settings.monochrome)
+        {
+            formatObjectsMonochrome(stdout.lockingTextWriter, things);
+        }
+        else
+        {
+            formatObjectsColoured(stdout.lockingTextWriter, things);
+        }
     }
     else
     {
@@ -713,6 +722,8 @@ version(Colours)
 string colourise(Codes...)(Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
+    if (settings.monochrome) return string.init;
+
     import std.array : Appender;
 
     Appender!string sink;
@@ -792,12 +803,17 @@ final class KamelosoLogger : Logger
     {
         version(Colours)
         {
-            sink.colourise(BashForeground.white);
+            if (!monochrome)
+            {
+                sink.colourise(BashForeground.white);
+            }
         }
 
         sink.formattedWrite("[%s] ", (cast(DateTime)timestamp)
             .timeOfDay
             .toString());
+
+        if (monochrome) return;
 
         version(Colours)
         with (LogLevel)
@@ -857,8 +873,11 @@ final class KamelosoLogger : Logger
     {
         version(Colours)
         {
-            // Reset.blink in case a fatal message was thrown
-            sink.colourise(BashForeground.default_, BashReset.blink);
+            if (!monochrome)
+            {
+                // Reset.blink in case a fatal message was thrown
+                sink.colourise(BashForeground.default_, BashReset.blink);
+            }
         }
 
         static if (__traits(hasMember, sink, "data"))
@@ -881,12 +900,21 @@ final class KamelosoLogger : Logger
 
 unittest
 {
-    Logger log_ = new KamelosoLogger(LogLevel.all);
+    Logger log_ = new KamelosoLogger(LogLevel.all, false);
 
     log_.log("log: log");
     log_.info("log: info");
     log_.warning("log: warning");
     log_.error("log: error");
     // log_.fatal("log: FATAL");  // crashes the program
+    log_.trace("log: trace");
+
+    log_ = new KamelosoLogger(LogLevel.all, true);
+
+    log_.log("log: log");
+    log_.info("log: info");
+    log_.warning("log: warning");
+    log_.error("log: error");
+    // log_.fatal("log: FATAL");
     log_.trace("log: trace");
 }
