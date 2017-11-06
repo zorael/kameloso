@@ -350,7 +350,7 @@ void mapColours(ref IRCEvent event)
         }
 
         sink.put("\033[");
-        sink.put(cast(string)weechatForegroundMap[fgIndex]);
+        sink.put((cast(size_t)weechatForegroundMap[fgIndex]).to!string);
 
         if (hit[2].length)
         {
@@ -364,7 +364,7 @@ void mapColours(ref IRCEvent event)
             }
 
             sink.put(';');
-            sink.put(cast(string)weechatBackgroundMap[bgIndex]);
+            sink.put((cast(size_t)weechatBackgroundMap[bgIndex]).to!string);
         }
 
         sink.put('m');

@@ -764,9 +764,11 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
 
     foreach (const code; codes)
     {
+        import std.conv : to;
+
         if (++numCodes > 1) sink.put(';');
 
-        sink.put(cast(string)code);
+        sink.put((cast(size_t)code).to!string);
     }
 
     sink.put('m');
