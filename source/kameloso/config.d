@@ -473,7 +473,7 @@ void walkConfigExcluding(Range_, Sink, Things...)(Range_ range,
         case '#':
         case ';':
             // Comment
-            if (skipping) continue;
+            if (skipping || !currentSection.length) continue;
 
             sink.put(line);
             sink.put('\n');
