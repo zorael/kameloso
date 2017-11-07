@@ -22,7 +22,7 @@ public import std.typecons : No, Yes;
  +      the string arr from the start up to the separator.
  +/
 pragma(inline)
-string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separator)
+string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separator) @trusted
 {
     static if (decode)
     {
@@ -34,15 +34,14 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     {
         // Only do this if we know it's not user text
         import std.algorithm.searching : countUntil;
-        import std.string : representation;
 
         static if (isSomeString!C)
         {
-            immutable index = arr.representation.countUntil(separator.representation);
+            immutable index = (cast(ubyte[])arr).countUntil(cast(ubyte[])separator);
         }
         else
         {
-            immutable index = arr.representation.countUntil(cast(ubyte)separator);
+            immutable index = (cast(ubyte[])arr).countUntil(cast(ubyte)separator);
         }
     }
 
