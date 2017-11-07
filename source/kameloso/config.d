@@ -468,13 +468,13 @@ void walkConfigExcluding(Range_, Sink, Things...)(Range_ range,
 			continue;
 		}
 
-		if (skipping) continue;
-
         switch (line[0])
         {
         case '#':
         case ';':
             // Comment
+            if (skipping) continue;
+
             sink.put(line);
             sink.put('\n');
 			break;
@@ -485,6 +485,8 @@ void walkConfigExcluding(Range_, Sink, Things...)(Range_ range,
 
 			immutable lineCopy = line;  // formattedRead will advance line
             line.formattedRead("[%s]", currentSection);
+
+            skipping = false;
 
 			foreach (Thing; Things)
 			{
