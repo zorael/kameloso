@@ -189,11 +189,14 @@ void parsePrefix(ref IRCEvent event, ref string slice)
 
     auto prefix = slice.nom(' ');
 
-    with(event)
+    with (event)
     if (prefix.indexOf('!') != -1)
     {
         // user!~ident@address
-        prefix.formattedRead("%s!%s@%s", sender, ident, address);
+        //prefix.formattedRead("%s!%s@%s", sender, ident, address);
+        sender = prefix.nom('!');
+        ident = prefix.nom('@');
+        address = prefix;
 
         // FIXME: This obviously doesn't scale
         special = (address == "services.") ||
