@@ -849,7 +849,8 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
 
 
 version(Colours)
-void truecolourise(Sink)(auto ref Sink sink, const int r, const int g, const int b)
+void truecolourise(Flag!"normalise" normalise = Yes.normalise, Sink)
+    (auto ref Sink sink, uint r, uint g, uint b)
 if (isOutputRange!(Sink,string))
 {
     import std.format : formattedWrite;
@@ -859,7 +860,13 @@ if (isOutputRange!(Sink,string))
     // 2 truecolor?
     // r;g;bm
 
-    sink.formattedWrite("%s[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat, r, g, b);
+    static if (normalise)
+    {
+        normaliseColours(r, g, b);
+    }
+
+    sink.formattedWrite("%s[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat,
+        r, g, b);
 }
 
 unittest
@@ -868,8 +875,12 @@ unittest
 
     Appender!(char[]) sink;
 
-    sink.truecolourise(0, 0, 0);
+    sink.truecolourise!(No.normalise)(0, 0, 0);
     assert(sink.data == "\033[38;2;0;0;0m", sink.data);
+    sink.clear();
+
+    sink.truecolourise!(Yes.normalise)(0, 0, 0);
+    assert(sink.data == "\033[38;2;150;150;150m", sink.data);
     sink.clear();
 
     sink.truecolourise(255, 255, 255);
