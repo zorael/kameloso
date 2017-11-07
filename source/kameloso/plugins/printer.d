@@ -166,9 +166,35 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         import std.algorithm : equal;
         import std.uni : asLowerCase;
 
-        sink.colourise(senderColour);
-        sink.put((alias_.length && alias_.asLowerCase.equal(sender)) ?
-            alias_ : sender);
+        bool aliasPrinted;
+
+        void colouriseSenderTruecolour()
+        {
+            if (event.colour.length)
+            {
+                import kameloso.stringutils : numFromHex;
+
+                int r, g, b;
+                event.colour.numFromHex(r, g, b);
+                sink.truecolourise(r, g, b);
+            }
+            else
+            {
+                sink.colourise(senderColour);
+            }
+        }
+
+        colouriseSenderTruecolour();
+
+        if (alias_.length && alias_.asLowerCase.equal(sender))
+        {
+            sink.put(alias_);
+            aliasPrinted = true;
+        }
+        else
+        {
+            sink.put(sender);
+        }
 
         if (special)
         {
@@ -182,9 +208,9 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.formattedWrite(" [%s]", enumToString(role));
         }
 
-        if (alias_.length && (alias_ != sender))
+        if (alias_.length && !aliasPrinted)
         {
-            sink.colourise(senderColour);
+            colouriseSenderTruecolour();
             sink.formattedWrite(" (%s)", alias_);
         }
 
