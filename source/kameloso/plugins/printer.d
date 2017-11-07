@@ -472,21 +472,8 @@ void mapColours(ref IRCEvent event)
  +      ref event = the IRC event whose content body to work on
  +/
 version(Colours)
-void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
-{
-    import std.conv  : to;
-    import std.regex : ctRegex, replaceAll;
-
-    static engine = ctRegex!([cast(char)mircToken]);
-    enum bashToken = "\033[" ~ bashEffectCode.to!string ~ "m";
-
-    event.content = event.content.replaceAll(engine, bashToken);
-    event.content ~= "\033[0m";
-}
-
-
-version(Colours)
-void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
+void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
+    (ref IRCEvent event)
 {
     import std.array : Appender;
     import std.conv  : to;
