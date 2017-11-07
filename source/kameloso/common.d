@@ -781,6 +781,39 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
 }
 
 
+version(Colours)
+void truecolourise(Sink)(auto ref Sink sink, const int r, const int g, const int b)
+if (isOutputRange!(Sink,string))
+{
+    import std.format : formattedWrite;
+
+    // \033[
+    // 38 foreground
+    // 2 truecolor?
+    // r;g;bm
+
+    sink.formattedWrite("%s[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat, r, g, b);
+}
+
+unittest
+{
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    sink.truecolourise(0, 0, 0);
+    assert(sink.data == "\033[38;2;0;0;0m", sink.data);
+    sink.clear();
+
+    sink.truecolourise(255, 255, 255);
+    assert(sink.data == "\033[38;2;255;255;255m", sink.data);
+    sink.clear();
+
+    sink.truecolourise(123, 221, 0);
+    assert(sink.data == "\033[38;2;123;221;0m", sink.data);
+}
+
+
 // KamelosoLogger
 /++
  +  Modified Logger to print timestamped and coloured logging messages.
