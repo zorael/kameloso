@@ -538,6 +538,16 @@ unittest
 }
 
 
+// numFromHex
+/++
+ +  Returns the decimal value of a hex number in string form.
+ +
+ +  Params:
+ +      hex = a string with a hexadecimal number.
+ +
+ +  Returns:
+ +      An integer equalling the value of the passed hexadecimal string.
+ +/
 int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex)
 {
@@ -582,6 +592,21 @@ int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     return total;
 }
 
+
+// numFromHex
+/++
+ +  Convenience wrapper that takes a hex string and maps the values to three
+ +  integers passed by ref.
+ +
+ +  This is to be used when mapping a #RRGGBB colour to their decimal
+ +  red/green/blue equivalents.
+ +
+ +  Params:
+ +      hexString = a string with a hexadecimal number (colour)
+ +      ref r = ref int for the red part of the hex string
+ +      ref g = ref int for the green part of the hex string
+ +      ref b = ref int for the blue part of the hex string
+ +/
 void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hexString, out int r, out int g, out int b)
 {
