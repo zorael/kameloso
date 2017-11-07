@@ -10,6 +10,8 @@ import std.stdio;
 
 private:
 
+
+/// All Printer plugin options gathered in a struct
 struct PrinterOptions
 {
     bool monochrome;
@@ -71,6 +73,15 @@ void onAnyEvent(const IRCEvent origEvent)
     }
 }
 
+
+// put
+/++
+ +  Puts a variadic list of values into an output range sink.
+ +
+ +  Params:
+ +      sink = output range to sink items into
+ +      args = variadic list of things to put
+ +/
 void put(Sink, Args...)(auto ref Sink sink, Args args)
 {
     import std.range : put;
@@ -89,6 +100,21 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
     }
 }
 
+
+// formatMessage
+/++
+ +  Formats an IRCEvent into an output range sink.
+ +
+ +  It formats the timestamp, the type of the event, the sender or sender alias,
+ +  the channel or target, the content body, as well as auxiliary information.
+ +
+ +  By default output is in colours, unless on Windows. The behaviour is stored
+ +  and read from the PrinterOptions struct.
+ +
+ +  Params:
+ +      sink = output range to format the IRCEvent into
+ +      event = the reference event that is being formatted
+ +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
     import kameloso.stringutils : enumToString;
@@ -426,6 +452,25 @@ void mapColours(ref IRCEvent event)
 }
 
 
+// mapAlternatingEffectImpl
+/++
+ +  Replaces mIRC tokens with Bash effect codes, in an alternating fashion so as
+ +  to support repeated effects toggling behaviour.
+ +
+ +  It seems to be the case that a token for bold text will trigger bold text up
+ +  until the next bold token. If we only naïvely replace all mIRC tokens for
+ +  bold text then, we'll get lines that start off bold and continue as such
+ +  until the very end.
+ +
+ +  Instead we look at it in a pairwise perspective. We use regex to replace
+ +  pairs of tokens, properly alternating and toggling on and off, then once
+ +  more at the end in case there was an odd token only toggling on.
+ +
+ +  Params:
+ +      bashEffectCode = the Bash equivalent of the mircToken effect
+ +      mircToken = the mIRC token for a particular text effect
+ +      ref event = the IRC event whose content body to work on
+ +/
 version(Colours)
 void mapEffectImpl(ubyte bashEffectCode, ubyte mircToken)(ref IRCEvent event)
 {
