@@ -176,9 +176,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         if (type == IRCEvent.Type.QUERY) typeColour = lightgreen;
 
         sink.colourise(white);
-        sink.formattedWrite("[%s] ", timestamp);
+        //sink.formattedWrite("[%s] ", timestamp);
+        put(sink, '[', timestamp, "] ");
         sink.colourise(typeColour);
-        sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
+        //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
+        put(sink, '[', enumToString(type), "] ");
 
         import std.algorithm : equal;
         import std.uni : asLowerCase;
@@ -228,37 +230,43 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         if (alias_.length && !aliasPrinted)
         {
             colouriseSenderTruecolour();
-            sink.formattedWrite(" (%s)", alias_);
+            //sink.formattedWrite(" (%s)", alias_);
+            put(sink, " (", alias_, ')');
         }
 
         if (target.length)
         {
             sink.colourise(DefaultColour.target);
-            sink.formattedWrite(" (%s)", target);
+            //sink.formattedWrite(" (%s)", target);
+            put(sink, " (", target, ')');
         }
 
         if (channel.length)
         {
             sink.colourise(DefaultColour.channel);
-            sink.formattedWrite(" [%s]", channel);
+            //sink.formattedWrite(" [%s]", channel);
+            put(sink, " [", channel, ']');
         }
 
         if (content.length)
         {
             sink.colourise(DefaultColour.content);
-            sink.formattedWrite(`: "%s"`, content);
+            //sink.formattedWrite(`: "%s"`, content);
+            put(sink, `: "`, content, '"');
         }
 
         if (aux.length)
         {
             sink.colourise(DefaultColour.aux);
-            sink.formattedWrite(" <%s>", aux);
+            //sink.formattedWrite(" <%s>", aux);
+            put(sink, " <", aux, '>');
         }
 
         if (num > 0)
         {
             sink.colourise(DefaultColour.num);
-            sink.formattedWrite(" (#%d)", num);
+            //sink.formattedWrite(" (#%d)", num);
+            put(sink, " (#", num, ')');
         }
 
         sink.colourise(default_);
