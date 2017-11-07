@@ -10,6 +10,12 @@ import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
+version(unittest)
+shared static this()
+{
+    logger = new KamelosoLogger(LogLevel.all, settings.monochrome);
+}
+
 // logger
 /++
  +  Instance of a KamelosoLogger, providing timestamped and coloured logging.

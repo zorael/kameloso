@@ -401,7 +401,7 @@ public:
 version(unittest)
 void main() {
     // Compiled with -b unittest, so run the tests and exit.
-    initLogger();
+    // Logger is initialised in a module constructor, don't reinit here.
     logger.info("All tests passed successfully!");
 }
 else
