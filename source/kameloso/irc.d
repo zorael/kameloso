@@ -2233,10 +2233,15 @@ IRCUser userFromEvent(const IRCEvent event)
 
         with (user)
         {
+            import kameloso.stringutils : nom;
+
             nickname  = event.target;
             login     = event.aux;
             special   = event.special;
-            content.formattedRead("%s %s", ident, address);
+            ident = content.nom(' ');
+            address = content;
+            //content.formattedRead("%s %s", ident, address);
+
         }
         break;
 
@@ -2305,6 +2310,16 @@ unittest
         assert((ident == "NickServ"), ident);
         assert((address == "services."), address);
         assert(special);
+    }
+
+    immutable e4 = ":asimov.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :Full Name Here"
+                   .toIRCEvent();
+    with (userFromEvent(e4))
+    {
+        assert((nickname == "zorael"), nickname);
+        assert((ident == "~NaN"), ident);
+        assert((address == "ns3363704.ip-94-23-253.eu"), address);
+        assert(!special);
     }
 }
 
