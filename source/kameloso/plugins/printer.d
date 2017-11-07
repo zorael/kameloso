@@ -71,6 +71,23 @@ void onAnyEvent(const IRCEvent origEvent)
     }
 }
 
+void put(Sink, Args...)(auto ref Sink sink, Args args)
+{
+    import std.range : put;
+    import std.conv : to;
+
+    foreach (arg; args)
+    {
+        static if (!__traits(compiles, std.range.put(sink, typeof(arg).init)))
+        {
+            std.range.put(sink, arg.to!string);
+        }
+        else
+        {
+            std.range.put(sink, arg);
+        }
+    }
+}
 
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
