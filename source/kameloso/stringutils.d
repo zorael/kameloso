@@ -542,8 +542,6 @@ unittest
 int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex)
 {
-    import std.stdio;
-
     int val = -1;
     int total;
 
@@ -562,15 +560,15 @@ int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
         case 'a':
         ..
         case 'f':
-            val = (c - (54+32));
+            val = (c - (55+32));
             goto case 'F';
     }
 
         case 'A':
         ..
         case 'F':
-            if (val < 0) val = (c - 54);
-            total *= 15;
+            if (val < 0) val = (c - 55);
+            total *= 16;
             total += val;
             val = -1;
             break;
@@ -579,6 +577,8 @@ int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
             assert(0, "Invalid hex string: " ~ hex);
         }
     }
+
+    assert(total < 16^^hex.length);
 
     return total;
 }
@@ -611,26 +611,26 @@ unittest
         int r, g, b;
         numFromHex("FFFFFF", r, g, b);
 
-        assert((r == 256), r.text);
-        assert((g == 256), g.text);
-        assert((b == 256), b.text);
+        assert((r == 255), r.text);
+        assert((g == 255), g.text);
+        assert((b == 255), b.text);
     }
 
     {
         int r, g, b;
         numFromHex("3C507D", r, g, b);
 
-        assert((r == 58), r.text);
-        assert((g == 75), g.text);
-        assert((b == 119), b.text);
+        assert((r == 60), r.text);
+        assert((g == 80), g.text);
+        assert((b == 125), b.text);
     }
 
     {
         int r, g, b;
         numFromHex!(Yes.acceptLowercase)("9a4B7c", r, g, b);
 
-        assert((r == 146), r.text);
-        assert((g == 72), g.text);
-        assert((b == 118), b.text);
+        assert((r == 154), r.text);
+        assert((g == 75), g.text);
+        assert((b == 124), b.text);
     }
 }
