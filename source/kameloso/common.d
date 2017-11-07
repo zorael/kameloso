@@ -875,6 +875,9 @@ unittest
 
     Appender!(char[]) sink;
 
+    // LDC workaround for not taking formattedWrite sink as auto ref
+    sink.reserve(16);
+
     sink.truecolourise!(No.normalise)(0, 0, 0);
     assert(sink.data == "\033[38;2;0;0;0m", sink.data);
     sink.clear();
