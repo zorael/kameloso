@@ -2,6 +2,7 @@ module kameloso.irc;
 
 import kameloso.common;
 import kameloso.constants;
+import kameloso.stringutils : nom;
 
 import std.format : format, formattedRead;
 import std.string : indexOf;
