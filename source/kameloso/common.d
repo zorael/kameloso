@@ -780,6 +780,73 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     sink.put('m');
 }
 
+version(Colours)
+void normaliseColours(ref uint r, ref uint g, ref uint b)
+{
+    enum pureBlackReplacement = 150;
+    enum incrementWhenOnlyOneColour = 100;
+    enum tooDarkValueThreshold = 75;
+    enum highColourHighlight = 95;
+    enum lowColourIncrement = 75;
+
+    // Sanity check
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+
+    if ((r + g + b) == 0)
+    {
+        // Specialcase pure black, set to grey and return
+        r = pureBlackReplacement;
+        b = pureBlackReplacement;
+        g = pureBlackReplacement;
+
+        return;
+    }
+
+    if ((r + g + b) == 255)
+    {
+        // Precisely one colour is saturated with the rest at 0 (probably)
+        // Make it more bland, can be difficult to see otherwise
+        r += incrementWhenOnlyOneColour;
+        b += incrementWhenOnlyOneColour;
+        g += incrementWhenOnlyOneColour;
+
+        // Sanity check
+        if (r > 255) r = 255;
+        if (g > 255) g = 255;
+        if (b > 255) b = 255;
+
+        return;
+    }
+
+    int rDark, gDark, bDark;
+
+    rDark = (r < tooDarkValueThreshold);
+    gDark = (g < tooDarkValueThreshold);
+    bDark = (b < tooDarkValueThreshold);
+
+    if ((rDark + gDark +bDark) > 1)
+    {
+        // At least two colours were below the threshold (75)
+
+        // Highlight the colours above the threshold
+        r += (rDark == 0) * highColourHighlight;
+        b += (bDark == 0) * highColourHighlight;
+        g += (gDark == 0) * highColourHighlight;
+
+        // Raise all colours to make it brighter
+        r += 75;
+        b += 75;
+        g += 75;
+
+        // Sanity check
+        if (r >= 255) r = 255;
+        if (g >= 255) g = 255;
+        if (b >= 255) b = 255;
+    }
+}
+
 
 version(Colours)
 void truecolourise(Sink)(auto ref Sink sink, const int r, const int g, const int b)
