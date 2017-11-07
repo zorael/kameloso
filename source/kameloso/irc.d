@@ -1299,7 +1299,7 @@ void parseTwitchTags(ref IRCEvent event)
 
         case "color":
             // Hexadecimal RGB color code. This is empty if it is never set.
-            event.colour = tag[1..$];
+            if (tag.length) event.colour = tag[1..$];
             break;
 
         case "msg-param-sub-plan-name":
