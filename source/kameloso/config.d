@@ -116,10 +116,18 @@ void readConfig(T...)(const string configFile, ref T things)
 }
 
 
+// configReader
+/++
+ +  Reads a file from disk and returns its contents.
+ +
+ +  Params:
+ +      configFile = the filename of the file to read
+ +
+ +  Returns:
+ +      the file's contents in a string
+ +/
 string configReader(const string configFile)
 {
-    import std.algorithm.iteration : splitter;
-    import std.ascii  : newline;
     import std.file   : exists, isFile, readText, write;
     import std.string : chomp;
 
@@ -431,7 +439,7 @@ void replaceConfig(Things...)(const string configFile, Things things)
     import std.datetime : Clock;
 
     Appender!string sink;
-    sink.reserve(1024);  // 731 with Notes nd Printer settings enabled
+    sink.reserve(1024);  // 731 with Notes and Printer settings enabled
 
     auto configSource = configFile
         .configReader
@@ -448,6 +456,18 @@ void replaceConfig(Things...)(const string configFile, Things things)
 }
 
 
+// walkConfigExcluding
+/++
+ +  Reads a config file line by line from an input range and omits sections
+ +  pertaining to the types passed.
+ +
+ +  It's a way to strip configuration files of types.
+ +
+ +  Params:
+ +      range = input range to read the configuration lines from
+ +      sink = output range to save included lines into
+ +      things = variadic list of types to omit from the saved configuration
+ +/
 void walkConfigExcluding(Range_, Sink, Things...)(Range_ range,
 	auto ref Sink sink, Things things)
 {
