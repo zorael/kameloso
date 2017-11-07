@@ -43,11 +43,19 @@ void parseBasic(ref IRCEvent event) @trusted
 {
     mixin(scopeguard(failure));
 
-    string raw = event.raw;
-    string slice;
+    string slice = event.raw;
 
-    raw.formattedRead("%s :%s", event.typestring, slice);
-    //raw.formattedRead("%s :%s", event.typestring, slice); // restore me later
+    // This is malformed for some strings but works anyway.
+    //slice.formattedRead("%s :%s", event.typestring, slice);
+    event.typestring = slice.nom(" :");
+
+    /*immutable spaceIndex = event.typestring.indexOf(' ');
+    if (spaceIndex != -1)
+    {
+        // NOTICE AUTH
+        // discard AUTH...
+        event.typestring = event.typestring[0..spaceIndex];
+    }*/
 
     switch (event.typestring)
     {
@@ -62,14 +70,27 @@ void parseBasic(ref IRCEvent event) @trusted
         event.content = slice;
         break;
 
+    case "NOTICE AUTH":
     case "NOTICE":
         import std.string : stripRight;
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
-        bot.server.network = IRCServer.Network.quakenet;  // only available locally
+        // adam_d_ruppe | but it will read a string up until whitespace and
+        //                call that the first one
+        // adam_d_ruppe | then ... well i'm not sure, it might just skip
+        //                everything up until the colon
+        // adam_d_ruppe | tbh i try to avoid these formattedRead (and the whole
+        //                family of functions) since their behavior is always
+        //                strange to me
+        if (bot.server.network == IRCServer.Network.init)
+        {
+            bot.server.network = IRCServer.Network.quakenet;  // only available locally
+        }
+
+        event.typestring = "NOTICE";
         event.type = IRCEvent.Type.NOTICE;
-        event.content = raw;
+        event.content = slice;
         event.aux = slice.stripRight();
         event.special = true;
         break;
