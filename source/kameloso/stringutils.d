@@ -537,3 +537,100 @@ unittest
         assert(enumToString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
     }
 }
+
+
+int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
+    (const string hex)
+{
+    import std.stdio;
+
+    int val = -1;
+    int total;
+
+    foreach (immutable c; hex)
+    {
+        switch (c)
+        {
+        case '0':
+        ..
+        case '9':
+            val = (c - 48);
+            goto case 'F';
+
+    static if (acceptLowercase)
+    {
+        case 'a':
+        ..
+        case 'f':
+            val = (c - (54+32));
+            goto case 'F';
+    }
+
+        case 'A':
+        ..
+        case 'F':
+            if (val < 0) val = (c - 54);
+            total *= 15;
+            total += val;
+            val = -1;
+            break;
+
+        default:
+            assert(0, "Invalid hex string: " ~ hex);
+        }
+    }
+
+    return total;
+}
+
+void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
+    (const string hexString, out int r, out int g, out int b)
+{
+    if (!hexString.length) return;
+
+    immutable hex = (hexString[0] == '#') ? hexString[1..$] : hexString;
+
+    r = numFromHex!acceptLowercase(hex[0..2]);
+    g = numFromHex!acceptLowercase(hex[2..4]);
+    b = numFromHex!acceptLowercase(hex[4..$]);
+}
+
+unittest
+{
+    import std.conv : text;
+    {
+        int r, g, b;
+        numFromHex("000102", r, g, b);
+
+        assert((r == 0), r.text);
+        assert((g == 1), g.text);
+        assert((b == 2), b.text);
+    }
+
+    {
+        int r, g, b;
+        numFromHex("FFFFFF", r, g, b);
+
+        assert((r == 256), r.text);
+        assert((g == 256), g.text);
+        assert((b == 256), b.text);
+    }
+
+    {
+        int r, g, b;
+        numFromHex("3C507D", r, g, b);
+
+        assert((r == 58), r.text);
+        assert((g == 75), g.text);
+        assert((b == 119), b.text);
+    }
+
+    {
+        int r, g, b;
+        numFromHex!(Yes.acceptLowercase)("9a4B7c", r, g, b);
+
+        assert((r == 146), r.text);
+        assert((g == 72), g.text);
+        assert((b == 118), b.text);
+    }
+}
