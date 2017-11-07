@@ -892,6 +892,10 @@ unittest
 
     sink.truecolourise(123, 221, 0);
     assert(sink.data == "\033[38;2;123;221;0m", sink.data);
+    sink.clear();
+
+    sink.truecolourise(0, 255, 0);
+    assert(sink.data == "\033[38;2;100;255;100m", sink.data);
 }
 
 
