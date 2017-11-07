@@ -144,7 +144,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     {
         version(Colours)
         {
-            if (!printerOptions.monochrome) event.mapEffects();
+            event.mapEffects();
         }
 
         enum DefaultColour
