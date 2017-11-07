@@ -1297,6 +1297,11 @@ void parseTwitchTags(ref IRCEvent event)
             event.aux = event.aux.length ? (event.aux ~ 'x' ~ tag) : tag;
             break;
 
+        case "color":
+            // Hexadecimal RGB color code. This is empty if it is never set.
+            event.colour = tag[1..$];
+            break;
+
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
             // name or one created by the channel owner.
@@ -1328,8 +1333,6 @@ void parseTwitchTags(ref IRCEvent event)
         case "r9k":
             // R9K mode. If enabled, messages with more than 9 characters must
             // be unique. Valid values: 0 (disabled) or 1 (enabled).
-        case "color":
-            // Hexadecimal RGB color code. This is empty if it is never set.
         case "emotes":
             /*  Information to replace text in the message with emote images.
                 This can be empty. Syntax:
@@ -2141,6 +2144,9 @@ struct IRCEvent
 
     /// The role in string form, may be of other values than the enum provides.
     string rolestring;
+
+    /// The colour (RRGGBB) to tint the user's nickname with
+    string colour;
 
     /// IRCv3 message tags attached to this event.
     string tags;
