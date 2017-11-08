@@ -497,8 +497,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
     case NICK:
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
-        event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
         event.content = slice[1..$];
+
+        if (event.sender == bot.nickname)
+        {
+            event.type = SELFNICK;
+            bot.nickname = event.content;
+            bot.updated = true;
+        }
         break;
 
     case QUIT:
