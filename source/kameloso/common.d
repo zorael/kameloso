@@ -89,7 +89,15 @@ struct Hidden {}
 struct Settings
 {
     bool joinOnInvite = true;
-    bool monochrome = false;
+
+    version(Windows)
+    {
+        bool monochrome = true;
+    }
+    else
+    {
+        bool monochrome = false;
+    }
 
     @Unconfigurable
     {
