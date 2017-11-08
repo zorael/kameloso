@@ -60,7 +60,7 @@ The bot needs the `NickServ`/`Q`/`AuthServ` login name of the administrator/mast
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you notice you're missing options in your configuration file, such as the new plugin-specific options, just run '--writeconfig` again and your file should be updated with all fields. Make a backup just in case.
+If you notice missing options in your configuration file, such as the new plugin-specific options for the printer and notes plugins, just run `--writeconfig` again and your file should be updated with all fields.
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login in the configuration file before it will listen to anything you do.
 
