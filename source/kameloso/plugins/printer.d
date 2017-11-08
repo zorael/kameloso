@@ -15,6 +15,7 @@ private:
 struct PrinterOptions
 {
     bool monochrome;
+    bool truecolour = true;
     bool randomNickColours = true;
 }
 
@@ -185,21 +186,41 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             num     = darkgrey,
         }
 
-        BashForeground senderColour = DefaultColour.sender;
-
-        if (printerOptions.randomNickColours)
+        static BashForeground colourByHash(const string nickname)
         {
-            import std.traits : EnumMembers;
+            if (printerOptions.randomNickColours)
+            {
+                import std.traits : EnumMembers;
 
-            static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
+                static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
 
-            auto colourIndex = hashOf(sender) % 16;
-            if (colourIndex == 1) colourIndex = 16;  // map black to white
-            senderColour = fg[colourIndex];
+                auto colourIndex = hashOf(nickname) % 16;
+                if (colourIndex == 1) colourIndex = 16;  // map black to white
+                return fg[colourIndex];
+            }
+
+            // fixme
+            return DefaultColour.sender;
         }
 
-        BashForeground typeColour = DefaultColour.type;
-        if (type == IRCEvent.Type.QUERY) typeColour = lightgreen;
+        void colouriseSenderTruecolour()
+        {
+            if (event.colour.length && printerOptions.truecolour)
+            {
+                import kameloso.stringutils : numFromHex;
+
+                int r, g, b;
+                event.colour.numFromHex(r, g, b);
+                sink.truecolourise(r, g, b);
+            }
+            else
+            {
+                sink.colourise(colourByHash(sender));
+            }
+        }
+
+        BashForeground typeColour = (type == IRCEvent.Type.QUERY) ?
+            lightgreen : DefaultColour.type;
 
         sink.colourise(white);
         //sink.formattedWrite("[%s] ", timestamp);
@@ -212,22 +233,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         import std.uni : asLowerCase;
 
         bool aliasPrinted;
-
-        void colouriseSenderTruecolour()
-        {
-            if (event.colour.length)
-            {
-                import kameloso.stringutils : numFromHex;
-
-                int r, g, b;
-                event.colour.numFromHex(r, g, b);
-                sink.truecolourise(r, g, b);
-            }
-            else
-            {
-                sink.colourise(senderColour);
-            }
-        }
 
         colouriseSenderTruecolour();
 
@@ -262,7 +267,16 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         if (target.length)
         {
-            sink.colourise(DefaultColour.target);
+            if (target[0] == '#')
+            {
+                // Let all channels be one colour
+                sink.colourise(DefaultColour.target);
+            }
+            else
+            {
+                sink.colourise(colourByHash(event.target));
+            }
+
             //sink.formattedWrite(" (%s)", target);
             put(sink, " (", target, ')');
         }
