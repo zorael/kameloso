@@ -84,10 +84,10 @@ void parseBasic(ref IRCEvent event) @trusted
         // adam_d_ruppe | tbh i try to avoid these formattedRead (and the whole
         //                family of functions) since their behavior is always
         //                strange to me
-        if (bot.server.network == IRCServer.Network.init)
+        /*if (bot.server.network == IRCServer.Network.init)
         {
             bot.server.network = IRCServer.Network.quakenet;  // only available locally
-        }
+        }*/
 
         event.type = IRCEvent.Type.NOTICE;
         event.content = slice;
