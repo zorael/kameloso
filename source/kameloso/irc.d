@@ -716,7 +716,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             case "NETWORK":
                 try
                 {
-                    immutable thisNetwork = value.toLower.to!(IRCServer.Network);
+                    immutable thisNetwork = value
+                        .toLower
+                        .toEnum!(IRCServer.Network);
+
                     logger.info("Detected network: ", thisNetwork);
 
                     if (thisNetwork != bot.server.network)
