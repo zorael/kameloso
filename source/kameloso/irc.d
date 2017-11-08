@@ -18,9 +18,6 @@ uint maxNickLength = 9;
 /// Max channel name length as per IRC specs
 uint maxChannelLength = 200;
 
-/// Function hooks to call upon certain pre-defined events
-IRCParserHooks hooks;
-
 
 // parseBasic
 /++
@@ -1546,45 +1543,6 @@ string decodeIRCv3String(const string line)
 
 public:
 
-/// Takes an IRCBot and stores it, so that certain operations in the parsing
-/// has the context it needs.
-void loadBot(IRCBot bot)
-{
-    .bot = bot;
-}
-
-
-// registerParserHooks
-/++
- +  Takes an IRCParserHooks and stores it.
- +
- +  These contain function pointers which will be clled upon certain events,
- +  currently only when the local IRCBot has been updated, and the change should
- +  propagate down the stack.
- +
- +  Params:
- +      hooks = a struct instance with function pointers.
- +/
-void registerParserHooks(const IRCParserHooks hooks)
-{
-    .hooks = hooks;
-}
-
-
-// IRCParserHooks
-/++
- +  Aggregate struct conaining function pointers to be called when certain
- +  events occur, currently only when the local IRCBot has been updated.
- +/
-struct IRCParserHooks
-{
-    /// Function to call when bot has changed and the change needs to propagate.
-    static void function(const IRCBot) @trusted onNewBot;
-
-    //static void function(const IRCServer) onNewServer;
-
-    //static void function(const IRCServer) onNewNetwork;
-}
 
 /// Aggregate collecting all the relevant settings, options and state needed
 struct IRCBot

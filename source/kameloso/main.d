@@ -111,8 +111,6 @@ Flag!"quit" checkMessages()
     {
         .bot = cast(IRCBot)bot;
 
-        kameloso.irc.loadBot(.bot);
-
         foreach (plugin; plugins) plugin.newBot(.bot);
     }
 
@@ -337,22 +335,6 @@ void initPlugins()
     state.settings = settings;
     state.mainThread = thisTid;
     state.bot.server.resolveNetwork();  // neccessary?
-
-    // Register function to run when the IRC parser wants to propagate
-    // a change to the IRCBot
-
-    static void onNewBotFunction(const IRCBot bot) @trusted
-    {
-        import std.concurrency : send, thisTid;
-
-        // This really isn't @trusted but we cheat here, only this once.
-        thisTid.send(cast(shared)bot);
-    }
-
-    IRCParserHooks hooks;
-    hooks.onNewBot = &onNewBotFunction;
-    kameloso.irc.registerParserHooks(hooks);
-    kameloso.irc.loadBot(state.bot);
 
     // Zero out old plugins array and allocate room for new ones
     plugins.length = 0;
