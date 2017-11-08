@@ -257,6 +257,9 @@ Flag!"quit" handleArguments(string[] args)
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
 
+    // We know Settings now so reinitialise the logger
+    initLogger();
+
     // Give common.d a copy of Settings
     kameloso.common.settings = settings;
 
@@ -272,9 +275,6 @@ Flag!"quit" handleArguments(string[] args)
         writeln();
         return Yes.quit;
     }
-
-    // We know Settings now so initialise the logger
-    initLogger();
 
     // Try to resolve which IRC network we're connecting to based on addresses
     bot.server.resolveNetwork();
