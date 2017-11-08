@@ -88,7 +88,6 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * add ExamplePlugin
 * no-member struct UDAs to enums? (currently structs)
 * investigate inverse channel behaviour (blacklists)
-* solve scope creep (almost now); `loadBot`? cross-module globals?
 * revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
 * prettify configuration files; width is weird by neccessity of current design but can easily be formatted as post-processing
