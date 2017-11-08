@@ -1034,7 +1034,7 @@ final class KamelosoLogger : Logger
 
 unittest
 {
-    Logger log_ = new KamelosoLogger(LogLevel.all, false);
+    Logger log_ = new KamelosoLogger(LogLevel.all, true);
 
     log_.log("log: log");
     log_.info("log: info");
@@ -1043,7 +1043,7 @@ unittest
     // log_.fatal("log: FATAL");  // crashes the program
     log_.trace("log: trace");
 
-    log_ = new KamelosoLogger(LogLevel.all, true);
+    log_ = new KamelosoLogger(LogLevel.all, false);
 
     log_.log("log: log");
     log_.info("log: info");
