@@ -659,20 +659,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender);
     }
 
-    // onSelfNickMixin
-    /++
-     +  Inherit a new nickname.
-     +
-     +  Params:
-     +      event = the triggering IRCEvent.
-     +/
-    @(IRCEvent.Type.SELFNICK)
-    void onSelfnickMixin(const IRCEvent event)
-    {
-        logger.info(module_, ": new nickname");
-        state.bot.nickname = event.content;
-    }
-
     // updateBot
     /++
      +  Takes a copy of the current bot state and concurrency-sends it to the
