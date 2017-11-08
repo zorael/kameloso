@@ -149,7 +149,7 @@ Flag!"quit" checkMessages()
     /// Fake that a string was received from the server
     void stringToEvent(string line)
     {
-        immutable event = line.toIRCEvent();
+        immutable event = line.toIRCEvent(bot);
 
         foreach (plugin; plugins) plugin.onEvent(event);
     }
@@ -499,12 +499,19 @@ Flag!"quit" loopGenerator(Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            immutable event = line.toIRCEvent();
+            immutable event = line.toIRCEvent(bot);
 
             bool spammedAboutReplaying;
 
             foreach (plugin; plugins)
             {
+                if (bot.updated)
+                {
+                    // IRCBot was marked as having been changed; propagate
+                    bot.updated = false;
+                    plugin.newBot(bot);
+                }
+
                 plugin.onEvent(event);
 
                 if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
