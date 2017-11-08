@@ -2355,6 +2355,8 @@ bool isFromAuthService(const IRCEvent event)
                 break;
             }
 
+            break;
+
         case "services":
             // :NickServ!services@services.unrealircd.org NOTICE kameloso :Nick kameloso isn't registered.
             switch (address)
