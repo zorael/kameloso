@@ -442,10 +442,10 @@ void writeConfig(const string configFile)
 }*/
 
 
+public:
+
 mixin BasicEventHandlers;
 mixin OnEventImpl!__MODULE__;
-
-public:
 
 
 // NotesPlugin

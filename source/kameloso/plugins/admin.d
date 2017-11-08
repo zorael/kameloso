@@ -393,10 +393,10 @@ void onCommandWriteConfig()
 }
 
 
+public:
+
 mixin BasicEventHandlers!__MODULE__;
 mixin OnEventImpl!__MODULE__;
-
-public:
 
 
 // AdminPlugin
