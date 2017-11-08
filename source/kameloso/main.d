@@ -408,6 +408,9 @@ void main() {
 else
 int main(string[] args)
 {
+    // Initialise the logger immediately so it's always available, reinit later
+    initLogger();
+
     if (handleArguments(args) == Yes.quit) return 0;
 
     printVersionInfo(BashForeground.white);
