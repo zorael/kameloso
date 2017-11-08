@@ -403,6 +403,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
             bot.server.resolvedAddress = event.sender;
+            bot.updated = true;
         }
 
         if (event.isFromAuthService(bot))
