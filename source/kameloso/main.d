@@ -233,6 +233,7 @@ Flag!"quit" handleArguments(string[] args)
             "c|config",      "Read configuration from file (default %s)"
                              .format(Settings.init.configFile), &settings.configFile,
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
+            "writeconf",     &shouldWriteConfig,
             "version",       "Show version info", &shouldShowVersion,
         );
     }
@@ -260,7 +261,7 @@ Flag!"quit" handleArguments(string[] args)
     // We know Settings now so reinitialise the logger
     initLogger();
 
-    // Give common.d a copy of Settings
+    // Give common.d a copy of Settings. FIXME
     kameloso.common.settings = settings;
 
     if (getoptResults.helpWanted)
@@ -279,14 +280,14 @@ Flag!"quit" handleArguments(string[] args)
     // Try to resolve which IRC network we're connecting to based on addresses
     bot.server.resolveNetwork();
 
-    // If --writeconfig was supplied we should just write and quit
-
+    // If --version was supplied we should just show info and quit
     if (shouldShowVersion)
     {
         printVersionInfo();
         return Yes.quit;
     }
 
+    // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
         initPlugins();
@@ -295,6 +296,7 @@ Flag!"quit" handleArguments(string[] args)
         foreach (plugin; plugins)
         {
             plugin.writeConfig(settings.configFile);
+            // Not all plugins with configuration is important enough to list
             plugin.present();
         }
 
@@ -343,6 +345,7 @@ void initPlugins()
     {
         import std.concurrency : send, thisTid;
 
+        // This really isn't @trusted but we cheat here, only this once.
         thisTid.send(cast(shared)bot);
     }
 
@@ -486,7 +489,6 @@ Flag!"quit" loopGenerator(Generator!string generator)
         {
             // Listening Generator disconnected; reconnect
             generator.reset();
-
             return No.quit;
         }
 
@@ -497,7 +499,6 @@ Flag!"quit" loopGenerator(Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            // Hopefully making the event immutable means less gets copied?
             immutable event = line.toIRCEvent();
 
             bool spammedAboutReplaying;
@@ -526,10 +527,12 @@ Flag!"quit" loopGenerator(Generator!string generator)
             if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
                 (event.type == IRCEvent.Type.HASTHISNICK))
             {
+                // These events signify a completed WHOIS
                 replayQueue.remove(event.target);
             }
         }
 
+        // Check concurrency messages to see if we should exit
         quit = checkMessages();
     }
 
