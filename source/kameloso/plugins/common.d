@@ -579,7 +579,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 typeof(fun).stringof);
                         }
                     }
-                    catch (Exception e)
+                    catch (const Exception e)
                     {
                         logger.error(name, " ", e.msg);
                     }

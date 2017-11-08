@@ -297,7 +297,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
             with (IRCEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
         }
-        catch (Exception e)
+        catch (const Exception e)
         {
             logger.error(e.msg);
             printObjects(event);
@@ -306,7 +306,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
     else
     {
         try event.type = event.typestring.toEnum!(IRCEvent.Type);
-        catch (Exception e)
+        catch (const Exception e)
         {
             logger.error(e.msg);
             printObjects(event);
@@ -738,7 +738,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
                         hooks.onNewBot(bot);
                     }
                 }
-                catch (Exception e)
+                catch (const Exception e)
                 {
                     logger.error(e.msg);
                 }
@@ -746,7 +746,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
             case "NICKLEN":
                 try maxNickLength = value.to!uint;
-                catch (Exception e)
+                catch (const Exception e)
                 {
                     logger.error(e.msg);
                 }
@@ -754,7 +754,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
 
             case "CHANNELLEN":
                 try maxChannelLength = value.to!uint;
-                catch (Exception e)
+                catch (const Exception e)
                 {
                     logger.error(e.msg);
                 }
@@ -789,7 +789,7 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
             event.content = slice.nom(' ');
             event.aux = slice;
         }
-        catch (Exception e)
+        catch (const Exception e)
         {
             logger.error(e.msg);
         }
@@ -2207,7 +2207,7 @@ IRCEvent toIRCEvent(const string raw)
         // useful strings, like sender, target and content
         parseSpecialcases(event, slice);
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error(e.msg);
     }

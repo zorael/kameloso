@@ -237,7 +237,7 @@ Flag!"quit" handleArguments(string[] args)
             "version",       "Show version info", &shouldShowVersion,
         );
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         // User misspelled or supplied an invalid argument; error out and quit
         logger.error(e.msg);

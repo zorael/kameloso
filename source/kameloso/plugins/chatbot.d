@@ -58,7 +58,7 @@ string getQuote(const string nickname)
             return string.init;
         }
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error(e.msg);
         return string.init;
@@ -90,7 +90,7 @@ void addQuote(const string nickname, const string line)
             quotes.object[nickname] = JSONValue([ line ]);
         }
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         // No quotes at all
         logger.error(e.msg);

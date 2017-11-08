@@ -224,7 +224,7 @@ TitleLookup lookupTitle(const string url)
         lookup.domain = getDomainFromURL(url);
         lookup.when = Clock.currTime;
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         tlsLogger.error(e.msg);
 
@@ -375,7 +375,7 @@ void titleworker(shared Tid sMainThread)
                 else
                 {
                     try lookup = lookupTitle(url);
-                    catch (Exception e)
+                    catch (const Exception e)
                     {
                         logger.error(e.msg);
                     }

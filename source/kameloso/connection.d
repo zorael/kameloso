@@ -89,7 +89,7 @@ public:
             ips = getAddress(address, port);
             logger.infof("%s resolved into %d ips.", address, ips.length);
         }
-        catch (SocketException e)
+        catch (const SocketException e)
         {
             switch (e.msg)
             {
@@ -108,7 +108,7 @@ public:
                 assert(0);
             }
         }
-        catch (Exception e)
+        catch (const Exception e)
         {
             logger.error(e.msg);
             assert(0);
@@ -151,11 +151,11 @@ public:
                 logger.info("Connected!");
                 return;
             }
-            catch (SocketException e)
+            catch (const SocketException e)
             {
                 logger.warning("Failed! ", e.msg);
             }
-            catch (Exception e)
+            catch (const Exception e)
             {
                 logger.error(e.msg);
                 assert(0);

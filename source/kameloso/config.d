@@ -248,7 +248,7 @@ void setMember(Thing)(ref Thing thing, const string memberToSet,
                                 import std.conv : to;
 
                                 try member ~= value.to!MemberType;
-                                catch (Exception e)
+                                catch (const Exception e)
                                 {
                                     logger.warningf("Caught Exception trying " ~
                                         "to convert '%s' to %s: %s",
@@ -272,7 +272,7 @@ void setMember(Thing)(ref Thing thing, const string memberToSet,
 
                     // Trust to std.conv.to for conversion
                     try thing.tupleof[i] = value.to!MemberType;
-                    catch (Exception e)
+                    catch (const Exception e)
                     {
                         writefln("Caught Exception trying to convert '%s' to %s: %s",
                                 value, MemberType.stringof, e.msg);

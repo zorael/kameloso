@@ -275,7 +275,7 @@ auto getNotes(const string nickname)
             return noteArray;
         }
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error(e.msg);
         return noteArray;
@@ -302,7 +302,7 @@ void clearNotes(const string nickname)
             saveNotes(notesOptions.notesFile);
         }
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error(e.msg);
     }
@@ -347,7 +347,7 @@ void addNote(const string nickname, const string sender, const string line)
             notes[nickname] = [ lineAsAA ];
         }
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error(e.msg);
     }
