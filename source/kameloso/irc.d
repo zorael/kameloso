@@ -48,7 +48,7 @@ void parseBasic(ref IRCEvent event) @trusted
 
     // This is malformed for some strings but works anyway.
     //slice.formattedRead("%s :%s", event.typestring, slice);
-    event.typestring = slice.nom(" :");
+    immutable typestring = slice.nom(" :");
 
     /*immutable spaceIndex = event.typestring.indexOf(' ');
     if (spaceIndex != -1)
@@ -58,7 +58,7 @@ void parseBasic(ref IRCEvent event) @trusted
         event.typestring = event.typestring[0..spaceIndex];
     }*/
 
-    switch (event.typestring)
+    switch (typestring)
     {
     case "PING":
         event.type = IRCEvent.Type.PING;
@@ -89,7 +89,6 @@ void parseBasic(ref IRCEvent event) @trusted
             bot.server.network = IRCServer.Network.quakenet;  // only available locally
         }
 
-        event.typestring = "NOTICE";
         event.type = IRCEvent.Type.NOTICE;
         event.content = slice;
         event.aux = slice.stripRight();
@@ -123,7 +122,7 @@ void parseBasic(ref IRCEvent event) @trusted
         }
         else
         {
-            logger.warning("Unknown basic type: ", event.typestring);
+            logger.warning("Unknown basic type: ", typestring);
             logger.info("Please report this.");
         }
 
@@ -283,14 +282,14 @@ void parseTypestring(ref IRCEvent event, ref string slice)
     import kameloso.stringutils : nom, toEnum;
     import std.conv : to;
 
-    event.typestring = slice.nom(' ');
+    immutable typestring = slice.nom(' ');
 
-    if ((event.typestring[0] >= '0') && (event.typestring[0] <= '9'))
+    if ((typestring[0] >= '0') && (typestring[0] <= '9'))
     {
         // typestring is a number (ascii 48 is 0, 57 is 9)
         try
         {
-            immutable number = event.typestring.to!uint;
+            immutable number = typestring.to!uint;
             event.num = number;
             event.type = IRCEvent.typenums[number];
 
@@ -305,7 +304,7 @@ void parseTypestring(ref IRCEvent event, ref string slice)
     }
     else
     {
-        try event.type = event.typestring.toEnum!(IRCEvent.Type);
+        try event.type = typestring.toEnum!(IRCEvent.Type);
         catch (const Exception e)
         {
             logger.error(e.msg);
@@ -2126,9 +2125,6 @@ struct IRCEvent
 
     /// The address of the sender.
     string address;
-
-    /// The type in string form; a by-product of parsing.
-    string typestring;
 
     /// The channel the event transpired in, or is otherwise related to.
     string channel;
