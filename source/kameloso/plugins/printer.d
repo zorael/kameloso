@@ -14,7 +14,15 @@ private:
 /// All Printer plugin options gathered in a struct
 struct PrinterOptions
 {
-    bool monochrome;
+    version(Windows)
+    {
+        bool monochrome = true;
+    }
+    else
+    {
+        bool monochrome = false;
+    }
+
     bool truecolour = true;
     bool randomNickColours = true;
 }
