@@ -172,148 +172,157 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         version(Colours)
         {
             event.mapEffects();
-        }
 
-        enum DefaultColour
-        {
-            type    = lightblue,
-            sender  = lightgreen,
-            special = lightyellow,
-            target  = cyan,
-            channel = yellow,
-            content = default_,
-            aux     = white,
-            num     = darkgrey,
-        }
-
-        static BashForeground colourByHash(const string nickname)
-        {
-            if (printerOptions.randomNickColours)
+            enum DefaultColour
             {
-                import std.traits : EnumMembers;
-
-                static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
-
-                auto colourIndex = hashOf(nickname) % 16;
-                if (colourIndex == 1) colourIndex = 16;  // map black to white
-                return fg[colourIndex];
+                type    = lightblue,
+                sender  = lightgreen,
+                special = lightyellow,
+                target  = cyan,
+                channel = yellow,
+                content = default_,
+                aux     = white,
+                num     = darkgrey,
             }
 
-            // fixme
-            return DefaultColour.sender;
-        }
-
-        void colouriseSenderTruecolour()
-        {
-            if (event.colour.length && printerOptions.truecolour)
+            static BashForeground colourByHash(const string nickname)
             {
-                import kameloso.stringutils : numFromHex;
+                if (printerOptions.randomNickColours)
+                {
+                    import std.traits : EnumMembers;
 
-                int r, g, b;
-                event.colour.numFromHex(r, g, b);
-                sink.truecolourise(r, g, b);
+                    static immutable BashForeground[17] fg =
+                        [ EnumMembers!BashForeground ];
+
+                    auto colourIndex = hashOf(nickname) % 16;
+                    if (colourIndex == 1) colourIndex = 16;  // map black to white
+                    return fg[colourIndex];
+                }
+
+                // fixme
+                return DefaultColour.sender;
+            }
+
+            void colouriseSenderTruecolour()
+            {
+                if (event.colour.length && printerOptions.truecolour)
+                {
+                    import kameloso.stringutils : numFromHex;
+
+                    int r, g, b;
+                    event.colour.numFromHex(r, g, b);
+                    sink.truecolourise(r, g, b);
+                }
+                else
+                {
+                    sink.colourise(colourByHash(sender));
+                }
+            }
+
+            BashForeground typeColour = (type == IRCEvent.Type.QUERY) ?
+                lightgreen : DefaultColour.type;
+
+            sink.colourise(white);
+            //sink.formattedWrite("[%s] ", timestamp);
+            put(sink, '[', timestamp, "] ");
+            sink.colourise(typeColour);
+            //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
+            put(sink, '[', enumToString(type), "] ");
+
+            import std.algorithm : equal;
+            import std.uni : asLowerCase;
+
+            bool aliasPrinted;
+
+            colouriseSenderTruecolour();
+
+            if (alias_.length && alias_.asLowerCase.equal(sender))
+            {
+                sink.put(alias_);
+                aliasPrinted = true;
             }
             else
             {
-                sink.colourise(colourByHash(sender));
+                sink.put(sender);
             }
-        }
 
-        BashForeground typeColour = (type == IRCEvent.Type.QUERY) ?
-            lightgreen : DefaultColour.type;
+            if (special)
+            {
+                sink.colourise(DefaultColour.special);
+                sink.put('*');
+            }
 
-        sink.colourise(white);
-        //sink.formattedWrite("[%s] ", timestamp);
-        put(sink, '[', timestamp, "] ");
-        sink.colourise(typeColour);
-        //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
-        put(sink, '[', enumToString(type), "] ");
+            if (role != Role.init)
+            {
+                sink.colourise(white);
+                sink.formattedWrite(" [%s]", enumToString(role));
+            }
 
-        import std.algorithm : equal;
-        import std.uni : asLowerCase;
+            if (alias_.length && !aliasPrinted)
+            {
+                colouriseSenderTruecolour();
+                //sink.formattedWrite(" (%s)", alias_);
+                put(sink, " (", alias_, ')');
+            }
 
-        bool aliasPrinted;
+            if (target.length)
+            {
+                if (target[0] == '#')
+                {
+                    // Let all channels be one colour
+                    sink.colourise(DefaultColour.target);
+                }
+                else
+                {
+                    sink.colourise(colourByHash(event.target));
+                }
 
-        colouriseSenderTruecolour();
+                //sink.formattedWrite(" (%s)", target);
+                put(sink, " (", target, ')');
+            }
 
-        if (alias_.length && alias_.asLowerCase.equal(sender))
-        {
-            sink.put(alias_);
-            aliasPrinted = true;
+            if (channel.length)
+            {
+                sink.colourise(DefaultColour.channel);
+                //sink.formattedWrite(" [%s]", channel);
+                put(sink, " [", channel, ']');
+            }
+
+            if (content.length)
+            {
+                sink.colourise(DefaultColour.content);
+                //sink.formattedWrite(`: "%s"`, content);
+                put(sink, `: "`, content, '"');
+            }
+
+            if (aux.length)
+            {
+                sink.colourise(DefaultColour.aux);
+                //sink.formattedWrite(" <%s>", aux);
+                put(sink, " <", aux, '>');
+            }
+
+            if (num > 0)
+            {
+                sink.colourise(DefaultColour.num);
+                //sink.formattedWrite(" (#%d)", num);
+                put(sink, " (#", num, ')');
+            }
+
+            sink.colourise(default_);
+
+            static if (!__traits(hasMember, Sink, "data"))
+            {
+                sink.put('\n');
+            }
         }
         else
         {
-            sink.put(sender);
-        }
+            log.warning("bot was not built with colour support yet " ~
+                "monochrome is off; forcing monochrome.");
 
-        if (special)
-        {
-            sink.colourise(DefaultColour.special);
-            sink.put('*');
-        }
-
-        if (role != Role.init)
-        {
-            sink.colourise(white);
-            sink.formattedWrite(" [%s]", enumToString(role));
-        }
-
-        if (alias_.length && !aliasPrinted)
-        {
-            colouriseSenderTruecolour();
-            //sink.formattedWrite(" (%s)", alias_);
-            put(sink, " (", alias_, ')');
-        }
-
-        if (target.length)
-        {
-            if (target[0] == '#')
-            {
-                // Let all channels be one colour
-                sink.colourise(DefaultColour.target);
-            }
-            else
-            {
-                sink.colourise(colourByHash(event.target));
-            }
-
-            //sink.formattedWrite(" (%s)", target);
-            put(sink, " (", target, ')');
-        }
-
-        if (channel.length)
-        {
-            sink.colourise(DefaultColour.channel);
-            //sink.formattedWrite(" [%s]", channel);
-            put(sink, " [", channel, ']');
-        }
-
-        if (content.length)
-        {
-            sink.colourise(DefaultColour.content);
-            //sink.formattedWrite(`: "%s"`, content);
-            put(sink, `: "`, content, '"');
-        }
-
-        if (aux.length)
-        {
-            sink.colourise(DefaultColour.aux);
-            //sink.formattedWrite(" <%s>", aux);
-            put(sink, " <", aux, '>');
-        }
-
-        if (num > 0)
-        {
-            sink.colourise(DefaultColour.num);
-            //sink.formattedWrite(" (#%d)", num);
-            put(sink, " (#", num, ')');
-        }
-
-        sink.colourise(default_);
-
-        static if (!__traits(hasMember, Sink, "data"))
-        {
-            sink.put('\n');
+            printerOptions.monochrome = true;
+            return formatMessage(sink, event);
         }
     }
 }
