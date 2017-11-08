@@ -76,9 +76,15 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot)
         //                family of functions) since their behavior is always
         //                strange to me
         event.type = IRCEvent.Type.NOTICE;
-        event.sender = bot.server.address;
         event.content = slice;
         event.special = true;
+
+        if (bot.server.address != typeof(bot.server).init.address)
+        {
+            // No sender known and the address has been set to something
+            // Inherit that as sender
+            event.sender = bot.server.address;
+        }
         break;
 
     case "PONG":
