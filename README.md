@@ -4,7 +4,7 @@ A command-line IRC bot.
 
 kameloso sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not respond to keyboard input, though text can be sent manually by other means.
 
-It works on Freenode, Rizon and QuakeNet, with less confident support for Undernet, GameSurge, EFnet, DALnet, IRCnet, SwiftIRC, IRCHighWay, Twitch and UnrealIRCd servers. Definitions for those 12 servers exist and support varies from good to okay.
+It works well on Freenode, Rizon, QuakeNet and Twitch servers, with less confident support for Undernet, GameSurge, EFnet, DALnet, IRCnet, SwiftIRC, IRCHighWay and UnrealIRCd servers. Definitions for those 12 server networks exist and support varies from good to okay.
 
 Often a new server network will just work right away, but sometimes there's a slight difference in how they behave and respond, and changes will have to be made. It's usually fairly trivial modifications, like "does this network's `NickServ` just want a password, or a login *and* a password?", or "is `NickServ` replaced with `AuthServ`?"
 
@@ -16,10 +16,10 @@ Current functionality includes:
 * 8ball! because why not
 * storing, loading and printing quotes from users
 * saving notes to offline users that get played back when they come online
-* looking up titles of pasted URLs
+* looking up titles of pasted web URLs
 * sed-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
-* mIRC colour coding
+* mIRC colour coding and text effects (bold, underlined, ...), translalted into Bash formatting
 
 ## Getting Started
 
@@ -60,7 +60,7 @@ The bot needs the `NickServ`/`Q`/`AuthServ` login name of the administrator/mast
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you notice missing options in your configuration file, such as the new plugin-specific options for the printer and notes plugins, just run `--writeconfig` again and your file should be updated with all fields.
+If you notice missing options in your configuration file, such as the new plugin-specific options for the `printer` and `notes` plugins, just run `--writeconfig` again and your file should be updated with all fields.
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login in the configuration file before it will listen to anything you do.
 
@@ -83,15 +83,16 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 * "online" help; listing of verbs/commands
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
-* fix ctrl+c leaving behind fifos
-* JSON config file? but random ordering of entries, no lined-up columns
+* fix ctrl+c leaving behind fifos, needs catching signals
+* JSON config file? but random ordering of entries, no lined-up columns...
 * add ExamplePlugin
-* non-member struct UDAs to enums? (currently structs)
+* no-member struct UDAs to enums? (currently structs)
 * investigate inverse channel behaviour (blacklists)
-* solve scope creep (almost now)
-* revisit roles (badges) because this isn't working
+* solve scope creep (almost now); `loadBot`? cross-module globals?
+* revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
-* prettify configuration files; width is weird by neccessity of current design
+* prettify configuration files; width is weird by neccessity of current design but can easily be formatted as post-processing
+* split out Twitch bits into own plugin; need for plugins to be able to modify IRCEvents as they are constructed
 
 ## Built With
 
