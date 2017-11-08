@@ -438,7 +438,8 @@ if (is(Enum == enum))
             enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-        enumSwitch ~= `default: assert(0, "No such member " ~ enumstring);}`;
+        enumSwitch ~= `default: throw new Exception("No such enum member: "
+            ~ enumstring);}`;
 
         return enumSwitch;
     }();
@@ -463,7 +464,7 @@ unittest
         assert("PRIVMSG".toEnum!Type == PRIVMSG);
         assert("RPL_ENDOFMOTD".toEnum!Type == RPL_ENDOFMOTD);
         assert("UNSET".toEnum!Type == UNSET);
-        assertThrown!AssertError("DOESNTEXIST".toEnum!Type);  // needs @system
+        assertThrown!Exception("DOESNTEXIST".toEnum!Type);  // needs @system
     }
 }
 
