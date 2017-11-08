@@ -318,7 +318,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
         else
         {
-            log.warning("bot was not built with colour support yet " ~
+            logger.warning("bot was not built with colour support yet " ~
                 "monochrome is off; forcing monochrome.");
 
             printerOptions.monochrome = true;
