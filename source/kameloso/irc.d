@@ -503,12 +503,6 @@ void parseSpecialcases(ref IRCEvent event, ref string slice)
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
         event.type = (event.sender == bot.nickname) ? SELFNICK : NICK;
         event.content = slice[1..$];
-
-        if (event.type == SELFNICK)
-        {
-            bot.nickname = event.content;
-            hooks.onNewBot(bot);  // Propagate the new bot
-        }
         break;
 
     case QUIT:
