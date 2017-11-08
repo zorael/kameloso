@@ -919,7 +919,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         //slice.formattedRead("%s :%s", event.target, event.content);
         event.target = slice.nom(" :");
         event.content = slice;
-        bot.nickname = event.target;  // propagate?
+        bot.nickname = event.target;
+        bot.updated = true;
         break;
 
     case TOCONNECTTYPE: // 513
