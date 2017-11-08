@@ -83,7 +83,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 * "online" help; listing of verbs/commands
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
-* fix ctrl+c leaving behind fifos, needs catching signals
+* (posix) fix ctrl+c leaving behind fifos, needs catching signals
 * JSON config file? but random ordering of entries, no lined-up columns...
 * add ExamplePlugin
 * no-member struct UDAs to enums? (currently structs)
@@ -92,7 +92,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
 * prettify configuration files; width is weird by neccessity of current design but can easily be formatted as post-processing
-* split out Twitch bits into own plugin; need for plugins to be able to modify IRCEvents as they are constructed
+* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are constructed
 
 ## Built With
 
