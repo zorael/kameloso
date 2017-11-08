@@ -10,6 +10,7 @@ import kameloso.plugins;
 import std.concurrency;
 import std.datetime : SysTime;
 import std.stdio;
+import std.typecons : Flag, No, Yes;
 
 version(Windows)
 shared static this()

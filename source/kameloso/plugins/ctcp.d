@@ -88,6 +88,7 @@ void onCTCPs(const IRCEvent event)
 void onCTCPClientinfo(const IRCEvent event)
 {
     import std.concurrency : send;
+    import std.format : format;
 
     enum string allCTCPTypes = ()
     {

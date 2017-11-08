@@ -165,6 +165,7 @@ TitleLookup lookupTitle(const string url)
     import requests : Request;
     import std.array : Appender;
     import std.datetime : Clock;
+    import std.string : indexOf;
 
     TitleLookup lookup;
     Appender!string pageContent;

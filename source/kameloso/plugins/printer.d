@@ -85,7 +85,7 @@ void onAnyEvent(const IRCEvent origEvent)
  +/
 void put(Sink, Args...)(auto ref Sink sink, Args args)
 {
-    import std.range : put;
+    static import std.range;
     import std.conv : to;
 
     foreach (arg; args)

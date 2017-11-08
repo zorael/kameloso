@@ -340,6 +340,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
                 foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
                 {
+                    import std.format : format;
 
                     enum name = "%s : %s (%s)".format(module_,
                         __traits(identifier, fun), eventTypeUDA);
