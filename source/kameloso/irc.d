@@ -820,10 +820,9 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
             //slice.formattedRead("%s %s :%s", event.target, event.aux, event.content);
-            /*event.target = slice.nom(' ');
+            event.target = slice.nom(' ');
             event.aux = slice.nom(" :");
-            event.content = slice;*/
-            goto case ERR_NEEDMOREPARAMS;
+            event.content = slice;
         }
         break;
 
