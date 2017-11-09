@@ -20,6 +20,7 @@ Current functionality includes:
 * sed-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
 * mIRC colour coding and text effects (bold, underlined, ...), translalted into Bash formatting
+* SASL authentication (plain)
 
 ## Getting Started
 
