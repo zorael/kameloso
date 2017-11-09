@@ -92,6 +92,11 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot)
         event.sender = slice;
         break;
 
+    case "AUTHENTICATE":
+        event.content = slice;
+        event.type = IRCEvent.Type.SASL_AUTHENTICATE;
+        break;
+
     default:
         import kameloso.stringutils : beginsWith;
 
@@ -1684,10 +1689,14 @@ struct IRCEvent
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
+        SASL_AUTHENTICATE,
         SUB, RESUB,
         AUTH_CHALLENGE,
         AUTH_FAILURE,
         AUTH_SUCCESS, // = 900          // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
+        SASL_SUCCESS, // = 903          // :cherryh.freenode.net 903 kameloso^ :SASL authentication successful
+        SASL_FAILURE, // = 904          // :irc.rizon.no 904 kameloso^^ :SASL authentication failed"
+        SASL_ABORTED, // = 906          // :orwell.freenode.net 906 kameloso^ :SASL authentication aborted
         USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
         USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
         USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
@@ -2047,6 +2056,9 @@ struct IRCEvent
         705 : Type.HELP_ENTRIES,
         706 : Type.HELP_END,
         900 : Type.AUTH_SUCCESS,
+        903 : Type.SASL_SUCCESS,
+        904 : Type.SASL_FAILURE,
+        906 : Type.SASL_ABORTED,
     ];
 
     enum Role
