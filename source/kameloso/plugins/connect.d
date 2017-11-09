@@ -366,7 +366,6 @@ void onInvite(const IRCEvent event)
  +  have to be requested (CAP LS), and the negotiations need to be ended
  +  (CAP END).
  +/
-@(IRCEvent.Type.NOTICE)
 @(IRCEvent.Type.CAP)
 void onRegistrationEvent(const IRCEvent event)
 {
@@ -400,6 +399,13 @@ void onRegistrationEvent(const IRCEvent event)
 
         state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
     }
+}
+
+
+@(IRCEvent.Type.NOTICE)
+void onNotice(const IRCEvent event)
+{
+    if (!state.bot.finishedRegistering) return;
 
     if (event.sender.length && !state.bot.server.resolvedAddress.length)
     {
