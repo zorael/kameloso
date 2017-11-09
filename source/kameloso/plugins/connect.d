@@ -447,6 +447,58 @@ void onNotice(const IRCEvent event)
 }
 
 
+@(IRCEvent.Type.SASL_AUTHENTICATE)
+void onSASLAuthenticate(const IRCEvent event)
+{
+    with (state)
+    {
+        import std.base64 : Base64;
+
+        immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
+        immutable authToken = "%s%c%s%c%s"
+            .format(bot.origNickname, '\0', authLogin, '\0', bot.authPassword);
+        immutable encoded = Base64.encode(cast(ubyte[])authToken);
+
+        mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
+        logger.trace("--> AUTHENTICATE hunter2");
+    }
+}
+
+
+@(IRCEvent.Type.SASL_SUCCESS)
+void onSASLSuccess()
+{
+    // Naïve, revisit
+    state.bot.finishedRegistering = true;
+    state.bot.finishedAuth = true;
+
+    /++
+    +  The END subcommand signals to the server that capability negotiation
+    +  is complete and requests that the server continue with client
+    +  registration. If the client is already registered, this command
+    +  MUST be ignored by the server.
+    +
+    +  Clients that support capabilities but do not wish to enter negotiation
+    +  SHOULD send CAP END upon connection to the server.
+    +
+    +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
+    +/
+
+    state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+}
+
+
+@(IRCEvent.Type.SASL_FAILURE)
+void onSASLFailure()
+{
+    // End CAP but don't flag as finished auth
+    state.bot.finishedRegistering = true;
+
+    // See onSASLSuccess for info on CAP END
+    state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+}
+
+
 // register
 /++
  +  Register with/log onto an IRC server.
