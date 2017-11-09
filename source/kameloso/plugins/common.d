@@ -251,8 +251,6 @@ mixin template IRCPluginBasics()
 
      void writeConfig(const string configFile)
      {
-         import std.stdio;
-
          static if (__traits(compiles, .writeConfig(string.init)))
          {
              .writeConfig(configFile);
@@ -267,8 +265,6 @@ mixin template IRCPluginBasics()
      +/
     void loadConfig(const string configFile)
     {
-        import std.stdio;
-
         static if (__traits(compiles, .loadConfig(string.init)))
         {
             .loadConfig(configFile);

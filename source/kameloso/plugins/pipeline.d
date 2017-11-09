@@ -9,7 +9,7 @@ import kameloso.plugins.common;
 
 import std.concurrency;
 import std.experimental.logger;
-import std.stdio : File;
+import std.stdio;
 
 private:
 

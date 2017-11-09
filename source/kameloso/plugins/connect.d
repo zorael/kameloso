@@ -8,6 +8,7 @@ import kameloso.stringutils;
 
 import std.concurrency : send;
 import std.format : format;
+import std.stdio;
 
 private:
 

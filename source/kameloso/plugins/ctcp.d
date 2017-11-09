@@ -5,6 +5,8 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
+import std.stdio;
+
 private:
 
 /// All plugin state variables gathered in a struct

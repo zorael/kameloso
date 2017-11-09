@@ -5,6 +5,7 @@ import kameloso.constants;
 
 import core.time : seconds;
 import std.socket;
+import std.stdio;
 
 
 // Connection

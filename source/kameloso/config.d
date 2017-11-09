@@ -165,7 +165,6 @@ void writeConfigToDisk(T...)(const string configFile, T things)
 {
     import std.datetime : Clock;
     import std.file : exists, isFile, removeFile = remove;
-    import std.stdio  : File;
 
     if (configFile.exists && configFile.isFile)
     {

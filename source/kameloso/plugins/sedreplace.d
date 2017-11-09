@@ -7,6 +7,7 @@ import kameloso.plugins.common;
 
 import std.concurrency : send;
 import std.regex : ctRegex;
+import std.stdio;
 
 private:
 

@@ -12,6 +12,7 @@ import kameloso.plugins.common;
 import std.concurrency : send, Tid;
 import std.experimental.logger;
 import std.regex : ctRegex;
+import std.stdio;
 
 private:
 

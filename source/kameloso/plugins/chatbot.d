@@ -110,7 +110,6 @@ void addQuote(const string nickname, const string line)
 void saveQuotes(const string filename)
 {
     import std.file  : exists, isFile, remove;
-    import std.stdio : File;
 
     if (filename.exists && filename.isFile)
     {
