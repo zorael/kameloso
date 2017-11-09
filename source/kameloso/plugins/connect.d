@@ -197,6 +197,8 @@ void onEndOfMotd(const IRCEvent event)
             return;
         }
 
+        if (bot.finishedAuth) return;
+
         bot.startedAuth = true;
 
         final switch (bot.server.network)
@@ -310,7 +312,8 @@ void onEndOfMotd(const IRCEvent event)
 @(IRCEvent.Type.AUTH_FAILURE)
 void onAuthEnd()
 {
-    if (state.bot.finishedAuth) return;
+    // This can be before registration ends in case of SASL
+    if (state.bot.finishedAuth || !state.bot.finishedRegistering) return;
 
     state.bot.finishedAuth = true;
     logger.info("Joining channels");
