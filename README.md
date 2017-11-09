@@ -84,7 +84,6 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 * "online" help; listing of verbs/commands
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
-* (posix) fix ctrl+c leaving behind fifos, needs catching signals
 * JSON config file? but random ordering of entries, no lined-up columns...
 * add ExamplePlugin
 * no-member struct UDAs to enums? (currently structs)
