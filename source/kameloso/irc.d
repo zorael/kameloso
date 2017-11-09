@@ -127,6 +127,7 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
         else
         {
             logger.warning("Unknown basic type: ", typestring);
+            logger.trace(event.raw);
             logger.info("Please report this.");
         }
 
