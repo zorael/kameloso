@@ -844,10 +844,19 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
         // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
         // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
+        // :irc.uworld.se 265 kameloso^^ :Current local users: 14552  Max: 19744
+        // :irc.uworld.se 266 kameloso^^ :Current global users: 14552  Max: 19744
         //slice.formattedRead("%s %s :%s", event.target, event.aux, event.content);
         event.target = slice.nom(' ');
-        event.aux = slice.nom(" :");
-        event.content = slice;
+
+        if (slice.indexOf(" :") != -1)
+        {
+            event.aux = slice.nom(" :");
+        }
+        else
+        {
+            event.content = slice[1..$];
+        }
         break;
 
     case RPL_WHOISUSER: // 311
