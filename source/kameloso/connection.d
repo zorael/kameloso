@@ -140,7 +140,7 @@ public:
                 setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
                     Timeout.receive.seconds*5);
 
-                logger.infof("Connecting to %s ...", ip);
+                logger.logf("Connecting to %s ...", ip);
                 socket.connect(ip);
 
                 setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
@@ -148,7 +148,7 @@ public:
 
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
-                logger.info("Connected!");
+                logger.log("Connected!");
                 return;
             }
             catch (const SocketException e)
