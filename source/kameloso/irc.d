@@ -975,11 +975,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case CAP:
         if (slice.indexOf('*') != -1)
         {
+            import std.string : stripRight;
+
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
             //slice.formattedRead("* %s :%s", event.aux, event.content);
             slice.nom("* ");
             event.aux = slice.nom(" :");
-            event.content = slice;
+            event.content = slice.stripRight();
         }
         else
         {
