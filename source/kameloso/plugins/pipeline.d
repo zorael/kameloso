@@ -55,7 +55,7 @@ void pipereader(shared IRCPluginState newState)
 
     scope(exit)
     {
-        tlsLogger.info("Deleting FIFO from disk");
+        tlsLogger.log("Deleting FIFO from disk");
         remove(fifo.name);
     }
 
@@ -133,7 +133,7 @@ void createFIFO()
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
 
-    tlsLogger.info("Creating FIFO: ", filename);
+    tlsLogger.log("Creating FIFO");
 
     if (!filename.exists)
     {
@@ -146,6 +146,9 @@ void createFIFO()
             " but a directory exists with the same name");
         return;
     }
+
+    tlsLogger.info("Pipe text to ./", filename,
+        " to send raw commands to the server");
 
     fifo = File(filename, "r");
 }

@@ -223,7 +223,7 @@ public:
  +  Yields:
  +      full IRC event strings.
  +/
-void listenFiber(Connection conn)
+void listenFiber(Connection conn, ref bool abort)
 {
     import core.stdc.string : memmove;
     import std.algorithm.searching : countUntil;
@@ -234,7 +234,7 @@ void listenFiber(Connection conn)
     SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
-    while (true)
+    while (!abort)
     {
         const ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
 

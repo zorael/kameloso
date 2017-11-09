@@ -25,6 +25,9 @@ shared static this()
 
 private:
 
+/// When this is set, the program should exit
+bool abort;
+
 /// State variables and configuration for the IRC bot.
 IRCBot bot;
 
@@ -44,6 +47,15 @@ Connection conn;
 SysTime[string] whoisCalls;
 
 
+
+extern (C)
+void signalHandler(int signal) nothrow @nogc @system
+{
+    printf("...caught signal %d!\n", signal);
+    abort = true;
+}
+
+
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was received.
@@ -61,7 +73,7 @@ Flag!"quit" checkMessages()
     scope (failure)
     {
         logger.error("[main.checkMessages] FAILURE");
-        foreach (plugin; plugins) plugin.teardown();
+        teardownPlugins();
     }
 
     Flag!"quit" quit;
@@ -328,7 +340,7 @@ void initPlugins()
      +     (i.e they're imported)
      +/
 
-    foreach (plugin; plugins) plugin.teardown();
+    teardownPlugins();
 
     IRCPluginState state;
     state.bot = bot;
@@ -363,6 +375,14 @@ void initPlugins()
     }
 }
 
+void teardownPlugins()
+{
+    if (!plugins.length) return;
+
+    logger.info("Deinitialising plugins");
+    foreach (plugin; plugins) plugin.teardown();
+}
+
 /// Writes the current configuration to the config file specified in the Settings.
 void writeConfigAndPrint(const string configFile)
 {
@@ -393,6 +413,16 @@ void main() {
 else
 int main(string[] args)
 {
+    // Set up signal handlers
+    import core.stdc.signal;
+    signal(SIGINT, &signalHandler);
+
+    version(Posix)
+    {
+        import core.sys.posix.signal;
+        signal(SIGHUP, &signalHandler);
+    }
+
     // Initialise the logger immediately so it's always available, reinit later
     initLogger();
 
@@ -437,10 +467,26 @@ int main(string[] args)
 
         initPlugins();
 
-        auto generator = new Generator!string(() => listenFiber(conn));
+        auto generator = new Generator!string(() => listenFiber(conn, abort));
         quit = loopGenerator(generator);
     }
-    while (!quit);
+    while (!quit && !abort);
+
+    import core.thread;
+    if (quit)
+    {
+        teardownPlugins();
+    }
+    else if (abort)
+    {
+        logger.warning("Aborting...");
+        teardownPlugins();
+        thread_joinAll();
+        return 1;
+    }
+
+    logger.info("Exiting...");
+    thread_joinAll();
 
     return 0;
 }
