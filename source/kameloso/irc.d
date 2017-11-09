@@ -443,11 +443,16 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             with (AuthSuccess)
             {
                 if ((content.beginsWith(freenode)) ||
-                    (content.beginsWith(quakenet)) ||
+                    (content.beginsWith(quakenet)) || // also Freenode SASL
                     (content == rizon) ||
                     (content == gamesurge))
                 {
                     type = AUTH_SUCCESS;
+
+                    if (event.target.indexOf(' ') != -1)
+                    {
+                        event.target = bot.nickname;
+                    }
                 }
             }
 
