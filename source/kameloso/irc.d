@@ -449,10 +449,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
                 {
                     type = AUTH_SUCCESS;
 
-                    if (event.target.indexOf(' ') != -1)
-                    {
-                        event.target = bot.nickname;
-                    }
+                    // Restart with the new type
+                    return parseSpecialcases(event, bot, slice);
                 }
             }
 
@@ -1086,6 +1084,15 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
 
         event.role = Role.SERVER;
+        break;
+
+    case AUTH_SUCCESS:
+    case SASL_SUCCESS:
+        if (event.target.indexOf(' ') != -1)
+        {
+            event.target = bot.nickname;
+        }
+
         break;
 
     default:
