@@ -31,23 +31,30 @@ uint maxChannelLength = 200;
  +  Params:
  +      ref event = the IRCEvent to fill out the members of.
  +/
-void parseBasic(ref IRCEvent event, ref IRCBot bot)
+void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
 {
+    import std.algorithm.searching : canFind;
+
     mixin(scopeguard(failure));
 
     string slice = event.raw;
 
     // This is malformed for some strings but works anyway.
     //slice.formattedRead("%s :%s", event.typestring, slice);
-    immutable typestring = slice.nom(" :");
+    string typestring;
 
-    /*immutable spaceIndex = event.typestring.indexOf(' ');
-    if (spaceIndex != -1)
+    if ((cast(ubyte[])slice).canFind(':'))
     {
-        // NOTICE AUTH
-        // discard AUTH...
-        event.typestring = event.typestring[0..spaceIndex];
-    }*/
+        typestring = slice.nom(" :");
+    }
+    else if ((cast(ubyte[])slice).canFind(' '))
+    {
+        typestring = slice.nom(' ');
+    }
+    else
+    {
+        typestring = slice;
+    }
 
     switch (typestring)
     {
