@@ -415,8 +415,14 @@ void onRegistrationEvent(const IRCEvent event)
             mainThread.send(ThreadMessage.Sendline(), "AUTHENTICATE PLAIN");
             break;
 
+        /*case "twitch.tv/membership":
+        case "twitch.tv/tags":
+        case "twitch.tv/commands":
+            // Uncomment if we ever need this
+            break;*/
+
         default:
-            logger.warning("Unhandled capability ACK: ", event.content);
+            //logger.warning("Unhandled capability ACK: ", event.content);
             break;
         }
         break;
