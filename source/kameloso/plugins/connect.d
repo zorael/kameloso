@@ -369,35 +369,67 @@ void onInvite(const IRCEvent event)
 @(IRCEvent.Type.CAP)
 void onRegistrationEvent(const IRCEvent event)
 {
-    if (state.bot.finishedRegistering) return;
-
-    if ((event.type == IRCEvent.Type.CAP) && (event.aux == "LS"))
+    with (state)
+    switch (event.aux)
     {
+    case "LS":
         // Specialcase some Twitch capabilities
+        import std.algorithm.iteration : splitter;
 
-        if (state.bot.server.network == IRCServer.Network.twitch)
+        bool tryingSASL;
+
+        foreach (const cap; event.content.splitter(' '))
         {
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "CAP REQ :twitch.tv/membership");
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "CAP REQ :twitch.tv/tags");
-            state.mainThread.send(ThreadMessage.Sendline(),
-                "CAP REQ :twitch.tv/commands");
+            switch (cap)
+            {
+            case "sasl":
+                mainThread.send(ThreadMessage.Sendline(), "CAP REQ :sasl");
+                tryingSASL = true;
+                break;
+
+            case "twitch.tv/membership":
+            case "twitch.tv/tags":
+            case "twitch.tv/commands":
+                // Twitch-specific capabilites
+                mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
+                break;
+
+            default:
+                // logger.warning("Unhandled capability: ", cap);
+                break;
+            }
         }
 
-        /++
-         +  The END subcommand signals to the server that capability negotiation
-         +  is complete and requests that the server continue with client
-         +  registration. If the client is already registered, this command
-         +  MUST be ignored by the server.
-         +
-         +  Clients that support capabilities but do not wish to enter negotiation
-         +  SHOULD send CAP END upon connection to the server.
-         +
-         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
-         +/
+        if (!tryingSASL)
+        {
+            // No SASL request in action, safe to end handshake
+            // See onSASLSuccess for info on CAP END
+            state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        }
 
-        state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        break;
+    case "ACK":
+        switch (event.content)
+        {
+        case "sasl":
+            mainThread.send(ThreadMessage.Sendline(), "AUTHENTICATE PLAIN");
+            break;
+
+        default:
+            logger.warning("Unhandled capability ACK: ", event.content);
+            break;
+        }
+        break;
+
+    default:
+        // logger.warning("Unhandled capability type: ", event.aux);
+        break;
+    }
+
+    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    {
+        state.bot.server.resolvedAddress = event.sender;
+        updateBot();
     }
 }
 
