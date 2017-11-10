@@ -212,13 +212,13 @@ Flag!"quit" handleArguments(string[] args)
 
     bool shouldWriteConfig;
     bool shouldShowVersion;
-    GetoptResult getoptResults;
+    GetoptResult results;
 
     try
     {
         arraySep = ",";
 
-        getoptResults = args.getopt(
+        results = args.getopt(
             config.caseSensitive,
             "n|nickname",    "Bot nickname", &bot.nickname,
             "u|user",        "Username when registering onto server (not nickname)",
@@ -259,8 +259,8 @@ Flag!"quit" handleArguments(string[] args)
     Settings settingsFromConfig;
 
     // These arguments are by reference.
-    settings.configFile.readConfig(botFromConfig, botFromConfig.server,
-        settingsFromConfig);
+    settings.configFile.readConfigInto(botFromConfig,
+        botFromConfig.server, settingsFromConfig);
 
     botFromConfig.meldInto(bot);
     settingsFromConfig.meldInto(settings);
@@ -271,7 +271,7 @@ Flag!"quit" handleArguments(string[] args)
     // Give common.d a copy of Settings. FIXME
     kameloso.common.settings = settings;
 
-    if (getoptResults.helpWanted)
+    if (results.helpWanted)
     {
         printVersionInfo(BashForeground.white);
         writeln();
@@ -279,7 +279,7 @@ Flag!"quit" handleArguments(string[] args)
         defaultGetoptPrinter(colourise(BashForeground.lightgreen) ~
                             "Command-line arguments available:\n" ~
                             colourise(BashForeground.default_),
-                            getoptResults.options);
+                            results.options);
         writeln();
         return Yes.quit;
     }
