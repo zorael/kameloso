@@ -201,12 +201,13 @@ void printObject(Thing)(Thing thing)
  +  Don't use this directly, instead use printObjects(Things...).
  +
  +  Params:
- +      thing = The struct object to enumerate.
+ +      sink = output range to write to
+ +      things = one or more structs to enumerate and format.
  +/
 void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isArray, isSomeFunction, isSomeString;
+    import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
 
     // workaround formattedWrite taking Appender by value
@@ -228,10 +229,11 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
+                import std.traits : isArray, isSomeString;
+
                 alias T = Unqual!(typeof(member));
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                //static if (is(MemberType : string))
                 static if (isSomeString!T)
                 {
                     enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
@@ -317,7 +319,8 @@ unittest
  +  Don't use this directly, instead use printObjects(Things...).
  +
  +  Params:
- +      thing = The struct object to enumerate.
+ +      sink = output range to write to
+ +      things = one or more structs to enumerate and format.
  +/
 void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
 {
@@ -341,21 +344,34 @@ void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                alias MemberType = Unqual!(typeof(member));
-                enum typestring = MemberType.stringof;
+                import std.traits : isArray, isSomeString;
+
+                alias T = Unqual!(typeof(member));
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                static if (is(MemberType : string))
+                static if (isSomeString!T)
                 {
                     enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
-                    sink.formattedWrite(stringPattern, typestring,
+                    sink.formattedWrite(stringPattern, T.stringof,
                         (entryPadding + 2), memberstring,
                         member, member.length);
+                }
+                else static if (isArray!T)
+                {
+                    immutable width = member.length ?
+                        (entryPadding + 2) : (entryPadding + 4);
+
+                    enum arrayPattern = "%9s %-*s%s(%d)\n";
+                    sink.formattedWrite!arrayPattern(
+                        T.stringof,
+                        width, memberstring,
+                        member,
+                        member.length);
                 }
                 else
                 {
                     enum normalPattern = "%9s %-*s  %s\n";
-                    sink.formattedWrite(normalPattern, typestring,
+                    sink.formattedWrite(normalPattern, T.stringof,
                         (entryPadding + 2), memberstring, member);
                 }
             }
