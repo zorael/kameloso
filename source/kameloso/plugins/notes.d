@@ -12,13 +12,13 @@ import std.stdio;
 
 private:
 
-struct NotesOptions
+struct Notes
 {
     string notesFile = "notes.json";
 }
 
 /// All Notes plugin options gathered
-NotesOptions notesOptions;
+Notes notesOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
