@@ -25,7 +25,7 @@ shared static this()
 
 private:
 
-/// When this is set, the program should exit
+/// When this is set by signal handlers, the program should exit.
 bool abort;
 
 /// State variables and configuration for the IRC bot.
@@ -45,7 +45,6 @@ Connection conn;
 
 /// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
-
 
 
 extern (C)
@@ -286,6 +285,7 @@ Flag!"quit" handleArguments(string[] args)
     }
 
     // Try to resolve which IRC network we're connecting to based on addresses
+    // Why though?
     bot.server.resolveNetwork();
 
     // If --version was supplied we should just show info and quit
