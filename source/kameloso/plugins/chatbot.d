@@ -13,13 +13,16 @@ import std.stdio;
 
 private:
 
-struct ChatbotOptions
+struct Chatbot
 {
     string quotesFile = "quotes.json";
+    bool eightball = true;
+    bool quotes = true;
+    bool say = true;
 }
 
 /// All ChatBot plugin options gathered
-ChatbotOptions chatbotOptions;
+Chatbot chatbotOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -176,6 +179,8 @@ JSONValue loadQuotes(const string filename)
 @Prefix(NickPrefixPolicy.required, "säg")
 void onCommandSay(const IRCEvent event)
 {
+    if (!chatbotOptions.say) return;
+
     import std.format : format;
 
     if (!event.content.length)
@@ -208,6 +213,8 @@ void onCommandSay(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "8ball")
 void onCommand8ball(const IRCEvent event)
 {
+    if (!chatbotOptions.eightball) return;
+
     import std.format : format;
     import std.random : uniform;
 
@@ -260,6 +267,8 @@ void onCommand8ball(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "quote")
 void onCommandQuote(const IRCEvent event)
 {
+    if (!chatbotOptions.quotes) return;
+
     import std.format : format;
     import std.string : indexOf, strip;
 
@@ -304,6 +313,8 @@ void onCommandQuote(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "addquote")
 void onCommanAdddQuote(const IRCEvent event)
 {
+    if (!chatbotOptions.quotes) return;
+
     import std.format : format;
 
     string slice = event.content;  // need mutable
@@ -334,6 +345,8 @@ void onCommanAdddQuote(const IRCEvent event)
 @Prefix(NickPrefixPolicy.required, "printquotes")
 void onCommandPrintQuotes()
 {
+    if (!chatbotOptions.quotes) return;
+
     writeln(quotes.toPrettyString);
 }
 
@@ -351,6 +364,8 @@ void onCommandPrintQuotes()
 @Prefix(NickPrefixPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
+    if (!chatbotOptions.quotes) return;
+
     logger.log("Reloading quotes");
     quotes = loadQuotes(chatbotOptions.quotesFile);
 }
@@ -392,7 +407,7 @@ mixin OnEventImpl!__MODULE__;
  +  Chatbot plugin to provide common chat functionality. Administrative actions have been
  +  broken out into a plugin of its own.
  +/
-final class Chatbot : IRCPlugin
+final class ChatbotPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
 }
