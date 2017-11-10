@@ -309,7 +309,7 @@ Flag!"quit" handleArguments(string[] args)
         sink.reserve(512);
         sink.serialise(bot, bot.server, settings);
 
-        printObjects(bot, bot.server);
+        printObjects(bot, bot.server, settings);
 
         foreach (plugin; plugins)
         {
