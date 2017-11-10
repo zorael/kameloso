@@ -68,32 +68,27 @@ void signalHandler(int signal) nothrow @nogc @system
  +/
 Flag!"quit" checkMessages()
 {
-    import core.time : seconds;
-
-    scope (failure)
-    {
-        logger.error("[main.checkMessages] FAILURE");
-        teardownPlugins();
-    }
+    scope (failure) teardownPlugins();
 
     Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server
-    void sendline(ThreadMessage.Sendline, string line)
+    static void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
         conn.sendline(line);
     }
 
     /// Send a line to the server without echoing it
-    void quietline(ThreadMessage.Quietline, string line)
+    static void quietline(ThreadMessage.Quietline, string line)
     {
         conn.sendline(line);
     }
 
     /// Send a WHOIS call to the server, and buffer the requests.
-    void whois(ThreadMessage.Whois, IRCEvent event)
+    static void whois(ThreadMessage.Whois, IRCEvent event)
     {
+        import core.time : seconds;
         import std.datetime : Clock;
 
         if (bot.server.network == IRCServer.Network.twitch)
@@ -119,7 +114,7 @@ Flag!"quit" checkMessages()
 
     /// Receive an updated bot, inherit it into .bot and propagate it to
     /// all plugins.
-    void updateBot(shared IRCBot bot)
+    static void updateBot(shared IRCBot bot)
     {
         .bot = cast(IRCBot)bot;
 
@@ -128,7 +123,7 @@ Flag!"quit" checkMessages()
 
     /// Receive new settings, inherit them into .settings and propagate
     /// them to all plugins.
-    void updateSettings(Settings settings)
+    static void updateSettings(Settings settings)
     {
         .settings = settings;
 
@@ -136,7 +131,7 @@ Flag!"quit" checkMessages()
     }
 
     /// Respond to PING with PONG to the supplied text as target.
-    void pong(ThreadMessage.Pong, string target)
+    static void pong(ThreadMessage.Pong, string target)
     {
         conn.sendline("PONG :", target);
     }
@@ -157,9 +152,11 @@ Flag!"quit" checkMessages()
     }
 
     /// Fake that a string was received from the server
-    void stringToEvent(string line)
+    static void stringToEvent(string line)
     {
         immutable event = line.toIRCEvent(bot);
+
+        logger.info("Forging an event!");
 
         foreach (plugin; plugins) plugin.onEvent(event);
     }
