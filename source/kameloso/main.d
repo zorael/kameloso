@@ -422,6 +422,89 @@ void initLogger()
 }
 
 
+// loopGenerator
+/++
+ +  This loops over the Generator fiber that's reading from the socket.
+ +
+ +  Full lines are yielded in the Generator to be caught here, consequently
+ +  parsed into IRCEvents, and then dispatched to all the plugins.
+ +
+ +  Params:
+ +      generator = a string-returning Generator that's reading from the socket.
+ +
+ +  Returns:
+ +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
+ +/
+Flag!"quit" loopGenerator(Generator!string generator)
+{
+    import core.thread : Fiber;
+
+    Flag!"quit" quit;
+
+    while (!quit)
+    {
+        if (generator.state == Fiber.State.TERM)
+        {
+            // Listening Generator disconnected; reconnect
+            generator.reset();
+            return No.quit;
+        }
+
+        generator.call();
+
+        foreach (immutable line; generator)
+        {
+            // Empty line yielded means nothing received
+            if (!line.length) break;
+
+            immutable event = line.toIRCEvent(bot);
+
+            bool spammedAboutReplaying;
+
+            foreach (plugin; plugins)
+            {
+                if (bot.updated)
+                {
+                    // IRCBot was marked as having been changed; propagate
+                    bot.updated = false;
+                    plugin.newBot(bot);
+                }
+
+                plugin.onEvent(event);
+
+                if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
+                    (event.type == IRCEvent.Type.HASTHISNICK))
+                {
+                    const savedEvent = event.target in replayQueue;
+                    if (!savedEvent) continue;
+
+                    if (!spammedAboutReplaying)
+                    {
+                        logger.info("Replaying event:");
+                        printObjects(*savedEvent);
+                        spammedAboutReplaying = true;
+                    }
+
+                    plugin.onEvent(*savedEvent);
+                }
+            }
+
+            if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
+                (event.type == IRCEvent.Type.HASTHISNICK))
+            {
+                // These events signify a completed WHOIS
+                replayQueue.remove(event.target);
+            }
+        }
+
+        // Check concurrency messages to see if we should exit
+        quit = checkMessages();
+    }
+
+    return Yes.quit;
+}
+
+
 public:
 
 
@@ -514,87 +597,4 @@ int main(string[] args)
     thread_joinAll();
 
     return 0;
-}
-
-
-// loopGenerator
-/++
- +  This loops over the Generator fiber that's reading from the socket.
- +
- +  Full lines are yielded in the Generator to be caught here, consequently
- +  parsed into IRCEvents, and then dispatched to all the plugins.
- +
- +  Params:
- +      generator = a string-returning Generator that's reading from the socket.
- +
- +  Returns:
- +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
- +/
-Flag!"quit" loopGenerator(Generator!string generator)
-{
-    import core.thread : Fiber;
-
-    Flag!"quit" quit;
-
-    while (!quit)
-    {
-        if (generator.state == Fiber.State.TERM)
-        {
-            // Listening Generator disconnected; reconnect
-            generator.reset();
-            return No.quit;
-        }
-
-        generator.call();
-
-        foreach (immutable line; generator)
-        {
-            // Empty line yielded means nothing received
-            if (!line.length) break;
-
-            immutable event = line.toIRCEvent(bot);
-
-            bool spammedAboutReplaying;
-
-            foreach (plugin; plugins)
-            {
-                if (bot.updated)
-                {
-                    // IRCBot was marked as having been changed; propagate
-                    bot.updated = false;
-                    plugin.newBot(bot);
-                }
-
-                plugin.onEvent(event);
-
-                if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
-                    (event.type == IRCEvent.Type.HASTHISNICK))
-                {
-                    const savedEvent = event.target in replayQueue;
-                    if (!savedEvent) continue;
-
-                    if (!spammedAboutReplaying)
-                    {
-                        logger.info("Replaying event:");
-                        printObjects(*savedEvent);
-                        spammedAboutReplaying = true;
-                    }
-
-                    plugin.onEvent(*savedEvent);
-                }
-            }
-
-            if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
-                (event.type == IRCEvent.Type.HASTHISNICK))
-            {
-                // These events signify a completed WHOIS
-                replayQueue.remove(event.target);
-            }
-        }
-
-        // Check concurrency messages to see if we should exit
-        quit = checkMessages();
-    }
-
-    return Yes.quit;
 }
