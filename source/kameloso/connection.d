@@ -112,13 +112,14 @@ public:
 
                 default:
                     logger.error(e.msg);
-                    assert(0);
+                    logger.log("Could not connect. Verify your server address");
+                    return false;
                 }
             }
             catch (const Exception e)
             {
                 logger.error(e.msg);
-                assert(0);
+                return false;
             }
         }
 
