@@ -872,9 +872,9 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
         g += (gDark == 0) * highColourHighlight;
 
         // Raise all colours to make it brighter
-        r += 75;
-        b += 75;
-        g += 75;
+        r += lowColourIncrement;
+        b += lowColourIncrement;
+        g += lowColourIncrement;
 
         // Sanity check
         if (r >= 255) r = 255;
