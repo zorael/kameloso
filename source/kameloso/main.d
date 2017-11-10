@@ -1,7 +1,7 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.config;
+import kameloso.config2;
 import kameloso.connection;
 import kameloso.constants;
 import kameloso.irc;
@@ -300,15 +300,26 @@ Flag!"quit" handleArguments(string[] args)
     // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
+        import kameloso.config2;
+
+        // If we don't initialise the plugins there'll be no plugins array
         initPlugins();
-        writeConfigAndPrint(settings.configFile);
+
+        Appender!string sink;
+        sink.reserve(512);
+        sink.serialise(bot, bot.server, settings);
+
+        printObjects(bot, bot.server);
 
         foreach (plugin; plugins)
         {
-            plugin.writeConfig(settings.configFile);
+            plugin.addToConfig(sink);
             // Not all plugins with configuration is important enough to list
             plugin.present();
         }
+
+        immutable justified = sink.data.justifiedConfigurationText;
+        writeToDisk!(Yes.addBanner)(settings.configFile, justified);
 
         return Yes.quit;
     }
@@ -384,13 +395,13 @@ void teardownPlugins()
 }
 
 /// Writes the current configuration to the config file specified in the Settings.
-void writeConfigAndPrint(const string configFile)
+/*void writeConfigAndPrint(const string configFile)
 {
     logger.info("Writing configuration to ", configFile);
-    configFile.writeConfigToDisk(bot, bot.server, settings);
+    configFile.writeToDisk!(Yes.addBanner)(bot, bot.server, settings);
     writeln();
     printObjects(bot, bot.server, settings);
-}
+}*/
 
 void initLogger()
 {
