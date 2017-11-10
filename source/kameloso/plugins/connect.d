@@ -551,14 +551,14 @@ void start()
 
 void loadConfig(const string configFile)
 {
-    import kameloso.config2 : readConfig;
-    configFile.readConfig(connectOptions);
+    import kameloso.config2 : readConfigInto;
+    configFile.readConfigInto(connectOptions);
 }
 
 
 void addToConfig(ref Appender!string sink)
 {
-    import kameloso.config2;
+    import kameloso.config2 : serialise;
     sink.serialise(connectOptions);
 }
 

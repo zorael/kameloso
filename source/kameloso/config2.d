@@ -53,7 +53,7 @@ string configReader(const string configFile)
 }
 
 
-void readConfig(T...)(const string configFile, ref T things)
+void readConfigInto(T...)(const string configFile, ref T things)
 {
     import std.algorithm.iteration : splitter;
     import std.ascii  : newline;
