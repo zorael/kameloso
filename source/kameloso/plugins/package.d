@@ -26,10 +26,10 @@ version(Webtitles)
 
 /// Add plugins to this list to enable them
 public alias EnabledPlugins = AliasSeq!(
-    Printer,
+    PrinterPlugin,
     ConnectPlugin,
     AdminPlugin,
-    Chatbot,
+    ChatbotPlugin,
     NotesPlugin,
     SedReplacePlugin,
     CTCPPlugin

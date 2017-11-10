@@ -450,7 +450,7 @@ mixin OnEventImpl!__MODULE__;
  +  its server and and streams the web page itself, looking for the web page's
  +  title (in its <title> tags). This is then reported to the originating channel.
  +/
-final class Webtitles : IRCPlugin
+final class WebtitlesPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
 }

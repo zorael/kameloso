@@ -611,7 +611,7 @@ mixin OnEventImpl!__MODULE__;
  +  This used to be part of the core program, but with UDAs it's easy to split
  +  off into its own plugin.
  +/
-final class Printer : IRCPlugin
+final class PrinterPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
 }

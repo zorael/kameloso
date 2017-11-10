@@ -203,7 +203,7 @@ mixin OnEventImpl!__MODULE__;
  +  to the server. It is for debugging purposes until such time we figure out a
  +  way to properly input lines via the terminal.
  +/
-final class Pipeline : IRCPlugin
+final class PipelinePlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
 }

@@ -371,13 +371,13 @@ void initPlugins()
     // Add Webtitles if possible
     static if (__traits(compiles, new Webtitles(IRCPluginState.init)))
     {
-        plugins ~= new Webtitles(state);
+        plugins ~= new WebtitlesPlugin(state);
     }
 
     // Add Pipeline if possible
     static if (__traits(compiles, new Pipeline(IRCPluginState.init)))
     {
-        plugins ~= new Pipeline(state);
+        plugins ~= new PipelinePlugin(state);
     }
 
     foreach (plugin; plugins)
