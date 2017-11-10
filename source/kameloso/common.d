@@ -207,8 +207,6 @@ void printObject(Thing)(Thing thing)
  +/
 void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 {
-    import kameloso.config : longestMemberName;
-
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
@@ -315,8 +313,6 @@ unittest
  +/
 void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
 {
-    import kameloso.config : longestMemberName;
-
     import std.format   : format, formattedWrite;
     import std.traits   : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
