@@ -206,7 +206,7 @@ void printObject(Thing)(Thing thing)
 void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 {
     import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isSomeFunction;
+    import std.traits : hasUDA, isArray, isSomeFunction, isSomeString;
     import std.typecons : Unqual;
 
     // workaround formattedWrite taking Appender by value
@@ -228,25 +228,42 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
-                alias MemberType = Unqual!(typeof(member));
-                enum typestring = MemberType.stringof;
+                alias T = Unqual!(typeof(member));
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                static if (is(MemberType : string))
+                //static if (is(MemberType : string))
+                static if (isSomeString!T)
                 {
-                    enum stringPattern = "%s%9s %s%-*s %s\"%s\"%s(%d)\n";
+                    enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
                     sink.formattedWrite(stringPattern,
-                        colourise(cyan), typestring,
+                        colourise(cyan), T.stringof,
                         colourise(white), (entryPadding + 2),
                         memberstring,
                         colourise(lightgreen), member,
                         colourise(darkgrey), member.length);
                 }
+                else static if (isArray!T)
+                {
+                    immutable width = member.length ?
+                        (entryPadding + 2) : (entryPadding + 4);
+
+                    enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
+                    sink.formattedWrite!arrayPattern(
+                        colourise(cyan),
+                        T.stringof,
+                        colourise(white),
+                        width,
+                        memberstring,
+                        colourise(lightgreen),
+                        member,
+                        colourise(darkgrey),
+                        member.length);
+                }
                 else
                 {
                     enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                     sink.formattedWrite(normalPattern,
-                        colourise(cyan), typestring,
+                        colourise(cyan), T.stringof,
                         colourise(white), (entryPadding + 2),
                         memberstring,
                         colourise(lightgreen), member);
