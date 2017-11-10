@@ -81,39 +81,49 @@ public:
      +      address = The string address to look up.
      +      port = The remote port build into the Address.
      +/
-    void resolve(const string address, const ushort port)
+    bool resolve(const string address, const ushort port, ref bool abort)
     {
         import core.thread : Thread;
 
-        try
+        foreach (immutable i; 0..5)
         {
-            ips = getAddress(address, port);
-            logger.infof("%s resolved into %d ips.", address, ips.length);
-        }
-        catch (const SocketException e)
-        {
-            switch (e.msg)
+            if (abort) return false;
+
+            try
             {
-            case "getaddrinfo error: Name or service not known":
-            case "getaddrinfo error: Temporary failure in name resolution":
-                // Assume net down, wait and try again
+                ips = getAddress(address, port);
+                logger.infof("%s resolved into %d ips.", address, ips.length);
+                return true;
+            }
+            catch (const SocketException e)
+            {
+                switch (e.msg)
+                {
+                case "getaddrinfo error: Name or service not known":
+                case "getaddrinfo error: Temporary failure in name resolution":
+                    // Assume net down, wait and try again
 
-                logger.warning(e.msg);
-                logger.logf("Network down? Retrying in %d seconds", Timeout.resolve);
-                Thread.sleep(Timeout.resolve.seconds);
+                    logger.warning(e.msg);
+                    logger.logf("Network down? Retrying in %d seconds (attempt %d)",
+                        Timeout.resolve, i+1);
+                    Thread.sleep(Timeout.resolve.seconds);
 
-                return resolve(address, port);
+                    return resolve(address, port, abort);
 
-            default:
+                default:
+                    logger.error(e.msg);
+                    assert(0);
+                }
+            }
+            catch (const Exception e)
+            {
                 logger.error(e.msg);
                 assert(0);
             }
         }
-        catch (const Exception e)
-        {
-            logger.error(e.msg);
-            assert(0);
-        }
+
+        logger.warning("Failed to resolve host");
+        return false;
     }
 
     // connect
