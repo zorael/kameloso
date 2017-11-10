@@ -237,8 +237,7 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                     enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
                     sink.formattedWrite(stringPattern,
                         colourise(cyan), T.stringof,
-                        colourise(white), (entryPadding + 2),
-                        memberstring,
+                        colourise(white), (entryPadding + 2), memberstring,
                         colourise(lightgreen), member,
                         colourise(darkgrey), member.length);
                 }
@@ -249,23 +248,17 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 
                     enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
                     sink.formattedWrite!arrayPattern(
-                        colourise(cyan),
-                        T.stringof,
-                        colourise(white),
-                        width,
-                        memberstring,
-                        colourise(lightgreen),
-                        member,
-                        colourise(darkgrey),
-                        member.length);
+                        colourise(cyan), T.stringof,
+                        colourise(white), width, memberstring,
+                        colourise(lightgreen), member,
+                        colourise(darkgrey), member.length);
                 }
                 else
                 {
                     enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                     sink.formattedWrite(normalPattern,
                         colourise(cyan), T.stringof,
-                        colourise(white), (entryPadding + 2),
-                        memberstring,
+                        colourise(white), (entryPadding + 2), memberstring,
                         colourise(lightgreen), member);
                 }
             }
