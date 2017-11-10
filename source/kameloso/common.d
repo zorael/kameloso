@@ -92,10 +92,16 @@ struct Settings
     {
         bool monochrome = true;
     }
-    else
+    else version(Colours)
     {
         bool monochrome = false;
     }
+    else
+    {
+        bool monochrome = true;
+    }
+
+    bool reconnectOnFailure = true;
 
     @Unconfigurable
     {
