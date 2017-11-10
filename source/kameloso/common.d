@@ -13,7 +13,8 @@ import std.typecons : Flag, No, Yes;
 version(unittest)
 shared static this()
 {
-    logger = new KamelosoLogger(LogLevel.all, settings.monochrome);
+    // This is technically before settings have been read...
+    logger = new KamelosoLogger;
 }
 
 // logger
@@ -940,7 +941,7 @@ final class KamelosoLogger : Logger
 
     bool monochrome;
 
-    this(LogLevel lv, bool monochrome = false)
+    this(LogLevel lv = LogLevel.all, bool monochrome = false)
     {
         this.monochrome = monochrome;
         super(lv);
