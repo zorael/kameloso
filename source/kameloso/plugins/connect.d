@@ -568,10 +568,11 @@ void register()
  +  registration procedure (notably NOTICEs about our IDENT and hostname), we
  +  preemptively register. It seems to work.
  +/
-void initialise()
+void start()
 {
     register();
 }
+
 
 void loadConfig(const string configFile)
 {

@@ -30,7 +30,11 @@ interface IRCPlugin
     /// Executed during setup to let plugins read settings from disk
     void loadConfig(const string);
 
+    /// Executed when gathering things to put in the configuration file
     void addToConfig(ref Appender!string);
+
+    /// Executed when connection has been established
+    void start();
 
     /// Executed when we want a plugin to print its settings and such
     void present();
@@ -294,7 +298,14 @@ mixin template IRCPluginBasics()
         {
             .addToConfig(sink);
         }
+    }
 
+    void start()
+    {
+        static if (__traits(compiles, .start()))
+        {
+            .start();
+        }
     }
 
     // teardown

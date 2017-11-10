@@ -394,6 +394,14 @@ void teardownPlugins()
     foreach (plugin; plugins) plugin.teardown();
 }
 
+void startPlugins()
+{
+    if (!plugins.length) return;
+
+    logger.info("Starting plugins");
+    foreach (plugin; plugins) plugin.start();
+}
+
 /// Writes the current configuration to the config file specified in the Settings.
 /*void writeConfigAndPrint(const string configFile)
 {
@@ -480,6 +488,7 @@ int main(string[] args)
         bot.server.resolvedAddress = string.init;
 
         initPlugins();
+        startPlugins();
 
         auto generator = new Generator!string(() => listenFiber(conn, abort));
         quit = loopGenerator(generator);
