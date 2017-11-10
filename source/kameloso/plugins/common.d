@@ -13,6 +13,8 @@ import kameloso.irc;
  +/
 interface IRCPlugin
 {
+    import std.array : Appender;
+
     /// Executed on update to the internal IRCBot struct
     void newBot(IRCBot);
 
@@ -27,6 +29,8 @@ interface IRCPlugin
 
     /// Executed during setup to let plugins read settings from disk
     void loadConfig(const string);
+
+    void addToConfig(ref Appender!string);
 
     /// Executed when we want a plugin to print its settings and such
     void present();
@@ -157,6 +161,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginBasics()
 {
+    import std.array : Appender;
     // onEvent
     /++
      +  Pass on the supplied IRCEvent to the top-level .onEvent.
@@ -281,6 +286,15 @@ mixin template IRCPluginBasics()
         {
             .present();
         }
+    }
+
+    void addToConfig(ref Appender!string sink)
+    {
+        static if (__traits(compiles, .addToConfig(sink)))
+        {
+            .addToConfig(sink);
+        }
+
     }
 
     // teardown
