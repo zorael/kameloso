@@ -375,7 +375,7 @@ void onCommandReloadQuotes()
 /++
  +  Initialises the Chatbot plugin. Loads the quotes from disk.
  +/
-void initialise()
+void start()
 {
     logger.log("Initialising quotes ...");
     quotes = loadQuotes(chatbotOptions.quotesFile);

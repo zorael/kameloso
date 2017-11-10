@@ -419,7 +419,7 @@ JSONValue loadNotes(const string filename)
  +
  +  This is executed immediately after a successful connect.
  +/
-void initialise()
+void start()
 {
     logger.log("Initialising notes ...");
     notes = loadNotes(notesOptions.notesFile);
