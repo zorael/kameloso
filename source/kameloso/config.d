@@ -1,5 +1,5 @@
 module kameloso.config;
-
+__EOF__
 import kameloso.common;
 import kameloso.constants;
 
