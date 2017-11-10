@@ -308,7 +308,7 @@ void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
         catch (const Exception e)
         {
             logger.error(e.msg);
-            printObjects(event);
+            printObject(event);
         }
     }
     else
@@ -317,7 +317,7 @@ void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
         catch (const Exception e)
         {
             logger.error(e.msg);
-            printObjects(event);
+            printObject(event);
         }
     }
 }
@@ -388,7 +388,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     scope(failure)
     {
         logger.warning("--------- PARSE SPECIALCASES FAILURE");
-        printObjects(event);
+        printObject(event);
         logger.warning("------------------------------------");
     }
 
@@ -613,7 +613,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             }
             default:
                 logger.warning("-------------------- UNKNOWN CTCP EVENT");
-                printObjects(event);
+                printObject(event);
                 break;
             }
         }
@@ -952,7 +952,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         if (slice.indexOf(" :To connect type ") == -1)
         {
             logger.warning("Unknown variant of TOCONNECTTYPE");
-            printObjects(event);
+            printObject(event);
             break;
         }
 
@@ -1100,7 +1100,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             writeln();
             logger.warning("--------- UNCAUGHT NUMERIC OR UNSET");
-            printObjects(event);
+            printObject(event);
             logger.warning("-----------------------------------");
             writeln();
         }
@@ -1137,7 +1137,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     {
         writeln();
         logger.warning("--------------- SPACES, NEEDS REVISION");
-        printObjects(event);
+        printObject(event);
         logger.warning("--------------------------------------");
         writeln();
     }
@@ -1148,7 +1148,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     {
         writeln();
         logger.warning("--------------- CHANNEL/TARGET REVISION");
-        printObjects(event);
+        printObject(event);
         logger.warning("---------------------------------------");
         writeln();
     }
@@ -1156,7 +1156,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     if (event.target.beginsWith('#'))
     {
         logger.warning("--------------- TARGET IS A CHANNEL?");
-        printObjects(event);
+        printObject(event);
         logger.warning("------------------------------------");
         writeln();
     }
