@@ -14,14 +14,14 @@ import std.stdio;
 private:
 
 
-struct ConnectOptions
+struct Connect
 {
     bool sasl = true;
     bool joinOnInvite = false;
 }
 
 /// All Connect plugin options gathered
-ConnectOptions connectOptions;
+Connect connectOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
