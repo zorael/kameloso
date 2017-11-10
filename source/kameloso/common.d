@@ -88,8 +88,6 @@ struct Hidden {}
  +/
 struct Settings
 {
-    bool joinOnInvite = true;
-
     version(Windows)
     {
         bool monochrome = true;

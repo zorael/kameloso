@@ -6,11 +6,22 @@ import kameloso.irc;
 import kameloso.plugins.common;
 import kameloso.stringutils;
 
+import std.array : Appender;
 import std.concurrency : send;
 import std.format : format;
 import std.stdio;
 
 private:
+
+
+struct ConnectOptions
+{
+    bool sasl = true;
+    bool joinOnInvite = false;
+}
+
+/// All Connect plugin options gathered
+ConnectOptions connectOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -348,9 +359,9 @@ void onNickInUse()
 @(IRCEvent.Type.INVITE)
 void onInvite(const IRCEvent event)
 {
-    if (!state.settings.joinOnInvite)
+    if (!connectOptions.joinOnInvite)
     {
-        logger.log("settings.joinOnInvite is false so not joining");
+        logger.log("Invited, but joinOnInvite is false so not joining");
         return;
     }
 
@@ -384,6 +395,7 @@ void onRegistrationEvent(const IRCEvent event)
             switch (cap)
             {
             case "sasl":
+                if (!connectOptions.sasl) continue;
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :sasl");
                 tryingSASL = true;
                 break;
@@ -559,6 +571,19 @@ void register()
 void initialise()
 {
     register();
+}
+
+void loadConfig(const string configFile)
+{
+    import kameloso.config2 : readConfig;
+    configFile.readConfig(connectOptions);
+}
+
+
+void addToConfig(ref Appender!string sink)
+{
+    import kameloso.config2;
+    sink.serialise(connectOptions);
 }
 
 
