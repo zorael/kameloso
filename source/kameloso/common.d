@@ -1052,3 +1052,54 @@ unittest
     // log_.fatal("log: FATAL");
     log_.trace("log: trace");
 }
+
+
+size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
+    (Number num, ptrdiff_t n)
+{
+    assert((n > 0), "Cannot get multiple of 0 or negatives");
+    assert((num >= 0), "Cannot get multiples for a negative number");
+
+    if (num == 0) return 0;
+
+    if (num == n)
+    {
+        static if (oneUp) return (n * 2);
+        else
+        {
+            return n;
+        }
+    }
+    double frac = (num / double(n));
+    uint floor_ = cast(uint)frac;
+
+    static if (oneUp) uint mod = (floor_ + 1);
+    else
+    {
+        uint mod = (floor_ == frac) ? floor_ : (floor_ + 1);
+    }
+
+    return (mod * n);
+}
+
+unittest
+{
+    import std.conv : text;
+
+    immutable n1 = 15.getMultipleOf(4);
+    assert((n1 == 16), n1.text);
+
+    immutable n2 = 16.getMultipleOf!(Yes.alwaysOneUp)(4);
+    assert((n2 == 20), n2.text);
+
+    immutable n3 = 16.getMultipleOf(4);
+    assert((n3 == 16), n3.text);
+    immutable n4 = 0.getMultipleOf(5);
+    assert((n4 == 0), n4.text);
+
+    immutable n5 = 1.getMultipleOf(1);
+    assert((n5 == 1), n5.text);
+
+    immutable n6 = 1.getMultipleOf!(Yes.alwaysOneUp)(1);
+    assert((n6 == 2), n6.text);
+}
