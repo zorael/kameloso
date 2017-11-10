@@ -62,20 +62,19 @@ struct ThreadMessage
 
     /// Concurrency message type asking for a plugin to shut down cleanly.
     struct Teardown {}
-
-    /// Concurrency message type asking for current settings to be saved to disk.
-    struct WriteConfig {}
 }
 
 
 /// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
+
 /// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
     string token = ",";
 }
+
 
 /// UDA used to convey "this member should not be printed in clear text"
 struct Hidden {}
