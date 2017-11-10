@@ -68,6 +68,8 @@ void signalHandler(int signal) nothrow @nogc @system
  +/
 Flag!"quit" checkMessages()
 {
+    import core.time : seconds;
+
     scope (failure) teardownPlugins();
 
     Flag!"quit" quit;
@@ -88,7 +90,6 @@ Flag!"quit" checkMessages()
     /// Send a WHOIS call to the server, and buffer the requests.
     static void whois(ThreadMessage.Whois, IRCEvent event)
     {
-        import core.time : seconds;
         import std.datetime : Clock;
 
         if (bot.server.network == IRCServer.Network.twitch)
@@ -310,6 +311,7 @@ Flag!"quit" handleArguments(string[] args)
 void writeConfigurationFile(const string filename)
 {
     import kameloso.config2;
+    import std.array : Appender;
 
     Appender!string sink;
     sink.reserve(512);

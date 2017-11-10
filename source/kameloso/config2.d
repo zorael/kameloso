@@ -4,7 +4,7 @@ import kameloso.common;
 
 import std.array : Appender;
 import std.stdio;
-import std.typecons : Flag;
+import std.typecons : Flag, No, Yes;
 
 
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
@@ -82,7 +82,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
     import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
-    import std.traits : getUDAs, hasUDA, isSomeString, isArray;
+    import std.traits;
 
     static if (__traits(hasMember, Sink, "data"))
     {
