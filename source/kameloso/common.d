@@ -130,12 +130,10 @@ template isConfigurableVariable(alias var)
 
         alias T = typeof(var);
 
-        enum isConfigurableVariable =
-            !isSomeFunction!T &&
+        enum isConfigurableVariable = !isSomeFunction!T &&
             !__traits(isTemplate, T) &&
             !__traits(isAssociativeArray, T) &&
-            !__traits(isStaticArray, T) &&
-            __traits(compiles, var = T.init);
+            !__traits(isStaticArray, T);
     }
     else
     {
