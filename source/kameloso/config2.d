@@ -472,7 +472,7 @@ NaN     !"#¤%&/`;
     }
 }
 
-string justifyConfigurationText(const string origLines)
+string justifiedConfigurationText(const string origLines)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
@@ -652,10 +652,9 @@ because         no DifferentSeection struct was passed
 nil             5
 NaN             !"#¤%&/`;
 
-
     sink.serialise(foo, diff);
     assert((sink.data == unjustified), sink.data);
-    immutable configText = justifyConfigurationText(sink.data);
+    immutable configText = justifiedConfigurationText(sink.data);
 
     assert((configText == justified), configText);
 }
