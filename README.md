@@ -8,6 +8,8 @@ It works well on Freenode, Rizon, QuakeNet and Twitch servers, with less confide
 
 Often a new server network will just work right away, but sometimes there's a slight difference in how they behave and respond, and changes will have to be made. It's usually fairly trivial modifications, like "does this network's `NickServ` just want a password, or a login *and* a password?", or "is `NickServ` replaced with `AuthServ`?"
 
+Networks without such [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, as the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
+
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
@@ -19,8 +21,10 @@ Current functionality includes:
 * looking up titles of pasted web URLs
 * sed-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
-* mIRC colour coding and text effects (bold, underlined, ...), translalted into Bash formatting
-* SASL authentication (plain)
+* mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
+* [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (plain)
+
+Web URL lookup may not work out of the box with HTTPS on Windows.
 
 ## Getting Started
 
@@ -36,7 +40,7 @@ It's *possible* to build it without `dub` but it is non-trivial if you want the 
 
 ### Downloading
 
-GitHub offers downloads in ZIP format, but it's easiest to use `git` and clone the repository that way.
+GitHub offers downloads in ZIP format, but it's easier to use `git` and clone the repository that way.
 
     $ git clone https://github.com/zorael/kameloso.git
     $ cd kameloso
@@ -55,13 +59,13 @@ The tests are run at the *start* of the program, not during compilation.
 
 ## How to use
 
-The bot needs the `NickServ`/`Q`/`AuthServ` login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the nickname services login name of the administrator/master of the bot, and/or one of more channels to operate in. It can't work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you notice missing options in your configuration file, such as the new plugin-specific options for the `printer` and `notes` plugins, just run `--writeconfig` again and your file should be updated with all fields.
+If you have an old configuration file and you notice missing options, such as the new plugin-specific options for the `printer` and `notes` plugins, just run `--writeconfig` again and your file should be updated with all fields. There may be more, less important options available than what is displayed at program start.
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with NickServ and whitelist your login in the configuration file before it will listen to anything you do.
 
@@ -72,7 +76,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | kameloso: quote you This is a quote
     kameloso | Quote saved. (1 on record)
          you | kameloso: quote you
-    kameloso | zorael | This is a quote
+    kameloso | you | This is a quote
          you | kameloso: note OfflinePerson Why so offline?
     kameloso | Note added
          you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
@@ -84,14 +88,13 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 * "online" help; listing of verbs/commands
 * make webtitles parse html entities like `&mdash;`. [arsd.dom](https://github.com/adamdruppe/arsd/blob/master/dom.d)?
-* JSON config file? but random ordering of entries, no lined-up columns...
 * add ExamplePlugin
-* no-member struct UDAs to enums? (currently structs)
 * investigate inverse channel behaviour (blacklists)
 * revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
-* prettify configuration files; width is weird by neccessity of current design but can easily be formatted as post-processing
-* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are constructed
+* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are built. `IRCPlugin.postprocess(IRCEvent)`?h
+* sort out `main.d`
+* pipedream: DCC
 
 ## Built With
 
