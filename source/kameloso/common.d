@@ -9,6 +9,7 @@ import std.traits : isType;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
+@safe:
 
 version(unittest)
 shared static this()
@@ -27,9 +28,6 @@ shared static this()
 Logger logger;
 
 Settings settings;
-
-
-@safe:
 
 
 /++
