@@ -177,16 +177,14 @@ void onEndOfMotd(const IRCEvent event)
     with (IRCServer.Network)
     with (state)
     {
-        if (!bot.authPassword.length)
+        if (!bot.authPassword.length || bot.finishedAuth)
         {
             // No password set up; join channels and be done
             // EFnet has no nick registration services
-            state.bot.finishedAuth = true;
+            bot.finishedAuth = true;
             joinChannels();
             return;
         }
-
-        if (bot.finishedAuth) return;
 
         bot.startedAuth = true;
 
