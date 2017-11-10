@@ -356,11 +356,14 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
                                 things[i].setMemberByName(entry, value);
                                 continue thingloop;
                         }
-
                     }
 
                 default:
-                    logger.warning("default?");
+                    // Unknown setting in known section
+                    logger.infof("Found invalid %s under [%s]. " ~
+                        "It is either malformed or no longer in use. " ~
+                        "Use --writeconfig to update your configuration file.",
+                        entry, section);
                     break;
                 }
             }
