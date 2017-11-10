@@ -18,18 +18,22 @@ shared static this()
     logger = new KamelosoLogger;
 }
 
+
 // logger
 /++
- +  Instance of a KamelosoLogger, providing timestamped and coloured logging.
+ +  Instance of a `KamelosoLogger`, providing timestamped and coloured logging.
  +
- +  The member functions to use are log, trace, info, warning, error, and fatal.
- +  It is not thread-safe, so instantiate a thread-local Logger if threading.
+ +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
+ +  and `fatal`. It is not thread-safe, so instantiate a thread-local Logger
+ +  if threading.
  +/
 Logger logger;
 
+/// A local copy of the Settings struct, housing certain runtime options
 Settings settings;
 
 
+// ThreadMessage
 /++
  +  Aggregate of thread message types.
  +
@@ -40,10 +44,10 @@ Settings settings;
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server PONG event.
+    /// Concurrency message type asking for a to-server `PONG` event.
     struct Pong {}
 
-    /// Concurrency message type asking for a to-server PING event.
+    /// Concurrency message type asking for a to-server `PING` event.
     struct Ping {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
@@ -55,7 +59,7 @@ struct ThreadMessage
     /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
 
-    /// Concurrency message type asking for WHOIS information on a user.
+    /// Concurrency message type asking for `WHOIS` information on a user.
     struct Whois {}
 
     /// Concurrency message type asking for a plugin to shut down cleanly.
@@ -66,13 +70,11 @@ struct ThreadMessage
 /// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
-
 /// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
     string token = ",";
 }
-
 
 /// UDA used to convey "this member should not be printed in clear text"
 struct Hidden {}
@@ -82,7 +84,8 @@ struct Hidden {}
 /++
  +  Aggregate struct containing runtime bot setting variables.
  +
- +  Kept inside one struct they're nicely gathered and easy to pass around.
+ +  Kept inside one struct, they're nicely gathered and easy to pass around.
+ +  Some defaults are hardcoded here.
  +/
 struct Settings
 {
@@ -112,9 +115,12 @@ struct Settings
 // isConfigurableVariable
 /++
  +  Eponymous template bool of whether a variable can be configured via the
- +  functions in kameloso.config or not.
+ +  functions in `kameloso.config` or not.
  +
  +  Currently it does not support static arrays.
+ +
+ +  Params:
+ +      var = variable to examine.
  +/
 template isConfigurableVariable(alias var)
 {
@@ -133,7 +139,6 @@ template isConfigurableVariable(alias var)
     }
     else
     {
-        // var is a type or something that cannot be called typeof on
         enum isConfigurableVariable = false;
     }
 }
@@ -167,11 +172,11 @@ unittest
  +  current settings and state, where such is kept in structs.
  +
  +  Params:
- +      thing = The struct object to enumerate.
+ +      things = The struct objects to enumerate.
  +/
 void printObjects(Things...)(Things things) @trusted
 {
-    // writeln trusts lockingTextWriter so we will too.
+    // writeln trusts `lockingTextWriter` so we will too.
 
     version(Colours)
     {
@@ -192,7 +197,9 @@ void printObjects(Things...)(Things things) @trusted
 
 
 // printObject
-/// ditto
+/++
+ +  Single-object `printObjects`.
+ +/
 void printObject(Thing)(Thing thing)
 {
     printObjects(thing);
@@ -204,7 +211,7 @@ void printObject(Thing)(Thing thing)
  +  Formats a struct object, with all its printable members with all their
  +  printable values. Formats in colour.
  +
- +  Don't use this directly, instead use printObjects(Things...).
+ +  Don't use this directly, instead use `printObjects(Things...)`.
  +
  +  Params:
  +      sink = output range to write to
@@ -322,16 +329,19 @@ unittest
  +  Formats a struct object, with all its printable members with all their
  +  printable values. Formats without adding colours.
  +
- +  Don't use this directly, instead use printObjects(Things...).
+ +  Don't use this directly, instead use `printObjects(Things...)`.
  +
  +  Params:
  +      sink = output range to write to
  +      things = one or more structs to enumerate and format.
+ +
+ +  TODO:
+ +      Merge this with formatObjectsColoured.
  +/
 void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
 {
-    import std.format   : format, formattedWrite;
-    import std.traits   : hasUDA, isSomeFunction;
+    import std.format : format, formattedWrite;
+    import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
 
     // workaround formattedWrite taking Appender by value
@@ -426,7 +436,7 @@ unittest
  +  This is used for formatting configuration files, so that columns line up.
  +
  +  Params:
- +      T = the struct type to inspect for member name lengths.
+ +      Things = the types to examine and count name lengths
  +/
 template longestMemberName(Things...)
 {
@@ -530,16 +540,16 @@ unittest
  +  Takes two structs and melds them together, making the members a union of
  +  the two.
  +
- +  It only overwrites members that are typeof(member).init, so only unset
+ +  It only overwrites members that are `typeof(member).init`, so only unset
  +  members get their values overwritten by the melding struct. Supply a
- +  template parameter Yes.overwrite to make it overwrite if the melding
- +  struct's member is not typeof(member).init.
+ +  template parameter `Yes.overwrite` to make it overwrite if the melding
+ +  struct's member is not `typeof(member).init`.
  +
  +  Params:
  +      overwrite = flag denoting whether the second object should overwrite
  +                  set values in the receiving object.
- +      meldThis = struct to meld (sender).
- +      intoThis = struct to meld (receiver).
+ +      meldThis = struct to meld (origin).
+ +      intoThis = struct to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis)
@@ -660,11 +670,11 @@ unittest
 // scopeguard
 /++
  +  Generates a string mixin of scopeguards. This is a convenience function
- +  to automate basic scope(exit|success|failure) messages, as well as an
+ +  to automate basic `scope(exit|success|failure)` messages, as well as an
  +  optional entry message. Which scope to guard is passed by ORing the states.
  +
  +  Params:
- +      states = Bitmsask of which states to guard, see the enum in kameloso.constants.
+ +      states = Bitmask of which states to guard, see the enum in `kameloso.constants`.
  +      scopeName = Optional scope name to print. Otherwise the current function
  +                  name will be used.
  +
@@ -746,14 +756,14 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
 
 // colourise
 /++
- +  Takes a mix of a BashForeground, a BashBackground, a BashFormat and/or a
- +  BashReset and composes them into a colour code token.
+ +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
+ +  a `BashReset`` and composes them into a colour code token.
  +
- +  This function creates an appender and fills it with the return value of
- +  colourise(Sink, Codes...).
+ +  This function creates an `Appender` and fills it with the return value of
+ +  `colourise(Sink, Codes...)`.
  +
  +  Params:
- +      codes = a variadic list of codes.
+ +      codes = a variadic list of Bash format codes.
  +
  +  Returns:
  +      A Bash code sequence of the passed codes.
@@ -782,13 +792,13 @@ string colourise(Codes...)(Codes codes)
 
 // colourise
 /++
- +  Takes a mix of a BashForeground, a BashBackground, a BashFormat and/or a
- +  BashReset and composes them into a colour code token.
+ +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
+ +  a `BashReset`` and composes them into a colour code token.
  +
- +  This is the composing function that fills its result into a sink.
+ +  This is the composing function that fills its result into an output range.
  +
  +  Params:
- +      codes = a variadic list of codes.
+ +      codes = a variadic list of Bash format codes.
  +
  +  Returns:
  +      A Bash code sequence of the passed codes.
@@ -814,6 +824,21 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     sink.put('m');
 }
 
+
+// normaliseColours
+/++
+ +  Takes a colour and, if it deems it is too dark to see on a black terminal
+ +  background, makes it brighter.
+ +
+ +  Future improvements include reverse logic; making fonts darker to improve
+ +  readability on bright background. The parameters are passed by `ref` and as
+ +  such nothing is returned.
+ +
+ +  Params:
+ +      r = red
+ +      g = green
+ +      b = blue
+ +/
 version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b)
 {
@@ -882,6 +907,18 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
 }
 
 
+// truecolourise
+/++
+ +  Produces a Bash colour token for the colour passed, expressed in terms of
+ +  red, green and blue.
+ +
+ +  Params:
+ +      normalise = normalise colours so that they aren't too dark.
+ +      sink = output range to write the final code into
+ +      r = red
+ +      g = green
+ +      b = blue
+ +/
 version(Colours)
 void truecolourise(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b)
@@ -899,8 +936,8 @@ if (isOutputRange!(Sink,string))
         normaliseColours(r, g, b);
     }
 
-    sink.formattedWrite("%s[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat,
-        r, g, b);
+    sink.formattedWrite("%s[38;2;%d;%d;%dm",
+        cast(char)TerminalToken.bashFormat, r, g, b);
 }
 
 unittest
@@ -935,7 +972,7 @@ unittest
 
 // KamelosoLogger
 /++
- +  Modified Logger to print timestamped and coloured logging messages.
+ +  Modified `Logger` to print timestamped and coloured logging messages.
  +/
 final class KamelosoLogger : Logger
 {
@@ -977,30 +1014,31 @@ final class KamelosoLogger : Logger
 
         version(Colours)
         with (LogLevel)
+        with (BashForeground)
         switch (logLevel)
         {
         case trace:
-            sink.colourise(BashForeground.default_);
+            sink.colourise(default_);
             break;
 
         case info:
-            sink.colourise(BashForeground.lightgreen);
+            sink.colourise(lightgreen);
             break;
 
         case warning:
-            sink.colourise(BashForeground.lightred);
+            sink.colourise(lightred);
             break;
 
         case error:
-            sink.colourise(BashForeground.red);
+            sink.colourise(red);
             break;
 
         case fatal:
-            sink.colourise(BashForeground.red, BashFormat.blink);
+            sink.colourise(red, BashFormat.blink);
             break;
 
         default:
-            sink.colourise(BashForeground.white);
+            sink.colourise(white);
             break;
         }
     }
@@ -1040,7 +1078,7 @@ final class KamelosoLogger : Logger
             }
         }
 
-        static if (__traits(hasMember, sink, "data"))
+        static if (__traits(hasMember, Sink, "data"))
         {
             writeln(sink.data);
             sink.clear();
@@ -1080,6 +1118,18 @@ unittest
 }
 
 
+// getMultipleOf
+/++
+ +  Given a number, calculates the largest multiple of `n` needed to reach that
+ +  number.
+ +
+ +  It rounds up, and if supplied `Yes.alwaysOneUp` it will always overshoot.
+ +  This is good for when calculating format pattern widths.
+ +
+ +  Params:
+ +      num = the number to reach
+ +      n = the value to find a multiplier for
+ +/
 size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (Number num, ptrdiff_t n)
 {
@@ -1096,6 +1146,7 @@ size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
             return n;
         }
     }
+
     double frac = (num / double(n));
     uint floor_ = cast(uint)frac;
 
