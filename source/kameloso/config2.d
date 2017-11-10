@@ -3,6 +3,7 @@ module kameloso.config2;
 import kameloso.common;
 
 import std.array : Appender;
+import std.ascii : newline;
 import std.stdio;
 import std.typecons : Flag, No, Yes;
 
@@ -22,7 +23,8 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     static if (banner)
     {
         import std.datetime : Clock;
-        file.writefln("# kameloso bot config (%s)\n", Clock.currTime);
+        file.writefln("# kameloso bot config (%s)", Clock.currTime);
+        file.write(newline);
     }
 
     file.writeln(configurationText);
@@ -87,10 +89,10 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
     static if (__traits(hasMember, Sink, "data"))
     {
         // Sink is not empty, place a newline between current content and new
-        if (sink.data.length) sink.put('\n');
+        if (sink.data.length) sink.put(newline);
     }
 
-    sink.formattedWrite("[%s]\n", Thing.stringof);
+    sink.formattedWrite("[%s]%s", Thing.stringof, newline);
 
     foreach (immutable i, member; thing.tupleof)
     {
@@ -146,11 +148,13 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
             if (comment)
             {
                 // .init or otherwise disabled
-                sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
+                sink.formattedWrite("#%s%s",
+                    __traits(identifier, thing.tupleof[i]), newline);
             }
             else
             {
-                sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                sink.formattedWrite("%s %s%s",
+                    __traits(identifier, thing.tupleof[i]), value, newline);
             }
         }
     }
@@ -209,7 +213,7 @@ pipyon 3
     Appender!string bothSink;
     bothSink.reserve(128);
     bothSink.serialise(Foo.init, Bar.init);
-    assert(bothSink.data == fooSink.data ~ '\n' ~ barSink.data);
+    assert(bothSink.data == fooSink.data ~ newline ~ barSink.data);
 }
 
 
@@ -424,7 +428,7 @@ NaN     !"#¤%&/`;
 
     Foo foo;
     configurationFileContents
-        .splitter("\n")
+        .splitter(newline)
         .applyConfiguration(foo);
 
     with (foo)
@@ -458,7 +462,7 @@ NaN     !"#¤%&/`;
 
     DifferentSection diff;
     configurationFileContents
-        .splitter("\n")
+        .splitter(newline)
         .applyConfiguration(diff);
 
     with (diff)
@@ -479,7 +483,7 @@ string justifiedConfigurationText(const string origLines)
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
 
-    foreach (immutable rawline; origLines.splitter("\n"))
+    foreach (immutable rawline; origLines.splitter(newline))
     {
         if (!rawline.length)
         {
@@ -535,7 +539,7 @@ string justifiedConfigurationText(const string origLines)
         if (!line.length)
         {
             // Don't adda a linebreak at the top of the file
-            if (justified.data.length) justified.put('\n');
+            if (justified.data.length) justified.put(newline);
             continue;
         }
 
@@ -545,7 +549,7 @@ string justifiedConfigurationText(const string origLines)
         case ';':
         case '[':
             justified.put(line);
-            justified.put('\n');
+            justified.put(newline);
             continue;
 
         default:
@@ -553,7 +557,7 @@ string justifiedConfigurationText(const string origLines)
 
             immutable entry = line.munch("^ \t");
             immutable value = line.stripLeft();
-            justified.formattedWrite("%-*s %s\n", width, entry, value);
+            justified.formattedWrite("%-*s %s%s", width, entry, value, newline);
             break;
         }
     }

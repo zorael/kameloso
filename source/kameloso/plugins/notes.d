@@ -358,19 +358,18 @@ void addNote(const string nickname, const string sender, const string line)
  +/
 void saveNotes(const string filename)
 {
+    import std.ascii : newline;
     import std.file  : exists, isFile, remove;
-    import std.stdio : File;
 
     if (filename.exists && filename.isFile)
     {
         remove(filename); // Wise?
     }
 
-    auto f = File(filename, "a");
+    auto file = File(filename, "a");
 
-    f.write(notes.toPrettyString);
-    //f.writeln();
-    f.write("\n");
+    file.write(notes.toPrettyString);
+    file.write(newline);
 }
 
 

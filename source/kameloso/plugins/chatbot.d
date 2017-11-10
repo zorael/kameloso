@@ -113,6 +113,7 @@ void addQuote(const string nickname, const string line)
  +/
 void saveQuotes(const string filename)
 {
+    import std.ascii : newline;
     import std.file  : exists, isFile, remove;
 
     if (filename.exists && filename.isFile)
@@ -120,10 +121,10 @@ void saveQuotes(const string filename)
         remove(filename); // Wise?
     }
 
-    auto f = File(filename, "a");
+    auto file = File(filename, "a");
 
-    f.write(quotes.toPrettyString);
-    f.write("\n");
+    file.write(quotes.toPrettyString);
+    file.write(newline);
 }
 
 
