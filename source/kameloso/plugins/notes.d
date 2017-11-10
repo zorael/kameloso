@@ -424,17 +424,20 @@ void initialise()
     notes = loadNotes(notesOptions.notesFile);
 }
 
+
 void loadConfig(const string configFile)
 {
-    import kameloso.config : readConfig;
+    import kameloso.config2 : readConfig;
     configFile.readConfig(notesOptions);
 }
 
-void writeConfig(const string configFile)
+
+void addToConfig(ref Appender!string sink)
 {
-    import kameloso.config : replaceConfig;
-    configFile.replaceConfig(notesOptions);
+    import kameloso.config2;
+    sink.serialise(notesOptions);
 }
+
 
 /*void present()
 {

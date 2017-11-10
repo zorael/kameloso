@@ -581,17 +581,16 @@ unittest
 
 void loadConfig(const string configFile)
 {
-    import kameloso.config : readConfig;
+    import kameloso.config2 : readConfig;
     configFile.readConfig(printerOptions);
 }
 
 
-void writeConfig(const string configFile)
+void addToConfig(ref Appender!string sink)
 {
-    import kameloso.config : replaceConfig;
-    configFile.replaceConfig(printerOptions);
+    import kameloso.config2;
+    sink.serialise(printerOptions);
 }
-
 
 void present()
 {
