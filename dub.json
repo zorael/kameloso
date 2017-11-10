@@ -8,16 +8,13 @@
     "buildRequirements": [ "silenceDeprecations" ],
     "targetType": "executable",
     "libs-posix-dmd": [ "phobos2" ],
-    "dependencies-posix":
-    {
-        "requests": "~>0.5.0"
-    },
     "configurations":
     [
         {
             "name": "posix",
             "platforms": [ "posix" ],
-            "versions": [ "Webtitles", "Colours" ]
+            "versions": [ "Webtitles", "Colours" ],
+            "dependencies-posix": { "requests": "~>0.5.0" }
         },
         {
             "name": "windows",
@@ -29,7 +26,8 @@
         },
         {
             "name": "nocolours",
-            "versions": [ "Webtitles" ]
+            "versions": [ "Webtitles" ],
+            "dependencies-posix": { "requests": "~>0.5.0" }
         },
         {
             "name": "nowebtitles-nocolours"
@@ -37,8 +35,8 @@
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions-posix": [ "Webtitles", "Colours" ],
-            "versions-windows": [ "Colours" ]
+            "versions": [ "Webtitles", "Colours" ],
+            "dependencies": { "requests": "~>0.5.0" }
         }
     ]
 }
