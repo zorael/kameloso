@@ -356,7 +356,9 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
                         static if (!isType!member &&
                             !hasUDA!(Things[i].tupleof[n], Unconfigurable))
                         {
-                            case __traits(identifier, Things[i].tupleof[n]):
+                            enum memberstring = __traits(identifier, Things[i].tupleof[n]);
+
+                            case memberstring:
                                 things[i].setMemberByName(entry, value);
                                 continue thingloop;
                         }
