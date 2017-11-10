@@ -267,20 +267,14 @@ auto getNotes(const string nickname)
                 noteArray[i].line = note["line"].str;
                 noteArray[i].when = SysTime.fromISOString(note["when"].str);
             }
-
-            return noteArray;
-        }
-        else
-        {
-            logger.log("No notes available for nickname ", nickname);
-            return noteArray;
         }
     }
     catch (const Exception e)
     {
         logger.error(e.msg);
-        return noteArray;
     }
+
+    return noteArray;
 }
 
 
