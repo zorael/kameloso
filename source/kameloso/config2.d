@@ -4,11 +4,12 @@ import kameloso.common;
 
 import std.array : Appender;
 import std.stdio;
+import std.typecons : Flag;
 
 
-void writeToDisk(const string filename, const string configurationText)
+void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
+    (const string filename, const string configurationText)
 {
-    //import std.datetime : Clock;
     import std.file : exists, isFile, removeFile = remove;
 
     if (filename.exists && filename.isFile)
@@ -18,8 +19,55 @@ void writeToDisk(const string filename, const string configurationText)
 
     auto file = File(filename, "a");
 
-    //file.writefln("# kameloso bot config (%s)\n", Clock.currTime);
-    file.write(configurationText);
+    static if (banner)
+    {
+        import std.datetime : Clock;
+        file.writefln("# kameloso bot config (%s)\n", Clock.currTime);
+    }
+
+    file.writeln(configurationText);
+    file.flush();
+}
+
+
+string configReader(const string configFile)
+{
+    import std.file   : exists, isFile, readText;
+    import std.string : chomp;
+
+    if (!configFile.exists)
+    {
+        logger.info("Config file does not exist");
+        return string.init;
+    }
+    else if (!configFile.isFile)
+    {
+        logger.error("Config file is not a file!");
+        return string.init;
+    }
+
+    // Read the contents and split by newline
+    return configFile
+        .readText
+        .chomp;
+}
+
+
+void readConfig(T...)(const string configFile, ref T things)
+{
+    import std.algorithm.iteration : splitter;
+    import std.ascii  : newline;
+
+    configFile
+        .configReader
+        .splitter(newline)
+        .applyConfiguration(things);
+}
+
+unittest
+{
+    immutable s = configReader("kameloso.conf");
+    assert(s.length);
 }
 
 
