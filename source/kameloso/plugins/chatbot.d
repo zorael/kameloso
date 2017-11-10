@@ -6,6 +6,7 @@ import kameloso.irc;
 import kameloso.plugins.common;
 import kameloso.stringutils;
 
+import std.array : Appender;
 import std.concurrency : send;
 import std.json : JSONValue;
 import std.stdio;
@@ -363,6 +364,20 @@ void initialise()
 {
     logger.log("Initialising quotes ...");
     quotes = loadQuotes(chatbotOptions.quotesFile);
+}
+
+
+void loadConfig(const string configFile)
+{
+    import kameloso.config2 : readConfig;
+    configFile.readConfig(chatbotOptions);
+}
+
+
+void addToConfig(ref Appender!string sink)
+{
+    import kameloso.config2;
+    sink.serialise(chatbotOptions);
 }
 
 
