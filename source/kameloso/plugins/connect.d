@@ -30,29 +30,6 @@ IRCPluginState state;
 bool serverPinged;
 
 
-// onSelfJoin
-/++
- +  Adds a channel to the list of joined channels in the IRCBot struct, and
- +  propagates the event to all plugins.
- +
- +  Fires when the bot joins a channel.
- +
- +  Params:
- +      event = the triggering IRCevent.
- +/
-@(IRCEvent.Type.SELFJOIN)
-void onSelfjoin(const IRCEvent event)
-{
-    import std.algorithm.searching : canFind;
-
-    if (!state.bot.channels.canFind(event.channel))
-    {
-        state.bot.channels ~= event.channel;
-        updateBot();
-    }
-}
-
-
 // onSelfpart
 /++
  +  Removes a channel from the list of joined channels.
