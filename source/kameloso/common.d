@@ -550,18 +550,18 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     {
         static if (!isType!member)
         {
-            alias MemberType = typeof(member);
+            alias T = typeof(member);
 
-            static if (is(MemberType == struct) || is(MemberType == class))
+            static if (is(T == struct) || is(T == class))
             {
                 // Recurse
                 meldThis.tupleof[i].meldInto(member);
             }
-            else static if (isOfAssignableType!MemberType)
+            else static if (isOfAssignableType!T)
             {
                 static if (overwrite)
                 {
-                    static if (is(MemberType == float))
+                    static if (is(T == float))
                     {
                         import std.math : isNaN;
 
@@ -572,7 +572,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                     }
                     else
                     {
-                        if (meldThis.tupleof[i] != MemberType.init)
+                        if (meldThis.tupleof[i] != T.init)
                         {
                             member = meldThis.tupleof[i];
                         }
@@ -580,7 +580,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                 }
                 else
                 {
-                    static if (is(MemberType == float))
+                    static if (is(T == float))
                     {
                         import std.math : isNaN;
 
@@ -591,7 +591,7 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                     }
                     else
                     {
-                        if ((member == MemberType.init) ||
+                        if ((member == T.init) ||
                             (member == Thing.init.tupleof[i]))
                         {
                             member = meldThis.tupleof[i];
