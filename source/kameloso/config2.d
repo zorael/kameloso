@@ -81,6 +81,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
     import std.array : array;
     import std.conv : to;
     import std.format : format, formattedWrite;
+    import std.range : hasLength;
     import std.traits : getUDAs, hasUDA, isSomeString, isArray;
 
     static if (__traits(hasMember, Sink, "data"))
@@ -110,7 +111,8 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
                 enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
                 static assert(separator.length, "Invalid separator (empty)");
 
-                auto value = member; //member.joiner(separator).array;
+                enum arrayPattern = "%-(%s" ~ separator ~ "%)";
+                immutable value = arrayPattern.format(member);
             }
             else static if (is(T == enum))
             {
@@ -120,36 +122,35 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
             }
             else
             {
-                auto value = member;
+                immutable value = member;
             }
 
             static if (is(T == bool) || is(T == enum))
             {
-                sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
+                immutable comment = false;
             }
             else static if (is(T == float) || is(T == double))
             {
                 import std.math : isNaN;
-
-                if (member.to!T.isNaN)
-                {
-                    sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
-                }
-                else
-                {
-                    sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
-                }
+                immutable comment = member.to!T.isNaN;
+            }
+            else static if (hasLength!T)
+            {
+                immutable comment = !member.length;
             }
             else
             {
-                if (member == T.init)
-                {
-                    sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
-                }
-                else
-                {
-                    sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
-                }
+                immutable comment = (member == T.init);
+            }
+
+            if (comment)
+            {
+                // .init or otherwise disabled
+                sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
+            }
+            else
+            {
+                sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
             }
         }
     }
@@ -611,12 +612,12 @@ someBool true
 someFloat 3.14
 someDouble 99.9
 someBars oorgle
-intArray [1, 2, -3, 4, 5]
-stringArrayy ["hello", "world", "!"]
-boolArray [true, false, true]
-floatArray [0, 1.1, -2.2, 3.3]
-doubleArray [99.9999, 0.0001, -1]
-barArray [blaawp, oorgle, blaawp]
+intArray 1,2,-3,4,5
+stringArrayy hello,world,!
+boolArray true,false,true
+floatArray 0,1.1,-2.2,3.3
+doubleArray 99.9999,0.0001,-1
+barArray blaawp,oorgle,blaawp
 
 [DifferentSection]
 ignored completely
@@ -633,12 +634,12 @@ someBool        true
 someFloat       3.14
 someDouble      99.9
 someBars        oorgle
-intArray        [1, 2, -3, 4, 5]
-stringArrayy    ["hello", "world", "!"]
-boolArray       [true, false, true]
-floatArray      [0, 1.1, -2.2, 3.3]
-doubleArray     [99.9999, 0.0001, -1]
-barArray        [blaawp, oorgle, blaawp]
+intArray        1,2,-3,4,5
+stringArrayy    hello,world,!
+boolArray       true,false,true
+floatArray      0,1.1,-2.2,3.3
+doubleArray     99.9999,0.0001,-1
+barArray        blaawp,oorgle,blaawp
 
 [DifferentSection]
 ignored         completely
