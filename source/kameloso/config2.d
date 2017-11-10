@@ -64,12 +64,6 @@ void readConfig(T...)(const string configFile, ref T things)
         .applyConfiguration(things);
 }
 
-unittest
-{
-    immutable s = configReader("kameloso.conf");
-    assert(s.length);
-}
-
 
 void serialise(Sink, Things...)(ref Sink sink, Things things)
 if (Things.length > 1)
