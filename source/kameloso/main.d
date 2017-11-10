@@ -300,33 +300,36 @@ Flag!"quit" handleArguments(string[] args)
     // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
-        import kameloso.config2;
-
         // If we don't initialise the plugins there'll be no plugins array
         initPlugins();
-
-        Appender!string sink;
-        sink.reserve(512);
-        sink.serialise(bot, bot.server, settings);
-
-        printObjects(bot, bot.server, settings);
-
-        foreach (plugin; plugins)
-        {
-            plugin.addToConfig(sink);
-            // Not all plugins with configuration is important enough to list
-            plugin.present();
-        }
-
-        immutable justified = sink.data.justifiedConfigurationText;
-        writeToDisk!(Yes.addBanner)(settings.configFile, justified);
-
+        writeConfigurationFile(settings.configFile);
         return Yes.quit;
     }
 
     return No.quit;
 }
 
+
+void writeConfigurationFile(const string filename)
+{
+    import kameloso.config2;
+
+    Appender!string sink;
+    sink.reserve(512);
+    sink.serialise(bot, bot.server, settings);
+
+    printObjects(bot, bot.server, settings);
+
+    foreach (plugin; plugins)
+    {
+        plugin.addToConfig(sink);
+        // Not all plugins with configuration is important enough to list
+        plugin.present();
+    }
+
+    immutable justified = sink.data.justifiedConfigurationText;
+    writeToDisk!(Yes.addBanner)(settings.configFile, justified);
+}
 
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
