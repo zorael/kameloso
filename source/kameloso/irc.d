@@ -2589,7 +2589,6 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.ERR_NICKNAMEINUSE), type.to!string);
-        assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "Nickname is already in use."), content);
         assert((num == 433), num.to!string);
     }
@@ -2620,7 +2619,6 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.RPL_ENDOFMOTD), type.to!string);
-        assert((target.nickname == "kameloso^"), target.nickname);
         assert((content == "End of /MOTD command."), content);
         assert((num == 376), num.to!string);
     }
@@ -2633,7 +2631,6 @@ unittest
     with (e5)
     {
         assert((sender.nickname == "kameloso^"), sender.nickname);
-        assert((target.nickname == "kameloso^"), target.nickname);
         assert((type == IRCEvent.Type.SELFMODE), type.to!string);
         assert((aux == "+i"), aux);
     }
