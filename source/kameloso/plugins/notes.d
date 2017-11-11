@@ -49,7 +49,7 @@ void onJoin(const IRCEvent event)
     import std.datetime : Clock;
     import std.format : format;
 
-    const noteArray = getNotes(event.sender);
+    const noteArray = getNotes(event.sender.nickname);
 
     if (!noteArray.length) return;
     else if (noteArray.length == 1)
@@ -59,13 +59,13 @@ void onJoin(const IRCEvent event)
 
         state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :%s! %s left note %s ago: %s"
-            .format(event.channel, event.sender, note.sender, timestamp, note.line));
+            .format(event.channel, event.sender.nickname, note.sender, timestamp, note.line));
     }
     else
     {
         state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :%s! You have %d notes."
-            .format(event.channel, event.sender, noteArray.length));
+            .format(event.channel, event.sender.nickname, noteArray.length));
 
         foreach (const note; noteArray)
         {
@@ -77,7 +77,7 @@ void onJoin(const IRCEvent event)
         }
     }
 
-    clearNotes(event.sender);
+    clearNotes(event.sender.nickname);
 }
 
 
@@ -110,7 +110,7 @@ void onNames(const IRCEvent event)
         with (fakeEvent)
         {
             type = IRCEvent.Type.JOIN;
-            sender = nickname.stripModeSign();
+            sender.nickname = nickname.stripModeSign();
             channel = event.channel;
             time = Clock.currTime.toUnixTime;
         }
@@ -143,7 +143,7 @@ void onCommandAddNote(const IRCEvent event)
 
     if (hits != 2) return;
 
-    nickname.addNote(event.sender, line);
+    nickname.addNote(event.sender.nickname, line);
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Note added".format(event.channel));
 
@@ -210,11 +210,11 @@ void onCommandFakejoin(const IRCEvent event)
     if (nickname.indexOf(' ') != -1)
     {
         // contains more than one word
-        newEvent.sender = nickname.nom!(Yes.decode)(' ');
+        newEvent.sender.nickname = nickname.nom!(Yes.decode)(' ');
     }
     else
     {
-        newEvent.sender = event.content;
+        newEvent.sender.nickname = event.content;
     }
 
     return onJoin(newEvent);  // or onEvent?
