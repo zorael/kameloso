@@ -92,9 +92,11 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * investigate inverse channel behaviour (blacklists)
 * revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
-* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are built. `IRCPlugin.postprocess(IRCEvent)`?h
+* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are built. `IRCPlugin.postprocess(IRCEvent)`?
 * sort out `main.d`
 * pipedream: DCC
+* update docs
+* fix option structs for each plugin with configurables
 
 ## Built With
 
