@@ -379,6 +379,11 @@ void onRegistrationEvent(const IRCEvent event)
             case "twitch.tv/tags":
             case "twitch.tv/commands":
                 // Twitch-specific capabilites
+            case "account-notify":
+            case "extended-join":
+            case "identify-msg":
+            case "multi-prefix":
+                // Freenode
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
                 break;
 
