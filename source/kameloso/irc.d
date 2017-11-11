@@ -745,10 +745,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         import std.algorithm.iteration : splitter;
         import std.conv : to;
         import std.string : toLower;
-
         // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
         // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
         // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
+        // :tmi.twitch.tv 004 zorael :-
         //slice.formattedRead("%s %s", event.target, event.content);
         event.target.nickname = slice.nom(' ');
         event.content = slice;
@@ -1121,6 +1121,9 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
     case AUTH_SUCCESS:
     case SASL_SUCCESS:
+        // :weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.
+        // :weber.freenode.net 903 kameloso :SASL authentication successful
+        // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
         if (event.target.nickname.indexOf(' ') != -1)
         {
             event.target.nickname = bot.nickname;
