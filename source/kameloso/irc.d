@@ -1205,7 +1205,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     if ((event.target.nickname == bot.nickname) &&
         (event.type != IRCEvent.Type.MODE) &&
         (event.type != IRCEvent.Type.CHANMODE) &&
-        (event.type != IRCEvent.Type.WELCOME))
+        (event.type != IRCEvent.Type.WELCOME) &&
+        (event.type != IRCEvent.Type.QUERY))
     {
         logger.trace("Bot shares nickname with event target, consider culling?");
         event.target.nickname = string.init;
