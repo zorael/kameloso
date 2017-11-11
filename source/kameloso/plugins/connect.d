@@ -387,6 +387,12 @@ void onRegistrationEvent(const IRCEvent event)
             //case "identify-msg":
             //case "multi-prefix":
                 // Freenode
+            //case away-notify:
+            //case chghost:
+            //case invite-notify:
+            //case multi-prefix:
+            //case userhost-in-names:
+                // Rizon
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
                 break;
 
