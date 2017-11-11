@@ -71,7 +71,7 @@ void onCTCPs(const IRCEvent event)
 
     with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(event.sender));
+        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(event.sender.nickname));
 }
 
 
@@ -119,7 +119,7 @@ void onCTCPClientinfo(const IRCEvent event)
     with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
         ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
-        .format(event.sender, allCTCPTypes));
+        .format(event.sender.nickname, allCTCPTypes));
 }
 
 

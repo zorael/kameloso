@@ -112,10 +112,10 @@ void onWelcome(const IRCEvent event)
     if (!state.bot.server.resolvedAddress.length)
     {
         // Must resolve here too if the server doesn't negotiate CAP
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
     }
 
-    state.bot.nickname = event.target;
+    state.bot.nickname = event.target.nickname;
     updateBot();
 }
 
@@ -153,7 +153,7 @@ void onToConnectType(const IRCEvent event)
 void onPing(const IRCEvent event)
 {
     serverPinged = true;
-    state.mainThread.send(ThreadMessage.Pong(), event.sender);
+    state.mainThread.send(ThreadMessage.Pong(), event.sender.nickname);
 
     if (state.bot.startedAuth && !state.bot.finishedAuth)
     {
@@ -425,9 +425,9 @@ void onRegistrationEvent(const IRCEvent event)
         break;
     }
 
-    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
         updateBot();
     }
 }
@@ -438,9 +438,9 @@ void onNotice(const IRCEvent event)
 {
     if (!state.bot.finishedRegistering) return;
 
-    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
         updateBot();
     }
 }
