@@ -416,13 +416,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case NOTICE:
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
         // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
+        // :tolkien.freenode.net NOTICE * :*** Checking Ident
 
         //slice.formattedRead("%s :%s", event.target, event.content);
         event.target.nickname = slice.nom(" :");
         event.content = slice;
 
         // FIXME: This obviously doesn't scale either
-        if (event.target.nickname == "*") event.sender.special = true;
+        if (event.target.nickname == "*") event.target.nickname = string.init;
         else if ((event.sender.ident == "service") && (event.sender.address == "rizon.net"))
         {
             event.sender.special = true;
