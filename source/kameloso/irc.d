@@ -484,13 +484,26 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case JOIN:
-        import std.string : munch;
-
+        // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
         // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
+
+        import std.string : munch, strip;
+
         event.type = (event.sender == bot.nickname) ? SELFJOIN : JOIN;
-        event.channel = slice;
-        event.channel.munch(":");
+
+        if (slice.indexOf(' '))
+        {
+            // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
+            event.channel = slice.nom(' ');
+            event.login = slice.nom(" :");
+            event.content = slice.strip();
+        }
+        else
+        {
+            event.channel = slice;
+            event.channel.munch(":");
+        }
         break;
 
     case PART:
