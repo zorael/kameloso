@@ -1725,7 +1725,7 @@ struct IRCUser
 
     bool isServer() @property const
     {
-        return (!nickname.length && address.length);
+        return (!nickname.length && (address.indexOf('.') != -1));
     }
 }
 
