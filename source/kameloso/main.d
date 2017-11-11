@@ -481,7 +481,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
                     if (!spammedAboutReplaying)
                     {
                         logger.info("Replaying event:");
-                        printObjects(*savedEvent);
+                        printObject(*savedEvent);
                         spammedAboutReplaying = true;
                     }
 
