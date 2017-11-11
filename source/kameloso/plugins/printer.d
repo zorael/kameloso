@@ -175,7 +175,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         if (channel.length) sink.formattedWrite(" [%s]",  channel);
         if (content.length) sink.formattedWrite(`: "%s"`, content);
         if (aux.length)     sink.formattedWrite(" <%s>",  aux);
-        if (num > 0)        sink.formattedWrite(" (#%d)", num);
+        if (num > 0)        sink.formattedWrite(" (#%03d)", num);
 
         static if (!__traits(hasMember, Sink, "data"))
         {
@@ -314,7 +314,15 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.colour(DefaultColour.content);
                 //sink.formattedWrite(`: "%s"`, content);
-                put(sink, `: "`, content, '"');
+                if (sender.isServer || sender.nickname.length)
+                {
+                    put(sink, `: "`, content, '"');
+                }
+                else
+                {
+                    // PING or ERROR likely
+                    put(sink, content);
+                }
             }
 
             if (aux.length)
@@ -328,7 +336,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.colour(DefaultColour.num);
                 //sink.formattedWrite(" (#%d)", num);
-                put(sink, " (#", num, ')');
+                //put(sink, " (#", num, ')');
+                put(sink, " (#");
+                sink.formattedWrite("%03d", num);
+                put(sink, ')');
             }
 
             sink.colour(default_);
