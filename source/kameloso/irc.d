@@ -861,6 +861,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_WHOISIDLE: //  317
     case ERR_ERRONEOUSNICKNAME: // 432
     case ERR_NEEDMOREPARAMS: // 461
+    case USERCOUNTLOCAL: // 265
+    case USERCOUNTGLOBAL: // 266
         // :asimov.freenode.net 252 kameloso^ 31 :IRC Operators online
         // :asimov.freenode.net 253 kameloso^ 13 :unknown connection(s)
         // :asimov.freenode.net 254 kameloso^ 54541 :channels formed
@@ -868,6 +870,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         // :asimov.freenode.net 461 kameloso^ JOIN :Not enough parameters
         // :asimov.freenode.net 265 kameloso^ 6500 11061 :Current local users 6500, max 11061
         // :asimov.freenode.net 266 kameloso^ 85267 92341 :Current global users 85267, max 92341
+        // :irc.uworld.se 265 kameloso^^ :Current local users: 14552  Max: 19744
+        // :irc.uworld.se 266 kameloso^^ :Current global users: 14552  Max: 19744
+        // :weber.freenode.net 265 kameloso 3385 6820 :Current local users 3385, max 6820"
+        // :weber.freenode.net 266 kameloso 87056 93012 :Current global users 87056, max 93012
+        // :irc.rizon.no 265 kameloso^^ :Current local users: 16115  Max: 17360
+        // :irc.rizon.no 266 kameloso^^ :Current global users: 16115  Max: 17360
+
         //slice.formattedRead("%s %s :%s", event.target, event.aux, event.content);
         event.target.nickname = slice.nom(' ');
 
@@ -880,14 +889,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             event.content = slice[1..$];
         }
-        break;
-
-    case USERCOUNTLOCAL: // 265
-    case USERCOUNTGLOBAL: // 266
-        // :irc.uworld.se 265 kameloso^^ :Current local users: 14552  Max: 19744
-        // :irc.uworld.se 266 kameloso^^ :Current global users: 14552  Max: 19744
-        event.target.nickname = slice.nom(" :");
-        event.content = slice;
         break;
 
     case RPL_WHOISUSER: // 311
