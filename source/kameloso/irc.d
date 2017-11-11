@@ -59,8 +59,18 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
     switch (typestring)
     {
     case "PING":
+        // PING :3466174537
+        // PING :weber.freenode.net
         event.type = IRCEvent.Type.PING;
-        event.sender.address = slice;
+
+        if (slice.indexOf('.') != -1)
+        {
+            event.sender.address = slice;
+        }
+        else
+        {
+            event.content = slice;
+        }
         break;
 
     case "ERROR":

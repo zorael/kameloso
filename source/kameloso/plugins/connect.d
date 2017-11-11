@@ -153,7 +153,10 @@ void onToConnectType(const IRCEvent event)
 void onPing(const IRCEvent event)
 {
     serverPinged = true;
-    state.mainThread.send(ThreadMessage.Pong(), event.sender.nickname);
+    immutable target = (event.content.length) ?
+        event.content : event.sender.address;
+
+    state.mainThread.send(ThreadMessage.Pong(), target);
 
     if (state.bot.startedAuth && !state.bot.finishedAuth)
     {
