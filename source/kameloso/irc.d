@@ -2571,7 +2571,7 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.ERR_NICKNAMEINUSE), type.to!string);
-        // assert((target == "kameloso"), target);
+        assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "Nickname is already in use."), content);
         assert((num == 433), num.to!string);
     }
@@ -2602,7 +2602,7 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.RPL_ENDOFMOTD), type.to!string);
-        //assert((target == "kameloso^"), target);
+        assert((target.nickname == "kameloso^"), target.nickname);
         assert((content == "End of /MOTD command."), content);
         assert((num == 376), num.to!string);
     }
@@ -2630,7 +2630,7 @@ unittest
     {
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((type == IRCEvent.Type.QUERY), type.to!string); // Will this work?
-        //assert((target == "kameloso^", target);
+        assert((target.nickname == "kameloso^"), target.nickname);
         assert((content == "sudo privmsg zorael :derp"), content);
     }
 
@@ -2718,7 +2718,7 @@ unittest
      {
         assert((sender.address == "irc.uworld.se"), sender.address);
         assert((type == IRCEvent.Type.TOCONNECTTYPE), type.to!string);
-        // assert((target == "kameloso"), target);
+        assert((target.nickname == "kameloso"), target.nickname);
         assert((aux == "3705964477"), aux);
         assert((content == "PONG"), content);
      }
