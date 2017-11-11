@@ -753,13 +753,13 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
                         is(T : BashFormat) || is(T : BashReset);
 
 
-// colourise
+// colour
 /++
  +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset`` and composes them into a colour code token.
+ +  a `BashReset` and composes them into a colour code token.
  +
  +  This function creates an `Appender` and fills it with the return value of
- +  `colourise(Sink, Codes...)`.
+ +  `colour(Sink, Codes...)`.
  +
  +  Params:
  +      codes = a variadic list of Bash format codes.
@@ -768,7 +768,7 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-string colourise(Codes...)(Codes codes)
+string colour(Codes...)(Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     if (settings.monochrome) return string.init;
@@ -778,18 +778,18 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     Appender!string sink;
     sink.reserve(16);
 
-    sink.colourise(codes);
+    sink.colour(codes);
     return sink.data;
 }
 else
-/// Dummy colourise for when version != Colours
-string colourise(Codes...)(Codes codes)
+/// Dummy colour for when version != Colours
+string colour(Codes...)(Codes codes)
 {
     return string.init;
 }
 
 
-// colourise
+// colour
 /++
  +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
  +  a `BashReset`` and composes them into a colour code token.
@@ -803,7 +803,7 @@ string colourise(Codes...)(Codes codes)
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-void colourise(Sink, Codes...)(auto ref Sink sink, Codes codes)
+void colour(Sink, Codes...)(auto ref Sink sink, Codes codes)
 if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(TerminalToken.bashFormat);
@@ -906,7 +906,7 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
 }
 
 
-// truecolourise
+// truecolour
 /++
  +  Produces a Bash colour token for the colour passed, expressed in terms of
  +  red, green and blue.
@@ -919,7 +919,7 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
  +      b = blue
  +/
 version(Colours)
-void truecolourise(Flag!"normalise" normalise = Yes.normalise, Sink)
+void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b)
 if (isOutputRange!(Sink,string))
 {
@@ -948,23 +948,23 @@ unittest
     // LDC workaround for not taking formattedWrite sink as auto ref
     sink.reserve(16);
 
-    sink.truecolourise!(No.normalise)(0, 0, 0);
+    sink.truecolour!(No.normalise)(0, 0, 0);
     assert(sink.data == "\033[38;2;0;0;0m", sink.data);
     sink.clear();
 
-    sink.truecolourise!(Yes.normalise)(0, 0, 0);
+    sink.truecolour!(Yes.normalise)(0, 0, 0);
     assert(sink.data == "\033[38;2;150;150;150m", sink.data);
     sink.clear();
 
-    sink.truecolourise(255, 255, 255);
+    sink.truecolour(255, 255, 255);
     assert(sink.data == "\033[38;2;255;255;255m", sink.data);
     sink.clear();
 
-    sink.truecolourise(123, 221, 0);
+    sink.truecolour(123, 221, 0);
     assert(sink.data == "\033[38;2;123;221;0m", sink.data);
     sink.clear();
 
-    sink.truecolourise(0, 255, 0);
+    sink.truecolour(0, 255, 0);
     assert(sink.data == "\033[38;2;100;255;100m", sink.data);
 }
 
