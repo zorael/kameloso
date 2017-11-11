@@ -107,8 +107,7 @@ public:
                     logger.logf("Network down? Retrying in %d seconds (attempt %d)",
                         Timeout.resolve, i+1);
                     Thread.sleep(Timeout.resolve.seconds);
-
-                    return resolve(address, port, abort);
+                    continue;
 
                 default:
                     logger.error(e.msg);
