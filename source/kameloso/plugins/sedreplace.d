@@ -146,6 +146,7 @@ unittest
  +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
+@(PrivilegeLevel.anyone)  // ?
 void onMessage(const IRCEvent event)
 {
     import kameloso.stringutils : beginsWith;
@@ -162,13 +163,13 @@ void onMessage(const IRCEvent event)
         case '/':
         case '|':
         case '#':
-            if (const line = event.sender in prevlines)
+            if (const line = event.sender.nickname in prevlines)
             {
                 if ((Clock.currTime - line.timestamp) >
                     replaceTimeoutSeconds.seconds)
                 {
                     // Entry is too old, remove it
-                    prevlines.remove(event.sender);
+                    prevlines.remove(event.sender.nickname);
                     return;
                 }
 
@@ -177,9 +178,9 @@ void onMessage(const IRCEvent event)
 
                 state.mainThread.send(ThreadMessage.Sendline(),
                     "PRIVMSG %s :%s | %s"
-                    .format(event.channel, event.sender, result));
+                    .format(event.channel, event.sender.nickname, result));
 
-                prevlines.remove(event.sender);
+                prevlines.remove(event.sender.nickname);
             }
 
             // Processed a sed-replace command (succesfully or not); return
@@ -198,7 +199,7 @@ void onMessage(const IRCEvent event)
     Line line;
     line.content = stripped;
     line.timestamp = Clock.currTime;
-    prevlines[event.sender] = line;
+    prevlines[event.sender.nickname] = line;
 }
 
 
