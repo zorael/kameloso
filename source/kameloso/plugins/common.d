@@ -640,7 +640,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.JOIN)
     void onWhoisLoginMixin(const IRCEvent event)
     {
-        state.users[event.target.nickname] = userFromEvent(event);
+        state.users[event.target.nickname] = event.target;
     }
 
     //onEndOfWhoisMixin
