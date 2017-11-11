@@ -190,7 +190,7 @@ void onCommandSay(const IRCEvent event)
         return;
     }
 
-    immutable target = (event.channel.length) ? event.channel : event.sender;
+    immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, event.content));
@@ -245,7 +245,7 @@ void onCommand8ball(const IRCEvent event)
     ];
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-    immutable target = (event.channel.length) ? event.channel : event.sender;
+    immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, reply));
@@ -283,7 +283,8 @@ void onCommandQuote(const IRCEvent event)
     }
 
     immutable quote = nickname.getQuote();
-    immutable target = (event.channel.length) ? event.channel : event.sender;
+    immutable target = (event.channel.length) ?
+        event.channel : event.sender.nickname;
 
     if (quote.length)
     {
@@ -326,7 +327,8 @@ void onCommanAdddQuote(const IRCEvent event)
     nickname.addQuote(slice);
     saveQuotes(chatbotOptions.quotesFile);
 
-    immutable target = (event.channel.length) ? event.channel : event.sender;
+    immutable target = (event.channel.length) ?
+        event.channel : event.sender.nickname;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Quote for %s saved (%d on record)"
