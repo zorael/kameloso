@@ -1005,18 +1005,17 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
             //slice.formattedRead("* %s :%s", event.aux, event.content);
             slice.nom("* ");
-            event.aux = slice.nom(" :");
-            event.content = slice.stripRight();
         }
         else
         {
             // :genesis.ks.us.irchighway.net CAP 867AAF66L LS :away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names
-            string id;
+            //string id;
             //slice.formattedRead("%s %s :%s", id, event.aux, event.content);
-            id = slice.nom(' ');
-            event.aux = slice.nom(" :");
-            event.content = slice.stripRight();
+            immutable id = slice.nom(' ');
         }
+
+        event.aux = slice.nom(" :");
+        event.content = slice.stripRight();
         break;
 
     case TOPIC:
@@ -2274,6 +2273,17 @@ IRCUser userFromEvent(const IRCEvent event)
         {
             nickname = event.target;
             login    = event.aux;
+        }
+        break;
+
+    case JOIN:
+        // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
+        // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
+        // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
+        with (user)
+        {
+            nickname = event.sender;
+            login = event.login;
         }
         break;
 
