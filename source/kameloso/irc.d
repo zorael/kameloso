@@ -1128,6 +1128,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
         break;
 
+    case YOURHIDDENHOST:
+        // :TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host
+        slice.nom(' ');
+        event.content = slice.nom(" :");
+        event.aux = slice;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
