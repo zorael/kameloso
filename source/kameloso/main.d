@@ -101,15 +101,15 @@ Flag!"quit" checkMessages()
         // at any one given time.Identical requests are likely to go out several
         // at a time in bursts, and we only need one reply. So limit the calls.
 
-        const then = (event.sender in whoisCalls);
+        const then = (event.sender.nickname in whoisCalls);
         const now = Clock.currTime;
 
         if (then && (now - *then) < Timeout.whois.seconds) return;
 
-        logger.trace("--> WHOIS :", event.sender);
-        conn.sendline("WHOIS :", event.sender);
-        whoisCalls[event.sender] = Clock.currTime;
-        replayQueue[event.sender] = event;
+        logger.trace("--> WHOIS :", event.sender.nickname);
+        conn.sendline("WHOIS :", event.sender.nickname);
+        whoisCalls[event.sender.nickname] = Clock.currTime;
+        replayQueue[event.sender.nickname] = event;
     }
 
     /// Receive an updated bot, inherit it into .bot and propagate it to
@@ -475,7 +475,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
                     (event.type == IRCEvent.Type.HASTHISNICK))
                 {
-                    const savedEvent = event.target in replayQueue;
+                    const savedEvent = event.target.nickname in replayQueue;
                     if (!savedEvent) continue;
 
                     if (!spammedAboutReplaying)
@@ -493,7 +493,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 (event.type == IRCEvent.Type.HASTHISNICK))
             {
                 // These events signify a completed WHOIS
-                replayQueue.remove(event.target);
+                replayQueue.remove(event.target.nickname);
             }
         }
 
