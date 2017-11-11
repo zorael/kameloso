@@ -985,10 +985,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case CAP:
+        import std.string : stripRight;
+
         if (slice.indexOf('*') != -1)
         {
-            import std.string : stripRight;
-
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
             //slice.formattedRead("* %s :%s", event.aux, event.content);
             slice.nom("* ");
@@ -1002,7 +1002,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             //slice.formattedRead("%s %s :%s", id, event.aux, event.content);
             id = slice.nom(' ');
             event.aux = slice.nom(" :");
-            event.content = slice;
+            event.content = slice.stripRight();
         }
         break;
 
