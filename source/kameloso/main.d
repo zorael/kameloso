@@ -589,12 +589,12 @@ int main(string[] args)
     {
         logger.warning("Aborting...");
         teardownPlugins();
-        thread_joinAll();
+        //thread_joinAll();
         return 1;
     }
 
     logger.info("Exiting...");
-    thread_joinAll();
+    //thread_joinAll();
 
     return 0;
 }
