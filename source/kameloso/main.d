@@ -578,7 +578,7 @@ int main(string[] args)
         auto generator = new Generator!string(() => listenFiber(conn, abort));
         quit = loopGenerator(generator);
     }
-    while (!quit && !abort);
+    while (!quit && !abort && settings.reconnectOnFailure);
 
     import core.thread;
     if (quit)
