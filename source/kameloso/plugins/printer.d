@@ -171,7 +171,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.formattedWrite(" (%s)", alias_);
         }
 
-        if (target.nickname.length) sink.formattedWrite(" (%s)",  target);
+        if (target.nickname.length) sink.formattedWrite(" (%s)",  target.nickname);
         if (channel.length) sink.formattedWrite(" [%s]",  channel);
         if (content.length) sink.formattedWrite(`: "%s"`, content);
         if (aux.length)     sink.formattedWrite(" <%s>",  aux);
@@ -300,7 +300,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 }
 
                 //sink.formattedWrite(" (%s)", target);
-                put(sink, " (", target, ')');
+                put(sink, " (", target.nickname, ')');
             }
 
             if (channel.length)
