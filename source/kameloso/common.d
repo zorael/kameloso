@@ -231,7 +231,7 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
     foreach (thing; things)
     {
         sink.formattedWrite("%s-- %s\n",
-            colourise(white),
+            white.colour,
             Unqual!(typeof(thing)).stringof);
 
         foreach (immutable i, member; thing.tupleof)
@@ -250,10 +250,10 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                 {
                     enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
                     sink.formattedWrite(stringPattern,
-                        colourise(cyan), T.stringof,
-                        colourise(white), (entryPadding + 2), memberstring,
-                        colourise(lightgreen), member,
-                        colourise(darkgrey), member.length);
+                        cyan.colour, T.stringof,
+                        white.colour, (entryPadding + 2), memberstring,
+                        lightgreen.colour, member,
+                        darkgrey.colour, member.length);
                 }
                 else static if (isArray!T)
                 {
@@ -261,24 +261,24 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
                         (entryPadding + 2) : (entryPadding + 4);
 
                     enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
-                    sink.formattedWrite!arrayPattern(
-                        colourise(cyan), T.stringof,
-                        colourise(white), width, memberstring,
-                        colourise(lightgreen), member,
-                        colourise(darkgrey), member.length);
+                    sink.formattedWrite(arrayPattern,
+                        cyan.colour, T.stringof,
+                        white.colour, width, memberstring,
+                        lightgreen.colour, member,
+                        darkgrey.colour, member.length);
                 }
                 else
                 {
                     enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                     sink.formattedWrite(normalPattern,
-                        colourise(cyan), T.stringof,
-                        colourise(white), (entryPadding + 2), memberstring,
-                        colourise(lightgreen), member);
+                        cyan.colour, T.stringof,
+                        white.colour, (entryPadding + 2), memberstring,
+                        lightgreen.colour, member);
                 }
             }
         }
 
-        sink.put(colourise(default_));
+        sink.put(default_.colour);
         sink.put('\n');
     }
 }
@@ -1001,7 +1001,7 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                sink.colourise(BashForeground.white);
+                sink.colour(BashForeground.white);
             }
         }
 
@@ -1017,27 +1017,27 @@ final class KamelosoLogger : Logger
         switch (logLevel)
         {
         case trace:
-            sink.colourise(default_);
+            sink.colour(default_);
             break;
 
         case info:
-            sink.colourise(lightgreen);
+            sink.colour(lightgreen);
             break;
 
         case warning:
-            sink.colourise(lightred);
+            sink.colour(lightred);
             break;
 
         case error:
-            sink.colourise(red);
+            sink.colour(red);
             break;
 
         case fatal:
-            sink.colourise(red, BashFormat.blink);
+            sink.colour(red, BashFormat.blink);
             break;
 
         default:
-            sink.colourise(white);
+            sink.colour(white);
             break;
         }
     }
@@ -1073,7 +1073,7 @@ final class KamelosoLogger : Logger
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                sink.colourise(BashForeground.default_, BashReset.blink);
+                sink.colour(BashForeground.default_, BashReset.blink);
             }
         }
 

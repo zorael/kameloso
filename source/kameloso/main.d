@@ -276,9 +276,9 @@ Flag!"quit" handleArguments(string[] args)
         printVersionInfo(BashForeground.white);
         writeln();
 
-        defaultGetoptPrinter(colourise(BashForeground.lightgreen) ~
+        defaultGetoptPrinter(BashForeground.lightgreen.colour ~
                             "Command-line arguments available:\n" ~
-                            colourise(BashForeground.default_),
+                            BashForeground.default_.colour,
                             results.options);
         writeln();
         return Yes.quit;
@@ -333,11 +333,11 @@ void writeConfigurationFile(const string filename)
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-        colourise(colourCode),
+        colourCode.colour,
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
-        colourise(BashForeground.default_));
+        BashForeground.default_.colour);
 }
 
 

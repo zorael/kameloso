@@ -211,7 +211,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 return DefaultColour.sender;
             }
 
-            void colouriseSenderTruecolour()
+            void colourSenderTruecolour()
             {
                 if (event.colour.length && printerOptions.truecolour)
                 {
@@ -219,21 +219,21 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
-                    sink.truecolourise(r, g, b);
+                    sink.truecolour(r, g, b);
                 }
                 else
                 {
-                    sink.colourise(colourByHash(sender));
+                    sink.colour(colourByHash(sender));
                 }
             }
 
             BashForeground typeColour = (type == IRCEvent.Type.QUERY) ?
                 lightgreen : DefaultColour.type;
 
-            sink.colourise(white);
+            sink.colour(white);
             //sink.formattedWrite("[%s] ", timestamp);
             put(sink, '[', timestamp, "] ");
-            sink.colourise(typeColour);
+            sink.colour(typeColour);
             //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
             put(sink, '[', enumToString(type), "] ");
 
@@ -242,7 +242,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             bool aliasPrinted;
 
-            colouriseSenderTruecolour();
+            colourSenderTruecolour();
 
             if (alias_.length && alias_.asLowerCase.equal(sender))
             {
@@ -256,19 +256,19 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (special)
             {
-                sink.colourise(DefaultColour.special);
+                sink.colour(DefaultColour.special);
                 sink.put('*');
             }
 
             if (role != Role.init)
             {
-                sink.colourise(white);
+                sink.colour(white);
                 sink.formattedWrite(" [%s]", enumToString(role));
             }
 
             if (alias_.length && !aliasPrinted)
             {
-                colouriseSenderTruecolour();
+                colourSenderTruecolour();
                 //sink.formattedWrite(" (%s)", alias_);
                 put(sink, " (", alias_, ')');
             }
@@ -278,11 +278,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 if (target[0] == '#')
                 {
                     // Let all channels be one colour
-                    sink.colourise(DefaultColour.target);
+                    sink.colour(DefaultColour.target);
                 }
                 else
                 {
-                    sink.colourise(colourByHash(event.target));
+                    sink.colour(colourByHash(event.target));
                 }
 
                 //sink.formattedWrite(" (%s)", target);
@@ -291,33 +291,33 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (channel.length)
             {
-                sink.colourise(DefaultColour.channel);
+                sink.colour(DefaultColour.channel);
                 //sink.formattedWrite(" [%s]", channel);
                 put(sink, " [", channel, ']');
             }
 
             if (content.length)
             {
-                sink.colourise(DefaultColour.content);
+                sink.colour(DefaultColour.content);
                 //sink.formattedWrite(`: "%s"`, content);
                 put(sink, `: "`, content, '"');
             }
 
             if (aux.length)
             {
-                sink.colourise(DefaultColour.aux);
+                sink.colour(DefaultColour.aux);
                 //sink.formattedWrite(" <%s>", aux);
                 put(sink, " <", aux, '>');
             }
 
             if (num > 0)
             {
-                sink.colourise(DefaultColour.num);
+                sink.colour(DefaultColour.num);
                 //sink.formattedWrite(" (#%d)", num);
                 put(sink, " (#", num, ')');
             }
 
-            sink.colourise(default_);
+            sink.colour(default_);
 
             static if (!__traits(hasMember, Sink, "data"))
             {
