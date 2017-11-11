@@ -138,7 +138,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
-    auto user = event.sender in state.users;
+    auto user = event.sender.nickname in state.users;
 
     if (!user) return FilterResult.whois;
     else if ((user.login == state.bot.master) ||
@@ -550,14 +550,14 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (state.users[event.sender].login !=
+                                    (state.users[event.sender.nickname].login !=
                                         state.bot.master))
                                 {
                                     static if (verbose)
                                     {
                                         writefln("%s: %s passed privilege " ~
                                             "check but isn't master; continue",
-                                            name, event.sender);
+                                            name, event.sender.nickname);
                                     }
                                     continue;
                                 }
@@ -570,7 +570,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                 static if (verbose)
                                 {
                                     writefln("%s: %s failed privilege check; " ~
-                                        "continue", name, event.sender);
+                                        "continue", name, event.sender.nickname);
                                 }
                                 continue;
                             }
@@ -640,7 +640,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.JOIN)
     void onWhoisLoginMixin(const IRCEvent event)
     {
-        state.users[event.target] = userFromEvent(event);
+        state.users[event.target.nickname] = userFromEvent(event);
     }
 
     //onEndOfWhoisMixin
@@ -661,7 +661,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWhoisMixin(const IRCEvent event)
     {
-        state.queue.remove(event.target);
+        state.queue.remove(event.target.nickname);
     }
 
     // onLeaveMixin
@@ -678,7 +678,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.QUIT)
     void onLeaveMixin(const IRCEvent event)
     {
-        state.users.remove(event.sender);
+        state.users.remove(event.sender.nickname);
     }
 
     // updateBot
