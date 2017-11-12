@@ -822,6 +822,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             }
         }
 
+        with (bot.server)
+        if (network == Network.init)
+        {
+            logger.info("No network detected, guessing...");
+            network = networkOf(address);
+            logger.info(network, "?");
+        }
+
         break;
 
     case TOPICSETTIME: // 333
