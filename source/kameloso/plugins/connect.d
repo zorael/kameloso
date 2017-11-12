@@ -359,6 +359,8 @@ void onInvite(const IRCEvent event)
 @(IRCEvent.Type.CAP)
 void onRegistrationEvent(const IRCEvent event)
 {
+    /// http://ircv3.net/irc
+
     with (state)
     switch (event.aux)
     {

@@ -392,6 +392,17 @@ unittest
  +  This function only focuses on specialcasing the remaining line, dividing it
  +  into fields like target, channel, content, etc.
  +
+ +  IRC events are *riddled* with inconsistencies, so this function is very very
+ +  long but by neccessity. An alternative is to break out stuff into:
+ +
+ +  -------------
+ +  case NOTICE:
+ +      onNotice(event);
+ +      break;
+ +  -------------
+ +
+ +  This might not be a dumb idea, it just hasn't been done.
+ +
  +  The IRCEvent is finished at the end of this function.
  +
  +  Params:
