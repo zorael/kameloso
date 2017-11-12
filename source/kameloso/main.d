@@ -301,6 +301,10 @@ Flag!"quit" handleArguments(string[] args)
     // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
+        printVersionInfo(BashForeground.white);
+        logger.info("Writing configuration to ", settings.configFile);
+        writeln();
+
         // If we don't initialise the plugins there'll be no plugins array
         initPlugins();
 
