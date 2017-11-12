@@ -529,7 +529,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             event.channel = slice.nom(' ');
             event.sender.login = slice.nom(" :");
             if (event.sender.login == "*") event.sender.login = string.init;
-            event.content = slice.strip();
+            //event.content = slice.strip();  // no need for full name...
         }
         else
         {
@@ -1159,7 +1159,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             event.target.nickname = bot.nickname;
         }
+        break;
 
+    case ACCOUNT:
+        //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
+        event.sender.login = slice;
         break;
 
     case YOURHIDDENHOST:
@@ -1743,8 +1747,9 @@ struct IRCEvent
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
-        SASL_AUTHENTICATE,
         SUB, RESUB,
+        ACCOUNT,
+        SASL_AUTHENTICATE,
         AUTH_CHALLENGE,
         AUTH_FAILURE,
         AUTH_SUCCESS, // = 900          // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
