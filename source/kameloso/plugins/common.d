@@ -681,6 +681,24 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender.nickname);
     }
 
+    // onJoinMixin
+    /++
+     +  Adds a user to the user array if the login is known.
+     +
+     +  Servers with the (enabled) capability `extended-join` will include the
+     +  login name of whoever joins in the event string. If it's there, catch
+     +  the user into the user array so we won't have to WHOIS them later.
+     +/
+    @(IRCEvent.Type.JOIN)
+    void onJoinMixin(const IRCEvent event)
+    {
+        if (event.sender.login.length)
+        {
+            // This is an extended-join event; catch the sender
+            state.users[event.sender.nickname] = event.sender;
+        }
+    }
+
     // updateBot
     /++
      +  Takes a copy of the current bot state and concurrency-sends it to the
