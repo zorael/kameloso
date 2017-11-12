@@ -1193,7 +1193,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
     }
 
-    postparseanityCheck(event);
+    postparseSanityCheck(event, bot);
 }
 
 
@@ -1205,8 +1205,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
  +  Params:
  +      ref event = the IRC event to examine.
  +/
-void postparseSanityCheck(ref IRCEvent event)
+void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
 {
+    import kameloso.stringutils : beginsWith;
+
     if ((event.type != IRCEvent.Type.CHANMODE) &&
         (event.type != IRCEvent.Type.TOPIC) &&
         ((event.target.nickname.indexOf(' ') != -1) ||
@@ -1221,6 +1223,7 @@ void postparseSanityCheck(ref IRCEvent event)
 
     if (event.target.nickname.beginsWith('#'))
     {
+        writeln();
         logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
         printObject(event);
         logger.warning("------------------------------------");
@@ -1233,7 +1236,8 @@ void postparseSanityCheck(ref IRCEvent event)
         (event.type != IRCEvent.Type.WELCOME) &&
         (event.type != IRCEvent.Type.QUERY))
     {
-        logger.trace("Bot shares nickname with event target, consider culling?");
+        logger.trace("Bot shares nickname with event target, consider culling? ",
+            event.type);
         event.target.nickname = string.init;
     }
 }
