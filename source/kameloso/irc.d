@@ -1236,8 +1236,7 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         logger.warning("--------------------------------------");
         writeln();
     }
-
-    if (event.target.nickname.beginsWith('#'))
+    else if (event.target.nickname.beginsWith('#'))
     {
         writeln();
         logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
