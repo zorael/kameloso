@@ -360,6 +360,7 @@ void onInvite(const IRCEvent event)
 void onRegistrationEvent(const IRCEvent event)
 {
     /// http://ircv3.net/irc
+    /// https://blog.irccloud.com/ircv3
 
     with (state)
     switch (event.aux)
