@@ -526,9 +526,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             // :nick!user@host JOIN #channelname accountname :Real Name
             // :nick!user@host JOIN #channelname * :Real Name
             // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
+            // :kameloso!~NaN@2001:41d0:2:80b4:: JOIN #hirrsteff2 kameloso : kameloso!
             event.channel = slice.nom(' ');
             event.sender.login = slice.nom(" :");
-            if (event.sender.login == "*") event.sender.login = string.init;
+            //if (event.sender.login == "*") event.sender.login = string.init;
             //event.content = slice.strip();  // no need for full name...
         }
         else
