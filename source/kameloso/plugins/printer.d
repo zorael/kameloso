@@ -417,7 +417,7 @@ void mapColours(ref IRCEvent event)
 {
     import std.regex;
 
-    enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
+    enum colourPattern = 3 ~ "([0-9]{0,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
 
     alias F = BashForeground;
@@ -468,7 +468,12 @@ void mapColours(ref IRCEvent event)
     {
         import std.conv : to;
 
-        if (!hit[1].length) continue;
+        if (!hit[1].length)
+        {
+            writeln("no colour code? reset?");
+            sink.put("\033[0m");
+            continue;
+        }
 
         Appender!string sink;
         sink.reserve(8);
