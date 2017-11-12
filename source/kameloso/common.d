@@ -577,6 +577,10 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                             member = meldThis.tupleof[i];
                         }
                     }
+                    else static if (is(T == bool))
+                    {
+                        member = meldThis.tupleof[i];
+                    }
                     else
                     {
                         if (meldThis.tupleof[i] != T.init)
@@ -598,6 +602,10 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                     }
                     else
                     {
+                        /+  This is tricksy for bools. A value of false could be
+                            false, or merely unset. If we're not overwriting,
+                            let whichever side is true win out? +/
+
                         if ((member == T.init) ||
                             (member == Thing.init.tupleof[i]))
                         {
@@ -605,6 +613,10 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
                         }
                     }
                 }
+            }
+            else
+            {
+                pragma(msg, T.stringof ~ " is not meldable!");
             }
         }
     }
@@ -662,6 +674,50 @@ unittest
         assert((def == "OVERWRITTEN TOO"), def);
         assert((i == 100_135), i.to!string); // 0 is int.init
         assert((f == 0.1f), f.to!string);
+    }
+
+    import kameloso.irc : IRCUser;
+    IRCUser one;
+    with (one)
+    {
+        nickname = "kameloso";
+        ident = "NaN";
+        address = "herpderp.net";
+        special = false;
+    }
+
+    IRCUser two;
+    with (two)
+    {
+        nickname = "kameloso^";
+        alias_ = "Kameloso";
+        address = "asdf.org";
+        login = "kamelusu";
+        special = true;
+    }
+
+    IRCUser twoCopy = two;
+
+    one.meldInto!(No.overwrite)(two);
+    with (two)
+    {
+        assert((nickname == "kameloso^"), nickname);
+        assert((alias_ == "Kameloso"), alias_);
+        assert((ident == "NaN"), ident);
+        assert((address == "asdf.org"), address);
+        assert((login == "kamelusu"), login);
+        assert(special);
+    }
+
+    one.meldInto!(Yes.overwrite)(twoCopy);
+    with (twoCopy)
+    {
+        assert((nickname == "kameloso"), nickname);
+        assert((alias_ == "Kameloso"), alias_);
+        assert((ident == "NaN"), ident);
+        assert((address == "herpderp.net"), address);
+        assert((login == "kamelusu"), login);
+        assert(!special);
     }
 }
 
