@@ -1241,15 +1241,22 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         writeln();
     }
 
-    if ((event.target.nickname == bot.nickname) &&
-        (event.type != IRCEvent.Type.MODE) &&
-        (event.type != IRCEvent.Type.CHANMODE) &&
-        (event.type != IRCEvent.Type.WELCOME) &&
-        (event.type != IRCEvent.Type.QUERY))
+    if (event.target.nickname == bot.nickname)
     {
-        logger.trace("Bot shares nickname with event target, consider culling? ",
-            event.type);
-        event.target.nickname = string.init;
+        with (IRCEvent.Type)
+        switch (event.type)
+        {
+        case MODE:
+        case CHANMODE:
+        case WELCOME:
+        case QUERY:
+        case JOIN:
+            break;
+
+        default:
+            event.target.nickname = string.init;
+            break;
+        }
     }
 }
 
