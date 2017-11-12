@@ -81,7 +81,7 @@ void pipereader(shared IRCPluginState newState)
                     }
                     else
                     {
-                        state.mainThread.send(ThreadMessage.Quit(), line);
+                        state.mainThread.send(ThreadMessage.Quit(), string.init);
                     }
 
                     break eofLoop;
@@ -161,7 +161,7 @@ void createFIFO()
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {
-    state.bot.nickname = event.target;
+    state.bot.nickname = event.target.nickname;
     fifoThread = spawn(&pipereader, cast(shared)state);
 }
 

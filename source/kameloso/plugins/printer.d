@@ -138,20 +138,27 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
     with (BashForeground)
     with (event)
+    with (event.sender)
     if (printerOptions.monochrome)
     {
         import std.algorithm : equal;
         import std.uni : asLowerCase;
 
-        sink.formattedWrite("[%s] [%s] ",
-            timestamp, enumToString(type));
+        sink.formattedWrite("[%s] [%s] ", timestamp, enumToString(type));
 
-        sink.put((alias_.length && alias_.asLowerCase.equal(sender)) ?
-            alias_ : sender);
-
-        if (special)
+        if (sender.isServer)
         {
-            sink.put('*');
+            sink.put(address);
+        }
+        else
+        {
+            sink.put((alias_.length && alias_.asLowerCase.equal(nickname)) ?
+                alias_ : nickname);
+
+            if (special)
+            {
+                sink.put('*');
+            }
         }
 
         if (role != Role.init)
@@ -159,16 +166,16 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.formattedWrite(" [%s]", enumToString(role));
         }
 
-        if (alias_.length && (alias_ != sender))
+        if (!sender.isServer && alias_.length && (alias_ != nickname))
         {
             sink.formattedWrite(" (%s)", alias_);
         }
 
-        if (target.length)  sink.formattedWrite(" (%s)",  target);
+        if (target.nickname.length) sink.formattedWrite(" (%s)",  target.nickname);
         if (channel.length) sink.formattedWrite(" [%s]",  channel);
         if (content.length) sink.formattedWrite(`: "%s"`, content);
         if (aux.length)     sink.formattedWrite(" <%s>",  aux);
-        if (num > 0)        sink.formattedWrite(" (#%d)", num);
+        if (num > 0)        sink.formattedWrite(" (#%03d)", num);
 
         static if (!__traits(hasMember, Sink, "data"))
         {
@@ -223,7 +230,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 }
                 else
                 {
-                    sink.colour(colourByHash(sender));
+                    sink.colour(colourByHash(sender.isServer ? address : nickname));
                 }
             }
 
@@ -244,20 +251,27 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             colourSenderTruecolour();
 
-            if (alias_.length && alias_.asLowerCase.equal(sender))
+            if (sender.isServer)
             {
-                sink.put(alias_);
-                aliasPrinted = true;
+                sink.put(address);
             }
             else
             {
-                sink.put(sender);
-            }
+                if (alias_.length && alias_.asLowerCase.equal(nickname))
+                {
+                    sink.put(alias_);
+                    aliasPrinted = true;
+                }
+                else
+                {
+                    sink.put(nickname);
+                }
 
-            if (special)
-            {
-                sink.colour(DefaultColour.special);
-                sink.put('*');
+                if (special)
+                {
+                    sink.colour(DefaultColour.special);
+                    sink.put('*');
+                }
             }
 
             if (role != Role.init)
@@ -266,27 +280,27 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 sink.formattedWrite(" [%s]", enumToString(role));
             }
 
-            if (alias_.length && !aliasPrinted)
+            if (!sender.isServer && alias_.length && !aliasPrinted)
             {
                 colourSenderTruecolour();
                 //sink.formattedWrite(" (%s)", alias_);
                 put(sink, " (", alias_, ')');
             }
 
-            if (target.length)
+            if (target.nickname.length)
             {
-                if (target[0] == '#')
+                if (target.nickname[0] == '#')
                 {
                     // Let all channels be one colour
                     sink.colour(DefaultColour.target);
                 }
                 else
                 {
-                    sink.colour(colourByHash(event.target));
+                    sink.colour(colourByHash(event.target.nickname));
                 }
 
                 //sink.formattedWrite(" (%s)", target);
-                put(sink, " (", target, ')');
+                put(sink, " (", target.nickname, ')');
             }
 
             if (channel.length)
@@ -300,7 +314,15 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.colour(DefaultColour.content);
                 //sink.formattedWrite(`: "%s"`, content);
-                put(sink, `: "`, content, '"');
+                if (sender.isServer || sender.nickname.length)
+                {
+                    put(sink, `: "`, content, '"');
+                }
+                else
+                {
+                    // PING or ERROR likely
+                    put(sink, content);
+                }
             }
 
             if (aux.length)
@@ -314,7 +336,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.colour(DefaultColour.num);
                 //sink.formattedWrite(" (#%d)", num);
-                put(sink, " (#", num, ')');
+                //put(sink, " (#", num, ')');
+                put(sink, " (#");
+                sink.formattedWrite("%03d", num);
+                put(sink, ')');
             }
 
             sink.colour(default_);

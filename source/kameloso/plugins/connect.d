@@ -112,10 +112,10 @@ void onWelcome(const IRCEvent event)
     if (!state.bot.server.resolvedAddress.length)
     {
         // Must resolve here too if the server doesn't negotiate CAP
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
     }
 
-    state.bot.nickname = event.target;
+    state.bot.nickname = event.target.nickname;
     updateBot();
 }
 
@@ -153,7 +153,10 @@ void onToConnectType(const IRCEvent event)
 void onPing(const IRCEvent event)
 {
     serverPinged = true;
-    state.mainThread.send(ThreadMessage.Pong(), event.sender);
+    immutable target = (event.content.length) ?
+        event.content : event.sender.address;
+
+    state.mainThread.send(ThreadMessage.Pong(), target);
 
     if (state.bot.startedAuth && !state.bot.finishedAuth)
     {
@@ -379,6 +382,29 @@ void onRegistrationEvent(const IRCEvent event)
             case "twitch.tv/tags":
             case "twitch.tv/commands":
                 // Twitch-specific capabilites
+            //case "account-notify":
+            //case "extended-join":
+            //case "identify-msg":
+            //case "multi-prefix":
+                // Freenode
+            //case away-notify:
+            //case chghost:
+            //case invite-notify:
+            //case multi-prefix:
+            //case userhost-in-names:
+                // Rizon
+            //case unrealircd.org/plaintext-policy:
+            //case unrealircd.org/link-security:
+            //case sts:
+            //case extended-join:
+            //case chghost:
+            //case cap-notify:
+            //case userhost-in-names:
+            //case multi-prefix:
+            //case away-notify:
+            //case account-notify:
+            //case tls:
+                // UnrealIRCd
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
                 break;
 
@@ -420,9 +446,9 @@ void onRegistrationEvent(const IRCEvent event)
         break;
     }
 
-    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
         updateBot();
     }
 }
@@ -433,9 +459,9 @@ void onNotice(const IRCEvent event)
 {
     if (!state.bot.finishedRegistering) return;
 
-    if (event.sender.length && !state.bot.server.resolvedAddress.length)
+    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
-        state.bot.server.resolvedAddress = event.sender;
+        state.bot.server.resolvedAddress = event.sender.nickname;
         updateBot();
     }
 }

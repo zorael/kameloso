@@ -90,7 +90,7 @@ void onMessage(const IRCEvent event)
         if (!urlHit.length) continue;
 
         immutable url = urlHit[0];
-        immutable target = (event.channel.length) ? event.channel : event.sender;
+        immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
         logger.log(url);
         workerThread.send(url, target);
