@@ -690,12 +690,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  the user into the user array so we won't have to WHOIS them later.
      +/
     @(IRCEvent.Type.JOIN)
+    @(IRCEvent.Type.ACCOUNT)
     void onJoinMixin(const IRCEvent event)
     {
         if (event.sender.login.length)
         {
             // This is an extended-join event; catch the sender
-            state.users[event.sender.nickname] = event.sender;
+            //state.users[event.sender.nickname] = event.sender;
+            printObject(state.users.get(event.sender.nickname));
+            event.sender.meldInto!(Yes.overwrite)
+                (state.users.get(event.sender.nickname));
+            printObject(state.users.get(event.sender.nickname));
         }
     }
 
