@@ -155,8 +155,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.put((alias_.length && alias_.asLowerCase.equal(nickname)) ?
                 alias_ : nickname);
 
-            if (login.length) put(sink, ':', login);
-
             if (special)
             {
                 sink.put('*');
@@ -268,8 +266,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 {
                     sink.put(nickname);
                 }
-
-                if (login.length) put(sink, ':', login);
 
                 if (special)
                 {
