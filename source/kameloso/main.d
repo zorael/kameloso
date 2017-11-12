@@ -284,10 +284,6 @@ Flag!"quit" handleArguments(string[] args)
         return Yes.quit;
     }
 
-    // Try to resolve which IRC network we're connecting to based on addresses
-    // Why though?
-    bot.server.resolveNetwork();
-
     // If --version was supplied we should just show info and quit
     if (shouldShowVersion)
     {
@@ -295,11 +291,19 @@ Flag!"quit" handleArguments(string[] args)
         return Yes.quit;
     }
 
+    // Do we even need this? We'll resolve it during after registration anyway
+    // Do it here so it's resolved for both shouldWriteConfig and return No.quit
+    if (bot.server.network == IRCServer.Network.init)
+    {
+        bot.server.network = networkOf(bot.server.address);
+    }
+
     // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
         // If we don't initialise the plugins there'll be no plugins array
         initPlugins();
+
         writeConfigurationFile(settings.configFile);
         return Yes.quit;
     }
@@ -359,7 +363,6 @@ void initPlugins()
     state.bot = bot;
     state.settings = settings;
     state.mainThread = thisTid;
-    state.bot.server.resolveNetwork();  // neccessary?
 
     // Zero out old plugins array and allocate room for new ones
     plugins.length = 0;
