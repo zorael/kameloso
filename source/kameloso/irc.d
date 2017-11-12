@@ -1164,6 +1164,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case ACCOUNT:
         //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
         event.sender.login = slice;
+        event.content = slice;  // to make it visible?
         break;
 
     case YOURHIDDENHOST:
