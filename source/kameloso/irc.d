@@ -1577,81 +1577,6 @@ IRCEvent.Role prioritiseTwoRoles(const IRCEvent.Role current, const string newRo
 }
 
 
-// networkOf
-/++
- +  Tries to guess the network of an IRC server based on its address.
- +
- +  This is done early on before connecting. After registering, we can (usually)
- +  get the correct answer from the CAP LS event.
- +
- +  Params:
- +      address = the IRC server address to evaluate.
- +
- +  Returns:
- +      a member of the IRCServer.Network enum type signifying which network
- +      the server was guessed to be part of.
- +/
-IRCServer.Network networkOf(const string address)
-{
-    with (IRCServer.Network)
-    {
-        import std.algorithm.searching : endsWith;
-
-        immutable IRCServer.Network[string] networkMap =
-        [
-            ".freenode.net"   : freenode,
-            ".rizon.net"      : rizon,
-            ".quakenet.org"   : quakenet,
-            ".undernet.org"   : undernet,
-            ".gamesurge.net"  : gamesurge,
-            ".twitch.tv"      : twitch,
-            ".unrealircd.org" : unreal,
-            ".efnet.org"      : efnet,
-            ".ircnet.org"     : ircnet,
-            ".swiftirc.net"   : swiftirc,
-            ".irchighway.net" : irchighway,
-            ".dal.net"        : dalnet,
-
-        ];
-
-        foreach (addressTail, net; networkMap)
-        {
-            if (address.endsWith(addressTail))
-            {
-                return networkMap[addressTail];
-            }
-        }
-
-        return unknown;
-    }
-}
-
-unittest
-{
-    import std.conv : to;
-
-    with (IRCServer.Network)
-    {
-        immutable n1 = networkOf("irc.freenode.net");
-        assert(n1 == freenode, n1.to!string);
-
-        immutable n2 = networkOf("harbl.hhorlb.rizon.net");
-        assert(n2 == rizon, n2.to!string);
-
-        immutable n3 = networkOf("under.net.undernet.org");
-        assert(n3 == undernet, n3.to!string);
-
-        immutable n4 = networkOf("irc.irc.irc.gamesurge.net");
-        assert(n4 == gamesurge, n4.to!string);
-
-        immutable n5 = networkOf("irc.chat.twitch.tv");
-        assert(n5 == twitch, n5.to!string);
-
-        immutable n6 = networkOf("irc.unrealircd.org");
-        assert(n6 == unreal, n6.to!string);
-    }
-}
-
 string decodeIRCv3String(const string line)
 {
     import std.regex : ctRegex, replaceAll;
@@ -2584,6 +2509,80 @@ unittest
     assert(!"".stripModeSign.length);
 }
 
+
+// networkOf
+/++
+ +  Tries to guess the network of an IRC server based on its address.
+ +
+ +  This is done early on before connecting. After registering, we can (usually)
+ +  get the correct answer from the RPL_ISUPPORT event (NETWORK tag).
+ +
+ +  Params:
+ +      address = the IRC server address to evaluate.
+ +
+ +  Returns:
+ +      a member of the IRCServer.Network enum type signifying which network
+ +      the server was guessed to be part of.
+ +/
+IRCServer.Network networkOf(const string address)
+{
+    with (IRCServer.Network)
+    {
+        import std.algorithm.searching : endsWith;
+
+        immutable IRCServer.Network[string] networkMap =
+        [
+            ".freenode.net"   : freenode,
+            ".rizon.net"      : rizon,
+            ".quakenet.org"   : quakenet,
+            ".undernet.org"   : undernet,
+            ".gamesurge.net"  : gamesurge,
+            ".twitch.tv"      : twitch,
+            ".unrealircd.org" : unreal,
+            ".efnet.org"      : efnet,
+            ".ircnet.org"     : ircnet,
+            ".swiftirc.net"   : swiftirc,
+            ".irchighway.net" : irchighway,
+            ".dal.net"        : dalnet,
+        ];
+
+        foreach (addressTail, net; networkMap)
+        {
+            if (address.endsWith(addressTail))
+            {
+                return networkMap[addressTail];
+            }
+        }
+
+        return unknown;
+    }
+}
+
+unittest
+{
+    import std.conv : to;
+
+    with (IRCServer.Network)
+    {
+        immutable n1 = networkOf("irc.freenode.net");
+        assert(n1 == freenode, n1.to!string);
+
+        immutable n2 = networkOf("harbl.hhorlb.rizon.net");
+        assert(n2 == rizon, n2.to!string);
+
+        immutable n3 = networkOf("under.net.undernet.org");
+        assert(n3 == undernet, n3.to!string);
+
+        immutable n4 = networkOf("irc.irc.irc.gamesurge.net");
+        assert(n4 == gamesurge, n4.to!string);
+
+        immutable n5 = networkOf("irc.chat.twitch.tv");
+        assert(n5 == twitch, n5.to!string);
+
+        immutable n6 = networkOf("irc.unrealircd.org");
+        assert(n6 == unreal, n6.to!string);
+    }
+}
 
 unittest
 {
