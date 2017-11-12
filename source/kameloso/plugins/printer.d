@@ -468,15 +468,15 @@ void mapColours(ref IRCEvent event)
     {
         import std.conv : to;
 
+        Appender!string sink;
+        sink.reserve(8);
+
         if (!hit[1].length)
         {
             writeln("no colour code? reset?");
             sink.put("\033[0m");
             continue;
         }
-
-        Appender!string sink;
-        sink.reserve(8);
 
         immutable fgIndex = hit[1].to!size_t;
 
