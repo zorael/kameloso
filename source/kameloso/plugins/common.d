@@ -691,16 +691,23 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onJoinMixin(const IRCEvent event)
+    void onReceivedLoginMixin(const IRCEvent event)
     {
         if (event.sender.login.length)
         {
             // This is an extended-join event; catch the sender
-            //state.users[event.sender.nickname] = event.sender;
-            printObject(state.users.get(event.sender.nickname));
+            writeln("-----------------------------------------");
+            printObject(state.users.get(event.sender.nickname, IRCUser.init));
+
+            auto user = event.sender.nickname in state.users;
+            if (!user) state.users[event.sender.nickname] = IRCUser.init;
+
             event.sender.meldInto!(Yes.overwrite)
-                (state.users.get(event.sender.nickname));
-            printObject(state.users.get(event.sender.nickname));
+                (state.users[event.sender.nickname]);
+
+            writeln("... became ...");
+            printObject(state.users[event.sender.nickname]);
+            writeln("-----------------------------------------");
         }
     }
 
