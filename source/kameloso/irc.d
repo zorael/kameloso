@@ -1182,6 +1182,20 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
     }
 
+    postparseanityCheck(event);
+}
+
+
+// postparseSanityCheck
+/++
+ +  Checks for some specific erroneous edge cases in an IRCEvent, complains
+ +  about all of them and corrects some.
+ +
+ +  Params:
+ +      ref event = the IRC event to examine.
+ +/
+void postparseSanityCheck(ref IRCEvent event)
+{
     if ((event.type != IRCEvent.Type.CHANMODE) &&
         (event.type != IRCEvent.Type.TOPIC) &&
         ((event.target.nickname.indexOf(' ') != -1) ||
