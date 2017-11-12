@@ -1669,11 +1669,6 @@ struct IRCServer
     {
         sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
     }
-
-    void resolveNetwork()
-    {
-        network = networkOf(address);
-    }
 }
 
 
