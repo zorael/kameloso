@@ -1715,10 +1715,8 @@ struct IRCUser
     {
         import std.format : formattedWrite;
 
-        sink.formattedWrite("%s:%s!~%s@%s%s",
+        sink.formattedWrite("[FIXME] %s:%s!~%s@%s%s",
             nickname, login, ident, address, special ? " (*)" : string.init);
-        logger.warning("Something thought event.sender was still a string, " ~
-            "update it to use event.sender.nickname.");
     }
 
     bool isServer() @property const
