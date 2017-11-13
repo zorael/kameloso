@@ -885,10 +885,17 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
         break;
 
+    case RPL_WHOISIDLE: //  317
+        // :rajaniemi.freenode.net 317 kameloso zorael 0 1510219961 :seconds idle, signon time
+        slice.nom(' ');
+        slice.nom(' ');
+        event.content = slice.nom(' ');
+        event.aux = slice.nom(": ");
+        break;
+
     case RPL_LUSEROP: // 252
     case RPL_LUSERUNKNOWN: // 253
     case RPL_LUSERCHANNELS: // 254
-    case RPL_WHOISIDLE: //  317
     case ERR_ERRONEOUSNICKNAME: // 432
     case ERR_NEEDMOREPARAMS: // 461
     case USERCOUNTLOCAL: // 265
