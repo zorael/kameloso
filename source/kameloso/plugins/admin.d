@@ -102,14 +102,17 @@ void onCommandAddHome(const IRCEvent event)
         return;
     }
 
-    if (!state.bot.homes.canFind(channel))
+    with (state)
     {
-        state.mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
-    }
+        if (!bot.homes.canFind(channel))
+        {
+            mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
+        }
 
-    logger.info("Adding channel: ", channel);
-    state.bot.homes ~= channel;
-    state.bot.updated = true;
+        logger.info("Adding channel: ", channel);
+        bot.homes ~= channel;
+        bot.updated = true;
+    }
 }
 
 
@@ -137,17 +140,20 @@ void onCommandDelHome(const IRCEvent event)
         return;
     }
 
-    immutable chanIndex = state.bot.homes.countUntil(channel);
-
-    if (chanIndex == -1)
+    with (state)
     {
-        logger.warningf("Channel %s was not in bot.homes", channel);
-        return;
-    }
+        immutable chanIndex = bot.homes.countUntil(channel);
 
-    state.bot.homes = state.bot.homes.remove(chanIndex);
-    state.bot.updated = true;
-    state.mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
+        if (chanIndex == -1)
+        {
+            logger.warningf("Channel %s was not in bot.homes", channel);
+            return;
+        }
+
+        bot.homes = bot.homes.remove(chanIndex);
+        bot.updated = true;
+        mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
+    }
 }
 
 
@@ -181,9 +187,12 @@ void onCommandAddFriend(const IRCEvent event)
         return;
     }
 
-    state.bot.friends ~= nickname;
-    state.bot.updated = true;
-    logger.infof("%s added to friends", nickname);
+    with (state)
+    {
+        bot.friends ~= nickname;
+        bot.updated = true;
+        logger.infof("%s added to friends", nickname);
+    }
 }
 
 
@@ -224,9 +233,12 @@ void onCommandDelFriend(const IRCEvent event)
         return;
     }
 
-    state.bot.friends = state.bot.friends.remove(friendIndex);
-    state.bot.updated = true;
-    logger.infof("%s removed from friends", nickname);
+    with (state)
+    {
+        bot.friends = bot.friends.remove(friendIndex);
+        bot.updated = true;
+        logger.infof("%s removed from friends", nickname);
+    }
 }
 
 
