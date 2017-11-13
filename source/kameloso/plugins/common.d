@@ -79,7 +79,7 @@ enum FilterResult { fail, pass, whois }
 
 /// Whether an annotated event ignores, allows or requires the event to be
 /// prefixed with the bot's nickname
-enum NickPrefixPolicy { ignored, allowed, required, hardRequired }
+enum NickPrefixPolicy { ignored, optional, required, hardRequired }
 
 
 /// What level of privilege is needed to trigger an event
@@ -444,7 +444,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                             case ignored:
                                 break;
 
-                            case allowed:
+                            case optional:
                                 if (content.beginsWith(bot.nickname))
                                 {
                                     mutEvent.content = content
@@ -459,10 +459,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     static if (verbose)
                                     {
                                         writeln(name, "but it is a query, " ~
-                                            "consider allowed");
+                                            "consider optional");
                                     }
 
-                                    goto case allowed;
+                                    goto case optional;
                                 }
 
                                 goto case hardRequired;
