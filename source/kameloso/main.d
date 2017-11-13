@@ -577,7 +577,7 @@ int main(string[] args)
         immutable resolved = conn.resolve(bot.server.address, bot.server.port, abort);
         if (!resolved) return Yes.quit;
 
-        conn.connect();
+        conn.connect(abort);
 
         if (!conn.connected) return 1;
 
