@@ -70,7 +70,7 @@ void joinChannels()
         if (bot.homes.length)
         {
             bot.finishedAuth = true;
-            state.bot.updated = true;
+            bot.updated = true;
         }
         else if (!bot.channels.length)
         {
@@ -162,8 +162,8 @@ void onPing(const IRCEvent event)
     {
         logger.info("Auth timed out. Joining channels");
         state.bot.finishedAuth = true;
-        joinChannels();
         state.bot.updated = true;
+        joinChannels();
     }
 }
 
@@ -185,11 +185,13 @@ void onEndOfMotd(const IRCEvent event)
             // No password set up; join channels and be done
             // EFnet has no nick registration services
             bot.finishedAuth = true;
+            bot.updated = true;
             joinChannels();
             return;
         }
 
         bot.startedAuth = true;
+        bot.updated = true;
 
         final switch (bot.server.network)
         {
@@ -263,6 +265,7 @@ void onEndOfMotd(const IRCEvent event)
         case twitch:
             // No registration available; join channels and be done
             state.bot.finishedAuth = true;
+            state.bot.updated = true;
             joinChannels();
             break;
 
@@ -305,6 +308,7 @@ void onAuthEnd()
     if (state.bot.finishedAuth || !state.bot.finishedRegistering) return;
 
     state.bot.finishedAuth = true;
+    state.bot.updated = true;
     logger.info("Joining channels");
     joinChannels();
 }
@@ -493,6 +497,7 @@ void onSASLSuccess()
     // Naïve, revisit
     state.bot.finishedRegistering = true;
     state.bot.finishedAuth = true;
+    state.bot.updated = true;
 
     /++
     +  The END subcommand signals to the server that capability negotiation
@@ -515,6 +520,7 @@ void onSASLFailure()
 {
     // End CAP but don't flag as finished auth
     state.bot.finishedRegistering = true;
+    state.bot.updated = true;
 
     // See onSASLSuccess for info on CAP END
     state.mainThread.send(ThreadMessage.Sendline(), "CAP END");

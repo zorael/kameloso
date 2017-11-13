@@ -162,6 +162,7 @@ void createFIFO()
 void onWelcome(const IRCEvent event)
 {
     state.bot.nickname = event.target.nickname;
+    state.bot.updated = true;
     fifoThread = spawn(&pipereader, cast(shared)state);
 }
 
