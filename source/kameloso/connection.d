@@ -134,7 +134,7 @@ public:
      +  Success is determined by whether or not an exception was thrown during
      +  the attempt, and is kept track of with the connected boolean.
      +/
-    void connect()
+    void connect(ref bool abort)
     {
         import core.thread : Thread;
 
@@ -142,6 +142,8 @@ public:
 
         foreach (immutable i, ip; ips)
         {
+            if (abort) break;
+
             // Decide which kind of socket to use based on the AddressFamily of
             // the resolved ip; IPv4 or IPv6
             socket = (ip.addressFamily == AddressFamily.INET6) ? &socket6 : &socket4;
