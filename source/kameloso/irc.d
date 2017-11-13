@@ -2571,6 +2571,7 @@ IRCServer.Network networkOf(const string address)
             ".efnet.org"      : efnet,
             ".ircnet.org"     : ircnet,
             ".swiftirc.net"   : swiftirc,
+            ".SwiftIRC.net"   : swiftirc,
             ".irchighway.net" : irchighway,
             ".dal.net"        : dalnet,
         ];
