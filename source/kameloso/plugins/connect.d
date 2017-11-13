@@ -112,7 +112,7 @@ void onWelcome(const IRCEvent event)
     if (!state.bot.server.resolvedAddress.length)
     {
         // Must resolve here too if the server doesn't negotiate CAP
-        state.bot.server.resolvedAddress = event.sender.nickname;
+        state.bot.server.resolvedAddress = event.sender.address;
     }
 
     state.bot.nickname = event.target.nickname;
