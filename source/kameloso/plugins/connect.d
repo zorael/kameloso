@@ -45,17 +45,20 @@ void onSelfpart(const IRCEvent event)
     import std.algorithm.mutation : remove;
     import std.algorithm.searching : countUntil;
 
-    immutable index = state.bot.channels.countUntil(event.channel);
-
-    if (index == -1)
+    with (state)
     {
-        logger.warning("Tried to remove a channel that wasn't there: ",
-                       event.channel);
-        return;
-    }
+        immutable index = bot.channels.countUntil(event.channel);
 
-    state.bot.channels = state.bot.channels.remove(index);
-    state.bot.updated = true;
+        if (index == -1)
+        {
+            logger.warning("Tried to remove a channel that wasn't there: ",
+                        event.channel);
+            return;
+        }
+
+        bot.channels = bot.channels.remove(index);
+        bot.updated = true;
+    }
 }
 
 
@@ -107,16 +110,19 @@ void joinChannels()
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {
-    state.bot.finishedRegistering = true;
-
-    if (!state.bot.server.resolvedAddress.length)
+    with (state)
     {
-        // Must resolve here too if the server doesn't negotiate CAP
-        state.bot.server.resolvedAddress = event.sender.address;
-    }
+        bot.finishedRegistering = true;
 
-    state.bot.nickname = event.target.nickname;
-    state.bot.updated = true;
+        if (!bot.server.resolvedAddress.length)
+        {
+            // Must resolve here too if the server doesn't negotiate CAP
+            bot.server.resolvedAddress = event.sender.address;
+        }
+
+        bot.nickname = event.target.nickname;
+        bot.updated = true;
+    }
 }
 
 
@@ -156,14 +162,17 @@ void onPing(const IRCEvent event)
     immutable target = (event.content.length) ?
         event.content : event.sender.address;
 
-    state.mainThread.send(ThreadMessage.Pong(), target);
-
-    if (state.bot.startedAuth && !state.bot.finishedAuth)
+    with (state)
     {
-        logger.info("Auth timed out. Joining channels");
-        state.bot.finishedAuth = true;
-        state.bot.updated = true;
-        joinChannels();
+        mainThread.send(ThreadMessage.Pong(), target);
+
+        if (bot.startedAuth && !bot.finishedAuth)
+        {
+            logger.info("Auth timed out. Joining channels");
+            bot.finishedAuth = true;
+            bot.updated = true;
+            joinChannels();
+        }
     }
 }
 
@@ -264,8 +273,8 @@ void onEndOfMotd(const IRCEvent event)
         case undernet:
         case twitch:
             // No registration available; join channels and be done
-            state.bot.finishedAuth = true;
-            state.bot.updated = true;
+            bot.finishedAuth = true;
+            bot.updated = true;
             joinChannels();
             break;
 
@@ -304,13 +313,16 @@ void onEndOfMotd(const IRCEvent event)
 @(IRCEvent.Type.AUTH_FAILURE)
 void onAuthEnd()
 {
-    // This can be before registration ends in case of SASL
-    if (state.bot.finishedAuth || !state.bot.finishedRegistering) return;
+    with (state)
+    {
+        // This can be before registration ends in case of SASL
+        if (bot.finishedAuth || !bot.finishedRegistering) return;
 
-    state.bot.finishedAuth = true;
-    state.bot.updated = true;
-    logger.info("Joining channels");
-    joinChannels();
+        bot.finishedAuth = true;
+        bot.updated = true;
+        logger.info("Joining channels");
+        joinChannels();
+    }
 }
 
 
@@ -322,11 +334,14 @@ void onAuthEnd()
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {
-    state.bot.nickname ~= altNickSign;
-    state.bot.updated = true;
+    with (state)
+    {
+        bot.nickname ~= altNickSign;
+        bot.updated = true;
 
-    state.mainThread.send(ThreadMessage.Sendline(),
-        "NICK %s".format(state.bot.nickname));
+        mainThread.send(ThreadMessage.Sendline(),
+            "NICK %s".format(bot.nickname));
+    }
 }
 
 
@@ -424,7 +439,7 @@ void onRegistrationEvent(const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+            mainThread.send(ThreadMessage.Sendline(), "CAP END");
         }
 
         break;
@@ -452,10 +467,11 @@ void onRegistrationEvent(const IRCEvent event)
         break;
     }
 
-    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
+    with(state)
+    if (event.sender.nickname.length && !bot.server.resolvedAddress.length)
     {
-        state.bot.server.resolvedAddress = event.sender.nickname;
-        state.bot.updated = true;
+        bot.server.resolvedAddress = event.sender.nickname;
+        bot.updated = true;
     }
 }
 
@@ -463,12 +479,15 @@ void onRegistrationEvent(const IRCEvent event)
 @(IRCEvent.Type.NOTICE)
 void onNotice(const IRCEvent event)
 {
-    if (!state.bot.finishedRegistering) return;
-
-    if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
+    with (state)
     {
-        state.bot.server.resolvedAddress = event.sender.nickname;
-        state.bot.updated = true;
+        if (!bot.finishedRegistering) return;
+
+        if (event.sender.nickname.length && !bot.server.resolvedAddress.length)
+        {
+            bot.server.resolvedAddress = event.sender.nickname;
+            bot.updated = true;
+        }
     }
 }
 
@@ -494,36 +513,42 @@ void onSASLAuthenticate(const IRCEvent event)
 @(IRCEvent.Type.SASL_SUCCESS)
 void onSASLSuccess()
 {
-    // Naïve, revisit
-    state.bot.finishedRegistering = true;
-    state.bot.finishedAuth = true;
-    state.bot.updated = true;
+    with (state)
+    {
+        // Naïve, revisit
+        bot.finishedRegistering = true;
+        bot.finishedAuth = true;
+        bot.updated = true;
 
-    /++
-    +  The END subcommand signals to the server that capability negotiation
-    +  is complete and requests that the server continue with client
-    +  registration. If the client is already registered, this command
-    +  MUST be ignored by the server.
-    +
-    +  Clients that support capabilities but do not wish to enter negotiation
-    +  SHOULD send CAP END upon connection to the server.
-    +
-    +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
-    +/
+        /++
+        +  The END subcommand signals to the server that capability negotiation
+        +  is complete and requests that the server continue with client
+        +  registration. If the client is already registered, this command
+        +  MUST be ignored by the server.
+        +
+        +  Clients that support capabilities but do not wish to enter negotiation
+        +  SHOULD send CAP END upon connection to the server.
+        +
+        +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
+        +/
 
-    state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        mainThread.send(ThreadMessage.Sendline(), "CAP END");
+    }
 }
 
 
 @(IRCEvent.Type.SASL_FAILURE)
 void onSASLFailure()
 {
-    // End CAP but don't flag as finished auth
-    state.bot.finishedRegistering = true;
-    state.bot.updated = true;
+    with (state)
+    {
+        // End CAP but don't flag as finished auth
+        bot.finishedRegistering = true;
+        bot.updated = true;
 
-    // See onSASLSuccess for info on CAP END
-    state.mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        // See onSASLSuccess for info on CAP END
+        mainThread.send(ThreadMessage.Sendline(), "CAP END");
+    }
 }
 
 
@@ -538,7 +563,7 @@ void register()
         if (bot.startedRegistering) return;
 
         bot.startedRegistering = true;
-        state.bot.updated = true;
+        bot.updated = true;
 
         mainThread.send(ThreadMessage.Sendline(), "CAP LS");
 
