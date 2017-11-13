@@ -112,15 +112,6 @@ Flag!"quit" checkMessages()
         replayQueue[event.sender.nickname] = event;
     }
 
-    /// Receive an updated bot, inherit it into .bot and propagate it to
-    /// all plugins.
-    static void updateBot(shared IRCBot bot)
-    {
-        .bot = cast(IRCBot)bot;
-
-        foreach (plugin; plugins) plugin.newBot(.bot);
-    }
-
     /// Receive new settings, inherit them into .settings and propagate
     /// them to all plugins.
     static void updateSettings(Settings settings)
@@ -173,7 +164,6 @@ Flag!"quit" checkMessages()
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &whois,
-            &updateBot,
             &quietline,
             &pong,
             &quitServer,
@@ -420,6 +410,15 @@ void startPlugins()
     printObjects(bot, bot.server, settings);
 }*/
 
+void propagateBot(IRCBot bot)
+{
+    foreach (plugin; plugins)
+    {
+        plugin.newBot(bot);
+    }
+}
+
+
 void initLogger()
 {
     import std.experimental.logger;
@@ -472,12 +471,22 @@ Flag!"quit" loopGenerator(Generator!string generator)
             {
                 if (bot.updated)
                 {
-                    // IRCBot was marked as having been changed; propagate
+                    // Non-plugin updated bot; propagate
+                    writeln("non-plugin updated bot; propagating");
                     bot.updated = false;
-                    plugin.newBot(bot);
+                    propagateBot(bot);
                 }
 
                 plugin.onEvent(event);
+
+                auto yieldedBot = plugin.yieldBot();
+                if (yieldedBot.updated)
+                {
+                    // Plugin updated the bot; propagate
+                    writeln("a plugin updated bot; propagating");
+                    bot = yieldedBot;  // yieldedBot.meldInto(bot);
+                    propagateBot(bot);
+                }
 
                 if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
                     (event.type == IRCEvent.Type.HASTHISNICK))

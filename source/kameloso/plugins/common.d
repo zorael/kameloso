@@ -18,6 +18,9 @@ interface IRCPlugin
     /// Executed on update to the internal IRCBot struct
     void newBot(IRCBot);
 
+    /// Executed after a plugin has run its onEvent course to pick up bot changes
+    IRCBot yieldBot();
+
     /// Executed on update to the internal Settings struct
     void newSettings(Settings);
 
@@ -227,6 +230,18 @@ mixin template IRCPluginBasics()
         static if (__traits(compiles, .state.bot = bot))
         {
             .state.bot = bot;
+        }
+    }
+
+    // yieldBot
+    /++
+     +
+     +/
+    IRCBot yieldBot()
+    {
+        static if (__traits(compiles, .state.bot))
+        {
+            return .state.bot;
         }
     }
 
@@ -721,17 +736,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
-    // updateBot
+    // yieldBot
     /++
-     +  Takes a copy of the current bot state and concurrency-sends it to the
-     +  main thread, propagating any changes up the stack and then down to all
-     +  other plugins.
+     +
      +/
-    void updateBot()
+    IRCBot yieldBot()
     {
-        import std.concurrency : send;
-
-        const botCopy = state.bot;
-        state.mainThread.send(cast(shared)botCopy);
+        return state.bot;
     }
 }

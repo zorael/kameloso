@@ -55,7 +55,7 @@ void onSelfpart(const IRCEvent event)
     }
 
     state.bot.channels = state.bot.channels.remove(index);
-    updateBot();
+    state.bot.updated = true;
 }
 
 
@@ -70,7 +70,7 @@ void joinChannels()
         if (bot.homes.length)
         {
             bot.finishedAuth = true;
-            updateBot();
+            state.bot.updated = true;
         }
         else if (!bot.channels.length)
         {
@@ -116,7 +116,7 @@ void onWelcome(const IRCEvent event)
     }
 
     state.bot.nickname = event.target.nickname;
-    updateBot();
+    state.bot.updated = true;
 }
 
 
@@ -163,7 +163,7 @@ void onPing(const IRCEvent event)
         logger.info("Auth timed out. Joining channels");
         state.bot.finishedAuth = true;
         joinChannels();
-        updateBot();
+        state.bot.updated = true;
     }
 }
 
@@ -284,7 +284,6 @@ void onEndOfMotd(const IRCEvent event)
                 bot.authLogin, " hunter2");
 
             logger.trace("--> PRIVMSG NickServ :IDENTIFY hunter2");
-
             break;
         }
     }
@@ -320,7 +319,7 @@ void onAuthEnd()
 void onNickInUse()
 {
     state.bot.nickname ~= altNickSign;
-    updateBot();
+    state.bot.updated = true;
 
     state.mainThread.send(ThreadMessage.Sendline(),
         "NICK %s".format(state.bot.nickname));
@@ -452,7 +451,7 @@ void onRegistrationEvent(const IRCEvent event)
     if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
         state.bot.server.resolvedAddress = event.sender.nickname;
-        updateBot();
+        state.bot.updated = true;
     }
 }
 
@@ -465,7 +464,7 @@ void onNotice(const IRCEvent event)
     if (event.sender.nickname.length && !state.bot.server.resolvedAddress.length)
     {
         state.bot.server.resolvedAddress = event.sender.nickname;
-        updateBot();
+        state.bot.updated = true;
     }
 }
 
@@ -533,7 +532,7 @@ void register()
         if (bot.startedRegistering) return;
 
         bot.startedRegistering = true;
-        updateBot();
+        state.bot.updated = true;
 
         mainThread.send(ThreadMessage.Sendline(), "CAP LS");
 
