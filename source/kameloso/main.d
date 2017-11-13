@@ -472,7 +472,6 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 if (bot.updated)
                 {
                     // Non-plugin updated bot; propagate
-                    writeln("non-plugin updated bot; propagating");
                     bot.updated = false;
                     propagateBot(bot);
                 }
@@ -483,7 +482,6 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 if (yieldedBot.updated)
                 {
                     // Plugin updated the bot; propagate
-                    writeln("a plugin updated bot; propagating");
                     bot = yieldedBot;  // yieldedBot.meldInto(bot);
                     propagateBot(bot);
                 }
