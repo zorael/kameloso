@@ -61,6 +61,7 @@ void pipereader(shared IRCPluginState newState)
 
     bool halt;
 
+    with (state)
     while (!halt)
     {
         eofLoop:
@@ -77,18 +78,18 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
                     {
-                        state.mainThread.send(ThreadMessage.Quit(), line[7..$]);
+                        mainThread.send(ThreadMessage.Quit(), line[7..$]);
                     }
                     else
                     {
-                        state.mainThread.send(ThreadMessage.Quit(), string.init);
+                        mainThread.send(ThreadMessage.Quit(), string.init);
                     }
 
                     break eofLoop;
                 }
                 else
                 {
-                    state.mainThread.send(ThreadMessage.Sendline(), line);
+                    mainThread.send(ThreadMessage.Sendline(), line);
                 }
             }
         }
@@ -161,9 +162,12 @@ void createFIFO()
 @(IRCEvent.Type.WELCOME)
 void onWelcome(const IRCEvent event)
 {
-    state.bot.nickname = event.target.nickname;
-    state.bot.updated = true;
-    fifoThread = spawn(&pipereader, cast(shared)state);
+    with (state)
+    {
+        bot.nickname = event.target.nickname;
+        bot.updated = true;
+        fifoThread = spawn(&pipereader, cast(shared)state);
+    }
 }
 
 
