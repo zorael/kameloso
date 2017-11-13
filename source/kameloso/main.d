@@ -86,32 +86,6 @@ Flag!"quit" checkMessages()
         conn.sendline(line);
     }
 
-    /// Send a WHOIS call to the server, and buffer the requests.
-    static void whois(ThreadMessage.Whois, IRCEvent event)
-    {
-        import std.datetime : Clock;
-
-        if (bot.server.network == IRCServer.Network.twitch)
-        {
-            // Twitch doesn't support WHOIS
-            return;
-        }
-
-        // We buffer the request so only one goes out for a particular nickname
-        // at any one given time.Identical requests are likely to go out several
-        // at a time in bursts, and we only need one reply. So limit the calls.
-
-        const then = (event.sender.nickname in whoisCalls);
-        const now = Clock.currTime;
-
-        if (then && (now - *then) < Timeout.whois.seconds) return;
-
-        logger.trace("--> WHOIS :", event.sender.nickname);
-        conn.sendline("WHOIS :", event.sender.nickname);
-        whoisCalls[event.sender.nickname] = Clock.currTime;
-        replayQueue[event.sender.nickname] = event;
-    }
-
     /// Receive new settings, inherit them into .settings and propagate
     /// them to all plugins.
     static void updateSettings(Settings settings)
@@ -163,7 +137,6 @@ Flag!"quit" checkMessages()
         // BUG: except if quit is true, then it returns without exhausting
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
-            &whois,
             &quietline,
             &pong,
             &quitServer,
@@ -486,28 +459,10 @@ Flag!"quit" loopGenerator(Generator!string generator)
                     propagateBot(bot);
                 }
 
-                if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
-                    (event.type == IRCEvent.Type.HASTHISNICK))
-                {
-                    const savedEvent = event.target.nickname in replayQueue;
-                    if (!savedEvent) continue;
-
-                    if (!spammedAboutReplaying)
-                    {
-                        logger.info("Replaying event:");
-                        printObject(*savedEvent);
-                        spammedAboutReplaying = true;
-                    }
-
-                    plugin.onEvent(*savedEvent);
-                }
-            }
-
-            if ((event.type == IRCEvent.Type.WHOISLOGIN) ||
-                (event.type == IRCEvent.Type.HASTHISNICK))
-            {
-                // These events signify a completed WHOIS
-                replayQueue.remove(event.target.nickname);
+                auto reqs = plugin.yieldWHOISRequests();
+                auto reqsNoParams = plugin.yieldWHOISRequestsNoParams();
+                event.handleQueue(reqs, event.target.nickname);
+                event.handleQueue(reqsNoParams, event.target.nickname);
             }
         }
 
@@ -516,6 +471,47 @@ Flag!"quit" loopGenerator(Generator!string generator)
     }
 
     return Yes.quit;
+}
+
+void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickname)
+{
+    if ((nickname.length) &&
+        ((event.type == IRCEvent.Type.WHOISLOGIN) ||
+        (event.type == IRCEvent.Type.HASTHISNICK)))
+    {
+        auto req = nickname in reqs;
+        if (!req) return;
+        /*if (!spammedAboutReplaying)*/ logger.info("Replaying event...");
+        req.trigger();
+        reqs.remove(nickname);
+    }
+    else
+    {
+        foreach (entry; reqs.byKeyValue)
+        {
+            if (!entry.key.length) continue;
+
+            with (entry)
+            {
+                import std.datetime : Clock;
+
+                const then = key in whoisCalls;
+                const now = Clock.currTime;
+
+                if (!then || ((now - *then) >
+                    Timeout.whois.seconds))
+                {
+                    logger.trace("--> WHOIS :", key);
+                    conn.sendline("WHOIS :", key);
+                    whoisCalls[key] = Clock.currTime;
+                }
+                else
+                {
+                    // logger.log("Too soon... ", (now - *then));
+                }
+            }
+        }
+    }
 }
 
 

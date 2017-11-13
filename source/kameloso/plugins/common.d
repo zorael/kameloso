@@ -21,6 +21,12 @@ interface IRCPlugin
     /// Executed after a plugin has run its onEvent course to pick up bot changes
     IRCBot yieldBot();
 
+    /// Executed to get a list of nicknames a plugin wants WHOISed
+    ref WHOISRequest[string] yieldWHOISRequests();
+
+    /// Executed to get a list of nicknames a plugin wants WHOIsed (no param funs)
+    ref WHOISRequestNoParams[string] yieldWHOISRequestsNoParams();
+
     /// Executed on update to the internal Settings struct
     void newSettings(Settings);
 
@@ -47,6 +53,62 @@ interface IRCPlugin
 }
 
 
+struct WHOISRequestImpl(F)
+{
+    import std.datetime.systime : SysTime;
+
+    F fp;
+
+    IRCEvent event;
+    SysTime created;
+    SysTime lastWhois;
+
+    this(IRCEvent event, F fp)
+    {
+        import std.datetime : Clock;
+        this.event = event;
+        this.fp = fp;
+        created = Clock.currTime;
+    }
+
+    this(F fp)
+    {
+        import std.datetime : Clock;
+        this.event = event;
+        this.fp = fp;
+        created = Clock.currTime;
+    }
+
+    void trigger()
+    {
+        if (!fp)
+        {
+            import std.stdio;
+            writeln("null fp!");
+            return;
+        }
+
+        static if (is(F : void function(const IRCEvent event)))
+        {
+            fp(event);
+        }
+        else
+        {
+            fp();
+        }
+    }
+
+    string toString()
+    {
+        import std.format;
+        return "[%s]@%s".format(event.type, event.sender.nickname);
+    }
+}
+
+alias WHOISRequestNoParams = WHOISRequestImpl!(void function());
+alias WHOISRequest = WHOISRequestImpl!(void function(const IRCEvent));
+
+
 // IRCPluginState
 /++
  +  An aggregate of all variables that make up the state of a given plugin.
@@ -70,6 +132,9 @@ struct IRCPluginState
 
     /// Queued events to execute when a username triggers it
     bool delegate()[string] queue;
+
+    WHOISRequest[string] whoisQueue;
+    WHOISRequestNoParams[string] whoisQueueNoParams;
 }
 
 
@@ -106,26 +171,6 @@ struct Prefix
 struct Terminate;
 
 struct Verbose;
-
-
-// doWhois
-/++
- +  Ask the main thread to do a WHOIS call.
- +
- +  This way the plugins don't need to know of the server connection at all,
- +  at the slight cost of concurrency message passing overhead.
- +
- +  Params:
- +      event = A complete IRCEvent to queue for later processing.
- +/
-void doWhois(IRCPluginState state, const IRCEvent event)
-{
-    import kameloso.common : ThreadMessage;
-    import std.concurrency : send;
-
-    IRCEvent eventCopy = event;  // need mutable or the send will fail
-    state.mainThread.send(ThreadMessage.Whois(), eventCopy);
-}
 
 
 // filterUser
@@ -242,6 +287,30 @@ mixin template IRCPluginBasics()
         static if (__traits(compiles, .state.bot))
         {
             return .state.bot;
+        }
+    }
+
+    // yieldWHOISReuests
+    /++
+     +
+     +/
+    ref WHOISRequest[string] yieldWHOISRequests()
+    {
+        static if (__traits(compiles, .state.whoisQueue))
+        {
+            return .state.whoisQueue;
+        }
+    }
+
+    // yieldWHOISReuests
+    /++
+     +
+     +/
+    ref WHOISRequestNoParams[string] yieldWHOISRequestsNoParams()
+    {
+        static if (__traits(compiles, .state.whoisQueueNoParams))
+        {
+            return .state.whoisQueueNoParams;
         }
     }
 
@@ -366,6 +435,7 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
 
         import std.traits;
 
+        funloop:
         foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
         {
             static if (isSomeFunction!fun)
@@ -450,7 +520,6 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                     mutEvent.content = content
                                         .stripPrefix(bot.nickname);
                                 }
-
                                 break;
 
                             case required:
@@ -461,10 +530,8 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                                         writeln(name, "but it is a query, " ~
                                             "consider optional");
                                     }
-
                                     goto case optional;
                                 }
-
                                 goto case hardRequired;
 
                             case hardRequired:
@@ -553,39 +620,45 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                         immutable privilegeLevel = getUDAs!(fun,
                             PrivilegeLevel)[0];
 
+                        static if (verbose)
+                        {
+                            writefln("%s.%s", module_, __traits(identifier, fun));
+                            writeln("PrivilegeLevel.:", privilegeLevel);
+                        }
+
                         with (PrivilegeLevel)
                         final switch (privilegeLevel)
                         {
                         case friend:
                         case master:
-                            immutable result = state.filterUser(event);
+                            immutable result = state.filterUser(mutEvent);
 
                             with (FilterResult)
                             final switch (result)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (state.users[event.sender.nickname].login !=
+                                    (state.users[mutEvent.sender.nickname].login !=
                                         state.bot.master))
                                 {
                                     static if (verbose)
                                     {
                                         writefln("%s: %s passed privilege " ~
                                             "check but isn't master; continue",
-                                            name, event.sender.nickname);
+                                            name, mutEvent.sender.nickname);
                                     }
                                     continue;
                                 }
                                 break;
 
                             case whois:
-                                return state.doWhois(event);
+                                return mutEvent.queueWhois(mutEvent.sender.nickname, &fun);
 
                             case fail:
                                 static if (verbose)
                                 {
-                                    writefln("%s: %s failed privilege check; " ~
-                                        "continue", name, event.sender.nickname);
+                                    logger.warningf("%s: %s failed privilege check; continue",
+                                        name, mutEvent.sender.nickname);
                                 }
                                 continue;
                             }
@@ -623,6 +696,10 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
                     static if (hasUDA!(fun, Terminate))
                     {
                         return;
+                    }
+                    else
+                    {
+                        continue funloop;
                     }
                 }
             }
@@ -736,12 +813,13 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
-    // yieldBot
-    /++
-     +
-     +/
-    IRCBot yieldBot()
+    void queueWhois(const IRCEvent event, const string key, void function(const IRCEvent) fp)
     {
-        return state.bot;
+        state.whoisQueue[key] = WHOISRequest(event, fp);
+    }
+
+    void queueWhois(const IRCEvent event, const string key, void function() fp)
+    {
+        state.whoisQueueNoParams[key] = WHOISRequestNoParams(event, fp);
     }
 }
