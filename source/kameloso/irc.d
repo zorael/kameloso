@@ -1174,6 +1174,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.aux = slice;
         break;
 
+    case YOURUNIQUEID:
+        // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
+        slice.nom(' ');
+        event.aux = slice.nom(" :");
+        event.content = slice;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
