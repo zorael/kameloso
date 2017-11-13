@@ -322,8 +322,14 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
             }
         }
 
-        sink.put(default_.colour);
-        sink.put('\n');
+        static if (coloured)
+        {
+            sink.put(default_.colour);
+        }
+        else
+        {
+            sink.put('\n');
+        }
     }
 }
 
