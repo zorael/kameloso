@@ -2613,6 +2613,32 @@ unittest
     }
 }
 
+
+string nickServiceOf(const IRCServer.Network network)
+{
+    with (IRCServer.Network)
+    {
+        static immutable string[13] netmap =
+        [
+            unknown    : "NickServ",
+            freenode   : "NickServ",
+            rizon      : "NickServ",
+            quakenet   : "Q@CServe.quakenet.org",
+            undernet   : string.init,
+            gamesurge  : "AuthServ@Services.GameSurge.net",
+            twitch     : string.init,
+            unreal     : "NickServ",
+            efnet      : string.init,
+            ircnet     : string.init,
+            swiftirc   : "NickServ",
+            irchighway : "NickServ",
+            dalnet     : "NickServ@services.dal.net",
+        ];
+
+        return netmap[network];
+    }
+}
+
 unittest
 {
     import std.conv : to;
