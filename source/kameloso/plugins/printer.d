@@ -417,8 +417,10 @@ void mapColours(ref IRCEvent event)
 {
     import std.regex;
 
-    enum colourPattern = 3 ~ "([0-9]{0,2})(?:,([0-9]{1,2}))?";
+    enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
+
+    bool colouredSomething;
 
     alias F = BashForeground;
     BashForeground[16] weechatForegroundMap =
@@ -471,12 +473,7 @@ void mapColours(ref IRCEvent event)
         Appender!string sink;
         sink.reserve(8);
 
-        if (!hit[1].length)
-        {
-            writeln("no colour code? reset?");
-            sink.put("\033[0m");
-            continue;
-        }
+        if (!hit[1].length) continue;
 
         immutable fgIndex = hit[1].to!size_t;
 
@@ -507,9 +504,31 @@ void mapColours(ref IRCEvent event)
 
         sink.put('m');
         event.content = event.content.replaceAll(hit[0].regex, sink.data);
+        colouredSomething = true;
     }
 
-    //event.content ~= "\033[0m";
+    if (colouredSomething)
+    {
+        enum endPattern = 3 ~ "([^0-9])?";
+        static endEngine = ctRegex!endPattern;
+
+        event.content = event.content.replaceAll(endEngine, "\033[0m$1");
+    }
+}
+
+unittest
+{
+    IRCEvent e1;
+    e1.content = "This is " ~ 3 ~ "4all red!" ~ 3 ~ " while this is not.";
+    e1.mapColours();
+    assert((e1.content == "This is \033[91mall red!\033[0m while this is not."),
+        e1.content);
+
+    IRCEvent e2;
+    e2.content = "This time there's" ~ 3 ~ "6 no ending token, only magenta.";
+    e2.mapColours();
+    assert((e2.content == "This time there's\033[35m no ending token, only magenta."),
+        e2.content);
 }
 
 
