@@ -36,6 +36,7 @@ void onCTCPs(const IRCEvent event)
 
     string line;
 
+    with (state)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -62,7 +63,7 @@ void onCTCPs(const IRCEvent event)
         break;
 
     case CTCP_USERINFO:
-        line = "USERINFO %s (%s)".format(state.bot.nickname, state.bot.user);
+        line = "USERINFO %s (%s)".format(bot.nickname, bot.user);
         break;
 
     default:
