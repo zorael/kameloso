@@ -181,16 +181,16 @@ void printObjects(Things...)(Things things) @trusted
     {
         if (settings.monochrome)
         {
-            formatObjectsMonochrome(stdout.lockingTextWriter, things);
+            formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsColoured(stdout.lockingTextWriter, things);
+            formatObjectsImpl!(Yes.coloured)(stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsMonochrome(stdout.lockingTextWriter, things);
+        formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
     }
 }
 
@@ -208,15 +208,18 @@ void printObject(Thing)(Thing thing)
 // formatObjectsColoured
 /++
  +  Formats a struct object, with all its printable members with all their
- +  printable values. Formats in colour.
+ +  printable values.
  +
- +  Don't use this directly, instead use `printObjects(Things...)`.
+ +  This is an implementation template and should not be called directly;
+ +  instead use `printObjects(Things...)`.
  +
  +  Params:
+ +      coloured = whether to display in colours or not
  +      sink = output range to write to
  +      things = one or more structs to enumerate and format.
  +/
-void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
+void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
+    (auto ref Sink sink, Things things) @system
 {
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
@@ -230,9 +233,15 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
     with (BashForeground)
     foreach (thing; things)
     {
-        sink.formattedWrite("%s-- %s\n",
-            white.colour,
-            Unqual!(typeof(thing)).stringof);
+        static if (coloured)
+        {
+            sink.formattedWrite("%s-- %s\n", white.colour,
+                Unqual!(typeof(thing)).stringof);
+        }
+        else
+        {
+            sink.formattedWrite("-- %s\n", Unqual!(typeof(thing)).stringof);
+        }
 
         foreach (immutable i, member; thing.tupleof)
         {
@@ -248,32 +257,67 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
 
                 static if (isSomeString!T)
                 {
-                    enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
-                    sink.formattedWrite(stringPattern,
-                        cyan.colour, T.stringof,
-                        white.colour, (entryPadding + 2), memberstring,
-                        lightgreen.colour, member,
-                        darkgrey.colour, member.length);
+                    static if (coloured)
+                    {
+                        enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
+                        sink.formattedWrite(stringPattern,
+                            cyan.colour, T.stringof,
+                            white.colour, (entryPadding + 2), memberstring,
+                            lightgreen.colour, member,
+                            darkgrey.colour, member.length);
+                    }
+                    else
+                    {
+                        //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
+                        enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
+                        sink.formattedWrite(stringPattern, T.stringof,
+                            (entryPadding + 2), memberstring,
+                            member, member.length);
+                    }
                 }
                 else static if (isArray!T)
                 {
-                    immutable width = member.length ?
-                        (entryPadding + 2) : (entryPadding + 4);
+                    static if (coloured)
+                    {
+                        immutable width = member.length ?
+                            (entryPadding + 2) : (entryPadding + 4);
 
-                    enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
-                    sink.formattedWrite(arrayPattern,
-                        cyan.colour, T.stringof,
-                        white.colour, width, memberstring,
-                        lightgreen.colour, member,
-                        darkgrey.colour, member.length);
+                        enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
+                        sink.formattedWrite(arrayPattern,
+                            cyan.colour, T.stringof,
+                            white.colour, width, memberstring,
+                            lightgreen.colour, member,
+                            darkgrey.colour, member.length);
+                    }
+                    else
+                    {
+                        immutable width = member.length ?
+                            (entryPadding + 2) : (entryPadding + 4);
+
+                        enum arrayPattern = "%9s %-*s%s(%d)\n";
+                        sink.formattedWrite!arrayPattern(
+                            T.stringof,
+                            width, memberstring,
+                            member,
+                            member.length);
+                    }
                 }
                 else
                 {
-                    enum normalPattern = "%s%9s %s%-*s  %s%s\n";
-                    sink.formattedWrite(normalPattern,
-                        cyan.colour, T.stringof,
-                        white.colour, (entryPadding + 2), memberstring,
-                        lightgreen.colour, member);
+                    static if (coloured)
+                    {
+                        enum normalPattern = "%s%9s %s%-*s  %s%s\n";
+                        sink.formattedWrite(normalPattern,
+                            cyan.colour, T.stringof,
+                            white.colour, (entryPadding + 2), memberstring,
+                            lightgreen.colour, member);
+                    }
+                    else
+                    {
+                        enum normalPattern = "%9s %-*s  %s\n";
+                        sink.formattedWrite(normalPattern, T.stringof,
+                            (entryPadding + 2), memberstring, member);
+                    }
                 }
             }
         }
@@ -283,12 +327,43 @@ void formatObjectsColoured(Sink, Things...)(auto ref Sink sink, Things things)
     }
 }
 
-unittest
+@system unittest
 {
     import std.array : Appender;
-    import std.string : indexOf;
+
+    // Monochrome
 
     struct StructName
+    {
+        int i = 12345;
+        string s = "foo";
+        bool b = true;
+        float f = 3.14f;
+        double d = 99.9;
+    }
+
+    StructName s;
+    Appender!string sink;
+
+    sink.reserve(128);  // ~119
+    sink.formatObjectsImpl!(No.coloured)(s);
+
+    assert((sink.data.length > 12), "Empty sink after monochrome fill");
+    assert(sink.data ==
+`-- StructName
+      int i    12345
+   string s   "foo"(3)
+     bool b    true
+    float f    3.14
+   double d    99.9
+
+`, "\n" ~ sink.data);
+
+    // Colour
+
+    import std.string : indexOf;
+
+    struct StructName2
     {
         int int_ = 12345;
         string string_ = "foo";
@@ -297,11 +372,11 @@ unittest
         double double_ = 99.9;
     }
 
-    StructName s;
-    Appender!string sink;
+    StructName2 s2;
 
+    sink = typeof(sink).init;
     sink.reserve(256);  // ~239
-    sink.formatObjectsColoured(s);
+    sink.formatObjectsImpl!(Yes.coloured)(s2);
 
     assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -320,111 +395,6 @@ unittest
 
     assert(sink.data.indexOf("double_") != -1);
     assert(sink.data.indexOf("99.9") != -1);
-}
-
-
-// formatObjectsMonochrome
-/++
- +  Formats a struct object, with all its printable members with all their
- +  printable values. Formats without adding colours.
- +
- +  Don't use this directly, instead use `printObjects(Things...)`.
- +
- +  Params:
- +      sink = output range to write to
- +      things = one or more structs to enumerate and format.
- +
- +  TODO:
- +      Merge this with formatObjectsColoured.
- +/
-void formatObjectsMonochrome(Sink, Things...)(auto ref Sink sink, Things things)
-{
-    import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isSomeFunction;
-    import std.typecons : Unqual;
-
-    // workaround formattedWrite taking Appender by value
-    version(LDC) sink.put(string.init);
-
-    enum entryPadding = longestMemberName!Things.length;
-
-    foreach (thing; things)
-    {
-        sink.formattedWrite("-- %s\n", Unqual!(typeof(thing)).stringof);
-
-        foreach (immutable i, member; thing.tupleof)
-        {
-            static if (!isType!member &&
-                       isConfigurableVariable!member &&
-                       !hasUDA!(thing.tupleof[i], Hidden) &&
-                       !hasUDA!(thing.tupleof[i], Unconfigurable))
-            {
-                import std.traits : isArray, isSomeString;
-
-                alias T = Unqual!(typeof(member));
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
-
-                static if (isSomeString!T)
-                {
-                    enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
-                    sink.formattedWrite(stringPattern, T.stringof,
-                        (entryPadding + 2), memberstring,
-                        member, member.length);
-                }
-                else static if (isArray!T)
-                {
-                    immutable width = member.length ?
-                        (entryPadding + 2) : (entryPadding + 4);
-
-                    enum arrayPattern = "%9s %-*s%s(%d)\n";
-                    sink.formattedWrite!arrayPattern(
-                        T.stringof,
-                        width, memberstring,
-                        member,
-                        member.length);
-                }
-                else
-                {
-                    enum normalPattern = "%9s %-*s  %s\n";
-                    sink.formattedWrite(normalPattern, T.stringof,
-                        (entryPadding + 2), memberstring, member);
-                }
-            }
-        }
-
-        sink.put('\n');
-    }
-}
-
-unittest
-{
-    import std.array : Appender;
-
-    struct StructName
-    {
-        int i = 12345;
-        string s = "foo";
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-    }
-
-    StructName s;
-    Appender!string sink;
-
-    sink.reserve(128);  // ~119
-    sink.formatObjectsMonochrome(s);
-
-    assert((sink.data.length > 12), "Empty sink after monochrome fill");
-    assert(sink.data ==
-`-- StructName
-      int i    12345
-   string s   "foo"(3)
-     bool b    true
-    float f    3.14
-   double d    99.9
-
-`, "\n" ~ sink.data);
 }
 
 
