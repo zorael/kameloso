@@ -752,6 +752,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender.nickname);
     }
 
+    /// Nick change, move the IRCUser entry
+    @(IRCEvent.Type.NICK)
+    void onNickMixin(const IRCEvent event)
+    {
+        if (auto oldUser = event.sender.nickname in state.users)
+        {
+            state.users[event.target.nickname] = *oldUser;
+            state.users.remove(event.sender.nickname);
+        }
+    }
+
     /// Target info; catch
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserInfoMixin(const IRCEvent event)
