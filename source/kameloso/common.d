@@ -505,6 +505,7 @@ unittest
     assert(!isOfAssignableType!boo);  // room for improvement: @property
     assert(isOfAssignableType!Baz);
     assert(!isOfAssignableType!baz);
+    assert(isOfAssignableType!string);
 }
 
 
