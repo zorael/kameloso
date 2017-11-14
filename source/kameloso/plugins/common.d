@@ -738,61 +738,6 @@ mixin template OnEventImpl(string module_, bool debug_ = false)
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
-    // onWhoisLoginMixin
-    /++
-     +  Records a user's NickServ login.
-     +
-     +  This function populates the user array.
-     +
-     +  Params:
-     +      event = the triggering IRCEvent.
-     +/
-    @(IRCEvent.Type.WHOISLOGIN)
-    @(IRCEvent.Type.HASTHISNICK)
-    void onLoginInfoMixin(const IRCEvent event)
-    {
-        import std.datetime : Clock;
-
-        onUserInfoMixin(event);
-        state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
-    }
-
-    @(IRCEvent.Type.JOIN)
-    @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(const IRCEvent event)
-    {
-        auto user = event.target.nickname in state.users;
-
-        if (!user)
-        {
-            state.users[event.target.nickname] = IRCUser.init;
-            user = event.target.nickname in state.users;
-        }
-
-        event.target.meldInto!(Yes.overwrite)(*user);
-    }
-
-    //onEndOfWhoisMixin
-    /++
-     +  Removes a user from the WHOIS queue.
-     +
-     +  When doing a WHOIS with the goal of replaying an event, the event is
-     +  placed in a queue. If the reply lists a valid known-good NickServ login,
-     +  it is replayed. If it is not a known-good login or if there is no login
-     +  at all, it would live there forever, making up garbage.
-     +
-     +  As such, always remove the queued event at the end of the WHOIS.
-     +  At that point, any valid events should have already been replayed.
-     +
-     +  Params:
-     +      event = the triggering IRCEvent.
-     +/
-    @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWhoisMixin(const IRCEvent event)
-    {
-        state.queue.remove(event.target.nickname);
-    }
-
     // onLeaveMixin
     /++
      +  Remove a user from the user array.
@@ -810,6 +755,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender.nickname);
     }
 
+    /// Target info; catch
+    @(IRCEvent.Type.RPL_WHOISUSER)
+    void onUserInfoMixin(const IRCEvent event)
+    {
+        import std.datetime : Clock;
+        catchUser!(No.overwrite)(event.target);
+
+        // Record lastWhois here so it happens even if no WHOISLOGIN event
+        state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
+    }
+
     // onJoinMixin
     /++
      +  Adds a user to the user array if the login is known.
@@ -820,43 +776,66 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onReceivedLoginMixin(const IRCEvent event)
+    void onLoginInfoSenderMixin(const IRCEvent event)
     {
-        // This is an extended-join event; catch the sender
+        catchUser(event.sender);
 
-        with (event.sender)
-        if (login.length)
+        if (event.sender.login == "*")
         {
-            auto user = nickname in state.users;
-
-            if (!user)
-            {
-                // No user existed so create one and return
-                state.users[nickname] = event.sender;
-                return;
-            }
-
-            // *user guaranteed safe to reference here
-
-            if (login == "*")
-            {
-                (*user).login = string.init;
-                return;
-            }
-            else
-            {
-                event.sender.meldInto!(Yes.overwrite)(*user);
-            }
+            state.users[event.sender.nickname].login = string.init;
         }
     }
 
-    void queueWhois(const IRCEvent event, const string key, void function(const IRCEvent) fp)
+    // onWhoisLoginMixin
+    /++
+     +  Records a user's NickServ login.
+     +
+     +  This function populates the user array.
+     +
+     +  Params:
+     +      event = the triggering IRCEvent.
+     +/
+    @(IRCEvent.Type.WHOISLOGIN)
+    @(IRCEvent.Type.HASTHISNICK)
+    void onLoginInfoTargetMixin(const IRCEvent event)
     {
-        state.whoisQueue[key] = WHOISRequest(event, fp);
+        catchUser(event.target);
     }
 
-    void queueWhois(const IRCEvent event, const string key, void function() fp)
+    /// Helper, meld into users
+    void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
+        (const IRCUser newUser)
     {
-        state.whoisQueueNoParams[key] = WHOISRequestNoParams(event, fp);
+        auto user = newUser.nickname in state.users;
+
+        if (!user)
+        {
+            state.users[newUser.nickname] = IRCUser.init;
+            user = newUser.nickname in state.users;
+        }
+
+        newUser.meldInto!overwrite(*user);
+    }
+
+    /// Queue a WHOIS request in the state arrays
+    void queueWhois(F)(const IRCEvent event, const string nickname, F fp)
+    {
+        import kameloso.constants : Timeout;
+        import std.datetime : Clock, SysTime, seconds;
+        import std.traits : Parameters;
+
+        const user = nickname in state.users;
+        const elapsed = (Clock.currTime - SysTime.fromUnixTime(user.lastWhois));
+
+        if (user && (elapsed < Timeout.whois.seconds)) return;
+
+        static if (!Parameters!F.length)
+        {
+            state.whoisQueueNoParams[nickname] = WHOISRequestNoParams(event, fp);
+        }
+        else
+        {
+            state.whoisQueue[nickname] = WHOISRequest(event, fp);
+        }
     }
 }
