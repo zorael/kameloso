@@ -1718,6 +1718,8 @@ struct IRCUser
     string login;
     bool special;
 
+    size_t lastWhois;
+
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
