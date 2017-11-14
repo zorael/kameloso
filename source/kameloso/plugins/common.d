@@ -55,20 +55,20 @@ interface IRCPlugin
 
 struct WHOISRequestImpl(F)
 {
-    import std.datetime.systime : SysTime;
+    import std.datetime.systime : Clock, SysTime;
 
     F fp;
 
     IRCEvent event;
-    SysTime created;
-    SysTime lastWhois;
+    size_t created;
+    size_t lastWhois;
 
     this(IRCEvent event, F fp)
     {
         import std.datetime : Clock;
         this.event = event;
         this.fp = fp;
-        created = Clock.currTime;
+        created = Clock.currTime.toUnixTime;
     }
 
     void trigger()
@@ -100,6 +100,34 @@ struct WHOISRequestImpl(F)
 alias WHOISRequestNoParams = WHOISRequestImpl!(void function());
 alias WHOISRequest = WHOISRequestImpl!(void function(const IRCEvent));
 
+unittest
+{
+    IRCEvent event;
+    event.target.nickname = "kameloso";
+    event.content = "hirrpp";
+    event.sender.nickname = "zorael";
+
+    int i = 5;
+
+    void dg()
+    {
+        ++i;
+    }
+
+    auto req = WHOISRequestImpl!(void delegate())(event, &dg);
+
+    with (req.event)
+    {
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "hirrpp"), content);
+        assert((sender.nickname == "zorael"), sender.nickname);
+
+    }
+
+    assert(i == 5);
+    req.trigger();
+    assert(i == 6);
+}
 
 // IRCPluginState
 /++
