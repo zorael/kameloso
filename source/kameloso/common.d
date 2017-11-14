@@ -528,6 +528,12 @@ unittest
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis)
 {
+    if (meldThis == Thing.init)
+    {
+        // We're merging an .init with something; just return, should be faster
+        return;
+    }
+
     foreach (immutable i, ref member; intoThis.tupleof)
     {
         static if (!isType!member)
