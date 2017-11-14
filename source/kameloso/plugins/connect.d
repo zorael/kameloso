@@ -406,25 +406,25 @@ void onRegistrationEvent(const IRCEvent event)
             case "account-notify":
             case "extended-join":
             //case "identify-msg":
-            //case "multi-prefix":
+            case "multi-prefix":
                 // Freenode
-            //case away-notify:
-            //case chghost:
-            //case invite-notify:
-            //case multi-prefix:
-            //case userhost-in-names:
+            case "away-notify":
+            case "chghost":
+            case "invite-notify":
+            //case "multi-prefix":
+            case "userhost-in-names":
                 // Rizon
-            //case unrealircd.org/plaintext-policy:
-            //case unrealircd.org/link-security:
-            //case sts:
-            //case extended-join:
-            //case chghost:
-            //case cap-notify:
-            //case userhost-in-names:
-            //case multi-prefix:
-            //case away-notify:
-            //case account-notify:
-            //case tls:
+            //case "unrealircd.org/plaintext-policy":
+            //case "unrealircd.org/link-security":
+            //case "sts":
+            //case "extended-join":
+            //case "chghost":
+            case "cap-notify":
+            //case "userhost-in-names":
+            //case "multi-prefix":
+            //case "away-notify":
+            //case "account-notify":
+            //case "tls":
                 // UnrealIRCd
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
                 break;
