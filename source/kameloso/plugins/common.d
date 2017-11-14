@@ -822,9 +822,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         import std.traits : Parameters;
 
         const user = nickname in state.users;
-        const elapsed = (Clock.currTime - SysTime.fromUnixTime(user.lastWhois));
 
-        if (user && (elapsed < Timeout.whois.seconds)) return;
+        if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
+            < Timeout.whois.seconds))
+        {
+            return;
+        }
 
         static if (!Parameters!F.length)
         {
