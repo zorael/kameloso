@@ -150,9 +150,6 @@ struct IRCPluginState
     /// Hashmap of IRC user details
     IRCUser[string] users;
 
-    /// Queued events to execute when a username triggers it
-    bool delegate()[string] queue;
-
     WHOISRequest[string] whoisQueue;
     WHOISRequestNoParams[string] whoisQueueNoParams;
 }
