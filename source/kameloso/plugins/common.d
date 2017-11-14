@@ -71,14 +71,6 @@ struct WHOISRequestImpl(F)
         created = Clock.currTime;
     }
 
-    this(F fp)
-    {
-        import std.datetime : Clock;
-        this.event = event;
-        this.fp = fp;
-        created = Clock.currTime;
-    }
-
     void trigger()
     {
         if (!fp)
@@ -729,10 +721,27 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.WHOISLOGIN)
     @(IRCEvent.Type.HASTHISNICK)
-    @(IRCEvent.Type.JOIN)
-    void onWhoisLoginMixin(const IRCEvent event)
+    void onLoginInfoMixin(const IRCEvent event)
     {
-        state.users[event.target.nickname] = event.target;
+        import std.datetime : Clock;
+
+        onUserInfoMixin(event);
+        state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
+    }
+
+    @(IRCEvent.Type.JOIN)
+    @(IRCEvent.Type.RPL_WHOISUSER)
+    void onUserInfoMixin(const IRCEvent event)
+    {
+        auto user = event.target.nickname in state.users;
+
+        if (!user)
+        {
+            state.users[event.target.nickname] = IRCUser.init;
+            user = event.target.nickname in state.users;
+        }
+
+        event.target.meldInto!(Yes.overwrite)(*user);
     }
 
     //onEndOfWhoisMixin
