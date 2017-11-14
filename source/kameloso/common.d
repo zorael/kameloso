@@ -1122,7 +1122,12 @@ final class KamelosoLogger : Logger
     /// ditto
     override protected void finishLogMsg() @trusted
     {
-        return finishLogMsg(stdout.lockingTextWriter);
+        finishLogMsg(stdout.lockingTextWriter);
+
+        version(Cygwin)
+        {
+            stdout.flush();
+        }
     }
 }
 

@@ -348,6 +348,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.put('\n');
             }
+
+            version(Cygwin)
+            {
+                stdout.flush();
+            }
         }
         else
         {
