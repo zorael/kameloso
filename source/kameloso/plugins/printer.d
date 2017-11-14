@@ -25,6 +25,7 @@ struct Printer
 
     bool truecolour = true;
     bool randomNickColours = true;
+    bool truncateMOTD = true;
 }
 
 /// All Printer plugin options gathered
@@ -74,6 +75,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case CONNECTIONRECORD:
     // case CAP:
         // These event types are too spammy; ignore
+        if (!printerOptions.truncateMOTD) goto default;
         break;
 
     default:
