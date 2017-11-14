@@ -936,9 +936,9 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
         slice.nom(' ');
         event.target.nickname = slice.nom(' ');
-        event.content = slice.nom(" *");
-        slice.nom(" :");
-        event.aux = slice.stripLeft();
+        event.target.ident = slice.nom(' ');
+        event.target.address = slice.nom(" * :");
+        event.content = slice.stripLeft();
         break;
 
     case RPL_WHOISCHANNELS: // 319
@@ -2746,8 +2746,10 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.RPL_WHOISUSER), type.to!string);
-        assert((content == "~NaN ns3363704.ip-94-23-253.eu"), content);
-        assert((aux == "jr"), aux);
+        assert((target.nickname == "zorael"), target.nickname);
+        assert((target.ident == "~NaN"), target.ident);
+        assert((target.address == "ns3363704.ip-94-23-253.eu"), target.address);
+        assert((content == "jr"), content);
         assert((num == 311), num.to!string);
     }
 
