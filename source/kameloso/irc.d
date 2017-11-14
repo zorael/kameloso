@@ -977,7 +977,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         //slice.formattedRead("%s %s :%s", event.target, event.aux, event.content);
         event.target.nickname = slice.nom(' ');
         event.target.login = slice.nom(" :");
-        event.content = slice;
+        //event.content = slice;
+        event.content = event.target.login;
         break;
 
     case HASTHISNICK: // 307
@@ -986,7 +987,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         slice.nom(' '); // bot nick
         event.target.nickname = slice.nom(" :");
         //event.aux = event.target.nickname;
-        event.content = slice;
+        //event.content = slice;
+        event.content = event.target.nickname;
         break;
 
     case PONG:
@@ -2767,7 +2769,7 @@ unittest
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.WHOISLOGIN), type.to!string);
         assert((target.nickname == "zurael"), target.nickname);
-        assert((content == "is logged in as"), content);
+        assert((content == "zorael"), content);
         assert((target.login == "zorael"), target.login);
         assert((num == 330), num.to!string);
     }
