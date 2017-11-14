@@ -18,6 +18,7 @@ struct Connect
 {
     bool sasl = true;
     bool joinOnInvite = false;
+    bool exitOnSASLFailure = false;
 }
 
 /// All Connect plugin options gathered
@@ -542,6 +543,12 @@ void onSASLFailure()
 {
     with (state)
     {
+        if (connectOptions.exitOnSASLFailure)
+        {
+            mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
+            return;
+        }
+
         // End CAP but don't flag as finished auth
         bot.finishedRegistering = true;
         bot.updated = true;
