@@ -221,6 +221,8 @@ void printObject(Thing)(Thing thing)
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink, Things things) @system
 {
+    import kameloso.stringutils : stripSuffix;
+
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
@@ -233,14 +235,18 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     with (BashForeground)
     foreach (thing; things)
     {
+        alias Thing = typeof(thing);
         static if (coloured)
         {
-            sink.formattedWrite("%s-- %s\n", white.colour,
-                Unqual!(typeof(thing)).stringof);
+            sink.formattedWrite("%s-- %s\n", white.colour, Unqual!Thing
+                .stringof
+                .stripSuffix("Options"));
         }
         else
         {
-            sink.formattedWrite("-- %s\n", Unqual!(typeof(thing)).stringof);
+            sink.formattedWrite("-- %s\n", Unqual!Thing
+                .stringof
+                .stripSuffix("Options"));
         }
 
         foreach (immutable i, member; thing.tupleof)
@@ -347,13 +353,12 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     }
 
     StructName s;
-    Appender!string sink;
+    Appender!(char[]) sink;
 
     sink.reserve(128);  // ~119
     sink.formatObjectsImpl!(No.coloured)(s);
 
-    assert((sink.data.length > 12), "Empty sink after monochrome fill");
-    assert(sink.data ==
+    enum structNameSerialised =
 `-- StructName
       int i    12345
    string s   "foo"(3)
@@ -361,7 +366,17 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     float f    3.14
    double d    99.9
 
-`, "\n" ~ sink.data);
+`;
+    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
+    // Adding Options does nothing
+    alias StructNameOptions = StructName;
+    StructNameOptions so;
+    sink.clear();
+    sink.formatObjectsImpl!(No.coloured)(so);
+
+    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
 
     // Colour
 
@@ -378,7 +393,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
 
     StructName2 s2;
 
-    sink = typeof(sink).init;
+    sink.clear();
     sink.reserve(256);  // ~239
     sink.formatObjectsImpl!(Yes.coloured)(s2);
 
@@ -399,6 +414,15 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
 
     assert(sink.data.indexOf("double_") != -1);
     assert(sink.data.indexOf("99.9") != -1);
+
+    // Adding Options does nothing
+    alias StructName2Options = StructName2;
+    immutable sinkCopy = sink.data.idup;
+    StructName2Options s2o;
+
+    sink.clear();
+    sink.formatObjectsImpl!(Yes.coloured)(s2o);
+    assert((sink.data == sinkCopy), sink.data);
 }
 
 
