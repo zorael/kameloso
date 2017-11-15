@@ -79,6 +79,7 @@ if (Things.length > 1)
 
 void serialise(Sink, Thing)(ref Sink sink, Thing thing)
 {
+    import kameloso.stringutils : stripSuffix;
     import std.algorithm : joiner;
     import std.array : array;
     import std.conv : to;
@@ -92,7 +93,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
         if (sink.data.length) sink.put(newline);
     }
 
-    sink.formattedWrite("[%s]%s", Thing.stringof, newline);
+    sink.formattedWrite("[%s]%s", Thing.stringof.stripSuffix("Options"), newline);
 
     foreach (immutable i, member; thing.tupleof)
     {
@@ -165,7 +166,7 @@ unittest
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
-    struct Foo
+    struct FooOptions
     {
         string fooasdf = "foo 1";
         string bar = "foo 1";
@@ -173,7 +174,7 @@ unittest
         double pi = 3.14159;
     }
 
-    struct Bar
+    struct BarOptions
     {
         string foofdsa = "foo 2";
         string bar = "bar 2";
@@ -192,7 +193,7 @@ pi 3.14159
     Appender!string fooSink;
     fooSink.reserve(64);
 
-    fooSink.serialise(Foo.init);
+    fooSink.serialise(FooOptions.init);
     assert(fooSink.data == fooSerialised);
 
     enum barSerialised =
@@ -206,13 +207,13 @@ pipyon 3
     Appender!string barSink;
     barSink.reserve(64);
 
-    barSink.serialise(Bar.init);
+    barSink.serialise(BarOptions.init);
     assert(barSink.data == barSerialised);
 
     // try two at once
     Appender!string bothSink;
     bothSink.reserve(128);
-    bothSink.serialise(Foo.init, Bar.init);
+    bothSink.serialise(FooOptions.init, BarOptions.init);
     assert(bothSink.data == fooSink.data ~ newline ~ barSink.data);
 }
 
@@ -299,6 +300,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 
 void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
+    import kameloso.stringutils : stripSuffix;
     import std.format : formattedRead;
     import std.string : munch, strip, stripLeft;
     import std.traits : Unqual, hasUDA, isType;
@@ -347,7 +349,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             {
                 alias T = Unqual!(typeof(thing));
 
-                if (section != T.stringof) continue;
+                if (section != T.stringof.stripSuffix("Options")) continue;
 
                 switch (entry)
                 {
