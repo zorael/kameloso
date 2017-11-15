@@ -761,6 +761,10 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             state.users[event.target.nickname] = *oldUser;
             state.users.remove(event.sender.nickname);
         }
+        else
+        {
+            state.users[event.target.nickname] = event.sender;
+        }
     }
 
     /// Target info; catch
@@ -768,9 +772,10 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     void onUserInfoMixin(const IRCEvent event)
     {
         import std.datetime : Clock;
-        catchUser!(No.overwrite)(event.target);
+        catchUser(event.target);
 
         // Record lastWhois here so it happens even if no WHOISLOGIN event
+        assert(event.target.nickname in state.users);
         state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
     }
 
@@ -790,6 +795,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
 
         if (event.sender.login == "*")
         {
+            assert(event.sender.nickname in state.users);
             state.users[event.sender.nickname].login = string.init;
         }
     }
@@ -807,7 +813,15 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.HASTHISNICK)
     void onLoginInfoTargetMixin(const IRCEvent event)
     {
-        catchUser(event.target);
+        // No point catching the entire user
+        if (auto user = event.target.nickname in state.users)
+        {
+            (*user).login = event.target.login;
+        }
+        else
+        {
+            state.users[event.target.nickname] = event.target;
+        }
     }
 
     /// Helper, meld into users
