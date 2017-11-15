@@ -563,7 +563,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         if (event.sender.nickname == bot.nickname)
         {
             event.type = SELFNICK;
-            bot.nickname = event.content;
+            bot.nickname = event.target.nickname;
             bot.updated = true;
         }
         break;
@@ -1271,6 +1271,7 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         case WELCOME:
         case QUERY:
         case JOIN:
+        case SELFNICK:
             break;
 
         default:
@@ -2948,8 +2949,11 @@ unittest
         assert((target.nickname == "kameloso__"), target.nickname);
     }
 
+    IRCBot bot2 = bot;
+
+    assert((bot2.nickname == "kameloso^"), bot2.nickname);
     immutable e22 = ":kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_"
-                    .toIRCEvent(bot);
+                    .toIRCEvent(bot2);
     with (e22)
     {
         assert((sender.nickname == "kameloso^"), sender.nickname);
@@ -2957,5 +2961,7 @@ unittest
         assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
         assert((type == IRCEvent.Type.SELFNICK), type.to!string);
         assert((target.nickname == "kameloso_"), target.nickname);
+        assert(bot2.updated);
+        assert((bot2.nickname == "kameloso_"), bot2.nickname);
     }
 }
