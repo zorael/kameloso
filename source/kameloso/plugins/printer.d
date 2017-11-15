@@ -54,8 +54,6 @@ void onAnyEvent(const IRCEvent origEvent)
     {
     case RPL_NAMREPLY:
     case RPL_MOTD:
-    case PING:
-    case PONG:
     case SERVERINFO:
     case RPL_ISUPPORT:
     case TOPICSETTIME:
@@ -76,6 +74,10 @@ void onAnyEvent(const IRCEvent origEvent)
     // case CAP:
         // These event types are too spammy; ignore
         if (!printerOptions.truncateMOTD) goto default;
+        break;
+
+    case PING:
+    case PONG:
         break;
 
     default:
