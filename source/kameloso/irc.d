@@ -2937,4 +2937,25 @@ unittest
         assert((aux == "270"), aux);
     }
 
+    immutable e21 = ":kameloso_!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso__"
+                    .toIRCEvent(bot);
+    with (e21)
+    {
+        assert((sender.nickname == "kameloso_"), sender.nickname);
+        assert((sender.ident == "~NaN"), sender.ident);
+        assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
+        assert((type == IRCEvent.Type.NICK), type.to!string);
+        assert((target.nickname == "kameloso__"), target.nickname);
+    }
+
+    immutable e22 = ":kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_"
+                    .toIRCEvent(bot);
+    with (e22)
+    {
+        assert((sender.nickname == "kameloso^"), sender.nickname);
+        assert((sender.ident == "~NaN"), sender.ident);
+        assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
+        assert((type == IRCEvent.Type.SELFNICK), type.to!string);
+        assert((target.nickname == "kameloso_"), target.nickname);
+    }
 }
