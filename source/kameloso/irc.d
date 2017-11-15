@@ -891,7 +891,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         slice.nom(' ');
         slice.nom(' ');
         event.content = slice.nom(' ');
-        event.aux = slice.nom(": ");
+        event.aux = slice.nom(" :");
         break;
 
     case RPL_LUSEROP: // 252
