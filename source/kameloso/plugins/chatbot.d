@@ -13,7 +13,7 @@ import std.stdio;
 
 private:
 
-struct Chatbot
+struct ChatbotOptions
 {
     string quotesFile = "quotes.json";
     bool eightball = true;
@@ -22,7 +22,7 @@ struct Chatbot
 }
 
 /// All ChatBot plugin options gathered
-Chatbot chatbotOptions;
+ChatbotOptions chatbotOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

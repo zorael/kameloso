@@ -12,7 +12,7 @@ private:
 
 
 /// All Printer plugin options gathered in a struct
-struct Printer
+struct PrinterOptions
 {
     version(Windows)
     {
@@ -29,7 +29,7 @@ struct Printer
 }
 
 /// All Printer plugin options gathered
-Printer printerOptions;
+PrinterOptions printerOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

@@ -14,7 +14,7 @@ import std.stdio;
 private:
 
 
-struct Connect
+struct ConnectOptions
 {
     bool sasl = true;
     bool joinOnInvite = false;
@@ -22,7 +22,7 @@ struct Connect
 }
 
 /// All Connect plugin options gathered
-Connect connectOptions;
+ConnectOptions connectOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
