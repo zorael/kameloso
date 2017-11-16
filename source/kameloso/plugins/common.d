@@ -405,9 +405,18 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     void addToConfig(ref Appender!string sink)
     {
-        static if (__traits(compiles, .addToConfig(sink)))
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import std.traits;
+
+        foreach (ref symbol; getSymbolsByUDA!(thisModule, Configurable))
         {
-            .addToConfig(sink);
+            static if (!isType!symbol && !isSomeFunction!symbol &&
+                !__traits(isTemplate, symbol))
+            {
+                import kameloso.config2 : serialise;
+                sink.serialise(symbol);
+            }
         }
     }
 
