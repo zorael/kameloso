@@ -293,9 +293,8 @@ string getDomainFromURL(const string url) @safe
  +/
 string getTitleFromStream(Stream_)(ref Stream_ stream)
 {
-    import std.array : Appender, arrayReplace = replace;
+    import std.array : Appender;
     import std.regex : matchFirst;
-    import std.string : removechars, strip;
 
     Appender!string pageContent;
     pageContent.reserve(BufferSize.titleLookup);
@@ -324,12 +323,48 @@ string getTitleFromStream(Stream_)(ref Stream_ stream)
         }
     }
 
-    // TODO: Add DOM translation, &nbsp; etc.
+    return parseTitle(title);
+}
+
+
+string parseTitle(const string title)
+{
+    import arsd.dom : htmlEntitiesDecode;
+    import std.regex : ctRegex, replaceAll;
+    import std.string : strip;
+
+    enum rPattern = "\r";
+    enum nPattern = "\n";
+    static rEngine = ctRegex!rPattern;
+    static nEngine = ctRegex!nPattern;
+
+    // replaceAll takes about 4.48x as long as removechars does
+    // but that's micro-optimising; we're still in the µsec range
 
     return title
-        .removechars("\r")
-        .arrayReplace("\n", " ")
-        .strip;
+        .replaceAll(rEngine, string.init)
+        .replaceAll(nEngine, " ")
+        .strip
+        .htmlEntitiesDecode();
+}
+
+unittest
+{
+    immutable t1 = "&quot;Hello&nbsp;world!&quot;";
+    immutable t1p = parseTitle(t1);
+    assert((t1p == "\"Hello\u00A0world!\""), t1p);  // not a normal space
+
+    immutable t2 = "&lt;/title&gt;";
+    immutable t2p = parseTitle(t2);
+    assert((t2p == "</title>"), t2p);
+
+    immutable t3 = "&mdash;&micro;&acute;&yen;&euro;";
+    immutable t3p = parseTitle(t3);
+    assert((t3p == "—µ´¥€"), t3p);  // not a normal dash
+
+    immutable t4 = "&quot;Se&ntilde;or &THORN;&quot; &copy;2017";
+    immutable t4p = parseTitle(t4);
+    assert((t4p == `"Señor Þ" ©2017`), t4p);
 }
 
 
