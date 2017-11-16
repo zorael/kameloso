@@ -615,13 +615,6 @@ void start()
 }
 
 
-void addToConfig(ref Appender!string sink)
-{
-    import kameloso.config2 : serialise;
-    sink.serialise(connectOptions);
-}
-
-
 public:
 
 mixin BasicEventHandlers;

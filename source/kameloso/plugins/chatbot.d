@@ -385,13 +385,6 @@ void start()
 }
 
 
-void addToConfig(ref Appender!string sink)
-{
-    import kameloso.config2 : serialise;
-    sink.serialise(chatbotOptions);
-}
-
-
 public:
 
 mixin BasicEventHandlers;

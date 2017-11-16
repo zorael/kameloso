@@ -636,12 +636,6 @@ unittest
 }
 
 
-void addToConfig(ref Appender!string sink)
-{
-    import kameloso.config2 : serialise;
-    sink.serialise(printerOptions);
-}
-
 void present()
 {
     printObject(printerOptions);
