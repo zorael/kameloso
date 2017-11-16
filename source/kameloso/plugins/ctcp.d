@@ -127,7 +127,7 @@ void onCTCPClientinfo(const IRCEvent event)
 public:
 
 
-mixin OnEventImpl!__MODULE__;
+mixin OnEventImpl;
 
 
 // CTCP

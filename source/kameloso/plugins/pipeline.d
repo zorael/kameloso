@@ -199,7 +199,7 @@ void teardown()
 public:
 
 
-mixin OnEventImpl!__MODULE__;
+mixin OnEventImpl;
 
 
 // Pipeline

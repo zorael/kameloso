@@ -658,7 +658,7 @@ void present()
 public:
 
 mixin BasicEventHandlers;
-mixin OnEventImpl!__MODULE__;
+mixin OnEventImpl;
 
 
 // Printer

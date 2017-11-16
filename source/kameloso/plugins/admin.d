@@ -391,8 +391,8 @@ void joinPartImpl(const string prefix, const IRCEvent event)
 
 public:
 
-mixin BasicEventHandlers!__MODULE__;
-mixin OnEventImpl!__MODULE__;
+mixin BasicEventHandlers;
+mixin OnEventImpl;
 
 
 // AdminPlugin

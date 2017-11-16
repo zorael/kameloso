@@ -402,7 +402,7 @@ void addToConfig(ref Appender!string sink)
 public:
 
 mixin BasicEventHandlers;
-mixin OnEventImpl!__MODULE__;
+mixin OnEventImpl;
 
 
 // Chatbot

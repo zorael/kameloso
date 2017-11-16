@@ -441,7 +441,7 @@ void teardown()
 public:
 
 mixin BasicEventHandlers;
-mixin OnEventImpl!__MODULE__;
+mixin OnEventImpl;
 
 
 // Webtitles

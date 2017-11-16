@@ -444,7 +444,7 @@ mixin template IRCPluginBasics()
  +                kameloso.plugins.common.
  +      debug_ = flag denoting that more verbose code should be compiled in.
  +/
-mixin template OnEventImpl(string module_, bool debug_ = false)
+mixin template OnEventImpl(string module_ = __MODULE__, bool debug_ = false)
 {
     void onEvent(const IRCEvent event)
     {
