@@ -228,7 +228,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +      .onEvent
  +      .teardown
  +/
-mixin template IRCPluginBasics()
+mixin template IRCPluginBasics(string module_ = __MODULE__)
 {
     import std.array : Appender;
     // onEvent
@@ -375,9 +375,18 @@ mixin template IRCPluginBasics()
      +/
     void loadConfig(const string configFile)
     {
-        static if (__traits(compiles, .loadConfig(string.init)))
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import std.traits;
+
+        foreach (ref symbol; getSymbolsByUDA!(thisModule, Configurable))
         {
-            .loadConfig(configFile);
+            static if (!isType!symbol && !isSomeFunction!symbol &&
+                !__traits(isTemplate, symbol))
+            {
+                import kameloso.config2 : readConfigInto;
+                configFile.readConfigInto(symbol);
+            }
         }
     }
 
