@@ -615,13 +615,6 @@ void start()
 }
 
 
-void loadConfig(const string configFile)
-{
-    import kameloso.config2 : readConfigInto;
-    configFile.readConfigInto(connectOptions);
-}
-
-
 void addToConfig(ref Appender!string sink)
 {
     import kameloso.config2 : serialise;

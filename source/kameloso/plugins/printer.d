@@ -636,13 +636,6 @@ unittest
 }
 
 
-void loadConfig(const string configFile)
-{
-    import kameloso.config2 : readConfigInto;
-    configFile.readConfigInto(printerOptions);
-}
-
-
 void addToConfig(ref Appender!string sink)
 {
     import kameloso.config2 : serialise;
