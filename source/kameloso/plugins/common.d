@@ -693,7 +693,7 @@ mixin template OnEventImpl(string module_ = __MODULE__, bool debug_ = false)
                                     writefln("%s:%s (%s)", module_,
                                        __traits(identifier, fun), event.type);
                                 }
-                                return mutEvent.queueWhois(mutEvent.sender.nickname, &fun);
+                                return mutEvent.doWhois(mutEvent.sender.nickname, &fun);
 
                             case fail:
                                 static if (verbose)
@@ -864,7 +864,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     }
 
     /// Queue a WHOIS request in the state arrays
-    void queueWhois(F)(const IRCEvent event, const string nickname, F fp)
+    void doWhois(F)(const IRCEvent event, const string nickname, F fp)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
