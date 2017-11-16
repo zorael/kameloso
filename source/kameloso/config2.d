@@ -353,16 +353,20 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 
                 switch (entry)
                 {
-                    foreach (immutable n, ref member; things[i].tupleof)
+                    static if (!is(T == enum))
                     {
-                        static if (!isType!member &&
-                            !hasUDA!(Things[i].tupleof[n], Unconfigurable))
+                        foreach (immutable n, ref member; things[i].tupleof)
                         {
-                            enum memberstring = __traits(identifier, Things[i].tupleof[n]);
+                            static if (!isType!member &&
+                                !hasUDA!(Things[i].tupleof[n], Unconfigurable))
+                            {
+                                enum memberstring = __traits(identifier,
+                                    Things[i].tupleof[n]);
 
-                            case memberstring:
-                                things[i].setMemberByName(entry, value);
-                                continue thingloop;
+                                case memberstring:
+                                    things[i].setMemberByName(entry, value);
+                                    continue thingloop;
+                            }
                         }
                     }
 
