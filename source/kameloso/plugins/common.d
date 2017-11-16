@@ -679,6 +679,11 @@ mixin template OnEventImpl(string module_ = __MODULE__, bool debug_ = false)
                                 break;
 
                             case whois:
+                                static if (verbose)
+                                {
+                                    writefln("%s:%s (%s)", module_,
+                                       __traits(identifier, fun), event.type);
+                                }
                                 return mutEvent.queueWhois(mutEvent.sender.nickname, &fun);
 
                             case fail:
