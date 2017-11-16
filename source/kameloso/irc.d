@@ -726,6 +726,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_TOPIC: // 332
     case CHANNELURL: // 328
     case NEEDAUTHTOJOIN: // 477
+    case ERR_NOSUCHCHANNEL: // 403
+        // :moon.freenode.net 403 kameloso archlinux :No such channel
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
         // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
