@@ -1245,3 +1245,29 @@ unittest
     immutable n6 = 1.getMultipleOf!(Yes.alwaysOneUp)(1);
     assert((n6 == 2), n6.text);
 }
+
+
+void interruptibleSleep(D)(const D dur, ref bool abort) @system
+{
+    import core.thread;
+
+    const step = 250.msecs;
+
+    D left = dur;
+
+    while (left > 0.seconds)
+    {
+        if (abort) return;
+
+        if ((left - step) < 0.seconds)
+        {
+            Thread.sleep(left);
+            break;
+        }
+        else
+        {
+            Thread.sleep(step);
+            left -= step;
+        }
+    }
+}

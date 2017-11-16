@@ -1,6 +1,6 @@
 module kameloso.connection;
 
-import kameloso.common : logger;
+import kameloso.common : logger, interruptibleSleep;
 import kameloso.constants;
 
 import core.time : seconds;
@@ -106,7 +106,7 @@ public:
                     logger.warning(e.msg);
                     logger.logf("Network down? Retrying in %d seconds (attempt %d)",
                         Timeout.resolve, i+1);
-                    Thread.sleep(Timeout.resolve.seconds);
+                    interruptibleSleep(Timeout.resolve.seconds, abort);
                     continue;
 
                 default:
@@ -180,7 +180,7 @@ public:
                 if (i && (i < ips.length))
                 {
                     logger.infof("Trying next ip in %d seconds", Timeout.retry);
-                    Thread.sleep(Timeout.retry.seconds);
+                    interruptibleSleep(Timeout.retry.seconds, abort);
                 }
             }
         }
