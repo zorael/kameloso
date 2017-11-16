@@ -18,7 +18,7 @@ struct NotesOptions
 }
 
 /// All Notes plugin options gathered
-NotesOptions notesOptions;
+@Configurable NotesOptions notesOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

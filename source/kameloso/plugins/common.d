@@ -189,6 +189,7 @@ struct Terminate;
 
 struct Verbose;
 
+struct Configurable;
 
 // filterUser
 /++

@@ -29,7 +29,7 @@ struct PrinterOptions
 }
 
 /// All Printer plugin options gathered
-PrinterOptions printerOptions;
+@Configurable PrinterOptions printerOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

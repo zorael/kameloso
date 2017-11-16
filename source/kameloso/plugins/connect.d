@@ -22,7 +22,7 @@ struct ConnectOptions
 }
 
 /// All Connect plugin options gathered
-ConnectOptions connectOptions;
+@Configurable ConnectOptions connectOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

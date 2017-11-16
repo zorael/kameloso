@@ -22,7 +22,7 @@ struct ChatbotOptions
 }
 
 /// All ChatBot plugin options gathered
-ChatbotOptions chatbotOptions;
+@Configurable ChatbotOptions chatbotOptions;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
