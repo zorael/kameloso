@@ -385,7 +385,6 @@ JSONValue loadNotes(const string filename)
 {
     import std.file   : exists, isFile, readText;
     import std.json   : parseJSON;
-    import std.string : chomp;
 
     if (!filename.exists)
     {
@@ -402,7 +401,7 @@ JSONValue loadNotes(const string filename)
         return newJSON;
     }
 
-    immutable wholeFile = filename.readText.chomp;
+    immutable wholeFile = filename.readText;
     return parseJSON(wholeFile);
 }
 
