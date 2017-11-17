@@ -433,8 +433,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
         // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
 
-        import std.string : munch, strip;
-
         event.type = (event.sender.nickname == bot.nickname) ? SELFJOIN : JOIN;
 
         if (slice.indexOf(' ') != -1)
