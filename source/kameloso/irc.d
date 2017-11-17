@@ -449,8 +449,15 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
         else
         {
-            event.channel = slice;
-            event.channel.munch(":");
+            if (slice.length && (slice[0] == ':'))
+            {
+                event.channel = slice[1..$];
+            }
+            else
+            {
+                logger.warning("Boop! A thing happened that shouldn't have, report");
+                event.channel = slice;
+            }
         }
         break;
 
