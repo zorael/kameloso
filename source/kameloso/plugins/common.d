@@ -57,6 +57,13 @@ interface IRCPlugin
 }
 
 
+/++
+ +  Implementation of a queued WHOIS request call.
+ +
+ +  It functions like a Command pattern object in that it stores a payload and
+ +  a function pointer, which we queue and do a WHOIS call. When the response
+ +  returns we trigger the object and the original IRCEvent is replayed.
+ +/
 struct WHOISRequestImpl(F)
 if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == IRCEvent)))
 {
@@ -76,6 +83,7 @@ if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == 
         created = Clock.currTime.toUnixTime;
     }
 
+    /// Call the passed function/delegate pointer, optionally with the IRCEvent
     void trigger()
     {
         if (!fp)
@@ -104,7 +112,10 @@ if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == 
     }
 }
 
+/// WHOIS request structure for a function with no parmaeters
 alias WHOISRequestNoParams = WHOISRequestImpl!(void function());
+
+/// WHOIS request structure for an IRCEvent-taking function
 alias WHOISRequest = WHOISRequestImpl!(void function(const IRCEvent));
 
 unittest
@@ -220,10 +231,17 @@ struct Prefix
     string string_;
 }
 
+
+/// Flag denoting that an event-handling function should not let other functions
+/// get processed after it; move onto next plugin instead.
 struct Terminate;
 
+/// Flag denoting that we want verbose debug output of the plumbing when
+/// handling events, iterating through the module
 struct Verbose;
 
+/// Flag denoting that a variable is to be considered configurable and should be
+/// saved in the configuration file.
 struct Configurable;
 
 
@@ -337,7 +355,13 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     // yieldBot
     /++
+     +  Yields a copy of the current IRCot to the caller.
      +
+     +  This is used to let the main loop examine it for updates to propagate
+     +  to other plugins.
+     +
+     +  Returns:
+     +      a copy of the current IRCBot.
      +/
     IRCBot yieldBot()
     {
@@ -349,7 +373,14 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     // yieldWHOISReuests
     /++
+     +  Yields a reference to the WHOIS request queue.
      +
+     +  The main loop does this after processing all on-event functions so as to
+     +  know what nicks the plugin wants a WHOI for. After the WHOIS response
+     +  returns, the event bundled in the WHOISRequest will be replayed.
+     +
+     +  Returns:
+     +      a reference to the local WHOIS request queue.
      +/
     ref WHOISRequest[string] yieldWHOISRequests()
     {
@@ -360,9 +391,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     }
 
     // yieldWHOISReuests
-    /++
-     +
-     +/
+    /// Ditto
     ref WHOISRequestNoParams[string] yieldWHOISRequestsNoParams()
     {
         static if (__traits(compiles, .state.whoisQueueNoParams))
@@ -396,9 +425,9 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     /++
      +  Writes configuration to disk.
      +
-     +  Each plugin does it in turn, which might be tricky.
+     +  Params:
+     +      configFile = the file to write to.
      +/
-
      void writeConfig(const string configFile)
      {
          static if (__traits(compiles, .writeConfig(string.init)))
@@ -411,7 +440,8 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     /++
      +  Loads configuration from disk.
      +
-     +  This should be safe and race-free.
+     +  This does not proxy a cal but merely loads configuration from disk for
+     +  all variables annotated Configurable.
      +/
     void loadConfig(const string configFile)
     {
@@ -432,7 +462,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     // present
     /++
-     +  Print some information to the screen, usually settings
+     +  Print some information to the screen, usually options.
      +/
     void present()
     {
@@ -442,6 +472,14 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         }
     }
 
+    // addToConfig
+    /++
+     +  Gathers the configuration text the plugin wants to contribute to the
+     +  configuration file.
+     +
+     +  Params:
+     +      ref sink = Appender to fill with plugin-specific options text.
+     +/
     void addToConfig(ref Appender!string sink)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -459,6 +497,10 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         }
     }
 
+    // start
+    /++
+     +  Activates the plugin, run when connection has been established.
+     +/
     void start()
     {
         static if (__traits(compiles, .start()))
@@ -470,8 +512,6 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     // teardown
     /++
      +  Deinitialises the plugin.
-     +
-     +  It passes execution to the top-level .teardown() if it exists.
      +/
     void teardown()
     {
@@ -824,9 +864,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +
      +  This automatically deauthenticates them from the bot's service, as all
      +  track of them will have disappeared. A new WHOIS must be made then.
-     +
-     +  Params:
-     +      event = the triggering IRCEvent.
      +/
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
@@ -835,7 +872,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users.remove(event.sender.nickname);
     }
 
-    /// Nick change, move the IRCUser entry
+
+    // onNickMixin
+    /++
+     +  Tracks a nick change, moving any old IRCUser entry in state.users to
+     +  point to the new nickname.
+     +/
     @(IRCEvent.Type.NICK)
     void onNickMixin(const IRCEvent event)
     {
@@ -850,7 +892,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
-    /// Target info; catch
+
+    // onUserInfoMixin
+    /++
+     +  Catches a user's information and saves it in the IRCUser array, along
+     +  with a timestamp of the last WHOIS call, which is this.
+     +/
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserInfoMixin(const IRCEvent event)
     {
@@ -887,12 +934,8 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
 
     // onWhoisLoginMixin
     /++
-     +  Records a user's NickServ login.
-     +
-     +  This function populates the user array.
-     +
-     +  Params:
-     +      event = the triggering IRCEvent.
+     +  Records a user's NickServ login by saving it to the user's IRCBot in
+     +  the state.users associative array.
      +/
     @(IRCEvent.Type.WHOISLOGIN)
     @(IRCEvent.Type.HASTHISNICK)
@@ -909,13 +952,25 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
+    // onWHOReply
+    /++
+     +  Catches a user's information from a WHO reply event.
+     +
+     +  It usually contains everything interesting except login.
+     +/
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onWHOReply(const IRCEvent event)
     {
         catchUser(event.target);
     }
 
-    /// Helper, meld into users
+
+    // catchUser
+    /++
+     +  Catch an IRCUser, saving it to the state.users array.
+     +
+     +  If a user already exists, meld the new information into the old one.
+     +/
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (const IRCUser newUser)
     {
@@ -935,7 +990,18 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         newUser.meldInto!overwrite(*user);
     }
 
-    /// Queue a WHOIS request in the state arrays
+
+    // doWhois
+    /++
+     +  Construct and queue a WHOIS request in the local request queue.
+     +
+     +  The main loop will catch up on it and do the neccessary WHOIS calls,
+     +  then replay the event.
+     +
+     +  Params:
+     +      event = the IRCEvent to replay once we have WHOIS login information.
+     +      fp = the function pointer to call when that happens.
+     +/
     void doWhois(F)(const IRCEvent event, const string nickname, F fp)
     {
         import kameloso.constants : Timeout;
