@@ -9,6 +9,8 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
+import arsd.dom;
+
 import std.concurrency : send, Tid;
 import std.experimental.logger;
 import std.regex : ctRegex;
@@ -150,6 +152,87 @@ string streamUntil(Stream_, Regex_, Sink)
 
     // No hits, but sink might be filled
     return string.init;
+}
+
+TitleLookup lookupTitle2(const string url)
+{
+    import arsd.dom;
+    import requests;
+    import std.array : Appender;
+
+    tlsLogger.log("URL2: ", url);
+
+    TitleLookup lookup;
+    lookup.url = url;
+    auto doc = new Document;
+    Appender!(ubyte[]) sink;
+
+    Request req;
+    req.useStreaming = true;
+    req.keepAlive = false;
+    req.bufferSize = BufferSize.titleLookup;
+
+    try
+    {
+        auto res = req.get(url);
+        if (res.code >= 400) return lookup;
+
+        auto stream = res.receiveAsRange();
+
+        foreach (const part; stream)
+        {
+            sink.put(part);
+            doc.parseGarbage(cast(string)sink.data);
+            if (doc.title.length) break;
+        }
+
+        if (!doc.title.length) return lookup;
+
+        lookup.title = doc.title;
+
+        if (lookup.title == "YouTube" &&
+            (url.indexOf("youtube.com/watch?") != -1))
+        {
+            lookup.fixYoutubeTitles(doc.title, url);
+        }
+
+        lookup.domain = getDomainFromURL(url);
+        lookup.when = Clock.currTime;
+    }
+    catch (const Exception e)
+    {
+        tlsLogger.warning(e.msg);
+    }
+
+    return lookup;
+}
+
+
+void fixYoutubeTitles(ref TitleLookup lookup, const string title, const string url)
+{
+    import std.regex : replaceFirst;
+
+    tlsLogger.info("Bland YouTube title...");
+
+    immutable onRepeatURL = url.replaceFirst(youtubeRegex,
+        "https://www.listenonrepeat.com/watch/");
+
+    tlsLogger.info(onRepeatURL);
+
+    TitleLookup onRepeatLookup = lookupTitle2(onRepeatURL);
+
+    tlsLogger.info(onRepeatLookup.title);
+
+    if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
+    {
+        logger.warning("Failed to ListenOnRepeatify YouTube title");
+        return;
+    }
+
+    // Truncate away " - ListenOnRepeat"
+    onRepeatLookup.title = onRepeatLookup.title[0..$-17];
+    onRepeatLookup.domain = "youtube.com";
+    lookup = onRepeatLookup;
 }
 
 
@@ -410,7 +493,7 @@ void titleworker(shared Tid sMainThread)
                 }
                 else
                 {
-                    try lookup = lookupTitle(url);
+                    try lookup = lookupTitle2(url);
                     catch (const Exception e)
                     {
                         logger.error(e.msg);
