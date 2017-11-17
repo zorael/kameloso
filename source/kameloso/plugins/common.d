@@ -113,6 +113,8 @@ unittest
     event.content = "hirrpp";
     event.sender.nickname = "zorael";
 
+    // delegate()
+
     int i = 5;
 
     void dg()
@@ -133,9 +135,13 @@ unittest
     req.trigger();
     assert(i == 6);
 
+    // function()
+
     static void fn() { }
 
     auto reqfn = WHOISRequestImpl!(void function())(event, &fn);
+
+    // delegate(ref IRCEvent)
 
     void dg2(ref IRCEvent thisEvent)
     {
@@ -146,7 +152,13 @@ unittest
     assert((req2.event.content == "hirrpp"), event.content);
     req2.trigger();
     assert((req2.event.content == "blah"), event.content);
+
+    // function(IRCEvent)
+
+    static void fn2(IRCEvent thisEvent) { }
+    auto reqfn2 = WHOISRequestImpl!(void function(IRCEvent))(event, &fn2);
 }
+
 
 // IRCPluginState
 /++
