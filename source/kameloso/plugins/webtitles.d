@@ -163,7 +163,6 @@ TitleLookup lookupTitle2(const string url)
     tlsLogger.log("URL2: ", url);
 
     TitleLookup lookup;
-    lookup.url = url;
     auto doc = new Document;
     Appender!(ubyte[]) sink;
 
