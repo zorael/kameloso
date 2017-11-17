@@ -302,7 +302,8 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.stringutils : stripSuffix;
     import std.format : formattedRead;
-    import std.string : munch, strip, stripLeft;
+    import std.regex  : ctRegex, matchFirst;
+    import std.string : strip, stripLeft;
     import std.traits : Unqual, hasUDA, isType;
 
     string section;
@@ -340,9 +341,9 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
                 continue;
             }
 
-            // FIXME: regex
-            immutable entry = line.munch("^ \t");
-            immutable value = line.stripLeft();
+            enum pattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
+            static engine = ctRegex!pattern;
+            auto hits = line.matchFirst(engine);
 
             thingloop:
             foreach (immutable i, thing; things)
@@ -351,7 +352,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 
                 if (section != T.stringof.stripSuffix("Options")) continue;
 
-                switch (entry)
+                switch (hits["entry"])
                 {
                     static if (!is(T == enum))
                     {
@@ -364,7 +365,8 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
                                     Things[i].tupleof[n]);
 
                                 case memberstring:
-                                    things[i].setMemberByName(entry, value);
+                                    things[i].setMemberByName(hits["entry"],
+                                        hits["value"]);
                                     continue thingloop;
                             }
                         }
@@ -375,7 +377,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
                     logger.infof("Found invalid %s under [%s]. " ~
                         "It is either malformed or no longer in use. " ~
                         "Use --writeconfig to update your configuration file.",
-                        entry, section);
+                        hits["entry"], section);
                     break;
                 }
             }
