@@ -297,7 +297,7 @@ void titleworker(shared Tid sMainThread)
                 TitleLookup lookup;
                 const inCache = url in cache;
 
-                if (inCache && ((Clock.currTime - inCache.when.fromUnixTime)
+                if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
                     < Timeout.titleCache.seconds))
                 {
                     lookup = *inCache;
