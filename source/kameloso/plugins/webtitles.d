@@ -193,7 +193,7 @@ TitleLookup lookupTitle2(const string url)
         if (lookup.title == "YouTube" &&
             (url.indexOf("youtube.com/watch?") != -1))
         {
-            lookup.fixYoutubeTitles(doc.title, url);
+            lookup.fixYoutubeTitles(url);
         }
 
         lookup.domain = getDomainFromURL(url);
@@ -208,7 +208,7 @@ TitleLookup lookupTitle2(const string url)
 }
 
 
-void fixYoutubeTitles(ref TitleLookup lookup, const string title, const string url)
+void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 {
     import std.regex : replaceFirst;
 
