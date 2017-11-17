@@ -257,11 +257,16 @@ struct Configurable;
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
+    import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
+    import std.datetime : Clock, SysTime;
+    import core.time : seconds;
 
     auto user = event.sender.nickname in state.users;
 
-    if (!user || !user.login.length)
+    if (!user || !user.login.length &&
+        ((SysTime.fromUnixTime(user.lastWhois) - Clock.currTime)
+          < Timeout.whois.seconds))
     {
         return FilterResult.whois;
     }
