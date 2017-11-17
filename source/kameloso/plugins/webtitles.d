@@ -117,37 +117,30 @@ TitleLookup lookupTitle(const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    try
+    auto res = req.get(url);
+    if (res.code >= 400) return lookup;
+
+    auto stream = res.receiveAsRange();
+
+    foreach (const part; stream)
     {
-        auto res = req.get(url);
-        if (res.code >= 400) return lookup;
-
-        auto stream = res.receiveAsRange();
-
-        foreach (const part; stream)
-        {
-            sink.put(part);
-            doc.parseGarbage(cast(string)sink.data);
-            if (doc.title.length) break;
-        }
-
-        if (!doc.title.length) return lookup;
-
-        lookup.title = doc.title;
-
-        if (lookup.title == "YouTube" &&
-            (url.indexOf("youtube.com/watch?") != -1))
-        {
-            lookup.fixYoutubeTitles(url);
-        }
-
-        lookup.domain = getDomainFromURL(url);
-        lookup.when = Clock.currTime.toUnixTime;
+        sink.put(part);
+        doc.parseGarbage(cast(string)sink.data);
+        if (doc.title.length) break;
     }
-    catch (const Exception e)
+
+    if (!doc.title.length) return lookup;
+
+    lookup.title = doc.title;
+
+    if (lookup.title == "YouTube" &&
+        (url.indexOf("youtube.com/watch?") != -1))
     {
-        tlsLogger.warning(e.msg);
+        lookup.fixYoutubeTitles(url);
     }
+
+    lookup.domain = getDomainFromURL(url);
+    lookup.when = Clock.currTime.toUnixTime;
 
     return lookup;
 }
