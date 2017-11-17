@@ -6,6 +6,7 @@ import kameloso.irc;
 import std.meta : AliasSeq;
 import std.traits : Parameters, Unqual, isSomeFunction;
 
+
 // IRCPlugin
 /++
  +  Interface that all IRCPlugins must adhere to.
@@ -225,6 +226,7 @@ struct Verbose;
 
 struct Configurable;
 
+
 // filterUser
 /++
  +  Decides whether a nick is known good, known bad, or needs WHOIS.
@@ -240,7 +242,10 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 
     auto user = event.sender.nickname in state.users;
 
-    if (!user) return FilterResult.whois;
+    if (!user || !user.login.length)
+    {
+        return FilterResult.whois;
+    }
     else if ((user.login == state.bot.master) ||
         state.bot.friends.canFind(user.login))
     {
@@ -675,8 +680,6 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
                             static assert(prefixUDA.string_.length,
                                 name ~ " had an empty Prefix string");
 
-                            import kameloso.stringutils;
-
                             import std.string : indexOf, toLower;
 
                             if (mutEvent.content.indexOf(' ') == -1)
@@ -859,6 +862,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
     }
 
+
     // onJoinMixin
     /++
      +  Adds a user to the user array if the login is known.
@@ -879,6 +883,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             state.users[event.sender.nickname].login = string.init;
         }
     }
+
 
     // onWhoisLoginMixin
     /++
