@@ -104,6 +104,7 @@ TitleLookup lookupTitle(const string url)
     import requests;
     import std.array : Appender;
     import std.datetime : Clock;
+    import std.string : indexOf;
 
     tlsLogger.log("URL2: ", url);
 
@@ -148,6 +149,7 @@ TitleLookup lookupTitle(const string url)
 void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 {
     import std.regex : replaceFirst;
+    import std.string : indexOf;
 
     tlsLogger.info("Bland YouTube title...");
 

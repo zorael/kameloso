@@ -494,6 +494,7 @@ void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickn
             with (entry)
             {
                 import std.datetime : Clock;
+                import core.time : seconds;
 
                 const then = key in whoisCalls;
                 const now = Clock.currTime;

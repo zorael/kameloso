@@ -730,6 +730,8 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
                             }
                             else
                             {
+                                import std.typecons : Yes;
+
                                 contextPrefix = mutEvent
                                     .content
                                     .nom!(Yes.decode)(" ")
@@ -971,6 +973,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +
      +  If a user already exists, meld the new information into the old one.
      +/
+    import std.typecons : Flag, Yes;
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (const IRCUser newUser)
     {
