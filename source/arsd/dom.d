@@ -27,278 +27,6 @@
 +/
 module arsd.dom;
 
-import std.string : toLower, indexOf;
-import std.conv : to;
-static import std.utf;
-
-/// This helper function is used for decoding html entities. It has a hard-coded list of entities and characters.
-dchar parseEntity(in dchar[] entity) {
-	switch(entity[1..$-1]) {
-		case "quot":
-			return '"';
-		case "apos":
-			return '\'';
-		case "lt":
-			return '<';
-		case "gt":
-			return '>';
-		case "amp":
-			return '&';
-		// the next are html rather than xml
-
-		case "Agrave": return '\u00C0';
-		case "Aacute": return '\u00C1';
-		case "Acirc": return '\u00C2';
-		case "Atilde": return '\u00C3';
-		case "Auml": return '\u00C4';
-		case "Aring": return '\u00C5';
-		case "AElig": return '\u00C6';
-		case "Ccedil": return '\u00C7';
-		case "Egrave": return '\u00C8';
-		case "Eacute": return '\u00C9';
-		case "Ecirc": return '\u00CA';
-		case "Euml": return '\u00CB';
-		case "Igrave": return '\u00CC';
-		case "Iacute": return '\u00CD';
-		case "Icirc": return '\u00CE';
-		case "Iuml": return '\u00CF';
-		case "ETH": return '\u00D0';
-		case "Ntilde": return '\u00D1';
-		case "Ograve": return '\u00D2';
-		case "Oacute": return '\u00D3';
-		case "Ocirc": return '\u00D4';
-		case "Otilde": return '\u00D5';
-		case "Ouml": return '\u00D6';
-		case "Oslash": return '\u00D8';
-		case "Ugrave": return '\u00D9';
-		case "Uacute": return '\u00DA';
-		case "Ucirc": return '\u00DB';
-		case "Uuml": return '\u00DC';
-		case "Yacute": return '\u00DD';
-		case "THORN": return '\u00DE';
-		case "szlig": return '\u00DF';
-		case "agrave": return '\u00E0';
-		case "aacute": return '\u00E1';
-		case "acirc": return '\u00E2';
-		case "atilde": return '\u00E3';
-		case "auml": return '\u00E4';
-		case "aring": return '\u00E5';
-		case "aelig": return '\u00E6';
-		case "ccedil": return '\u00E7';
-		case "egrave": return '\u00E8';
-		case "eacute": return '\u00E9';
-		case "ecirc": return '\u00EA';
-		case "euml": return '\u00EB';
-		case "igrave": return '\u00EC';
-		case "iacute": return '\u00ED';
-		case "icirc": return '\u00EE';
-		case "iuml": return '\u00EF';
-		case "eth": return '\u00F0';
-		case "ntilde": return '\u00F1';
-		case "ograve": return '\u00F2';
-		case "oacute": return '\u00F3';
-		case "ocirc": return '\u00F4';
-		case "otilde": return '\u00F5';
-		case "ouml": return '\u00F6';
-		case "oslash": return '\u00F8';
-		case "ugrave": return '\u00F9';
-		case "uacute": return '\u00FA';
-		case "ucirc": return '\u00FB';
-		case "uuml": return '\u00FC';
-		case "yacute": return '\u00FD';
-		case "thorn": return '\u00FE';
-		case "yuml": return '\u00FF';
-		case "nbsp": return '\u00A0';
-		case "iexcl": return '\u00A1';
-		case "cent": return '\u00A2';
-		case "pound": return '\u00A3';
-		case "curren": return '\u00A4';
-		case "yen": return '\u00A5';
-		case "brvbar": return '\u00A6';
-		case "sect": return '\u00A7';
-		case "uml": return '\u00A8';
-		case "copy": return '\u00A9';
-		case "ordf": return '\u00AA';
-		case "laquo": return '\u00AB';
-		case "not": return '\u00AC';
-		case "shy": return '\u00AD';
-		case "reg": return '\u00AE';
-		case "ldquo": return '\u201c';
-		case "rdquo": return '\u201d';
-		case "macr": return '\u00AF';
-		case "deg": return '\u00B0';
-		case "plusmn": return '\u00B1';
-		case "sup2": return '\u00B2';
-		case "sup3": return '\u00B3';
-		case "acute": return '\u00B4';
-		case "micro": return '\u00B5';
-		case "para": return '\u00B6';
-		case "middot": return '\u00B7';
-		case "cedil": return '\u00B8';
-		case "sup1": return '\u00B9';
-		case "ordm": return '\u00BA';
-		case "raquo": return '\u00BB';
-		case "frac14": return '\u00BC';
-		case "frac12": return '\u00BD';
-		case "frac34": return '\u00BE';
-		case "iquest": return '\u00BF';
-		case "times": return '\u00D7';
-		case "divide": return '\u00F7';
-		case "OElig": return '\u0152';
-		case "oelig": return '\u0153';
-		case "Scaron": return '\u0160';
-		case "scaron": return '\u0161';
-		case "Yuml": return '\u0178';
-		case "fnof": return '\u0192';
-		case "circ": return '\u02C6';
-		case "tilde": return '\u02DC';
-		case "trade": return '\u2122';
-		case "euro": return '\u20AC';
-
-		case "hellip": return '\u2026';
-		case "ndash": return '\u2013';
-		case "mdash": return '\u2014';
-		case "lsquo": return '\u2018';
-		case "rsquo": return '\u2019';
-
-		case "Omicron": return '\u039f';
-		case "omicron": return '\u03bf';
-
-		// and handling numeric entities
-		default:
-			if(entity[1] == '#') {
-				if(entity[2] == 'x' /*|| (!strict && entity[2] == 'X')*/) {
-					auto hex = entity[3..$-1];
-
-					auto p = intFromHex(to!string(hex).toLower());
-					return cast(dchar) p;
-				} else {
-					auto decimal = entity[2..$-1];
-
-					// dealing with broken html entities
-					while(decimal.length && (decimal[0] < '0' || decimal[0] >   '9'))
-						decimal = decimal[1 .. $];
-
-					if(decimal.length == 0)
-						return ' '; // this is really broken html
-					// done with dealing with broken stuff
-
-					auto p = std.conv.to!int(decimal);
-					return cast(dchar) p;
-				}
-			} else
-				return '\ufffd'; // replacement character diamond thing
-	}
-
-	assert(0);
-}
-
-///.
-int intFromHex(string hex) {
-	int place = 1;
-	int value = 0;
-	for(sizediff_t a = hex.length - 1; a >= 0; a--) {
-		int v;
-		char q = hex[a];
-		if( q >= '0' && q <= '9')
-			v = q - '0';
-		else if (q >= 'a' && q <= 'f')
-			v = q - 'a' + 10;
-		else throw new Exception("Illegal hex character: " ~ q);
-
-		value += v * place;
-
-		place *= 16;
-	}
-
-	return value;
-}
-
-/// This takes a string of raw HTML and decodes the entities into a nice D utf-8 string.
-/// By default, it uses loose mode - it will try to return a useful string from garbage input too.
-/// Set the second parameter to true if you'd prefer it to strictly throw exceptions on garbage input.
-string htmlEntitiesDecode(string data, bool strict = false) {
-	// this check makes a *big* difference; about a 50% improvement of parse speed on my test.
-	if(data.indexOf("&") == -1) // all html entities begin with &
-		return data; // if there are no entities in here, we can return the original slice and save some time
-
-	char[] a; // this seems to do a *better* job than appender!
-
-	char[4] buffer;
-
-	bool tryingEntity = false;
-	dchar[16] entityBeingTried;
-	int entityBeingTriedLength = 0;
-	int entityAttemptIndex = 0;
-
-	foreach(dchar ch; data) {
-		if(tryingEntity) {
-			entityAttemptIndex++;
-			entityBeingTried[entityBeingTriedLength++] = ch;
-
-			// I saw some crappy html in the wild that looked like &0&#1111; this tries to handle that.
-			if(ch == '&') {
-				if(strict)
-					throw new Exception("unterminated entity; & inside another at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
-
-				// if not strict, let's try to parse both.
-
-				if(entityBeingTried[0 .. entityBeingTriedLength] == "&&")
-					a ~= "&"; // double amp means keep the first one, still try to parse the next one
-				else
-					a ~= buffer[0.. std.utf.encode(buffer, parseEntity(entityBeingTried[0 .. entityBeingTriedLength]))];
-
-				// tryingEntity is still true
-				entityBeingTriedLength = 1;
-				entityAttemptIndex = 0; // restarting o this
-			} else
-			if(ch == ';') {
-				tryingEntity = false;
-				a ~= buffer[0.. std.utf.encode(buffer, parseEntity(entityBeingTried[0 .. entityBeingTriedLength]))];
-			} else if(ch == ' ') {
-				// e.g. you &amp i
-				if(strict)
-					throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
-				else {
-					tryingEntity = false;
-					a ~= to!(char[])(entityBeingTried[0 .. entityBeingTriedLength]);
-				}
-			} else {
-				if(entityAttemptIndex >= 9) {
-					if(strict)
-						throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
-					else {
-						tryingEntity = false;
-						a ~= to!(char[])(entityBeingTried[0 .. entityBeingTriedLength]);
-					}
-				}
-			}
-		} else {
-			if(ch == '&') {
-				tryingEntity = true;
-				entityBeingTriedLength = 0;
-				entityBeingTried[entityBeingTriedLength++] = ch;
-				entityAttemptIndex = 0;
-			} else {
-				a ~= buffer[0 .. std.utf.encode(buffer, ch)];
-			}
-		}
-	}
-
-	if(tryingEntity) {
-		if(strict)
-			throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
-
-		// otherwise, let's try to recover, at least so we don't drop any data
-		a ~= to!string(entityBeingTried[0 .. entityBeingTriedLength]);
-		// FIXME: what if we have "cool &amp"? should we try to parse it?
-	}
-
-	return cast(string) a; // assumeUnique is actually kinda slow, lol
-}
-
-__EOF__
-
 // FIXME: support the css standard namespace thing in the selectors too
 
 version(with_arsd_jsvar)
@@ -4055,8 +3783,253 @@ string xmlEntitiesEncode(string data) {
 	return htmlEntitiesEncode(data);
 }
 
+/// This helper function is used for decoding html entities. It has a hard-coded list of entities and characters.
+dchar parseEntity(in dchar[] entity) {
+	switch(entity[1..$-1]) {
+		case "quot":
+			return '"';
+		case "apos":
+			return '\'';
+		case "lt":
+			return '<';
+		case "gt":
+			return '>';
+		case "amp":
+			return '&';
+		// the next are html rather than xml
+
+		case "Agrave": return '\u00C0';
+		case "Aacute": return '\u00C1';
+		case "Acirc": return '\u00C2';
+		case "Atilde": return '\u00C3';
+		case "Auml": return '\u00C4';
+		case "Aring": return '\u00C5';
+		case "AElig": return '\u00C6';
+		case "Ccedil": return '\u00C7';
+		case "Egrave": return '\u00C8';
+		case "Eacute": return '\u00C9';
+		case "Ecirc": return '\u00CA';
+		case "Euml": return '\u00CB';
+		case "Igrave": return '\u00CC';
+		case "Iacute": return '\u00CD';
+		case "Icirc": return '\u00CE';
+		case "Iuml": return '\u00CF';
+		case "ETH": return '\u00D0';
+		case "Ntilde": return '\u00D1';
+		case "Ograve": return '\u00D2';
+		case "Oacute": return '\u00D3';
+		case "Ocirc": return '\u00D4';
+		case "Otilde": return '\u00D5';
+		case "Ouml": return '\u00D6';
+		case "Oslash": return '\u00D8';
+		case "Ugrave": return '\u00D9';
+		case "Uacute": return '\u00DA';
+		case "Ucirc": return '\u00DB';
+		case "Uuml": return '\u00DC';
+		case "Yacute": return '\u00DD';
+		case "THORN": return '\u00DE';
+		case "szlig": return '\u00DF';
+		case "agrave": return '\u00E0';
+		case "aacute": return '\u00E1';
+		case "acirc": return '\u00E2';
+		case "atilde": return '\u00E3';
+		case "auml": return '\u00E4';
+		case "aring": return '\u00E5';
+		case "aelig": return '\u00E6';
+		case "ccedil": return '\u00E7';
+		case "egrave": return '\u00E8';
+		case "eacute": return '\u00E9';
+		case "ecirc": return '\u00EA';
+		case "euml": return '\u00EB';
+		case "igrave": return '\u00EC';
+		case "iacute": return '\u00ED';
+		case "icirc": return '\u00EE';
+		case "iuml": return '\u00EF';
+		case "eth": return '\u00F0';
+		case "ntilde": return '\u00F1';
+		case "ograve": return '\u00F2';
+		case "oacute": return '\u00F3';
+		case "ocirc": return '\u00F4';
+		case "otilde": return '\u00F5';
+		case "ouml": return '\u00F6';
+		case "oslash": return '\u00F8';
+		case "ugrave": return '\u00F9';
+		case "uacute": return '\u00FA';
+		case "ucirc": return '\u00FB';
+		case "uuml": return '\u00FC';
+		case "yacute": return '\u00FD';
+		case "thorn": return '\u00FE';
+		case "yuml": return '\u00FF';
+		case "nbsp": return '\u00A0';
+		case "iexcl": return '\u00A1';
+		case "cent": return '\u00A2';
+		case "pound": return '\u00A3';
+		case "curren": return '\u00A4';
+		case "yen": return '\u00A5';
+		case "brvbar": return '\u00A6';
+		case "sect": return '\u00A7';
+		case "uml": return '\u00A8';
+		case "copy": return '\u00A9';
+		case "ordf": return '\u00AA';
+		case "laquo": return '\u00AB';
+		case "not": return '\u00AC';
+		case "shy": return '\u00AD';
+		case "reg": return '\u00AE';
+		case "ldquo": return '\u201c';
+		case "rdquo": return '\u201d';
+		case "macr": return '\u00AF';
+		case "deg": return '\u00B0';
+		case "plusmn": return '\u00B1';
+		case "sup2": return '\u00B2';
+		case "sup3": return '\u00B3';
+		case "acute": return '\u00B4';
+		case "micro": return '\u00B5';
+		case "para": return '\u00B6';
+		case "middot": return '\u00B7';
+		case "cedil": return '\u00B8';
+		case "sup1": return '\u00B9';
+		case "ordm": return '\u00BA';
+		case "raquo": return '\u00BB';
+		case "frac14": return '\u00BC';
+		case "frac12": return '\u00BD';
+		case "frac34": return '\u00BE';
+		case "iquest": return '\u00BF';
+		case "times": return '\u00D7';
+		case "divide": return '\u00F7';
+		case "OElig": return '\u0152';
+		case "oelig": return '\u0153';
+		case "Scaron": return '\u0160';
+		case "scaron": return '\u0161';
+		case "Yuml": return '\u0178';
+		case "fnof": return '\u0192';
+		case "circ": return '\u02C6';
+		case "tilde": return '\u02DC';
+		case "trade": return '\u2122';
+		case "euro": return '\u20AC';
+
+		case "hellip": return '\u2026';
+		case "ndash": return '\u2013';
+		case "mdash": return '\u2014';
+		case "lsquo": return '\u2018';
+		case "rsquo": return '\u2019';
+
+		case "Omicron": return '\u039f';
+		case "omicron": return '\u03bf';
+
+		// and handling numeric entities
+		default:
+			if(entity[1] == '#') {
+				if(entity[2] == 'x' /*|| (!strict && entity[2] == 'X')*/) {
+					auto hex = entity[3..$-1];
+
+					auto p = intFromHex(to!string(hex).toLower());
+					return cast(dchar) p;
+				} else {
+					auto decimal = entity[2..$-1];
+
+					// dealing with broken html entities
+					while(decimal.length && (decimal[0] < '0' || decimal[0] >   '9'))
+						decimal = decimal[1 .. $];
+
+					if(decimal.length == 0)
+						return ' '; // this is really broken html
+					// done with dealing with broken stuff
+
+					auto p = std.conv.to!int(decimal);
+					return cast(dchar) p;
+				}
+			} else
+				return '\ufffd'; // replacement character diamond thing
+	}
+
+	assert(0);
+}
+
 import std.utf;
 import std.stdio;
+
+/// This takes a string of raw HTML and decodes the entities into a nice D utf-8 string.
+/// By default, it uses loose mode - it will try to return a useful string from garbage input too.
+/// Set the second parameter to true if you'd prefer it to strictly throw exceptions on garbage input.
+string htmlEntitiesDecode(string data, bool strict = false) {
+	// this check makes a *big* difference; about a 50% improvement of parse speed on my test.
+	if(data.indexOf("&") == -1) // all html entities begin with &
+		return data; // if there are no entities in here, we can return the original slice and save some time
+
+	char[] a; // this seems to do a *better* job than appender!
+
+	char[4] buffer;
+
+	bool tryingEntity = false;
+	dchar[16] entityBeingTried;
+	int entityBeingTriedLength = 0;
+	int entityAttemptIndex = 0;
+
+	foreach(dchar ch; data) {
+		if(tryingEntity) {
+			entityAttemptIndex++;
+			entityBeingTried[entityBeingTriedLength++] = ch;
+
+			// I saw some crappy html in the wild that looked like &0&#1111; this tries to handle that.
+			if(ch == '&') {
+				if(strict)
+					throw new Exception("unterminated entity; & inside another at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
+
+				// if not strict, let's try to parse both.
+
+				if(entityBeingTried[0 .. entityBeingTriedLength] == "&&")
+					a ~= "&"; // double amp means keep the first one, still try to parse the next one
+				else
+					a ~= buffer[0.. std.utf.encode(buffer, parseEntity(entityBeingTried[0 .. entityBeingTriedLength]))];
+
+				// tryingEntity is still true
+				entityBeingTriedLength = 1;
+				entityAttemptIndex = 0; // restarting o this
+			} else
+			if(ch == ';') {
+				tryingEntity = false;
+				a ~= buffer[0.. std.utf.encode(buffer, parseEntity(entityBeingTried[0 .. entityBeingTriedLength]))];
+			} else if(ch == ' ') {
+				// e.g. you &amp i
+				if(strict)
+					throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
+				else {
+					tryingEntity = false;
+					a ~= to!(char[])(entityBeingTried[0 .. entityBeingTriedLength]);
+				}
+			} else {
+				if(entityAttemptIndex >= 9) {
+					if(strict)
+						throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
+					else {
+						tryingEntity = false;
+						a ~= to!(char[])(entityBeingTried[0 .. entityBeingTriedLength]);
+					}
+				}
+			}
+		} else {
+			if(ch == '&') {
+				tryingEntity = true;
+				entityBeingTriedLength = 0;
+				entityBeingTried[entityBeingTriedLength++] = ch;
+				entityAttemptIndex = 0;
+			} else {
+				a ~= buffer[0 .. std.utf.encode(buffer, ch)];
+			}
+		}
+	}
+
+	if(tryingEntity) {
+		if(strict)
+			throw new Exception("unterminated entity at " ~ to!string(entityBeingTried[0 .. entityBeingTriedLength]));
+
+		// otherwise, let's try to recover, at least so we don't drop any data
+		a ~= to!string(entityBeingTried[0 .. entityBeingTriedLength]);
+		// FIXME: what if we have "cool &amp"? should we try to parse it?
+	}
+
+	return cast(string) a; // assumeUnique is actually kinda slow, lol
+}
 
 abstract class SpecialElement : Element {
 	this(Document _parentDocument) {
@@ -5076,6 +5049,27 @@ private enum static string[] selfClosedElements = [
 	"source" ];
 
 static import std.conv;
+
+///.
+int intFromHex(string hex) {
+	int place = 1;
+	int value = 0;
+	for(sizediff_t a = hex.length - 1; a >= 0; a--) {
+		int v;
+		char q = hex[a];
+		if( q >= '0' && q <= '9')
+			v = q - '0';
+		else if (q >= 'a' && q <= 'f')
+			v = q - 'a' + 10;
+		else throw new Exception("Illegal hex character: " ~ q);
+
+		value += v * place;
+
+		place *= 16;
+	}
+
+	return value;
+}
 
 
 // CSS selector handling
