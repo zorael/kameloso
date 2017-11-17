@@ -204,7 +204,8 @@ enum FilterResult { fail, pass, whois }
 
 /// Whether an annotated event ignores, allows or requires the event to be
 /// prefixed with the bot's nickname
-enum NickPrefixPolicy { ignored, optional, required, hardRequired }
+enum NickPolicy { ignored, optional, required, hardRequired }
+deprecated alias NickPrefixPolicy = NickPolicy;
 
 
 enum ChannelPolicy { homeOnly, any }
@@ -225,7 +226,7 @@ enum PrivilegeLevel { anyone, friend, master }
 struct Prefix
 {
     /// The policy to which extent the prefix string_ is required
-    NickPrefixPolicy nickPrefixPolicy;
+    NickPolicy policy;
 
     /// The prefix string, one word with no spaces
     string string_;
@@ -645,8 +646,8 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             with (state)
                             with (event)
-                            with (NickPrefixPolicy)
-                            final switch (prefixUDA.nickPrefixPolicy)
+                            with (NickPolicy)
+                            final switch (prefixUDA.policy)
                             {
                             case ignored:
                                 break;
