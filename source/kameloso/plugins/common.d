@@ -94,10 +94,12 @@ if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == 
         }
     }
 
-    string toString()
+    /// Identify the queue entry, in case we ever need that
+    void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format;
-        return "[%s]@%s".format(event.type, event.sender.nickname);
+
+        sink("[%s]@%s".format(event.type, event.sender.nickname));
     }
 }
 
