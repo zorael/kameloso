@@ -301,23 +301,36 @@ unittest
 pragma(inline)
 string stripPrefix(const string line, const string prefix)
 {
+    import std.regex : ctRegex, matchFirst;
     import std.string : munch, stripLeft;
 
     string slice = line.stripLeft();
 
     // the onus is on the caller that slice begins with prefix
     slice.nom(prefix);
-    slice.munch(":?! ");
 
-    return slice;
+    enum pattern = "[:?! ]*(.+)";
+    static engine = ctRegex!pattern;
+    auto hits = slice.matchFirst(engine);
+    return hits[1];
 }
 
 unittest
 {
-    assert("say: lorem ipsum".stripPrefix("say") == "lorem ipsum");
-    assert("note!!!! zorael hello".stripPrefix("note") == "zorael hello");
-    assert("sudo quit :derp".stripPrefix("sudo") == "quit :derp");
-    assert("8ball predicate?".stripPrefix("") == "8ball predicate?");
+    immutable lorem = "say: lorem ipsum".stripPrefix("say");
+    assert((lorem == "lorem ipsum"), lorem);
+
+    immutable notehello = "note!!!! zorael hello".stripPrefix("note");
+    assert((notehello == "zorael hello"), notehello);
+
+    immutable sudoquit = "sudo quit :derp".stripPrefix("sudo");
+    assert((sudoquit == "quit :derp"), sudoquit);
+
+    immutable eightball = "8ball predicate?".stripPrefix("");
+    assert((eightball == "8ball predicate?"), eightball);
+
+    immutable isabot = "kamelosois a bot".stripPrefix("kameloso");
+    assert((isabot == "is a bot"), isabot);
 }
 
 
