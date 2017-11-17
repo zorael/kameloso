@@ -66,7 +66,7 @@ struct TitleLookup
 
     string title;
     string domain;
-    SysTime when;
+    size_t when;
 }
 
 
@@ -197,7 +197,7 @@ TitleLookup lookupTitle2(const string url)
         }
 
         lookup.domain = getDomainFromURL(url);
-        lookup.when = Clock.currTime;
+        lookup.when = Clock.currTime.toUnixTime;
     }
     catch (const Exception e)
     {
@@ -486,8 +486,8 @@ void titleworker(shared Tid sMainThread)
                 TitleLookup lookup;
                 const inCache = url in cache;
 
-                if (inCache && ((Clock.currTime - inCache.when) <
-                    Timeout.titleCache.seconds))
+                if (inCache && ((Clock.currTime - inCache.when.fromUnixTime)
+                    < Timeout.titleCache.seconds))
                 {
                     lookup = *inCache;
                 }
