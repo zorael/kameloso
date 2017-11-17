@@ -873,6 +873,12 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
+    @(IRCEvent.Type.RPL_WHOREPLY)
+    void onWHOReply(const IRCEvent event)
+    {
+        catchUser(event.target);
+    }
+
     /// Helper, meld into users
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (const IRCUser newUser)
