@@ -2600,7 +2600,8 @@ string stripModeSign(const string nickname)
         case '~':
         case '%':
         // case '&': // channel prefix?
-            return nickname[1..$];
+            // recurse, since the server may have the multi-prefix capability
+            return stripModeSign(nickname[1..$]);
 
         default:
             // no sign
