@@ -556,6 +556,40 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         //event.content = event.content.stripRight();
         break;
 
+    case RPL_WHOREPLY: // 352
+        import std.string : stripLeft;
+        // :moon.freenode.net 352 kameloso ##linux LP9NDWY7Cy gentoo/contributor/Fieldy moon.freenode.net Fieldy H :0 Ni!
+        // :moon.freenode.net 352 kameloso ##linux sid99619 gateway/web/irccloud.com/x-eviusxrezdarwcpk moon.freenode.net tjsimmons G :0 T.J. Simmons
+        // :moon.freenode.net 352 kameloso ##linux sid35606 gateway/web/irccloud.com/x-rvrdncbvklhxwjrr moon.freenode.net Whisket H :0 Whisket
+        // :moon.freenode.net 352 kameloso ##linux ~rahlff b29beb9d.rev.stofanet.dk orwell.freenode.net Axton H :0 Michael Rahlff
+        // :moon.freenode.net 352 kameloso ##linux ~wzhang sea.mrow.org card.freenode.net wzhang H :0 wzhang
+        // "<channel> <user> <host> <server> <nick> ( "H" / "G" > ["*"] [ ( "@" / "+" ) ] :<hopcount> <real name>"
+        slice.nom(' ');
+        event.channel = slice.nom(' ');
+        immutable userOrIdent = slice.nom(' ');
+        if (userOrIdent[0] == '~') event.target.ident = userOrIdent;
+        event.target.address = slice.nom(' ');
+        slice.nom(' ');  // server
+        event.target.nickname = slice.nom(' ');
+        slice.nom(' ');  // H|G
+        slice.nom(' ');  // hopcount
+        event.content = slice.stripLeft();
+        break;
+
+    case RPL_ENDOFWHO: // 315
+        // :tolkien.freenode.net 315 kameloso^ ##linux :End of /WHO list.
+        slice.nom(' ');
+        event.channel = slice.nom(" :");
+        event.content = slice;
+        break;
+
+    case RPL_AWAY: // 301
+        // :tolkien.freenode.net 301 kameloso^ jcjordyn120 :Idle
+        slice.nom(' ');
+        event.target.nickname = slice.nom(" :");
+        event.content = slice;
+        break;
+
     case RPL_MOTD: // 372
     case RPL_LUSERCLIENT: // 251
         // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
@@ -998,6 +1032,7 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         case QUERY:
         case JOIN:
         case SELFNICK:
+        case RPL_WHOREPLY:
             break;
 
         default:
