@@ -3,7 +3,8 @@ module kameloso.plugins.common;
 import kameloso.common : Settings;
 import kameloso.irc;
 
-import std.traits : Parameters;
+import std.meta : AliasSeq;
+import std.traits : Parameters, Unqual, isSomeFunction;
 
 // IRCPlugin
 /++
@@ -56,7 +57,7 @@ interface IRCPlugin
 
 
 struct WHOISRequestImpl(F)
-if (is(F == void function(const IRCEvent)) || !Parameters!F.length)
+if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == IRCEvent)))
 {
     import std.datetime.systime : Clock, SysTime;
 
@@ -83,7 +84,7 @@ if (is(F == void function(const IRCEvent)) || !Parameters!F.length)
             return;
         }
 
-        static if (is(F : void function(const IRCEvent event)))
+        static if (Parameters!F.length && is(Unqual!(Parameters!F[0]) == IRCEvent))
         {
             fp(event);
         }
@@ -124,12 +125,25 @@ unittest
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "hirrpp"), content);
         assert((sender.nickname == "zorael"), sender.nickname);
-
     }
 
     assert(i == 5);
     req.trigger();
     assert(i == 6);
+
+    static void fn() { }
+
+    auto reqfn = WHOISRequestImpl!(void function())(event, &fn);
+
+    void dg2(ref IRCEvent thisEvent)
+    {
+        thisEvent.content = "blah";
+    }
+
+    auto req2 = WHOISRequestImpl!(void delegate(ref IRCEvent))(event, &dg2);
+    assert((req2.event.content == "hirrpp"), event.content);
+    req2.trigger();
+    assert((req2.event.content == "blah"), event.content);
 }
 
 // IRCPluginState
