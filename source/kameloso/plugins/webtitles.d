@@ -9,8 +9,6 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
-import arsd.dom;
-
 import std.concurrency : send, Tid;
 import std.experimental.logger;
 import std.regex : ctRegex;
@@ -102,9 +100,10 @@ void onMessage(const IRCEvent event)
 
 TitleLookup lookupTitle(const string url)
 {
-    import arsd.dom;
+    import arsd.dom : Document;
     import requests;
     import std.array : Appender;
+    import std.datetime : Clock;
 
     tlsLogger.log("URL2: ", url);
 
@@ -269,7 +268,7 @@ void titleworker(shared Tid sMainThread)
 {
     import core.time : seconds;
     import std.concurrency : OwnerTerminated, receive;
-    import std.datetime : Clock;
+    import std.datetime : Clock, SysTime;
     import std.variant : Variant;
 
     Tid mainThread = cast(Tid)sMainThread;
