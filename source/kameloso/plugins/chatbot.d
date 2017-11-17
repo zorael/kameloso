@@ -176,8 +176,8 @@ JSONValue loadQuotes(const string filename)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix(NickPrefixPolicy.required, "say")
-@Prefix(NickPrefixPolicy.required, "säg")
+@Prefix(NickPolicy.required, "say")
+@Prefix(NickPolicy.required, "säg")
 void onCommandSay(const IRCEvent event)
 {
     if (!chatbotOptions.say) return;
@@ -211,7 +211,7 @@ void onCommandSay(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix(NickPrefixPolicy.required, "8ball")
+@Prefix(NickPolicy.required, "8ball")
 void onCommand8ball(const IRCEvent event)
 {
     if (!chatbotOptions.eightball) return;
@@ -265,7 +265,7 @@ void onCommand8ball(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix(NickPrefixPolicy.required, "quote")
+@Prefix(NickPolicy.required, "quote")
 void onCommandQuote(const IRCEvent event)
 {
     if (!chatbotOptions.quotes) return;
@@ -312,7 +312,7 @@ void onCommandQuote(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix(NickPrefixPolicy.required, "addquote")
+@Prefix(NickPolicy.required, "addquote")
 void onCommanAdddQuote(const IRCEvent event)
 {
     if (!chatbotOptions.quotes) return;
@@ -345,7 +345,7 @@ void onCommanAdddQuote(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "printquotes")
+@Prefix(NickPolicy.required, "printquotes")
 void onCommandPrintQuotes()
 {
     if (!chatbotOptions.quotes) return;
@@ -364,7 +364,7 @@ void onCommandPrintQuotes()
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "reloadquotes")
+@Prefix(NickPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
     if (!chatbotOptions.quotes) return;

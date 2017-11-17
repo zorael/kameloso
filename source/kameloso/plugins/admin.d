@@ -31,7 +31,7 @@ bool printBytes;
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "sudo")
+@Prefix(NickPolicy.required, "sudo")
 void onCommandSudo(const IRCEvent event)
 {
     state.mainThread.send(ThreadMessage.Sendline(), event.content);
@@ -50,7 +50,7 @@ void onCommandSudo(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "fake")
+@Prefix(NickPolicy.required, "fake")
 void onCommandFake(const IRCEvent event)
 {
     state.mainThread.send(event.content);
@@ -71,7 +71,7 @@ void onCommandFake(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "quit")
+@Prefix(NickPolicy.required, "quit")
 void onCommandQuit(const IRCEvent event)
 {
     state.mainThread.send(ThreadMessage.Quit(), event.content);
@@ -88,7 +88,7 @@ void onCommandQuit(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "addhome")
+@Prefix(NickPolicy.required, "addhome")
 void onCommandAddHome(const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -126,7 +126,7 @@ void onCommandAddHome(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "delhome")
+@Prefix(NickPolicy.required, "delhome")
 void onCommandDelHome(const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
@@ -169,7 +169,7 @@ void onCommandDelHome(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "addfriend")
+@Prefix(NickPolicy.required, "addfriend")
 void onCommandAddFriend(const IRCEvent event)
 {
     import std.string : indexOf, strip;
@@ -206,7 +206,7 @@ void onCommandAddFriend(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "delfriend")
+@Prefix(NickPolicy.required, "delfriend")
 void onCommandDelFriend(const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
@@ -253,7 +253,7 @@ void onCommandDelFriend(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "resetterm")
+@Prefix(NickPolicy.required, "resetterm")
 void onCommandResetTerminal()
 {
     write(TerminalToken.reset);
@@ -269,7 +269,7 @@ void onCommandResetTerminal()
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "printall")
+@Prefix(NickPolicy.required, "printall")
 void onCommandPrintAll()
 {
     printAll = !printAll;
@@ -286,7 +286,7 @@ void onCommandPrintAll()
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "printbytes")
+@Prefix(NickPolicy.required, "printbytes")
 void onCommandPrintBytes()
 {
     printBytes = !printBytes;
@@ -332,7 +332,7 @@ void onAnyEvent(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "join")
+@Prefix(NickPolicy.required, "join")
 void onCommandJoin(const IRCEvent event)
 {
     joinPartImpl("JOIN", event);
@@ -351,7 +351,7 @@ void onCommandJoin(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "part")
+@Prefix(NickPolicy.required, "part")
 void onCommandPart(const IRCEvent event)
 {
     joinPartImpl("PART", event);

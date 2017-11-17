@@ -130,8 +130,8 @@ void onNames(const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-@Prefix(NickPrefixPolicy.required, "addnote")
-@Prefix(NickPrefixPolicy.required, "note")
+@Prefix(NickPolicy.required, "addnote")
+@Prefix(NickPolicy.required, "note")
 void onCommandAddNote(const IRCEvent event)
 {
     import std.format : format, formattedRead;
@@ -161,7 +161,7 @@ void onCommandAddNote(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "printnotes")
+@Prefix(NickPolicy.required, "printnotes")
 void onCommandPrintNotes()
 {
     writeln(notes.toPrettyString);
@@ -177,7 +177,7 @@ void onCommandPrintNotes()
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "reloadnotes")
+@Prefix(NickPolicy.required, "reloadnotes")
 void onCommandReloadQuotes()
 {
     logger.log("Reloading notes");
@@ -196,7 +196,7 @@ void onCommandReloadQuotes()
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
-@Prefix(NickPrefixPolicy.required, "fakejoin")
+@Prefix(NickPolicy.required, "fakejoin")
 void onCommandFakejoin(const IRCEvent event)
 {
     import kameloso.stringutils;
