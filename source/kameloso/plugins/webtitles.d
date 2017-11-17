@@ -100,7 +100,7 @@ void onMessage(const IRCEvent event)
 }
 
 
-TitleLookup lookupTitle2(const string url)
+TitleLookup lookupTitle(const string url)
 {
     import arsd.dom;
     import requests;
@@ -164,7 +164,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     tlsLogger.info(onRepeatURL);
 
-    TitleLookup onRepeatLookup = lookupTitle2(onRepeatURL);
+    TitleLookup onRepeatLookup = lookupTitle(onRepeatURL);
 
     tlsLogger.info(onRepeatLookup.title);
 
@@ -304,7 +304,7 @@ void titleworker(shared Tid sMainThread)
                 }
                 else
                 {
-                    try lookup = lookupTitle2(url);
+                    try lookup = lookupTitle(url);
                     catch (const Exception e)
                     {
                         logger.error(e.msg);
