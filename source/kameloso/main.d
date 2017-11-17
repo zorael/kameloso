@@ -1,7 +1,6 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.config2;
 import kameloso.connection;
 import kameloso.constants;
 import kameloso.irc;
@@ -170,6 +169,7 @@ Flag!"quit" checkMessages()
  +/
 Flag!"quit" handleArguments(string[] args)
 {
+    import kameloso.config : readConfigInto;
     import std.format : format;
     import std.getopt;
 
@@ -281,7 +281,7 @@ Flag!"quit" handleArguments(string[] args)
 
 void writeConfigurationFile(const string filename)
 {
-    import kameloso.config2;
+    import kameloso.config;
     import std.array : Appender;
 
     Appender!string sink;

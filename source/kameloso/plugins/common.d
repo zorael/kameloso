@@ -455,7 +455,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
             {
-                import kameloso.config2 : readConfigInto;
+                import kameloso.config : readConfigInto;
                 configFile.readConfigInto(symbol);
             }
         }
@@ -492,7 +492,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
             {
-                import kameloso.config2 : serialise;
+                import kameloso.config : serialise;
                 sink.serialise(symbol);
             }
         }

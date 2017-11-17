@@ -1,4 +1,4 @@
-module kameloso.config2;
+module kameloso.config;
 
 import kameloso.common;
 
