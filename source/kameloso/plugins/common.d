@@ -877,6 +877,11 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (const IRCUser newUser)
     {
+        if (!newUser.nickname.length || (newUser.nickname == state.bot.nickname))
+        {
+            return;
+        }
+
         auto user = newUser.nickname in state.users;
 
         if (!user)
