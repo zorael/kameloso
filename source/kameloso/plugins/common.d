@@ -3,6 +3,8 @@ module kameloso.plugins.common;
 import kameloso.common : Settings;
 import kameloso.irc;
 
+import std.traits : Parameters;
+
 // IRCPlugin
 /++
  +  Interface that all IRCPlugins must adhere to.
@@ -54,6 +56,7 @@ interface IRCPlugin
 
 
 struct WHOISRequestImpl(F)
+if (is(F == void function(const IRCEvent)) || !Parameters!F.length)
 {
     import std.datetime.systime : Clock, SysTime;
 
