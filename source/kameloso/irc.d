@@ -2878,7 +2878,7 @@ unittest
      {
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((type == IRCEvent.Type.CHANMODE), type.to!string);
-        assert((target.nickname == "kameloso^"), target.nickname);
+        assert((content == "kameloso^"), content);
         assert((channel == "#flerrp"), channel);
         assert((aux == "+v"), aux);
      }
