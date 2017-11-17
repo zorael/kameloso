@@ -488,7 +488,11 @@ string justifiedConfigurationText(const string origLines)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import std.string : munch, strip, stripLeft;
+    import std.regex : ctRegex, matchFirst;
+    import std.string : strip;
+
+    enum entryValuePattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
+    static entryValueEngine = ctRegex!entryValuePattern;
 
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
@@ -519,14 +523,12 @@ string justifiedConfigurationText(const string origLines)
         default:
             import std.format : format;
 
-            // FIXME: regex
-            immutable entry = line.munch("^ \t");
-            immutable value = line.stripLeft();
+            auto hits = line.matchFirst(entryValueEngine);
 
-            longestEntryLength = (entry.length > longestEntryLength) ?
-                entry.length : longestEntryLength;
+            longestEntryLength = (hits["entry"].length > longestEntryLength) ?
+                hits["entry"].length : longestEntryLength;
 
-            unjustified.put("%s %s".format(entry, value));
+            unjustified.put("%s %s".format(hits["entry"], hits["value"]));
             break;
         }
     }
@@ -565,9 +567,10 @@ string justifiedConfigurationText(const string origLines)
         default:
             import std.format : formattedWrite;
 
-            immutable entry = line.munch("^ \t");
-            immutable value = line.stripLeft();
-            justified.formattedWrite("%-*s %s%s", width, entry, value, newline);
+            auto hits = line.matchFirst(entryValueEngine);
+
+            justified.formattedWrite("%-*s %s%s", width, hits["entry"],
+                hits["value"], newline);
             break;
         }
     }
