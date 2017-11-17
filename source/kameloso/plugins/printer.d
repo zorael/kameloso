@@ -522,6 +522,7 @@ void mapColours(ref IRCEvent event)
         static endEngine = ctRegex!endPattern;
 
         event.content = event.content.replaceAll(endEngine, "\033[0m$1");
+        event.content ~= colour(BashReset.all);
     }
 }
 
@@ -530,13 +531,13 @@ unittest
     IRCEvent e1;
     e1.content = "This is " ~ 3 ~ "4all red!" ~ 3 ~ " while this is not.";
     e1.mapColours();
-    assert((e1.content == "This is \033[91mall red!\033[0m while this is not."),
+    assert((e1.content == "This is \033[91mall red!\033[0m while this is not.\033[0m"),
         e1.content);
 
     IRCEvent e2;
     e2.content = "This time there's" ~ 3 ~ "6 no ending token, only magenta.";
     e2.mapColours();
-    assert((e2.content == "This time there's\033[35m no ending token, only magenta."),
+    assert((e2.content == "This time there's\033[35m no ending token, only magenta.\033[0m"),
         e2.content);
 }
 
