@@ -678,7 +678,7 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
-                        immutable privilegeLevel = getUDAs!(fun,
+                        enum privilegeLevel = getUDAs!(fun,
                             PrivilegeLevel)[0];
 
                         static if (verbose)
