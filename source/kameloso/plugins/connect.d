@@ -52,8 +52,18 @@ void onSelfpart(const IRCEvent event)
 
         if (index == -1)
         {
-            logger.warning("Tried to remove a channel that wasn't there: ",
-                        event.channel);
+            immutable homeIndex = bot.channels.countUntil(event.channel);
+
+            if (homeIndex == -1)
+            {
+                logger.warning("Tried to remove a channel that wasn't there: ",
+                    event.channel);
+            }
+            else
+            {
+                logger.warning("Leaving a home ...");
+            }
+
             return;
         }
 
