@@ -164,6 +164,9 @@ enum FilterResult { fail, pass, whois }
 enum NickPrefixPolicy { ignored, optional, required, hardRequired }
 
 
+enum ChannelPolicy { homeOnly, any }
+
+
 /// What level of privilege is needed to trigger an event
 enum PrivilegeLevel { anyone, friend, master }
 
@@ -499,28 +502,50 @@ mixin template OnEventImpl(string module_ = __MODULE__, bool debug_ = false)
                             // particular UDA; continue to the next one
                             continue;
                         }
-
-                        static if ((eventTypeUDA == IRCEvent.Type.CHAN) ||
-                                (eventTypeUDA == IRCEvent.Type.JOIN) ||
-                                (eventTypeUDA == IRCEvent.Type.PART) ||
-                                (eventTypeUDA == IRCEvent.Type.QUIT))
-                        {
-                            import std.algorithm.searching : canFind;
-
-                            if (!state.bot.homes.canFind(event.channel))
-                            {
-                                static if (verbose)
-                                {
-                                    writeln(name, " ignore invalid channel ",
-                                            event.channel);
-                                }
-                                return;
-                            }
-                        }
                     }
 
                     IRCEvent mutEvent = event;  // mutable
                     string contextPrefix;
+
+                    static if (hasUDA!(fun, ChannelPolicy))
+                    {
+                        enum policy = getUDAs!(fun, ChannelPolicy)[0];
+                    }
+                    else
+                    {
+                        enum policy = ChannelPolicy.homeOnly;
+                    }
+
+                    static if (verbose)
+                    {
+                        writefln("%s.%s: %s", module_, __traits(identifier, fun), policy);
+                    }
+
+                    with (ChannelPolicy)
+                    final switch (policy)
+                    {
+                    case homeOnly:
+                        import std.algorithm.searching : canFind;
+
+                        if (!mutEvent.channel.length)
+                        {
+                            // it is a non-channel event, like a QUERY
+                        }
+                        else if (!state.bot.homes.canFind(mutEvent.channel))
+                        {
+                            static if (verbose)
+                            {
+                                writeln(name, " ignore invalid channel ",
+                                        mutEvent.channel);
+                            }
+                            return;
+                        }
+                        break;
+
+                    case any:
+                        // drop down, no need to check
+                        break;
+                    }
 
                     static if (hasUDA!(fun, Prefix))
                     {

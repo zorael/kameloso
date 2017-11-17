@@ -1001,10 +1001,8 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
 {
     import kameloso.stringutils : beginsWith;
 
-    if ((event.type != IRCEvent.Type.CHANMODE) &&
-        (event.type != IRCEvent.Type.TOPIC) &&
-        ((event.target.nickname.indexOf(' ') != -1) ||
-        (event.channel.indexOf(' ') != -1)))
+    if ((event.target.nickname.indexOf(' ') != -1) ||
+        (event.channel.indexOf(' ') != -1))
     {
         writeln();
         logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
