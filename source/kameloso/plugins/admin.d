@@ -21,6 +21,27 @@ bool printAll;
 bool printBytes;
 
 
+// onCommandShowUsers
+/++
+ +  Prints out the current state.users array in the local terminal.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "users")
+void onCommandShowUsers()
+{
+    logger.trace("Printing Admin's users");
+
+    printObject(state.bot);
+
+    foreach (entry; state.users.byKeyValue)
+    {
+        writefln("%-12s [%s]", entry.key, entry.value);
+    }
+}
+
+
 // onCommandSudo
 /++
  +  Sends supplied text to the server, verbatim.
