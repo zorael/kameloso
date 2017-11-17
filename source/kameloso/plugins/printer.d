@@ -44,6 +44,7 @@ IRCPluginState state;
  +      event = the IRCEvent to print.
  +/
 @(IRCEvent.Type.ANY)
+@(ChannelPolicy.any)
 void onAnyEvent(const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
