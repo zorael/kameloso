@@ -425,91 +425,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     switch (event.type)
     {
     case NOTICE:
-        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
-        // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
-        // :tolkien.freenode.net NOTICE * :*** Checking Ident
-
-        //slice.formattedRead("%s :%s", event.target, event.content);
-        //event.target.nickname = slice.nom(" :");
-        slice.nom(" :");
-        event.content = slice;
-
-        // FIXME: This obviously doesn't scale either
-        /*if (event.target.nickname == "*") event.target.nickname = string.init;
-        else*/
-        if ((event.sender.ident == "service") && (event.sender.address == "rizon.net"))
-        {
-            event.sender.special = true;
-        }
-
-        if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
-        {
-            bot.server.resolvedAddress = event.sender.nickname;
-            bot.updated = true;
-        }
-
-        if (event.isFromAuthService(bot))
-        {
-            event.sender.special = true;  // by definition
-
-            if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
-                (event.content.indexOf("/msg NickServ identify") != -1))
-            {
-                event.type = AUTH_CHALLENGE;
-                break;
-            }
-
-            // FIXME: This obviously doesn't scale either
-
-            enum AuthSuccess
-            {
-                freenode = "You are now identified for",
-                rizon = "Password accepted - you are now recognized.",
-                quakenet = "You are now logged in as",
-                gamesurge = "I recognize you.",
-            }
-
-            with (event)
-            with (AuthSuccess)
-            {
-                if ((content.beginsWith(freenode)) ||
-                    (content.beginsWith(quakenet)) || // also Freenode SASL
-                    (content == rizon) ||
-                    (content == gamesurge))
-                {
-                    type = AUTH_SUCCESS;
-
-                    // Restart with the new type
-                    return parseSpecialcases(event, bot, slice);
-                }
-            }
-
-            enum AuthFailure
-            {
-                rizon = "Your nick isn't registered.",
-                quakenet = "Username or password incorrect.",
-                freenodeInvalid = "is not a registered nickname.",
-                freenodeRejected = "Invalid password for",
-                dalnet = "is not registered.",
-                unreal = "isn't registered.",
-                gamesurge = "Could not find your account -- did you register yet?",
-            }
-
-            with (event)
-            with (AuthFailure)
-            {
-                if ((content == rizon) ||
-                    (content == quakenet) ||
-                    (content == gamesurge) ||
-                    (content.indexOf(freenodeInvalid) != -1) ||
-                    (content.beginsWith(freenodeRejected)) ||
-                    (content.indexOf(dalnet) != -1) ||
-                    (content.indexOf(unreal) != -1))
-                {
-                    event.type = AUTH_FAILURE;
-                }
-            }
-        }
+        event.onNotice(bot, slice);
         break;
 
     case JOIN:
@@ -580,122 +496,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case PRIVMSG:
-        // FIXME, change so that it assigns to the proper field
-
-        immutable targetOrChannel = slice.nom(" :");
-        event.content = slice;
-
-        if (targetOrChannel.isValidChannel)
-        {
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
-            event.type = CHAN;
-            event.channel = targetOrChannel;
-        }
-        else
-        {
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
-            event.type = QUERY;
-            event.target.nickname = targetOrChannel;
-        }
-
-        if (slice.length < 3) break;
-
-        if ((slice[0] == IRCControlCharacter.ctcp) &&
-            (slice[$-1] == IRCControlCharacter.ctcp))
-        {
-            slice = slice[1..$-1];
-            immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
-            event.content = slice;
-
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
-            // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :VERSION
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :TIME
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :CLIENTINFO
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :DCC
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :SOURCE
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :USERINFO
-            // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :FINGER
-
-            import std.traits : EnumMembers;
-
-            /++
-             +  This iterates through all IRCEvent.Types that begin with
-             +  "CTCP_" and generates switch cases for the string of each.
-             +  Inside it will assign event.type to the corresponding
-             +  IRCEvent.Type.
-             +
-             +  Like so, except automatically generated through compile-time
-             +  introspection:
-             +
-             +      case "CTCP_PING":
-             +          event.type = CTCP_PING;
-             +          event.aux = "PING";
-             +          break;
-             +/
-
-            top:
-            switch (ctcpEvent)
-            {
-            case "ACTION":
-                // We already sliced away the control characters and nommed the
-                // "ACTION" ctcpEvent string, so just set the type and break.
-                event.type = IRCEvent.Type.EMOTE;
-                break;
-
-            foreach (immutable type; EnumMembers!(IRCEvent.Type))
-            {
-                import std.conv : to;
-
-                enum typestring = type.to!string;
-
-                static if (typestring.beginsWith("CTCP_"))
-                {
-                    case typestring[5..$]:
-                        mixin("event.type = " ~ typestring ~ ";");
-                        event.aux = typestring[5..$];
-                        break top;
-                }
-            }
-
-            default:
-                logger.warning("-------------------- UNKNOWN CTCP EVENT");
-                printObject(event);
-                break;
-            }
-        }
+        event.onPRIVMSG(bot, slice);
         break;
 
     case MODE:
-        immutable targetOrChannel = slice.nom(' ');
-
-        if (targetOrChannel.isValidChannel)
-        {
-            event.channel = targetOrChannel;
-
-            if (slice.indexOf(' ') != -1)
-            {
-                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
-                // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
-                event.type = CHANMODE;
-                //slice.formattedRead("%s %s", event.aux, event.target);
-                event.aux = slice.nom(' ');
-                event.target.nickname = slice;
-            }
-            else
-            {
-                event.type = USERMODE;
-                event.aux = slice;
-            }
-        }
-        else
-        {
-            // :kameloso^ MODE kameloso^ :+i
-            event.type = SELFMODE;
-            //event.target.nickname = targetOrChannel;
-            event.aux = slice[1..$];
-        }
+        event.onMode(bot, slice);
         break;
 
     case KICK:
@@ -761,88 +566,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_ISUPPORT: // 004-005
-        import std.algorithm.iteration : splitter;
-        import std.conv : to;
-        import std.string : toLower;
-        // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
-        // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
-        // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
-        // :tmi.twitch.tv 004 zorael :-
-        //slice.formattedRead("%s %s", event.target, event.content);
-        //event.target.nickname = slice.nom(' ');
-        slice.nom(' ');
-        event.content = slice;
-
-        if (event.content.indexOf(" :") != -1)
-        {
-            event.aux = event.content.nom(" :");
-        }
-
-        foreach (value; event.aux.splitter(' '))
-        {
-            if (value.indexOf('=') == -1) continue;
-
-            immutable key = value.nom('=');
-
-            /// http://www.irc.org/tech_docs/005.html
-
-            switch (key)
-            {
-            case "CHANTYPES":
-                // TODO: Logic here to register channel prefix signs
-                break;
-
-            case "NETWORK":
-                try
-                {
-                    immutable thisNetwork = value
-                        .toLower
-                        .toEnum!(IRCServer.Network);
-
-                    logger.info("Detected network: ", thisNetwork);
-
-                    if (thisNetwork != bot.server.network)
-                    {
-                        // Propagate change
-                        bot.server.network = thisNetwork;
-                        bot.updated = true;
-                    }
-                }
-                catch (const Exception e)
-                {
-                    logger.error(e.msg);
-                }
-                break;
-
-            case "NICKLEN":
-                try maxNickLength = value.to!uint;
-                catch (const Exception e)
-                {
-                    logger.error(e.msg);
-                }
-                break;
-
-            case "CHANNELLEN":
-                try maxChannelLength = value.to!uint;
-                catch (const Exception e)
-                {
-                    logger.error(e.msg);
-                }
-                break;
-
-            default:
-                break;
-            }
-        }
-
-        with (bot.server)
-        if (network == Network.init)
-        {
-            logger.info("No network detected, guessing...");
-            network = networkOf(address);
-            logger.info(network, "?");
-        }
-
+        event.onISUPPORT(bot, slice);
         break;
 
     case TOPICSETTIME: // 333
@@ -1629,6 +1353,312 @@ string decodeIRCv3String(const string line)
     static spaces = ctRegex!`\\s`;
 
     return line.replaceAll(spaces, " ");
+}
+
+void onNotice(ref IRCEvent event, ref IRCBot bot, ref string slice)
+{
+    import kameloso.stringutils : beginsWith;
+    import std.string : indexOf;
+    // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflohomeOnlyw] Make sure your nick is registered, then please try again to join ##linux.
+    // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
+    // :tolkien.freenode.net NOTICE * :*** Checking Ident
+
+    //slice.formattedRead("%s :%s", event.target, event.content);
+    //event.target.nickname = slice.nom(" :");
+    slice.nom(" :");
+    event.content = slice;
+
+    // FIXME: This obviously doesn't scale either
+    /*if (event.target.nickname == "*") event.target.nickname = string.init;
+    else*/
+    if ((event.sender.ident == "service") && (event.sender.address == "rizon.net"))
+    {
+        event.sender.special = true;
+    }
+
+    if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
+    {
+        bot.server.resolvedAddress = event.sender.nickname;
+        bot.updated = true;
+    }
+
+    if (event.isFromAuthService(bot))
+    {
+        event.sender.special = true;  // by definition
+
+        if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
+            (event.content.indexOf("/msg NickServ identify") != -1))
+        {
+            event.type = IRCEvent.Type.AUTH_CHALLENGE;
+            return;
+        }
+
+        // FIXME: This obviously doesn't scale either
+
+        enum AuthSuccess
+        {
+            freenode = "You are now identified for",
+            rizon = "Password accepted - you are now recognized.",
+            quakenet = "You are now logged in as",
+            gamesurge = "I recognize you.",
+        }
+
+        with (event)
+        with (AuthSuccess)
+        {
+            if ((content.beginsWith(freenode)) ||
+                (content.beginsWith(quakenet)) || // also Freenode SASL
+                (content == rizon) ||
+                (content == gamesurge))
+            {
+                type = IRCEvent.Type.AUTH_SUCCESS;
+
+                // Restart with the new type
+                return parseSpecialcases(event, bot, slice);
+            }
+        }
+
+        enum AuthFailure
+        {
+            rizon = "Your nick isn't registered.",
+            quakenet = "Username or password incorrect.",
+            freenodeInvalid = "is not a registered nickname.",
+            freenodeRejected = "Invalid password for",
+            dalnet = "is not registered.",
+            unreal = "isn't registered.",
+            gamesurge = "Could not find your account -- did you register yet?",
+        }
+
+        with (event)
+        with (AuthFailure)
+        {
+            if ((content == rizon) ||
+                (content == quakenet) ||
+                (content == gamesurge) ||
+                (content.indexOf(freenodeInvalid) != -1) ||
+                (content.beginsWith(freenodeRejected)) ||
+                (content.indexOf(dalnet) != -1) ||
+                (content.indexOf(unreal) != -1))
+            {
+                event.type = IRCEvent.Type.AUTH_FAILURE;
+            }
+        }
+    }
+}
+
+void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
+{
+    import kameloso.stringutils : beginsWith;
+
+    // FIXME, change so that it assigns to the proper field
+
+    immutable targetOrChannel = slice.nom(" :");
+    event.content = slice;
+
+    if (targetOrChannel.isValidChannel)
+    {
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
+        event.type = IRCEvent.Type.CHAN;
+        event.channel = targetOrChannel;
+    }
+    else
+    {
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
+        event.type = IRCEvent.Type.QUERY;
+        event.target.nickname = targetOrChannel;
+    }
+
+    if (slice.length < 3) return;
+
+    if ((slice[0] == IRCControlCharacter.ctcp) &&
+        (slice[$-1] == IRCControlCharacter.ctcp))
+    {
+        slice = slice[1..$-1];
+        immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
+        event.content = slice;
+
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
+        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
+        // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :VERSION
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :TIME
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :CLIENTINFO
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :DCC
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :SOURCE
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :USERINFO
+        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :FINGER
+
+        import std.traits : EnumMembers;
+
+        /++
+            +  This iterates through all IRCEvent.Types that begin with
+            +  "CTCP_" and generates switch cases for the string of each.
+            +  Inside it will assign event.type to the corresponding
+            +  IRCEvent.Type.
+            +
+            +  Like so, except automatically generated through compile-time
+            +  introspection:
+            +
+            +      case "CTCP_PING":
+            +          event.type = CTCP_PING;
+            +          event.aux = "PING";
+            +          break;
+            +/
+
+        with (IRCEvent.Type)
+        top:
+        switch (ctcpEvent)
+        {
+        case "ACTION":
+            // We already sliced away the control characters and nommed the
+            // "ACTION" ctcpEvent string, so just set the type and break.
+            event.type = IRCEvent.Type.EMOTE;
+            break;
+
+        foreach (immutable type; EnumMembers!(IRCEvent.Type))
+        {
+            import std.conv : to;
+
+            enum typestring = type.to!string;
+
+            static if (typestring.beginsWith("CTCP_"))
+            {
+                case typestring[5..$]:
+                    mixin("event.type = " ~ typestring ~ ";");
+                    event.aux = typestring[5..$];
+                    break top;
+            }
+        }
+
+        default:
+            logger.warning("-------------------- UNKNOWN CTCP EVENT");
+            printObject(event);
+            break;
+        }
+    }
+}
+
+
+void onMode(ref IRCEvent event, ref IRCBot bot, ref string slice)
+{
+    immutable targetOrChannel = slice.nom(' ');
+
+    if (targetOrChannel.isValidChannel)
+    {
+        event.channel = targetOrChannel;
+
+        if (slice.indexOf(' ') != -1)
+        {
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
+            event.type = IRCEvent.Type.CHANMODE;
+            //slice.formattedRead("%s %s", event.aux, event.target);
+            event.aux = slice.nom(' ');
+            // save target in content; there may be more than one
+            event.content = slice;
+        }
+        else
+        {
+            event.type = IRCEvent.Type.USERMODE;
+            event.aux = slice;
+        }
+    }
+    else
+    {
+        // :kameloso^ MODE kameloso^ :+i
+        event.type = IRCEvent.Type.SELFMODE;
+        //event.target.nickname = targetOrChannel;
+        event.aux = slice[1..$];
+    }
+}
+
+
+void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
+{
+    import kameloso.stringutils : toEnum;
+
+    import std.algorithm.iteration : splitter;
+    import std.conv : to;
+    import std.string : toLower;
+
+    // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
+    // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
+    // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
+    // :tmi.twitch.tv 004 zorael :-
+    //slice.formattedRead("%s %s", event.target, event.content);
+    //event.target.nickname = slice.nom(' ');
+    slice.nom(' ');
+    event.content = slice;
+
+    if (event.content.indexOf(" :") != -1)
+    {
+        event.aux = event.content.nom(" :");
+    }
+
+    foreach (value; event.aux.splitter(' '))
+    {
+        if (value.indexOf('=') == -1) continue;
+
+        immutable key = value.nom('=');
+
+        /// http://www.irc.org/tech_docs/005.html
+
+        switch (key)
+        {
+        case "CHANTYPES":
+            // TODO: Logic here to register channel prefix signs
+            break;
+
+        case "NETWORK":
+            try
+            {
+                immutable thisNetwork = value
+                    .toLower
+                    .toEnum!(IRCServer.Network);
+
+                logger.info("Detected network: ", thisNetwork);
+
+                if (thisNetwork != bot.server.network)
+                {
+                    // Propagate change
+                    bot.server.network = thisNetwork;
+                    bot.updated = true;
+                }
+            }
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+            }
+            break;
+
+        case "NICKLEN":
+            try maxNickLength = value.to!uint;
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+            }
+            break;
+
+        case "CHANNELLEN":
+            try maxChannelLength = value.to!uint;
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    with (bot.server)
+    if (network == Network.init)
+    {
+        logger.info("No network detected, guessing...");
+        network = networkOf(address);
+        logger.info(network, "?");
+    }
 }
 
 public:
