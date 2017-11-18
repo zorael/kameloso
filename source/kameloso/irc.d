@@ -963,9 +963,16 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;
         break;
 
-    case RPL_LISTSTART:  // 321
+    case RPL_LISTSTART: // 321
         // :cherryh.freenode.net 321 kameloso^ Channel :Users  Name
         // none of the fields are interesting...
+        break;
+
+    case CHANNELFORWARD: // 470
+        // :wolfe.freenode.net 470 kameloso #linux ##linux :Forwarding to another channel
+        slice.nom(' ');
+        event.channel = slice.nom(' ');
+        event.content = slice.nom(" :");
         break;
 
     default:
