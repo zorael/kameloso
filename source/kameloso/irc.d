@@ -1710,7 +1710,11 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
             }
             catch (const Exception e)
             {
+                // We know the network but we don't have defintions for it
                 logger.error(e.msg);
+                logger.info("Unfamiliar network: ", value);
+                bot.server.network = IRCServer.Network.unfamiliar;
+                bot.updated = true;
             }
             break;
 
