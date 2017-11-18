@@ -966,14 +966,14 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
-    // onWHOReply
+    // onWHOReplyMixin
     /++
      +  Catches a user's information from a WHO reply event.
      +
      +  It usually contains everything interesting except login.
      +/
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReply(const IRCEvent event)
+    void onWHOReplyMixin(const IRCEvent event)
     {
         catchUser(event.target);
     }
