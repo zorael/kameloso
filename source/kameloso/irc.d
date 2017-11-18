@@ -117,7 +117,13 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
     default:
         import kameloso.stringutils : beginsWith;
 
-        if (event.raw.beginsWith('@'))
+        if (event.raw.beginsWith("NOTICE"))
+        {
+            // Probably NOTICE <bot.nickname>
+            // NOTICE kameloso :*** If you are having problems connecting due to ping timeouts, please type /notice F94828E6 nospoof now.
+            goto case "NOTICE";
+        }
+        else if (event.raw.beginsWith('@'))
         {
             // @badges=broadcaster/1;color=;display-name=Zorael;emote-sets=0;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zorael
             // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
