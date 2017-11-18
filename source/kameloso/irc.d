@@ -556,7 +556,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         slice.nom(' ');
         //slice.formattedRead("%s :%s", event.channel, event.content);
         event.channel = slice.nom(" :");
-        event.content = slice.stripRight();
+        event.content = slice; //.stripRight();
         //event.content = event.content.stripRight();
         break;
 
@@ -705,12 +705,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice.stripLeft();
         break;
 
-    case RPL_WHOISCHANNELS: // 319
+    /*case RPL_WHOISCHANNELS: // 319
         // :leguin.freenode.net 319 kameloso^ zorael :#flerrp
         import std.string : stripRight;
         slice = slice.stripRight();
-        goto case RPL_ENDOFWHOIS;
+        goto case RPL_ENDOFWHOIS;*/
 
+    case RPL_WHOISCHANNELS: // 319
     case WHOISSECURECONN: // 671
     case RPL_ENDOFWHOIS: // 318
     case ERR_NICKNAMEINUSE: // 433
@@ -822,8 +823,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case CAP:
-        import std.string : stripRight;
-
         if (slice.indexOf('*') != -1)
         {
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
@@ -840,7 +839,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
 
         event.aux = slice.nom(" :");
-        event.content = slice.stripRight();
+        event.content = slice;
         break;
 
     case TOPIC:
@@ -978,17 +977,12 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             event.aux = slice;
         }
 
-        import std.algorithm.searching : endsWith;
-
-        if (event.content.endsWith(" "))
-        {
-            import std.string : stripRight;
-            event.content = event.content.stripRight(); // wise?
-        }
-
         break;
     }
 
+    import std.string : stripRight;
+
+    event.content = event.content.stripRight();
     postparseSanityCheck(event, bot);
 }
 
