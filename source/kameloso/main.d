@@ -584,11 +584,12 @@ int main(string[] args)
 
     Flag!"quit" quit;
 
+    with (bot)
     do
     {
         conn.reset();
 
-        immutable resolved = conn.resolve(bot.server.address, bot.server.port, abort);
+        immutable resolved = conn.resolve(server.address, server.port, abort);
         if (!resolved) return Yes.quit;
 
         conn.connect(abort);
@@ -596,11 +597,11 @@ int main(string[] args)
         if (!conn.connected) return 1;
 
         // Reset fields in the bot that should not survive a reconnect
-        bot.startedRegistering = false;
-        bot.finishedRegistering = false;
-        bot.startedAuth = false;
-        bot.finishedAuth = false;
-        bot.server.resolvedAddress = string.init;
+        startedRegistering = false;
+        finishedRegistering = false;
+        startedAuth = false;
+        finishedAuth = false;
+        server.resolvedAddress = string.init;
 
         initPlugins();
         startPlugins();
