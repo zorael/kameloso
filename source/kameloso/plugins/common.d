@@ -28,9 +28,6 @@ interface IRCPlugin
     /// Executed to get a list of nicknames a plugin wants WHOISed
     ref WHOISRequest[string] yieldWHOISRequests();
 
-    /// Executed to get a list of nicknames a plugin wants WHOIsed (no param funs)
-    ref WHOISRequestNoParams[string] yieldWHOISRequestsNoParams();
-
     /// Executed on update to the internal Settings struct
     void newSettings(Settings);
 
@@ -57,6 +54,21 @@ interface IRCPlugin
 }
 
 
+// WHOISRequest
+/++
+ +  A queued event to be replayed upon a WHOIS request response.
+ +
+ +  It is abstract; all objects must be of a concrete WHOISRequestImpl type.
+ +/
+abstract class WHOISRequest
+{
+    IRCEvent event;
+    size_t lastWhois;
+
+    void trigger();
+}
+
+
 /++
  +  Implementation of a queued WHOIS request call.
  +
@@ -64,42 +76,33 @@ interface IRCPlugin
  +  a function pointer, which we queue and do a WHOIS call. When the response
  +  returns we trigger the object and the original IRCEvent is replayed.
  +/
-struct WHOISRequestImpl(F)
-if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == IRCEvent)))
+final class WHOISRequestImpl(F) : WHOISRequest
 {
-    import std.datetime.systime : Clock, SysTime;
+    F fn;
 
-    F fp;
-
-    IRCEvent event;
-    size_t created;
-    size_t lastWhois;
-
-    this(IRCEvent event, F fp)
+    this(IRCEvent event, F fn)
     {
-        import std.datetime : Clock;
         this.event = event;
-        this.fp = fp;
-        created = Clock.currTime.toUnixTime;
+        this.fn = fn;
     }
 
     /// Call the passed function/delegate pointer, optionally with the IRCEvent
-    void trigger()
+    override void trigger()
     {
-        if (!fp)
+        if (!fn)
         {
-            import std.stdio;
-            writeln("null fp!");
+            import std.stdio : writeln;
+            writeln("null fn!");
             return;
         }
 
         static if (Parameters!F.length && is(Unqual!(Parameters!F[0]) == IRCEvent))
         {
-            fp(event);
+            fn(event);
         }
         else
         {
-            fp();
+            fn();
         }
     }
 
@@ -108,18 +111,15 @@ if (isSomeFunction!F && (!Parameters!F.length || is(Unqual!(Parameters!F[0]) == 
     {
         import std.format;
 
-        sink("[%s]@%s".format(event.type, event.sender.nickname));
+        sink("[%s] @ %s".format(event.type, event.sender.nickname));
     }
 }
 
-/// WHOIS request structure for a function with no parmaeters
-alias WHOISRequestNoParams = WHOISRequestImpl!(void function());
-
-/// WHOIS request structure for an IRCEvent-taking function
-alias WHOISRequest = WHOISRequestImpl!(void function(const IRCEvent));
 
 unittest
 {
+    WHOISRequest[] queue;
+
     IRCEvent event;
     event.target.nickname = "kameloso";
     event.content = "hirrpp";
@@ -134,9 +134,10 @@ unittest
         ++i;
     }
 
-    auto req = WHOISRequestImpl!(void delegate())(event, &dg);
+    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, &dg);
+    queue ~= reqdg;
 
-    with (req.event)
+    with (reqdg.event)
     {
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "hirrpp"), content);
@@ -144,14 +145,15 @@ unittest
     }
 
     assert(i == 5);
-    req.trigger();
+    reqdg.trigger();
     assert(i == 6);
 
     // function()
 
     static void fn() { }
 
-    auto reqfn = WHOISRequestImpl!(void function())(event, &fn);
+    WHOISRequest reqfn = new WHOISRequestImpl!(void function())(event, &fn);
+    queue ~= reqfn;
 
     // delegate(ref IRCEvent)
 
@@ -160,15 +162,18 @@ unittest
         thisEvent.content = "blah";
     }
 
-    auto req2 = WHOISRequestImpl!(void delegate(ref IRCEvent))(event, &dg2);
-    assert((req2.event.content == "hirrpp"), event.content);
-    req2.trigger();
-    assert((req2.event.content == "blah"), event.content);
+    WHOISRequest reqdg2 = new WHOISRequestImpl!(void delegate(ref IRCEvent))(event, &dg2);
+    queue ~= reqdg2;
+
+    assert((reqdg2.event.content == "hirrpp"), event.content);
+    reqdg2.trigger();
+    assert((reqdg2.event.content == "blah"), event.content);
 
     // function(IRCEvent)
 
     static void fn2(IRCEvent thisEvent) { }
-    auto reqfn2 = WHOISRequestImpl!(void function(IRCEvent))(event, &fn2);
+    WHOISRequest reqfn2 = new WHOISRequestImpl!(void function(IRCEvent))(event, &fn2);
+    queue ~= reqfn2;
 }
 
 
@@ -193,8 +198,8 @@ struct IRCPluginState
     /// Hashmap of IRC user details
     IRCUser[string] users;
 
+    /// Queued WHOIS requests and pertaining IRCEvents to replay
     WHOISRequest[string] whoisQueue;
-    WHOISRequestNoParams[string] whoisQueueNoParams;
 }
 
 
@@ -393,16 +398,6 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         static if (__traits(compiles, .state.whoisQueue))
         {
             return .state.whoisQueue;
-        }
-    }
-
-    // yieldWHOISReuests
-    /// Ditto
-    ref WHOISRequestNoParams[string] yieldWHOISRequestsNoParams()
-    {
-        static if (__traits(compiles, .state.whoisQueueNoParams))
-        {
-            return .state.whoisQueueNoParams;
         }
     }
 
@@ -1025,13 +1020,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             return;
         }
 
-        static if (!Parameters!F.length)
-        {
-            state.whoisQueueNoParams[nickname] = WHOISRequestNoParams(event, fp);
-        }
-        else
-        {
-            state.whoisQueue[nickname] = WHOISRequest(event, fp);
-        }
+        state.whoisQueue[nickname] = new WHOISRequestImpl!F(event, fp);
     }
 }
