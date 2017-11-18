@@ -297,6 +297,7 @@ void onEndOfMotd(const IRCEvent event)
             break;
 
         case unknown:
+        case unfamiliar:
             logger.log("Unsure of what AUTH approach to use.");
 
             if (bot.authLogin.length)

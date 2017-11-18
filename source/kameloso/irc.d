@@ -1742,9 +1742,11 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
     with (bot.server)
     if (network == Network.init)
     {
-        logger.info("No network detected, guessing...");
         network = networkOf(address);
-        logger.info(network, "?");
+        if (network != Network.init)
+        {
+            logger.info("Network: ", network, "?");
+        }
     }
 }
 
@@ -2755,9 +2757,10 @@ string nickServiceOf(const IRCServer.Network network)
 {
     with (IRCServer.Network)
     {
-        static immutable string[13] netmap =
+        static immutable string[14] netmap =
         [
             unknown    : "NickServ",
+            unfamiliar : "NickServ",
             freenode   : "NickServ",
             rizon      : "NickServ",
             quakenet   : "Q@CServe.quakenet.org",
