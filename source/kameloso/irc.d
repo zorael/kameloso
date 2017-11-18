@@ -2449,12 +2449,12 @@ bool isFromAuthService(const IRCEvent event, ref IRCBot bot)
 
         if (bot.server.resolvedAddress.endsWith(address))
         {
-            logger.info("Sensible guess that it's the real NickServ");
+            //logger.info("Sensible guess that it's the real NickServ");
             return true; // sensible
         }
         else
         {
-            logger.info("Naïve guess that it's the real NickServ");
+            //logger.info("Naïve guess that it's the real NickServ");
             return true;  // NAÏVE
         }
 
