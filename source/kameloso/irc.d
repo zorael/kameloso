@@ -2035,9 +2035,9 @@ struct IRCEvent
             import std.stdio;
 
             static pattern = ctRegex!` *([A-Z0-9_]+), // = ([0-9]+).*`;
-            string[768] arr;
+            string[1024] arr;
 
-            writeln("static immutable Type[768] typenums =\n[");
+            writeln("static immutable Type[1024] typenums =\n[");
 
             foreach (line; s.splitter("\n"))
             {
