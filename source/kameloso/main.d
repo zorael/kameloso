@@ -533,18 +533,32 @@ void main() {
 else
 int main(string[] args)
 {
-    // Set up signal handlers
     import core.stdc.signal;
+
+    // Initialise the logger immediately so it's always available, reinit later
+    initLogger();
+
+    scope(failure)
+    {
+        logger.error("We just crashed!");
+        teardownPlugins();
+        signal(SIGINT, SIG_DFL);
+
+        version(Posix)
+        {
+            import core.sys.posix.signal : SIGHUP;
+            signal(SIGHUP, SIG_DFL);
+        }
+    }
+
+    // Set up signal handlers
     signal(SIGINT, &signalHandler);
 
     version(Posix)
     {
-        import core.sys.posix.signal;
+        import core.sys.posix.signal : SIGHUP;
         signal(SIGHUP, &signalHandler);
     }
-
-    // Initialise the logger immediately so it's always available, reinit later
-    initLogger();
 
     if (handleArguments(args) == Yes.quit) return 0;
 
