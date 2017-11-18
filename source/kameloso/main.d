@@ -460,9 +460,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 }
 
                 auto reqs = plugin.yieldWHOISRequests();
-                auto reqsNoParams = plugin.yieldWHOISRequestsNoParams();
                 event.handleQueue(reqs, event.target.nickname);
-                event.handleQueue(reqsNoParams, event.target.nickname);
             }
         }
 
