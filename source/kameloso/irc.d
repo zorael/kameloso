@@ -1796,6 +1796,7 @@ struct IRCServer
     enum Network
     {
         unknown,
+        unfamiliar,
         freenode,
         rizon,
         quakenet,
