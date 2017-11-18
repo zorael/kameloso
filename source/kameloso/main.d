@@ -449,18 +449,25 @@ Flag!"quit" loopGenerator(Generator!string generator)
                     propagateBot(bot);
                 }
 
-                plugin.onEvent(event);
-
-                auto yieldedBot = plugin.yieldBot();
-                if (yieldedBot.updated)
+                try
                 {
-                    // Plugin updated the bot; propagate
-                    bot = yieldedBot;  // yieldedBot.meldInto(bot);
-                    propagateBot(bot);
-                }
+                    plugin.onEvent(event);
 
-                auto reqs = plugin.yieldWHOISRequests();
-                event.handleQueue(reqs, event.target.nickname);
+                    auto yieldedBot = plugin.yieldBot();
+                    if (yieldedBot.updated)
+                    {
+                        // Plugin updated the bot; propagate
+                        bot = yieldedBot;  // yieldedBot.meldInto(bot);
+                        propagateBot(bot);
+                    }
+
+                    auto reqs = plugin.yieldWHOISRequests();
+                    event.handleQueue(reqs, event.target.nickname);
+                }
+                catch (const Exception e)
+                {
+                    logger.error(e.msg);
+                }
             }
         }
 
