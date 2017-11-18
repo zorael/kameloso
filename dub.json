@@ -5,7 +5,6 @@
     "copyright": "Copyright © 2017, JR",
     "license": "LGPL-2.1",
     "mainSourceFile": "source/kameloso/main.d",
-    "buildRequirements": [ "silenceDeprecations" ],
     "targetType": "executable",
     "libs-posix-dmd": [ "phobos2" ],
     "configurations":
@@ -13,24 +12,29 @@
         {
             "name": "posix",
             "platforms": [ "posix" ],
+            "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Webtitles", "Colours" ],
             "dependencies-posix": { "requests": "~>0.5.0" }
         },
         {
             "name": "windows",
-            "platforms": [ "windows" ]
+            "platforms": [ "windows" ],
+            "buildRequirements": [ "silenceDeprecations" ]
         },
         {
             "name": "nowebtitles",
+            "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Colours" ]
         },
         {
             "name": "nocolours",
+            "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Webtitles" ],
             "dependencies-posix": { "requests": "~>0.5.0" }
         },
         {
-            "name": "nowebtitles-nocolours"
+            "name": "nowebtitles-nocolours",
+            "buildRequirements": [ "silenceDeprecations" ]
         },
         {
             "name": "unittest",
