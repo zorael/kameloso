@@ -572,12 +572,12 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     enum bashToken = "\033[" ~ (cast(ubyte)bashEffectCode).to!string ~ "m";
 
     enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
-    static immutable engine = ctRegex!pattern;
+    static engine = ctRegex!pattern;
 
     Appender!string sink;
     sink.reserve(cast(size_t)(event.content.length * 1.1));
 
-    auto hits = event.content.matchAll(pattern);
+    auto hits = event.content.matchAll(engine);
 
     while (hits.front.length)
     {
@@ -605,7 +605,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
             break;
         }
 
-        hits = hits.post.matchAll(pattern);
+        hits = hits.post.matchAll(engine);
     }
 
     // We've gone through them pair-wise, now see if there are any singles left
