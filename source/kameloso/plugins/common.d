@@ -109,7 +109,7 @@ final class WHOISRequestImpl(F) : WHOISRequest
     /// Identify the queue entry, in case we ever need that
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
-        import std.format;
+        import std.format : format;
 
         sink("[%s] @ %s".format(event.type, event.sender.nickname));
     }
@@ -224,6 +224,7 @@ enum NickPolicy { ignored, optional, required, hardRequired }
 deprecated alias NickPrefixPolicy = NickPolicy;
 
 
+/// If an annotated function should work in all channels or just in homes
 enum ChannelPolicy { homeOnly, any }
 
 
@@ -310,7 +311,6 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginBasics(string module_ = __MODULE__)
 {
-    import std.array : Appender;
     // onEvent
     /++
      +  Pass on the supplied IRCEvent to the top-level .onEvent.
@@ -492,6 +492,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
      +  Params:
      +      ref sink = Appender to fill with plugin-specific options text.
      +/
+    import std.array : Appender;
     void addToConfig(ref Appender!string sink)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -606,7 +607,8 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (verbose)
                     {
-                        writefln("%s.%s: %s", module_, __traits(identifier, fun), policy);
+                        writefln("%s.%s: %s", module_,
+                            __traits(identifier, fun), policy);
                     }
 
                     with (ChannelPolicy)
@@ -973,6 +975,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
+
     // onWHOReplyMixin
     /++
      +  Catches a user's information from a WHO reply event.
@@ -984,6 +987,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     {
         catchUser(event.target);
     }
+
 
     // onEndOfWHOIS
     /++
