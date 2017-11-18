@@ -1699,7 +1699,7 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
                     .toLower
                     .toEnum!(IRCServer.Network);
 
-                logger.info("Detected network: ", thisNetwork);
+                logger.info("Detected network: ", value);
 
                 if (thisNetwork != bot.server.network)
                 {
