@@ -956,6 +956,20 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;
         break;
 
+    case RPL_LIST: // 322
+        // :irc.RomaniaChat.eu 322 kameloso #GameOfThrones 1 :[+ntTGfB]
+        // :irc.RomaniaChat.eu 322 kameloso #radioclick 63 :[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro
+        slice.nom(' ');
+        event.channel = slice.nom(' ');
+        event.aux = slice.nom(" :");
+        event.content = slice;
+        break;
+
+    case RPL_LISTSTART:  // 321
+        // :cherryh.freenode.net 321 kameloso^ Channel :Users  Name
+        // none of the fields are interesting...
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
