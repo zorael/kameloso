@@ -152,7 +152,7 @@ unittest
 
     static void fn() { }
 
-    WHOISRequest reqfn = new WHOISRequestImpl!(void function())(event, &fn);
+    auto reqfn = whoisRequest(event, &fn);
     queue ~= reqfn;
 
     // delegate(ref IRCEvent)
@@ -162,7 +162,7 @@ unittest
         thisEvent.content = "blah";
     }
 
-    WHOISRequest reqdg2 = new WHOISRequestImpl!(void delegate(ref IRCEvent))(event, &dg2);
+    auto reqdg2 = whoisRequest(event, &dg2);
     queue ~= reqdg2;
 
     assert((reqdg2.event.content == "hirrpp"), event.content);
@@ -172,8 +172,19 @@ unittest
     // function(IRCEvent)
 
     static void fn2(IRCEvent thisEvent) { }
-    WHOISRequest reqfn2 = new WHOISRequestImpl!(void function(IRCEvent))(event, &fn2);
+
+    auto reqfn2 = whoisRequest(event, &fn2);
     queue ~= reqfn2;
+}
+
+
+// whoisRequest
+/++
+ +  Convenience function that returns a WHOISRequestImpl of the right type.
+ +/
+WHOISRequest whoisRequest(F)(const IRCEvent event, F fn)
+{
+    return new WHOISRequestImpl!F(event, fn);
 }
 
 
@@ -1006,7 +1017,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +      event = the IRCEvent to replay once we have WHOIS login information.
      +      fp = the function pointer to call when that happens.
      +/
-    void doWhois(F)(const IRCEvent event, const string nickname, F fp)
+    void doWhois(F)(const IRCEvent event, const string nickname, F fn)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
@@ -1020,6 +1031,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             return;
         }
 
-        state.whoisQueue[nickname] = new WHOISRequestImpl!F(event, fp);
+        state.whoisQueue[nickname] = whoisRequest(event, fn);
     }
 }
