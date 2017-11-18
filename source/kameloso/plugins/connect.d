@@ -412,7 +412,7 @@ void onRegistrationEvent(const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!connectOptions.sasl) continue;
+                if (!connectOptions.sasl || !bot.authPassword.length) continue;
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :sasl");
                 tryingSASL = true;
                 break;
