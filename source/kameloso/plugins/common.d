@@ -925,8 +925,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         catchUser(event.target);
 
         // Record lastWhois here so it happens even if no WHOISLOGIN event
-        assert(event.target.nickname in state.users);
-        state.users[event.target.nickname].lastWhois = Clock.currTime.toUnixTime;
+        auto user = event.target.nickname in state.users;
+        if (!user) return;  // probably the bot
+        (*user).lastWhois = Clock.currTime.toUnixTime;
     }
 
 
