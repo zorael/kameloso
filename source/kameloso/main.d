@@ -110,7 +110,7 @@ Flag!"quit" checkMessages()
         logger.trace("--> QUIT :", line);
         conn.sendline("QUIT :", line);
 
-        foreach (plugin; plugins) plugin.teardown();
+        teardownPlugins();
 
         quit = Yes.quit;
     }
@@ -486,7 +486,6 @@ void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickn
     {
         auto req = nickname in reqs;
         if (!req) return;
-        /*if (!spammedAboutReplaying)*/ logger.info("Replaying event...");
         req.trigger();
         reqs.remove(nickname);
     }
@@ -504,8 +503,7 @@ void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickn
                 const then = key in whoisCalls;
                 const now = Clock.currTime;
 
-                if (!then || ((now - *then) >
-                    Timeout.whois.seconds))
+                if (!then || ((now - *then) > Timeout.whois.seconds))
                 {
                     logger.trace("--> WHOIS :", key);
                     conn.sendline("WHOIS :", key);
@@ -575,7 +573,6 @@ int main(string[] args)
         logger.warning("No master nor channels configured!");
         logger.logf("Use %s --writeconfig to generate a configuration file.",
                      args[0].baseName);
-
         return 1;
     }
 
@@ -611,7 +608,6 @@ int main(string[] args)
     }
     while (!quit && !abort && settings.reconnectOnFailure);
 
-    import core.thread;
     if (quit)
     {
         teardownPlugins();
@@ -620,12 +616,10 @@ int main(string[] args)
     {
         logger.warning("Aborting...");
         teardownPlugins();
-        //thread_joinAll();
         return 1;
     }
 
     logger.info("Exiting...");
-    //thread_joinAll();
 
     return 0;
 }
