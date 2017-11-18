@@ -617,13 +617,16 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case CONNECTINGFROM: // 378
-        //:wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
+        // :wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
+        // TRIED TO NOM TOO MUCH:'kameloso :is connecting from NaN@194.117.188.126 194.117.188.126' with ' :is connecting from *@'
         slice.nom(' ');
 
         /*slice.formattedRead("%s :is connecting from *@%s %s",
                             event.target, event.content, event.aux);*/
         // can this happen with others as target?
-        event.target.nickname = slice.nom(" :is connecting from *@");
+        event.target.nickname = slice.nom(" :is connecting from ");
+        event.target.ident = slice.nom('@');
+        if (event.target.ident == "*") event.target.ident = string.init;
         event.content = slice.nom(' ');
         event.aux = slice;
         break;
