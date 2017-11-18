@@ -978,6 +978,15 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         catchUser(event.target);
     }
 
+    // onEndOfWHOIS
+    /++
+     +  Remove an exhausted WHOIS request from the queue upon end of WHOIS.
+     +/
+    @(IRCEvent.Type.RPL_ENDOFWHOIS)
+    void onEndOfWHOISMixin(const IRCEvent event)
+    {
+        state.whoisQueue.remove(event.target.nickname);
+    }
 
     // catchUser
     /++
