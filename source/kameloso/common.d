@@ -771,7 +771,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                     import std.string : indexOf;
                     enum __%2$sdotPos  = __FUNCTION__.indexOf('.');
                     enum __%2$sfunName = __FUNCTION__[(__%2$sdotPos+1)..$];
-                    logger.infof("[%%s %2$s", __%2$sfunName);
+                    logger.infof("[%%s] %2$s", __%2$sfunName);
                 }
             }.format(state.toLower, state);
         }
@@ -795,7 +795,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 import std.string : indexOf;
                 enum __%1$sdotPos  = __FUNCTION__.indexOf('.');
                 enum __%1$sfunName = __FUNCTION__[(__%1$sdotPos+1)..$];
-                logger.infof("[%%s %1$s", __%1$sfunName);
+                logger.infof("[%%s] %1$s", __%1$sfunName);
             }.format(state);
         }
     }
