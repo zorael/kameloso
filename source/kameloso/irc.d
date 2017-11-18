@@ -947,7 +947,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case YOURUNIQUEID: // 42
+    case ERR_YOUREBANNEDCREEP: // 465
         // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
+        // miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
+        // event.time was 1511000921
         slice.nom(' ');
         event.aux = slice.nom(" :");
         event.content = slice;
