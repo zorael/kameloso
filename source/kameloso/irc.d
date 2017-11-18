@@ -923,8 +923,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.role = Role.SERVER;  // FIXME
         break;
 
-    case AUTH_SUCCESS:
-    case SASL_SUCCESS:
+    case AUTH_SUCCESS: // 900
+    case SASL_SUCCESS: // 903
         // :weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.
         // :weber.freenode.net 903 kameloso :SASL authentication successful
         // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
@@ -940,14 +940,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;  // to make it visible?
         break;
 
-    case YOURHIDDENHOST:
+    case YOURHIDDENHOST: // 396
         // :TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host
         slice.nom(' ');
         event.content = slice.nom(" :");
         event.aux = slice;
         break;
 
-    case YOURUNIQUEID:
+    case YOURUNIQUEID: // 42
         // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
         slice.nom(' ');
         event.aux = slice.nom(" :");
