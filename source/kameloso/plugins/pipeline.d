@@ -78,7 +78,7 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
                     {
-                        mainThread.send(ThreadMessage.Quit(), line[7..$]);
+                        mainThread.send(ThreadMessage.Quit(), line[6..$]);
                     }
                     else
                     {
