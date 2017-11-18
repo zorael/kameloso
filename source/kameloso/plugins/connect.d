@@ -75,7 +75,7 @@ void onSelfpart(const IRCEvent event)
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
-    if (state.bot.server.family == IRCServer.Network.twitch) return;
+    if (state.bot.server.network == IRCServer.Network.twitch) return;
 
     state.mainThread.send(ThreadMessage.Sendline(), "WHO " ~ event.channel);
 }
