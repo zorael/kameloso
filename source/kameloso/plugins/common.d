@@ -637,6 +637,12 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, Prefix))
                     {
+                        if ((event.type != IRCEvent.Type.CHAN) ||
+                            (event.type != IRCEvent.Type.QUERY))
+                        {
+                            continue;
+                        }
+
                         bool matches;
 
                         foreach (prefixUDA; getUDAs!(fun, Prefix))
