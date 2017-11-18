@@ -969,7 +969,27 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         if (slice.indexOf(" :") != -1)
         {
             //slice.formattedRead("%s :%s", event.target, event.content);
-            event.target.nickname = slice.nom(" :");
+            string targetOrChannel = slice.nom(" :");
+
+            if (targetOrChannel.indexOf(' ') != -1)
+            {
+                logger.warning("targetOrChannel.indexOf(' ') happened. Report this.");
+                printObject(event);
+                // target *and* channel
+                event.target.nickname = targetOrChannel.nom(' ');
+                event.channel = targetOrChannel;
+            }
+            else if (targetOrChannel.beginsWith('#'))
+            {
+                logger.warning("targetOrChannel.beginsWith('#') happened. Report this.");
+                printObject(event);
+                event.channel = targetOrChannel;
+            }
+            else
+            {
+                event.target.nickname = targetOrChannel;
+            }
+
             event.content = slice;
         }
         else
