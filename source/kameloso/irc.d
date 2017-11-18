@@ -978,6 +978,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice.nom(" :");
         break;
 
+    case ISUSINGMODES: // 379
+        // :cadance.canternet.org 379 kameloso kameloso :is using modes +ix
+        slice.nom(' ');
+        event.target.nickname = slice.nom(" :is using modes ");
+        event.aux = slice;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
@@ -1911,6 +1918,7 @@ struct IRCEvent
         MESSAGENEEDSADDRESS, // = 487   // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
         NICKCHANUNAVAILABLE, // = 437   // <nickname> <channel> :Nick/channel is temporarily unavailable
         YOURUNIQUEID, // = 042,         // <nickname> <id> :your unique ID
+        ISUSINGMODES, // = 379,         // <nickname> :is using modes <modes>
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -2175,6 +2183,7 @@ struct IRCEvent
         375 : Type.RPL_MOTDSTART,
         376 : Type.RPL_ENDOFMOTD,
         378 : Type.CONNECTINGFROM,
+        379 : Type.ISUSINGMODES,
         381 : Type.RPL_YOUREOPER,
         382 : Type.RPL_REHASHING,
         384 : Type.RPL_MYPORTIS,
