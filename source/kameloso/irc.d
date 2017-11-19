@@ -81,7 +81,6 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
 
     case "NOTICE AUTH":
     case "NOTICE":
-        import std.string : stripRight;
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
         // Unsure how formattedRead is doing this...
@@ -862,8 +861,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case HOSTTARGET:
-        // This should rarely if ever trigger
-
         if (slice.indexOf(" :-") != -1)
         {
             event.type = HOSTEND;
@@ -1569,7 +1566,11 @@ void onNotice(ref IRCEvent event, ref IRCBot bot, ref string slice)
             }
         }
     }
+
+    // FIXME: support
+    // *** If you are having problems connecting due to ping timeouts, please type /quote PONG j`ruV\rcn] or /raw PONG j`ruV\rcn] now.
 }
+
 
 void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
@@ -1753,7 +1754,6 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
             catch (const Exception e)
             {
                 // We know the network but we don't have defintions for it
-                logger.error(e.msg);
                 logger.info("Unfamiliar network: ", value);
                 bot.server.network = IRCServer.Network.unfamiliar;
                 bot.updated = true;
@@ -1914,6 +1914,7 @@ struct IRCEvent
 {
     /// Taken from https://tools.ietf.org/html/rfc1459 with many additions
     /// https://www.alien.net.au/irc/irc2numerics.html
+    /// http://defs.ircdocs.horse/
     enum Type
     {
         UNSET, ANY, ERROR, NUMERIC,
@@ -2879,12 +2880,6 @@ struct IRCEvent
     /// The name of whoever (or whatever) sent this event.
     IRCUser sender;
 
-    /// The IDENT identification of the sender.
-    //string ident;
-
-    /// The address of the sender.
-    //string address;
-
     /// The channel the event transpired in, or is otherwise related to.
     string channel;
 
@@ -2908,9 +2903,6 @@ struct IRCEvent
 
     /// With a numeric event, the number of the event type.
     uint num;
-
-    /// A flag that we set when we're sure the event originated from the server or its services.
-    //bool special;
 
     /// A timestamp of when the event occured.
     long time;
