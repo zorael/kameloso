@@ -917,6 +917,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
             // Banned
             event.channel = slice.nom(" :");
             event.target.nickname = slice;
+            event.type = event.aux.length ? TEMPBAN : PERMBAN;
         }
         else
         {
@@ -1176,7 +1177,7 @@ void parseTwitchTags(ref IRCEvent event, ref IRCBot bot)
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // (Optional) Duration of the timeout, in seconds. If omitted,
             // the ban is permanent.
-            event.aux = (tag.length) ? tag : "PERMANENT";
+            event.aux = tag;
             break;
 
         case "ban-reason":
@@ -1916,7 +1917,7 @@ struct IRCEvent
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
-        SUB, RESUB,
+        SUB, RESUB, TEMPBAN, PERMBAN,
         ACCOUNT,
         SASL_AUTHENTICATE,
         AUTH_CHALLENGE,
