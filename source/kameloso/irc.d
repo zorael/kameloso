@@ -1875,7 +1875,7 @@ struct IRCUser
     {
         import std.format : formattedWrite;
 
-        sink.formattedWrite!"[FIXME] n:%s l:%s a:%s i:%s s:%s%s w:%s"(
+        sink.formattedWrite("[FIXME] n:%s l:%s a:%s i:%s s:%s%s w:%s",
             nickname, login, alias_, ident, address,
             special ? " (*)" : string.init, lastWhois);
     }

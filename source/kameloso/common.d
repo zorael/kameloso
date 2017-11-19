@@ -301,7 +301,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                             (entryPadding + 2) : (entryPadding + 4);
 
                         enum arrayPattern = "%9s %-*s%s(%d)\n";
-                        sink.formattedWrite!arrayPattern(
+                        sink.formattedWrite(arrayPattern,
                             T.stringof,
                             width, memberstring,
                             member,
