@@ -25,7 +25,7 @@ struct PrinterOptions
 
     bool truecolour = true;
     bool randomNickColours = true;
-    bool truncateMOTD = true;
+    bool filterVerbose = true;
 }
 
 /// All Printer plugin options gathered
@@ -75,7 +75,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_MYINFO:
     // case CAP:
         // These event types are too spammy; ignore
-        if (!printerOptions.truncateMOTD) goto default;
+        if (!printerOptions.filterVerbose) goto default;
         break;
 
     case PING:
