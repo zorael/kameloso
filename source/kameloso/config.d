@@ -221,7 +221,7 @@ pipyon 3
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {
     import std.conv : to;
-    import std.traits : hasUDA, isArray, isSomeString, isType;
+    import std.traits;
 
     top:
     switch (memberToSet)
@@ -245,10 +245,17 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     else static if (!isSomeString!T && isArray!T)
                     {
                         import std.algorithm.iteration : splitter;
+                        import std.format : format;
 
                         thing.tupleof[i].length = 0;
 
-                        foreach (immutable entry; valueToSet.splitter(","))
+                        static assert(hasUDA!(thing.tupleof[i], Separator),
+                            "Field %s is missing a Separator annotation"
+                            .format(memberstring));
+
+                        enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
+
+                        foreach (immutable entry; valueToSet.splitter(separator))
                         {
                             try
                             {
@@ -295,6 +302,41 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
     default:
         break;
     }
+}
+
+unittest
+{
+    import std.conv : to;
+
+    struct Foo
+    {
+        string bar;
+        int baz;
+
+        @Separator("|")
+        {
+            string[] arr;
+            string[] matey;
+        }
+
+        @Separator(";;")
+        {
+            string[] parrots;
+        }
+    }
+
+    Foo foo;
+    foo.setMemberByName("bar", "asdf fdsa adf");
+    assert((foo.bar == "asdf fdsa adf"), foo.bar);
+    foo.setMemberByName("baz", "42");
+    assert((foo.baz == 42), foo.baz.to!string);
+    foo.setMemberByName("arr", "herp|derp|dirp|darp");
+    assert((foo.arr == [ "herp", "derp", "dirp", "darp"]), foo.arr.to!string);
+    foo.setMemberByName("matey", "this,should,not,be,separated");
+    assert((foo.matey == [ "this,should,not,be,separated" ]), foo.matey.to!string);
+    foo.setMemberByName("parrots", "squaawk;;parrot sounds;;repeating");
+    assert((foo.parrots == [ "squaawk", "parrot sounds", "repeating"]),
+        foo.parrots.to!string);
 }
 
 
@@ -396,17 +438,21 @@ unittest
     {
         enum Bar { blaawp = 5, oorgle = -1 }
         int i;
-        int[] ia;
         string s;
-        string[] sa;
         bool b;
-        bool[] ba;
         float f;
-        float[] fa;
         double d;
-        double[] da;
         Bar bar;
-        Bar[] bara;
+
+        @Separator(",")
+        {
+            int[] ia;
+            string[] sa;
+            bool[] ba;
+            float[] fa;
+            double[] da;
+            Bar[] bara;
+        }
     }
 
     enum configurationFileContents = `
