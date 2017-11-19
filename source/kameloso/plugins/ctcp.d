@@ -161,9 +161,12 @@ void onCTCPs(const IRCEvent event)
         assert(0);
     }
 
+    immutable target = event.sender.isServer ?
+        event.sender.address: event.sender.nickname;
+
     with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(event.sender.nickname));
+        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
 }
 
 
