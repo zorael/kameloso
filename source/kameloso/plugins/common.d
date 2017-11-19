@@ -868,9 +868,9 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 /++
  +  Rudimentary IRCEvent handlers.
  +
- +  Almost any plugin will need handlers for WHOISLOGIN, RPL_ENDOFWHOIS, PART,
- +  QUIT, and SELFNICK. This mixin provides those. If more elaborate ones are
- +  needed, additional functions can be written and annotated appropriately.
+ +  Almost any plugin will need handlers for RPL_WHOISACCOUNT, RPL_ENDOFWHOIS,
+ +  PART, QUIT, and SELFNICK. This mixin provides those. If more elaborate ones
+ +  are needed, additional functions can be written and annotated appropriately.
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
@@ -920,7 +920,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         import std.datetime : Clock;
         catchUser(event.target);
 
-        // Record lastWhois here so it happens even if no WHOISLOGIN event
+        // Record lastWhois here so it happens even if no RPL_WHOISACCOUNT event
         auto user = event.target.nickname in state.users;
         if (!user) return;  // probably the bot
         (*user).lastWhois = Clock.currTime.toUnixTime;
@@ -949,13 +949,13 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     }
 
 
-    // onWhoisLoginMixin
+    // onLoginInfoTargetMixin
     /++
      +  Records a user's NickServ login by saving it to the user's IRCBot in
      +  the state.users associative array.
      +/
-    @(IRCEvent.Type.WHOISLOGIN)
-    @(IRCEvent.Type.HASTHISNICK)
+    @(IRCEvent.Type.RPL_WHOISACCOUNT)
+    @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onLoginInfoTargetMixin(const IRCEvent event)
     {
         // No point catching the entire user

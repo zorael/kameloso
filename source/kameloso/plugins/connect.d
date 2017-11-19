@@ -128,7 +128,7 @@ void joinChannels()
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@(IRCEvent.Type.WELCOME)
+@(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(const IRCEvent event)
 {
     with (state)
@@ -155,7 +155,7 @@ void onWelcome(const IRCEvent event)
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-@(IRCEvent.Type.TOCONNECTTYPE)
+@(IRCEvent.Type.ERR_BADPING)
 void onToConnectType(const IRCEvent event)
 {
     if (serverPinged) return;

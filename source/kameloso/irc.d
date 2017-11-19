@@ -531,8 +531,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case ERR_INVITEONLYCHAN: // 473
     case RPL_ENDOFNAMES: // 366
     case RPL_TOPIC: // 332
-    case CHANNELURL: // 328
-    case NEEDAUTHTOJOIN: // 477
+    case RPL_CHANNEL_URL: // 328
+    case ERR_NEEDREGGEDNICK: // 477
     case ERR_NOSUCHCHANNEL: // 403
         // :moon.freenode.net 403 kameloso archlinux :No such channel
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
@@ -605,7 +605,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.onISUPPORT(bot, slice);
         break;
 
-    case TOPICSETTIME: // 333
+    case RPL_TOPICWHOTIME: // 333
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
         /*slice.formattedRead("%s %s %s %s", event.target, event.channel,
                             event.content, event.aux);*/
@@ -616,7 +616,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.aux = slice;
         break;
 
-    case CONNECTINGFROM: // 378
+    case RPL_WHOISHOST378: // 378
         // :wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
         // TRIED TO NOM TOO MUCH:'kameloso :is connecting from NaN@194.117.188.126 194.117.188.126' with ' :is connecting from *@'
         slice.nom(' ');
@@ -663,8 +663,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_LUSERCHANNELS: // 254
     case ERR_ERRONEOUSNICKNAME: // 432
     case ERR_NEEDMOREPARAMS: // 461
-    case USERCOUNTLOCAL: // 265
-    case USERCOUNTGLOBAL: // 266
+    case RPL_LOCALUSERS: // 265
+    case RPL_GLOBALUSERS: // 266
         // :asimov.freenode.net 252 kameloso^ 31 :IRC Operators online
         // :asimov.freenode.net 253 kameloso^ 13 :unknown connection(s)
         // :asimov.freenode.net 254 kameloso^ 54541 :channels formed
@@ -713,7 +713,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         goto case RPL_ENDOFWHOIS;*/
 
     case RPL_WHOISCHANNELS: // 319
-    case WHOISSECURECONN: // 671
+    case RPL_WHOISSECURE: // 671
     case RPL_ENDOFWHOIS: // 318
     case ERR_NICKNAMEINUSE: // 433
     case ERR_NOSUCHNICK: // 401
@@ -739,7 +739,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.aux = slice;
         break;
 
-    case WHOISLOGIN: // 330
+    case RPL_WHOISACCOUNT: // 330
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
         slice.nom(' ');
         //slice.formattedRead("%s %s :%s", event.target, event.aux, event.content);
@@ -749,7 +749,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = event.target.login;
         break;
 
-    case HASTHISNICK: // 307
+    case RPL_WHOISREGNICK: // 307
         // :irc.x2x.cc 307 kameloso^^ py-ctcp :has identified for this nick
         // :irc.x2x.cc 307 kameloso^^ wob^2 :has identified for this nick
         slice.nom(' '); // bot nick
@@ -780,7 +780,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
         break;
 
-    case WELCOME: // 001
+    case RPL_WELCOME: // 001
         // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
         //slice.formattedRead("%s :%s", event.target, event.content);
         event.target.nickname = slice.nom(" :");
@@ -789,7 +789,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         bot.updated = true;
         break;
 
-    case TOCONNECTTYPE: // 513
+    case ERR_BADPING: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
         if (slice.indexOf(" :To connect type ") == -1)
         {
@@ -805,9 +805,9 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = event.aux.nom(' ');
         break;
 
-    case HELP_TOPICS: // 704
-    case HELP_ENTRIES: // 705
-    case HELP_END: // 706
+    case RPL_HELPSTART: // 704
+    case RPL_HELPTXT: // 705
+    case RPL_ENDOFHELP: // 706
         // :leguin.freenode.net 704 kameloso^ index :Help topics available to users:
         // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
@@ -816,7 +816,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;
         break;
 
-    case CANTCHANGENICK: // 435
+    case ERR_BANONCHAN: // 435
         // :cherryh.freenode.net 435 kameloso^ kameloso^^ #d3d9 :Cannot change nickname while banned on channel
         /*slice.formattedRead("%s %s %s :%s", event.target, event.aux,
                             event.channel, event.content);*/
@@ -943,14 +943,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;  // to make it visible?
         break;
 
-    case YOURHIDDENHOST: // 396
+    case RPL_HOSTHIDDEN: // 396
         // :TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host
         slice.nom(' ');
         event.content = slice.nom(" :");
         event.aux = slice;
         break;
 
-    case YOURUNIQUEID: // 42
+    case RPL_YOURID: // 42
     case ERR_YOUREBANNEDCREEP: // 465
         // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
         // miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
@@ -974,14 +974,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         // none of the fields are interesting...
         break;
 
-    case CHANNELFORWARD: // 470
+    case ERR_LINKCHANNEL: // 470
         // :wolfe.freenode.net 470 kameloso #linux ##linux :Forwarding to another channel
         slice.nom(' ');
         event.channel = slice.nom(' ');
         event.content = slice.nom(" :");
         break;
 
-    case ISUSINGMODES: // 379
+    case RPL_WHOISMODES379: // 379
         // :cadance.canternet.org 379 kameloso kameloso :is using modes +ix
         slice.nom(' ');
         event.target.nickname = slice.nom(" :is using modes ");
@@ -1086,7 +1086,8 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         logger.warning("------------------------------------");
         writeln();
     }
-    else if (event.channel.length && !event.channel.beginsWith('#'))
+    else if (event.channel.length && !event.channel.beginsWith('#') &&
+        (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL))
     {
         writeln();
         logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
@@ -1101,7 +1102,7 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         {
         case MODE:
         case CHANMODE:
-        case WELCOME:
+        case RPL_WELCOME:
         case QUERY:
         case JOIN:
         case SELFNICK:
@@ -1896,6 +1897,7 @@ struct IRCUser
 struct IRCEvent
 {
     /// Taken from https://tools.ietf.org/html/rfc1459 with many additions
+    /// https://www.alien.net.au/irc/irc2numerics.html
     enum Type
     {
         UNSET, ANY, ERROR, NUMERIC,
@@ -1919,128 +1921,27 @@ struct IRCEvent
         SASL_AUTHENTICATE,
         AUTH_CHALLENGE,
         AUTH_FAILURE,
-        AUTH_SUCCESS, // = 900          // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
-        SASL_SUCCESS, // = 903          // :cherryh.freenode.net 903 kameloso^ :SASL authentication successful
-        SASL_FAILURE, // = 904          // :irc.rizon.no 904 kameloso^^ :SASL authentication failed"
-        SASL_ABORTED, // = 906          // :orwell.freenode.net 906 kameloso^ :SASL authentication aborted
-        USERSTATS_1, // = 250           // "Highest connection count: <n> (<n> clients) (<m> connections received)"
-        USERSTATS_2, // = 265           // "Current local users <n>, max <m>"
-        USERSTATS_3, // = 266           // "Current global users <n>, max <m>"
-        WELCOME, // = 001,              // ":Welcome to <server name> <user>"
-        SERVERINFO, // = 002-003        // (server information)
-        RPL_ISUPPORT, // = 004-005      // (server information, different syntax)
-        TOPICSETTIME, // = 333          // "#channel user!~ident@address 1476294377"
-        USERCOUNTLOCAL, // = 265        // "Current local users n, max m"
-        USERCOUNTGLOBAL, // = 266       // "Current global users n, max m"
-        CONNECTIONRECORD, // = 250      // "Highest connection count: n (m clients) (v connections received)"
-        CHANNELURL, // = 328            // "http://linux.chat"
-        WHOISSECURECONN, // = 671       // "<nickname> :is using a secure connection"
-        WHOISLOGIN, // = 330            // "<nickname> <login> :is logged in as"
-        CHANNELFORWARD, // = 470        // <#original> <#new> :Forwarding to another channel
-        CONNECTINGFROM, // = 378        // <nickname> :is connecting from *@<address> <ip>
-        TOCONNECTTYPE, // = 513,        // <nickname> :To connect type /QUOTE PONG <number>
-        HASTHISNICK, // = 307           // <nickname> :has identified for this nick
-        INVALIDCHARACTERS, // = 455     // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
-        HELP_TOPICS, // = 704           // <nickname> index :Help topics available to users:
-        HELP_ENTRIES, // = 705          // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
-        HELP_END, // = 706              // <nickname> index :End of /HELP.
-        NEEDAUTHTOJOIN, // = 477        // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
-        CANTCHANGENICK, // = 435        // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
-        YOURHIDDENHOST, // = 396 ,      // <nickname> <host> :is now your hidden host
-        MESSAGENEEDSADDRESS, // = 487   // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
-        NICKCHANUNAVAILABLE, // = 437   // <nickname> <channel> :Nick/channel is temporarily unavailable
-        YOURUNIQUEID, // = 042,         // <nickname> <id> :your unique ID
-        ISUSINGMODES, // = 379,         // <nickname> :is using modes <modes>
-        HASANTISPAM, // = 439,          // <nickname> :This server has anti-spambot mechanisms enabled.
-        BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
-        ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
-        ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
-        ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
-        ERR_CANNOTSENDTOCHAN, // = 404, // "<channel name> :Cannot send to channel"
-        ERR_TOOMANYCHANNELS, // = 405,  // "<channel name> :You have joined too many channels"
-        ERR_WASNOSUCHNICK, // = 406,    // "<nickname> :There was no such nickname"
-        ERR_TOOMANYTARGETS, // = 407,   // "<target> :Duplicate recipients. No message delivered""
-        ERR_NOORIGIN, // = 409,         // ":No origin specified"
-        ERR_NORECIPIENT, // = 411,      // ":No recipient given (<command>)"
-        ERR_NOTEXTTOSEND, // = 412,     // ":No text to send"
-        ERR_NOTOPLEVEL, // = 413,       // "<mask> :No toplevel domain specified"
-        ERR_WILDTOPLEVEL, // = 414,     // "<mask> :Wildcard in toplevel domain"
-        ERR_UNKNOWNCOMMAND, // = 421,   // "<command> :Unknown command"
-        ERR_NOMOTD, // = 422,           // ":MOTD File is missing"
-        ERR_NOADMININFO, // = 423,      // "<server> :No administrative info available"
-        ERR_FILEERROR, // = 424,        // ":File error doing <file op> on <file>"
-        ERR_NONICKNAMEGIVEN, // = 431,  // ":No nickname given"
-        ERR_ERRONEOUSNICKNAME, // = 432,// "<nick> :Erroneus nickname"
-        ERR_NICKNAMEINUSE, // = 433,    // "<nick> :Nickname is already in use"
-        ERR_NICKCOLLISION, // = 436,    // "<nick> :Nickname collision KILL"
-        ERR_USERNOTINCHANNEL, // = 441, // "<nick> <channel> :They aren't on that channel"
-        ERR_NOTONCHANNEL, // = 442,     // "<channel> :You're not on that channel"
-        ERR_USERONCHANNEL, // = 443,    // "<user> <channel> :is already on channel"
-        ERR_NOLOGIN, // = 444,          // "<user> :User not logged in"
-        ERR_SUMMONDISABLED, // = 445,   // ":SUMMON has been disabled"
-        ERR_USERSDISABLED, // = 446,    // ":USERS has been disabled"
-        ERR_NOTREGISTERED, // = 451,    // ":You have not registered"
-        ERR_NEEDMOREPARAMS, // = 461,   // "<command> :Not enough parameters"
-        ERR_ALREADYREGISTERED, // = 462,// ":You may not reregister"
-        ERR_NOPERMFORHOST, // = 463,    // ":Your host isn't among the privileged"
-        ERR_PASSWDMISMATCH, // = 464,   // ":Password incorrect"
-        ERR_YOUREBANNEDCREEP, // = 465, // ":You are banned from this server"
-        ERR_KEYSET, // = 467,           // "<channel> :Channel key already set"
-        ERR_CHANNELISFULL, // = 471,    // "<channel> :Cannot join channel (+l)"
-        ERR_UNKNOWNMODE, // = 472,      // "<char> :is unknown mode char to me"
-        ERR_INVITEONLYCHAN, // = 473,   // "<channel> :Cannot join channel (+i)"
-        ERR_BANNEDFROMCHAN, // = 474,   // "<channel> :Cannot join channel (+b)"
-        ERR_BADCHANNELKEY, // = 475,    // "<channel> :Cannot join channel (+k)"
-        ERR_NOPRIVILEGES, // = 481,     // ":Permission Denied- You're not an IRC operator"
-        ERR_CHANOPRIVSNEEDED, // = 482, // [sic] "<channel> :You're not channel operator"
-        ERR_CANTKILLSERVER, // = 483,   // ":You cant kill a server!"
-        ERR_NOOPERHOST, // = 491,       // ":No O-lines for your host"
-        ERR_UNKNOWNMODEFLAG, // = 501,  // ":Unknown MODE flag"
-        ERR_USERSDONTMATCH, // = 502,   // ":Cant change mode for other users"
-        RPL_NONE, // = 300,             // Dummy reply number. Not used.
-        RPL_AWAY, // = 301              // "<nick> :<away message>"
-        RPL_USERHOST, // = 302          // ":[<reply>{<space><reply>}]"
-        RPL_ISON, // = 303,             // ":[<nick> {<space><nick>}]"
-        RPL_UNAWAY, // = 305,           // ":You are no longer marked as being away"
-        RPL_NOWAWAY, // = 306,          // ":You have been marked as being away"
-        RPL_WHOISUSER, // = 311,        // "<nick> <user> <host> * :<real name>"
-        RPL_WHOISSERVER, // = 312,      // "<nick> <server> :<server info>"
-        RPL_WHOISOPERATOR, // = 313,    // "<nick> :is an IRC operator"
-        RPL_WHOWASUSER, // = 314,       // "<nick> <user> <host> * :<real name>"
-        RPL_ENDOFWHO, // = 315,         // "<name> :End of /WHO list"
-        RPL_WHOISIDLE, // = 317,        // "<nick> <integer> :seconds idle"
-        RPL_ENDOFWHOIS, // = 318,       // "<nick> :End of /WHOIS list"
-        RPL_WHOISCHANNELS, // = 319,    // "<nick> :{[@|+]<channel><space>}"
-        RPL_LISTSTART, // = 321,        // "Channel :Users  Name"
-        RPL_LIST, // = 322,             // "<channel> <# visible> :<topic>"
-        RPL_LISTEND, // = 323,          // ":End of /LIST"
-        RPL_CHANNELMODEIS, // = 324,    // "<channel> <mode> <mode params>"
-        RPL_NOTOPIC, // = 331,          // "<channel> :No topic is set"
-        RPL_TOPIC, // = 332,            // "<channel> :<topic>"
-        RPL_WHOISBOT, // = 335,         // "<nick> <othernick> :is a Bot on <server>"
-        RPL_INVITING, // = 341,         // "<channel> <nick>"
-        RPL_SUMMONING, // = 342,        // "<user> :Summoning user to IRC"
-        RPL_VERSION, // = 351,          // "<version>.<debuglevel> <server> :<comments>"
-        RPL_WHOREPLY, // = 352,         // "<channel> <user> <host> <server> <nick> | <H|G>[*][@|+] :<hopcount> <real name>"
-        RPL_NAMREPLY, // = 353,         // "<channel> :[[@|+]<nick> [[@|+]<nick> [...]]]"
-        RPL_LINKS, // = 364,            // "<mask> <server> :<hopcount> <server info>"
-        RPL_ENDOFLINKS, // = 365,       // "<mask> :End of /LINKS list"
-        RPL_ENDOFNAMES, // = 366,       // "<channel> :End of /NAMES list"
-        RPL_BANLIST, // = 367,          // "<channel> <banid>"
-        RPL_ENDOFBANLIST, // = 368,     // "<channel> :End of channel ban list"
-        RPL_ENDOFWHOWAS, // = 369,      // "<nick> :End of WHOWAS"
-        RPL_INFO, // = 371,             // ":<string>"
-        RPL_MOTD, // = 372,             // ":- <text>"
-        RPL_ENDOFINFO, // = 374,        //  ":End of /INFO list"
-        RPL_MOTDSTART, // = 375,        // ":- <server> Message of the day - "
-        RPL_ENDOFMOTD, // = 376,        // ":End of /MOTD command"
-        RPL_YOUREOPER, // = 381,        // ":You are now an IRC operator"
-        RPL_REHASHING, // = 382,        // "<config file> :Rehashing"
-        RPL_TIME, // = 391,             // "<server> :<string showing server's local time>"
-        RPL_USERSTART, // = 392,        // ":UserID   Terminal  Host"
-        RPL_USERS, // = 393,            // ":%-8s %-9s %-8s"
-        RPL_ENDOFUSERS, // = 394,       // ":End of users"
-        RPL_NOUSERS, // = 395,          // ":Nobody logged in"
+
+        RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
+        RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
+        RPL_CREATED, // = 003,          // ":This server was created <date>"
+        RPL_MYINFO, // 004,             // "<server_name> <version> <user_modes> <chan_modes>"
+        //RPL_BOUNCE, // = 005,         // ":Try server <server_name>, port <port_number>" CONFLICT
+        RPL_ISUPPORT, // = 005,         // (server information, different syntax)
+        RPL_MAP6, // 006,
+        RPL_MAPEND7, // 007,
+        RPL_SNOMASK, // 008,            // Server notice mask (hex)
+        RPL_STATMEMTOT, // 009,
+        RPL_BOUNCE, // 010,             // "<hostname> <port> :<info>",
+        RPL_YOURCOOKIE, // 014,
+        RPL_MAP15, // 015,
+        RPL_MAPMORE16, // 016,
+        RPL_MAPEND17, // 017,
+        RPL_YOURID, // 042,             // <nickname> <id> :your unique ID
+        RPL_SAVENICK, // 043,           // Sent to the client when their nickname was forced to change due to a collision
+        RPL_ATTEMPTINGJUNC, // 050,
+        RPL_ATTEMPTINGREROUTE, // 051,
+
         RPL_TRACELINK, // = 200,        // "Link <version & debug level> <destination> <next server>"
         RPL_TRACECONNECTING, // = 201,  // "Try. <class> <server>"
         RPL_TRACEHANDSHAKE, // = 202,   // "H.S. <class> <server>"
@@ -2048,20 +1949,44 @@ struct IRCEvent
         RPL_TRACEOPERATOR, // = 204,    // "Oper <class> <nick>"
         RPL_TRACEUSER, // = 205,        // "User <class> <nick>"
         RPL_TRACESERVER, // = 206,      // "Serv <class> <int>S <int>C <server> <nick!user|*!*>@<host|server>"
+        RPL_TRACESERVICE, // = 207,     // "Service <class> <name> <type> <active_type>
         RPL_TRACENEWTYPE, // = 208,     // "<newtype> 0 <client name>"
+        RPL_TRACECLASS, // = 209,       // "Class <class> <count>"
+        //RPL_TRACERECONNECT, // = 210, // CONFLICT
+        RPL_STATS, // 210,              // Used instead of having multiple stats numerics
         RPL_STATSLINKINFO, // = 211,    // "<linkname> <sendq> <sent messages> <sent bytes> <received messages> <received bytes> <time open>"
         RPL_STATSCOMMAND, // = 212,     // "<command> <count>"
         RPL_STATSCLINE, // = 213,       // "C <host> * <name> <port> <class>"
         RPL_STATSNLINE, // = 214,       // "N <host> * <name> <port> <class>"
         RPL_STATSILINE, // = 215,       // "I <host> * <host> <port> <class>"
         RPL_STATSKLINE, // = 216,       // "K <host> * <username> <port> <class>"
+        //RPL_STATSPLINE, // = 217,     // CONFLICT
+        RPL_STATSQLINE, // = 217,
         RPL_STATSYLINE, // = 218        // "Y <class> <ping frequency> <connect frequency> <max sendq>"
         RPL_ENDOFSTATS, // = 219,       // "<stats letter> :End of /STATS report"
+        //RPL_STATSBLINE, // = 220,    // CONFLICT
+        RPL_STATSPLINE, // = 220,
         RPL_UMODEIS, // = 221,          // "<user mode string>"
+        RPL_SERVICEINFO, // = 231,      // (reserved numeric)
+        RPL_ENDOFSERVICES, // = 232,    // (reserved numeric)
+        RPL_SERVICE, // = 233,          // (reserved numeric)
+        RPL_SERVLIST, // = 234,         // (reserved numeric)
+        RPL_SERVLISTEND, // = 235,      // (reserved numeric)
+        RPL_STATSVERBOSE, // = 236,     // Verbose server list?
+        RPL_STATSENGINE, // = 237,      // Engine name?
+        RPL_STATSFLINE, // = 238,       // Feature lines?
+        RPL_STATSIAUTH, // = 239,
+        RPL_STATSVLINE, // = 240,
         RPL_STATSLLINE, // = 241,       // "L <hostmask> * <servername> <maxdepth>"
         RPL_STATSUPTIME, // = 242,      // ":Server Up %d days %d:%02d:%02d"
         RPL_STATSOLINE, // = 243,       // "O <hostmask> * <name>"
         RPL_STATSHLINE, // = 244,       // "H <hostmask> * <servername>"
+        RPL_STATSSLINE, // = 245,
+        RPL_STATSPING, // = 246,
+        RPL_STATSBLINE, // = 247,
+        RPL_STATSULINE248, // = 248,
+        RPL_STATSULINE249, // = 249,
+        RPL_STATSCONN, // = 250,
         RPL_LUSERCLIENT, // = 251,      // ":There are <integer> users and <integer> invisible on <integer> servers"
         RPL_LUSEROP, // = 252,          // "<integer> :operator(s) online"
         RPL_LUSERUNKNOWN, // = 253,     // "<integer> :unknown connection(s)"
@@ -2072,23 +1997,410 @@ struct IRCEvent
         RPL_ADMINLOC2, // = 258,        // ":<admin info>"
         RPL_ADMINEMAIL, // = 259,       // ":<admin info>"
         RPL_TRACELOG, // = 261,         // "File <logfile> <debug level>"
+        RPL_TRACEEND, // = 262,         // "<server_name> <version>[.<debug_level>] :<info>"
+        RPL_TRYAGAIN, // = 263,         // "<command> :<info>"
+        RPL_LOCALUSERS, // = 265,       // Also known as RPL_CURRENT_LOCAL
+        RPL_GLOBALUSERS, // = 266,      // Also known as RPL_CURRENT_GLOBAL
+        RPL_START_NETSTAT, // = 267,
+        RPL_NETSTAT, // = 268,
+        RPL_END_NETSTAT, // = 269,
+        RPL_PRIVS, // = 270,
+        RPL_SILELIST, // = 271,
+        RPL_ENDOFSILELIST, // = 272,
+        RPL_NOTIFY, // = 273,
+        //RPL_STATSDELTA, // = 274,     // CONFLICT
+        RPL_ENDNOTIFY, // = 274,
+        RPL_STATSDLINE, // = 275,
+        RPL_VCHANEXIST, // = 276,
+        RPL_VCHANLIST, // = 277,
+        RPL_VCHANHELP, // = 278,
+        RPL_GLIST, // = 280
+        //RPL_ACCEPTLIST, // = 281,     // CONFLICT
+        RPL_ENDOFGLIST, // = 281,
+        //RPL_ENDOFACCEPT, // = 282,    // CONFLICT
+        RPL_JUPELIST, // = 282,
+        //RPL_ALIST, // = 283,          // CONFLICT
+        RPL_ENDOFJUPELIST, // = 283,
+        //RPL_ENDOFALIST, // = 284,     // CONFLICT
+        RPL_FEATURE, // = 284,
+        //RPL_GLIST_HASH, // = 285,     // CONFLICT
+        //RPL_NEWHOSTIS, // = 285,      // CONFLICT
+        RPL_CHANINFO_HANDLE, // = 285,
+        //RPL_CHKHEAD, // = 286,        // CONFLICT
+        RPL_CHANINFO_USERS, // = 286,
+        //RPL_CHANUSER, // = 287        // CONFLICT
+        RPL_CHANINFO_CHOPS, // = 287,
+        //RPL_PATCHHEAD, // = 288,      // CONFLICT
+        RPL_CHANINFO_VOICES, // = 288,
+        //RPL_PATCHCON, // = 289,       // CONFLICT
+        RPL_CHANINFO_AWAY, // = 289,
+        //RPL_CHANINFO_HELPHDR, // = 290// CONFLICT
+        //RPL_HELPHDR, // = 290,        // CONFLICT
+        RPL_CHANINFO_OPERS, // = 290,
+        //RPL_ENDOFCHECK, // = 291,     // CONFLICT
+        //RPL_HELPOP, // = 291,         // CONFLICT
+        RPL_CHANINFO_BANNED, // = 291,
+        //RPL_HELPTLR, // = 292,        // CONFLICT
+        RPL_CHANINFO_BANS, // = 292,
+        //RPL_HELPHLP, // = 293,        // CONFLICT
+        RPL_CHANINFO_INVITE, // = 293,
+        //RPL_HELPFWD, // = 294,        // CONFLICT
+        RPL_CHANINFO_INVITES, // = 294,
+        //RPL_HELPIGN, // = 295,        // CONFLICT
+        RPL_CHANINFO_KICK, // = 295,
+        RPL_CHANINFO_KICKS, // = 296,
+        RPL_END_CHANINFO, // = 299,
 
-        RPL_TRACECLASS, // = 209,       // (reserved numeric)
-        RPL_STATSQLINE, // = 217,       // (reserved numeric)
-        RPL_SERVICEINFO, // = 231,      // (reserved numeric)
-        RPL_ENDOFSERVICES, // = 232,    // (reserved numeric)
-        RPL_SERVICE, // = 233,          // (reserved numeric)
-        RPL_SERVLIST, // = 234,         // (reserved numeric)
-        RPL_SERVLISTEND, // = 235,      // (reserved numeric)
+        RPL_NONE, // = 300,             // Dummy reply number. Not used.
+        RPL_AWAY, // = 301              // "<nick> :<away message>"
+        RPL_USERHOST, // = 302          // ":[<reply>{<space><reply>}]"
+        RPL_ISON, // = 303,             // ":[<nick> {<space><nick>}]"
+        RPL_TEXT, // = 304,
+        RPL_UNAWAY, // = 305,           // ":You are no longer marked as being away"
+        RPL_NOWAWAY, // = 306,          // ":You have been marked as being away"
+        //RPL_USERIP, // = 307,         // CONFLICT
+        //RPL_SUSERHOST, // = 307,      // CONFLICT
+        RPL_WHOISREGNICK, // = 307      // <nickname> :has identified for this nick
+        //RPL_WHOISADMIN, // = 308,     // CONFLICT
+        //RPL_RULESSTART, // = 308,     // CONFLICT
+        RPL_NOTIFYACTION, // = 308,
+        //RPL_WHOISHELPER, // = 309,    // CONFLICT
+        //RPL_ENDOFRULES, // = 309,     // CONFLICT
+        //RPL_WHOISADMIN, // = 309,     // CONFLICT
+        RPL_NICKTRACE, // = 309,
+        //RPL_WHOISSERVICE, // = 310,   // CONFLICT
+        //RPL_WHOISHELPOP, // = 310,    // CONFLICT
+        RPL_WHOISSVCMSG, // = 310,
+        RPL_WHOISUSER, // = 311,        // "<nick> <user> <host> * :<real name>"
+        RPL_WHOISSERVER, // = 312,      // "<nick> <server> :<server info>"
+        RPL_WHOISOPERATOR, // = 313,    // "<nick> :is an IRC operator"
+        RPL_WHOWASUSER, // = 314,       // "<nick> <user> <host> * :<real name>"
+        RPL_ENDOFWHO, // = 315,         // "<name> :End of /WHO list"
         RPL_WHOISCHANOP, // = 316,      // (reserved numeric)
+        RPL_WHOISIDLE, // = 317,        // "<nick> <integer> :seconds idle"
+        RPL_ENDOFWHOIS, // = 318,       // "<nick> :End of /WHOIS list"
+        RPL_WHOISCHANNELS, // = 319,    // "<nick> :{[@|+]<channel><space>}"
+        //RPL_WHOISVIRT, // = 320,      // CONFLICT
+        //RPL_WHOIS_HIDDEN, // = 320,   // CONFLICT
+        RPL_WHOISSPECIAL, // = 320,
+        RPL_LISTSTART, // = 321,        // "Channel :Users  Name"
+        RPL_LIST, // = 322,             // "<channel> <# visible> :<topic>"
+        RPL_LISTEND, // = 323,          // ":End of /LIST"
+        RPL_CHANNELMODEIS, // = 324,    // "<channel> <mode> <mode params>"
+        //RPL_CHANNELPASSIS, // = 325,  // CONFLICT
+        RPL_UNIQOPIS, // = 325,
+        RPL_NOCHANPASS, // = 326,
+        RPL_CHPASSUNKNOWN, // = 327,
+        RPL_CHANNEL_URL, // = 328       // "http://linux.chat"
+        RPL_CREATIONTIME, // = 329,
+        //RPL_WHOWAS_TIME, // = 330,    // CONFLICT
+        RPL_WHOISACCOUNT, // = 330      // "<nickname> <login> :is logged in as"
+        RPL_NOTOPIC, // = 331,          // "<channel> :No topic is set"
+        RPL_TOPIC, // = 332,            // "<channel> :<topic>"
+        RPL_TOPICWHOTIME, // = 333,     // "#channel user!~ident@address 1476294377"
+        //RPL_COMMANDSYNTAX, // = 334,  // CONFLICT
+        //RPL_LISTSYNTAX, // = 334,     // CONFLICT
+        RPL_LISTUSAGE, // = 334,
+        RPL_WHOISBOT, // = 335,         // "<nick> <othernick> :is a Bot on <server>"
+        //RPL_CHANPASSOK, // = 338,     // CONFLICT
+        RPL_WHOISACTUALLY, // = 338,
+        RPL_BADCHANPASS, // = 390,
+        RPL_USERIP, // = 340,
+        RPL_INVITING, // = 341,         // "<channel> <nick>"
+        RPL_SUMMONING, // = 342,        // "<user> :Summoning user to IRC"
+        RPL_INVITED, // = 345,
+        RPL_INVITELIST, // = 346,
+        RPL_ENDOFINVITELIST, // = 347,
+        RPL_EXCEPTLIST, // = 348,
+        RPL_ENDOFEXCEPTLIST, // = 349,
+        RPL_VERSION, // = 351,          // "<version>.<debuglevel> <server> :<comments>"
+        RPL_WHOREPLY, // = 352,         // "<channel> <user> <host> <server> <nick> | <H|G>[*][@|+] :<hopcount> <real name>"
+        RPL_NAMREPLY, // = 353,         // "<channel> :[[@|+]<nick> [[@|+]<nick> [...]]]"
+        RPL_WHOSPCRPL, // = 354,
+        RPL_NAMREPLY_, // = 355,
+        RPL_MAP357, // = 357,
+        RPL_MAPMORE358, // = 358,
+        RPL_MAPEND359, // = 359,
         RPL_KILLDONE, // = 361,         // (reserved numeric)
         RPL_CLOSING, // = 362,          // (reserved numeric)
         RPL_CLOSEEND, // = 363,         // (reserved numeric)
+        RPL_LINKS, // = 364,            // "<mask> <server> :<hopcount> <server info>"
+        RPL_ENDOFLINKS, // = 365,       // "<mask> :End of /LINKS list"
+        RPL_ENDOFNAMES, // = 366,       // "<channel> :End of /NAMES list"
+        RPL_BANLIST, // = 367,          // "<channel> <banid>"
+        RPL_ENDOFBANLIST, // = 368,     // "<channel> :End of channel ban list"
+        RPL_ENDOFWHOWAS, // = 369,      // "<nick> :End of WHOWAS"
+        RPL_INFO, // = 371,             // ":<string>"
+        RPL_MOTD, // = 372,             // ":- <text>"
         RPL_INFOSTART, // = 373,        // (reserved numeric)
-        RPL_MYPORTIS, // = 384,         // (reserved numeric)
+        RPL_ENDOFINFO, // = 374,        //  ":End of /INFO list"
+        RPL_MOTDSTART, // = 375,        // ":- <server> Message of the day - "
+        RPL_ENDOFMOTD, // = 376,        // ":End of /MOTD command"
+        //RPL_SPAM, // = 377,           // CONFLICT
+        RPL_KICKEXPIRED, // = 377,
+        //RPL_BANEXPIRED, // = 378,     // CONFLICT
+        //RPL_MOTD, // = 378            // CONFLICT
+        RPL_WHOISHOST378, // = 378         // <nickname> :is connecting from *@<address> <ip>
+        //RPL_KICKLINKED, // = 379,     // CONFLICT
+        RPL_WHOISMODES379, // = 379,       // <nickname> :is using modes <modes>
+        RPL_YOUREOPER, // = 381,        // ":You are now an IRC operator"
+        RPL_REHASHING, // = 382,        // "<config file> :Rehashing"
+        RPL_YOURESERVICE, // = 383,
+        RPL_MYPORTIS, // = 384,
+        RPL_NOTOPERANYMORE, // = 385,
+        //RPL_IRCOPS, // = 386,         // CONFLICT
+        RPL_QLIST, // = 386,
+        //RPL_ENDOFIRCOPS, // = 387,    // CONFLICT
+        RPL_ENDOFQLIST, // = 387,
+        RPL_ALIST, // = 388,
+        RPL_ENDOFALIST, // = 389
+        RPL_TIME, // = 391,             // "<server> :<string showing server's local time>"
+        RPL_USERSTART, // = 392,        // ":UserID   Terminal  Host"
+        RPL_USERS, // = 393,            // ":%-8s %-9s %-8s"
+        RPL_ENDOFUSERS, // = 394,       // ":End of users"
+        RPL_NOUSERS, // = 395,          // ":Nobody logged in"
+        RPL_HOSTHIDDEN, // = 396,       // <nickname> <host> :is now your hidden host
+
+        ERR_UNKNOWNERROR, // = 400,
+        ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
+        ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
+        ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
+        ERR_CANNOTSENDTOCHAN, // = 404, // "<channel name> :Cannot send to channel"
+        ERR_TOOMANYCHANNELS, // = 405,  // "<channel name> :You have joined too many channels"
+        ERR_WASNOSUCHNICK, // = 406,    // "<nickname> :There was no such nickname"
+        ERR_TOOMANYTARGETS, // = 407,   // "<target> :Duplicate recipients. No message delivered""
+        //ERR_NOCOLORSONCHAN, // = 408, // CONFLICT
+        ERR_NOSUCHSERVICE, // = 408,
+        ERR_NOORIGIN, // = 409,         // ":No origin specified"
+        ERR_NORECIPIENT, // = 411,      // ":No recipient given (<command>)"
+        ERR_NOTEXTTOSEND, // = 412,     // ":No text to send"
+        ERR_NOTOPLEVEL, // = 413,       // "<mask> :No toplevel domain specified"
+        ERR_WILDTOPLEVEL, // = 414,     // "<mask> :Wildcard in toplevel domain"
+        ERR_BADMASK, // = 415,
+        //ERR_QUERYTOOLONG, // = 416,   // CONFLICT
+        ERR_TOOMANYMATCHES, // = 416,
+        ERR_LENGTHTRUNCATED, // = 419,
+        ERR_UNKNOWNCOMMAND, // = 421,   // "<command> :Unknown command"
+        ERR_NOMOTD, // = 422,           // ":MOTD File is missing"
+        ERR_NOADMININFO, // = 423,      // "<server> :No administrative info available"
+        ERR_FILEERROR, // = 424,        // ":File error doing <file op> on <file>"
+        ERR_NOOPERMOTD, // = 425,
+        ERR_TOOMANYAWAY, // = 429,
+        ERR_EVENTNICKCHANGE, // = 430,
+        ERR_NONICKNAMEGIVEN, // = 431,  // ":No nickname given"
+        ERR_ERRONEOUSNICKNAME, // = 432,// "<nick> :Erroneus nickname"
+        ERR_NICKNAMEINUSE, // = 433,    // "<nick> :Nickname is already in use"
+        //ERR_SERVICENAMEINUSE, // = 434//CONFLICT
+        ERR_NORULES, // = 434,
+        //ERR_SERVICECONFUSED, // = 435 // CONFLICT
+        ERR_BANONCHAN, // = 435         // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
+        ERR_NICKCOLLISION, // = 436,    // "<nick> :Nickname collision KILL"
+        //ERR_BANNICKCHANGE, // = 437,  // CONFLICT
+        ERR_UNAVAILRESOURCE, // = 437,  // <nickname> <channel> :Nick/channel is temporarily unavailable
+        //ERR_DEAD, // = 438,           // CONFLICT
+        ERR_NICKTOOFAST, // = 438,
+        ERR_TARGETTOOFAST, // = 439,    // <nickname> :This server has anti-spambot mechanisms enabled.
+        ERR_SERVICESDOWN, // = 440,
+        ERR_USERNOTINCHANNEL, // = 441, // "<nick> <channel> :They aren't on that channel"
+        ERR_NOTONCHANNEL, // = 442,     // "<channel> :You're not on that channel"
+        ERR_USERONCHANNEL, // = 443,    // "<user> <channel> :is already on channel"
+        ERR_NOLOGIN, // = 444,          // "<user> :User not logged in"
+        ERR_SUMMONDISABLED, // = 445,   // ":SUMMON has been disabled"
+        ERR_USERSDISABLED, // = 446,    // ":USERS has been disabled"
+        ERR_NONICKCHANGE, // = 447,
+        ERR_NOTIMPLEMENTED, // = 449,
+        ERR_NOTREGISTERED, // = 451,    // ":You have not registered"
+        ERR_IDCOLLISION, // = 455       // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
+        ERR_ACCEPTFULL, // = 456
+        ERR_ACCEPTEXIST, // = 457,
+        ERR_ACCEPTNOT, // = 458,
+        ERR_NOHIDING, // = 459,
+        ERR_NOTFORHALFOPS, // = 460,
+        ERR_NEEDMOREPARAMS, // = 461,   // "<command> :Not enough parameters"
+        ERR_ALREADYREGISTERED, // = 462,// ":You may not reregister"
+        ERR_NOPERMFORHOST, // = 463,    // ":Your host isn't among the privileged"
+        ERR_PASSWDMISMATCH, // = 464,   // ":Password incorrect"
+        ERR_YOUREBANNEDCREEP, // = 465, // ":You are banned from this server"
         ERR_YOUWILLBEBANNED, // = 466   // (reserved numeric)
+        ERR_KEYSET, // = 467,           // "<channel> :Channel key already set"
+        //ERR_ONLYSERVERSCANCHANGE, // = 468 // CONFLICT
+        ERR_INVALIDUSERNAME, // = 468,
+        ERR_LINKSET, // = 469,
+        //ERR_KICKEDFROMCHAN, // = 470, // CONFLICT
+        ERR_LINKCHANNEL, // = 470       // <#original> <#new> :Forwarding to another channel
+        ERR_CHANNELISFULL, // = 471,    // "<channel> :Cannot join channel (+l)"
+        ERR_UNKNOWNMODE, // = 472,      // "<char> :is unknown mode char to me"
+        ERR_INVITEONLYCHAN, // = 473,   // "<channel> :Cannot join channel (+i)"
+        ERR_BANNEDFROMCHAN, // = 474,   // "<channel> :Cannot join channel (+b)"
+        ERR_BADCHANNELKEY, // = 475,    // "<channel> :Cannot join channel (+k)"
         ERR_BADCHANMASK, // = 476,      // (reserved numeric)
+        //ERR_NOCHANMODES, // = 477     // CONFLICT
+        ERR_NEEDREGGEDNICK, // = 477    // <nickname> <channel> :Cannot join channel (+r) - you need to be identified with services
+        ERR_BANLISTFULL, // = 478,
+        //ERR_BADCHANNAME, // = 479,    // CONFLICT
+        ERR_LINKFAIL, // = 479,
+        //ERR_NOULINE, // = 480,        // CONFLICT
+        ERR_CANNOTKNOCK, // = 480,
+        ERR_NOPRIVILEGES, // = 481,     // ":Permission Denied- You're not an IRC operator"
+        ERR_CHANOPRIVSNEEDED, // = 482, // [sic] "<channel> :You're not channel operator"
+        ERR_CANTKILLSERVER, // = 483,   // ":You cant kill a server!"
+        //ERR_ATTACKENY, // = 484,      // CONFLICT
+        //ERR_DESYNC, // = 484,         // CONFLICT
+        //ERR_ISCHANSERVICE, // = 484,  // CONFLICT
+        ERR_RESTRICTED, // = 484,
+        //ERR_KILLDENY, // = 485,       // CONFLICT
+        //ERR_CANTKICKADMIN, // = 485,  // CONFLICT
+        //ERR_ISREALSERVICE, // = 485,  // CONFLICT
+        ERR_UNIQPRIVSNEEDED, // = 485,
+        //ERR_ACCOUNTONLY, // = 486,    // CONFLICT
+        //ERR_HTMDIABLED, // = 486,     // CONFLICT
+        ERR_NONONREG, // = 486,
+        //ERR_CHANTOORECENT, // = 487,  // CONFLICT
+        ERR_MSGSERVICES, // = 487       // <nickname> :Error! "/msg NickServ" is no longer supported. Use "/msg NickServ@services.dal.net" or "/NickServ" instead.
+        ERR_TSLESSCHAN, // = 488,
+        //ERR_VOICENEEDED, // = 489,    // CONFLICT
+        ERR_SECUREONLYCHAN, // = 489,
+        ERR_NOOPERHOST, // = 491,       // ":No O-lines for your host"
         ERR_NOSERVICEHOST, // = 492,    // (reserved numeric)
+        ERR_NOFEATURE, // = 493,
+        ERR_BADFEATURES, // = 494,
+        ERR_BADLOGTYPE, // = 495,
+        ERR_BADLOGSYS, // = 496,
+        ERR_BADLOGVALUE, // = 497,
+        ERR_ISOPERLCHAN, // = 498,
+        ERR_CHANOWNPRIVNEEDED, // = 499,
+
+        ERR_UNKNOWNMODEFLAG, // = 501,  // ":Unknown MODE flag"
+        ERR_USERSDONTMATCH, // = 502,   // ":Cant change mode for other users"
+        ERR_GHOSTEDCLIENT, // = 503,
+        //ERR_VWORLDWARN, // = 504,     // CONFLICT
+        ERR_USERNOTONSERV, // = 504,
+        ERR_SILELISTFULL, // = 511,
+        ERR_TOOMANYWATCH, // = 512,
+        ERR_BADPING, // = 513,          // <nickname> :To connect type /QUOTE PONG <number>
+        //ERR_TOOMANYDCC, // = 514,     // CONFLICT
+        ERR_INVALID_ERROR, // = 514,
+        ERR_BADEXPIRE, // = 515,
+        ERR_DONTCHEAT, // = 516,
+        ERR_DISABLED, // = 517,
+        //ERR_NOINVITE, // = 518,       // CONFLICT
+        ERR_LONGMASK, // = 518,
+        //ERR_ADMONLY, // = 519,        // CONFLICT
+        ERR_TOOMANYUSERS, // = 519,
+        //ERR_WHOTRUNC, // = 520,       // CONFLICT
+        //ERR_OPERONLY, // = 520,       // CONFLICT
+        ERR_MASKTOOWIDE, // = 520,
+        ERR_LISTSYNTAX, // = 521,
+        ERR_WHOSYNTAX, // = 522,
+        ERR_WHOLIMEXCEED, // = 523,
+        //ERR_OPERSPVERIFY, // = 524,   // CONFLICT
+        ERR_QUARANTINED, // = 524,
+        ERR_REMOTEPFX, // = 525,
+        ERR_PFXUNROUTABLE, // = 526,
+        ERR_BADHOSTMASK, // = 550,
+        ERR_HOSTUNAVAIL, // = 551,
+        ERR_USINGSLINE, // = 552,
+        ERR_STATSSLINE, // = 553,
+
+        RPL_LOGON, // = 600,
+        RPL_LOGOFF, // = 601,
+        RPL_WATCHOFF, // = 602,
+        RPL_WATCHSTAT, // = 603,
+        RPL_NOWON, // = 604,
+        RPL_NOWFF, // = 605,
+        RPL_WATCHLIST, // = 606,
+        RPL_ENDOFWATCHLIST, // = 607,
+        RPL_WATCHCLEAR, // = 608,
+        //RPL_ISOPER, // = 610          // CONFLICT
+        RPL_MAPMORE610, // = 610,
+        RPL_ISLOCOP, // = 611,
+        RPL_ISNOTOPER, // = 612,
+        RPL_ENDOFISOPER, // = 613,
+        //RPL_MAPMORE615, // = 615,        // CONFLICT
+        RPL_WHOISMODES615, // = 615,
+        RPL_WHOISHOST616, // = 616,
+        //RPL_WHOISBOT, // = 617,       // CONFLICT
+        RPL_DCCSTATUS, // = 617,
+        RPL_DCCLIST, // = 618,
+        //RPL_WHOWASHOST, // = 619,     // CONFLICT
+        RPL_ENDOFDCCLIST, // = 619,
+        //RPL_RULESSTART, // = 620,     // CONFLICT
+        RPL_DCCINFO, // = 620,
+        RPL_RULES, // = 621,
+        RPL_ENDOFRULES, // = 622,
+        RPL_MAPMORE623, // = 623,
+        RPL_OMOTDSTART624, // = 624,
+        RPL_OMOTD625, // = 625
+        RPL_ENDOFO, // = 626,
+        RPL_SETTINGS, // = 630,
+        RPL_ENDOFSETTINGS, // = 631,
+        RPL_DUMPING, // = 640,
+        RPL_DUMPRPL, // = 641,
+        RPL_EODUMP, // = 642,
+        RPL_TRACEROUTE_HOP, // = 660,
+        RPL_TRACEROUTE_START, // = 661,
+        RPL_MODECHANGEWARN, // = 662,
+        RPL_CHANREDIR, // = 663,
+        RPL_SERVMODEIS, // = 664,
+        RPL_OTHERUMODEIS, // = 665,
+        RPL_ENDOF_GENERIC, // = 666,
+        RPL_WHOWASDETAILS, // = 670,
+        RPL_WHOISSECURE, // = 671       // "<nickname> :is using a secure connection"
+        RPL_UNKNOWNMODES, // = 672
+        RPL_CANNOTSETMODES, // = 673,
+        RPL_LUSERSTAFF, // = 678,
+        RPL_TIMEONSERVERIS, // = 679,
+        RPL_NETWORKS, // = 682,
+        RPL_YOURLANGUAGEIS, // = 687,
+        RPL_LANGUAGE, // = 688,
+        RPL_WHOISSTAFF, // = 689,
+        RPL_WHOISLANGUAGE, // = 690,
+
+        RPL_MODLIST, // = 702,
+        RPL_ENDOFMODLIST, // = 703,
+        RPL_HELPSTART, // = 704           // <nickname> index :Help topics available to users:
+        RPL_HELPTXT, // = 705          // <nickname> index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
+        RPL_ENDOFHELP, // = 706              // <nickname> index :End of /HELP.
+        RPL_ETRACEFULL, // = 708,
+        RPL_ETRACE, // = 709,
+        RPL_KNOCK, // = 710,
+        RPL_KNOCKDLVR, // = 711,
+        ERR_TOOMANYKNOCK, // = 712,
+        ERR_CHANOPEN, // = 713,
+        ERR_KNOCKONCHAN, // = 714,
+        ERR_KNOCKDISABLED, // = 715,
+        RPL_TARGUMODEG, // = 716,
+        RPL_TARGNOTIFY, // = 717,
+        RPL_UMODEGMSG, // = 718,
+        RPL_OMOTDSTART720, // = 720
+        RPL_OMOTD721, // = 721,
+        RPL_ENDOFOMOTD, // = 722,
+        ERR_NOPRIVS, // = 723,
+        RPL_TESTMASK, // = 724,
+        RPL_TESTLINE, // = 725,
+        RPL_NOTESTLINE, // = 726,
+        RPL_XINFO, // = 771,
+        RPL_XINFOSTART, // = 773
+        RPL_XINFOEND, // = 774,
+
+        AUTH_SUCCESS, // = 900          // <nickname>!<ident>@<address> <nickname> :You are now logged in as <nickname>
+        SASL_SUCCESS, // = 903          // :cherryh.freenode.net 903 kameloso^ :SASL authentication successful
+        SASL_FAILURE, // = 904          // :irc.rizon.no 904 kameloso^^ :SASL authentication failed"
+        SASL_ABORTED, // = 906          // :orwell.freenode.net 906 kameloso^ :SASL authentication aborted
+        BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
+        ERR_CANNOTDOCOMMAND, // = 972,
+        ERR_CANNOTCHANGEUMODE, // = 973,
+        ERR_CANNOTCHANGECHANMODE, // = 974,
+        ERR_CANNOTCHANGESERVERMODE, // = 975,
+        ERR_CANNOTSENDTONICK, // = 976,
+        ERR_UNKNOWNSERVERMODE, // = 977,
+        ERR_SERVERMODELOCK, // = 979,
+        ERR_BADCHARENCODING, // = 980,
+        ERR_TOOMANYLANGUAGES, // = 981,
+        ERR_NOLANGUAGE, // = 982,
+        ERR_TEXTTOOSHORT, // = 983,
+
+        ERR_NUMERIC_ERR, // = 999
     }
 
     /*
@@ -2125,12 +2437,24 @@ struct IRCEvent
     /// Reverse mapping of Types to their numeric form, to speed up conversion
     static immutable Type[1024] typenums =
     [
-        001 : Type.WELCOME,
-        002 : Type.SERVERINFO,
-        003 : Type.SERVERINFO,
-        004 : Type.RPL_ISUPPORT,
-        005 : Type.RPL_ISUPPORT,
-         42 : Type.YOURUNIQUEID,
+          1 : Type.RPL_WELCOME,
+          2 : Type.RPL_YOURHOST,
+          3 : Type.RPL_CREATED,
+          4 : Type.RPL_MYINFO,
+          5 : Type.RPL_ISUPPORT,
+          6 : Type.RPL_MAP6,
+          7 : Type.RPL_MAPEND7,
+          8 : Type.RPL_SNOMASK,
+          9 : Type.RPL_STATMEMTOT,
+         10 : Type.RPL_BOUNCE,
+         14 : Type.RPL_YOURCOOKIE,
+         15 : Type.RPL_MAP15,
+         16 : Type.RPL_MAPMORE16,
+         17 : Type.RPL_MAPEND17,
+         42 : Type.RPL_YOURID,
+         43 : Type.RPL_SAVENICK,
+         50 : Type.RPL_ATTEMPTINGJUNC,
+         51 : Type.RPL_ATTEMPTINGREROUTE,
         200 : Type.RPL_TRACELINK,
         201 : Type.RPL_TRACECONNECTING,
         202 : Type.RPL_TRACEHANDSHAKE,
@@ -2138,8 +2462,10 @@ struct IRCEvent
         204 : Type.RPL_TRACEOPERATOR,
         205 : Type.RPL_TRACEUSER,
         206 : Type.RPL_TRACESERVER,
+        207 : Type.RPL_TRACESERVICE,
         208 : Type.RPL_TRACENEWTYPE,
         209 : Type.RPL_TRACECLASS,
+        210 : Type.RPL_STATS,
         211 : Type.RPL_STATSLINKINFO,
         212 : Type.RPL_STATSCOMMAND,
         213 : Type.RPL_STATSCLINE,
@@ -2149,17 +2475,28 @@ struct IRCEvent
         217 : Type.RPL_STATSQLINE,
         218 : Type.RPL_STATSYLINE,
         219 : Type.RPL_ENDOFSTATS,
+        220 : Type.RPL_STATSPLINE,
         221 : Type.RPL_UMODEIS,
         231 : Type.RPL_SERVICEINFO,
         232 : Type.RPL_ENDOFSERVICES,
         233 : Type.RPL_SERVICE,
         234 : Type.RPL_SERVLIST,
         235 : Type.RPL_SERVLISTEND,
+        236 : Type.RPL_STATSVERBOSE,
+        237 : Type.RPL_STATSENGINE,
+        238 : Type.RPL_STATSFLINE,
+        239 : Type.RPL_STATSIAUTH,
+        240 : Type.RPL_STATSVLINE,
         241 : Type.RPL_STATSLLINE,
         242 : Type.RPL_STATSUPTIME,
         243 : Type.RPL_STATSOLINE,
         244 : Type.RPL_STATSHLINE,
-        250 : Type.CONNECTIONRECORD,
+        245 : Type.RPL_STATSSLINE,
+        246 : Type.RPL_STATSPING,
+        247 : Type.RPL_STATSBLINE,
+        248 : Type.RPL_STATSULINE248,
+        249 : Type.RPL_STATSULINE249,
+        250 : Type.RPL_STATSCONN,
         251 : Type.RPL_LUSERCLIENT,
         252 : Type.RPL_LUSEROP,
         253 : Type.RPL_LUSERUNKNOWN,
@@ -2170,15 +2507,51 @@ struct IRCEvent
         258 : Type.RPL_ADMINLOC2,
         259 : Type.RPL_ADMINEMAIL,
         261 : Type.RPL_TRACELOG,
-        265 : Type.USERCOUNTLOCAL,
-        266 : Type.USERCOUNTGLOBAL,
+        262 : Type.RPL_TRACEEND,
+        263 : Type.RPL_TRYAGAIN,
+        265 : Type.RPL_LOCALUSERS,
+        266 : Type.RPL_GLOBALUSERS,
+        267 : Type.RPL_START_NETSTAT,
+        268 : Type.RPL_NETSTAT,
+        269 : Type.RPL_END_NETSTAT,
+        270 : Type.RPL_PRIVS,
+        271 : Type.RPL_SILELIST,
+        272 : Type.RPL_ENDOFSILELIST,
+        273 : Type.RPL_NOTIFY,
+        274 : Type.RPL_ENDNOTIFY,
+        275 : Type.RPL_STATSDLINE,
+        276 : Type.RPL_VCHANEXIST,
+        277 : Type.RPL_VCHANLIST,
+        278 : Type.RPL_VCHANHELP,
+        280 : Type.RPL_GLIST,
+        281 : Type.RPL_ENDOFGLIST,
+        282 : Type.RPL_JUPELIST,
+        283 : Type.RPL_ENDOFJUPELIST,
+        284 : Type.RPL_FEATURE,
+        285 : Type.RPL_CHANINFO_HANDLE,
+        286 : Type.RPL_CHANINFO_USERS,
+        287 : Type.RPL_CHANINFO_CHOPS,
+        288 : Type.RPL_CHANINFO_VOICES,
+        289 : Type.RPL_CHANINFO_AWAY,
+        290 : Type.RPL_CHANINFO_OPERS,
+        291 : Type.RPL_CHANINFO_BANNED,
+        292 : Type.RPL_CHANINFO_BANS,
+        293 : Type.RPL_CHANINFO_INVITE,
+        294 : Type.RPL_CHANINFO_INVITES,
+        295 : Type.RPL_CHANINFO_KICK,
+        296 : Type.RPL_CHANINFO_KICKS,
+        299 : Type.RPL_END_CHANINFO,
         300 : Type.RPL_NONE,
         301 : Type.RPL_AWAY,
         302 : Type.RPL_USERHOST,
         303 : Type.RPL_ISON,
+        304 : Type.RPL_TEXT,
         305 : Type.RPL_UNAWAY,
         306 : Type.RPL_NOWAWAY,
-        307 : Type.HASTHISNICK,
+        307 : Type.RPL_WHOISREGNICK,
+        308 : Type.RPL_NOTIFYACTION,
+        309 : Type.RPL_NICKTRACE,
+        310 : Type.RPL_WHOISSVCMSG,
         311 : Type.RPL_WHOISUSER,
         312 : Type.RPL_WHOISSERVER,
         313 : Type.RPL_WHOISOPERATOR,
@@ -2188,21 +2561,39 @@ struct IRCEvent
         317 : Type.RPL_WHOISIDLE,
         318 : Type.RPL_ENDOFWHOIS,
         319 : Type.RPL_WHOISCHANNELS,
+        320 : Type.RPL_WHOISSPECIAL,
         321 : Type.RPL_LISTSTART,
         322 : Type.RPL_LIST,
         323 : Type.RPL_LISTEND,
         324 : Type.RPL_CHANNELMODEIS,
-        328 : Type.CHANNELURL,
-        330 : Type.WHOISLOGIN,
+        325 : Type.RPL_UNIQOPIS,
+        326 : Type.RPL_NOCHANPASS,
+        327 : Type.RPL_CHPASSUNKNOWN,
+        328 : Type.RPL_CHANNEL_URL,
+        329 : Type.RPL_CREATIONTIME,
+        330 : Type.RPL_WHOISACCOUNT,
         331 : Type.RPL_NOTOPIC,
         332 : Type.RPL_TOPIC,
-        333 : Type.TOPICSETTIME,
+        333 : Type.RPL_TOPICWHOTIME,
+        334 : Type.RPL_LISTUSAGE,
         335 : Type.RPL_WHOISBOT,
+        338 : Type.RPL_WHOISACTUALLY,
+        340 : Type.RPL_USERIP,
         341 : Type.RPL_INVITING,
         342 : Type.RPL_SUMMONING,
+        345 : Type.RPL_INVITED,
+        346 : Type.RPL_INVITELIST,
+        347 : Type.RPL_ENDOFINVITELIST,
+        348 : Type.RPL_EXCEPTLIST,
+        349 : Type.RPL_ENDOFEXCEPTLIST,
         351 : Type.RPL_VERSION,
         352 : Type.RPL_WHOREPLY,
         353 : Type.RPL_NAMREPLY,
+        354 : Type.RPL_WHOSPCRPL,
+        355 : Type.RPL_NAMREPLY_,
+        357 : Type.RPL_MAP357,
+        358 : Type.RPL_MAPMORE358,
+        359 : Type.RPL_MAPEND359,
         361 : Type.RPL_KILLDONE,
         362 : Type.RPL_CLOSING,
         363 : Type.RPL_CLOSEEND,
@@ -2218,17 +2609,26 @@ struct IRCEvent
         374 : Type.RPL_ENDOFINFO,
         375 : Type.RPL_MOTDSTART,
         376 : Type.RPL_ENDOFMOTD,
-        378 : Type.CONNECTINGFROM,
-        379 : Type.ISUSINGMODES,
+        377 : Type.RPL_KICKEXPIRED,
+        378 : Type.RPL_WHOISHOST378,
+        379 : Type.RPL_WHOISMODES379,
         381 : Type.RPL_YOUREOPER,
         382 : Type.RPL_REHASHING,
+        383 : Type.RPL_YOURESERVICE,
         384 : Type.RPL_MYPORTIS,
+        385 : Type.RPL_NOTOPERANYMORE,
+        386 : Type.RPL_QLIST,
+        387 : Type.RPL_ENDOFQLIST,
+        388 : Type.RPL_ALIST,
+        389 : Type.RPL_ENDOFALIST,
+        390 : Type.RPL_BADCHANPASS,
         391 : Type.RPL_TIME,
         392 : Type.RPL_USERSTART,
         393 : Type.RPL_USERS,
         394 : Type.RPL_ENDOFUSERS,
         395 : Type.RPL_NOUSERS,
-        396 : Type.YOURHIDDENHOST,
+        396 : Type.RPL_HOSTHIDDEN,
+        400 : Type.ERR_UNKNOWNERROR,
         401 : Type.ERR_NOSUCHNICK,
         402 : Type.ERR_NOSUCHSERVER,
         403 : Type.ERR_NOSUCHCHANNEL,
@@ -2236,30 +2636,47 @@ struct IRCEvent
         405 : Type.ERR_TOOMANYCHANNELS,
         406 : Type.ERR_WASNOSUCHNICK,
         407 : Type.ERR_TOOMANYTARGETS,
+        408 : Type.ERR_NOSUCHSERVICE,
         409 : Type.ERR_NOORIGIN,
         411 : Type.ERR_NORECIPIENT,
         412 : Type.ERR_NOTEXTTOSEND,
         413 : Type.ERR_NOTOPLEVEL,
         414 : Type.ERR_WILDTOPLEVEL,
+        415 : Type.ERR_BADMASK,
+        416 : Type.ERR_TOOMANYMATCHES,
+        419 : Type.ERR_LENGTHTRUNCATED,
         421 : Type.ERR_UNKNOWNCOMMAND,
         422 : Type.ERR_NOMOTD,
         423 : Type.ERR_NOADMININFO,
         424 : Type.ERR_FILEERROR,
+        425 : Type.ERR_NOOPERMOTD,
+        429 : Type.ERR_TOOMANYAWAY,
+        430 : Type.ERR_EVENTNICKCHANGE,
         431 : Type.ERR_NONICKNAMEGIVEN,
         432 : Type.ERR_ERRONEOUSNICKNAME,
         433 : Type.ERR_NICKNAMEINUSE,
-        435 : Type.CANTCHANGENICK,
+        434 : Type.ERR_NORULES,
+        435 : Type.ERR_BANONCHAN,
         436 : Type.ERR_NICKCOLLISION,
-        437 : Type.NICKCHANUNAVAILABLE,
-        439 : Type.HASANTISPAM,
+        437 : Type.ERR_UNAVAILRESOURCE,
+        438 : Type.ERR_NICKTOOFAST,
+        439 : Type.ERR_TARGETTOOFAST,
+        440 : Type.ERR_SERVICESDOWN,
         441 : Type.ERR_USERNOTINCHANNEL,
         442 : Type.ERR_NOTONCHANNEL,
         443 : Type.ERR_USERONCHANNEL,
         444 : Type.ERR_NOLOGIN,
         445 : Type.ERR_SUMMONDISABLED,
         446 : Type.ERR_USERSDISABLED,
+        447 : Type.ERR_NONICKCHANGE,
+        449 : Type.ERR_NOTIMPLEMENTED,
         451 : Type.ERR_NOTREGISTERED,
-        455 : Type.INVALIDCHARACTERS,
+        455 : Type.ERR_IDCOLLISION,
+        456 : Type.ERR_ACCEPTFULL,
+        457 : Type.ERR_ACCEPTEXIST,
+        458 : Type.ERR_ACCEPTNOT,
+        459 : Type.ERR_NOHIDING,
+        460 : Type.ERR_NOTFORHALFOPS,
         461 : Type.ERR_NEEDMOREPARAMS,
         462 : Type.ERR_ALREADYREGISTERED,
         463 : Type.ERR_NOPERMFORHOST,
@@ -2267,32 +2684,152 @@ struct IRCEvent
         465 : Type.ERR_YOUREBANNEDCREEP,
         466 : Type.ERR_YOUWILLBEBANNED,
         467 : Type.ERR_KEYSET,
-        470 : Type.CHANNELFORWARD,
+        468 : Type.ERR_INVALIDUSERNAME,
+        469 : Type.ERR_LINKSET,
+        470 : Type.ERR_LINKCHANNEL,
         471 : Type.ERR_CHANNELISFULL,
         472 : Type.ERR_UNKNOWNMODE,
         473 : Type.ERR_INVITEONLYCHAN,
         474 : Type.ERR_BANNEDFROMCHAN,
         475 : Type.ERR_BADCHANNELKEY,
         476 : Type.ERR_BADCHANMASK,
-        477 : Type.NEEDAUTHTOJOIN,
+        477 : Type.ERR_NEEDREGGEDNICK,
+        478 : Type.ERR_BANLISTFULL,
+        479 : Type.ERR_LINKFAIL,
+        480 : Type.ERR_CANNOTKNOCK,
         481 : Type.ERR_NOPRIVILEGES,
         482 : Type.ERR_CHANOPRIVSNEEDED,
         483 : Type.ERR_CANTKILLSERVER,
-        487 : Type.MESSAGENEEDSADDRESS,
+        484 : Type.ERR_RESTRICTED,
+        485 : Type.ERR_UNIQPRIVSNEEDED,
+        486 : Type.ERR_NONONREG,
+        487 : Type.ERR_MSGSERVICES,
+        488 : Type.ERR_TSLESSCHAN,
+        489 : Type.ERR_SECUREONLYCHAN,
         491 : Type.ERR_NOOPERHOST,
         492 : Type.ERR_NOSERVICEHOST,
+        493 : Type.ERR_NOFEATURE,
+        494 : Type.ERR_BADFEATURES,
+        495 : Type.ERR_BADLOGTYPE,
+        496 : Type.ERR_BADLOGSYS,
+        497 : Type.ERR_BADLOGVALUE,
+        498 : Type.ERR_ISOPERLCHAN,
+        499 : Type.ERR_CHANOWNPRIVNEEDED,
         501 : Type.ERR_UNKNOWNMODEFLAG,
         502 : Type.ERR_USERSDONTMATCH,
-        513 : Type.TOCONNECTTYPE,
-        671 : Type.WHOISSECURECONN,
-        704 : Type.HELP_TOPICS,
-        705 : Type.HELP_ENTRIES,
-        706 : Type.HELP_END,
+        503 : Type.ERR_GHOSTEDCLIENT,
+        504 : Type.ERR_USERNOTONSERV,
+        511 : Type.ERR_SILELISTFULL,
+        512 : Type.ERR_TOOMANYWATCH,
+        513 : Type.ERR_BADPING,
+        514 : Type.ERR_INVALID_ERROR,
+        515 : Type.ERR_BADEXPIRE,
+        516 : Type.ERR_DONTCHEAT,
+        517 : Type.ERR_DISABLED,
+        518 : Type.ERR_LONGMASK,
+        519 : Type.ERR_TOOMANYUSERS,
+        520 : Type.ERR_MASKTOOWIDE,
+        521 : Type.ERR_LISTSYNTAX,
+        522 : Type.ERR_WHOSYNTAX,
+        523 : Type.ERR_WHOLIMEXCEED,
+        524 : Type.ERR_QUARANTINED,
+        525 : Type.ERR_REMOTEPFX,
+        526 : Type.ERR_PFXUNROUTABLE,
+        550 : Type.ERR_BADHOSTMASK,
+        551 : Type.ERR_HOSTUNAVAIL,
+        552 : Type.ERR_USINGSLINE,
+        553 : Type.ERR_STATSSLINE,
+        600 : Type.RPL_LOGON,
+        601 : Type.RPL_LOGOFF,
+        602 : Type.RPL_WATCHOFF,
+        603 : Type.RPL_WATCHSTAT,
+        604 : Type.RPL_NOWON,
+        605 : Type.RPL_NOWFF,
+        606 : Type.RPL_WATCHLIST,
+        607 : Type.RPL_ENDOFWATCHLIST,
+        608 : Type.RPL_WATCHCLEAR,
+        610 : Type.RPL_MAPMORE610,
+        611 : Type.RPL_ISLOCOP,
+        612 : Type.RPL_ISNOTOPER,
+        613 : Type.RPL_ENDOFISOPER,
+        615 : Type.RPL_WHOISMODES615,
+        616 : Type.RPL_WHOISHOST616,
+        617 : Type.RPL_DCCSTATUS,
+        618 : Type.RPL_DCCLIST,
+        619 : Type.RPL_ENDOFDCCLIST,
+        620 : Type.RPL_DCCINFO,
+        621 : Type.RPL_RULES,
+        622 : Type.RPL_ENDOFRULES,
+        623 : Type.RPL_MAPMORE623,
+        624 : Type.RPL_OMOTDSTART624,
+        625 : Type.RPL_OMOTD625,
+        626 : Type.RPL_ENDOFO,
+        630 : Type.RPL_SETTINGS,
+        631 : Type.RPL_ENDOFSETTINGS,
+        640 : Type.RPL_DUMPING,
+        641 : Type.RPL_DUMPRPL,
+        642 : Type.RPL_EODUMP,
+        660 : Type.RPL_TRACEROUTE_HOP,
+        661 : Type.RPL_TRACEROUTE_START,
+        662 : Type.RPL_MODECHANGEWARN,
+        663 : Type.RPL_CHANREDIR,
+        664 : Type.RPL_SERVMODEIS,
+        665 : Type.RPL_OTHERUMODEIS,
+        666 : Type.RPL_ENDOF_GENERIC,
+        670 : Type.RPL_WHOWASDETAILS,
+        671 : Type.RPL_WHOISSECURE,
+        672 : Type.RPL_UNKNOWNMODES,
+        673 : Type.RPL_CANNOTSETMODES,
+        678 : Type.RPL_LUSERSTAFF,
+        679 : Type.RPL_TIMEONSERVERIS,
+        682 : Type.RPL_NETWORKS,
+        687 : Type.RPL_YOURLANGUAGEIS,
+        688 : Type.RPL_LANGUAGE,
+        689 : Type.RPL_WHOISSTAFF,
+        690 : Type.RPL_WHOISLANGUAGE,
+        702 : Type.RPL_MODLIST,
+        703 : Type.RPL_ENDOFMODLIST,
+        704 : Type.RPL_HELPSTART,
+        705 : Type.RPL_HELPTXT,
+        706 : Type.RPL_ENDOFHELP,
+        708 : Type.RPL_ETRACEFULL,
+        709 : Type.RPL_ETRACE,
+        710 : Type.RPL_KNOCK,
+        711 : Type.RPL_KNOCKDLVR,
+        712 : Type.ERR_TOOMANYKNOCK,
+        713 : Type.ERR_CHANOPEN,
+        714 : Type.ERR_KNOCKONCHAN,
+        715 : Type.ERR_KNOCKDISABLED,
+        716 : Type.RPL_TARGUMODEG,
+        717 : Type.RPL_TARGNOTIFY,
+        718 : Type.RPL_UMODEGMSG,
+        720 : Type.RPL_OMOTDSTART720,
+        721 : Type.RPL_OMOTD721,
+        722 : Type.RPL_ENDOFOMOTD,
+        723 : Type.ERR_NOPRIVS,
+        724 : Type.RPL_TESTMASK,
+        725 : Type.RPL_TESTLINE,
+        726 : Type.RPL_NOTESTLINE,
+        771 : Type.RPL_XINFO,
+        773 : Type.RPL_XINFOSTART,
+        774 : Type.RPL_XINFOEND,
         900 : Type.AUTH_SUCCESS,
         903 : Type.SASL_SUCCESS,
         904 : Type.SASL_FAILURE,
         906 : Type.SASL_ABORTED,
         931 : Type.BOTSNOTWELCOME,
+        972 : Type.ERR_CANNOTDOCOMMAND,
+        973 : Type.ERR_CANNOTCHANGEUMODE,
+        974 : Type.ERR_CANNOTCHANGECHANMODE,
+        975 : Type.ERR_CANNOTCHANGESERVERMODE,
+        976 : Type.ERR_CANNOTSENDTONICK,
+        977 : Type.ERR_UNKNOWNSERVERMODE,
+        979 : Type.ERR_SERVERMODELOCK,
+        980 : Type.ERR_BADCHARENCODING,
+        981 : Type.ERR_TOOMANYLANGUAGES,
+        982 : Type.ERR_NOLANGUAGE,
+        983 : Type.ERR_TEXTTOOSHORT,
+        999 : Type.ERR_NUMERIC_ERR,
     ];
 
     enum Role
@@ -2844,7 +3381,7 @@ unittest
     }
 
     /+
-    [WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)
+    [RPL_WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)
     :tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
      +/
     immutable e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
@@ -2852,7 +3389,7 @@ unittest
     with (e3)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
-        assert((type == IRCEvent.Type.WELCOME), type.to!string);
+        assert((type == IRCEvent.Type.RPL_WELCOME), type.to!string);
         assert((target.nickname == "kameloso^"), target.nickname);
         assert((content == "Welcome to the freenode Internet Relay Chat Network kameloso^"),
                content);
@@ -2925,7 +3462,7 @@ unittest
     with (e8)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
-        assert((type == IRCEvent.Type.WHOISLOGIN), type.to!string);
+        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), type.to!string);
         assert((target.nickname == "zurael"), target.nickname);
         assert((content == "zorael"), content);
         assert((target.login == "zorael"), target.login);
@@ -2984,7 +3521,7 @@ unittest
      with (e12)
      {
         assert((sender.address == "irc.uworld.se"), sender.address);
-        assert((type == IRCEvent.Type.TOCONNECTTYPE), type.to!string);
+        assert((type == IRCEvent.Type.ERR_BADPING), type.to!string);
         assert((target.nickname == "kameloso"), target.nickname);
         assert((aux == "3705964477"), aux);
         assert((content == "PONG"), content);

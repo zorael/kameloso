@@ -54,10 +54,10 @@ void onAnyEvent(const IRCEvent origEvent)
     {
     case RPL_NAMREPLY:
     case RPL_MOTD:
-    case SERVERINFO:
+    case RPL_YOURHOST:
     case RPL_ISUPPORT:
-    case TOPICSETTIME:
-    case WHOISSECURECONN:
+    case RPL_TOPICWHOTIME:
+    case RPL_WHOISSECURE:
     case RPL_LUSERCLIENT:
     case RPL_LUSEROP:
     case RPL_LUSERCHANNELS:
@@ -68,9 +68,9 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_MOTDSTART:
     case RPL_ENDOFMOTD:
     case RPL_ENDOFNAMES:
-    case USERCOUNTGLOBAL:
-    case USERCOUNTLOCAL:
-    case CONNECTIONRECORD:
+    case RPL_GLOBALUSERS:
+    case RPL_LOCALUSERS:
+    case RPL_STATSCONN:
     // case CAP:
         // These event types are too spammy; ignore
         if (!printerOptions.truncateMOTD) goto default;
@@ -130,15 +130,16 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
-    import kameloso.stringutils : enumToString;
+    import kameloso.stringutils : enumToString, beginsWith;
 
     import std.datetime;
     import std.format : formattedWrite;
     import std.string : toLower;
 
-    immutable timestamp = (cast(DateTime)SysTime.fromUnixTime(event.time))
-                            .timeOfDay
-                            .toString();
+    immutable timestamp = (cast(DateTime)SysTime
+        .fromUnixTime(event.time))
+        .timeOfDay
+        .toString();
 
     with (BashForeground)
     with (event)
@@ -148,7 +149,21 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         import std.algorithm : equal;
         import std.uni : asLowerCase;
 
-        sink.formattedWrite("[%s] [%s] ", timestamp, enumToString(type));
+        //sink.formattedWrite("[%s] [%s] ", timestamp, enumToString(type));
+        sink.formattedWrite("[%s] ", timestamp);
+
+        string typestring = enumToString(type);
+
+        if (typestring.beginsWith("RPL_"))
+        {
+            typestring = typestring[4..$];
+        }
+        else if (typestring.beginsWith("ERR_"))
+        {
+            typestring = typestring[4..$];
+        }
+
+        sink.formattedWrite("[%s] ", typestring);
 
         if (sender.isServer)
         {
@@ -195,6 +210,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             enum DefaultColour
             {
                 type    = lightblue,
+                error   = lightred,
                 sender  = lightgreen,
                 special = lightyellow,
                 target  = cyan,
@@ -244,9 +260,26 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.colour(white);
             //sink.formattedWrite("[%s] ", timestamp);
             put(sink, '[', timestamp, "] ");
-            sink.colour(typeColour);
+
+            string typestring = enumToString(type);
+
+            if (typestring.beginsWith("RPL_"))
+            {
+                typestring = typestring[4..$];
+                sink.colour(typeColour);
+            }
+            else if (typestring.beginsWith("ERR_"))
+            {
+                typestring = typestring[4..$];
+                sink.colour(DefaultColour.error);
+            }
+            else
+            {
+                sink.colour(typeColour);
+            }
+
             //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
-            put(sink, '[', enumToString(type), "] ");
+            put(sink, '[', typestring, "] ");
 
             import std.algorithm : equal;
             import std.uni : asLowerCase;

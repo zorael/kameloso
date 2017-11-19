@@ -480,9 +480,9 @@ Flag!"quit" loopGenerator(Generator!string generator)
 
 void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickname)
 {
-    if ((nickname.length) &&
-        ((event.type == IRCEvent.Type.WHOISLOGIN) ||
-        (event.type == IRCEvent.Type.HASTHISNICK)))
+    if (nickname.length &&
+        ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
+        (event.type == IRCEvent.Type.RPL_WHOISREGNICK)))
     {
         auto req = nickname in reqs;
         if (!req) return;

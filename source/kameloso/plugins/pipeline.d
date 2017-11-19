@@ -159,7 +159,7 @@ void createFIFO()
 /++
  +  Spawns the pipereader thread.
  +/
-@(IRCEvent.Type.WELCOME)
+@(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(const IRCEvent event)
 {
     with (state)
