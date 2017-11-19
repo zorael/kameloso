@@ -1005,11 +1005,26 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
             if (targetOrChannel.indexOf(' ') != -1)
             {
-                logger.warning("targetOrChannel.indexOf(' ') happened. Report this.");
-                printObject(event);
+                logger.trace(event.raw);
                 // target *and* channel
-                event.target.nickname = targetOrChannel.nom(' ');
-                event.channel = targetOrChannel;
+                immutable probablyBot = targetOrChannel.nom(' ');
+
+                if (probablyBot == bot.nickname)
+                {
+                    if (targetOrChannel.length && (targetOrChannel[0] == '#'))
+                    {
+                        event.channel = targetOrChannel;
+                    }
+                    else
+                    {
+                        event.target.nickname = targetOrChannel;
+                    }
+                }
+                else
+                {
+                    event.target.nickname = targetOrChannel.nom(' ');
+                    event.channel = targetOrChannel;
+                }
             }
             else if (targetOrChannel.beginsWith('#'))
             {
@@ -1071,7 +1086,14 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         logger.warning("------------------------------------");
         writeln();
     }
-
+    else if (event.channel.length && !event.channel.beginsWith('#'))
+    {
+        writeln();
+        logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
+        printObject(event);
+        logger.warning("------------------------------------");
+        writeln();
+    }
     if (event.target.nickname == bot.nickname)
     {
         with (IRCEvent.Type)
