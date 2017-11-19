@@ -717,10 +717,13 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_ENDOFWHOIS: // 318
     case ERR_NICKNAMEINUSE: // 433
     case ERR_NOSUCHNICK: // 401
+    case RPL_WHOISOPERATOR:
         // :asimov.freenode.net 671 kameloso^ zorael :is using a secure connection
         // :asimov.freenode.net 318 kameloso^ zorael :End of /WHOIS list.
         // :asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.
         // :cherryh.freenode.net 401 kameloso^ cherryh.freenode.net :No such nick/channel
+        // :lightning.ircstorm.net 313 kameloso NickServ :is a Network Service
+
         slice.nom(' ');
         //slice.formattedRead("%s :%s", event.target, event.content);
         event.target.nickname = slice.nom(" :");
@@ -1926,6 +1929,8 @@ struct IRCEvent
         NICKCHANUNAVAILABLE, // = 437   // <nickname> <channel> :Nick/channel is temporarily unavailable
         YOURUNIQUEID, // = 042,         // <nickname> <id> :your unique ID
         ISUSINGMODES, // = 379,         // <nickname> :is using modes <modes>
+        HASANTISPAM, // = 439,          // <nickname> :This server has anti-spambot mechanisms enabled.
+        BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
         ERR_NOSUCHNICK, // = 401,       // "<nickname> :No such nick/channel"
         ERR_NOSUCHSERVER, // = 402,     // "<server name> :No such server"
         ERR_NOSUCHCHANNEL, // = 403,    // "<channel name> :No such channel"
@@ -1990,6 +1995,7 @@ struct IRCEvent
         RPL_CHANNELMODEIS, // = 324,    // "<channel> <mode> <mode params>"
         RPL_NOTOPIC, // = 331,          // "<channel> :No topic is set"
         RPL_TOPIC, // = 332,            // "<channel> :<topic>"
+        RPL_WHOISBOT, // = 335,         // "<nick> <othernick> :is a Bot on <server>"
         RPL_INVITING, // = 341,         // "<channel> <nick>"
         RPL_SUMMONING, // = 342,        // "<user> :Summoning user to IRC"
         RPL_VERSION, // = 351,          // "<version>.<debuglevel> <server> :<comments>"
@@ -2169,6 +2175,7 @@ struct IRCEvent
         331 : Type.RPL_NOTOPIC,
         332 : Type.RPL_TOPIC,
         333 : Type.TOPICSETTIME,
+        335 : Type.RPL_WHOISBOT,
         341 : Type.RPL_INVITING,
         342 : Type.RPL_SUMMONING,
         351 : Type.RPL_VERSION,
@@ -2222,6 +2229,7 @@ struct IRCEvent
         435 : Type.CANTCHANGENICK,
         436 : Type.ERR_NICKCOLLISION,
         437 : Type.NICKCHANUNAVAILABLE,
+        439 : Type.HASANTISPAM,
         441 : Type.ERR_USERNOTINCHANNEL,
         442 : Type.ERR_NOTONCHANNEL,
         443 : Type.ERR_USERONCHANNEL,
@@ -2262,6 +2270,7 @@ struct IRCEvent
         903 : Type.SASL_SUCCESS,
         904 : Type.SASL_FAILURE,
         906 : Type.SASL_ABORTED,
+        931 : Type.BOTSNOTWELCOME,
     ];
 
     enum Role
