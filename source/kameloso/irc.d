@@ -1257,10 +1257,25 @@ void parseTwitchTags(ref IRCEvent event, ref IRCBot bot)
                 event.type = Type.RESUB;
                 break;
 
+            case "subgift":
+                // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
+                // [21:33:48] msg-param-recipient-id = '125985061'
+                // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
+                event.type = Type.SUBGIFT;
+                break;
+
             default:
                 logger.info("unhandled message: ", tag);
                 break;
             }
+            break;
+
+        case "msg-param-receipient-display-name":
+            event.target.alias_ = tag;
+            break;
+
+        case "msg-param-recipient-user-name":
+            event.target.nickname = tag;
             break;
 
         case "msg-param-months":
@@ -1917,7 +1932,7 @@ struct IRCEvent
         USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
         CLEARCHAT, USERNOTICE, HOSTTARGET,
         HOSTSTART, HOSTEND,
-        SUB, RESUB, TEMPBAN, PERMBAN,
+        SUB, RESUB, TEMPBAN, PERMBAN, SUBGIFT,
         ACCOUNT,
         SASL_AUTHENTICATE,
         AUTH_CHALLENGE,
