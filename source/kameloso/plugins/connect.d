@@ -19,6 +19,9 @@ struct ConnectOptions
     bool sasl = true;
     bool joinOnInvite = false;
     bool exitOnSASLFailure = false;
+
+    @Separator(";")
+    string[] sendAfterConnect;
 }
 
 /// All Connect plugin options gathered
@@ -204,6 +207,14 @@ void onPing(const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(const IRCEvent event)
 {
+    // Run commands defined in the options
+    foreach (immutable line; connectOptions.sendAfterConnect)
+    {
+        import std.string : strip;
+
+        state.mainThread.send(ThreadMessage.Sendline(), line.strip());
+    }
+
     with (IRCServer.Network)
     with (state)
     {
