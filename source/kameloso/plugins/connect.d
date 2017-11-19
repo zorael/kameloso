@@ -339,7 +339,7 @@ void onEndOfMotd(const IRCEvent event)
  +  Fires when an authentication service sends a message with a known success,
  +  invalid or rejected auth text, signifying completed login.
  +/
-@(IRCEvent.Type.AUTH_SUCCESS)
+@(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
 void onAuthEnd()
 {
@@ -540,7 +540,7 @@ void onSASLAuthenticate(const IRCEvent event)
 }
 
 
-@(IRCEvent.Type.SASL_SUCCESS)
+@(IRCEvent.Type.RPL_SASLSUCCESS)
 void onSASLSuccess()
 {
     with (state)
@@ -567,7 +567,7 @@ void onSASLSuccess()
 }
 
 
-@(IRCEvent.Type.SASL_FAILURE)
+@(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure()
 {
     with (state)
