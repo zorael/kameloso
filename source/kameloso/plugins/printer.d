@@ -71,6 +71,8 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_GLOBALUSERS:
     case RPL_LOCALUSERS:
     case RPL_STATSCONN:
+    case RPL_CREATED:
+    case RPL_MYINFO:
     // case CAP:
         // These event types are too spammy; ignore
         if (!printerOptions.truncateMOTD) goto default;
