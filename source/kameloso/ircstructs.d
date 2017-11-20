@@ -701,23 +701,35 @@ struct IRCEvent
             import std.algorithm;
             import std.stdio;
 
-            static pattern = ctRegex!` *([A-Z0-9_]+), // = ([0-9]+).*`;
+            enum pattern = r" *([/A-Z0-9_]+),? [/= ]* ([0-9]+),?.*";
+            static engine = ctRegex!pattern;
             string[1024] arr;
-
-            writeln("static immutable Type[1024] typenums =\n[");
 
             foreach (line; s.splitter("\n"))
             {
-                auto hits = line.matchFirst(pattern);
+                auto hits = line.matchFirst(engine);
                 if (hits.length < 2) continue;
-                arr[hits[2].to!size_t] = hits[1];
+
+                try
+                {
+                    if (hits[1].startsWith("/")) continue;
+                    size_t idx = hits[2].to!size_t;
+                    if (arr[idx] != typeof(arr[idx]).init) stderr.writeln("DUPLICATE! ", idx);
+                    arr[idx] = hits[1];
+                }
+                catch (Exception e)
+                {
+                    //writeln(e.msg, ": ", line);
+                }
             }
+
+            writeln("static immutable Type[1024] typenums =\n[");
 
             foreach (i, val; arr)
             {
                 if (!val.length) continue;
 
-                writefln("    %03d : Type.%s,", i, val);
+                writefln("    %-3d : Type.%s,", i, val);
             }
 
             writeln("];");
