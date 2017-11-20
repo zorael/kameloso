@@ -266,8 +266,8 @@ struct IRCEvent
         RPL_CHPASSUNKNOWN, // = 327,
         RPL_CHANNEL_URL, // = 328       // "http://linux.chat"
         RPL_CREATIONTIME, // = 329,
-        RPL_WHOISACCOUNT, // = 330      // CONFLICT "<nickname> <login> :is logged in as"
-        RPL_WHOWAS_TIME, // = 330,
+        RPL_WHOWAS_TIME, // = 330,      // CONFLICT
+        RPL_WHOISACCOUNT, // = 330      // "<nickname> <login> :is logged in as"
         RPL_NOTOPIC, // = 331,          // "<channel> :No topic is set"
         RPL_TOPIC, // = 332,            // "<channel> :<topic>"
         RPL_TOPICWHOTIME, // = 333,     // "#channel user!~ident@address 1476294377"
@@ -883,7 +883,7 @@ struct IRCEvent
         327 : Type.RPL_CHPASSUNKNOWN,
         328 : Type.RPL_CHANNEL_URL,
         329 : Type.RPL_CREATIONTIME,
-        330 : Type.RPL_WHOWAS_TIME,
+        330 : Type.RPL_WHOISACCOUNT,
         331 : Type.RPL_NOTOPIC,
         332 : Type.RPL_TOPIC,
         333 : Type.RPL_TOPICWHOTIME,
