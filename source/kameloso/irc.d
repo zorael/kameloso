@@ -602,8 +602,12 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice;
         break;
 
-    case RPL_ISUPPORT: // 004-005
+    case RPL_ISUPPORT: // 005
         event.onISUPPORT(bot, slice);
+        break;
+
+    case RPL_MYINFO: // 004
+        event.onMyInfo(bot, slice);
         break;
 
     case RPL_TOPICWHOTIME: // 333
@@ -1791,6 +1795,108 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             logger.info("Network: ", network, "?");
         }
+    }
+}
+
+void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
+{
+    import std.string : toLower;
+
+    /*
+    cadance.canternet.org                   InspIRCd-2.0
+    barjavel.freenode.net                   ircd-seven-1.1.4
+    irc.uworld.se                           plexus-4(hybrid-8.1.20)
+    port80c.se.quakenet.org                 u2.10.12.10+snircd(1.3.4a)
+    Ashburn.Va.Us.UnderNet.org              u2.10.12.18
+    irc2.unrealircd.org                     UnrealIRCd-4.0.16-rc1
+    nonstop.ix.me.dal.net                   bahamut-2.0.7
+    TAL.DE.EU.GameSurge.net                 u2.10.12.18(gs2)
+    efnet.port80.se                         ircd-ratbox-3.0.9
+    conclave.il.us.SwiftIRC.net             Unreal3.2.6.SwiftIRC(10)
+    caliburn.pa.us.irchighway.net           InspIRCd-2.0
+    (twitch)                                -
+    irc.RomaniaChat.eu                      Unreal3.2.10.6
+    Defiant.GeekShed.net                    Unreal3.2.10.3-gs
+    irc.inn.at.euirc.net                    euIRCd 1.3.4-c09c980819
+    irc.krstarica.com                       UnrealIRCd-4.0.9
+    XxXChatters.Com                         UnrealIRCd-4.0.3.1
+    noctem.iZ-smart.net                     Unreal3.2.10.4-iZ
+    fedora.globalirc.it                     InspIRCd-2.0
+    ee.ircworld.org                         charybdis-3.5.0.IRCWorld
+    Armida.german-elite.net                 Unreal3.2.7
+    procrastinate.idlechat.net              Unreal3.2.10.4
+    irc2.chattersweb.nl                     UnrealIRCd-4.0.11
+    Heol.Immortal-Anime.Net                 Unreal3.2.10.5
+    brlink.vircio.net                       InspIRCd-2.2
+    MauriChat.s2.de.GigaIRC.net             UnrealIRCd-4.0.10
+    IRC.101Systems.Com.BR                   UnrealIRCd-4.0.15
+    IRC.Passatempo.Org                      UnrealIRCd-4.0.14
+    irc01-green.librairc.net                InspIRCd-2.0
+    irc.place2chat.com                      UnrealIRCd-4.0.10
+    irc.ircportal.net                       Unreal3.2.10.1
+    irc.de.icq-chat.com                     InspIRCd-2.0
+    lightning.ircstorm.net                  CR1.8.03-Unreal3.2.10.1
+    irc.chat-garden.nl                      UnrealIRCd-4.0.10
+    alpha.noxether.net                      UnrealIRCd-4.0-Noxether
+    CraZyPaLaCe.Be_ChatFun.Be_Webradio.VIP  CR1.8.03-Unreal3.2.8.1
+    redhispana.org                          Unreal3.2.8+UDB-3.6.1
+    */
+
+    slice.nom(' ');  // server address
+    immutable daemonstringRaw = slice.nom(' ');
+    immutable daemonstring = daemonstringRaw.toLower();
+    event.content = slice;
+    event.aux = daemonstringRaw;
+
+    with (IRCServer.Daemon)
+    with (IRCEvent)
+    {
+        Type[1024] mod;
+
+        if (daemonstring.indexOf("unreal") != -1)
+        {
+            bot.server.daemon = unreal;
+            IRCEvent.setTypenums(unreal);
+        }
+        else if (daemonstring.indexOf("inspircd") != -1)
+        {
+            bot.server.daemon = inspircd;
+            IRCEvent.setTypenums(inspircd);
+        }
+        else if (daemonstring.indexOf("u2.") != -1)
+        {
+            bot.server.daemon = u2;
+            IRCEvent.setTypenums(u2);
+        }
+        else if (daemonstring.indexOf("bahamut") != -1)
+        {
+            bot.server.daemon = bahamut;
+            IRCEvent.setTypenums(bahamut);
+        }
+        else if (daemonstring.indexOf("hybrid") != -1)
+        {
+            bot.server.daemon = hybrid;
+            IRCEvent.setTypenums(hybrid);
+        }
+        else if (daemonstring.indexOf("ratbox") != -1)
+        {
+            bot.server.daemon = ratbox;
+            IRCEvent.setTypenums(ratbox);
+        }
+        else if (daemonstring.indexOf("charybdis") != -1)
+        {
+            bot.server.daemon = charybdis;
+            IRCEvent.setTypenums(charybdis);
+        }
+        /*else if (daemonstring.indexOf("ircd-seven") != -1)
+        {
+            // Freenode
+            IRCEvent.setTypenums(FIXME);
+        }*/
+        /*else if (daemonstring.indexOf("") != -1)
+        {
+            IRCEvent.setTypenums();
+        }*/
     }
 }
 
