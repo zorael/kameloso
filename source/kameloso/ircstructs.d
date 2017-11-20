@@ -1817,7 +1817,39 @@ struct IRCServer
         dalnet,
     }
 
+    enum Daemon
+    {
+        unreal,
+        inspircd,
+        bahamut,
+        ratbox,
+        u2,
+        hybrid,
+        quakenet,
+        rizon,
+        undernet,
+
+        ircu,
+        aircd,
+        rfc1459,
+        rfc2812,
+        nefarious,
+        rusnet,
+        austhex,
+        ircnet,
+        ptlink,
+        ultimate,
+        anothernet,
+        sorircd,
+        bdqircd,
+        chatircd,
+        charybdis,
+        irch,
+        ithildin,
+    }
+
     Network network;
+    Daemon daemon;
     string address = "irc.freenode.net";
     ushort port = 6667;
 
