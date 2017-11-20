@@ -617,7 +617,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.aux = slice;
         break;
 
-    case RPL_WHOISHOST378: // 378
+    case RPL_WHOISHOST: // 378
         // :wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
         // TRIED TO NOM TOO MUCH:'kameloso :is connecting from NaN@194.117.188.126 194.117.188.126' with ' :is connecting from *@'
         slice.nom(' ');
@@ -981,7 +981,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.content = slice.nom(" :");
         break;
 
-    case RPL_WHOISMODES379: // 379
+    case RPL_WHOISMODES: // 379
         // :cadance.canternet.org 379 kameloso kameloso :is using modes +ix
         slice.nom(' ');
         event.target.nickname = slice.nom(" :is using modes ");
