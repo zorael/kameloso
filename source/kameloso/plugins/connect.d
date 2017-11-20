@@ -601,7 +601,7 @@ void register()
         bot.startedRegistering = true;
         bot.updated = true;
 
-        mainThread.send(ThreadMessage.Sendline(), "CAP LS");
+        mainThread.send(ThreadMessage.Sendline(), "CAP LS 302");
 
         if (bot.pass.length)
         {
