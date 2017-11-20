@@ -42,13 +42,14 @@ struct IRCEvent
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
         RPL_CREATED, // = 003,          // ":This server was created <date>"
         RPL_MYINFO, // = 004,           // "<server_name> <version> <user_modes> <chan_modes>"
-        RPL_BOUNCE, // = 005,           // CONFLICT ":Try server <server_name>, port <port_number>" CONFLICT
+        RPL_BOUNCE, // = 005,           // CONFLICT ":Try server <server_name>, port <port_number>"
         RPL_ISUPPORT, // = 005,         // (server information, different syntax)
         RPL_MAP, // = 006,
         RPL_MAPEND, // = 007,
         RPL_SNOMASK, // = 008,          // Server notice mask (hex)
         RPL_STATMEMTOT, // = 009,
-        //RPL_BOUNCE, // = 010,           // "<hostname> <port> :<info>",
+        //RPL_BOUNCE, // = 010,         // CONFLICT "<hostname> <port> :<info>",
+        RPL_STATMEM, // = 010,          // deprecated
         RPL_YOURCOOKIE, // = 014,
         //RPL_MAP, // = 015,
         RPL_MAPMORE, // = 016,
@@ -92,6 +93,7 @@ struct IRCEvent
         //RPL_STATSPLINE, // = 220,
         RPL_UMODEIS, // = 221,          // "<user mode string>"
         //RPL_STATSBLINE, // = 222,       // CONFLICT
+        RPL_SQLINE_NICK, // = 222,      // CONFLICT
         RPL_CODEPAGE, // = 222,         // CONFLICT
         RPL_STATSJLINE, // = 222,       // CONFLICT
         RPL_MODLIST, // = 222,
@@ -198,7 +200,8 @@ struct IRCEvent
         RPL_CHANINFO_VOICES, // = 288,
         RPL_PATCHCON, // = 289,         // CONFLICT
         RPL_CHANINFO_AWAY, // = 289,
-        RPL_CHANINFO_HELPHDR, // = 290  // CONFLICT
+        RPL_CHANINFO_HELPHDR, // = 290, // CONFLICT
+        RPL_DATASTR, // = 290,          // CONFLICT
         RPL_HELPHDR, // = 290,          // CONFLICT
         RPL_CHANINFO_OPERS, // = 290,
         RPL_ENDOFCHECK, // = 291,       // CONFLICT
@@ -320,9 +323,9 @@ struct IRCEvent
         RPL_BANEXPIRED, // = 378,       // CONFLICT
         //RPL_MOTD, // = 378,             // CONFLICT
         //RPL_WHOISHOST, // = 378         // <nickname> :is connecting from *@<address> <ip>
-        RPL_WHOISMODES, // = 379,       // CONFLICT
+        RPL_WHOISMODES, // = 379,       // CONFLICT <nickname> :is using modes <modes>
         RPL_KICKLINKED, // = 379,       // CONFLICT
-        //RPL_WHOISMODES, // = 379,       // <nickname> :is using modes <modes>
+        RPL_WHOWASIP, // = 379,
         RPL_YOURHELPER, // = 380,       // CONFLICT
         RPL_BANLINKED, // = 380,
         RPL_YOUREOPER, // = 381,        // ":You are now an IRC operator"
@@ -444,7 +447,7 @@ struct IRCEvent
         ERR_NOPRIVILEGES, // = 481,     // ":Permission Denied- You're not an IRC operator"
         ERR_CHANOPRIVSNEEDED, // = 482, // [sic] "<channel> :You're not channel operator"
         ERR_CANTKILLSERVER, // = 483,   // ":You cant kill a server!"
-        ERR_ATTACKENY, // = 484,        // CONFLICT
+        ERR_ATTACKDENY, // = 484,        // CONFLICT
         ERR_DESYNC, // = 484,           // CONFLICT
         ERR_ISCHANSERVICE, // = 484,    // CONFLICT
         ERR_RESTRICTED, // = 484,
@@ -470,13 +473,14 @@ struct IRCEvent
         ERR_NOSWEAR, // = 490,          // CONFLICT
         ERR_ALLMUSTSSL, // = 490,
         ERR_NOOPERHOST, // = 491,       // ":No O-lines for your host"
+        ERR_CANNOTSENDTOUSER, // = 492, // CONFLICT
         ERR_NOCTCP, // = 492,           // CONFLICT
         ERR_NOTCP, // = 492,            // CONFLICT
         ERR_NOSERVICEHOST, // = 492,    // (reserved numeric)
         ERR_NOSHAREDCHAN, // = 493      // CONFLICT
         ERR_NOFEATURE, // = 493,
         ERR_OWNMODE, // = 494,          // CONFLICT
-        ERR_BADFEATURES, // = 494,
+        ERR_BADFEATVALUE, // = 494,
         ERR_DELAYREJOIN, // = 495,      // CONFLICT
         ERR_BADLOGTYPE, // = 495,
         ERR_BADLOGSYS, // = 496,
@@ -486,7 +490,7 @@ struct IRCEvent
 
         ERR_NOREHASHPARAM, // = 500,    // CONFLICT
         ERR_TOOMANYJOINS, // = 500,
-        ERR_UNKOWNSNOMASK, // = 501,    // CONFLICT
+        ERR_UNKNOWNSNOMASK, // = 501,    // CONFLICT
         ERR_UMODEUNKNOWNFLAG, // = 501, // ":Unknown MODE flag"
         ERR_USERSDONTMATCH, // = 502,   // ":Cant change mode for other users"
         ERR_VWORLDWARN, // = 503,       // CONFLICT
@@ -585,7 +589,8 @@ struct IRCEvent
         RPL_WHOWASDETAILS, // = 670,    // CONFLICT
         RPL_STARTTLS, // = 670,
         RPL_WHOISSECURE, // = 671       // "<nickname> :is using a secure connection"
-        RPL_UNKNOWNMODES, // = 672
+        RPL_UNKNOWNMODES, // = 672,     // CONFLICT
+        RPL_WHOISREALIP, // 672,
         RPL_CANNOTSETMODES, // = 673,
         RPL_WHOISYOURID, // = 674,
         RPL_LUSERSTAFF, // = 678,
@@ -675,8 +680,8 @@ struct IRCEvent
         ERR_CANTLOADMODULE, // = 974,   // CONFLICT
         ERR_CANNOTCHANGECHANMODE, // = 974,
         ERR_CANNOTCHANGESERVERMODE, // = 975,// CONFLICT
-        RPL_LOADEDMODULE, // = 975,     // CONFLICT
-        //ERR_LASTERROR, // = 975,
+        //ERR_LASTERROR, // = 975,      // CONFLICT
+        RPL_LOADEDMODULE, // = 975,
         ERR_CANNOTSENDTONICK, // = 976,
         ERR_UNKNOWNSERVERMODE, // = 977,
         ERR_SERVERMODELOCK, // = 979,
@@ -722,28 +727,26 @@ struct IRCEvent
     /// Reverse mapping of Types to their numeric form, to speed up conversion
     static immutable Type[1024] typenums =
     [
-          1 : Type.RPL_WELCOME,
-          2 : Type.RPL_YOURHOST,
-          3 : Type.RPL_CREATED,
-          4 : Type.RPL_MYINFO,
-          5 : Type.RPL_ISUPPORT,
-          6 : Type.RPL_MAP6,
-          7 : Type.RPL_MAPEND7,
-          8 : Type.RPL_SNOMASK,
-          9 : Type.RPL_STATMEMTOT,
-         10 : Type.RPL_BOUNCE,
-         14 : Type.RPL_YOURCOOKIE,
-         15 : Type.RPL_MAP15,
-         16 : Type.RPL_MAPMORE16,
-         17 : Type.RPL_MAPEND17,
-         20 : Type.RPL_HELLO,
-         30 : Type.RPL_APASSWARN_SET,
-         31 : Type.RPL_APASSWARN_SECRET,
-         32 : Type.RPL_APASSWARN_CLEAR,
-         42 : Type.RPL_YOURID,
-         43 : Type.RPL_SAVENICK,
-         50 : Type.RPL_ATTEMPTINGJUNC,
-         51 : Type.RPL_ATTEMPTINGREROUTE,
+        1   : Type.RPL_WELCOME,
+        2   : Type.RPL_YOURHOST,
+        3   : Type.RPL_CREATED,
+        4   : Type.RPL_MYINFO,
+        5   : Type.RPL_ISUPPORT,
+        6   : Type.RPL_MAP,
+        7   : Type.RPL_MAPEND,
+        8   : Type.RPL_SNOMASK,
+        9   : Type.RPL_STATMEMTOT,
+        10  : Type.RPL_STATMEM,
+        14  : Type.RPL_YOURCOOKIE,
+        16  : Type.RPL_MAPMORE,
+        20  : Type.RPL_HELLO,
+        30  : Type.RPL_APASSWARN_SET,
+        31  : Type.RPL_APASSWARN_SECRET,
+        32  : Type.RPL_APASSWARN_CLEAR,
+        42  : Type.RPL_YOURID,
+        43  : Type.RPL_SAVENICK,
+        50  : Type.RPL_ATTEMPTINGJUNC,
+        51  : Type.RPL_ATTEMPTINGREROUTE,
         105 : Type.RPL_REMOTEISUPPORT,
         200 : Type.RPL_TRACELINK,
         201 : Type.RPL_TRACECONNECTING,
@@ -765,15 +768,15 @@ struct IRCEvent
         217 : Type.RPL_STATSQLINE,
         218 : Type.RPL_STATSYLINE,
         219 : Type.RPL_ENDOFSTATS,
-        220 : Type.RPL_STATSPLINE,
+        220 : Type.RPL_STATSWLINE,
         221 : Type.RPL_UMODEIS,
-        222 : Type.RPL_STATSJLINE,
+        222 : Type.RPL_MODLIST,
         223 : Type.RPL_STATSELINE,
         224 : Type.RPL_STATSFLINE,
         225 : Type.RPL_STATSDLINE,
         226 : Type.RPL_STATSCOUNT,
-        227 : Type.RPL_STATSBLINE,
-        228 : Type.RPL_STATSQLINE228,
+        227 : Type.RPL_STATSVLINE,
+        228 : Type.RPL_STATSBANVER,
         229 : Type.RPL_STATSSPAMF,
         230 : Type.RPL_STATSEXCEPTTKL,
         231 : Type.RPL_SERVICEINFO,
@@ -783,18 +786,16 @@ struct IRCEvent
         235 : Type.RPL_SERVLISTEND,
         236 : Type.RPL_STATSVERBOSE,
         237 : Type.RPL_STATSENGINE,
-        238 : Type.RPL_STATSFLINE238,
         239 : Type.RPL_STATSIAUTH,
-        240 : Type.RPL_STATSVLINE,
+        240 : Type.RPL_STATSXLINE,
         241 : Type.RPL_STATSLLINE,
         242 : Type.RPL_STATSUPTIME,
         243 : Type.RPL_STATSOLINE,
         244 : Type.RPL_STATSHLINE,
         245 : Type.RPL_STATSSLINE,
         246 : Type.RPL_STATSPING,
-        247 : Type.RPL_STATSBLINE247,
-        248 : Type.RPL_STATSULINE248,
-        249 : Type.RPL_STATSULINE249,
+        248 : Type.RPL_STATSDEFINE,
+        249 : Type.RPL_STATSDEBUG,
         250 : Type.RPL_STATSCONN,
         251 : Type.RPL_LUSERCLIENT,
         252 : Type.RPL_LUSEROP,
@@ -806,7 +807,7 @@ struct IRCEvent
         258 : Type.RPL_ADMINLOC2,
         259 : Type.RPL_ADMINEMAIL,
         261 : Type.RPL_TRACELOG,
-        262 : Type.RPL_TRACEEND,
+        262 : Type.RPL_TRACEPING,
         263 : Type.RPL_TRYAGAIN,
         264 : Type.RPL_USINGSSL,
         265 : Type.RPL_LOCALUSERS,
@@ -819,16 +820,15 @@ struct IRCEvent
         272 : Type.RPL_ENDOFSILELIST,
         273 : Type.RPL_NOTIFY,
         274 : Type.RPL_ENDNOTIFY,
-        275 : Type.RPL_STATSDLINE275,
         276 : Type.RPL_STATSRLINE,
         277 : Type.RPL_VCHANLIST,
         278 : Type.RPL_VCHANHELP,
         280 : Type.RPL_GLIST,
-        281 : Type.RPL_ENDOFGLIST,
-        282 : Type.RPL_JUPELIST,
-        283 : Type.RPL_ENDOFJUPELIST,
-        284 : Type.RPL_FEATURE,
-        285 : Type.RPL_CHANINFO_HANDLE,
+        281 : Type.RPL_ACCEPTLIST,
+        282 : Type.RPL_ENDOFACCEPT,
+        283 : Type.RPL_ALIST,
+        284 : Type.RPL_ENDOFALIST,
+        285 : Type.RPL_GLIST_HASH,
         286 : Type.RPL_CHANINFO_USERS,
         287 : Type.RPL_CHANINFO_CHOPS,
         288 : Type.RPL_CHANINFO_VOICES,
@@ -848,7 +848,7 @@ struct IRCEvent
         304 : Type.RPL_TEXT,
         305 : Type.RPL_UNAWAY,
         306 : Type.RPL_NOWAWAY,
-        307 : Type.RPL_WHOISREGNICK,
+        307 : Type.RPL_USERIP,
         308 : Type.RPL_NOTIFYACTION,
         309 : Type.RPL_NICKTRACE,
         310 : Type.RPL_WHOISSVCMSG,
@@ -866,12 +866,12 @@ struct IRCEvent
         322 : Type.RPL_LIST,
         323 : Type.RPL_LISTEND,
         324 : Type.RPL_CHANNELMODEIS,
-        325 : Type.RPL_UNIQOPIS,
+        325 : Type.RPL_CHANNELPASSIS,
         326 : Type.RPL_NOCHANPASS,
         327 : Type.RPL_CHPASSUNKNOWN,
         328 : Type.RPL_CHANNEL_URL,
         329 : Type.RPL_CREATIONTIME,
-        330 : Type.RPL_WHOISACCOUNT,
+        330 : Type.RPL_WHOWAS_TIME,
         331 : Type.RPL_NOTOPIC,
         332 : Type.RPL_TOPIC,
         333 : Type.RPL_TOPICWHOTIME,
@@ -879,15 +879,12 @@ struct IRCEvent
         335 : Type.RPL_WHOISBOT,
         336 : Type.RPL_INVITELIST,
         337 : Type.RPL_ENDOFINVITELIST,
-        338 : Type.RPL_WHOISACTUALLY,
-        339 : Type.RPL_WHOISMARKS,
-        340 : Type.RPL_USERIP,
+        338 : Type.RPL_CHANPASSOK,
+        339 : Type.RPL_BADCHANPASS,
         341 : Type.RPL_INVITING,
         342 : Type.RPL_SUMMONING,
         343 : Type.RPL_WHOISKILL,
         345 : Type.RPL_INVITED,
-        346 : Type.RPL_INVITELIST346,
-        347 : Type.RPL_ENDOFINVITELIST347,
         348 : Type.RPL_EXCEPTLIST,
         349 : Type.RPL_ENDOFEXCEPTLIST,
         351 : Type.RPL_VERSION,
@@ -895,9 +892,6 @@ struct IRCEvent
         353 : Type.RPL_NAMREPLY,
         354 : Type.RPL_WHOSPCRPL,
         355 : Type.RPL_NAMREPLY_,
-        357 : Type.RPL_MAP357,
-        358 : Type.RPL_MAPMORE358,
-        359 : Type.RPL_MAPEND359,
         360 : Type.RPL_WHOWASREAL,
         361 : Type.RPL_KILLDONE,
         362 : Type.RPL_CLOSING,
@@ -915,8 +909,8 @@ struct IRCEvent
         375 : Type.RPL_MOTDSTART,
         376 : Type.RPL_ENDOFMOTD,
         377 : Type.RPL_KICKEXPIRED,
-        378 : Type.RPL_WHOISHOST378,
-        379 : Type.RPL_WHOISMODES379,
+        378 : Type.RPL_BANEXPIRED,
+        379 : Type.RPL_WHOWASIP,
         380 : Type.RPL_BANLINKED,
         381 : Type.RPL_YOUREOPER,
         382 : Type.RPL_REHASHING,
@@ -925,8 +919,6 @@ struct IRCEvent
         385 : Type.RPL_NOTOPERANYMORE,
         386 : Type.RPL_QLIST,
         387 : Type.RPL_ENDOFQLIST,
-        388 : Type.RPL_ALIST,
-        389 : Type.RPL_ENDOFALIST,
         391 : Type.RPL_TIME,
         392 : Type.RPL_USERSTART,
         393 : Type.RPL_USERS,
@@ -1020,7 +1012,7 @@ struct IRCEvent
         491 : Type.ERR_NOOPERHOST,
         492 : Type.ERR_NOSERVICEHOST,
         493 : Type.ERR_NOFEATURE,
-        494 : Type.ERR_BADFEATURES,
+        494 : Type.ERR_BADFEATVALUE,
         495 : Type.ERR_BADLOGTYPE,
         496 : Type.ERR_BADLOGSYS,
         497 : Type.ERR_BADLOGVALUE,
@@ -1059,7 +1051,7 @@ struct IRCEvent
         564 : Type.ERR_UPASSNOTSET,
         566 : Type.ERR_NOMANAGER,
         567 : Type.ERR_UPASS_SAME_APASS,
-        568 : Type.ERR_LASTERROR568,
+        568 : Type.ERR_LASTERROR,
         597 : Type.RPL_REAWAY,
         598 : Type.RPL_GONEAWAY,
         599 : Type.RPL_NOTAWAY,
@@ -1073,21 +1065,16 @@ struct IRCEvent
         607 : Type.RPL_ENDOFWATCHLIST,
         608 : Type.RPL_WATCHCLEAR,
         609 : Type.RPL_NOWISAWAY,
-        610 : Type.RPL_MAPMORE610,
+        610 : Type.RPL_ISOPER,
         611 : Type.RPL_ISLOCOP,
         612 : Type.RPL_ISNOTOPER,
         613 : Type.RPL_ENDOFISOPER,
-        615 : Type.RPL_WHOISMODES615,
-        616 : Type.RPL_WHOISHOST616,
         617 : Type.RPL_DCCSTATUS,
         618 : Type.RPL_DCCLIST,
         619 : Type.RPL_ENDOFDCCLIST,
         620 : Type.RPL_DCCINFO,
-        621 : Type.RPL_RULES,
-        622 : Type.RPL_ENDOFRULES,
-        623 : Type.RPL_MAPMORE623,
-        624 : Type.RPL_OMOTDSTART624,
-        625 : Type.RPL_OMOTD625,
+        624 : Type.RPL_OMOTDSTART,
+        625 : Type.RPL_OMOTD,
         626 : Type.RPL_ENDOFO,
         630 : Type.RPL_SETTINGS,
         631 : Type.RPL_ENDOFSETTINGS,
@@ -1104,7 +1091,7 @@ struct IRCEvent
         666 : Type.RPL_ENDOF_GENERIC,
         670 : Type.RPL_STARTTLS,
         671 : Type.RPL_WHOISSECURE,
-        672 : Type.RPL_UNKNOWNMODES,
+        672 : Type.RPL_WHOISREALIP,
         673 : Type.RPL_CANNOTSETMODES,
         674 : Type.RPL_WHOISYOURID,
         678 : Type.RPL_LUSERSTAFF,
@@ -1132,8 +1119,6 @@ struct IRCEvent
         716 : Type.RPL_TARGUMODEG,
         717 : Type.RPL_TARGNOTIFY,
         718 : Type.RPL_UMODEGMSG,
-        720 : Type.RPL_OMOTDSTART720,
-        721 : Type.RPL_OMOTD721,
         722 : Type.RPL_ENDOFOMOTD,
         723 : Type.ERR_NOPRIVS,
         724 : Type.RPL_TESTMASK,
@@ -1184,7 +1169,7 @@ struct IRCEvent
         972 : Type.ERR_CANNOTDOCOMMAND,
         973 : Type.ERR_CANNOTCHANGEUMODE,
         974 : Type.ERR_CANNOTCHANGECHANMODE,
-        975 : Type.ERR_LASTERROR975,
+        975 : Type.RPL_LOADEDMODULE,
         976 : Type.ERR_CANNOTSENDTONICK,
         977 : Type.ERR_UNKNOWNSERVERMODE,
         979 : Type.ERR_SERVERMODELOCK,
@@ -1205,7 +1190,7 @@ struct IRCEvent
         223 : Type.RPL_STATSGLINE,
         224 : Type.RPL_STATSTLINE,
         225 : Type.RPL_STATSELINE,
-        226 : Type.RPL_STASTNLINE,
+        226 : Type.RPL_STATSNLINE,
         227 : Type.RPL_STATSVLINE,
         228 : Type.RPL_STATSBANVER,
         232 : Type.RPL_RULES,
@@ -1248,8 +1233,8 @@ struct IRCEvent
         518 : Type.ERR_NOINVITE,
         519 : Type.ERR_ADMONLY,
         520 : Type.ERR_OPERONLY,
-        524 : Type.ERR_OPERSVERIFY,
-        610 : Type.ERR_MAPMORE,
+        524 : Type.ERR_OPERSPVERIFY,
+        610 : Type.RPL_MAPMORE,
         972 : Type.ERR_CANNOTDOCOMMAND,
         974 : Type.ERR_CANNOTCHANGECHANMODE,
     ];
@@ -1261,7 +1246,7 @@ struct IRCEvent
          17 : Type.RPL_MAPEND,
         222 : Type.RPL_STATSJLINE,
         228 : Type.RPL_STATSQLINE,
-        238 : Type.RPL_STASTFLINE,
+        238 : Type.RPL_STATSFLINE,
         246 : Type.RPL_STATSTLINE,
         247 : Type.RPL_STATSGLINE,
         248 : Type.RPL_STATSULINE,
@@ -1419,8 +1404,8 @@ struct IRCEvent
     Type[1024] nefariousSpecific =
     [
         220 : Type.RPL_STATSWLINE,
-        292 : Type.RPL_SEARCHNOMATCH,
-        316 : Type.RPL_WHOIPRIVDEAF,
+        292 : Type.ERR_SEARCHNOMATCH,
+        316 : Type.RPL_WHOISPRIVDEAF,
         320 : Type.RPL_WHOISWEBIRC,
         335 : Type.RPL_WHOISACCOUNTONLY,
         336 : Type.RPL_WHOISBOT,
@@ -1430,7 +1415,7 @@ struct IRCEvent
         388 : Type.RPL_ENDOFIRCOPS,
         521 : Type.ERR_NOSUCHGLINE,
         568 : Type.RPL_NOMOTD,
-        617 : Type.RPL_WHOISSLFP,
+        617 : Type.RPL_WHOISSSLFP,
         975 : Type.ERR_LASTERROR,
     ];
 
@@ -1449,7 +1434,7 @@ struct IRCEvent
 
     Type[1024] rizonSpecific =
     [
-        227 : Type.RPL_STASTBLINE,
+        227 : Type.RPL_STATSBLINE,
         672 : Type.RPL_WHOISREALIP,
         715 : Type.RPL_INVITETHROTTLE,
     ];
@@ -1457,7 +1442,7 @@ struct IRCEvent
     Type[1024] austHexSpecific =
     [
         240 : Type.RPL_STATSXLINE,
-        307 : Type.RPL_SUPERHOST,
+        307 : Type.RPL_SUSERHOST,
         309 : Type.RPL_WHOISHELPER,
         310 : Type.RPL_WHOISSERVICE,
         320 : Type.RPL_WHOISVIRT,
@@ -1495,13 +1480,13 @@ struct IRCEvent
     [
         270 : Type.RPL_MAPUSERS,
         304 : Type.RPL_SYNTAX,
-        370 : Type.RPL_WHOWASIP,
+        379 : Type.RPL_WHOWASIP,
         495 : Type.ERR_DELAYREJOIN,
         501 : Type.ERR_UNKNOWNSNOMASK,
         702 : Type.RPL_COMMANDS,
         703 : Type.RPL_COMMANDSEND,
         972 : Type.ERR_CANTUNLOADMODULE,
-        974 : Type.ERR_CANOTLOADMODULE,
+        974 : Type.ERR_CANTLOADMODULE,
         975 : Type.RPL_LOADEDMODULE
     ];
 
@@ -1550,7 +1535,7 @@ struct IRCEvent
         485 : Type.ERR_BANNEDNICK,      // deprecated
         702 : Type.RPL_MODLIST,
         703 : Type.RPL_ENDOFMODLIST,
-        715 : Type.RPL_KNOCKDISBLED,
+        715 : Type.ERR_KNOCKDISABLED,
     ];
 
     Type[1024] chatIRCd =
