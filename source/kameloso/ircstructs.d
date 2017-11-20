@@ -2,6 +2,11 @@ module kameloso.ircstructs;
 
 import kameloso.common : Hidden, Separator, Unconfigurable;
 
+final:
+@safe:
+pure:
+nothrow:
+
 // IRCEvent
 /++
  +  A single IRC event, parsed from server input.
