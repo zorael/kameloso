@@ -1195,11 +1195,6 @@ struct IRCEvent
         999 : Type.ERR_NUMERIC_ERR,
     ];
 
-
-
-
-
-
     Type[1024] unrealSpecific =
     [
           6 : Type.RPL_MAP,
@@ -1236,7 +1231,7 @@ struct IRCEvent
         388 : Type.RPL_ALIST,
         434 : Type.ERR_NORULES,
         435 : Type.ERR_SERVICECONFUSED,
-        438 : Type.ERR_ONLYSERVERSCANCHANGE
+        438 : Type.ERR_ONLYSERVERSCANCHANGE,
         470 : Type.ERR_LINKCHANNEL,
         477 : Type.ERR_NEEDREGGEDNICK,
         479 : Type.ERR_LINKFAIL,
@@ -1492,7 +1487,7 @@ struct IRCEvent
     [
         247 : Type.RPL_STATSXLINE,
         484 : Type.ERR_DESYNC,
-        485 : Type.ERR_CANTKICKADMIN
+        485 : Type.ERR_CANTKICKADMIN,
         615 : Type.RPL_MAPMORE,
     ];
 
@@ -1517,7 +1512,7 @@ struct IRCEvent
         387 : Type.RPL_ENDOFIRCOPS,
         434 : Type.ERR_NORULES,
         610 : Type.RPL_ISOPER,
-        615 : Type.RPL_WHOISMODES
+        615 : Type.RPL_WHOISMODES,
         616 : Type.RPL_WHOISHOST,
         617 : Type.RPL_WHOISBOT,
         619 : Type.RPL_WHOWASHOST,
