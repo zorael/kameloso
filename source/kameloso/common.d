@@ -5,7 +5,7 @@ import kameloso.constants;
 import std.experimental.logger;
 import std.meta : allSatisfy;
 import std.stdio;
-import std.traits : isType;
+import std.traits : isType, isArray;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
@@ -724,6 +724,64 @@ unittest
         assert((login == "kamelusu"), login);
         assert(!special);
     }
+}
+
+
+// meldInto (array)
+/++
+ +  Takes two arrays and melds them together, making a union of the two.
+ +
+ +  It only overwrites members that are `T.init`, so only unset
+ +  fields get their values overwritten by the melding array. Supply a
+ +  template parameter `Yes.overwrite` to make it overwrite if the melding
+ +  array's field is not `T.init`.
+ +
+ +  Params:
+ +      overwrite = flag denoting whether the second array should overwrite
+ +                  set values in the receiving array.
+ +      meldThis = array to meld (origin).
+ +      intoThis = array to meld (target).
+ +/
+void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
+    (Array1 meldThis, ref Array2 intoThis)
+if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
+    && !is(Array2 == immutable))
+{
+    assert((intoThis.length >= meldThis.length),
+        "Can't meld a larger array into a smaller one");
+
+    foreach (immutable i, val; meldThis)
+    {
+        if (val == typeof(val).init) continue;
+
+        static if (overwrite)
+        {
+            intoThis[i] = val;
+        }
+        else
+        {
+            if ((val != typeof(val).init) && (intoThis[i] == typeof(intoThis[i]).init))
+            {
+                intoThis[i] = val;
+            }
+        }
+    }
+}
+
+unittest
+{
+    import std.conv : to;
+    import std.typecons : Yes, No;
+
+    auto arr1 = [ 123, 0, 789, 0, 456, 0 ];
+    auto arr2 = [ 0, 456, 0, 123, 0, 789 ];
+    arr1.meldInto!(No.overwrite)(arr2);
+    assert((arr2 == [ 123, 456, 789, 123, 456, 789 ]), arr2.to!string);
+
+    auto yarr1 = [ 'Z', char.init, 'Z', char.init, 'Z' ];
+    auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
+    yarr1.meldInto!(Yes.overwrite)(yarr2);
+    assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
 }
 
 
