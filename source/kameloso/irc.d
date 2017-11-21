@@ -1126,7 +1126,8 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         writeln();
     }
     else if (event.target.nickname.beginsWith('#') &&
-        (event.type != IRCEvent.Type.ERR_NOSUCHNICK))
+        (event.type != IRCEvent.Type.ERR_NOSUCHNICK)
+        (event.type != IRCEvent.Type.RPL_ENDOFWHOIS))
     {
         writeln();
         logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
