@@ -1611,6 +1611,7 @@ struct IRCEvent
             break;
 
         case rizon:
+            typenumsHybrid.meldInto(typenums);
             typenumsRizon.meldInto(typenums);
             break;
 
