@@ -1910,7 +1910,14 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
         }
         else if (daemonstring.indexOf("hybrid") != -1)
         {
-            daemon = hybrid;
+            if (address.indexOf(".rizon.") != -1)
+            {
+                daemon = rizon;
+            }
+            else
+            {
+                daemon = hybrid;
+            }
         }
         else if (daemonstring.indexOf("ratbox") != -1)
         {
