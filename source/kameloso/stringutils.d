@@ -67,6 +67,7 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     return arr[0..index];
 }
 
+
 pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure
 if (isSomeString!T)
@@ -77,13 +78,6 @@ if (isSomeString!T)
     }
 
     return (haystack[0..needle.length] == needle);
-}
-
-unittest
-{
-    assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
-    assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
-    assert("Lorem ipsum sit amet".beginsWith(""));
 }
 
 
@@ -115,23 +109,7 @@ string stripPrefix(const string line, const string prefix)
     return hits[1];
 }
 
-unittest
-{
-    immutable lorem = "say: lorem ipsum".stripPrefix("say");
-    assert((lorem == "lorem ipsum"), lorem);
 
-    immutable notehello = "note!!!! zorael hello".stripPrefix("note");
-    assert((notehello == "zorael hello"), notehello);
-
-    immutable sudoquit = "sudo quit :derp".stripPrefix("sudo");
-    assert((sudoquit == "quit :derp"), sudoquit);
-
-    immutable eightball = "8ball predicate?".stripPrefix("");
-    assert((eightball == "8ball predicate?"), eightball);
-
-    immutable isabot = "kamelosois a bot".stripPrefix("kameloso");
-    assert((isabot == "is a bot"), isabot);
-}
 
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure
@@ -149,12 +127,3 @@ string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
         line[0..($-suffix.length)] : line;
 }
 
-unittest
-{
-    immutable line = "harblsnarbl";
-    assert(line.stripSuffix("snarbl") == "harbl");
-    assert(line.stripSuffix("") == "harblsnarbl");
-    assert(line.stripSuffix("INVALID") == "harblsnarbl");
-    assert(!line.stripSuffix!(Yes.allowFullStrip)("harblsnarbl").length);
-    assert(line.stripSuffix("harblsnarbl") == "harblsnarbl");
-}

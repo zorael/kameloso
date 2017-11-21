@@ -699,42 +699,9 @@ struct IRCEvent
     }
 
 
-    /// The event type, signifying what *kind* of event this is.
     Type type;
-
-    /// The role of the sender in this context
-
-    /// The raw IRC string, untouched.
-    string raw;
-
-    /// The name of whoever (or whatever) sent this event.
-    IRCUser sender;
-
-    /// The channel the event transpired in, or is otherwise related to.
-    string channel;
-
-    /// The target of the event. May be a nickname or a channel.
-    IRCUser target;
-
-    /// The main body of the event.
-    string content;
-
-    /// The auxiliary storage, containing type-specific extra bits of information.
     string aux;
-
-    /// The role in string form, may be of other values than the enum provides.
-    string rolestring;
-
-    /// The colour (RRGGBB) to tint the user's nickname with
-    string colour;
-
-    /// IRCv3 message tags attached to this event.
-    string tags;
-
-    /// With a numeric event, the number of the event type.
     uint num;
-
-    /// A timestamp of when the event occured.
     long time;
 }
 
@@ -755,6 +722,7 @@ struct IRCBot
         string pass;
     }
 
+
     @Separator(",")
     {
         string[] homes;
@@ -765,12 +733,6 @@ struct IRCBot
     @Unconfigurable
     {
         IRCServer server;
-        string origNickname;
-        bool startedRegistering;
-        bool finishedRegistering;
-        bool startedAuth;
-        bool finishedAuth;
-        bool updated;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
@@ -874,12 +836,5 @@ struct IRCUser
         sink.formattedWrite("n:%s l:%s a:%s i:%s s:%s%s w:%s",
             nickname, login, alias_, ident, address,
             special ? " (*)" : string.init, lastWhois);
-    }
-
-    bool isServer() @property const
-    {
-        import std.string : indexOf;
-
-        return (!nickname.length && (address.indexOf('.') != -1));
     }
 }

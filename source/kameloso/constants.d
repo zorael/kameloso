@@ -1,15 +1,9 @@
 module kameloso.constants;
 
-/// Special terminal control characters
 enum TerminalToken
 {
-    /// Character that preludes a Bash colouring code.
     bashFormat = '\033',
-
-    /// Character that resets a terminal that has entered "binary" mode.
-    reset = 15,
 }
-
 
 /// Effect codes that work like Bash colouring does, except for effects
 enum BashEffectToken

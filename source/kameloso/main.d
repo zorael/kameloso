@@ -1,7 +1,6 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.connection;
 import kameloso.constants;
 import kameloso.irc;
 

@@ -38,26 +38,7 @@ struct Hidden {}
  +/
 struct Settings
 {
-    version(Windows)
-    {
-        bool monochrome = true;
-    }
-    else version(Colours)
-    {
-        bool monochrome = false;
-    }
-    else
-    {
-        bool monochrome = true;
-    }
-
-    bool reconnectOnFailure = true;
-
-    @Unconfigurable
-    {
-        @Hidden
-        string configFile = "kameloso.conf";
-    }
+    bool monochrome;
 }
 
 
