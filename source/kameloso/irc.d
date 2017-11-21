@@ -1856,8 +1856,6 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
     with (bot.server)
     with (IRCServer.Daemon)
     {
-        IRCEvent.resetTypenums();
-
         if (daemonstring.indexOf("unreal") != -1)
         {
             daemon = unreal;
