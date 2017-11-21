@@ -324,7 +324,7 @@ void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             immutable number = typestring.to!uint;
             event.num = number;
-            event.type = IRCEvent.typenums[number];
+            //event.type = IRCEvent.typenums[number];
 
             with (IRCEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
@@ -607,7 +607,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_MYINFO: // 004
-        event.onMyInfo(bot, slice);
+        //event.onMyInfo(bot, slice);
         break;
 
     case RPL_TOPICWHOTIME: // 333
@@ -1798,7 +1798,7 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
     }
 }
 
-void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
+/+void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
     import std.string : toLower;
 
@@ -1898,7 +1898,7 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
             IRCEvent.setTypenums();
         }*/
     }
-}
+}+/
 
 public:
 

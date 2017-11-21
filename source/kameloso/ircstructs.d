@@ -14,6 +14,7 @@ nothrow:
  +  The IRCEvent struct is aconstruct with fields extracted from raw server strings.
  +  Since structs are not polymorphic the Type enum dictates what kind of event it is.
  +/
+// DustMiteNoRemoveStart
 struct IRCEvent
 {
     /// Taken from https://tools.ietf.org/html/rfc1459 with many additions
@@ -413,6 +414,7 @@ struct IRCEvent
         ERR_NICKLOST, // = 453,
         //ERR_IDCOLLISION, // = 455       // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
         ERR_HOSTILENAME, // = 455,
+        /*
         ERR_ACCEPTFULL, // = 456
         ERR_ACCEPTEXIST, // = 457,
         ERR_ACCEPTNOT, // = 458,
@@ -695,7 +697,21 @@ struct IRCEvent
         ERR_NOLANGUAGE, // = 982,
         ERR_TEXTTOOSHORT, // = 983,
 
-        ERR_NUMERIC_ERR, // = 999
+        ERR_NUMERIC_ERR, // = 999*/
+        ERR_BADPING,
+        RPL_LOGGEDIN,
+        RPL_SASLSUCCESS,
+        ERR_SASLFAIL,
+        ERR_INVITEONLYCHAN,
+        ERR_NEEDREGGEDNICK,
+        ERR_NEEDMOREPARAMS,
+        ERR_WHOISSECURE,
+        RPL_HELPSTART,
+        RPL_HELPTXT,
+        RPL_ENDOFHELP,
+        ERR_YOUREBANNEDCREEP,
+        ERR_LINKCHANNEL,
+        RPL_WHOISSECURE,
     }
 
     /*
@@ -742,9 +758,10 @@ struct IRCEvent
     */
 
     /// Reverse mapping of Types to their numeric form, to speed up conversion
-    static immutable Type[1024] typenumsBase =
+    /*
+    static immutable Type1024[] typenums =
     [
-        1   : Type.RPL_WELCOME,
+        1   : Type.RPL_WELCOME,/*
         2   : Type.RPL_YOURHOST,
         3   : Type.RPL_CREATED,
         4   : Type.RPL_MYINFO,
@@ -1195,11 +1212,12 @@ struct IRCEvent
         982 : Type.ERR_NOLANGUAGE,
         983 : Type.ERR_TEXTTOOSHORT,
         999 : Type.ERR_NUMERIC_ERR,
-    ];
 
-    static Type[1024] typenums = typenumsBase;
+    ];*/
 
-    static void setTypenums(const IRCServer.Daemon daemon)
+    //static Type[] typenums = typenumsBase;
+
+    /+static void setTypenums(const IRCServer.Daemon daemon)
     {
         static immutable Type[975] typenumsUnreal =
         [
@@ -1585,7 +1603,7 @@ struct IRCEvent
         import kameloso.common;
 
         // Reset
-        typenums = typenumsBase;
+        typenums = typenumsBase.dup;
 
         with (IRCServer.Daemon)
         final switch (daemon)
@@ -1694,7 +1712,7 @@ struct IRCEvent
             typenumsCharybdis.meldInto(typenums);
             break;
         }
-    }
+    }+/
 
     enum Role
     {
@@ -1755,6 +1773,7 @@ struct IRCEvent
     long time;
 }
 
+//DustMiteNoRemoveStop
 
 /// Aggregate collecting all the relevant settings, options and state needed
 struct IRCBot
