@@ -1842,6 +1842,7 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
     redhispana.org                          Unreal3.2.8+UDB-3.6.1
     */
 
+    slice.nom(' ');  // nickname
     slice.nom(' ');  // server address
     immutable daemonstringRaw = slice.nom(' ');
     immutable daemonstring = daemonstringRaw.toLower();
