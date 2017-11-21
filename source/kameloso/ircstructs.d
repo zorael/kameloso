@@ -1881,6 +1881,12 @@ struct IRCServer
     @Unconfigurable
     {
         string resolvedAddress;
+
+        /// Max nickname length as per IRC specs, but not the de facto standard
+        uint maxNickLength = 9;
+
+        /// Max channel name length as per IRC specs
+        uint maxChannelLength = 200;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const

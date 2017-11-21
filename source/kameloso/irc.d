@@ -14,13 +14,6 @@ import std.stdio;
 
 private:
 
-/// Max nickname length as per IRC specs, but not the de facto standard
-uint maxNickLength = 9;
-
-/// Max channel name length as per IRC specs
-uint maxChannelLength = 200;
-
-
 // parseBasic
 /++
  +  Parses the most basic of IRC events; PING, ERROR, PONG and NOTICE.
@@ -1816,7 +1809,11 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
             break;
 
         case "NICKLEN":
-            try maxNickLength = value.to!uint;
+            try
+            {
+                bot.server.maxNickLength = value.to!uint;
+                bot.updated = true;
+            }
             catch (const Exception e)
             {
                 logger.error(e.msg);
@@ -1824,7 +1821,11 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
             break;
 
         case "CHANNELLEN":
-            try maxChannelLength = value.to!uint;
+            try
+            {
+                bot.server.maxChannelLength = value.to!uint;
+                bot.updated = true;
+            }
             catch (const Exception e)
             {
                 logger.error(e.msg);
@@ -2159,7 +2160,7 @@ unittest
 
 
 /// Checks whether a string *looks* like a channel.
-bool isValidChannel(const string line)
+bool isValidChannel(const string line, const IRCBot bot = IRCBot.init)
 {
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
@@ -2179,7 +2180,10 @@ bool isValidChannel(const string line)
         return false;
     }
 
-    if ((line.length <= 1) || (line.length > maxChannelLength)) return false;
+    if ((line.length <= 1) || (line.length > bot.server.maxChannelLength))
+    {
+        return false;
+    }
 
     if ((line[0] == '#') || (line[0] == '&'))
     {
@@ -2208,14 +2212,17 @@ unittest
 }
 
 /// Checks if a string *looks* like a nickname.
-bool isValidNickname(const string nickname)
+bool isValidNickname(const string nickname, const IRCBot bot = IRCBot.init)
 {
     import std.regex : ctRegex, matchAll;
     import std.string : representation;
 
     // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
 
-    if (!nickname.length || (nickname.length > maxNickLength)) return false;
+    if (!nickname.length || (nickname.length > bot.server.maxNickLength))
+    {
+        return false;
+    }
 
     enum validCharactersPattern = r"^([a-zA-Z0-9_\\\[\]{}\^`|-]+)$";
     static engine = ctRegex!validCharactersPattern;
@@ -2227,6 +2234,8 @@ unittest
 {
     import std.range : repeat;
     import std.conv : to;
+
+    IRCBot bot;
 
     const validNicknames =
     [
@@ -2243,7 +2252,7 @@ unittest
     const invalidNicknames =
     [
         "",
-        "X".repeat(maxNickLength+1).to!string,
+        "X".repeat(bot.server.maxNickLength+1).to!string,
         "åäöÅÄÖ",
         "\n",
         "¨",
