@@ -37,45 +37,6 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
 {
 }
 
-unittest
-{
-    import std.conv : to;
-
-    IRCBot bot;
-
-    IRCEvent e1;
-    with (e1)
-    {
-        raw = "PING :irc.server.address";
-        e1.parseBasic(bot);
-        assert((type == IRCEvent.Type.PING), type.to!string);
-        assert((sender.address == "irc.server.address"), sender.address);
-        assert(!sender.nickname.length, sender.nickname);
-    }
-
-    IRCEvent e2;
-    with (e2)
-    {
-        // QuakeNet and others not having the sending server as prefix
-        raw = "NOTICE AUTH :*** Couldn't look up your hostname";
-        e2.parseBasic(bot);
-        assert((type == IRCEvent.Type.NOTICE), type.to!string);
-        assert(!sender.nickname.length, sender.nickname);
-        assert((content == "*** Couldn't look up your hostname"));
-    }
-
-    IRCEvent e3;
-    with (e3)
-    {
-        raw = "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)";
-        e3.parseBasic(bot);
-        assert((type == IRCEvent.Type.ERROR), type.to!string);
-        assert(!sender.nickname.length, sender.nickname);
-        assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
-    }
-}
-
-
 // parsePrefix
 /++
  +  Takes a slice of a raw IRC string and starts parsing it into an IRCEvent struct.
@@ -91,96 +52,7 @@ unittest
  +/
 void parsePrefix(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
-    import kameloso.stringutils : nom;
-    import std.algorithm.searching : endsWith;
-
-    auto prefix = slice.nom(' ');
-
-    with (event.sender)
-    if (prefix.indexOf('!') != -1)
-    {
-        // user!~ident@address
-        //prefix.formattedRead("%s!%s@%s", sender, ident, address);
-        nickname = prefix.nom('!');
-        ident = prefix.nom('@');
-        address = prefix;
-
-        // FIXME: This obviously doesn't scale
-        special = (address == "services.") ||
-                  ((ident == "service") && (address == "rizon.net")) ||
-                  (address.endsWith(".rizon.net")) ||
-                  (address.endsWith(".quakenet.org"));
-    }
-    else if (prefix.indexOf('.') != -1)
-    {
-        // dots signify an address
-        address = prefix;
-    }
-    else
-    {
-        nickname = prefix;
-    }
 }
-
-unittest
-{
-    import std.conv : to;
-
-    IRCBot bot;
-
-    IRCEvent e1;
-    with (e1)
-    with (e1.sender)
-    {
-        raw = ":zorael!~NaN@some.address.org PRIVMSG kameloso :this is fake";
-        string slice1 = raw[1..$];  // mutable
-        e1.parsePrefix(bot, slice1);
-        assert((nickname == "zorael"), nickname);
-        assert((ident == "~NaN"), ident);
-        assert((address == "some.address.org"), address);
-        assert(!special);
-    }
-
-    IRCEvent e2;
-    with (e2)
-    with (e2.sender)
-    {
-        raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
-        string slice2 = raw[1..$];  // mutable
-        e2.parsePrefix(bot, slice2);
-        assert((nickname == "NickServ"), nickname);
-        assert((ident == "NickServ"), ident);
-        assert((address == "services."), address);
-        assert(special);
-    }
-
-    IRCEvent e3;
-    with (e3)
-    with (e3.sender)
-    {
-        raw = ":kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp";
-        string slice3 = raw[1..$];  // mutable
-        e3.parsePrefix(bot, slice3);
-        assert((nickname == "kameloso^^"), nickname);
-        assert((ident == "~NaN"), ident);
-        assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
-        assert(!special);
-    }
-
-    IRCEvent e4;
-    with (e4)
-    with (e4.sender)
-    {
-        raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
-        string slice4 = raw[1..$];
-        e4.parsePrefix(bot, slice4);
-        assert((nickname == "Q"), nickname);
-        assert((ident == "TheQBot"), ident);
-        assert((address == "CServe.quakenet.org"), address);
-        assert(special);
-    }
-}
-
 
 // parseTypestring
 /++
@@ -197,85 +69,7 @@ unittest
  +/
 void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
-    import kameloso.stringutils : nom, toEnum;
-    import std.conv : to;
-
-    immutable typestring = slice.nom(' ');
-
-    if ((typestring[0] >= '0') && (typestring[0] <= '9'))
-    {
-        // typestring is a number (ascii 48 is 0, 57 is 9)
-        try
-        {
-            immutable number = typestring.to!uint;
-            event.num = number;
-            event.type = IRCEvent.typenums[number];
-
-            with (IRCEvent.Type)
-            event.type = (event.type == UNSET) ? NUMERIC : event.type;
-        }
-        catch (const Exception e)
-        {
-            logger.error(e.msg);
-            printObject(event);
-        }
-    }
-    else
-    {
-        try event.type = typestring.toEnum!(IRCEvent.Type);
-        catch (const Exception e)
-        {
-            logger.error(e.msg);
-            printObject(event);
-        }
-    }
 }
-
-unittest
-{
-    import std.conv : to;
-
-    IRCBot bot;
-
-    IRCEvent e1;
-    with (e1)
-    {
-        raw = /*":port80b.se.quakenet.org */"421 kameloso åäö :Unknown command";
-        string slice = raw;  // mutable
-        e1.parseTypestring(bot, slice);
-        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
-        assert((num == 421), num.to!string);
-    }
-
-    IRCEvent e2;
-    with (e2)
-    {
-        raw = /*":port80b.se.quakenet.org */"353 kameloso = #garderoben :@kameloso'";
-        string slice = raw;  // mutable
-        e2.parseTypestring(bot, slice);
-        assert((type == IRCEvent.Type.RPL_NAMREPLY), type.to!string);
-        assert((num == 353), num.to!string);
-    }
-
-    IRCEvent e3;
-    with (e3)
-    {
-        raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
-        string slice = raw;
-        e3.parseTypestring(bot, slice);
-        assert((type == IRCEvent.Type.PRIVMSG), type.to!string);
-    }
-
-    IRCEvent e4;
-    with (e4)
-    {
-        raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
-        string slice = raw;
-        e4.parseTypestring(bot, slice);
-        assert((type == IRCEvent.Type.PART), type.to!string);
-    }
-}
-
 
 // parseSpecialcases
 /++
