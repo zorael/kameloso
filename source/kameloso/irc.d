@@ -1012,9 +1012,24 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
                 // target *and* channel
                 immutable probablyBot = targetOrChannel.nom(' ');
 
-                if (probablyBot == bot.nickname)
+                if ((probablyBot == bot.nickname) && targetOrChannel.length)
                 {
-                    if (targetOrChannel.length && (targetOrChannel[0] == '#'))
+                    if ((targetOrChannel[0] >= '0' ) && (targetOrChannel[0] <= '9'))
+                    {
+                        // numeric
+                        if (targetOrChannel.indexOf(' ') != -1)
+                        {
+                            event.target.nickname = targetOrChannel.nom(' ');
+                            event.aux = targetOrChannel;
+                        }
+                        else
+                        {
+                            event.aux = targetOrChannel;
+                        }
+
+                        event.content = slice;
+                    }
+                    else if (targetOrChannel[0] == '#')
                     {
                         event.channel = targetOrChannel;
                     }
@@ -1079,7 +1094,8 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         logger.warning("--------------------------------------");
         writeln();
     }
-    else if (event.target.nickname.beginsWith('#'))
+    else if (event.target.nickname.beginsWith('#') &&
+        (event.type != IRCEvent.Type.ERR_NOSUCHNICK))
     {
         writeln();
         logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
