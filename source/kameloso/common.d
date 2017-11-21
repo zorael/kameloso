@@ -944,6 +944,21 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     sink.put('m');
 }
 
+version(Colours)
+string colour(Codes...)(const string text, const Codes codes)
+if (Codes.length && allSatisfy!(isAColourCode, Codes))
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(text.length + 15);
+
+    sink.colour(codes);
+    sink.put(text);
+    sink.colour(BashReset.all);
+    return sink.data;
+}
+
 
 // normaliseColours
 /++
