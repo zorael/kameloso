@@ -562,6 +562,7 @@ void mapColours(ref IRCEvent event)
     }
 }
 
+version(Colours)
 unittest
 {
     IRCEvent e1;
@@ -653,6 +654,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     event.content = sink.data;
 }
 
+version(Colours)
 unittest
 {
     import std.conv : to;
