@@ -286,8 +286,8 @@ struct IRCEvent
         RPL_INVITELIST, // = 336,
         //RPL_WHOISTEXT, // = 337,        // CONFLICT
         RPL_ENDOFINVITELIST, // = 337,  // CONFLICT
-        RPL_WHOISACTUALLY, // = 338,    // CONFLICT
-        RPL_CHANPASSOK, // = 338,
+        RPL_CHANPASSOK, // = 338,       // CONFLICT
+        RPL_WHOISACTUALLY, // = 338,
         RPL_WHOISMARKS, // = 339,       // CONFLICT
         RPL_BADCHANPASS, // = 339,
         //RPL_USERIP, // = 340,
@@ -328,9 +328,9 @@ struct IRCEvent
         RPL_BANEXPIRED, // = 378,       // CONFLICT
         //RPL_MOTD, // = 378,             // CONFLICT
         //RPL_WHOISHOST, // = 378         // <nickname> :is connecting from *@<address> <ip>
-        RPL_WHOISMODES, // = 379,       // CONFLICT <nickname> :is using modes <modes>
         RPL_KICKLINKED, // = 379,       // CONFLICT
-        RPL_WHOWASIP, // = 379,
+        RPL_WHOWASIP, // = 379,         // CONFLICT
+        RPL_WHOISMODES, // = 379,       // <nickname> :is using modes <modes>
         RPL_YOURHELPER, // = 380,       // CONFLICT
         RPL_BANLINKED, // = 380,
         RPL_YOUREOPER, // = 381,        // ":You are now an IRC operator"
@@ -896,7 +896,7 @@ struct IRCEvent
         335 : Type.RPL_WHOISBOT,
         336 : Type.RPL_INVITELIST,
         337 : Type.RPL_ENDOFINVITELIST,
-        338 : Type.RPL_CHANPASSOK,
+        338 : Type.RPL_WHOISACTUALLY,
         339 : Type.RPL_BADCHANPASS,
         341 : Type.RPL_INVITING,
         342 : Type.RPL_SUMMONING,
@@ -927,7 +927,7 @@ struct IRCEvent
         376 : Type.RPL_ENDOFMOTD,
         377 : Type.RPL_KICKEXPIRED,
         378 : Type.RPL_BANEXPIRED,
-        379 : Type.RPL_WHOWASIP,
+        379 : Type.RPL_WHOISMODES,
         380 : Type.RPL_BANLINKED,
         381 : Type.RPL_YOUREOPER,
         382 : Type.RPL_REHASHING,
