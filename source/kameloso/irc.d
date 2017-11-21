@@ -537,6 +537,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_CHANNEL_URL: // 328
     case ERR_NEEDREGGEDNICK: // 477
     case ERR_NOSUCHCHANNEL: // 403
+    case ERR_NOSUCHNICK: // 401
+        // :irc.rizon.no 401 kameloso^^ #garderoben :No such nick/channel
         // :moon.freenode.net 403 kameloso archlinux :No such channel
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
@@ -561,15 +563,19 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_WHOREPLY: // 352
-        import std.string : stripLeft;
         // :moon.freenode.net 352 kameloso ##linux LP9NDWY7Cy gentoo/contributor/Fieldy moon.freenode.net Fieldy H :0 Ni!
         // :moon.freenode.net 352 kameloso ##linux sid99619 gateway/web/irccloud.com/x-eviusxrezdarwcpk moon.freenode.net tjsimmons G :0 T.J. Simmons
         // :moon.freenode.net 352 kameloso ##linux sid35606 gateway/web/irccloud.com/x-rvrdncbvklhxwjrr moon.freenode.net Whisket H :0 Whisket
         // :moon.freenode.net 352 kameloso ##linux ~rahlff b29beb9d.rev.stofanet.dk orwell.freenode.net Axton H :0 Michael Rahlff
         // :moon.freenode.net 352 kameloso ##linux ~wzhang sea.mrow.org card.freenode.net wzhang H :0 wzhang
+        // :irc.rizon.no 352 kameloso^^ * ~NaN C2802314.E23AD7D8.E9841504.IP * kameloso^^ H :0  kameloso!
+        // :irc.rizon.no 352 kameloso^^ * ~zorael Rizon-64330364.ip-94-23-253.eu * wob^2 H :0 zorael
+
+
         // "<channel> <user> <host> <server> <nick> ( "H" / "G" > ["*"] [ ( "@" / "+" ) ] :<hopcount> <real name>"
         slice.nom(' ');
         event.channel = slice.nom(' ');
+        if (event.channel == "*") event.channel = string.init;
         immutable userOrIdent = slice.nom(' ');
         if (userOrIdent[0] == '~') event.target.ident = userOrIdent;
         event.target.address = slice.nom(' ');
@@ -582,8 +588,10 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
     case RPL_ENDOFWHO: // 315
         // :tolkien.freenode.net 315 kameloso^ ##linux :End of /WHO list.
+        // :irc.rizon.no 315 kameloso^^ * :End of /WHO list.
         slice.nom(' ');
         event.channel = slice.nom(" :");
+        if (event.channel == "*") event.channel = string.init;
         event.content = slice;
         break;
 
@@ -816,6 +824,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
         //slice.formattedRead("%s :%s", event.aux, event.content);
+        slice.nom(' ');
         event.aux = slice.nom(" :");
         event.content = slice;
         break;
@@ -947,6 +956,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_HOSTHIDDEN: // 396
+    case RPL_VERSION: // 351
+        // irc.rizon.no 351 kameloso^^ plexus-4(hybrid-8.1.20)(20170821_0-607). irc.rizon.no :TS6ow
         // :TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host
         slice.nom(' ');
         event.content = slice.nom(" :");
@@ -955,7 +966,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
     case RPL_YOURID: // 42
     case ERR_YOUREBANNEDCREEP: // 465
+    case ERR_HELPNOTFOUND: // 502, 524
+    case ERR_UNKNOWNMODE: // 472
         // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
+        // :irc.rizon.no 524 kameloso^^ 502 :Help not found
+        // :irc.rizon.no 472 kameloso^^ X :is unknown mode char to me
         // miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
         // event.time was 1511000921
         slice.nom(' ');
@@ -989,6 +1004,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         slice.nom(' ');
         event.target.nickname = slice.nom(" :is using modes ");
         event.aux = slice;
+        break;
+
+    case RPL_WHOWASUSER: // 314
+        // :irc.uworld.se 314 kameloso^^ kameloso ~NaN C2802314.E23AD7D8.E9841504.IP * : kameloso!
+        slice.nom(' ');
+        event.target.nickname = slice.nom(' ');
+        event.content = slice.nom(" :");
+        event.aux = slice.strip();
         break;
 
     default:
