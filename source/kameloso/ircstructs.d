@@ -1702,6 +1702,10 @@ struct IRCEvent
             //typenumsIthildin.meldInto(typenums);
             break;
 
+        case twitch:
+            // do nothing... FIXME
+            break;
+
         case unknown:
             // do nothing...
             break;
@@ -1847,6 +1851,7 @@ struct IRCServer
         rizon,
         undernet,
         ircdseven,
+        twitch,
 
         charybdis,
 

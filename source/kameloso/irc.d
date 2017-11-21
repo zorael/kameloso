@@ -1891,6 +1891,13 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
     */
 
     slice.nom(' ');  // nickname
+
+    if (slice == ":-")
+    {
+        bot.server.daemon = IRCServer.Daemon.twitch;
+        return;
+    }
+
     slice.nom(' ');  // server address
     immutable daemonstringRaw = slice.nom(' ');
     immutable daemonstring = daemonstringRaw.toLower();
