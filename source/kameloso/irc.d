@@ -1069,10 +1069,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
                 }
                 else
                 {
-                    logger.warning("am here");
+                    // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
                     //event.target.nickname = targets.nom(' ');
                     event.target.nickname = probablyBot;
                     event.channel = targets;
+                    event.content = slice;
                 }
             }
             else if (targets.beginsWith('#'))
