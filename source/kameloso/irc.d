@@ -1012,6 +1012,14 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         event.aux = slice.strip();
         break;
 
+    case ERR_USERONCHANNEL: // 443
+        // :orwell.freenode.net 443 kameloso^ kameloso #flerrp :is already on channel
+        slice.nom(' ');
+        event.target.nickname = slice.nom(' ');
+        event.channel = slice.nom(" :");
+        event.content = slice;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
