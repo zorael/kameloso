@@ -1748,7 +1748,9 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
                     .toLower
                     .toEnum!(IRCServer.Network);
 
-                logger.info("Detected network: ", value);
+                import kameloso.common;
+
+                logger.info("Detected network: ", value.colour(BashForeground.white));
 
                 if (thisNetwork != bot.server.network)
                 {
