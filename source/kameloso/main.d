@@ -159,7 +159,6 @@ Flag!"quit" checkMessages()
  +/
 Flag!"quit" handleArguments(string[] args)
 {
-    import kameloso.config : readConfigInto;
     import std.format : format;
     import std.getopt;
 
@@ -208,79 +207,7 @@ Flag!"quit" handleArguments(string[] args)
     // into the real ones into which the command-line arguments will have been
     // applied.
 
-    IRCBot botFromConfig;
-    Settings settingsFromConfig;
-
-    // These arguments are by reference.
-    settings.configFile.readConfigInto(botFromConfig,
-        botFromConfig.server, settingsFromConfig);
-
-    botFromConfig.meldInto(bot);
-    settingsFromConfig.meldInto(settings);
-
-    // We know Settings now so reinitialise the logger
-    initLogger();
-
-    // Give common.d a copy of Settings. FIXME
-    kameloso.common.settings = settings;
-
-    if (results.helpWanted)
-    {
-        printVersionInfo(BashForeground.white);
-        writeln();
-
-        defaultGetoptPrinter(BashForeground.lightgreen.colour ~
-                            "Command-line arguments available:\n" ~
-                            BashForeground.default_.colour,
-                            results.options);
-        writeln();
-        return Yes.quit;
-    }
-
-    // If --version was supplied we should just show info and quit
-    if (shouldShowVersion)
-    {
-        printVersionInfo();
-        return Yes.quit;
-    }
-
-    // Do we even need this? We'll resolve it during after registration anyway
-    // Do it here so it's resolved for both shouldWriteConfig and return No.quit
-    if (bot.server.network == IRCServer.Network.init)
-    {
-        bot.server.network = networkOf(bot.server.address);
-    }
-
-    // Likewise if --writeconfig was supplied we should just write and quit
-    if (shouldWriteConfig)
-    {
-        printVersionInfo(BashForeground.white);
-        logger.info("Writing configuration to ", settings.configFile);
-        writeln();
-
-        // If we don't initialise the plugins there'll be no plugins array
-
-        writeConfigurationFile(settings.configFile);
-        return Yes.quit;
-    }
-
     return No.quit;
-}
-
-
-void writeConfigurationFile(const string filename)
-{
-    import kameloso.config;
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(512);
-    sink.serialise(bot, bot.server, settings);
-
-    printObjects(bot, bot.server, settings);
-
-    immutable justified = sink.data.justifiedConfigurationText;
-    writeToDisk!(Yes.addBanner)(settings.configFile, justified);
 }
 
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
@@ -301,14 +228,6 @@ void teardownPlugins()
 void startPlugins()
 {
 }
-/// Writes the current configuration to the config file specified in the Settings.
-/*void writeConfigAndPrint(const string configFile)
-{
-    logger.info("Writing configuration to ", configFile);
-    configFile.writeToDisk!(Yes.addBanner)(bot, bot.server, settings);
-    writeln();
-    printObjects(bot, bot.server, settings);
-}*/
 
 void propagateBot(IRCBot bot)
 {
