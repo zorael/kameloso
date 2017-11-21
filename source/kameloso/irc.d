@@ -140,92 +140,37 @@ void parseTwitchTags(ref IRCEvent event, ref IRCBot bot)
 void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
     import kameloso.stringutils : beginsWith;
+    import std.traits : EnumMembers;
 
-    // FIXME, change so that it assigns to the proper field
-
-    immutable targetOrChannel = slice.nom(" :");
-    event.content = slice;
-
-    if (true)
+    with (IRCEvent.Type)
+    top:
+    switch ("foo")
     {
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
-        event.type = IRCEvent.Type.CHAN;
-        event.channel = targetOrChannel;
-    }
-    else
+    case "ACTION":
+        // We already sliced away the control characters and nommed the
+        // "ACTION" ctcpEvent string, so just set the type and break.
+        event.type = IRCEvent.Type.EMOTE;
+        break;
+
+    foreach (immutable type; EnumMembers!(IRCEvent.Type))
     {
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
-        event.type = IRCEvent.Type.QUERY;
-        event.target.nickname = targetOrChannel;
-    }
+        import std.conv : to;
 
-    if (slice.length < 3) return;
+        enum typestring = type.to!string;
 
-    if ((slice[0] == IRCControlCharacter.ctcp) &&
-        (slice[$-1] == IRCControlCharacter.ctcp))
-    {
-        slice = slice[1..$-1];
-        immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
-        event.content = slice;
-
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
-        // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :ACTION test test content
-        // :py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG kameloso^^ :VERSION
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :TIME
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :CLIENTINFO
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :DCC
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :SOURCE
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :USERINFO
-        // :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :FINGER
-
-        import std.traits : EnumMembers;
-
-        /++
-            +  This iterates through all IRCEvent.Types that begin with
-            +  "CTCP_" and generates switch cases for the string of each.
-            +  Inside it will assign event.type to the corresponding
-            +  IRCEvent.Type.
-            +
-            +  Like so, except automatically generated through compile-time
-            +  introspection:
-            +
-            +      case "CTCP_PING":
-            +          event.type = CTCP_PING;
-            +          event.aux = "PING";
-            +          break;
-            +/
-
-        with (IRCEvent.Type)
-        top:
-        switch (ctcpEvent)
+        static if (typestring.beginsWith("CTCP_"))
         {
-        case "ACTION":
-            // We already sliced away the control characters and nommed the
-            // "ACTION" ctcpEvent string, so just set the type and break.
-            event.type = IRCEvent.Type.EMOTE;
-            break;
-
-        foreach (immutable type; EnumMembers!(IRCEvent.Type))
-        {
-            import std.conv : to;
-
-            enum typestring = type.to!string;
-
-            static if (typestring.beginsWith("CTCP_"))
-            {
-                case typestring[5..$]:
-                    mixin("event.type = " ~ typestring ~ ";");
-                    event.aux = typestring[5..$];
-                    break top;
-            }
+            case typestring[5..$]:
+                mixin("event.type = " ~ typestring ~ ";");
+                event.aux = typestring[5..$];
+                break top;
         }
+    }
 
-        default:
-            logger.warning("-------------------- UNKNOWN CTCP EVENT");
-            printObject(event);
-            break;
-        }
+    default:
+        logger.warning("-------------------- UNKNOWN CTCP EVENT");
+        printObject(event);
+        break;
     }
 }
 
