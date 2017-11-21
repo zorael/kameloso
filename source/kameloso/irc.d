@@ -1627,7 +1627,7 @@ void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
     immutable targetOrChannel = slice.nom(" :");
     event.content = slice;
 
-    if (targetOrChannel.isValidChannel)
+    if (targetOrChannel.isValidChannel(bot))
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
         event.type = IRCEvent.Type.CHAN;
@@ -1715,7 +1715,7 @@ void onMode(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
     immutable targetOrChannel = slice.nom(' ');
 
-    if (targetOrChannel.isValidChannel)
+    if (targetOrChannel.isValidChannel(bot))
     {
         event.channel = targetOrChannel;
 
