@@ -1025,55 +1025,57 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         if (slice.indexOf(" :") != -1)
         {
             //slice.formattedRead("%s :%s", event.target, event.content);
-            string targetOrChannel = slice.nom(" :");
+            string targets = slice.nom(" :");
 
-            if (targetOrChannel.indexOf(' ') != -1)
+            if (targets.indexOf(' ') != -1)
             {
-                logger.trace(event.raw);
-                // target *and* channel
-                immutable probablyBot = targetOrChannel.nom(' ');
+                // More than one
 
-                if ((probablyBot == bot.nickname) && targetOrChannel.length)
+                immutable probablyBot = targets.nom(' ');
+
+                if ((probablyBot == bot.nickname) && targets.length)
                 {
-                    if ((targetOrChannel[0] >= '0' ) && (targetOrChannel[0] <= '9'))
+                    if ((targets[0] >= '0' ) && (targets[0] <= '9'))
                     {
                         // numeric
-                        if (targetOrChannel.indexOf(' ') != -1)
+                        if (targets.indexOf(' ') != -1)
                         {
-                            event.target.nickname = targetOrChannel.nom(' ');
-                            event.aux = targetOrChannel;
+                            event.target.nickname = targets.nom(' ');
+                            event.aux = targets;
                         }
                         else
                         {
-                            event.aux = targetOrChannel;
+                            event.aux = targets;
                         }
 
                         event.content = slice;
                     }
-                    else if (targetOrChannel[0] == '#')
+                    else if (targets[0] == '#')
                     {
-                        event.channel = targetOrChannel;
+                        event.channel = targets;
                     }
                     else
                     {
-                        event.target.nickname = targetOrChannel;
+                        event.target.nickname = targets;
                     }
                 }
                 else
                 {
-                    event.target.nickname = targetOrChannel.nom(' ');
-                    event.channel = targetOrChannel;
+                    logger.warning("am here");
+                    //event.target.nickname = targets.nom(' ');
+                    event.target.nickname = probablyBot;
+                    event.channel = targets;
                 }
             }
-            else if (targetOrChannel.beginsWith('#'))
+            else if (targets.beginsWith('#'))
             {
                 logger.warning("targetOrChannel.beginsWith('#') happened. Report this.");
                 printObject(event);
-                event.channel = targetOrChannel;
+                event.channel = targets;
             }
             else
             {
-                event.target.nickname = targetOrChannel;
+                event.target.nickname = targets;
             }
 
             event.content = slice;
