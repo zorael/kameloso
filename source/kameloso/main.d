@@ -4,7 +4,6 @@ import kameloso.common;
 import kameloso.connection;
 import kameloso.constants;
 import kameloso.irc;
-import kameloso.plugins;
 
 import std.concurrency;
 import std.datetime : SysTime;
@@ -33,8 +32,6 @@ IRCBot bot;
 /// Runtime settings for bot behaviour.
 Settings settings;
 
-/// A runtime array of all plugins. We iterate this when we have an IRCEvent to react to.
-IRCPlugin[] plugins;
 
 /// A 1-buffer of IRCEvents to replay when a WHOIS call returns.
 IRCEvent[string] replayQueue;
@@ -90,8 +87,6 @@ Flag!"quit" checkMessages()
     static void updateSettings(Settings settings)
     {
         .settings = settings;
-
-        foreach (plugin; plugins) plugin.newSettings(.settings);
     }
 
     /// Respond to PING with PONG to the supplied text as target.
@@ -118,11 +113,6 @@ Flag!"quit" checkMessages()
     /// Fake that a string was received from the server
     static void stringToEvent(string line)
     {
-        immutable event = line.toIRCEvent(bot);
-
-        logger.info("Forging an event!");
-
-        foreach (plugin; plugins) plugin.onEvent(event);
     }
 
     bool receivedSomething;
@@ -269,7 +259,6 @@ Flag!"quit" handleArguments(string[] args)
         writeln();
 
         // If we don't initialise the plugins there'll be no plugins array
-        initPlugins();
 
         writeConfigurationFile(settings.configFile);
         return Yes.quit;
@@ -290,13 +279,6 @@ void writeConfigurationFile(const string filename)
 
     printObjects(bot, bot.server, settings);
 
-    foreach (plugin; plugins)
-    {
-        plugin.addToConfig(sink);
-        // Not all plugins with configuration is important enough to list
-        plugin.present();
-    }
-
     immutable justified = sink.data.justifiedConfigurationText;
     writeToDisk!(Yes.addBanner)(settings.configFile, justified);
 }
@@ -312,68 +294,13 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 }
 
 
-/// Resets and initialises all plugins.
-void initPlugins()
-{
-    /++
-     +  1. Teardown any old plugins
-     +  2. Set up new IRCPluginState
-     +  3. Set parser hooks
-     +  4. Instantiate all enabled plugins (list is in kameloso.plugins.package)
-     +  5. Additionlly add Webtitles and Pipeline if doing so compiles
-     +     (i.e they're imported)
-     +/
-
-    teardownPlugins();
-
-    IRCPluginState state;
-    state.bot = bot;
-    state.settings = settings;
-    state.mainThread = thisTid;
-
-    // Zero out old plugins array and allocate room for new ones
-    plugins.length = 0;
-    plugins.reserve(EnabledPlugins.length + 2);
-
-    foreach (Plugin; EnabledPlugins)
-    {
-        plugins ~= new Plugin(state);
-    }
-
-    // Add Webtitles if possible
-    static if (__traits(compiles, new WebtitlesPlugin(IRCPluginState.init)))
-    {
-        plugins ~= new WebtitlesPlugin(state);
-    }
-
-    // Add Pipeline if possible
-    static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
-    {
-        plugins ~= new PipelinePlugin(state);
-    }
-
-    foreach (plugin; plugins)
-    {
-        plugin.loadConfig(state.settings.configFile);
-    }
-}
-
 void teardownPlugins()
 {
-    if (!plugins.length) return;
-
-    logger.info("Deinitialising plugins");
-    foreach (plugin; plugins) plugin.teardown();
 }
 
 void startPlugins()
 {
-    if (!plugins.length) return;
-
-    logger.info("Starting plugins");
-    foreach (plugin; plugins) plugin.start();
 }
-
 /// Writes the current configuration to the config file specified in the Settings.
 /*void writeConfigAndPrint(const string configFile)
 {
@@ -385,10 +312,6 @@ void startPlugins()
 
 void propagateBot(IRCBot bot)
 {
-    foreach (plugin; plugins)
-    {
-        plugin.newBot(bot);
-    }
 }
 
 
@@ -435,40 +358,6 @@ Flag!"quit" loopGenerator(Generator!string generator)
         {
             // Empty line yielded means nothing received
             if (!line.length) break;
-
-            immutable event = line.toIRCEvent(bot);
-
-            bool spammedAboutReplaying;
-
-            foreach (plugin; plugins)
-            {
-                if (bot.updated)
-                {
-                    // Non-plugin updated bot; propagate
-                    bot.updated = false;
-                    propagateBot(bot);
-                }
-
-                try
-                {
-                    plugin.onEvent(event);
-
-                    auto yieldedBot = plugin.yieldBot();
-                    if (yieldedBot.updated)
-                    {
-                        // Plugin updated the bot; propagate
-                        bot = yieldedBot;  // yieldedBot.meldInto(bot);
-                        propagateBot(bot);
-                    }
-
-                    auto reqs = plugin.yieldWHOISRequests();
-                    event.handleQueue(reqs, event.target.nickname);
-                }
-                catch (const Exception e)
-                {
-                    logger.error(e.msg);
-                }
-            }
         }
 
         // Check concurrency messages to see if we should exit
@@ -539,7 +428,6 @@ int main(string[] args)
     scope(failure)
     {
         logger.error("We just crashed!");
-        teardownPlugins();
         signal(SIGINT, SIG_DFL);
 
         version(Posix)
@@ -599,9 +487,6 @@ int main(string[] args)
         startedAuth = false;
         finishedAuth = false;
         server.resolvedAddress = string.init;
-
-        initPlugins();
-        startPlugins();
 
         auto generator = new Generator!string(() => listenFiber(conn, abort));
         quit = loopGenerator(generator);
