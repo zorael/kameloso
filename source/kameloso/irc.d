@@ -1849,56 +1849,58 @@ void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
     event.content = slice;
     event.aux = daemonstringRaw;
 
+    // https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
+
+    with (bot.server)
     with (IRCServer.Daemon)
-    with (IRCEvent)
     {
-        Type[1024] mod;
+        IRCEvent.resetTypenums();
 
         if (daemonstring.indexOf("unreal") != -1)
         {
-            bot.server.daemon = unreal;
-            IRCEvent.setTypenums(unreal);
+            daemon = unreal;
         }
         else if (daemonstring.indexOf("inspircd") != -1)
         {
-            bot.server.daemon = inspircd;
-            IRCEvent.setTypenums(inspircd);
+            daemon = inspircd;
         }
         else if (daemonstring.indexOf("u2.") != -1)
         {
-            bot.server.daemon = u2;
-            IRCEvent.setTypenums(u2);
+            daemon = u2;
         }
         else if (daemonstring.indexOf("bahamut") != -1)
         {
-            bot.server.daemon = bahamut;
-            IRCEvent.setTypenums(bahamut);
+            daemon = bahamut;
         }
         else if (daemonstring.indexOf("hybrid") != -1)
         {
-            bot.server.daemon = hybrid;
-            IRCEvent.setTypenums(hybrid);
+            daemon = hybrid;
         }
         else if (daemonstring.indexOf("ratbox") != -1)
         {
-            bot.server.daemon = ratbox;
-            IRCEvent.setTypenums(ratbox);
+            daemon = ratbox;
         }
         else if (daemonstring.indexOf("charybdis") != -1)
         {
-            bot.server.daemon = charybdis;
-            IRCEvent.setTypenums(charybdis);
+            daemon = charybdis;
         }
-        /*else if (daemonstring.indexOf("ircd-seven") != -1)
+        else if (daemonstring.indexOf("ircd-seven") != -1)
         {
-            // Freenode
-            IRCEvent.setTypenums(FIXME);
-        }*/
+            daemon = ircdseven;
+        }
         /*else if (daemonstring.indexOf("") != -1)
         {
-            IRCEvent.setTypenums();
+            daemon = unknown;
         }*/
+
+        IRCEvent.setTypenums(bot.server.daemon);
     }
+
+    import kameloso.stringutils : enumToString;
+
+    logger.info("daemon reported: ", bot.server.daemon
+        .enumToString
+        .colour(BashForeground.white));
 }
 
 public:
