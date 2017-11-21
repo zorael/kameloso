@@ -1668,6 +1668,7 @@ struct IRCEvent
 
         case ircdseven:
             // Nei | freenode is based in charybdis which is based on ratbox iirc
+            typenumsHybrid.meldInto(typenums);
             typenumsRatBox.meldInto(typenums);
             typenumsCharybdis.meldInto(typenums);
             break;
