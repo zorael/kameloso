@@ -924,7 +924,7 @@ string colour(Codes...)(Codes codes)
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-void colour(Sink, Codes...)(auto ref Sink sink, Codes codes)
+void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(TerminalToken.bashFormat);
