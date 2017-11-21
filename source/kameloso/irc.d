@@ -2225,6 +2225,9 @@ bool isValidNickname(const string nickname)
 
 unittest
 {
+    import std.range : repeat;
+    import std.conv : to;
+
     const validNicknames =
     [
         "kameloso",
@@ -2240,7 +2243,7 @@ unittest
     const invalidNicknames =
     [
         "",
-        "1234567890", // length > 9, max per standard
+        "X".repeat(maxNickLength+1).to!string,
         "åäöÅÄÖ",
         "\n",
         "¨",
