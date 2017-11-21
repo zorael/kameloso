@@ -537,8 +537,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_CHANNEL_URL: // 328
     case ERR_NEEDREGGEDNICK: // 477
     case ERR_NOSUCHCHANNEL: // 403
-    case ERR_NOSUCHNICK: // 401
-        // :irc.rizon.no 401 kameloso^^ #garderoben :No such nick/channel
         // :moon.freenode.net 403 kameloso archlinux :No such channel
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
         // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
