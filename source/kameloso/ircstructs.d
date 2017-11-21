@@ -233,8 +233,8 @@ struct IRCEvent
         RPL_UNAWAY, // = 305,           // ":You are no longer marked as being away"
         RPL_NOWAWAY, // = 306,          // ":You have been marked as being away"
         RPL_SUSERHOST, // = 307,        // CONFLICT
-        RPL_WHOISREGNICK, // = 307      // CONFLICT <nickname> :has identified for this nick
-        RPL_USERIP, // = 307,
+        RPL_USERIP, // = 307,           // CONFLICT
+        RPL_WHOISREGNICK, // = 307      // <nickname> :has identified for this nick
         RPL_WHOISADMIN, // = 308,       // CONFLICT
         RPL_RULESSTART, // = 308,       // CONFLICT
         RPL_NOTIFYACTION, // = 308,
@@ -267,7 +267,7 @@ struct IRCEvent
         RPL_UNIQOPIS, // = 325,         // CONFLICT
         RPL_CHANNELPASSIS, // = 325,
         RPL_NOCHANPASS, // = 326,
-        RPL_WHOISHOST, // = 327,        // CONFLICT
+        //RPL_WHOISHOST, // = 327,        // CONFLICT
         RPL_CHPASSUNKNOWN, // = 327,
         RPL_CHANNEL_URL, // = 328       // "http://linux.chat"
         RPL_CREATIONTIME, // = 329,
@@ -326,8 +326,8 @@ struct IRCEvent
         RPL_SPAM, // = 377,             // CONFLICT
         RPL_KICKEXPIRED, // = 377,
         RPL_BANEXPIRED, // = 378,       // CONFLICT
-        //RPL_MOTD, // = 378,             // CONFLICT
-        //RPL_WHOISHOST, // = 378         // <nickname> :is connecting from *@<address> <ip>
+        //RPL_MOTD, // = 378,           // CONFLICT
+        RPL_WHOISHOST, // = 378         // <nickname> :is connecting from *@<address> <ip>
         RPL_KICKLINKED, // = 379,       // CONFLICT
         RPL_WHOWASIP, // = 379,         // CONFLICT
         RPL_WHOISMODES, // = 379,       // <nickname> :is using modes <modes>
@@ -865,7 +865,7 @@ struct IRCEvent
         304 : Type.RPL_TEXT,
         305 : Type.RPL_UNAWAY,
         306 : Type.RPL_NOWAWAY,
-        307 : Type.RPL_USERIP,
+        307 : Type.RPL_WHOISREGNICK,
         308 : Type.RPL_NOTIFYACTION,
         309 : Type.RPL_NICKTRACE,
         310 : Type.RPL_WHOISSVCMSG,
@@ -926,7 +926,7 @@ struct IRCEvent
         375 : Type.RPL_MOTDSTART,
         376 : Type.RPL_ENDOFMOTD,
         377 : Type.RPL_KICKEXPIRED,
-        378 : Type.RPL_BANEXPIRED,
+        378 : Type.RPL_WHOISHOST,
         379 : Type.RPL_WHOISMODES,
         380 : Type.RPL_BANLINKED,
         381 : Type.RPL_YOUREOPER,
