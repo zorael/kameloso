@@ -1127,7 +1127,8 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
         writeln();
     }
     else if (event.channel.length && !event.channel.beginsWith('#') &&
-        (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL))
+        (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
+        (event.type != IRCEvent.Type.RPL_ENDOFWHO))
     {
         writeln();
         logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
