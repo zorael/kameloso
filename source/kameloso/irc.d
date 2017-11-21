@@ -412,6 +412,8 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 {
     import kameloso.stringutils;
 
+    import std.string : strip, stripLeft, stripRight;
+
     scope(failure)
     {
         logger.warning("--------- PARSE SPECIALCASES FAILURE");
@@ -548,7 +550,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_NAMREPLY: // 353
-        import std.string : stripRight;
         // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
         //event.target.nickname = slice.nom(' ');
         slice.nom(' ');
@@ -702,8 +703,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     case RPL_WHOISUSER: // 311
         // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
         // Hard to use formattedRead here
-        import std.string : stripLeft;
-
         slice.nom(' ');
         event.target.nickname = slice.nom(' ');
         event.target.ident = slice.nom(' ');
@@ -1053,8 +1052,6 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
 
         break;
     }
-
-    import std.string : stripRight;
 
     event.content = event.content.stripRight();
     postparseSanityCheck(event, bot);
