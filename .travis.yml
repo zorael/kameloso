@@ -7,4 +7,7 @@ os:
     - linux
     - windows
 
-script: dub test --compiler=${DC} --build-mode=singleFile
+script:
+    - dub test --compiler=${DC} --build-mode=singleFile
+    - dub test --compiler=${DC} --build-mode=singleFile -c nocolours
+    - dub test --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
