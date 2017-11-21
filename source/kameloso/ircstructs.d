@@ -1662,6 +1662,20 @@ struct IRCEvent
             typenumsUltimate.meldInto(typenums);
             break;
 
+        case charybdis:
+            typenumsCharybdis.meldInto(typenums);
+            break;
+
+        case ircdseven:
+            // Nei | freenode is based in charybdis which is based on ratbox iirc
+            typenumsRatBox.meldInto(typenums);
+            typenumsCharybdis.meldInto(typenums);
+            break;
+
+        case undernet:
+            typenumsUndernet.meldInto(typenums);
+            break;
+
         case anothernet:
             //typenumsAnothernet.meldInto(typenums);
             break;
@@ -1672,10 +1686,6 @@ struct IRCEvent
 
         case bdqircd:
             //typenumsBDQIrcD.meldInto(typenums);
-            break;
-
-        case undernet:
-            typenumsUndernet.meldInto(typenums);
             break;
 
         case chatircd:
@@ -1690,8 +1700,8 @@ struct IRCEvent
             //typenumsIthildin.meldInto(typenums);
             break;
 
-        case charybdis:
-            typenumsCharybdis.meldInto(typenums);
+        case unknown:
+            // do nothing...
             break;
         }
     }
@@ -1824,6 +1834,7 @@ struct IRCServer
 
     enum Daemon
     {
+        unknown,
         unreal,
         inspircd,
         bahamut,
@@ -1833,6 +1844,9 @@ struct IRCServer
         quakenet,
         rizon,
         undernet,
+        ircdseven,
+
+        charybdis,
 
         ircu,
         aircd,
@@ -1848,7 +1862,6 @@ struct IRCServer
         sorircd,
         bdqircd,
         chatircd,
-        charybdis,
         irch,
         ithildin,
     }
