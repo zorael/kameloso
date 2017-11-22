@@ -1696,7 +1696,7 @@ void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
             static if (typestring.beginsWith("CTCP_"))
             {
                 case typestring[5..$]:
-                    mixin("event.type = " ~ typestring ~ ";");
+                    event.type = type;
                     event.aux = typestring[5..$];
                     break top;
             }
