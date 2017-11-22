@@ -386,22 +386,15 @@ JSONValue loadNotes(const string filename)
     import std.file   : exists, isFile, readText;
     import std.json   : parseJSON;
 
-    if (!filename.exists)
+    if (!filename.exists || !filename.isFile)
     {
-        logger.info(filename, " does not exist");
-        JSONValue newJSON;
-        newJSON.object = null;
-        return newJSON;
-    }
-    else if (!filename.isFile)
-    {
-        logger.warning(filename, " is not a file");
+        logger.info(filename, " does not exist or is not a file!");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
     }
 
-    immutable wholeFile = filename.readText;
+    immutable wholeFile = readText(filename);
     return parseJSON(wholeFile);
 }
 
