@@ -741,8 +741,227 @@ struct IRCEvent
         }
     */
 
+    enum Role
+    {
+        UNSET,
+        OTHER,
+        MEMBER,
+        BITS,
+        TURBO,
+        SUBSCRIBER,
+        PREMIUM,
+        PARTNER,
+        MOD,
+        OPERATOR,
+        BROADCASTER,
+        ADMIN,
+        GLOBAL_MOD,
+        STAFF,
+        SERVER,
+    }
+
+    /// The event type, signifying what *kind* of event this is.
+    Type type;
+
+    /// The role of the sender in this context
+    Role role;
+
+    /// The raw IRC string, untouched.
+    string raw;
+
+    /// The name of whoever (or whatever) sent this event.
+    IRCUser sender;
+
+    /// The channel the event transpired in, or is otherwise related to.
+    string channel;
+
+    /// The target of the event. May be a nickname or a channel.
+    IRCUser target;
+
+    /// The main body of the event.
+    string content;
+
+    /// The auxiliary storage, containing type-specific extra bits of information.
+    string aux;
+
+    /// The role in string form, may be of other values than the enum provides.
+    string rolestring;
+
+    /// The colour (RRGGBB) to tint the user's nickname with
+    string colour;
+
+    /// IRCv3 message tags attached to this event.
+    string tags;
+
+    /// With a numeric event, the number of the event type.
+    uint num;
+
+    /// A timestamp of when the event occured.
+    long time;
+}
+
+
+/// Aggregate collecting all the relevant settings, options and state needed
+struct IRCBot
+{
+    string nickname   = "kameloso";
+    string user       = "kameloso!";
+    string ident      = "NaN";
+    string quitReason = "beep boop I am a bot";
+    string master;
+    string authLogin;
+
+    @Hidden
+    {
+        string authPassword;
+        string pass;
+    }
+
+    @Separator(",")
+    {
+        string[] homes;
+        string[] friends;
+        string[] channels;
+    }
+
+    @Unconfigurable
+    {
+        IRCServer server;
+        string origNickname;
+        bool startedRegistering;
+        bool finishedRegistering;
+        bool startedAuth;
+        bool finishedAuth;
+        bool updated;
+    }
+
+    void toString(scope void delegate(const(char)[]) @safe sink) const
+    {
+        import std.format : format;
+
+        sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
+             .format(nickname, authLogin, ident, homes, channels, friends, server));
+    }
+}
+
+
+/// Aggregate of all information and state pertaining to the connected IRC server.
+struct IRCServer
+{
+    /// A list of known networks as reported in the CAP LS message.
+    enum Network
+    {
+        unknown,
+        unfamiliar,
+        freenode,
+        rizon,
+        quakenet,
+        undernet,
+        gamesurge,
+        twitch,
+        unreal,
+        efnet,
+        ircnet,
+        swiftirc,
+        irchighway,
+        dalnet,
+    }
+
+    enum Daemon
+    {
+        unknown,
+        unreal,
+        inspircd,
+        bahamut,
+        ratbox,
+        u2,
+        hybrid,
+        quakenet,
+        rizon,
+        undernet,
+        ircdseven,
+        twitch,
+
+        charybdis,
+
+        ircu,
+        aircd,
+        rfc1459,
+        rfc2812,
+        nefarious,
+        rusnet,
+        austhex,
+        ircnet,
+        ptlink,
+        ultimate,
+        anothernet,
+        sorircd,
+        bdqircd,
+        chatircd,
+        irch,
+        ithildin,
+    }
+
+    Network network;
+    Daemon daemon;
+    string address = "irc.freenode.net";
+    ushort port = 6667;
+
+    @Unconfigurable
+    {
+        string resolvedAddress;
+
+        /// Max nickname length as per IRC specs, but not the de facto standard
+        uint maxNickLength = 9;
+
+        /// Max channel name length as per IRC specs
+        uint maxChannelLength = 200;
+    }
+
+    void toString(scope void delegate(const(char)[]) @safe sink) const
+    {
+        import std.format : format;
+
+        sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
+    }
+}
+
+
+/// An aggregate of string fields that represents a single user.
+struct IRCUser
+{
+    string nickname;
+    string alias_;
+    string ident;
+    string address;
+    string login;
+    bool special;
+
+    size_t lastWhois;
+
+    void toString(scope void delegate(const(char)[]) @safe sink) const
+    {
+        import std.format : formattedWrite;
+
+        sink.formattedWrite("n:%s l:%s a:%s i:%s s:%s%s w:%s",
+            nickname, login, alias_, ident, address,
+            special ? " (*)" : string.init, lastWhois);
+    }
+
+    bool isServer() @property const
+    {
+        import std.string : indexOf;
+
+        return (!nickname.length && (address.indexOf('.') != -1));
+    }
+}
+
+struct Typenums
+{
+    alias Type = IRCEvent.Type;
+
     /// Reverse mapping of Types to their numeric form, to speed up conversion
-    static immutable Type[1024] typenumsBase =
+    static immutable Type[1024] base =
     [
         1   : Type.RPL_WELCOME,
         2   : Type.RPL_YOURHOST,
@@ -1197,732 +1416,384 @@ struct IRCEvent
         999 : Type.ERR_NUMERIC_ERR,
     ];
 
-    static Type[1024] typenums = typenumsBase;
-
-    static void setTypenums(const IRCServer.Daemon daemon)
-    {
-        static immutable Type[975] typenumsUnreal =
-        [
-            6 : Type.RPL_MAP,
-            7 : Type.RPL_MAPEND,
-            210 : Type.RPL_STATSHELP,
-            220 : Type.RPL_STATSBLINE,
-            222 : Type.RPL_SQLINE_NICK,
-            223 : Type.RPL_STATSGLINE,
-            224 : Type.RPL_STATSTLINE,
-            225 : Type.RPL_STATSELINE,
-            226 : Type.RPL_STATSNLINE,
-            227 : Type.RPL_STATSVLINE,
-            228 : Type.RPL_STATSBANVER,
-            232 : Type.RPL_RULES,
-            247 : Type.RPL_STATSXLINE,
-            250 : Type.RPL_STATSCONN,
-            290 : Type.RPL_HELPHDR,
-            291 : Type.RPL_HELPOP,
-            292 : Type.RPL_HELPTLR,
-            293 : Type.RPL_HELPHLP,
-            294 : Type.RPL_HELPFWD,
-            295 : Type.RPL_HELPIGN,
-            307 : Type.RPL_WHOISREGNICK,
-            308 : Type.RPL_RULESSTART,
-            309 : Type.RPL_ENDOFRULES,
-            310 : Type.RPL_WHOISHELPOP,
-            320 : Type.RPL_WHOISSPECIAL,
-            334 : Type.RPL_LISTSYNTAX,
-            335 : Type.RPL_WHOISBOT,
-            378 : Type.RPL_WHOISHOST,
-            379 : Type.RPL_WHOISMODES,
-            386 : Type.RPL_QLIST,
-            387 : Type.RPL_ENDOFQLIST,
-            388 : Type.RPL_ALIST,
-            434 : Type.ERR_NORULES,
-            435 : Type.ERR_SERVICECONFUSED,
-            438 : Type.ERR_ONLYSERVERSCANCHANGE,
-            470 : Type.ERR_LINKCHANNEL,
-            477 : Type.ERR_NEEDREGGEDNICK,
-            479 : Type.ERR_LINKFAIL,
-            480 : Type.ERR_CANNOTKNOCK,
-            484 : Type.ERR_ATTACKDENY,
-            485 : Type.ERR_KILLDENY,
-            486 : Type.ERR_HTMDISABLED,         // CONFLICT ERR_NONONREG
-            487 : Type.ERR_NOTFORUSERS,
-            488 : Type.ERR_HTMDISABLED,         // again?
-            489 : Type.ERR_SECUREONLYCHAN,      // AKA ERR_SSLONLYCHAN
-            490 : Type.ERR_ALLMUSTSSL,          // CONFLICT ERR_NOSWEAR
-            492 : Type.ERR_NOCTCP,
-            500 : Type.ERR_TOOMANYJOINS,
-            518 : Type.ERR_NOINVITE,
-            519 : Type.ERR_ADMONLY,
-            520 : Type.ERR_OPERONLY,
-            524 : Type.ERR_OPERSPVERIFY,
-            610 : Type.RPL_MAPMORE,
-            972 : Type.ERR_CANNOTDOCOMMAND,
-            974 : Type.ERR_CANNOTCHANGECHANMODE,
-        ];
-
-        static immutable Type[569] typenumsIrcu =
-        [
-            15 : Type.RPL_MAP,
-            16 : Type.RPL_MAPMORE,
-            17 : Type.RPL_MAPEND,
-            222 : Type.RPL_STATSJLINE,
-            228 : Type.RPL_STATSQLINE,
-            238 : Type.RPL_STATSFLINE,
-            246 : Type.RPL_STATSTLINE,
-            247 : Type.RPL_STATSGLINE,
-            248 : Type.RPL_STATSULINE,
-            250 : Type.RPL_STATSCONN,
-            270 : Type.RPL_PRIVS,
-            275 : Type.RPL_STATSDLINE,
-            276 : Type.RPL_STATSRLINE,
-            281 : Type.RPL_ENDOFGLIST,
-            282 : Type.RPL_JUPELIST,
-            283 : Type.RPL_ENDOFJUPELIST,
-            284 : Type.RPL_FEATURE,
-            330 : Type.RPL_WHOISACCOUNT,
-            334 : Type.RPL_LISTUSAGE,
-            338 : Type.RPL_WHOISACTUALLY,
-            391 : Type.RPL_TIME,
-            437 : Type.ERR_BANNICKCHANGE,
-            438 : Type.ERR_NICKTOOFAST,
-            468 : Type.ERR_INVALIDUSERNAME,
-            477 : Type.ERR_NEEDREGGEDNICK,
-            493 : Type.ERR_NOFEATURE,
-            494 : Type.ERR_BADFEATVALUE,
-            495 : Type.ERR_BADLOGTYPE,
-            512 : Type.ERR_NOSUCHGLINE,
-            514 : Type.ERR_INVALID_ERROR,
-            518 : Type.ERR_LONGMASK,
-            519 : Type.ERR_TOOMANYUSERS,
-            520 : Type.ERR_MASKTOOWIDE,
-            524 : Type.ERR_QUARANTINED,
-            568 : Type.ERR_LASTERROR,
-        ];
-
-        static immutable Type[471] typenumsAircd =
-        [
-            210 : Type.RPL_STATS,
-            274 : Type.RPL_ENDNOTIFY,
-            285 : Type.RPL_CHANINFO_HANDLE,
-            286 : Type.RPL_CHANINFO_USERS,
-            287 : Type.RPL_CHANINFO_CHOPS,
-            288 : Type.RPL_CHANINFO_VOICES,
-            289 : Type.RPL_CHANINFO_AWAY,
-            290 : Type.RPL_CHANINFO_OPERS,
-            291 : Type.RPL_CHANINFO_BANNED,
-            292 : Type.RPL_CHANINFO_BANS,
-            293 : Type.RPL_CHANINFO_INVITE,
-            294 : Type.RPL_CHANINFO_INVITES,
-            295 : Type.RPL_CHANINFO_KICKS,
-            308 : Type.RPL_NOTIFYACTION,
-            309 : Type.RPL_NICKTRACE,
-            377 : Type.RPL_KICKEXPIRED,
-            378 : Type.RPL_BANEXPIRED,
-            379 : Type.RPL_KICKLINKED,
-            380 : Type.RPL_BANLINKED,
-            470 : Type.ERR_KICKEDFROMCHAN,
-        ];
-
-        static immutable Type[502] typenumsRFC1459 =
-        [
-            214 : Type.RPL_STATSNLINE,
-            217 : Type.RPL_STATSQLINE,
-            232 : Type.RPL_ENDOFSERVICES,
-            316 : Type.RPL_WHOISCHANOP, // deprecated
-            391 : Type.RPL_TIME,
-            492 : Type.ERR_NOSERVICEHOST,
-            501 : Type.ERR_UMODEUNKNOWNFLAG,
-        ];
-
-        static immutable Type[485] typenumsRFC2812 =
-        [
-            240 : Type.RPL_STATSVLINE,
-            246 : Type.RPL_STATSPING,
-            247 : Type.RPL_STATSBLINE,
-            250 : Type.RPL_STATSDLINE,
-            262 : Type.RPL_TRACEEND,
-            325 : Type.RPL_UNIQOPIS,
-            437 : Type.ERR_UNAVAILRESOURCE,
-            477 : Type.ERR_NOCHANMODES,
-            484 : Type.ERR_RESTRICTED,
-        ];
-
-        static immutable Type[716] typenumsHybrid =
-        [
-            220 : Type.RPL_STATSPLINE,
-            224 : Type.RPL_STATSFLINE,
-            225 : Type.RPL_STATSDLINE,
-            226 : Type.RPL_STATSALINE,
-            245 : Type.RPL_STATSSLINE,   // CONFLICT: Type.RPL_STATSTLINE
-            246 : Type.RPL_STATSSERVICE, // CONFLICT: Type.RPL_STATSULINE
-            247 : Type.RPL_STATSXLINE,
-            249 : Type.RPL_STATSDEBUG,
-            276 : Type.RPL_WHOISCERTFP,  // oftc-hybrid?
-            335 : Type.RPL_WHOISTEXT,
-            336 : Type.RPL_INVITELIST,
-            337 : Type.RPL_ENDOFINVITELIST, // CONFLICT: Type.RPL_WHOISTEXT
-            386 : Type.RPL_RSACHALLENGE,
-            396 : Type.RPL_VISIBLEHOST,
-            408 : Type.ERR_NOCTRLSONCHAN,
-            479 : Type.ERR_BADCHANNAME,
-            480 : Type.ERR_SSLONLYCHAN,     // deprecated
-            484 : Type.ERR_DESYNC,
-            485 : Type.ERR_CHANBANREASON,
-            492 : Type.ERR_NOCTCP,
-            503 : Type.ERR_GHOSTEDCLIENT,
-            524 : Type.ERR_HELPNOTFOUND,
-            715 : Type.ERR_TOOMANYINVITE,
-        ];
-
-        static immutable Type[621] typenumsBahamut =
-        [
-            220 : Type.RPL_STATSBLINE,
-            222 : Type.RPL_STATSBLINE,
-            223 : Type.RPL_STATSELINE,
-            224 : Type.RPL_STATSFLINE,
-            225 : Type.RPL_STATSCLONE,    // DEPRECATED CONFLICT: Type.RPL_STATSZLINE
-            226 : Type.RPL_STATSCOUNT,
-            227 : Type.RPL_STATSGLINE,
-            245 : Type.RPL_STATSSLINE,
-            275 : Type.RPL_USINGSSL,
-            307 : Type.RPL_WHOISREGNICK,
-            308 : Type.RPL_WHOISADMIN,
-            309 : Type.RPL_WHOISADMIN,      // duplicate?
-            310 : Type.RPL_WHOISSVCMSG,
-            334 : Type.RPL_COMMANDSYNTAX,
-            338 : Type.RPL_WHOISACTUALLY,
-            408 : Type.ERR_NOCOLORSONCHAN,
-            435 : Type.ERR_BANONCHAN,
-            468 : Type.ERR_ONLYSERVERSCANCHANGE,
-            477 : Type.ERR_NEEDREGGEDNICK,
-            484 : Type.ERR_DESYNC,
-            487 : Type.ERR_MSGSERVICES,
-            488 : Type.ERR_NOSSL,
-            493 : Type.ERR_NOSHAREDCHAN,
-            494 : Type.ERR_OWNMODE,
-            512 : Type.ERR_TOOMANYWATCH,
-            514 : Type.ERR_TOOMANYDCC,
-            521 : Type.ERR_LISTSYNTAX,
-            617 : Type.RPL_DCCSTATUS,
-            619 : Type.RPL_ENDOFDCCLIST,
-            620 : Type.RPL_DCCINFO,
-        ];
-
-        static immutable Type[554] typenumsQuakenet =
-        [
-            285 : Type.RPL_NEWHOSTIS,
-            286 : Type.RPL_CHKHEAD,
-            287 : Type.RPL_CHANUSER,
-            288 : Type.RPL_PATCHHEAD,
-            289 : Type.RPL_PATCHCON,
-            290 : Type.RPL_DATASTR,
-            291 : Type.RPL_ENDOFCHECK,
-            485 : Type.ERR_ISREALSERVICE,
-            486 : Type.ERR_ACCOUNTONLY,
-            553 : Type.ERR_STATSSLINE,
-        ];
-
-        static immutable Type[976] typenumsNefarious =
-        [
-            220 : Type.RPL_STATSWLINE,
-            292 : Type.ERR_SEARCHNOMATCH,
-            316 : Type.RPL_WHOISPRIVDEAF,
-            320 : Type.RPL_WHOISWEBIRC,
-            335 : Type.RPL_WHOISACCOUNTONLY,
-            336 : Type.RPL_WHOISBOT,
-            339 : Type.RPL_WHOISMARKS,
-            386 : Type.RPL_IRCOPSHEADER,
-            387 : Type.RPL_IRCOPS,
-            388 : Type.RPL_ENDOFIRCOPS,
-            521 : Type.ERR_NOSUCHGLINE,
-            568 : Type.RPL_NOMOTD,
-            617 : Type.RPL_WHOISSSLFP,
-            975 : Type.ERR_LASTERROR,
-        ];
-
-        static immutable Type[501] typenumsRusnet =
-        [
-            222 : Type.RPL_CODEPAGE,
-            223 : Type.RPL_CHARSET,
-            327 : Type.RPL_WHOISHOST,
-            468 : Type.ERR_NOCODEPAGE,
-            470 : Type.ERR_7BIT,
-            479 : Type.ERR_NOCOLOR,
-            480 : Type.ERR_NOWALLOP,
-            486 : Type.ERR_RLINED,
-            500 : Type.ERR_NOREHASHPARAM,
-        ];
-
-        static immutable Type[716] typenumsRizon =
-        [
-            227 : Type.RPL_STATSBLINE,
-            672 : Type.RPL_WHOISREALIP,
-            715 : Type.RPL_INVITETHROTTLE,
-        ];
-
-        static immutable Type[521] typenumsAustHex =
-        [
-            240 : Type.RPL_STATSXLINE,
-            307 : Type.RPL_SUSERHOST,
-            309 : Type.RPL_WHOISHELPER,
-            310 : Type.RPL_WHOISSERVICE,
-            320 : Type.RPL_WHOISVIRT,
-            357 : Type.RPL_MAP,
-            358 : Type.RPL_MAPMORE,
-            359 : Type.RPL_MAPEND,
-            377 : Type.RPL_SPAM,        // deprecated
-            378 : Type.RPL_MOTD,
-            380 : Type.RPL_YOURHELPER,
-            434 : Type.ERR_SERVICENAMEINUSE,
-            480 : Type.ERR_NOULINE,
-            503 : Type.ERR_VWORLDWARN,
-            520 : Type.ERR_WHOTRUNC,    // deprecated
-        ];
-
-        static immutable Type[489] typenumsIrcNet =
-        [
-            245 : Type.RPL_STATSSLINE,
-            248 : Type.RPL_STATSDEFINE,
-            274 : Type.RPL_STATSDELTA,
-            438 : Type.ERR_DEAD,
-            487 : Type.ERR_CHANTOORECENT,
-            488 : Type.ERR_TSLESSCHAN,
-        ];
-
-        static immutable Type[616] typenumsPTLink =
-        [
-            247 : Type.RPL_STATSXLINE,
-            484 : Type.ERR_DESYNC,
-            485 : Type.ERR_CANTKICKADMIN,
-            615 : Type.RPL_MAPMORE,
-        ];
-
-        static immutable Type[976] typenumsInspIRCd =
-        [
-            270 : Type.RPL_MAPUSERS,
-            304 : Type.RPL_SYNTAX,
-            379 : Type.RPL_WHOWASIP,
-            495 : Type.ERR_DELAYREJOIN,
-            501 : Type.ERR_UNKNOWNSNOMASK,
-            702 : Type.RPL_COMMANDS,
-            703 : Type.RPL_COMMANDSEND,
-            972 : Type.ERR_CANTUNLOADMODULE,
-            974 : Type.ERR_CANTLOADMODULE,
-            975 : Type.RPL_LOADEDMODULE
-        ];
-
-        static immutable Type[624] typenumsUltimate =
-        [
-            275 : Type.RPL_USINGSSL,
-            386 : Type.RPL_IRCOPS,
-            387 : Type.RPL_ENDOFIRCOPS,
-            434 : Type.ERR_NORULES,
-            610 : Type.RPL_ISOPER,
-            615 : Type.RPL_WHOISMODES,
-            616 : Type.RPL_WHOISHOST,
-            617 : Type.RPL_WHOISBOT,
-            619 : Type.RPL_WHOWASHOST,
-            620 : Type.RPL_RULESSTART,
-            621 : Type.RPL_RULES,
-            622 : Type.RPL_ENDOFRULES,
-            623 : Type.RPL_MAPMORE,
-        ];
-
-        static immutable Type[490] typenumsUndernet =
-        [
-            396 : Type.RPL_HOSTHIDDEN,
-            484 : Type.ERR_ISCHANSERVICE,
-            489 : Type.ERR_VOICENEEDED,
-        ];
-
-        static immutable Type[716] typenumsRatBox =
-        [
-            480 : Type.ERR_THROTTLE,
-            485 : Type.ERR_BANNEDNICK,      // deprecated
-            702 : Type.RPL_MODLIST,
-            703 : Type.RPL_ENDOFMODLIST,
-            715 : Type.ERR_KNOCKDISABLED,
-        ];
-
-        static immutable Type[495] typenumsCharybdis =
-        [
-            492 : Type.ERR_CANNOTSENDTOUSER,
-            494 : Type.ERR_OWNMODE,
-        ];
-
-        /*
-        static immutable Type[321] typenumsAnothernet =
-        [
-            320 : Type.RPL_WHOIS_HIDDEN,
-        ];
-
-        static immutable Type[326] typenumsSorircd =
-        [
-            325 : Type.RPL_CHANNELMLOCKIS,  // deprecated
-        ];
-
-        static immutable Type[392] typenumsBDQIRCd =
-        [
-            391 : Type.RPL_TIME,
-        ];
-
-        static immutable Type[488] typenumschatIRCd =
-        [
-            487 : Type.ERR_NONONSSL,
-        ];
-
-        static immutable Type[515] typenumsIRCh =
-        [
-            514 : Type.ERR_NOSUCHJUPE,
-        ];
-
-        static immutable Type[672] typenumsIthildin =
-        [
-            672 : Type.RPL_UNKNOWNMODES,
-        ];
-        */
-
-        import kameloso.common;
-
-        // Reset
-        typenums = typenumsBase;
-
-        with (IRCServer.Daemon)
-        final switch (daemon)
-        {
-        case unreal:
-            typenumsUnreal.meldInto(typenums);
-            break;
-
-        case inspircd:
-            typenumsInspIRCd.meldInto(typenums);
-            break;
-
-        case bahamut:
-            typenumsBahamut.meldInto(typenums);
-            break;
-
-        case ratbox:
-            typenumsRatBox.meldInto(typenums);
-            break;
-
-        case u2:
-            // unknown!
-            break;
-
-        case rizon:
-            typenumsHybrid.meldInto(typenums);
-            typenumsRizon.meldInto(typenums);
-            break;
-
-        case hybrid:
-            typenumsHybrid.meldInto(typenums);
-            break;
-
-        case ircu:
-            typenumsIrcu.meldInto(typenums);
-            break;
-
-        case aircd:
-            typenumsAircd.meldInto(typenums);
-            break;
-
-        case rfc1459:
-            typenumsRFC1459.meldInto(typenums);
-            break;
-
-        case rfc2812:
-            typenumsRFC2812.meldInto(typenums);
-            break;
-
-        case quakenet:
-            typenumsQuakenet.meldInto(typenums);
-            break;
-
-        case nefarious:
-            typenumsNefarious.meldInto(typenums);
-            break;
-
-        case rusnet:
-            typenumsRusnet.meldInto(typenums);
-            break;
-
-        case austhex:
-            typenumsAustHex.meldInto(typenums);
-            break;
-
-        case ircnet:
-            typenumsIrcNet.meldInto(typenums);
-            break;
-
-        case ptlink:
-            typenumsPTLink.meldInto(typenums);
-            break;
-
-        case ultimate:
-            typenumsUltimate.meldInto(typenums);
-            break;
-
-        case charybdis:
-            typenumsCharybdis.meldInto(typenums);
-            break;
-
-        case ircdseven:
-            // Nei | freenode is based in charybdis which is based on ratbox iirc
-            typenumsHybrid.meldInto(typenums);
-            typenumsRatBox.meldInto(typenums);
-            typenumsCharybdis.meldInto(typenums);
-            break;
-
-        case undernet:
-            typenumsUndernet.meldInto(typenums);
-            break;
-
-        case anothernet:
-            //typenumsAnothernet.meldInto(typenums);
-            break;
-
-        case sorircd:
-            //typenumsSorircd.meldInto(typenums);
-            break;
-
-        case bdqircd:
-            //typenumsBDQIrcD.meldInto(typenums);
-            break;
-
-        case chatircd:
-            //typenumsChatIRCd.meldInto(typenums);
-            break;
-
-        case irch:
-            //typenumsIrch.meldInto(typenums);
-            break;
-
-        case ithildin:
-            //typenumsIthildin.meldInto(typenums);
-            break;
-
-        case twitch:
-            // do nothing... FIXME
-            break;
-
-        case unknown:
-            // do nothing...
-            break;
-        }
-    }
-
-    enum Role
-    {
-        UNSET,
-        OTHER,
-        MEMBER,
-        BITS,
-        TURBO,
-        SUBSCRIBER,
-        PREMIUM,
-        PARTNER,
-        MOD,
-        OPERATOR,
-        BROADCASTER,
-        ADMIN,
-        GLOBAL_MOD,
-        STAFF,
-        SERVER,
-    }
-
-    /// The event type, signifying what *kind* of event this is.
-    Type type;
-
-    /// The role of the sender in this context
-    Role role;
-
-    /// The raw IRC string, untouched.
-    string raw;
-
-    /// The name of whoever (or whatever) sent this event.
-    IRCUser sender;
-
-    /// The channel the event transpired in, or is otherwise related to.
-    string channel;
-
-    /// The target of the event. May be a nickname or a channel.
-    IRCUser target;
-
-    /// The main body of the event.
-    string content;
-
-    /// The auxiliary storage, containing type-specific extra bits of information.
-    string aux;
-
-    /// The role in string form, may be of other values than the enum provides.
-    string rolestring;
-
-    /// The colour (RRGGBB) to tint the user's nickname with
-    string colour;
-
-    /// IRCv3 message tags attached to this event.
-    string tags;
-
-    /// With a numeric event, the number of the event type.
-    uint num;
-
-    /// A timestamp of when the event occured.
-    long time;
-}
-
-
-/// Aggregate collecting all the relevant settings, options and state needed
-struct IRCBot
-{
-    string nickname   = "kameloso";
-    string user       = "kameloso!";
-    string ident      = "NaN";
-    string quitReason = "beep boop I am a bot";
-    string master;
-    string authLogin;
-
-    @Hidden
-    {
-        string authPassword;
-        string pass;
-    }
-
-    @Separator(",")
-    {
-        string[] homes;
-        string[] friends;
-        string[] channels;
-    }
-
-    @Unconfigurable
-    {
-        IRCServer server;
-        string origNickname;
-        bool startedRegistering;
-        bool finishedRegistering;
-        bool startedAuth;
-        bool finishedAuth;
-        bool updated;
-    }
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : format;
-
-        sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
-             .format(nickname, authLogin, ident, homes, channels, friends, server));
-    }
-}
-
-
-/// Aggregate of all information and state pertaining to the connected IRC server.
-struct IRCServer
-{
-    /// A list of known networks as reported in the CAP LS message.
-    enum Network
-    {
-        unknown,
-        unfamiliar,
-        freenode,
-        rizon,
-        quakenet,
-        undernet,
-        gamesurge,
-        twitch,
-        unreal,
-        efnet,
-        ircnet,
-        swiftirc,
-        irchighway,
-        dalnet,
-    }
-
-    enum Daemon
-    {
-        unknown,
-        unreal,
-        inspircd,
-        bahamut,
-        ratbox,
-        u2,
-        hybrid,
-        quakenet,
-        rizon,
-        undernet,
-        ircdseven,
-        twitch,
-
-        charybdis,
-
-        ircu,
-        aircd,
-        rfc1459,
-        rfc2812,
-        nefarious,
-        rusnet,
-        austhex,
-        ircnet,
-        ptlink,
-        ultimate,
-        anothernet,
-        sorircd,
-        bdqircd,
-        chatircd,
-        irch,
-        ithildin,
-    }
-
-    Network network;
-    Daemon daemon;
-    string address = "irc.freenode.net";
-    ushort port = 6667;
-
-    @Unconfigurable
-    {
-        string resolvedAddress;
-
-        /// Max nickname length as per IRC specs, but not the de facto standard
-        uint maxNickLength = 9;
-
-        /// Max channel name length as per IRC specs
-        uint maxChannelLength = 200;
-    }
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : format;
-
-        sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
-    }
-}
-
-
-/// An aggregate of string fields that represents a single user.
-struct IRCUser
-{
-    string nickname;
-    string alias_;
-    string ident;
-    string address;
-    string login;
-    bool special;
-
-    size_t lastWhois;
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : formattedWrite;
-
-        sink.formattedWrite("n:%s l:%s a:%s i:%s s:%s%s w:%s",
-            nickname, login, alias_, ident, address,
-            special ? " (*)" : string.init, lastWhois);
-    }
-
-    bool isServer() @property const
-    {
-        import std.string : indexOf;
-
-        return (!nickname.length && (address.indexOf('.') != -1));
-    }
+    static immutable Type[975] unreal =
+    [
+        6 : Type.RPL_MAP,
+        7 : Type.RPL_MAPEND,
+        210 : Type.RPL_STATSHELP,
+        220 : Type.RPL_STATSBLINE,
+        222 : Type.RPL_SQLINE_NICK,
+        223 : Type.RPL_STATSGLINE,
+        224 : Type.RPL_STATSTLINE,
+        225 : Type.RPL_STATSELINE,
+        226 : Type.RPL_STATSNLINE,
+        227 : Type.RPL_STATSVLINE,
+        228 : Type.RPL_STATSBANVER,
+        232 : Type.RPL_RULES,
+        247 : Type.RPL_STATSXLINE,
+        250 : Type.RPL_STATSCONN,
+        290 : Type.RPL_HELPHDR,
+        291 : Type.RPL_HELPOP,
+        292 : Type.RPL_HELPTLR,
+        293 : Type.RPL_HELPHLP,
+        294 : Type.RPL_HELPFWD,
+        295 : Type.RPL_HELPIGN,
+        307 : Type.RPL_WHOISREGNICK,
+        308 : Type.RPL_RULESSTART,
+        309 : Type.RPL_ENDOFRULES,
+        310 : Type.RPL_WHOISHELPOP,
+        320 : Type.RPL_WHOISSPECIAL,
+        334 : Type.RPL_LISTSYNTAX,
+        335 : Type.RPL_WHOISBOT,
+        378 : Type.RPL_WHOISHOST,
+        379 : Type.RPL_WHOISMODES,
+        386 : Type.RPL_QLIST,
+        387 : Type.RPL_ENDOFQLIST,
+        388 : Type.RPL_ALIST,
+        434 : Type.ERR_NORULES,
+        435 : Type.ERR_SERVICECONFUSED,
+        438 : Type.ERR_ONLYSERVERSCANCHANGE,
+        470 : Type.ERR_LINKCHANNEL,
+        477 : Type.ERR_NEEDREGGEDNICK,
+        479 : Type.ERR_LINKFAIL,
+        480 : Type.ERR_CANNOTKNOCK,
+        484 : Type.ERR_ATTACKDENY,
+        485 : Type.ERR_KILLDENY,
+        486 : Type.ERR_HTMDISABLED,         // CONFLICT ERR_NONONREG
+        487 : Type.ERR_NOTFORUSERS,
+        488 : Type.ERR_HTMDISABLED,         // again?
+        489 : Type.ERR_SECUREONLYCHAN,      // AKA ERR_SSLONLYCHAN
+        490 : Type.ERR_ALLMUSTSSL,          // CONFLICT ERR_NOSWEAR
+        492 : Type.ERR_NOCTCP,
+        500 : Type.ERR_TOOMANYJOINS,
+        518 : Type.ERR_NOINVITE,
+        519 : Type.ERR_ADMONLY,
+        520 : Type.ERR_OPERONLY,
+        524 : Type.ERR_OPERSPVERIFY,
+        610 : Type.RPL_MAPMORE,
+        972 : Type.ERR_CANNOTDOCOMMAND,
+        974 : Type.ERR_CANNOTCHANGECHANMODE,
+    ];
+
+    static immutable Type[569] ircu =
+    [
+        15 : Type.RPL_MAP,
+        16 : Type.RPL_MAPMORE,
+        17 : Type.RPL_MAPEND,
+        222 : Type.RPL_STATSJLINE,
+        228 : Type.RPL_STATSQLINE,
+        238 : Type.RPL_STATSFLINE,
+        246 : Type.RPL_STATSTLINE,
+        247 : Type.RPL_STATSGLINE,
+        248 : Type.RPL_STATSULINE,
+        250 : Type.RPL_STATSCONN,
+        270 : Type.RPL_PRIVS,
+        275 : Type.RPL_STATSDLINE,
+        276 : Type.RPL_STATSRLINE,
+        281 : Type.RPL_ENDOFGLIST,
+        282 : Type.RPL_JUPELIST,
+        283 : Type.RPL_ENDOFJUPELIST,
+        284 : Type.RPL_FEATURE,
+        330 : Type.RPL_WHOISACCOUNT,
+        334 : Type.RPL_LISTUSAGE,
+        338 : Type.RPL_WHOISACTUALLY,
+        391 : Type.RPL_TIME,
+        437 : Type.ERR_BANNICKCHANGE,
+        438 : Type.ERR_NICKTOOFAST,
+        468 : Type.ERR_INVALIDUSERNAME,
+        477 : Type.ERR_NEEDREGGEDNICK,
+        493 : Type.ERR_NOFEATURE,
+        494 : Type.ERR_BADFEATVALUE,
+        495 : Type.ERR_BADLOGTYPE,
+        512 : Type.ERR_NOSUCHGLINE,
+        514 : Type.ERR_INVALID_ERROR,
+        518 : Type.ERR_LONGMASK,
+        519 : Type.ERR_TOOMANYUSERS,
+        520 : Type.ERR_MASKTOOWIDE,
+        524 : Type.ERR_QUARANTINED,
+        568 : Type.ERR_LASTERROR,
+    ];
+
+    static immutable Type[471] aircd =
+    [
+        210 : Type.RPL_STATS,
+        274 : Type.RPL_ENDNOTIFY,
+        285 : Type.RPL_CHANINFO_HANDLE,
+        286 : Type.RPL_CHANINFO_USERS,
+        287 : Type.RPL_CHANINFO_CHOPS,
+        288 : Type.RPL_CHANINFO_VOICES,
+        289 : Type.RPL_CHANINFO_AWAY,
+        290 : Type.RPL_CHANINFO_OPERS,
+        291 : Type.RPL_CHANINFO_BANNED,
+        292 : Type.RPL_CHANINFO_BANS,
+        293 : Type.RPL_CHANINFO_INVITE,
+        294 : Type.RPL_CHANINFO_INVITES,
+        295 : Type.RPL_CHANINFO_KICKS,
+        308 : Type.RPL_NOTIFYACTION,
+        309 : Type.RPL_NICKTRACE,
+        377 : Type.RPL_KICKEXPIRED,
+        378 : Type.RPL_BANEXPIRED,
+        379 : Type.RPL_KICKLINKED,
+        380 : Type.RPL_BANLINKED,
+        470 : Type.ERR_KICKEDFROMCHAN,
+    ];
+
+    static immutable Type[502] rfc1459 =
+    [
+        214 : Type.RPL_STATSNLINE,
+        217 : Type.RPL_STATSQLINE,
+        232 : Type.RPL_ENDOFSERVICES,
+        316 : Type.RPL_WHOISCHANOP, // deprecated
+        391 : Type.RPL_TIME,
+        492 : Type.ERR_NOSERVICEHOST,
+        501 : Type.ERR_UMODEUNKNOWNFLAG,
+    ];
+
+    static immutable Type[485] rfc2812 =
+    [
+        240 : Type.RPL_STATSVLINE,
+        246 : Type.RPL_STATSPING,
+        247 : Type.RPL_STATSBLINE,
+        250 : Type.RPL_STATSDLINE,
+        262 : Type.RPL_TRACEEND,
+        325 : Type.RPL_UNIQOPIS,
+        437 : Type.ERR_UNAVAILRESOURCE,
+        477 : Type.ERR_NOCHANMODES,
+        484 : Type.ERR_RESTRICTED,
+    ];
+
+    static immutable Type[716] hybrid =
+    [
+        220 : Type.RPL_STATSPLINE,
+        224 : Type.RPL_STATSFLINE,
+        225 : Type.RPL_STATSDLINE,
+        226 : Type.RPL_STATSALINE,
+        245 : Type.RPL_STATSSLINE,   // CONFLICT: Type.RPL_STATSTLINE
+        246 : Type.RPL_STATSSERVICE, // CONFLICT: Type.RPL_STATSULINE
+        247 : Type.RPL_STATSXLINE,
+        249 : Type.RPL_STATSDEBUG,
+        276 : Type.RPL_WHOISCERTFP,  // oftc-hybrid?
+        335 : Type.RPL_WHOISTEXT,
+        336 : Type.RPL_INVITELIST,
+        337 : Type.RPL_ENDOFINVITELIST, // CONFLICT: Type.RPL_WHOISTEXT
+        386 : Type.RPL_RSACHALLENGE,
+        396 : Type.RPL_VISIBLEHOST,
+        408 : Type.ERR_NOCTRLSONCHAN,
+        479 : Type.ERR_BADCHANNAME,
+        480 : Type.ERR_SSLONLYCHAN,     // deprecated
+        484 : Type.ERR_DESYNC,
+        485 : Type.ERR_CHANBANREASON,
+        492 : Type.ERR_NOCTCP,
+        503 : Type.ERR_GHOSTEDCLIENT,
+        524 : Type.ERR_HELPNOTFOUND,
+        715 : Type.ERR_TOOMANYINVITE,
+    ];
+
+    static immutable Type[621] bahamut =
+    [
+        220 : Type.RPL_STATSBLINE,
+        222 : Type.RPL_STATSBLINE,
+        223 : Type.RPL_STATSELINE,
+        224 : Type.RPL_STATSFLINE,
+        225 : Type.RPL_STATSCLONE,    // DEPRECATED CONFLICT: Type.RPL_STATSZLINE
+        226 : Type.RPL_STATSCOUNT,
+        227 : Type.RPL_STATSGLINE,
+        245 : Type.RPL_STATSSLINE,
+        275 : Type.RPL_USINGSSL,
+        307 : Type.RPL_WHOISREGNICK,
+        308 : Type.RPL_WHOISADMIN,
+        309 : Type.RPL_WHOISADMIN,      // duplicate?
+        310 : Type.RPL_WHOISSVCMSG,
+        334 : Type.RPL_COMMANDSYNTAX,
+        338 : Type.RPL_WHOISACTUALLY,
+        408 : Type.ERR_NOCOLORSONCHAN,
+        435 : Type.ERR_BANONCHAN,
+        468 : Type.ERR_ONLYSERVERSCANCHANGE,
+        477 : Type.ERR_NEEDREGGEDNICK,
+        484 : Type.ERR_DESYNC,
+        487 : Type.ERR_MSGSERVICES,
+        488 : Type.ERR_NOSSL,
+        493 : Type.ERR_NOSHAREDCHAN,
+        494 : Type.ERR_OWNMODE,
+        512 : Type.ERR_TOOMANYWATCH,
+        514 : Type.ERR_TOOMANYDCC,
+        521 : Type.ERR_LISTSYNTAX,
+        617 : Type.RPL_DCCSTATUS,
+        619 : Type.RPL_ENDOFDCCLIST,
+        620 : Type.RPL_DCCINFO,
+    ];
+
+    static immutable Type[554] quakenet =
+    [
+        285 : Type.RPL_NEWHOSTIS,
+        286 : Type.RPL_CHKHEAD,
+        287 : Type.RPL_CHANUSER,
+        288 : Type.RPL_PATCHHEAD,
+        289 : Type.RPL_PATCHCON,
+        290 : Type.RPL_DATASTR,
+        291 : Type.RPL_ENDOFCHECK,
+        485 : Type.ERR_ISREALSERVICE,
+        486 : Type.ERR_ACCOUNTONLY,
+        553 : Type.ERR_STATSSLINE,
+    ];
+
+    static immutable Type[976] nefarious =
+    [
+        220 : Type.RPL_STATSWLINE,
+        292 : Type.ERR_SEARCHNOMATCH,
+        316 : Type.RPL_WHOISPRIVDEAF,
+        320 : Type.RPL_WHOISWEBIRC,
+        335 : Type.RPL_WHOISACCOUNTONLY,
+        336 : Type.RPL_WHOISBOT,
+        339 : Type.RPL_WHOISMARKS,
+        386 : Type.RPL_IRCOPSHEADER,
+        387 : Type.RPL_IRCOPS,
+        388 : Type.RPL_ENDOFIRCOPS,
+        521 : Type.ERR_NOSUCHGLINE,
+        568 : Type.RPL_NOMOTD,
+        617 : Type.RPL_WHOISSSLFP,
+        975 : Type.ERR_LASTERROR,
+    ];
+
+    static immutable Type[501] rusnet =
+    [
+        222 : Type.RPL_CODEPAGE,
+        223 : Type.RPL_CHARSET,
+        327 : Type.RPL_WHOISHOST,
+        468 : Type.ERR_NOCODEPAGE,
+        470 : Type.ERR_7BIT,
+        479 : Type.ERR_NOCOLOR,
+        480 : Type.ERR_NOWALLOP,
+        486 : Type.ERR_RLINED,
+        500 : Type.ERR_NOREHASHPARAM,
+    ];
+
+    static immutable Type[716] rizon =
+    [
+        227 : Type.RPL_STATSBLINE,
+        672 : Type.RPL_WHOISREALIP,
+        715 : Type.RPL_INVITETHROTTLE,
+    ];
+
+    static immutable Type[521] austHex =
+    [
+        240 : Type.RPL_STATSXLINE,
+        307 : Type.RPL_SUSERHOST,
+        309 : Type.RPL_WHOISHELPER,
+        310 : Type.RPL_WHOISSERVICE,
+        320 : Type.RPL_WHOISVIRT,
+        357 : Type.RPL_MAP,
+        358 : Type.RPL_MAPMORE,
+        359 : Type.RPL_MAPEND,
+        377 : Type.RPL_SPAM,        // deprecated
+        378 : Type.RPL_MOTD,
+        380 : Type.RPL_YOURHELPER,
+        434 : Type.ERR_SERVICENAMEINUSE,
+        480 : Type.ERR_NOULINE,
+        503 : Type.ERR_VWORLDWARN,
+        520 : Type.ERR_WHOTRUNC,    // deprecated
+    ];
+
+    static immutable Type[489] ircNet =
+    [
+        245 : Type.RPL_STATSSLINE,
+        248 : Type.RPL_STATSDEFINE,
+        274 : Type.RPL_STATSDELTA,
+        438 : Type.ERR_DEAD,
+        487 : Type.ERR_CHANTOORECENT,
+        488 : Type.ERR_TSLESSCHAN,
+    ];
+
+    static immutable Type[616] ptlink =
+    [
+        247 : Type.RPL_STATSXLINE,
+        484 : Type.ERR_DESYNC,
+        485 : Type.ERR_CANTKICKADMIN,
+        615 : Type.RPL_MAPMORE,
+    ];
+
+    static immutable Type[976] inspIRCd =
+    [
+        270 : Type.RPL_MAPUSERS,
+        304 : Type.RPL_SYNTAX,
+        379 : Type.RPL_WHOWASIP,
+        495 : Type.ERR_DELAYREJOIN,
+        501 : Type.ERR_UNKNOWNSNOMASK,
+        702 : Type.RPL_COMMANDS,
+        703 : Type.RPL_COMMANDSEND,
+        972 : Type.ERR_CANTUNLOADMODULE,
+        974 : Type.ERR_CANTLOADMODULE,
+        975 : Type.RPL_LOADEDMODULE
+    ];
+
+    static immutable Type[624] ultimate =
+    [
+        275 : Type.RPL_USINGSSL,
+        386 : Type.RPL_IRCOPS,
+        387 : Type.RPL_ENDOFIRCOPS,
+        434 : Type.ERR_NORULES,
+        610 : Type.RPL_ISOPER,
+        615 : Type.RPL_WHOISMODES,
+        616 : Type.RPL_WHOISHOST,
+        617 : Type.RPL_WHOISBOT,
+        619 : Type.RPL_WHOWASHOST,
+        620 : Type.RPL_RULESSTART,
+        621 : Type.RPL_RULES,
+        622 : Type.RPL_ENDOFRULES,
+        623 : Type.RPL_MAPMORE,
+    ];
+
+    static immutable Type[490] undernet =
+    [
+        396 : Type.RPL_HOSTHIDDEN,
+        484 : Type.ERR_ISCHANSERVICE,
+        489 : Type.ERR_VOICENEEDED,
+    ];
+
+    static immutable Type[716] ratBox =
+    [
+        480 : Type.ERR_THROTTLE,
+        485 : Type.ERR_BANNEDNICK,      // deprecated
+        702 : Type.RPL_MODLIST,
+        703 : Type.RPL_ENDOFMODLIST,
+        715 : Type.ERR_KNOCKDISABLED,
+    ];
+
+    static immutable Type[495] charybdis =
+    [
+        492 : Type.ERR_CANNOTSENDTOUSER,
+        494 : Type.ERR_OWNMODE,
+    ];
+
+    /*
+    static immutable Type[321] anothernet =
+    [
+        320 : Type.RPL_WHOIS_HIDDEN,
+    ];
+
+    static immutable Type[326] sorircd =
+    [
+        325 : Type.RPL_CHANNELMLOCKIS,  // deprecated
+    ];
+
+    static immutable Type[392] bdqIRCd =
+    [
+        391 : Type.RPL_TIME,
+    ];
+
+    static immutable Type[488] chatIRCd =
+    [
+        487 : Type.ERR_NONONSSL,
+    ];
+
+    static immutable Type[515] irch =
+    [
+        514 : Type.ERR_NOSUCHJUPE,
+    ];
+
+    static immutable Type[672] ithildin =
+    [
+        672 : Type.RPL_UNKNOWNMODES,
+    ];
+    */
 }
