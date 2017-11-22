@@ -522,11 +522,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         //slice.formattedRead("%s %s", event.target, event.channel);
         event.target.nickname = slice.nom(' ');
         event.channel = slice;
-
-        if (event.channel[0] == ':')
-        {
-            event.channel = event.channel[1..$];
-        }
+        event.channel = (slice[0] == ':') ? slice[1..$] : slice;
         break;
 
     case ERR_INVITEONLYCHAN: // 473
@@ -541,7 +537,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
         // :cherryh.freenode.net 477 kameloso^ #archlinux :Cannot join channel (+r) - you need to be identified with services
         //slice.formattedRead("%s %s :%s", event.target, event.channel, event.content);
-        //event.target.nickname = slice.nom(' ');<
+        //event.target.nickname = slice.nom(' ');
         slice.nom(' ');
         event.channel = slice.nom(" :");
         event.content = slice;
@@ -566,8 +562,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :moon.freenode.net 352 kameloso ##linux ~wzhang sea.mrow.org card.freenode.net wzhang H :0 wzhang
         // :irc.rizon.no 352 kameloso^^ * ~NaN C2802314.E23AD7D8.E9841504.IP * kameloso^^ H :0  kameloso!
         // :irc.rizon.no 352 kameloso^^ * ~zorael Rizon-64330364.ip-94-23-253.eu * wob^2 H :0 zorael
-
-
         // "<channel> <user> <host> <server> <nick> ( "H" / "G" > ["*"] [ ( "@" / "+" ) ] :<hopcount> <real name>"
         slice.nom(' ');
         event.channel = slice.nom(' ');

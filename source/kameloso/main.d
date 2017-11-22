@@ -326,15 +326,6 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 /// Resets and initialises all plugins.
 void initPlugins()
 {
-    /++
-     +  1. Teardown any old plugins
-     +  2. Set up new IRCPluginState
-     +  3. Set parser hooks
-     +  4. Instantiate all enabled plugins (list is in kameloso.plugins.package)
-     +  5. Additionlly add Webtitles and Pipeline if doing so compiles
-     +     (i.e they're imported)
-     +/
-
     teardownPlugins();
 
     IRCPluginState state;
