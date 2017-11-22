@@ -51,6 +51,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
         typestring = slice;
     }
 
+    with (parser)
     switch (typestring)
     {
     case "PING":
@@ -416,6 +417,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         logger.warning("------------------------------------");
     }
 
+    with (parser)
     with (IRCEvent)
     with (IRCEvent.Type)
     switch (event.type)
@@ -1777,6 +1779,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         /// http://www.irc.org/tech_docs/005.html
 
+        with (parser)
         switch (key)
         {
         case "CHANTYPES":
@@ -1839,7 +1842,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
         }
     }
 
-    with (bot.server)
+    with (parser.bot.server)
     if (network == Network.init)
     {
         network = networkOf(address);
@@ -1910,7 +1913,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     // https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
-    with (bot.server)
+    with (parser.bot.server)
     with (IRCServer.Daemon)
     {
         if (daemonstring.indexOf("unreal") != -1)
