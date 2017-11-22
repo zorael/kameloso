@@ -1980,7 +1980,6 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     parser.bot.updated = true;
 }
 
-public:
 
 // toIRCEvent
 /++
