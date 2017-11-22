@@ -55,7 +55,7 @@ void onSelfpart(const IRCEvent event)
 
         if (index == -1)
         {
-            immutable homeIndex = bot.channels.countUntil(event.channel);
+            immutable homeIndex = bot.homes.countUntil(event.channel);
 
             if (homeIndex == -1)
             {
