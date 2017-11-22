@@ -2725,7 +2725,173 @@ unittest
         assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
         assert((type == IRCEvent.Type.SELFNICK), type.to!string);
         assert((target.nickname == "kameloso_"), target.nickname);
-        assert(bot2.updated);
-        assert((bot2.nickname == "kameloso_"), bot2.nickname);
+    }
+}
+
+
+struct IRCParser
+{
+    alias Type = IRCEvent.Type;
+    alias Daemon = IRCServer.Daemon;
+
+    IRCBot bot;
+
+    //Daemon serverDaemon;
+
+    Type[1024] typenums = Typenums.base;
+
+    IRCEvent toIRCEvent(const string raw)
+    {
+        return .toIRCEvent(this, raw);
+    }
+
+    this(IRCBot bot)
+    {
+        this.bot = bot;
+    }
+
+    @disable this(this);
+
+    /*Daemon daemon() const @property
+    {
+        return serverDaemon;
+    }*/
+
+    void daemon(const Daemon daemon) @property
+    {
+        import kameloso.common;
+
+        /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
+
+        // Reset
+        typenums = Typenums.base;
+        //this.serverDaemon = daemon;
+        bot.server.daemon = daemon;
+        bot.updated = true;
+
+        with (Typenums)
+        with (Daemon)
+        final switch (daemon)
+        {
+        case unreal:
+            Typenums.unreal.meldInto(typenums);
+            break;
+
+        case inspircd:
+            Typenums.inspIRCd.meldInto(typenums);
+            break;
+
+        case bahamut:
+            Typenums.bahamut.meldInto(typenums);
+            break;
+
+        case ratbox:
+            Typenums.ratBox.meldInto(typenums);
+            break;
+
+        case u2:
+            // unknown!
+            break;
+
+        case rizon:
+            Typenums.hybrid.meldInto(typenums);
+            Typenums.rizon.meldInto(typenums);
+            break;
+
+        case hybrid:
+            Typenums.hybrid.meldInto(typenums);
+            break;
+
+        case ircu:
+            Typenums.ircu.meldInto(typenums);
+            break;
+
+        case aircd:
+            Typenums.aircd.meldInto(typenums);
+            break;
+
+        case rfc1459:
+            Typenums.rfc1459.meldInto(typenums);
+            break;
+
+        case rfc2812:
+            Typenums.rfc2812.meldInto(typenums);
+            break;
+
+        case quakenet:
+            Typenums.quakenet.meldInto(typenums);
+            break;
+
+        case nefarious:
+            Typenums.nefarious.meldInto(typenums);
+            break;
+
+        case rusnet:
+            Typenums.rusnet.meldInto(typenums);
+            break;
+
+        case austhex:
+            Typenums.austHex.meldInto(typenums);
+            break;
+
+        case ircnet:
+            Typenums.ircNet.meldInto(typenums);
+            break;
+
+        case ptlink:
+            Typenums.ptlink.meldInto(typenums);
+            break;
+
+        case ultimate:
+            Typenums.ultimate.meldInto(typenums);
+            break;
+
+        case charybdis:
+            Typenums.charybdis.meldInto(typenums);
+            break;
+
+        case ircdseven:
+            // Nei | freenode is based in charybdis which is based on ratbox iirc
+            Typenums.hybrid.meldInto(typenums);
+            Typenums.ratBox.meldInto(typenums);
+            Typenums.charybdis.meldInto(typenums);
+            break;
+
+        case undernet:
+            Typenums.undernet.meldInto(typenums);
+            break;
+
+        case anothernet:
+            //Typenums.anothernet.meldInto(typenums);
+            break;
+
+        case sorircd:
+            //Typenums.sorircd.meldInto(typenums);
+            break;
+
+        case bdqircd:
+            //Typenums.bdqIrcD.meldInto(typenums);
+            break;
+
+        case chatircd:
+            //Typenums.chatIRCd.meldInto(typenums);
+            break;
+
+        case irch:
+            //Typenums.irch.meldInto(typenums);
+            break;
+
+        case ithildin:
+            //Typenums.ithildin.meldInto(typenums);
+            break;
+
+        case twitch:
+            // do nothing, their events aren't numerical?
+            break;
+
+        case unknown:
+            // do nothing...
+            break;
+        }
     }
 }
