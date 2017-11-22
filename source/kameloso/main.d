@@ -45,6 +45,9 @@ Connection conn;
 /// When a nickname was called WHOIS on, for hysteresis.
 SysTime[string] whoisCalls;
 
+/// Parser instance.
+IRCParser parser;
+
 
 extern (C)
 void signalHandler(int signal) nothrow @nogc @system
@@ -118,9 +121,17 @@ Flag!"quit" checkMessages()
     /// Fake that a string was received from the server
     static void stringToEvent(string line)
     {
-        immutable event = line.toIRCEvent(bot);
+        immutable event = parser.toIRCEvent(line);
 
         logger.info("Forging an event!");
+
+        if (parser.bot.updated)
+        {
+            // Parsing changed the bot
+            parser.bot.updated = false;
+            bot = parser.bot;
+            propagateBot(bot);
+        }
 
         foreach (plugin; plugins) plugin.onEvent(event);
     }
@@ -385,6 +396,8 @@ void startPlugins()
 
 void propagateBot(IRCBot bot)
 {
+    parser.bot = bot;
+
     foreach (plugin; plugins)
     {
         plugin.newBot(bot);
@@ -436,33 +449,33 @@ Flag!"quit" loopGenerator(Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            immutable event = line.toIRCEvent(bot);
+            immutable event = parser.toIRCEvent(line);
 
-            bool spammedAboutReplaying;
+            if (parser.bot.updated)
+            {
+                // Parsing changed the bot; propagate
+                parser.bot.updated = false;
+                bot = parser.bot;
+                propagateBot(bot);
+            }
 
             foreach (plugin; plugins)
             {
-                if (bot.updated)
-                {
-                    // Non-plugin updated bot; propagate
-                    bot.updated = false;
-                    propagateBot(bot);
-                }
-
                 try
                 {
                     plugin.onEvent(event);
+
+                    auto reqs = plugin.yieldWHOISRequests();
+                    reqs.handleQueue(event, event.target.nickname);
 
                     auto yieldedBot = plugin.yieldBot();
                     if (yieldedBot.updated)
                     {
                         // Plugin updated the bot; propagate
                         bot = yieldedBot;  // yieldedBot.meldInto(bot);
+                        bot.updated = false;
                         propagateBot(bot);
                     }
-
-                    auto reqs = plugin.yieldWHOISRequests();
-                    event.handleQueue(reqs, event.target.nickname);
                 }
                 catch (const Exception e)
                 {
@@ -599,6 +612,7 @@ int main(string[] args)
         startedAuth = false;
         finishedAuth = false;
         server.resolvedAddress = string.init;
+        parser = IRCParser(bot);
 
         initPlugins();
         startPlugins();
