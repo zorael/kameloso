@@ -1,13 +1,9 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.constants;
 import kameloso.irc;
 
 import std.concurrency;
-import std.datetime : SysTime;
-import std.stdio;
-import std.typecons : Flag, No, Yes;
 
 
 void main(string[] args)

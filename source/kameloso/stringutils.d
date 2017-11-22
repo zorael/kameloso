@@ -1,6 +1,5 @@
 module kameloso.stringutils;
 
-import std.datetime;
 import std.traits   : isSomeString;
 import std.typecons : Flag;
 
@@ -72,58 +71,26 @@ pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure
 if (isSomeString!T)
 {
-    if ((needle.length > haystack.length) || !haystack.length)
-    {
-        return false;
-    }
-
-    return (haystack[0..needle.length] == needle);
+    return false;
 }
 
 
-/// stripPrefix
-/++
- +  Strips a prefix word from a string.
- +
- +  Params:
- +      line = the prefixed string line.
- +      prefix = the prefix to strip.
- +
- +  Returns:
- +      The passed line with the prefix sliced away.
- +/
-pragma(inline)
 string stripPrefix(const string line, const string prefix)
 {
     import std.regex : ctRegex, matchFirst;
-    import std.string : munch, stripLeft;
 
-    string slice = line.stripLeft();
-
-    // the onus is on the caller that slice begins with prefix
+    string slice = line;
     slice.nom(prefix);
 
     enum pattern = "[:?! ]*(.+)";
     static engine = ctRegex!pattern;
-    auto hits = slice.matchFirst(engine);
-    return hits[1];
+    return "foo";
 }
-
 
 
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure
 {
-    static if (fullStrip)
-    {
-        if (line.length < suffix.length) return line;
-    }
-    else
-    {
-        if (line.length <= suffix.length) return line;
-    }
-
-    return (line[($-suffix.length)..$] == suffix) ?
-        line[0..($-suffix.length)] : line;
+    return "foo";
 }
 
