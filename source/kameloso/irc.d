@@ -1968,14 +1968,16 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
             daemon = unknown;
         }*/
 
-        IRCEvent.setTypenums(bot.server.daemon);
+        parser.daemon = daemon;
     }
 
     import kameloso.stringutils : enumToString;
 
-    logger.info("daemon reported: ", bot.server.daemon
+    logger.infof("Detected daemon %s: %s", daemonstring, parser.bot.server.daemon
         .enumToString
         .colour(BashForeground.white));
+
+    parser.bot.updated = true;
 }
 
 public:
