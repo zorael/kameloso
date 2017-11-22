@@ -769,6 +769,7 @@ struct IRCServer
 
     enum Daemon
     {
+        unknown,
         unreal,
         inspircd,
         bahamut,

@@ -13,13 +13,10 @@ import std.typecons : Flag, No, Yes;
 
 Logger logger;
 
-/// A local copy of the Settings struct, housing certain runtime options
 Settings settings;
 
-/// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
-/// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
     string token = ",";
@@ -39,37 +36,6 @@ struct Hidden {}
 struct Settings
 {
     bool monochrome;
-}
-
-
-// isConfigurableVariable
-/++
- +  Eponymous template bool of whether a variable can be configured via the
- +  functions in `kameloso.config` or not.
- +
- +  Currently it does not support static arrays.
- +
- +  Params:
- +      var = variable to examine.
- +/
-template isConfigurableVariable(alias var)
-{
-    static if (!isType!var)
-    {
-        import std.traits : isSomeFunction;
-
-        alias T = typeof(var);
-
-        enum isConfigurableVariable =
-            !isSomeFunction!T &&
-            !__traits(isTemplate, T) &&
-            !__traits(isAssociativeArray, T) &&
-            !__traits(isStaticArray, T);
-    }
-    else
-    {
-        enum isConfigurableVariable = false;
-    }
 }
 
 
@@ -141,7 +107,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
 
-    enum entryPadding = longestMemberName!Things.length;
+    enum entryPadding = 16;
 
     with (BashForeground)
     foreach (thing; things)
@@ -163,7 +129,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
         foreach (immutable i, member; thing.tupleof)
         {
             static if (!isType!member &&
-                       isConfigurableVariable!member &&
                        !hasUDA!(thing.tupleof[i], Hidden) &&
                        !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
@@ -185,7 +150,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                     }
                     else
                     {
-                        //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
                         enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, T.stringof,
                             (entryPadding + 2), memberstring,
@@ -246,44 +210,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
 
         sink.put('\n');
     }
-}
-
-
-// longestMemberName
-/++
- +  Gets the name of the longest member in a struct.
- +
- +  This is used for formatting configuration files, so that columns line up.
- +
- +  Params:
- +      Things = the types to examine and count name lengths
- +/
-template longestMemberName(Things...)
-{
-    enum longestMemberName = ()
-    {
-        import std.traits : hasUDA;
-
-        string longest;
-
-        foreach (T; Things)
-        {
-            foreach (name; __traits(allMembers, T))
-            {
-                static if (!isType!(__traits(getMember, T, name)) &&
-                           isConfigurableVariable!(__traits(getMember, T, name)) &&
-                           !hasUDA!(__traits(getMember, T, name), Hidden))
-                {
-                    if (name.length > longest.length)
-                    {
-                        longest = name;
-                    }
-                }
-            }
-        }
-
-        return longest;
-    }();
 }
 
 
