@@ -276,7 +276,7 @@ void onCommandQuote(const IRCEvent event)
     // stripModeSign to allow for quotes from @nickname and +dudebro
     immutable nickname = event.content.strip.stripModeSign();
 
-    if (!nickname.isValidNickname)
+    if (!nickname.isValidNickname(state.bot.server))
     {
         logger.warningf("Invalid nickname: '%s'", nickname);
         return;

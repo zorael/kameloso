@@ -353,7 +353,7 @@ void onCommandAddHome(const IRCEvent event)
 
     immutable channel = event.content.strip();
 
-    if (!channel.isValidChannel)
+    if (!channel.isValidChannel(state.bot.server))
     {
         logger.warning("Invalid channel");
         return;
@@ -391,7 +391,7 @@ void onCommandDelHome(const IRCEvent event)
 
     immutable channel = event.content.strip();
 
-    if (!channel.isValidChannel)
+    if (!channel.isValidChannel(state.bot.server))
     {
         logger.warning("Invalid channel");
         return;
