@@ -1905,9 +1905,11 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     slice.nom(' ');  // nickname
 
-    if (slice == ":-")
+    if ((slice == ":-") && (parser.bot.server.address.indexOf(".twitch.tv") != -1))
     {
-        bot.server.daemon = IRCServer.Daemon.twitch;
+        logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
+        parser.daemon = IRCServer.Daemon.twitch;
+        parser.bot.updated = true;
         return;
     }
 
