@@ -26,7 +26,7 @@ private:
  +  Params:
  +      ref event = the IRCEvent to fill out the members of.
  +/
-void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
+void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
 {
     import std.algorithm.searching : canFind;
 
@@ -130,9 +130,11 @@ void parseBasic(ref IRCEvent event, ref IRCBot bot) @trusted
             string raw = event.raw[1..$];
             // Save tags so we can restore it in our new event
             immutable tags = raw.nom(" ");
-            event = toIRCEvent(raw, bot);
+
+            event = parser.toIRCEvent(raw);
+
             event.tags = tags;
-            event.parseTwitchTags(bot);  // FIXME: support any IRCv3 server
+            parser.parseTwitchTags(event);  // FIXME: support any IRCv3 server
         }
         else
         {
@@ -197,7 +199,7 @@ unittest
  +      ref event = A reference to the IRCEvent to start working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parsePrefix(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : nom;
     import std.algorithm.searching : endsWith;
@@ -303,7 +305,7 @@ unittest
  +      ref event = A reference to the IRCEvent to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : nom, toEnum;
     import std.conv : to;
@@ -317,7 +319,7 @@ void parseTypestring(ref IRCEvent event, ref IRCBot bot, ref string slice)
         {
             immutable number = typestring.to!uint;
             event.num = number;
-            event.type = IRCEvent.typenums[number];
+            event.type = parser.typenums[number];
 
             with (IRCEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
@@ -401,7 +403,7 @@ unittest
  +      ref event = A reference to the IRCEvent to finish working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils;
 
@@ -419,7 +421,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     switch (event.type)
     {
     case NOTICE:
-        event.onNotice(bot, slice);
+        parser.onNotice(event, slice);
         break;
 
     case JOIN:
@@ -494,11 +496,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case PRIVMSG:
-        event.onPRIVMSG(bot, slice);
+        parser.onPRIVMSG(event, slice);
         break;
 
     case MODE:
-        event.onMode(bot, slice);
+        parser.onMode(event, slice);
         break;
 
     case KICK:
@@ -603,11 +605,11 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
         break;
 
     case RPL_ISUPPORT: // 005
-        event.onISUPPORT(bot, slice);
+        parser.onISUPPORT(event, slice);
         break;
 
     case RPL_MYINFO: // 004
-        event.onMyInfo(bot, slice);
+        parser.onMyInfo(event, slice);
         break;
 
     case RPL_TOPICWHOTIME: // 333
@@ -1094,7 +1096,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
     }
 
     event.content = event.content.stripRight();
-    postparseSanityCheck(event, bot);
+    parser.postparseSanityCheck(event);
 }
 
 
@@ -1106,7 +1108,7 @@ void parseSpecialcases(ref IRCEvent event, ref IRCBot bot, ref string slice)
  +  Params:
  +      ref event = the IRC event to examine.
  +/
-void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
+void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 {
     import kameloso.stringutils : beginsWith;
 
@@ -1170,7 +1172,7 @@ void postparseSanityCheck(ref IRCEvent event, const IRCBot bot)
  +  Params:
  +      ref event = A reference to the IRCEvent whose tags should be parsed.
  +/
-void parseTwitchTags(ref IRCEvent event, ref IRCBot bot)
+void parseTwitchTags(const ref IRCParser parser, ref IRCEvent event)
 {
     import kameloso.stringutils : nom;
     import std.algorithm.iteration : splitter;
@@ -1523,7 +1525,7 @@ string decodeIRCv3String(const string line)
     return line.replaceAll(spaces, " ");
 }
 
-void onNotice(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : beginsWith;
     import std.string : indexOf;
@@ -1618,7 +1620,7 @@ void onNotice(ref IRCEvent event, ref IRCBot bot, ref string slice)
 }
 
 
-void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : beginsWith;
 
@@ -1711,7 +1713,7 @@ void onPRIVMSG(ref IRCEvent event, ref IRCBot bot, ref string slice)
 }
 
 
-void onMode(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     immutable targetOrChannel = slice.nom(' ');
 
@@ -1745,7 +1747,7 @@ void onMode(ref IRCEvent event, ref IRCBot bot, ref string slice)
 }
 
 
-void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.stringutils : toEnum;
 
@@ -1848,7 +1850,7 @@ void onISUPPORT(ref IRCEvent event, ref IRCBot bot, ref string slice)
     }
 }
 
-void onMyInfo(ref IRCEvent event, ref IRCBot bot, ref string slice)
+void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import std.string : toLower;
 
@@ -1981,7 +1983,7 @@ public:
  +  Returns:
  +      A finished IRCEvent.
  +/
-IRCEvent toIRCEvent(const string raw, ref IRCBot bot)
+IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
     import std.datetime : Clock;
 
@@ -1996,21 +1998,21 @@ IRCEvent toIRCEvent(const string raw, ref IRCBot bot)
     {
         if (raw[0] != ':')
         {
-            parseBasic(event, bot);
+            parser.parseBasic(event);
             return event;
         }
 
         auto slice = event.raw[1..$]; // advance past first colon
 
         // First pass: prefixes. This is the sender
-        parsePrefix(event, bot, slice);
+        parser.parsePrefix(event, slice);
 
         // Second pass: typestring. This is what kind of action the event is of
-        parseTypestring(event, bot, slice);
+        parser.parseTypestring(event, slice);
 
         // Third pass: specialcases. This splits up the remaining bits into
         // useful strings, like sender, target and content
-        parseSpecialcases(event, bot, slice);
+        parser.parseSpecialcases(event, slice);
     }
     catch (const Exception e)
     {
@@ -2021,12 +2023,16 @@ IRCEvent toIRCEvent(const string raw, ref IRCBot bot)
 }
 
 
+public:
+
+
 /// This simply looks at an event and decides whether it is from a nickname
 /// registration service.
-bool isFromAuthService(const IRCEvent event, ref IRCBot bot)
+bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
+    with (parser)
     with (event)
     with (event.sender)
     switch (sender.nickname)
