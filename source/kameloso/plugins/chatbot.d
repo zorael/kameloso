@@ -144,14 +144,13 @@ JSONValue loadQuotes(const string filename)
 
     if (!filename.exists || !filename.isFile)
     {
-        logger.info(filename, " does not exist or is not a file!");
+        //logger.info(filename, " does not exist or is not a file!");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
     }
 
-    immutable wholeFile = filename.readText;
-
+    immutable wholeFile = readText(filename);
     return parseJSON(wholeFile);
 }
 
