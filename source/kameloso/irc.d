@@ -152,13 +152,13 @@ unittest
 {
     import std.conv : to;
 
-    IRCBot bot;
+    IRCParser parser;
 
     IRCEvent e1;
     with (e1)
     {
         raw = "PING :irc.server.address";
-        e1.parseBasic(bot);
+        parser.parseBasic(e1);
         assert((type == IRCEvent.Type.PING), type.to!string);
         assert((sender.address == "irc.server.address"), sender.address);
         assert(!sender.nickname.length, sender.nickname);
@@ -169,7 +169,7 @@ unittest
     {
         // QuakeNet and others not having the sending server as prefix
         raw = "NOTICE AUTH :*** Couldn't look up your hostname";
-        e2.parseBasic(bot);
+        parser.parseBasic(e2);
         assert((type == IRCEvent.Type.NOTICE), type.to!string);
         assert(!sender.nickname.length, sender.nickname);
         assert((content == "*** Couldn't look up your hostname"));
@@ -179,7 +179,7 @@ unittest
     with (e3)
     {
         raw = "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)";
-        e3.parseBasic(bot);
+        parser.parseBasic(e3);
         assert((type == IRCEvent.Type.ERROR), type.to!string);
         assert(!sender.nickname.length, sender.nickname);
         assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
@@ -237,7 +237,7 @@ unittest
 {
     import std.conv : to;
 
-    IRCBot bot;
+    IRCParser parser;
 
     IRCEvent e1;
     with (e1)
@@ -245,7 +245,7 @@ unittest
     {
         raw = ":zorael!~NaN@some.address.org PRIVMSG kameloso :this is fake";
         string slice1 = raw[1..$];  // mutable
-        e1.parsePrefix(bot, slice1);
+        parser.parsePrefix(e1, slice1);
         assert((nickname == "zorael"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "some.address.org"), address);
@@ -258,7 +258,7 @@ unittest
     {
         raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
         string slice2 = raw[1..$];  // mutable
-        e2.parsePrefix(bot, slice2);
+        parser.parsePrefix(e2, slice2);
         assert((nickname == "NickServ"), nickname);
         assert((ident == "NickServ"), ident);
         assert((address == "services."), address);
@@ -271,7 +271,7 @@ unittest
     {
         raw = ":kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp";
         string slice3 = raw[1..$];  // mutable
-        e3.parsePrefix(bot, slice3);
+        parser.parsePrefix(e3, slice3);
         assert((nickname == "kameloso^^"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
@@ -279,12 +279,13 @@ unittest
     }
 
     IRCEvent e4;
+    with (parser)
     with (e4)
     with (e4.sender)
     {
         raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
         string slice4 = raw[1..$];
-        e4.parsePrefix(bot, slice4);
+        parser.parsePrefix(e4, slice4);
         assert((nickname == "Q"), nickname);
         assert((ident == "TheQBot"), ident);
         assert((address == "CServe.quakenet.org"), address);
@@ -346,14 +347,14 @@ unittest
 {
     import std.conv : to;
 
-    IRCBot bot;
+    IRCParser parser;
 
     IRCEvent e1;
     with (e1)
     {
         raw = /*":port80b.se.quakenet.org */"421 kameloso åäö :Unknown command";
         string slice = raw;  // mutable
-        e1.parseTypestring(bot, slice);
+        parser.parseTypestring(e1, slice);
         assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
         assert((num == 421), num.to!string);
     }
@@ -363,7 +364,7 @@ unittest
     {
         raw = /*":port80b.se.quakenet.org */"353 kameloso = #garderoben :@kameloso'";
         string slice = raw;  // mutable
-        e2.parseTypestring(bot, slice);
+        parser.parseTypestring(e2, slice);
         assert((type == IRCEvent.Type.RPL_NAMREPLY), type.to!string);
         assert((num == 353), num.to!string);
     }
@@ -373,7 +374,7 @@ unittest
     {
         raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
         string slice = raw;
-        e3.parseTypestring(bot, slice);
+        parser.parseTypestring(e3, slice);
         assert((type == IRCEvent.Type.PRIVMSG), type.to!string);
     }
 
@@ -382,7 +383,7 @@ unittest
     {
         raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
         string slice = raw;
-        e4.parseTypestring(bot, slice);
+        parser.parseTypestring(e4, slice);
         assert((type == IRCEvent.Type.PART), type.to!string);
     }
 }
@@ -2128,15 +2129,15 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 
 unittest
 {
-    IRCBot bot;
+    IRCParser parser;
 
     IRCEvent e1;
     with (e1)
     {
         raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
         string slice = raw[1..$];  // mutable
-        e1.parsePrefix(bot, slice);
-        assert(e1.isFromAuthService(bot));
+        parser.parsePrefix(e1, slice);
+        assert(parser.isFromAuthService(e1));
     }
 
     IRCEvent e2;
@@ -2144,8 +2145,8 @@ unittest
     {
         raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
         string slice = raw[1..$];
-        e2.parsePrefix(bot, slice);
-        assert(e2.isFromAuthService(bot));
+        parser.parsePrefix(e2, slice);
+        assert(parser.isFromAuthService(e2));
     }
 
     IRCEvent e3;
@@ -2153,8 +2154,8 @@ unittest
     {
         raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
         string slice = raw[1..$];
-        e3.parsePrefix(bot, slice);
-        assert(e3.isFromAuthService(bot));
+        parser.parsePrefix(e3, slice);
+        assert(parser.isFromAuthService(e3));
     }
 
     IRCEvent e4;
@@ -2244,7 +2245,7 @@ unittest
     import std.range : repeat;
     import std.conv : to;
 
-    IRCBot bot;
+    IRCServer s;
 
     const validNicknames =
     [
@@ -2261,7 +2262,7 @@ unittest
     const invalidNicknames =
     [
         "",
-        "X".repeat(bot.server.maxNickLength+1).to!string,
+        "X".repeat(s.maxNickLength+1).to!string,
         "åäöÅÄÖ",
         "\n",
         "¨",
@@ -2274,12 +2275,12 @@ unittest
 
     foreach (nickname; validNicknames)
     {
-        assert(nickname.isValidNickname, nickname);
+        assert(nickname.isValidNickname(s), nickname);
     }
 
     foreach (nickname; invalidNicknames)
     {
-        assert(!nickname.isValidNickname, nickname);
+        assert(!nickname.isValidNickname(s), nickname);
     }
 }
 
@@ -2429,14 +2430,13 @@ unittest
 {
     import std.conv : to;
 
-    IRCBot bot;
+    IRCParser parser;
 
     /+
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
     :tepper.freenode.net NOTICE * :*** Checking Ident
      +/
-    immutable e1 = ":tepper.freenode.net NOTICE * :*** Checking Ident"
-                   .toIRCEvent(bot);
+    immutable e1 = parser.toIRCEvent(":tepper.freenode.net NOTICE * :*** Checking Ident");
     with (e1)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2448,8 +2448,7 @@ unittest
     [ERR_NICKNAMEINUSE] tepper.freenode.net (kameloso): "Nickname is already in use." (#433)
     :tepper.freenode.net 433 * kameloso :Nickname is already in use.
      +/
-    immutable e2 = ":tepper.freenode.net 433 * kameloso :Nickname is already in use."
-                   .toIRCEvent(bot);
+    immutable e2 = parser.toIRCEvent(":tepper.freenode.net 433 * kameloso :Nickname is already in use.");
     with (e2)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2462,8 +2461,7 @@ unittest
     [RPL_WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)
     :tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
      +/
-    immutable e3 = ":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^"
-                   .toIRCEvent(bot);
+    immutable e3 = parser.toIRCEvent(":tepper.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^");
     with (e3)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2478,8 +2476,7 @@ unittest
     [RPL_ENDOFMOTD] tepper.freenode.net (kameloso^): "End of /MOTD command." (#376)
     :tepper.freenode.net 376 kameloso^ :End of /MOTD command.
      +/
-    immutable e4 = ":tepper.freenode.net 376 kameloso^ :End of /MOTD command."
-                   .toIRCEvent(bot);
+    immutable e4 = parser.toIRCEvent(":tepper.freenode.net 376 kameloso^ :End of /MOTD command.");
     with (e4)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2492,7 +2489,7 @@ unittest
     [SELFMODE] kameloso^ (kameloso^) <+i>
     :kameloso^ MODE kameloso^ :+i
      +/
-    immutable e5 = ":kameloso^ MODE kameloso^ :+i".toIRCEvent(bot);
+    immutable e5 = parser.toIRCEvent(":kameloso^ MODE kameloso^ :+i");
     with (e5)
     {
         assert((sender.nickname == "kameloso^"), sender.nickname);
@@ -2504,8 +2501,7 @@ unittest
     [QUERY] zorael (kameloso^): "sudo privmsg zorael :derp"
     :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp
      +/
-    immutable e6 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp"
-                   .toIRCEvent(bot);
+    immutable e6 = parser.toIRCEvent(":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp");
     with (e6)
     {
         assert((sender.nickname == "zorael"), sender.nickname);
@@ -2518,8 +2514,7 @@ unittest
     [RPL_WHOISUSER] tepper.freenode.net (zorael): "~NaN ns3363704.ip-94-23-253.eu" <jr> (#311)
     :tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr
      +/
-    immutable e7 = ":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr"
-                   .toIRCEvent(bot);
+    immutable e7 = parser.toIRCEvent(":tepper.freenode.net 311 kameloso^ zorael ~NaN ns3363704.ip-94-23-253.eu * :jr");
     with (e7)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2535,8 +2530,7 @@ unittest
     [WHOISLOGIN] tepper.freenode.net (zurael): "is logged in as" <zorael> (#330)
     :tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as
      +/
-    immutable e8 = ":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as"
-                   .toIRCEvent(bot);
+    immutable e8 = parser.toIRCEvent(":tepper.freenode.net 330 kameloso^ zurael zorael :is logged in as");
     with (e8)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2551,8 +2545,7 @@ unittest
     [PONG] tepper.freenode.net
     :tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net
      +/
-    immutable e9 = ":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net"
-                   .toIRCEvent(bot);
+    immutable e9 = parser.toIRCEvent(":tepper.freenode.net PONG tepper.freenode.net :tepper.freenode.net");
     with (e9)
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
@@ -2564,9 +2557,8 @@ unittest
     [QUIT] wonderworld: "Remote host closed the connection"
     :wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de QUIT :Remote host closed the connection
      +/
-    immutable e10 = (":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de " ~
-                     "QUIT :Remote host closed the connection")
-                     .toIRCEvent(bot);
+    immutable e10 = parser.toIRCEvent(":wonderworld!~ww@ip-176-198-197-145.hsi05.unitymediagroup.de " ~
+        "QUIT :Remote host closed the connection");
     with (e10)
     {
         assert((sender.nickname == "wonderworld"), sender.nickname);
@@ -2579,8 +2571,7 @@ unittest
     [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
-     immutable e11 = ":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^"
-                     .toIRCEvent(bot);
+     immutable e11 = parser.toIRCEvent(":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^");
      with (e11)
      {
         assert((sender.nickname == "zorael"), sender.nickname);
@@ -2594,8 +2585,7 @@ unittest
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
      :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
      +/
-     immutable e12 = ":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477"
-                     .toIRCEvent(bot);
+     immutable e12 = parser.toIRCEvent(":irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477");
      with (e12)
      {
         assert((sender.address == "irc.uworld.se"), sender.address);
@@ -2609,8 +2599,7 @@ unittest
     [20:55:14] [ERR_UNKNOWNCOMMAND] karatkievich.freenode.net (kameloso^) <systemd,#kde,#kubuntu,#archlinux, ...>
     :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...
     +/
-    immutable e13 = ":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ..."
-                    .toIRCEvent(bot);
+    immutable e13 = parser.toIRCEvent(":karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,#archlinux ...");
     with (e13)
     {
         assert((sender.address == "karatkievich.freenode.net"), sender.address);
@@ -2621,8 +2610,7 @@ unittest
     /+
     :asimov.freenode.net 421 kameloso^ sudo :Unknown command
     +/
-    immutable e14 = ":asimov.freenode.net 421 kameloso^ sudo :Unknown command"
-                    .toIRCEvent(bot);
+    immutable e14 = parser.toIRCEvent(":asimov.freenode.net 421 kameloso^ sudo :Unknown command");
     with (e14)
     {
         assert((sender.address == "asimov.freenode.net"), sender.address);
@@ -2634,9 +2622,9 @@ unittest
     /+
     :wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :PING 1495974267 590878
     +/
-    immutable e15 = (":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~
+    immutable e15 = parser.toIRCEvent(":wob^2!~zorael@2A78C947:4EDD8138:3CB17EDC:IP PRIVMSG kameloso^^ :" ~
                      IRCControlCharacter.ctcp ~ "PING 1495974267 590878" ~
-                     IRCControlCharacter.ctcp).toIRCEvent(bot);
+                     IRCControlCharacter.ctcp);
     with (e15)
     {
         assert((sender.nickname == "wob^2"), sender.nickname);
@@ -2648,8 +2636,7 @@ unittest
     /+
     :beLAban!~beLAban@onlywxs PRIVMSG ##networking :start at cpasdcas
     +/
-    immutable e16 = ":beLAban!~beLAban@onlywxs PRIVMSG ##networking :start at cpasdcas"
-                    .toIRCEvent(bot);
+    immutable e16 = parser.toIRCEvent(":beLAban!~beLAban@onlywxs PRIVMSG ##networking :start at cpasdcas");
     with (e16)
     {
         assert((sender.nickname == "beLAban"), sender.nickname);
@@ -2661,9 +2648,9 @@ unittest
     /+
     :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
     +/
-    immutable e17 = (":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :" ~
+    immutable e17 = parser.toIRCEvent(":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :" ~
                      IRCControlCharacter.ctcp ~ "ACTION 123 test test content" ~
-                     IRCControlCharacter.ctcp).toIRCEvent(bot);
+                     IRCControlCharacter.ctcp);
     with (e17)
     {
         assert((sender.nickname == "zorael"), sender.nickname);
@@ -2675,7 +2662,7 @@ unittest
     /+
     :tmi.twitch.tv HOSTTARGET #lirik :h1z1 -
     +/
-    immutable e18 = ":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -".toIRCEvent(bot);
+    immutable e18 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -");
     with (e18)
     {
         assert((sender.address == "tmi.twitch.tv"), sender.address);
@@ -2688,7 +2675,7 @@ unittest
     /+
     :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
     +/
-    immutable e19 = ":tmi.twitch.tv HOSTTARGET #lirik :- 178".toIRCEvent(bot);
+    immutable e19 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :- 178");
     with (e19)
     {
         assert((sender.address == "tmi.twitch.tv"), sender.address);
@@ -2700,8 +2687,7 @@ unittest
     /+
     :tmi.twitch.tv HOSTTARGET #lirik chu8 270
     +/
-    immutable e20 = ":tmi.twitch.tv HOSTTARGET #lirik :chu8 270"
-                    .toIRCEvent(bot);
+    immutable e20 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :chu8 270");
     with (e20)
     {
         assert((sender.address == "tmi.twitch.tv"), sender.address);
@@ -2711,8 +2697,7 @@ unittest
         assert((aux == "270"), aux);
     }
 
-    immutable e21 = ":kameloso_!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso__"
-                    .toIRCEvent(bot);
+    immutable e21 = parser.toIRCEvent(":kameloso_!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso__");
     with (e21)
     {
         assert((sender.nickname == "kameloso_"), sender.nickname);
@@ -2722,11 +2707,7 @@ unittest
         assert((target.nickname == "kameloso__"), target.nickname);
     }
 
-    IRCBot bot2 = bot;
-
-    assert((bot2.nickname == "kameloso^"), bot2.nickname);
-    immutable e22 = ":kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_"
-                    .toIRCEvent(bot2);
+    immutable e22 = parser.toIRCEvent(":kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_");
     with (e22)
     {
         assert((sender.nickname == "kameloso^"), sender.nickname);
@@ -2734,6 +2715,8 @@ unittest
         assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
         assert((type == IRCEvent.Type.SELFNICK), type.to!string);
         assert((target.nickname == "kameloso_"), target.nickname);
+        assert(parser.bot.updated);
+        assert((parser.bot.nickname == "kameloso_"), parser.bot.nickname);
     }
 }
 
