@@ -141,24 +141,16 @@ JSONValue loadQuotes(const string filename)
 {
     import std.file   : exists, isFile, readText;
     import std.json   : parseJSON;
-    import std.string : chomp;
 
-    if (!filename.exists)
+    if (!filename.exists || !filename.isFile)
     {
-        logger.info(filename, " does not exist");
-        JSONValue newJSON;
-        newJSON.object = null;
-        return newJSON;
-    }
-    else if (!filename.isFile)
-    {
-        logger.error(filename, " is not a file");
+        logger.info(filename, " does not exist or is not a file!");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
     }
 
-    immutable wholeFile = filename.readText.chomp;
+    immutable wholeFile = filename.readText;
 
     return parseJSON(wholeFile);
 }
