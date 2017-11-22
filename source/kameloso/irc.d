@@ -2166,7 +2166,7 @@ unittest
         raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
         string slice = raw[1..$];
         parser.parsePrefix(e4, slice);
-        assert(parser.isFromAuthService(e4));
+        assert(!parser.isFromAuthService(e4));
     }
 }
 
