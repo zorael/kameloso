@@ -938,7 +938,7 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
 
         if (++numCodes > 1) sink.put(';');
 
-        sink.put((cast(size_t)code).to!string);
+        sink.put((cast(uint)code).to!string);
     }
 
     sink.put('m');
