@@ -1144,7 +1144,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         logger.warning("------------------------------------");
         writeln();
     }
-    if (event.target.nickname == bot.nickname)
+    if (event.target.nickname == parser.bot.nickname)
     {
         with (IRCEvent.Type)
         switch (event.type)
@@ -1632,7 +1632,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     immutable targetOrChannel = slice.nom(" :");
     event.content = slice;
 
-    if (targetOrChannel.isValidChannel(bot))
+    if (targetOrChannel.isValidChannel(parser.bot.server))
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
         event.type = IRCEvent.Type.CHAN;
@@ -1720,7 +1720,7 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     immutable targetOrChannel = slice.nom(' ');
 
-    if (targetOrChannel.isValidChannel(bot))
+    if (targetOrChannel.isValidChannel(parser.bot.server))
     {
         event.channel = targetOrChannel;
 
@@ -2163,14 +2163,14 @@ unittest
     {
         raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
         string slice = raw[1..$];
-        e4.parsePrefix(bot, slice);
-        assert(!e4.isFromAuthService(bot));
+        parser.parsePrefix(e4, slice);
+        assert(parser.isFromAuthService(e4));
     }
 }
 
 
 /// Checks whether a string *looks* like a channel.
-bool isValidChannel(const string line, const IRCBot bot = IRCBot.init)
+bool isValidChannel(const string line, const IRCServer server)
 {
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
@@ -2190,7 +2190,7 @@ bool isValidChannel(const string line, const IRCBot bot = IRCBot.init)
         return false;
     }
 
-    if ((line.length <= 1) || (line.length > bot.server.maxChannelLength))
+    if ((line.length <= 1) || (line.length > server.maxChannelLength))
     {
         return false;
     }
@@ -2211,25 +2211,27 @@ bool isValidChannel(const string line, const IRCBot bot = IRCBot.init)
 
 unittest
 {
-    assert("#channelName".isValidChannel);
-    assert("&otherChannel".isValidChannel);
-    assert("##freenode".isValidChannel);
-    assert(!"###froonode".isValidChannel);
-    assert(!"#not a channel".isValidChannel);
-    assert(!"notAChannelEither".isValidChannel);
-    assert(!"#".isValidChannel);
-    assert(!"".isValidChannel);
+    IRCServer s;
+    assert("#channelName".isValidChannel(s));
+    assert("&otherChannel".isValidChannel(s));
+    assert("##freenode".isValidChannel(s));
+    assert(!"###froonode".isValidChannel(s));
+    assert(!"#not a channel".isValidChannel(s));
+    assert(!"notAChannelEither".isValidChannel(s));
+    assert(!"#".isValidChannel(s));
+    assert(!"".isValidChannel(s));
 }
 
+
 /// Checks if a string *looks* like a nickname.
-bool isValidNickname(const string nickname, const IRCBot bot = IRCBot.init)
+bool isValidNickname(const string nickname, const IRCServer server)
 {
     import std.regex : ctRegex, matchAll;
     import std.string : representation;
 
     // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
 
-    if (!nickname.length || (nickname.length > bot.server.maxNickLength))
+    if (!nickname.length || (nickname.length > server.maxNickLength))
     {
         return false;
     }
