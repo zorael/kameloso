@@ -491,7 +491,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
     return Yes.quit;
 }
 
-void handleQueue(W)(const IRCEvent event, ref W[string] reqs, const string nickname)
+void handleQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickname)
 {
     if (nickname.length &&
         ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
