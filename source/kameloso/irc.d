@@ -1544,76 +1544,81 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
     // FIXME: This obviously doesn't scale either
     /*if (event.target.nickname == "*") event.target.nickname = string.init;
     else*/
-    if ((event.sender.ident == "service") && (event.sender.address == "rizon.net"))
-    {
-        event.sender.special = true;
-    }
 
-    if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
+    with (parser)
     {
-        bot.server.resolvedAddress = event.sender.nickname;
-        bot.updated = true;
-    }
-
-    if (event.isFromAuthService(bot))
-    {
-        event.sender.special = true;  // by definition
-
-        if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
-            (event.content.indexOf("/msg NickServ identify") != -1))
+        if ((event.sender.ident == "service") &&
+            (event.sender.address == "rizon.net"))
         {
-            event.type = IRCEvent.Type.AUTH_CHALLENGE;
-            return;
+            event.sender.special = true;
         }
 
-        // FIXME: This obviously doesn't scale either
-
-        enum AuthSuccess
+        if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
-            freenode = "You are now identified for",
-            rizon = "Password accepted - you are now recognized.",
-            quakenet = "You are now logged in as",
-            gamesurge = "I recognize you.",
+            bot.server.resolvedAddress = event.sender.nickname;
+            bot.updated = true;
         }
 
-        with (event)
-        with (AuthSuccess)
+        if (parser.isFromAuthService(event))
         {
-            if ((content.beginsWith(freenode)) ||
-                (content.beginsWith(quakenet)) || // also Freenode SASL
-                (content == rizon) ||
-                (content == gamesurge))
+            event.sender.special = true;  // by definition
+
+            if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
+                (event.content.indexOf("/msg NickServ identify") != -1))
             {
-                type = IRCEvent.Type.RPL_LOGGEDIN;
-
-                // Restart with the new type
-                return parseSpecialcases(event, bot, slice);
+                event.type = IRCEvent.Type.AUTH_CHALLENGE;
+                return;
             }
-        }
 
-        enum AuthFailure
-        {
-            rizon = "Your nick isn't registered.",
-            quakenet = "Username or password incorrect.",
-            freenodeInvalid = "is not a registered nickname.",
-            freenodeRejected = "Invalid password for",
-            dalnet = "is not registered.",
-            unreal = "isn't registered.",
-            gamesurge = "Could not find your account -- did you register yet?",
-        }
+            // FIXME: This obviously doesn't scale either
 
-        with (event)
-        with (AuthFailure)
-        {
-            if ((content == rizon) ||
-                (content == quakenet) ||
-                (content == gamesurge) ||
-                (content.indexOf(freenodeInvalid) != -1) ||
-                (content.beginsWith(freenodeRejected)) ||
-                (content.indexOf(dalnet) != -1) ||
-                (content.indexOf(unreal) != -1))
+            enum AuthSuccess
             {
-                event.type = IRCEvent.Type.AUTH_FAILURE;
+                freenode = "You are now identified for",
+                rizon = "Password accepted - you are now recognized.",
+                quakenet = "You are now logged in as",
+                gamesurge = "I recognize you.",
+            }
+
+            with (event)
+            with (AuthSuccess)
+            {
+                if ((content.beginsWith(freenode)) ||
+                    (content.beginsWith(quakenet)) || // also Freenode SASL
+                    (content == rizon) ||
+                    (content == gamesurge))
+                {
+                    type = IRCEvent.Type.RPL_LOGGEDIN;
+
+                    // Restart with the new type
+                    return parser.parseSpecialcases(event, slice);
+                }
+            }
+
+            enum AuthFailure
+            {
+                rizon = "Your nick isn't registered.",
+                quakenet = "Username or password incorrect.",
+                freenodeInvalid = "is not a registered nickname.",
+                freenodeRejected = "Invalid password for",
+                dalnet = "is not registered.",
+                unreal = "isn't registered.",
+                gamesurge = "Could not find your account -- did you register yet?",
+            }
+
+            with (event)
+            with (AuthFailure)
+            {
+                if ((content == rizon) ||
+                    (content == quakenet) ||
+                    (content == gamesurge) ||
+                    (content.indexOf(freenodeInvalid) != -1) ||
+                    (content.beginsWith(freenodeRejected)) ||
+                    (content.indexOf(dalnet) != -1) ||
+                    (content.indexOf(unreal) != -1))
+                {
+                    event.type = IRCEvent.Type.AUTH_FAILURE;
+                }
             }
         }
     }
