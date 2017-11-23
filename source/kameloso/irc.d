@@ -139,8 +139,8 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
         {
             import std.conv : text;
 
-            throw new IRCParseException(event, text("Unknown basic type: ",
-                typestring, " : please report this"));
+            throw new IRCParseException(text("Unknown basic type: ",
+                typestring, " : please report this"), event);
         }
 
         break;
@@ -1010,11 +1010,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {
-            writeln();
-            logger.warning("--------- UNCAUGHT NUMERIC OR UNSET");
-            printObject(event);
-            logger.warning("-----------------------------------");
-            writeln();
+            throw new IRCParseException("Uncaught NUMERIC or UNSET", event);
         }
 
         if (slice.indexOf(" :") != -1)
@@ -1340,9 +1336,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         }
 
         default:
-            logger.warning("-------------------- UNKNOWN CTCP EVENT");
-            printObject(event);
-            break;
+            throw new IRCParseException("Unknown CTCP event: " ~ ctcpEvent, event);
         }
     }
 }
@@ -2538,7 +2532,7 @@ final class IRCParseException : Exception
         super(message, file, line);
     }
 
-    this(const IRCEvent event, const string message,
+    this(const string message, const IRCEvent event,
         string file = __FILE__, uint line = __LINE__)
     {
         this.event = event;
