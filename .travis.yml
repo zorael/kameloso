@@ -11,3 +11,6 @@ script:
     - dub test --compiler=${DC} --build-mode=singleFile
     - dub test --compiler=${DC} --build-mode=singleFile -c nocolours
     - dub test --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nocolours
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
