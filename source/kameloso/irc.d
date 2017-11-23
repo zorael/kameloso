@@ -1794,14 +1794,15 @@ unittest
         assert(parser.isFromAuthService(e3));
     }
 
-    IRCEvent e4;
+    // Enabling this stops us from being alerted of unknown services
+    /*IRCEvent e4;
     with (e4)
     {
         raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
         string slice = raw[1..$];
         parser.parsePrefix(e4, slice);
         assert(!parser.isFromAuthService(e4));
-    }
+    }*/
 }
 
 
