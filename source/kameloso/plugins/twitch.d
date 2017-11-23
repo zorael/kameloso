@@ -49,13 +49,14 @@ void parseTwitchTags(ref IRCEvent event)
     foreach (tag; event.tags.splitter(";"))
     {
         immutable key = tag.nom("=");
+        immutable value = tag;
 
         switch (key)
         {
         case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            event.sender.alias_ = tag;
+            event.sender.alias_ = value;
             break;
 
         case "badges":
@@ -64,50 +65,65 @@ void parseTwitchTags(ref IRCEvent event)
             // Valid badge values: admin, bits, broadcaster, global_mod,
             // moderator, subscriber, staff, turbo.
 
-            event.rolestring = tag;
+            if (!value.length) break;
 
-            foreach (badge; tag.splitter(","))
+            /*foreach (const badge; value.splitter(","))
             {
-                immutable slash = tag.indexOf('/');
+                import std.string : indexOf;
+
+                immutable slash = badge.indexOf('/');
                 assert(slash != -1);
-                event.role = prioritiseTwoRoles(event.role, tag[0..slash]);
-            }
+                writefln!"VALUE:'%s', BADGE:'%s', SLASH:'%d', BADGE[0..SLASH]:'%s'"
+                    (value, badge, slash, badge[0..slash]);
+                event.badge = compareBadges(event.badge, badge[0..slash]);
+            }*/
+
+            // Assume the first badge is the most prominent one.
+            // Seems to be the case
+            immutable slash = value.indexOf('/');
+            assert((slash != -1), "Slash-less badgestring");
+            event.badge = value[0..slash];
             break;
 
         case "mod":
         case "subscriber":
         case "turbo":
             // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
-            if (tag == "0") break;
-            event.role = prioritiseTwoRoles(event.role, key);
+            if (value == "0") break;
+            //event.badge = compareBadges(event.badge, key);
+            if (!event.badge.length)
+            {
+                logger.errorf("PANIC! %s yet no previous badge!", key);
+            }
             break;
 
         case "ban-duration":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // (Optional) Duration of the timeout, in seconds. If omitted,
             // the ban is permanent.
-            event.aux = tag;
+            event.aux = value;
             break;
 
         case "ban-reason":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // The moderator’s reason for the timeout or ban.
-            event.content = decodeIRCv3String(tag);
+            event.content = decodeIRCv3String(value);
             break;
 
         case "user-type":
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // The broadcaster can have any of these.
-            event.role = prioritiseTwoRoles(event.role, tag);
+            if (!value.length) break;
+            event.badge = compareBadges(event.badge, value);
             break;
 
         case "system-msg":
             // The message printed in chat along with this notice.
-            event.content = decodeIRCv3String(tag);
+            event.content = decodeIRCv3String(value);
             break;
 
         case "emote-only":
-            if (tag == "0") break;
+            if (value == "0") break;
             if (event.type == Type.CHAN) event.type = Type.EMOTE;
             break;
 
@@ -147,7 +163,7 @@ void parseTwitchTags(ref IRCEvent event)
                 unban_success           <user> is no longer banned from this chat room.
                 unrecognized_cmd        Unrecognized command: <command>
             */
-            switch (tag)
+            switch (value)
             {
             case "host_on":
                 event.type = Type.HOSTSTART;
@@ -174,23 +190,23 @@ void parseTwitchTags(ref IRCEvent event)
                 break;
 
             default:
-                logger.info("unhandled message: ", tag);
+                logger.info("unhandled message: ", value);
                 break;
             }
             break;
 
         case "msg-param-receipient-display-name":
-            event.target.alias_ = tag;
+            event.target.alias_ = value;
             break;
 
         case "msg-param-recipient-user-name":
-            event.target.nickname = tag;
+            event.target.nickname = value;
             break;
 
         case "msg-param-months":
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
-            event.aux = event.aux.length ? (tag ~ 'x' ~ event.aux) : tag;
+            event.aux = event.aux.length ? (value ~ 'x' ~ event.aux) : value;
             break;
 
         case "msg-param-sub-plan":
@@ -200,12 +216,12 @@ void parseTwitchTags(ref IRCEvent event)
             // levels of paid subscriptions, respectively (currently $4.99,
             // $9.99, and $24.99).
             // EVALUATE ME
-            event.aux = event.aux.length ? (event.aux ~ 'x' ~ tag) : tag;
+            event.aux = event.aux.length ? (event.aux ~ 'x' ~ value) : value;
             break;
 
         case "color":
             // Hexadecimal RGB color code. This is empty if it is never set.
-            if (tag.length) event.colour = tag[1..$];
+            if (value.length) event.colour = value[1..$];
             break;
 
         case "msg-param-sub-plan-name":
@@ -292,7 +308,7 @@ void parseTwitchTags(ref IRCEvent event)
             // (Optional) Number of viewers watching the host.
         default:
             // Verbosely
-            logger.trace(key, " = '", tag, "'");
+            logger.trace(key, " = '", value, "'");
             break;
         }
     }
