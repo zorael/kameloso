@@ -792,18 +792,30 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case ERR_BADPING: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
-        if (slice.indexOf(" :To connect type ") == -1)
+        if (slice.indexOf(" :To connect"))
+        {
+            event.target.nickname = slice.nom(" :To connect");
+
+            if (slice[0] == ',')
+            {
+                // ngircd?
+                /* "NOTICE %s :To connect, type /QUOTE PONG %ld",
+                    Client_ID(Client), auth_ping)) */
+                // :like.so 513 kameloso :To connect, type /QUOTE PONG 3705964477
+                // "To connect, type /QUOTE PONG <id>"
+                //            ^
+                slice = slice[1..$];
+            }
+
+            slice.nom(" type /QUOTE ");
+            event.content = slice;
+        }
+        else
         {
             logger.warning("Unknown variant of TOCONNECTTYPE");
             printObject(event);
             break;
         }
-
-        //slice.formattedRead("%s :To connect type %s", event.target, event.aux);
-        event.target.nickname = slice.nom(" :To connect type ");
-        event.aux = slice;
-        event.aux.nom("/QUOTE ");
-        event.content = event.aux.nom(' ');
         break;
 
     case RPL_HELPSTART: // 704
@@ -2225,8 +2237,7 @@ unittest
         assert((sender.address == "irc.uworld.se"), sender.address);
         assert((type == IRCEvent.Type.ERR_BADPING), type.to!string);
         assert((target.nickname == "kameloso"), target.nickname);
-        assert((aux == "3705964477"), aux);
-        assert((content == "PONG"), content);
+        assert((content == "PONG 3705964477"), content);
      }
 
     /+
@@ -2352,6 +2363,18 @@ unittest
         assert(parser.bot.updated);
         assert((parser.bot.nickname == "kameloso_"), parser.bot.nickname);
     }
+    /+
+     [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
+     :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
+     +/
+     immutable e24 = parser.toIRCEvent(":like.so 513 kameloso :To connect, type /QUOTE PONG 3705964477");
+     with (e24)
+     {
+        assert((sender.address == "like.so"), sender.address);
+        assert((type == IRCEvent.Type.ERR_BADPING), type.to!string);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "PONG 3705964477"), content);
+     }
 }
 
 

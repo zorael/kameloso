@@ -160,8 +160,7 @@ void onToConnectType(const IRCEvent event)
 {
     if (serverPinged) return;
 
-    state.mainThread.send(ThreadMessage.Sendline(),
-        "%s :%s".format(event.content, event.aux));
+    state.mainThread.send(ThreadMessage.Sendline(), event.content);
 }
 
 
