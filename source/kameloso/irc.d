@@ -1694,9 +1694,11 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
     switch (service)
     {
     case "nickserv":
+    case "saslserv":
         switch (sender.ident)
         {
         case "NickServ":
+        case "SaslServ":
             if (sender.address == "services.") return true;
             break;
 
