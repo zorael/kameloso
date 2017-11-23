@@ -699,3 +699,81 @@ unittest
     assert(!line.stripSuffix!(Yes.allowFullStrip)("harblsnarbl").length);
     assert(line.stripSuffix("harblsnarbl") == "harblsnarbl");
 }
+
+
+/++
+ +  Calculates how many dot-separated suffixes two strings share.
+ +
+ +  This is useful to see to what extent two addresses are similar.
+ +/
+uint sharedDomains(const string rawOne, const string rawOther)
+{
+    uint dots;
+    bool doubleDots;
+
+    // If both strings are the same, act as if there's an extra dot.
+    // That gives (.)rizon.net and (.)rizon.net two suffixes.
+    if (rawOne.length && (rawOne == rawOther)) ++dots;
+
+    immutable one = (rawOne != rawOther) ? '.' ~ rawOne : rawOne;
+    immutable other = (rawOne != rawOther) ? '.' ~ rawOther : rawOther;
+
+    foreach (i; 0..one.length)
+    {
+        if (i == other.length)
+        {
+            // The first string was longer than the second
+            break;
+        }
+
+        if (one[$-i-1] != other[$-i-1])
+        {
+            // There was a character mismatch
+            break;
+        }
+
+        if (one[$-i-1] == '.')
+        {
+            if (!doubleDots)
+            {
+                ++dots;
+                doubleDots = true;
+            }
+        }
+        else
+        {
+            doubleDots = false;
+        }
+    }
+
+    return dots;
+}
+
+unittest
+{
+    import std.conv : text;
+
+    immutable n1 = sharedDomains("irc.freenode.net", "help.freenode.net");
+    assert((n1 == 2), n1.text);
+
+    immutable n2 = sharedDomains("irc.rizon.net", "services.rizon.net");
+    assert((n2 == 2), n2.text);
+
+    immutable n3 = sharedDomains("www.google.com", "www.yahoo.com");
+    assert((n3 == 1), n3.text);
+
+    immutable n4 = sharedDomains("www.google.se", "www.google.co.uk");
+    assert((n4 == 0), n4.text);
+
+    immutable n5 = sharedDomains("", string.init);
+    assert((n5 == 0), n5.text);
+
+    immutable n6 = sharedDomains("irc.rizon.net", "rizon.net");
+    assert((n6 == 2), n6.text);
+
+    immutable n7 = sharedDomains("rizon.net", "rizon.net");
+    assert((n7 == 2), n7.text);
+
+    immutable n8 = sharedDomains("net", "net");
+    assert((n8 == 1), n8.text);
+}
