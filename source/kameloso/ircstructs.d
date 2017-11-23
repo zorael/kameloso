@@ -825,25 +825,6 @@ struct IRCBot
 /// Aggregate of all information and state pertaining to the connected IRC server.
 struct IRCServer
 {
-    /// A list of known networks as reported in the CAP LS message.
-    enum Network
-    {
-        unknown,
-        unfamiliar,
-        freenode,
-        rizon,
-        quakenet,
-        undernet,
-        gamesurge,
-        twitch,
-        unreal,
-        efnet,
-        ircnet,
-        swiftirc,
-        irchighway,
-        dalnet,
-    }
-
     enum Daemon
     {
         unknown,
@@ -879,10 +860,10 @@ struct IRCServer
         ithildin,
     }
 
-    Network network;
     Daemon daemon;
     string address = "irc.freenode.net";
     ushort port = 6667;
+    string network;
 
     @Unconfigurable
     {

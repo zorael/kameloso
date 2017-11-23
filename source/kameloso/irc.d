@@ -1811,6 +1811,8 @@ unittest
     IRCEvent e3;
     with (e3)
     {
+        parser.bot.server.address = "irc.rizon.net";
+        parser.bot.server.resolvedAddress = "irc.uworld.se";
         raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
         string slice = raw[1..$];
         parser.parsePrefix(e3, slice);
