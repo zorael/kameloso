@@ -327,8 +327,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
         }
         catch (const Exception e)
         {
-            logger.error(e.msg);
-            printObject(event);
+            throw new IRCParseException(e.msg, event, e.file, e.line);
         }
     }
     else
@@ -336,8 +335,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
         try event.type = typestring.toEnum!(IRCEvent.Type);
         catch (const Exception e)
         {
-            logger.error(e.msg);
-            printObject(event);
+            throw new IRCParseException(e.msg, event, e.file, e.line);
         }
     }
 }
@@ -409,13 +407,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     import kameloso.stringutils;
 
     import std.string : strip, stripLeft, stripRight;
-
-    scope(failure)
-    {
-        logger.warning("--------- PARSE SPECIALCASES FAILURE");
-        printObject(event);
-        logger.warning("------------------------------------");
-    }
 
     with (parser)
     with (IRCEvent)
@@ -812,9 +803,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         else
         {
-            logger.warning("Unknown variant of TOCONNECTTYPE");
-            printObject(event);
-            break;
+            throw new IRCParseException("Unknown variant of to-connect-type?",
+                event);
         }
         break;
 
@@ -1460,7 +1450,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             }
             catch (const Exception e)
             {
-                logger.error(e.msg);
+                throw new IRCParseException(e.msg, event, e.file, e.line);
             }
             break;
 
@@ -1472,7 +1462,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             }
             catch (const Exception e)
             {
-                logger.error(e.msg);
+                throw new IRCParseException(e.msg, event, e.file, e.line);
             }
             break;
 
