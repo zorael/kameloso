@@ -81,17 +81,6 @@ void parseTwitchTags(ref IRCEvent event)
 
             if (!value.length) break;
 
-            /*foreach (const badge; value.splitter(","))
-            {
-                import std.string : indexOf;
-
-                immutable slash = badge.indexOf('/');
-                assert(slash != -1);
-                writefln!"VALUE:'%s', BADGE:'%s', SLASH:'%d', BADGE[0..SLASH]:'%s'"
-                    (value, badge, slash, badge[0..slash]);
-                event.badge = compareBadges(event.badge, badge[0..slash]);
-            }*/
-
             // Assume the first badge is the most prominent one.
             // Seems to be the case
             immutable slash = value.indexOf('/');
@@ -104,7 +93,7 @@ void parseTwitchTags(ref IRCEvent event)
         case "turbo":
             // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
             if (value == "0") break;
-            //event.badge = compareBadges(event.badge, key);
+
             if (!event.badge.length)
             {
                 logger.errorf("PANIC! %s yet no previous badge!", key);

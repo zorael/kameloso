@@ -265,13 +265,6 @@ Flag!"quit" handleArguments(string[] args)
         return Yes.quit;
     }
 
-    // Do we even need this? We'll resolve it during after registration anyway
-    // Do it here so it's resolved for both shouldWriteConfig and return No.quit
-    if (bot.server.network == IRCServer.Network.init)
-    {
-        bot.server.network = networkOf(bot.server.address);
-    }
-
     // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {

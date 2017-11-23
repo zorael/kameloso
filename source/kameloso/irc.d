@@ -912,10 +912,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case CLEARCHAT:
         // :tmi.twitch.tv CLEARCHAT #zorael
         // :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-        // Whether it's a tempban or a permban is decided in the Twitch plugin
         if (slice.indexOf(" :") != -1)
         {
             // Banned
+            // Whether it's a tempban or a permban is decided in the Twitch plugin
             event.channel = slice.nom(" :");
             event.target.nickname = slice;
         }
