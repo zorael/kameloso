@@ -1683,95 +1683,80 @@ string decodeIRCv3String(const string line)
 /// registration service.
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 {
+    import kameloso.stringutils : sharedDomains;
+
     import std.algorithm.searching : endsWith;
+    import std.string : toLower;
+
+    immutable service = event.sender.nickname.toLower();
 
     with (parser)
     with (event)
-    with (event.sender)
-    switch (sender.nickname)
+    switch (service)
     {
-    case "NickServ":
-        switch (ident)
+    case "nickserv":
+        switch (sender.ident)
         {
         case "NickServ":
-            switch (address)
-            {
-            case "services.":
-                // Freenode
-                // :NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.
-                return true;
-
-            default:
-                // drop down to test generic (NickServ || services)
-                break;
-            }
-
+            if (sender.address == "services.") return true;
             break;
 
         case "services":
-            // :NickServ!services@services.unrealircd.org NOTICE kameloso :Nick kameloso isn't registered.
-            switch (address)
-            {
-            case "services.unrealircd.org":
-            case "services.irchighway.net":
-            case "swiftirc.net":
-                return true;
-
-            default:
-                logger.warning("Unhandled *NickServ!services* address, " ~
-                    "can't tell if special");
-                break;
-            }
-
-            // drop down to test generic (NickServ || services)
+        case "service":
+            // known idents, drop to after switch
             break;
 
-        case "service":
-            switch (address)
-            {
-            case "rizon.net":
-            case "dal.net":
-                // :NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,
-                return true;
-
-            default:
-                logger.warning("Unhandled *NickServ!service* address, " ~
-                    "can't tell if special");
-                logger.trace(event.raw);
-                return false;
-            }
-
         default:
-            logger.warning("Unhandled *NickServ* ident, " ~
-                "can't tell if special");
-            logger.trace(event.raw);
-            return false;
+            // Unknown ident, try the generic address check after the switch
+            break;
         }
+        break;
 
-        // Can only be here if we dropped down
-        assert((ident == "NickServ") || (ident == "services"));
+    case "global":
+    case "chanserv":
+    case "operserv":
+    case "memoserv":
+    case "hostserv":
+    case "botserv":
+    case "infoserv":
+    case "reportserv":
+    case "moraleserv":
+    case "gameserv":
+    case "groupserv":
+    case "helpserv":
+    case "statserv":
+    case "userserv":
+    case "alis":
+    case "chanfix":
+    case "c":
+    case "spamserv":
+        // Known services that are not nickname services
+        return false;
 
-        if (bot.server.resolvedAddress.endsWith(address))
-        {
-            //logger.info("Sensible guess that it's the real NickServ");
-            return true; // sensible
-        }
-        else
-        {
-            //logger.info("Naïve guess that it's the real NickServ");
-            return true;  // NAÏVE
-        }
-
-    case "Q":
+    case "q":
         // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
-        return ((ident == "TheQBot") && (address == "CServe.quakenet.org"));
+        return ((sender.ident == "TheQBot") &&
+            (sender.address == "CServe.quakenet.org"));
 
-    case "AuthServ":
+    case "authserv":
         // :AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :Could not find your account
-        return ((ident == "AuthServ") && (address == "Services.GameSurge.net"));
+        return ((sender.ident == "AuthServ") &&
+            (sender.address == "Services.GameSurge.net"));
 
     default:
         // Not a known nick registration nick
+        logger.warning("Unknown nickname service nick");
+        printObject(event);
+        return false;
+    }
+
+    if ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
+        (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2))
+    {
+        return true;
+    }
+    else
+    {
         return false;
     }
 }
