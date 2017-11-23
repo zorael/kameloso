@@ -1071,7 +1071,7 @@ if (isOutputRange!(Sink,string))
         normaliseColours(r, g, b);
     }
 
-    sink.formattedWrite("%s[38;2;%d;%d;%dm",
+    sink.formattedWrite("%c[38;2;%d;%d;%dm",
         cast(char)TerminalToken.bashFormat, r, g, b);
 }
 else
@@ -1091,15 +1091,29 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     Appender!string sink;
     // \033[38;2;255;255;255m<word>\033[m
     sink.reserve(word.length + 23);
+
+    static if (normalise)
+    {
+        normaliseColours(r, g, b);
+    }
+
     sink.truecolour(r, g, b);
     sink.put(word);
-    sink.put("\033[0m");
+    sink.put('\033'~"[0m");
     return sink.data;
 }
 
+version(Colours)
 unittest
 {
-    string name = "Herpface".truecolour(255,255,255);
+    import std.format : format;
+
+    string name = "blarbhl".truecolour!(No.normalise)(255,255,255);
+    string alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
+        .format(cast(char)TerminalToken.bashFormat, 255, 255, 255,
+        "blarbhl", cast(char)TerminalToken.bashFormat);
+
+    assert((name == alsoName), alsoName);
 }
 
 version(Colours)
