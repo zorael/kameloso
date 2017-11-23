@@ -26,6 +26,7 @@ struct PrinterOptions
     bool truecolour = true;
     bool randomNickColours = true;
     bool filterVerbose = true;
+    bool badgesInCaps = false;
 }
 
 /// All Printer plugin options gathered
@@ -185,7 +186,14 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         if (badge.length)
         {
-            sink.formattedWrite(" [%s]", enumToString(role));
+            //sink.formattedWrite(" [%s]", enumToString(role));
+            //put(sink," [", badge, "]");
+            import std.string : toUpper;
+
+            immutable badgestring = printerOptions.badgesInCaps ?
+                badge.toUpper : badge;
+
+            put(sink, " [", badgestring, ']');
         }
 
         if (!sender.isServer && alias_.length && (alias_ != nickname))
@@ -316,8 +324,15 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (badge.length)
             {
+                import std.string : toUpper;
+
                 sink.colour(white);
-                sink.formattedWrite(" [%s]", enumToString(role));
+                //sink.formattedWrite(" [%s]", enumToString(role));
+
+                immutable badgestring = printerOptions.badgesInCaps ?
+                    badge.toUpper : badge;
+
+                put(sink, " [", badgestring, ']');
             }
 
             if (!sender.isServer && alias_.length && !aliasPrinted)
