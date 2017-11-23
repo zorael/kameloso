@@ -2527,15 +2527,41 @@ final class IRCParseException : Exception
 {
     IRCEvent event;
 
-    this(const string message, string file = __FILE__, uint line = __LINE__)
+    this(const string message, const string file = __FILE__,
+        const size_t line = __LINE__)
     {
         super(message, file, line);
     }
 
     this(const string message, const IRCEvent event,
-        string file = __FILE__, uint line = __LINE__)
+        const string file = __FILE__, const size_t line = __LINE__)
     {
         this.event = event;
         super(message, file, line);
     }
+}
+
+unittest
+{
+    import std.exception;
+
+    IRCEvent event;
+
+    assertThrown!IRCParseException((){ throw new IRCParseException("adf"); }());
+
+    assertThrown!IRCParseException(()
+    {
+        throw new IRCParseException("adf", event);
+    }());
+
+    assertThrown!IRCParseException(()
+    {
+        throw new IRCParseException("adf", event, "somefile.d");
+    }());
+
+    assertThrown!IRCParseException(()
+    {
+        throw new IRCParseException("adf", event, "somefile.d", 9999U);
+    }());
+
 }
