@@ -740,30 +740,11 @@ struct IRCEvent
         }
     */
 
-    enum Role
-    {
-        UNSET,
-        OTHER,
-        MEMBER,
-        BITS,
-        TURBO,
-        SUBSCRIBER,
-        PREMIUM,
-        PARTNER,
-        MOD,
-        OPERATOR,
-        BROADCASTER,
-        ADMIN,
-        GLOBAL_MOD,
-        STAFF,
-        SERVER,
-    }
-
     /// The event type, signifying what *kind* of event this is.
     Type type;
 
-    /// The role of the sender in this context
-    Role role;
+    /// The highest priority badge the sender has, in this context.
+    string badge;
 
     /// The raw IRC string, untouched.
     string raw;
@@ -782,9 +763,6 @@ struct IRCEvent
 
     /// The auxiliary storage, containing type-specific extra bits of information.
     string aux;
-
-    /// The role in string form, may be of other values than the enum provides.
-    string rolestring;
 
     /// The colour (RRGGBB) to tint the user's nickname with
     string colour;
