@@ -17,13 +17,21 @@ struct TwitchOptions
 
 IRCPluginState state;
 
-
 /++
- +
+ +  FIXME
  +/
 void postprocess(ref IRCEvent event)
 {
+    import std.algorithm.searching : endsWith;
+
+    if (!state.bot.server.address.endsWith(".twitch.tv")) return;
+
     parseTwitchTags(event);
+
+    if (event.sender.isServer)
+    {
+        event.badge = "server";
+    }
 }
 
 
