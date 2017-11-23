@@ -1162,7 +1162,6 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         if (sender.isServer || (sender.address == bot.server.address) ||
             (sender.address == bot.server.resolvedAddress))
         {
-            logger.log("addresss is server");
             return true;
         }
         else if ((sharedDomains(sender.address, bot.server.address) >= 2) ||
