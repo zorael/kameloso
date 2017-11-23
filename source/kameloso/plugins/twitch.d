@@ -122,7 +122,10 @@ void parseTwitchTags(ref IRCEvent event)
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // The broadcaster can have any of these.
             if (!value.length) break;
-            event.badge = compareBadges(event.badge, value);
+            if (!event.badge.length)
+            {
+                logger.errorf("PANIC! %s yet no previous badge!", value);
+            }
             break;
 
         case "system-msg":
