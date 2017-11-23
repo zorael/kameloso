@@ -1632,30 +1632,23 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // We don't need to .idup here; it has already been done in the Generator
     event.raw = raw;
 
-    try
+    if (raw[0] != ':')
     {
-        if (raw[0] != ':')
-        {
-            parser.parseBasic(event);
-            return event;
-        }
-
-        auto slice = event.raw[1..$]; // advance past first colon
-
-        // First pass: prefixes. This is the sender
-        parser.parsePrefix(event, slice);
-
-        // Second pass: typestring. This is what kind of action the event is of
-        parser.parseTypestring(event, slice);
-
-        // Third pass: specialcases. This splits up the remaining bits into
-        // useful strings, like sender, target and content
-        parser.parseSpecialcases(event, slice);
+        parser.parseBasic(event);
+        return event;
     }
-    catch (const Exception e)
-    {
-        logger.error(e.msg);
-    }
+
+    auto slice = event.raw[1..$]; // advance past first colon
+
+    // First pass: prefixes. This is the sender
+    parser.parsePrefix(event, slice);
+
+    // Second pass: typestring. This is what kind of action the event is of
+    parser.parseTypestring(event, slice);
+
+    // Third pass: specialcases. This splits up the remaining bits into
+    // useful strings, like sender, target and content
+    parser.parseSpecialcases(event, slice);
 
     return event;
 }
