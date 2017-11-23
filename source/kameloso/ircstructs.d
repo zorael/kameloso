@@ -706,7 +706,7 @@ struct IRCEvent
             import std.algorithm;
             import std.stdio;
 
-            enum pattern = r" *([/A-Z0-9_]+),? [/= ]* ([0-9]+),?.*";
+            enum pattern = r" *([A-Z0-9_]+),? [/= ]* ([0-9]+),?.*";
             static engine = ctRegex!pattern;
             string[1024] arr;
 
@@ -717,7 +717,6 @@ struct IRCEvent
 
                 try
                 {
-                    if (hits[1].startsWith("/")) continue;
                     size_t idx = hits[2].to!size_t;
                     if (arr[idx] != typeof(arr[idx]).init) stderr.writeln("DUPLICATE! ", idx);
                     arr[idx] = hits[1];
