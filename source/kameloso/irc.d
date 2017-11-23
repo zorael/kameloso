@@ -904,8 +904,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.channel = slice;
         }
-
-        event.role = Role.SERVER;  // FIXME
         break;
 
     case CLEARCHAT:
@@ -922,8 +920,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.channel = slice;
         }
-
-        event.role = Role.SERVER;  // FIXME
         break;
 
     case RPL_LOGGEDIN: // 900

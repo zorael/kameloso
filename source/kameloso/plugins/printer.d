@@ -183,7 +183,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             }
         }
 
-        if (role != Role.init)
+        if (badge.length)
         {
             sink.formattedWrite(" [%s]", enumToString(role));
         }
@@ -314,7 +314,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 }
             }
 
-            if (role != Role.init)
+            if (badge.length)
             {
                 sink.colour(white);
                 sink.formattedWrite(" [%s]", enumToString(role));
