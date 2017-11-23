@@ -11,6 +11,7 @@ public import kameloso.plugins.ctcp;
 public import kameloso.plugins.notes;
 public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
+public import kameloso.plugins.twitch;
 
 version(Posix)
 {
@@ -32,5 +33,6 @@ public alias EnabledPlugins = AliasSeq!(
     ChatbotPlugin,
     NotesPlugin,
     SedReplacePlugin,
-    CTCPPlugin
+    CTCPPlugin,
+    TwitchPlugin,
 );
