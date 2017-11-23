@@ -1152,6 +1152,31 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     }
 }
 
+bool isSpecial(const ref IRCParser parser, const IRCEvent event)
+{
+    import kameloso.stringutils : sharedDomains;
+
+    with (event)
+    with (parser)
+    {
+        if (sender.isServer || (sender.address == bot.server.address) ||
+            (sender.address == bot.server.resolvedAddress))
+        {
+            logger.log("addresss is server");
+            return true;
+        }
+        else if ((sharedDomains(sender.address, bot.server.address) >= 2) ||
+            (sharedDomains(sender.address, bot.server.resolvedAddress) >= 2))
+        {
+            // Safe to guess?
+            /*logger.log(sender.address, "|", bot.server.address,
+                ": Safe to guess it's a proper special?");*/
+            return true;
+        }
+    }
+
+    return false;
+}
 
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
