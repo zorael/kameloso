@@ -1083,6 +1083,26 @@ if (isOutputRange!(Sink, string))
 }
 
 version(Colours)
+string truecolour(Flag!"normalise" normalise = Yes.normalise)
+    (const string word, uint r, uint g, uint b)
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    // \033[38;2;255;255;255m<word>\033[m
+    sink.reserve(word.length + 23);
+    sink.truecolour(r, g, b);
+    sink.put(word);
+    sink.put("\033[0m");
+    return sink.data;
+}
+
+unittest
+{
+    string name = "Herpface".truecolour(255,255,255);
+}
+
+version(Colours)
 unittest
 {
     import std.array : Appender;
