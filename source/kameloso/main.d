@@ -440,7 +440,22 @@ Flag!"quit" loopGenerator(Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            auto event = parser.toIRCEvent(line);
+            IRCEvent event;
+
+            try event = parser.toIRCEvent(line);
+            catch (const IRCParseException e)
+            {
+                logger.warningf("IRCParseException at %s:%d: %s",
+                    e.file, e.line, e.msg);
+                printObject(event);
+                continue;
+            }
+            catch (Exception e)
+            {
+                logger.warningf("Unhandled exception at %s:%d: %s",
+                    e.file, e.line, e.msg);
+                continue;
+            }
 
             foreach (plugin; plugins)
             {
