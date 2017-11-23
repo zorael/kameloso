@@ -28,6 +28,9 @@ interface IRCPlugin
     /// Executed to get a list of nicknames a plugin wants WHOISed
     ref WHOISRequest[string] yieldWHOISRequests();
 
+    /// Executed to let plugins modify an event mid-parse
+    void postprocess(ref IRCEvent);
+
     /// Executed on update to the internal Settings struct
     void newSettings(Settings);
 
@@ -390,6 +393,14 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         static if (__traits(compiles, .state.bot))
         {
             return .state.bot;
+        }
+    }
+
+    void postprocess(ref IRCEvent event)
+    {
+        static if (__traits(compiles, .postprocess(event)))
+        {
+            .postprocess(event);
         }
     }
 
