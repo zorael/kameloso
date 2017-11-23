@@ -1180,8 +1180,8 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
 
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : beginsWith;
-    import std.string : indexOf;
+    import kameloso.stringutils : beginsWith, sharedDomains;
+    import std.string : indexOf, toLower;
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflohomeOnlyw] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
     // :tolkien.freenode.net NOTICE * :*** Checking Ident
@@ -1197,24 +1197,20 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     with (parser)
     {
-        if ((event.sender.ident == "service") &&
-            (event.sender.address == "rizon.net"))
-        {
-            event.sender.special = true;
-        }
+        event.sender.special = parser.isSpecial(event);
 
         if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
-            bot.server.resolvedAddress = event.sender.nickname;
+            assert(!event.sender.nickname.length, event.sender.nickname);
+            bot.server.resolvedAddress = event.sender.address;
             bot.updated = true;
         }
 
-        if (parser.isFromAuthService(event))
+        if (!event.sender.isServer && parser.isFromAuthService(event))
         {
-            event.sender.special = true;  // by definition
+            event.sender.special = true; // by definition
 
-            if ((event.content.indexOf("/msg NickServ IDENTIFY") != -1) ||
-                (event.content.indexOf("/msg NickServ identify") != -1))
+            if (event.content.toLower.indexOf("/msg nickserv identify") != -1)
             {
                 event.type = IRCEvent.Type.AUTH_CHALLENGE;
                 return;
