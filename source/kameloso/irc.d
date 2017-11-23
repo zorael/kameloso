@@ -2533,3 +2533,21 @@ struct IRCParser
         }
     }
 }
+
+
+final class IRCParseException : Exception
+{
+    IRCEvent event;
+
+    this(const string message, string file = __FILE__, uint line = __LINE__)
+    {
+        super(message, file, line);
+    }
+
+    this(const IRCEvent event, const string message,
+        string file = __FILE__, uint line = __LINE__)
+    {
+        this.event = event;
+        super(message, file, line);
+    }
+}
