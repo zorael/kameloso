@@ -440,7 +440,12 @@ Flag!"quit" loopGenerator(Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            immutable event = parser.toIRCEvent(line);
+            auto event = parser.toIRCEvent(line);
+
+            foreach (plugin; plugins)
+            {
+                plugin.postprocess(event);
+            }
 
             if (parser.bot.updated)
             {
