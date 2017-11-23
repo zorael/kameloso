@@ -337,7 +337,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (!sender.isServer && alias_.length && !aliasPrinted)
             {
-                colourSenderTruecolour();
+                // Don't truecolour the alias if aleady coloured
+                if (alias_[0] != '\033')
+                {
+                    colourSenderTruecolour();
+                }
                 //sink.formattedWrite(" (%s)", alias_);
                 put(sink, " (", alias_, ')');
             }
