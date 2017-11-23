@@ -196,6 +196,116 @@ void onPing(const IRCEvent event)
     }
 }
 
+void tryAuth()
+{
+    string service = "NickServ";
+    string verb = "IDENTIFY";
+
+    // Specialcase networks
+    switch (state.bot.server.network)
+    {
+    case "DALnet":
+        service = "NickServ@services.dal.net";
+        break;
+
+    case "GameSurge":
+        service = "AuthServ@Services.GameSurge.net";
+        break;
+
+    case "EFNet":
+        // Can't auth
+        return;
+
+    case "QuakeNet":
+        service = "Q@CServe.quakenet.org";
+        verb = "AUTH";
+        break;
+
+    default:
+        break;
+    }
+
+    state.bot.startedAuth = true;
+    state.bot.updated = true;
+
+    with (state)
+    with (IRCServer.Daemon)
+    switch (bot.server.daemon)
+    {
+    case rizon:
+    case unreal:
+    case hybrid:
+    case bahamut:
+        // Only accepts password, no auth nickname
+        if (bot.nickname != bot.origNickname)
+        {
+            logger.warningf("Cannot auth when you have changed your nickname " ~
+                "(%s != %s)", bot.nickname, bot.origNickname);
+
+            joinChannels();
+            return;
+        }
+
+        mainThread.send(ThreadMessage.Quietline(),
+            "PRIVMSG %s :%s %s"
+            .format(service, verb, bot.authPassword));
+        logger.trace("--> PRIVMSG %s :%s hunter2"
+            .format(service, verb));
+        break;
+
+    case quakenet:
+    case ircdseven:
+    case u2:
+        // Accepts auth login
+        // GameSurge is AuthServ
+
+        string login = bot.authLogin;
+
+        if (!bot.authLogin.length)
+        {
+            logger.log("No auth login specified! Trying ", bot.origNickname);
+            login = bot.origNickname;
+        }
+
+        mainThread.send(ThreadMessage.Quietline(),
+            "PRIVMSG %s :%s %s %s"
+            .format(service, verb, login, bot.authPassword));
+        logger.trace("--> PRIVMSG %s :%s %s hunter2"
+            .format(service, verb, login));
+        break;
+
+    case twitch:
+        // No registration available
+        bot.finishedAuth = true;
+        return;
+
+    default:
+        logger.warning("Unsure of what AUTH approach to use.");
+        logger.log("Need information about what approach succeeded!");
+
+        if (bot.authLogin.length) goto case ircdseven;
+        else
+        {
+            goto case bahamut;
+        }
+
+        /*if (bot.authLogin.length)
+        {
+            mainThread.send(ThreadMessage.Quietline(),
+                "PRIVMSG NickServ :%s %s %s"
+                .format(bot.authLogin, verb, bot.authPassword));
+            logger.tracef("--> PRIVMSG NickServ :%s %s hunter2",
+                verb, bot.authLogin);
+        }
+
+        mainThread.send(ThreadMessage.Quietline(),
+            "PRIVMSG NickServ :%s %s"
+            .format(verb, bot.authPassword));
+        logger.tracef("--> PRIVMSG NickServ :%s hunter2", verb);
+        break;*/
+    }
+}
+
 
 // onEndOfMotd
 /++
@@ -206,127 +316,21 @@ void onPing(const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(const IRCEvent event)
 {
+    if (state.bot.authPassword.length) tryAuth();
+
+    if (state.bot.finishedAuth)
+    {
+        // tryAuth finished early with an unsuccessful login
+        logger.log("Joining channels");
+        joinChannels();
+    }
+
     // Run commands defined in the options
     foreach (immutable line; connectOptions.sendAfterConnect)
     {
         import std.string : strip;
 
         state.mainThread.send(ThreadMessage.Sendline(), line.strip());
-    }
-
-    with (IRCServer.Network)
-    with (state)
-    {
-        if (!bot.authPassword.length || bot.finishedAuth)
-        {
-            // No password set up; join channels and be done
-            // EFnet has no nick registration services
-            bot.finishedAuth = true;
-            bot.updated = true;
-            joinChannels();
-            return;
-        }
-
-        bot.startedAuth = true;
-        bot.updated = true;
-
-        final switch (bot.server.network)
-        {
-        case quakenet:
-            // Special service nick (Q), otherwise takes both auth login and password
-
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG Q@CServe.quakenet.org :AUTH %s %s"
-                .format(bot.authLogin, bot.authPassword));
-
-            logger.trace("--> PRIVMSG Q@CServe.quakenet.org :AUTH ",
-                bot.authLogin, " hunter2");
-
-            break;
-
-        case rizon:
-        case swiftirc:
-        case dalnet:
-            // Only accepts password, no auth nickname
-
-            if (bot.nickname != bot.origNickname)
-            {
-                logger.warningf("Cannot auth on this network when you have " ~
-                    "changed your nickname (%s != %s)",
-                    bot.nickname, bot.origNickname);
-
-                joinChannels();
-                return;
-            }
-
-            immutable nickserv = (bot.server.network == dalnet) ?
-                "NickServ@services.dal.net" : "NickServ";
-
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG %s :IDENTIFY %s".format(nickserv, bot.authPassword));
-
-            logger.trace("--> PRIVMSG %s :IDENTIFY hunter2".format(nickserv));
-
-            break;
-
-        case freenode:
-        case irchighway:
-        case unreal:
-        case gamesurge:
-            // Accepts auth login
-            // GameSurge is AuthServ
-
-            string login = bot.authLogin;
-
-            if (!bot.authLogin.length)
-            {
-                logger.log("No auth login specified! Trying ", bot.origNickname);
-                login = bot.origNickname;
-            }
-
-            immutable service = (bot.server.network == gamesurge) ?
-                "AuthServ@Services.GameSurge.net" : "NickServ";
-
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG %s :IDENTIFY %s %s"
-                .format(service, login, bot.authPassword));
-
-            logger.trace("--> PRIVMSG %s :IDENTIFY %s hunter2"
-                .format(service, login));
-
-            break;
-
-        case efnet:
-        case ircnet:
-        case undernet:
-        case twitch:
-            // No registration available; join channels and be done
-            bot.finishedAuth = true;
-            bot.updated = true;
-            joinChannels();
-            break;
-
-        case unknown:
-        case unfamiliar:
-            logger.log("Unsure of what AUTH approach to use.");
-
-            if (bot.authLogin.length)
-            {
-                mainThread.send(ThreadMessage.Quietline(),
-                    "PRIVMSG NickServ :IDENTIFY %s %s"
-                    .format(bot.authLogin, bot.authPassword));
-            }
-
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ :IDENTIFY %s"
-                .format(bot.authPassword));
-
-            logger.trace("--> PRIVMSG NickServ :IDENTIFY ",
-                bot.authLogin, " hunter2");
-
-            logger.trace("--> PRIVMSG NickServ :IDENTIFY hunter2");
-            break;
-        }
     }
 }
 
