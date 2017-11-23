@@ -188,7 +188,7 @@ void onPing(const IRCEvent event)
 
         if (bot.startedAuth && !bot.finishedAuth)
         {
-            logger.info("Auth timed out. Joining channels");
+            logger.log("Auth timed out. Joining channels");
             bot.finishedAuth = true;
             bot.updated = true;
             joinChannels();
@@ -353,7 +353,7 @@ void onAuthEnd()
 
         bot.finishedAuth = true;
         bot.updated = true;
-        logger.info("Joining channels");
+        logger.log("Joining channels");
         joinChannels();
     }
 }
