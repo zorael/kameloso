@@ -31,6 +31,12 @@ void postprocess(ref IRCEvent event)
     if (event.sender.isServer)
     {
         event.badge = "server";
+
+        if (event.type == IRCEvent.Type.CLEARCHAT)
+        {
+            event.type = event.aux.length ?
+                IRCEvent.Type.TEMPBAN : IRCEvent.Type.PERMBAN;
+        }
     }
 }
 
