@@ -78,6 +78,7 @@ void parseTwitchTags(ref IRCEvent event)
             // badge (each in the format <badge>/<version>, such as admin/1).
             // Valid badge values: admin, bits, broadcaster, global_mod,
             // moderator, subscriber, staff, turbo.
+            import std.string : indexOf;
 
             if (!value.length) break;
 
