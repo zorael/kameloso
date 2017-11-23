@@ -1441,30 +1441,14 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             break;
 
         case "NETWORK":
-            try
-            {
-                immutable thisNetwork = value
-                    .toLower
-                    .toEnum!(IRCServer.Network);
+            import kameloso.common;
 
-                import kameloso.common;
+            logger.info("Detected network: ", value.colour(BashForeground.white));
 
-                logger.info("Detected network: ", value.colour(BashForeground.white));
+            // Propagate change
+            bot.server.network = value;
+            bot.updated = true;
 
-                if (thisNetwork != bot.server.network)
-                {
-                    // Propagate change
-                    bot.server.network = thisNetwork;
-                    bot.updated = true;
-                }
-            }
-            catch (const Exception e)
-            {
-                // We know the network but we don't have defintions for it
-                logger.info("Unfamiliar network: ", value);
-                bot.server.network = IRCServer.Network.unfamiliar;
-                bot.updated = true;
-            }
             break;
 
         case "NICKLEN":
@@ -1496,15 +1480,25 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
         }
     }
 
-    with (parser.bot.server)
-    if (network == Network.init)
+    with (parser)
     {
-        network = networkOf(address);
-        if (network != Network.init)
+        if (!bot.server.network.length)
         {
-            logger.info("Network: ", network, "?");
+            import std.string : endsWith;
+
+            if (bot.server.address.endsWith(".twitch.tv"))
+            {
+                bot.server.network = "Twitch";
+            }
+            else
+            {
+                bot.server.network = "unknown";
+            }
+
+            bot.updated = true;
         }
     }
+
 }
 
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
