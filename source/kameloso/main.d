@@ -33,9 +33,6 @@ Settings settings;
 /// A runtime array of all plugins. We iterate this when we have an IRCEvent to react to.
 IRCPlugin[] plugins;
 
-/// A 1-buffer of IRCEvents to replay when a WHOIS call returns.
-IRCEvent[string] replayQueue;
-
 /// The socket we use to connect to the server.
 Connection conn;
 
@@ -241,6 +238,7 @@ Flag!"quit" handleGetopt(string[] args)
     if (shouldWriteConfig)
     {
         printVersionInfo(BashForeground.white);
+
         logger.info("Writing configuration to ", settings.configFile);
         writeln();
 
@@ -295,6 +293,7 @@ void writeConfigurationFile(const string filename)
     writeToDisk!(Yes.addBanner)(settings.configFile, justified);
 }
 
+
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
@@ -343,6 +342,7 @@ void initPlugins()
     }
 }
 
+
 void teardownPlugins()
 {
     if (!plugins.length) return;
@@ -359,6 +359,7 @@ void teardownPlugins()
     }
 }
 
+
 void startPlugins()
 {
     if (!plugins.length) return;
@@ -367,14 +368,6 @@ void startPlugins()
     foreach (plugin; plugins) plugin.start();
 }
 
-/// Writes the current configuration to the config file specified in the Settings.
-/*void writeConfigAndPrint(const string configFile)
-{
-    logger.info("Writing configuration to ", configFile);
-    configFile.writeToDisk!(Yes.addBanner)(bot, bot.server, settings);
-    writeln();
-    printObjects(bot, bot.server, settings);
-}*/
 
 void propagateBot(IRCBot bot)
 {
@@ -539,7 +532,7 @@ void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string 
                 }
                 else
                 {
-                    // logger.log("Too soon... ", (now - *then));
+                    //logger.log("Too soon... ", (now - *then));
                 }
             }
         }
@@ -666,6 +659,5 @@ int main(string[] args)
     }
 
     logger.info("Exiting...");
-
     return 0;
 }
