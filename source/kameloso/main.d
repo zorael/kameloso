@@ -476,7 +476,7 @@ Flag!"quit" loopGenerator(Generator!string generator)
                     plugin.onEvent(event);
 
                     auto reqs = plugin.yieldWHOISRequests();
-                    reqs.handleQueue(event, event.target.nickname);
+                    reqs.handleWHOISQueue(event, event.target.nickname);
 
                     auto yieldedBot = plugin.yieldBot();
                     if (yieldedBot.updated)
@@ -505,7 +505,8 @@ Flag!"quit" loopGenerator(Generator!string generator)
     return Yes.quit;
 }
 
-void handleQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickname)
+
+void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickname)
 {
     if (nickname.length &&
         ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
