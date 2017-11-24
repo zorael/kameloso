@@ -92,7 +92,7 @@ void onMessage(const IRCEvent event)
         immutable url = urlHit[0];
         immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-        logger.log(url);
+        logger.info("Caught URL: ", url);  // race-y...
         workerThread.send(url, target);
     }
 }
@@ -151,16 +151,16 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
     import std.regex : replaceFirst;
     import std.string : indexOf;
 
-    tlsLogger.info("Bland YouTube title...");
+    tlsLogger.log("Bland YouTube title...");
 
     immutable onRepeatURL = url.replaceFirst(youtubeRegex,
         "https://www.listenonrepeat.com/watch/");
 
-    tlsLogger.info(onRepeatURL);
+    tlsLogger.log("ListenOnRepeat URL: ", onRepeatURL);
 
     TitleLookup onRepeatLookup = lookupTitle(onRepeatURL);
 
-    tlsLogger.info(onRepeatLookup.title);
+    tlsLogger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
     if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
     {
@@ -301,7 +301,9 @@ void titleworker(shared Tid sMainThread)
                     try lookup = lookupTitle(url);
                     catch (const Exception e)
                     {
-                        logger.error(e.msg);
+                        tlsLogger.error("Could not look up title: ", e.msg);
+                        tlsLogger.log("You may need a newer version of dlang-requests.");
+                        tlsLogger.log("See https://github.com/ikod/dlang-requests/issues/62");
                     }
                 }
 
