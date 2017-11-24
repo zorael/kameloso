@@ -594,14 +594,7 @@ int main(string[] args)
         }
     }
 
-    // Set up signal handlers
-    signal(SIGINT, &signalHandler);
-
-    version(Posix)
-    {
-        import core.sys.posix.signal : SIGHUP;
-        signal(SIGHUP, &signalHandler);
-    }
+    setupSignals();
 
     if (handleArguments(args) == Yes.quit) return 0;
 
