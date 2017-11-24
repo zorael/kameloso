@@ -2,9 +2,11 @@
 
 A command-line IRC bot.
 
-**kameloso** sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not respond to keyboard input, though text can be sent manually by other means.
+**kameloso** sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not (yet) respond to keyboard input, though text can be sent manually by other means.
 
-It provides a framework that works with nearly all IRC server networks, and where it doesn't it's easily extended. Featues are added as plugins written as [D](https://www.dlang.org) modules.
+It provides a framework that works with all* IRC server networks. Featues are added as plugins written as [D](https://www.dlang.org) modules.
+
+The IRC protocol is riddled with inconsistencies, so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
 Networks without [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
@@ -21,6 +23,7 @@ Current functionality includes:
 * piping text from the terminal to the server
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* Twitch events; simple Twitch bot is now easy
 
 ## Windows
 
@@ -93,14 +96,14 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * "online" help; listing of verbs/commands
 * add ExamplePlugin (work in progress)
 * investigate inverse channel behaviour (blacklists)
-* revisit "roles" (Twitch badges) because this isn't working
 * test IRCv3 more
-* split out Twitch bits into own `twitch` plugin; need for plugins to be able to modify `IRCEvents` as they are built. `IRCPlugin.postprocess(IRCEvent)`?
 * sort out `main.d`
 * pipedream: DCC
 * update docs and wiki
 * throttle sending messages, anti-flood protection
 * Travis LDC tests
+* logger-less `irc.d`, to act more like a headless library
+* ready for channel awareness
 
 ## Built With
 
@@ -118,5 +121,6 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 * [kameloso](https://www.youtube.com/watch?v=s-mOy8VUEBk) for obvious reasons
 * [README.md template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [dlang-requests](https://github.com/ikod/dlang-requests) for making the `webtitles` plugin possible
-* [#d on freenode](irc://irc.freenode.org:6667/#d) for always answering questions
+* [#d on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
 * [Adam D. Ruppe](https://github.com/adamdruppe) for graciously allowing us to use his libraries
+* [IRC Definition Files](http://defs.ircdocs.horse) and [#ircdocs on Freenode](irc://irc.freenode.org:6667/#ircdocs) for their excellent resource pages
