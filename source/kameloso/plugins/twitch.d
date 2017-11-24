@@ -321,11 +321,11 @@ void parseTwitchTags(ref IRCEvent event)
     }
 }
 
+public:
 
 mixin BasicEventHandlers;
 mixin OnEventImpl;
 
-public:
 
 final class TwitchPlugin : IRCPlugin
 {
