@@ -441,7 +441,7 @@ Flag!"quit" mainLoop(Generator!string generator)
                 printObject(event);
                 continue;
             }
-            catch (Exception e)
+            catch (const Exception e)
             {
                 logger.warningf("Unhandled exception at %s:%d: %s",
                     e.file, e.line, e.msg);
