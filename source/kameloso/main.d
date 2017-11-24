@@ -576,13 +576,12 @@ void main() {
 else
 int main(string[] args)
 {
-    import core.stdc.signal;
-
     // Initialise the logger immediately so it's always available, reinit later
     initLogger();
 
     scope(failure)
     {
+        import core.stdc.signal : signal, SIGINT, SIG_DFL;
         logger.error("We just crashed!");
         teardownPlugins();
         signal(SIGINT, SIG_DFL);
