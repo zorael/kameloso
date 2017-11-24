@@ -348,7 +348,15 @@ void teardownPlugins()
     if (!plugins.length) return;
 
     logger.info("Deinitialising plugins");
-    foreach (plugin; plugins) plugin.teardown();
+
+    foreach (plugin; plugins)
+    {
+        try plugin.teardown();
+        catch (const Exception e)
+        {
+            logger.error(e.msg);
+        }
+    }
 }
 
 void startPlugins()
