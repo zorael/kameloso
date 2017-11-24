@@ -396,7 +396,7 @@ void initLogger()
 }
 
 
-// loopGenerator
+// mainLoop
 /++
  +  This loops over the Generator fiber that's reading from the socket.
  +
@@ -409,7 +409,7 @@ void initLogger()
  +  Returns:
  +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
  +/
-Flag!"quit" loopGenerator(Generator!string generator)
+Flag!"quit" mainLoop(Generator!string generator)
 {
     import core.thread : Fiber;
 
