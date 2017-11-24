@@ -161,7 +161,7 @@ Flag!"quit" checkMessages()
 }
 
 
-// handleArguments
+// handleGetopt
 /++
  +  Read command-line options and merge them with those in the configuration file.
  +
@@ -175,66 +175,43 @@ Flag!"quit" checkMessages()
  +      Yes.quit or no depending on whether the arguments chosen mean the program
  +      should not proceed.
  +/
-Flag!"quit" handleArguments(string[] args)
+Flag!"quit" handleGetopt(string[] args)
 {
-    import kameloso.config : readConfigInto;
     import std.format : format;
     import std.getopt;
 
     bool shouldWriteConfig;
     bool shouldShowVersion;
-    GetoptResult results;
 
-    try
-    {
-        arraySep = ",";
+    arraySep = ",";
 
-        results = args.getopt(
-            config.caseSensitive,
-            "n|nickname",    "Bot nickname", &bot.nickname,
-            "u|user",        "Username when registering onto server (not nickname)",
-                &bot.user,
-            "i|ident",       "IDENT string", &bot.ident,
-            "pass",          "Registration password (not auth or nick services)",
-                &bot.pass,
-            "a|auth",        "Auth service login name, if applicable",
-                &bot.authLogin,
-            "p|authpassword","Auth service password", &bot.authPassword,
-            "m|master",      "Auth login of the bot's master, who gets " ~
-                            "access to administrative functions", &bot.master,
-            "H|home",        "Home channels to operate in, comma-separated" ~
-                            " (remember to escape or enquote the #s!)", &bot.homes,
-            "C|channel",     "Non-home channels to idle in, comma-separated" ~
-                            " (ditto)", &bot.channels,
-            "s|server",      "Server address", &bot.server.address,
-            "P|port",        "Server port", &bot.server.port,
-            "c|config",      "Read configuration from file (default %s)"
-                             .format(Settings.init.configFile), &settings.configFile,
-            "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
-            "writeconf",     &shouldWriteConfig,
-            "version",       "Show version info", &shouldShowVersion,
-        );
-    }
-    catch (const Exception e)
-    {
-        // User misspelled or supplied an invalid argument; error out and quit
-        logger.error(e.msg);
-        return Yes.quit;
-    }
+    auto results = args.getopt(
+        config.caseSensitive,
+        "n|nickname",    "Bot nickname", &bot.nickname,
+        "u|user",        "Username when registering onto server (not nickname)",
+            &bot.user,
+        "i|ident",       "IDENT string", &bot.ident,
+        "pass",          "Registration password (not auth or nick services)",
+            &bot.pass,
+        "a|auth",        "Auth service login name, if applicable",
+            &bot.authLogin,
+        "p|authpassword","Auth service password", &bot.authPassword,
+        "m|master",      "Auth login of the bot's master, who gets " ~
+                        "access to administrative functions", &bot.master,
+        "H|home",        "Home channels to operate in, comma-separated" ~
+                        " (remember to escape or enquote the #s!)", &bot.homes,
+        "C|channel",     "Non-home channels to idle in, comma-separated" ~
+                        " (ditto)", &bot.channels,
+        "s|server",      "Server address", &bot.server.address,
+        "P|port",        "Server port", &bot.server.port,
+        "c|config",      "Read configuration from file (default %s)"
+                            .format(Settings.init.configFile), &settings.configFile,
+        "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
+        "writeconf",     &shouldWriteConfig,
+        "version",       "Show version info", &shouldShowVersion,
+    );
 
-    // Read settings into a temporary Bot and Settings struct, then meld them
-    // into the real ones into which the command-line arguments will have been
-    // applied.
-
-    IRCBot botFromConfig;
-    Settings settingsFromConfig;
-
-    // These arguments are by reference.
-    settings.configFile.readConfigInto(botFromConfig,
-        botFromConfig.server, settingsFromConfig);
-
-    botFromConfig.meldInto(bot);
-    settingsFromConfig.meldInto(settings);
+    meldSettingsFromFile(bot, settings);
 
     // We know Settings now so reinitialise the logger
     initLogger();
@@ -247,10 +224,8 @@ Flag!"quit" handleArguments(string[] args)
         printVersionInfo(BashForeground.white);
         writeln();
 
-        defaultGetoptPrinter(BashForeground.lightgreen.colour ~
-                            "Command-line arguments available:\n" ~
-                            BashForeground.default_.colour,
-                            results.options);
+        defaultGetoptPrinter("Command-line arguments available:\n"
+            .colour(BashForeground.lightgreen), results.options);
         writeln();
         return Yes.quit;
     }
