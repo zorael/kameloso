@@ -1123,7 +1123,9 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     }
     else if (event.channel.length && !event.channel.beginsWith('#') &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFWHO))
+        (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
+        (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
+        (event.type != IRCEvent.Type.RPL_ENDOFNAMES))
     {
         writeln();
         logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
