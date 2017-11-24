@@ -1313,7 +1313,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
         event.type = (event.sender.nickname == parser.bot.nickname) ?
-            IRCEven.Type.SELFQUERY : IRCEvent.Type.QUERY;
+            IRCEvent.Type.SELFQUERY : IRCEvent.Type.QUERY;
 
         event.target.nickname = targetOrChannel;
     }
