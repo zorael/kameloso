@@ -24,9 +24,6 @@ shared static this()
 
 private:
 
-/// When this is set by signal handlers, the program should exit.
-bool abort;
-
 /// State variables and configuration for the IRC bot.
 IRCBot bot;
 
@@ -549,6 +546,9 @@ void handleQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickn
 
 
 public:
+
+/// When this is set by signal handlers, the program should exit.
+__gshared bool abort;
 
 
 version(unittest)
