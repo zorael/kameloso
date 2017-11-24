@@ -52,7 +52,7 @@ void postprocess(ref IRCEvent event)
  +/
 void parseTwitchTags(ref IRCEvent event)
 {
-    import kameloso.stringutils : nom;
+    import kameloso.string : nom;
     import std.algorithm.iteration : splitter;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags

@@ -149,7 +149,7 @@ unittest
 @(PrivilegeLevel.anyone)  // ?
 void onMessage(const IRCEvent event)
 {
-    import kameloso.stringutils : beginsWith;
+    import kameloso.string : beginsWith;
     import std.datetime : Clock, seconds;
     import std.format : format;
     import std.string : strip;

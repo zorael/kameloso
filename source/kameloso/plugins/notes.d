@@ -45,7 +45,7 @@ JSONValue notes;
 @(IRCEvent.Type.JOIN)
 void onJoin(const IRCEvent event)
 {
-    import kameloso.stringutils : timeSince;
+    import kameloso.string : timeSince;
     import std.datetime : Clock;
     import std.format : format;
 
@@ -199,7 +199,7 @@ void onCommandReloadQuotes()
 @Prefix(NickPolicy.required, "fakejoin")
 void onCommandFakejoin(const IRCEvent event)
 {
-    import kameloso.stringutils;
+    import kameloso.string;
     import std.string : indexOf;
 
     logger.info("Faking an event");

@@ -654,7 +654,7 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (prefixUDA; getUDAs!(fun, Prefix))
                         {
-                            import kameloso.stringutils;
+                            import kameloso.string;
 
                             if (matches)
                             {

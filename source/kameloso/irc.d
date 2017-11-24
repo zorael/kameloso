@@ -4,7 +4,7 @@ public import kameloso.ircstructs;
 
 import kameloso.common;
 import kameloso.constants;
-import kameloso.stringutils : nom;
+import kameloso.string : nom;
 
 import std.format : format, formattedRead;
 import std.string : indexOf;
@@ -110,7 +110,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
         break;
 
     default:
-        import kameloso.stringutils : beginsWith;
+        import kameloso.string : beginsWith;
 
         if (event.raw.beginsWith("NOTICE"))
         {
@@ -124,7 +124,6 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
             // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
             // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
 
-            import kameloso.stringutils : nom;
             import std.algorithm.iteration : splitter;
 
             // Get rid of the prepended @
@@ -201,7 +200,6 @@ unittest
  +/
 void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : nom;
     import std.algorithm.searching : endsWith;
 
     auto prefix = slice.nom(' ');
@@ -308,7 +306,7 @@ unittest
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : nom, toEnum;
+    import kameloso.string : toEnum;
     import std.conv : to;
 
     immutable typestring = slice.nom(' ');
@@ -404,7 +402,7 @@ unittest
  +/
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils;
+    import kameloso.string;
 
     import std.string : strip, stripLeft, stripRight;
 
@@ -1100,7 +1098,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 {
-    import kameloso.stringutils : beginsWith;
+    import kameloso.string : beginsWith;
 
     if ((event.target.nickname.indexOf(' ') != -1) ||
         (event.channel.indexOf(' ') != -1))
@@ -1157,7 +1155,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 
 bool isSpecial(const ref IRCParser parser, const IRCEvent event)
 {
-    import kameloso.stringutils : sharedDomains;
+    import kameloso.string : sharedDomains;
 
     with (event)
     with (parser)
@@ -1182,7 +1180,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
 
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : beginsWith, sharedDomains;
+    import kameloso.string : beginsWith, sharedDomains;
     import std.string : indexOf, toLower;
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflohomeOnlyw] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
@@ -1278,7 +1276,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : beginsWith;
+    import kameloso.string : beginsWith;
 
     // FIXME, change so that it assigns to the proper field
 
@@ -1425,7 +1423,7 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.stringutils : toEnum;
+    import kameloso.string : toEnum;
 
     import std.algorithm.iteration : splitter;
     import std.conv : to;
@@ -1633,7 +1631,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
         parser.daemon = daemon;
     }
 
-    import kameloso.stringutils : enumToString;
+    import kameloso.string : enumToString;
 
     logger.infof("Detected daemon %s: %s", daemonstring, parser.bot.server.daemon
         .enumToString
@@ -1707,7 +1705,7 @@ string decodeIRCv3String(const string line)
 /// registration service.
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 {
-    import kameloso.stringutils : sharedDomains;
+    import kameloso.string : sharedDomains;
 
     import std.algorithm.searching : endsWith;
     import std.string : toLower;

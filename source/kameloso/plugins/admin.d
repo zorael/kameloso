@@ -4,7 +4,7 @@ import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
-import kameloso.stringutils;
+import kameloso.string;
 
 import std.concurrency : send;
 import std.stdio;

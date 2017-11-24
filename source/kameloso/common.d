@@ -221,7 +221,7 @@ void printObject(Thing)(Thing thing)
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink, Things things) @system
 {
-    import kameloso.stringutils : stripSuffix;
+    import kameloso.string : stripSuffix;
 
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;

@@ -74,7 +74,7 @@ if (Things.length > 1)
 
 void serialise(Sink, Thing)(ref Sink sink, Thing thing)
 {
-    import kameloso.stringutils : stripSuffix;
+    import kameloso.string : stripSuffix;
     import std.algorithm : joiner;
     import std.array : array;
     import std.conv : to;
@@ -337,7 +337,7 @@ unittest
 
 void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
-    import kameloso.stringutils : stripSuffix;
+    import kameloso.string : stripSuffix;
     import std.format : formattedRead;
     import std.regex  : ctRegex, matchFirst;
     import std.string : strip, stripLeft;

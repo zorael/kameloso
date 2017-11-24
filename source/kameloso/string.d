@@ -1,4 +1,4 @@
-module kameloso.stringutils;
+module kameloso.string;
 
 import std.datetime;
 import std.traits   : isSomeString;

@@ -134,7 +134,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
-    import kameloso.stringutils : enumToString, beginsWith;
+    import kameloso.string : enumToString, beginsWith;
 
     import std.datetime;
     import std.format : formattedWrite;
@@ -253,7 +253,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 if (event.colour.length && printerOptions.truecolour)
                 {
-                    import kameloso.stringutils : numFromHex;
+                    import kameloso.string : numFromHex;
 
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);

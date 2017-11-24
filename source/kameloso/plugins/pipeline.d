@@ -69,7 +69,7 @@ void pipereader(shared IRCPluginState newState)
         {
             foreach (const line; fifo.byLineCopy)
             {
-                import kameloso.stringutils : beginsWith;
+                import kameloso.string : beginsWith;
                 import std.string : toLower;
 
                 if (!line.length) break eofLoop;
