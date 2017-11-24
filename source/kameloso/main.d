@@ -450,17 +450,25 @@ Flag!"quit" loopGenerator(Generator!string generator)
                 continue;
             }
 
-            foreach (plugin; plugins)
-            {
-                plugin.postprocess(event);
-            }
-
             if (parser.bot.updated)
             {
                 // Parsing changed the bot; propagate
                 parser.bot.updated = false;
                 bot = parser.bot;
                 propagateBot(bot);
+            }
+
+            foreach (plugin; plugins)
+            {
+                plugin.postprocess(event);
+
+                if (parser.bot.updated)
+                {
+                    // Postprocessing changed the bot; propagate
+                    parser.bot.updated = false;
+                    bot = parser.bot;
+                    propagateBot(bot);
+                }
             }
 
             foreach (plugin; plugins)
@@ -475,8 +483,12 @@ Flag!"quit" loopGenerator(Generator!string generator)
                     auto yieldedBot = plugin.yieldBot();
                     if (yieldedBot.updated)
                     {
-                        // Plugin updated the bot; propagate
-                        bot = yieldedBot;  // yieldedBot.meldInto(bot);
+                        /*  Plugin onEvent or WHOIS reaction updated the bot.
+                            There's no need to check for both since this is just
+                            a single plugin processing; it keeps its update
+                            through both passes.
+                         */
+                        bot = yieldedBot;
                         bot.updated = false;
                         propagateBot(bot);
                     }
