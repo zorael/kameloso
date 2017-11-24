@@ -618,17 +618,23 @@ int main(string[] args)
     bot.origNickname = bot.nickname;
 
     Flag!"quit" quit;
+    bool connectedAlready;
 
     with (bot)
     do
     {
+        if (connectedAlready)
+        {
+            logger.log("Please wait a few seconds...");
+            interruptibleSleep(Timeout.retry.seconds, abort);
+        }
+
         conn.reset();
 
         immutable resolved = conn.resolve(server.address, server.port, abort);
-        if (!resolved) return Yes.quit;
+        if (!resolved) return 1;
 
         conn.connect(abort);
-
         if (!conn.connected) return 1;
 
         // Reset fields in the bot that should not survive a reconnect
@@ -643,7 +649,8 @@ int main(string[] args)
         startPlugins();
 
         auto generator = new Generator!string(() => listenFiber(conn, abort));
-        quit = loopGenerator(generator);
+        quit = mainLoop(generator);
+        connectedAlready = true;
     }
     while (!quit && !abort && settings.reconnectOnFailure);
 
