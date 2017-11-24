@@ -589,7 +589,15 @@ int main(string[] args)
 
     setupSignals();
 
-    if (handleGetopt(args) == Yes.quit) return 0;
+    try
+    {
+        if (handleGetopt(args) == Yes.quit) return 0;
+    }
+    catch (const Exception e)
+    {
+        logger.error(e.msg);
+        return 1;
+    }
 
     printVersionInfo(BashForeground.white);
     writeln();
