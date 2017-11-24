@@ -288,21 +288,6 @@ void tryAuth()
         {
             goto case bahamut;
         }
-
-        /*if (bot.authLogin.length)
-        {
-            mainThread.send(ThreadMessage.Quietline(),
-                "PRIVMSG NickServ :%s %s %s"
-                .format(bot.authLogin, verb, bot.authPassword));
-            logger.tracef("--> PRIVMSG NickServ :%s %s hunter2",
-                verb, bot.authLogin);
-        }
-
-        mainThread.send(ThreadMessage.Quietline(),
-            "PRIVMSG NickServ :%s %s"
-            .format(verb, bot.authPassword));
-        logger.tracef("--> PRIVMSG NickServ :%s hunter2", verb);
-        break;*/
     }
 }
 
