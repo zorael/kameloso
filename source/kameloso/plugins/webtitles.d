@@ -164,7 +164,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
     {
-        logger.warning("Failed to ListenOnRepeatify YouTube title");
+        tlsLogger.warning("Failed to ListenOnRepeatify YouTube title");
         return;
     }
 
@@ -333,7 +333,7 @@ void titleworker(shared Tid sMainThread)
             },
             (Variant v)
             {
-                logger.error("titleworker received Variant: ", v);
+                tlsLogger.error("titleworker received Variant: ", v);
             }
         );
     }
