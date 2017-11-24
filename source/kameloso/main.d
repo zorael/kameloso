@@ -546,6 +546,21 @@ void handleQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickn
 }
 
 
+void setupSignals()
+{
+    // Set up signal handlers
+    import core.stdc.signal : signal, SIGINT;
+
+    signal(SIGINT, &signalHandler);
+
+    version(Posix)
+    {
+        import core.sys.posix.signal : SIGHUP;
+        signal(SIGHUP, &signalHandler);
+    }
+}
+
+
 public:
 
 /// When this is set by signal handlers, the program should exit.
