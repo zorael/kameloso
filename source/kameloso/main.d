@@ -596,7 +596,7 @@ int main(string[] args)
 
     setupSignals();
 
-    if (handleArguments(args) == Yes.quit) return 0;
+    if (handleGetopt(args) == Yes.quit) return 0;
 
     printVersionInfo(BashForeground.white);
     writeln();
