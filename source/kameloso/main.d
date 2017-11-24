@@ -602,7 +602,7 @@ int main(string[] args)
     writeln();
 
     // Print the current settings to show what's going on.
-    printObjects(bot, bot.server, settings);
+    printObjects(bot, bot.server);
 
     if (!bot.homes.length && !bot.master.length && !bot.friends.length)
     {
