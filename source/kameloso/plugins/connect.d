@@ -316,7 +316,7 @@ void tryAuth()
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(const IRCEvent event)
 {
-    if (state.bot.authPassword.length) tryAuth();
+    if (state.bot.authPassword.length && !state.bot.finishedAuth) tryAuth();
 
     if (state.bot.finishedAuth)
     {
