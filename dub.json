@@ -14,7 +14,7 @@
             "platforms": [ "posix" ],
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Webtitles", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.5.0" }
+            "dependencies-posix": { "requests": "~>0.6.0" }
         },
         {
             "name": "windows",
@@ -30,7 +30,7 @@
             "name": "nocolours",
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Webtitles" ],
-            "dependencies-posix": { "requests": "~>0.5.0" }
+            "dependencies-posix": { "requests": "~>0.6.0" }
         },
         {
             "name": "nowebtitles-nocolours",
@@ -40,7 +40,7 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "Webtitles", "Colours" ],
-            "dependencies": { "requests": "~>0.5.0" }
+            "dependencies": { "requests": "~>0.6.0" }
         }
     ]
 }
