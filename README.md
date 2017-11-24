@@ -72,7 +72,7 @@ The bot needs the *nickname services* login name of the administrator/master of 
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you have an old configuration file and you notice missing options, such as the new plugin-specific options for the `printer` and `notes` plugins, just run `--writeconfig` again and your file should be updated with all fields. There are many more plugin-specific and less important options available than what is displayed at program start.
+If you have an old configuration file and you notice missing options, such as the new plugin-specific options, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with *nickname services* and whitelist your master login in the configuration file before it will listen to anything you do.
 
@@ -104,6 +104,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
 * ready for channel awareness
+* more command-line flags; "list all options"?
 
 ## Built With
 
