@@ -429,19 +429,19 @@ void onRegistrationEvent(const IRCEvent event)
             case "away-notify":
             case "chghost":
             case "invite-notify":
-            //case "multi-prefix":
+            //case "multi-prefix":  // dup
             case "userhost-in-names":
                 // Rizon
             //case "unrealircd.org/plaintext-policy":
             //case "unrealircd.org/link-security":
             //case "sts":
-            //case "extended-join":
-            //case "chghost":
+            //case "extended-join":  // dup
+            //case "chghost":  // dup
             case "cap-notify":
-            //case "userhost-in-names":
-            //case "multi-prefix":
-            //case "away-notify":
-            //case "account-notify":
+            //case "userhost-in-names":  // dup
+            //case "multi-prefix":  // dup
+            //case "away-notify":  // dup
+            //case "account-notify":  // dup
             //case "tls":
                 // UnrealIRCd
             case "znc.in/self-message":
