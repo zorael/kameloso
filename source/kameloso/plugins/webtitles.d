@@ -106,11 +106,10 @@ TitleLookup lookupTitle(const string url)
     import std.datetime : Clock;
     import std.string : indexOf;
 
-    tlsLogger.log("URL2: ", url);
-
     TitleLookup lookup;
     auto doc = new Document;
     Appender!(ubyte[]) sink;
+    sink.reserve(BufferSize.titleLookup);
 
     Request req;
     req.useStreaming = true;
