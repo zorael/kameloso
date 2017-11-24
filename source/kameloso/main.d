@@ -254,6 +254,24 @@ Flag!"quit" handleGetopt(string[] args)
     return No.quit;
 }
 
+void meldSettingsFromFile(ref IRCBot bot, ref Settings settings)
+{
+    // Read settings into a temporary Bot and Settings struct, then meld them
+    // into the real ones into which the command-line arguments will have been
+    // applied.
+    import kameloso.config : readConfigInto;
+
+    IRCBot botFromConfig;
+    Settings settingsFromConfig;
+
+    // These arguments are by reference.
+    settings.configFile.readConfigInto(botFromConfig,
+        botFromConfig.server, settingsFromConfig);
+
+    botFromConfig.meldInto(bot);
+    settingsFromConfig.meldInto(settings);
+}
+
 
 void writeConfigurationFile(const string filename)
 {
