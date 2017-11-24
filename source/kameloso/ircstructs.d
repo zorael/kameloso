@@ -842,6 +842,7 @@ struct IRCServer
         twitch,
 
         charybdis,
+        sorircd,
 
         ircu,
         aircd,
@@ -854,7 +855,6 @@ struct IRCServer
         ptlink,
         ultimate,
         anothernet,
-        sorircd,
         bdqircd,
         chatircd,
         irch,
@@ -1744,15 +1744,15 @@ struct Typenums
         494 : Type.ERR_OWNMODE,
     ];
 
+    static immutable Type[326] sorircd =
+    [
+        325 : Type.RPL_CHANNELMLOCKIS,  // deprecated
+    ];
+
     /*
     static immutable Type[321] anothernet =
     [
         320 : Type.RPL_WHOIS_HIDDEN,
-    ];
-
-    static immutable Type[326] sorircd =
-    [
-        325 : Type.RPL_CHANNELMLOCKIS,  // deprecated
     ];
 
     static immutable Type[392] bdqIRCd =

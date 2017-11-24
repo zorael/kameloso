@@ -2432,7 +2432,8 @@ struct IRCParser
             break;
 
         case sorircd:
-            //Typenums.sorircd.meldInto(typenums);
+            Typenums.charybdis.meldInto(typenums);
+            Typenums.sorircd.meldInto(typenums);
             break;
 
         case bdqircd:
