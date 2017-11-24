@@ -1140,6 +1140,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         case CHANMODE:
         case RPL_WELCOME:
         case QUERY:
+        case SELFQUERY:
         case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
@@ -1282,16 +1283,38 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     immutable targetOrChannel = slice.nom(" :");
     event.content = slice;
 
+    /*  When a server sends a PRIVMSG/NOTICE to someone else on behalf of a
+        client connected to it – common when multiple clients are connected to a
+        bouncer – it is called a self-message. With the echo-message capability,
+        they are also sent in reply to every PRIVMSG/NOTICE a client sends.
+        These are represented by a protocol message looking like this:
+
+        :yournick!~foo@example.com PRIVMSG someone_else :Hello world!
+
+        They should be put in someone_else's query and displayed as though they
+        they were sent by the connected client themselves. This page displays
+        which clients properly parse and display this type of echo'd
+        PRIVMSG/NOTICE.
+
+        http://defs.ircdocs.horse/info/selfmessages.html
+
+        (common requested cap: znc.in/self-message)
+     */
+
     if (targetOrChannel.isValidChannel(parser.bot.server))
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
-        event.type = IRCEvent.Type.CHAN;
+        event.type = (event.sender.nickname == parser.bot.nickname) ?
+            IRCEvent.Type.SELFCHAN : IRCEvent.Type.CHAN;
+
         event.channel = targetOrChannel;
     }
     else
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
-        event.type = IRCEvent.Type.QUERY;
+        event.type = (event.sender.nickname == parser.bot.nickname) ?
+            IRCEven.Type.SELFQUERY : IRCEvent.Type.QUERY;
+
         event.target.nickname = targetOrChannel;
     }
 

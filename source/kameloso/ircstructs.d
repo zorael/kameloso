@@ -23,6 +23,7 @@ struct IRCEvent
     {
         UNSET, ANY, ERROR, NUMERIC,
         PRIVMSG, CHAN, QUERY, EMOTE, // ACTION
+        SELFQUERY, SELFCHAN,
         JOIN, PART, QUIT, KICK, INVITE,
         NOTICE,
         PING, PONG,

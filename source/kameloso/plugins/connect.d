@@ -444,6 +444,8 @@ void onRegistrationEvent(const IRCEvent event)
             //case "account-notify":
             //case "tls":
                 // UnrealIRCd
+            case "znc.in/self-message":
+                // znc SELFCHAN/SELFQUERY events
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
                 break;
 
