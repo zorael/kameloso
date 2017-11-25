@@ -609,6 +609,11 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 enum verbose = hasUDA!(fun, Verbose) || debug_;
 
+                static if (verbose)
+                {
+                    import std.stdio;
+                }
+
                 foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
                 {
                     import std.format : format;
