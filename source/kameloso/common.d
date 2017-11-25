@@ -202,7 +202,7 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 /++
  +  Single-object `printObjects`.
  +/
-void printObject(Thing, uint widthArg = 0)(Thing thing)
+void printObject(uint widthArg = 0, Thing)(Thing thing)
 {
     printObjects!widthArg(thing);
 }
