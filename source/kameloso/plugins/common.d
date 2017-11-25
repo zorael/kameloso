@@ -519,7 +519,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
                 !__traits(isTemplate, symbol))
             {
                 // FIXME: Hardcoded value
-                printObject!19(symbol);
+                printObject!17(symbol);
             }
         }
     }

@@ -257,7 +257,7 @@ Flag!"quit" handleGetopt(string[] args)
         writeln();
 
         // FIXME: Hardcoded value
-        printObjects!19(bot, bot.server, settings);
+        printObjects!17(bot, bot.server, settings);
 
         initPlugins();
         foreach (plugin; plugins) plugin.printSettings();
