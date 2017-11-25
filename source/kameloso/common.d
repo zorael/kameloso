@@ -173,7 +173,7 @@ unittest
  +  Params:
  +      things = The struct objects to enumerate.
  +/
-void printObjects(Things...)(Things things) @trusted
+void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 {
     // writeln trusts `lockingTextWriter` so we will too.
 
@@ -181,16 +181,19 @@ void printObjects(Things...)(Things things) @trusted
     {
         if (settings.monochrome)
         {
-            formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
+            formatObjectsImpl!(No.coloured, widthArg)
+                (stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsImpl!(Yes.coloured)(stdout.lockingTextWriter, things);
+            formatObjectsImpl!(Yes.coloured, widthArg)
+                (stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
+        formatObjectsImpl!(No.coloured, widthArg)
+            (stdout.lockingTextWriter, things);
     }
 }
 
@@ -199,9 +202,9 @@ void printObjects(Things...)(Things things) @trusted
 /++
  +  Single-object `printObjects`.
  +/
-void printObject(Thing)(Thing thing)
+void printObject(Thing, uint widthArg = 0)(Thing thing)
 {
-    printObjects(thing);
+    printObjects!widthArg(thing);
 }
 
 
@@ -218,7 +221,8 @@ void printObject(Thing)(Thing thing)
  +      sink = output range to write to
  +      things = one or more structs to enumerate and format.
  +/
-void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
+void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
+    uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @system
 {
     import kameloso.string : stripSuffix;
@@ -230,7 +234,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
 
-    enum entryPadding = longestMemberName!Things.length;
+    enum width = !widthArg ? longestMemberName!Things.length : widthArg;
 
     with (BashForeground)
     foreach (thing; things)
@@ -268,7 +272,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                         enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern,
                             cyan.colour, T.stringof,
-                            white.colour, (entryPadding + 2), memberstring,
+                            white.colour, (width + 2), memberstring,
                             lightgreen.colour, member,
                             darkgrey.colour, member.length);
                     }
@@ -277,7 +281,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                         //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
                         enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, T.stringof,
-                            (entryPadding + 2), memberstring,
+                            (width + 2), memberstring,
                             member, member.length);
                     }
                 }
@@ -285,25 +289,25 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                 {
                     static if (coloured)
                     {
-                        immutable width = member.length ?
-                            (entryPadding + 2) : (entryPadding + 4);
+                        immutable thisWidth = member.length ?
+                            (width + 2) : (width + 4);
 
                         enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
                         sink.formattedWrite(arrayPattern,
                             cyan.colour, T.stringof,
-                            white.colour, width, memberstring,
+                            white.colour, thisWidth, memberstring,
                             lightgreen.colour, member,
                             darkgrey.colour, member.length);
                     }
                     else
                     {
-                        immutable width = member.length ?
-                            (entryPadding + 2) : (entryPadding + 4);
+                        immutable thisWidth = member.length ?
+                            (width + 2) : (width + 4);
 
                         enum arrayPattern = "%9s %-*s%s(%d)\n";
                         sink.formattedWrite(arrayPattern,
                             T.stringof,
-                            width, memberstring,
+                            thisWidth, memberstring,
                             member,
                             member.length);
                     }
@@ -315,14 +319,14 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
                         enum normalPattern = "%s%9s %s%-*s  %s%s\n";
                         sink.formattedWrite(normalPattern,
                             cyan.colour, T.stringof,
-                            white.colour, (entryPadding + 2), memberstring,
+                            white.colour, (width + 2), memberstring,
                             lightgreen.colour, member);
                     }
                     else
                     {
                         enum normalPattern = "%9s %-*s  %s\n";
                         sink.formattedWrite(normalPattern, T.stringof,
-                            (entryPadding + 2), memberstring, member);
+                            (width + 2), memberstring, member);
                     }
                 }
             }
