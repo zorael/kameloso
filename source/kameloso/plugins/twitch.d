@@ -108,12 +108,6 @@ void parseTwitchTags(ref IRCEvent event)
             event.aux = value;
             break;
 
-        case "ban-reason":
-            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-            // The moderator’s reason for the timeout or ban.
-            event.content = decodeIRCv3String(value);
-            break;
-
         case "user-type":
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // The broadcaster can have any of these.
@@ -125,7 +119,12 @@ void parseTwitchTags(ref IRCEvent event)
             break;
 
         case "system-msg":
-            // The message printed in chat along with this notice.
+        case "ban-reason":
+            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            // The moderator’s reason for the timeout or ban.
+            // system-msg: The message printed in chat along with this notice.
+            import kameloso.irc : decodeIRCv3String;
+
             event.content = decodeIRCv3String(value);
             break;
 
