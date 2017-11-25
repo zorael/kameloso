@@ -28,7 +28,7 @@ private:
 IRCBot bot;
 
 /// Runtime settings for bot behaviour.
-BaseSettings settings;
+CoreSettings settings;
 
 /// A runtime array of all plugins. We iterate this when we have an IRCEvent to react to.
 IRCPlugin[] plugins;
@@ -84,7 +84,7 @@ Flag!"quit" checkMessages()
 
     /// Receive new settings, inherit them into .settings and propagate
     /// them to all plugins.
-    static void updateSettings(BaseSettings settings)
+    static void updateSettings(CoreSettings settings)
     {
         .settings = settings;
 
@@ -205,7 +205,7 @@ Flag!"quit" handleGetopt(string[] args)
         "P|port",        "Server port", &bot.server.port,
         "settings",      "Show all plugins' settings", &shouldShowSettings,
         "c|config",      "Read configuration from file (default %s)"
-                            .format(BaseSettings.init.configFile), &settings.configFile,
+                            .format(CoreSettings.init.configFile), &settings.configFile,
         "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
         "writeconf",     &shouldWriteConfig,
         "version",       "Show version info", &shouldShowVersion,
@@ -213,10 +213,10 @@ Flag!"quit" handleGetopt(string[] args)
 
     meldSettingsFromFile(bot, settings);
 
-    // We know BaseSettings now so reinitialise the logger
+    // We know CoreSettings now so reinitialise the logger
     initLogger();
 
-    // Give common.d a copy of BaseSettings. FIXME
+    // Give common.d a copy of CoreSettings. FIXME
     kameloso.common.settings = settings;
 
     if (results.helpWanted)
@@ -269,15 +269,15 @@ Flag!"quit" handleGetopt(string[] args)
     return No.quit;
 }
 
-void meldSettingsFromFile(ref IRCBot bot, ref BaseSettings settings)
+void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
-    // Read settings into a temporary Bot and BaseSettings struct, then meld them
+    // Read settings into a temporary Bot and CoreSettings struct, then meld them
     // into the real ones into which the command-line arguments will have been
     // applied.
     import kameloso.config : readConfigInto;
 
     IRCBot botFromConfig;
-    BaseSettings settingsFromConfig;
+    CoreSettings settingsFromConfig;
 
     // These arguments are by reference.
     settings.configFile.readConfigInto(botFromConfig,

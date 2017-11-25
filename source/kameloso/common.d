@@ -29,8 +29,12 @@ shared static this()
  +/
 Logger logger;
 
-/// A local copy of the BaseSettings struct, housing certain runtime settings
-BaseSettings settings;
+/// A local copy of the CoreSettings struct, housing certain runtime settings
+CoreSettings settings;
+
+deprecated("Use CoreSettings instead of BaseSettings. " ~
+    "This alias will eventually be removed.")
+alias BaseSettings = CoreSettings;
 
 
 // ThreadMessage
@@ -80,14 +84,14 @@ struct Separator
 struct Hidden {}
 
 
-// BaseSettings
+// CoreSettings
 /++
  +  Aggregate struct containing runtime bot setting variables.
  +
  +  Kept inside one struct, they're nicely gathered and easy to pass around.
  +  Some defaults are hardcoded here.
  +/
-struct BaseSettings
+struct CoreSettings
 {
     version(Windows)
     {
