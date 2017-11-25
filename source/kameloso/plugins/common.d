@@ -1,11 +1,7 @@
 module kameloso.plugins.common;
 
 import kameloso.common : BaseSettings;
-import kameloso.irc;
-
-import std.meta : AliasSeq;
-import std.traits : Parameters, Unqual, isSomeFunction;
-
+import kameloso.ircstructs;
 
 // IRCPlugin
 /++

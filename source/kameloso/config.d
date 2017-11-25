@@ -2,8 +2,6 @@ module kameloso.config;
 
 import kameloso.common;
 
-import std.array : Appender;
-import std.ascii : newline;
 import std.stdio;
 import std.typecons : Flag, No, Yes;
 

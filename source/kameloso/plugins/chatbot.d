@@ -1,12 +1,9 @@
 module kameloso.plugins.chatbot;
 
-import kameloso.common;
-import kameloso.constants;
-import kameloso.irc;
 import kameloso.plugins.common;
-import kameloso.string;
+import kameloso.ircstructs;
+import kameloso.common : ThreadMessage, logger;
 
-import std.array : Appender;
 import std.concurrency : send;
 import std.json : JSONValue;
 import std.stdio;

@@ -2,13 +2,12 @@ module kameloso.plugins.pipeline;
 
 version(Posix):
 
-import kameloso.common;
-import kameloso.constants;
-import kameloso.irc;
 import kameloso.plugins.common;
+import kameloso.ircstructs;
+import kameloso.common;
 
 import std.concurrency;
-import std.experimental.logger;
+import std.experimental.logger : LogLevel, Logger;
 import std.stdio;
 
 private:

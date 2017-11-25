@@ -1,12 +1,9 @@
 module kameloso.plugins.connect;
 
-import kameloso.common;
-import kameloso.constants;
-import kameloso.irc;
 import kameloso.plugins.common;
-import kameloso.string;
+import kameloso.ircstructs;
+import kameloso.common : ThreadMessage, logger;
 
-import std.array : Appender;
 import std.concurrency : send;
 import std.format : format;
 import std.stdio;

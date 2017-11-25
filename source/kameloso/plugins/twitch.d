@@ -1,8 +1,7 @@
 module kameloso.plugins.twitch;
 
 import kameloso.plugins.common;
-import kameloso.irc;
-import kameloso.common;
+import kameloso.ircstructs;
 
 import std.stdio;
 

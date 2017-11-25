@@ -1,11 +1,10 @@
 module kameloso.plugins.printer;
 
+import kameloso.plugins.common;
+import kameloso.ircstructs;
 import kameloso.common;
 import kameloso.constants;
-import kameloso.irc;
-import kameloso.plugins.common;
 
-import std.array : Appender;
 import std.stdio;
 
 private:

@@ -4,7 +4,6 @@ import kameloso.common : logger, interruptibleSleep;
 import kameloso.constants;
 
 import core.time : seconds;
-import std.socket;
 import std.stdio;
 
 

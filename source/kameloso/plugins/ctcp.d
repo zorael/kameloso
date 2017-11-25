@@ -1,9 +1,9 @@
 module kameloso.plugins.ctcp;
 
-import kameloso.common;
-import kameloso.constants;
-import kameloso.irc;
 import kameloso.plugins.common;
+import kameloso.ircstructs;
+import kameloso.common : ThreadMessage;
+import kameloso.constants : IRCControlCharacter;
 
 import std.stdio;
 

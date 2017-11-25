@@ -6,7 +6,7 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins;
 
-import std.concurrency;
+import std.concurrency : Generator, thisTid;
 import std.datetime : SysTime;
 import std.stdio;
 import std.typecons : Flag, No, Yes;
