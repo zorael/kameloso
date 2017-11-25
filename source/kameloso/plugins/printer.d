@@ -100,18 +100,18 @@ void onAnyEvent(const IRCEvent origEvent)
  +/
 void put(Sink, Args...)(auto ref Sink sink, Args args)
 {
-    static import std.range;
+    import std.range : put;
     import std.conv : to;
 
     foreach (arg; args)
     {
         static if (!__traits(compiles, std.range.put(sink, typeof(arg).init)))
         {
-            std.range.put(sink, arg.to!string);
+            put(sink, arg.to!string);
         }
         else
         {
-            std.range.put(sink, arg);
+            put(sink, arg);
         }
     }
 }
