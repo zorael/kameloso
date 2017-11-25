@@ -25,7 +25,7 @@ struct ConnectSettings
 }
 
 /// All Connect plugin settings gathered
-@Configurable ConnectSettings connectSettings;
+@Settings ConnectSettings connectSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

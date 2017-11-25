@@ -30,7 +30,7 @@ struct PrinterSettings
 }
 
 /// All Printer plugin options gathered
-@Configurable PrinterSettings printerSettings;
+@Settings PrinterSettings printerSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;

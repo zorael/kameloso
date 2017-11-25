@@ -13,7 +13,7 @@ struct TwitchSettings
     bool twitchColours = true;
 }
 
-@Configurable TwitchSettings twitchSettings;
+@Settings TwitchSettings twitchSettings;
 
 IRCPluginState state;
 

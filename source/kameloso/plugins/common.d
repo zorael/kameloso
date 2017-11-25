@@ -261,9 +261,14 @@ struct Terminate;
 /// handling events, iterating through the module
 struct Verbose;
 
-/// Flag denoting that a variable is to be considered configurable and should be
+/// Flag denoting that a variable is to be considered settings and should be
 /// saved in the configuration file.
-struct Configurable;
+struct Settings;
+
+/// Alias to allow the old annotation to  still work
+deprecated("Use @Settings instead of @Configurable. " ~
+           "This alias will eventually be removed.")
+alias Configurable = Settings;
 
 
 // filterUser
@@ -464,7 +469,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
      +  Loads configuration from disk.
      +
      +  This does not proxy a cal but merely loads configuration from disk for
-     +  all variables annotated Configurable.
+     +  all variables annotated Settings.
      +/
     void loadConfig(const string configFile)
     {
@@ -472,7 +477,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
         import std.traits;
 
-        foreach (ref symbol; getSymbolsByUDA!(thisModule, Configurable))
+        foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
         {
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
@@ -510,7 +515,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
         import std.traits;
 
-        foreach (ref symbol; getSymbolsByUDA!(thisModule, Configurable))
+        foreach (symbol; getSymbolsByUDA!(thisModule, Settings))
         {
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
