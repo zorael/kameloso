@@ -4,9 +4,9 @@ A command-line IRC bot.
 
 **kameloso** sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not (yet) respond to keyboard input, though text can be sent manually by other means.
 
-It provides a framework that works with all* IRC server networks. Featues are added as plugins written as [D](https://www.dlang.org) modules.
+Features are added as plugins written as [D](https://www.dlang.org) modules.
 
-The IRC protocol is riddled with inconsistencies, so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
+It includes a framework that works with "all" server networks. The IRC protocol is riddled with [inconsistencies](http://defs.ircdocs.horse/defs/numerics.html), so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
 Networks without [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
@@ -19,7 +19,7 @@ Current functionality includes:
 * storing, loading and printing quotes from users
 * saving notes to offline users that get played back when they come online
 * looking up titles of pasted web URLs
-* sed-replacement of the last message sent (`s/this/that/` substitution)
+* `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
@@ -104,7 +104,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
 * ready for channel awareness
-* more command-line flags; "list all options"?
+* more command-line flags
 
 ## Built With
 
