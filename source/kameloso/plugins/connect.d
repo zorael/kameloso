@@ -14,18 +14,19 @@ import std.stdio;
 private:
 
 
-struct ConnectOptions
+struct ConnectSettings
 {
     bool sasl = true;
     bool joinOnInvite = false;
     bool exitOnSASLFailure = false;
+    bool exitOnSASLFailureeeeeeeeeeeeeeeeeeeeeee = false;
 
     @Separator(";")
     string[] sendAfterConnect;
 }
 
-/// All Connect plugin options gathered
-@Configurable ConnectOptions connectOptions;
+/// All Connect plugin settings gathered
+@Configurable ConnectSettings connectSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -310,8 +311,8 @@ void onEndOfMotd(const IRCEvent event)
         joinChannels();
     }
 
-    // Run commands defined in the options
-    foreach (immutable line; connectOptions.sendAfterConnect)
+    // Run commands defined in the settings
+    foreach (immutable line; connectSettings.sendAfterConnect)
     {
         import std.string : strip;
 
@@ -373,7 +374,7 @@ void onNickInUse()
 @(IRCEvent.Type.INVITE)
 void onInvite(const IRCEvent event)
 {
-    if (!connectOptions.joinOnInvite)
+    if (!connectSettings.joinOnInvite)
     {
         logger.log("Invited, but joinOnInvite is false so not joining");
         return;
@@ -412,7 +413,7 @@ void onRegistrationEvent(const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!connectOptions.sasl || !bot.authPassword.length) continue;
+                if (!connectSettings.sasl || !bot.authPassword.length) continue;
                 mainThread.send(ThreadMessage.Sendline(), "CAP REQ :sasl");
                 tryingSASL = true;
                 break;
@@ -562,7 +563,7 @@ void onSASLFailure()
 {
     with (state)
     {
-        if (connectOptions.exitOnSASLFailure)
+        if (connectSettings.exitOnSASLFailure)
         {
             mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
             return;

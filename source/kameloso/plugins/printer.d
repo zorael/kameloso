@@ -12,7 +12,7 @@ private:
 
 
 /// All Printer plugin options gathered in a struct
-struct PrinterOptions
+struct PrinterSettings
 {
     version(Windows)
     {
@@ -30,7 +30,7 @@ struct PrinterOptions
 }
 
 /// All Printer plugin options gathered
-@Configurable PrinterOptions printerOptions;
+@Configurable PrinterSettings printerSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -77,7 +77,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_ENDOFWHO:
     // case CAP:
         // These event types are too spammy; ignore
-        if (!printerOptions.filterVerbose) goto default;
+        if (!printerSettings.filterVerbose) goto default;
         break;
 
     case PING:
@@ -126,7 +126,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  By default output is in colours, unless on Windows. The behaviour is stored
- +  and read from the PrinterOptions struct.
+ +  and read from the printerSettings struct.
  +
  +  Params:
  +      sink = output range to format the IRCEvent into
@@ -148,7 +148,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     with (BashForeground)
     with (event)
     with (event.sender)
-    if (printerOptions.monochrome)
+    if (printerSettings.monochrome)
     {
         import std.algorithm : equal;
         import std.uni : asLowerCase;
@@ -190,7 +190,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             //put(sink," [", badge, "]");
             import std.string : toUpper;
 
-            immutable badgestring = printerOptions.badgesInCaps ?
+            immutable badgestring = printerSettings.badgesInCaps ?
                 badge.toUpper : badge;
 
             put(sink, " [", badgestring, ']');
@@ -233,7 +233,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             static BashForeground colourByHash(const string nickname)
             {
-                if (printerOptions.randomNickColours)
+                if (printerSettings.randomNickColours)
                 {
                     import std.traits : EnumMembers;
 
@@ -251,7 +251,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             void colourSenderTruecolour()
             {
-                if (event.colour.length && printerOptions.truecolour)
+                if (event.colour.length && printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
 
@@ -329,7 +329,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 sink.colour(white);
                 //sink.formattedWrite(" [%s]", enumToString(role));
 
-                immutable badgestring = printerOptions.badgesInCaps ?
+                immutable badgestring = printerSettings.badgesInCaps ?
                     badge.toUpper : badge;
 
                 put(sink, " [", badgestring, ']');
@@ -418,7 +418,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             logger.warning("bot was not built with colour support yet " ~
                 "monochrome is off; forcing monochrome.");
 
-            printerOptions.monochrome = true;
+            printerSettings.monochrome = true;
             return formatMessage(sink, event);
         }
     }
@@ -697,7 +697,7 @@ unittest
 
 void present()
 {
-    printObject(printerOptions);
+    printObject(printerSettings);
 }
 
 

@@ -8,12 +8,12 @@ import std.stdio;
 
 private:
 
-struct TwitchOptions
+struct TwitchSettings
 {
     bool twitchColours = true;
 }
 
-@Configurable TwitchOptions twitchOptions;
+@Configurable TwitchSettings twitchSettings;
 
 IRCPluginState state;
 

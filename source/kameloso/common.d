@@ -244,13 +244,13 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
         {
             sink.formattedWrite("%s-- %s\n", white.colour, Unqual!Thing
                 .stringof
-                .stripSuffix("Options"));
+                .stripSuffix("Settings"));
         }
         else
         {
             sink.formattedWrite("-- %s\n", Unqual!Thing
                 .stringof
-                .stripSuffix("Options"));
+                .stripSuffix("Settings"));
         }
 
         foreach (immutable i, member; thing.tupleof)
@@ -373,9 +373,9 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 `;
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
-    // Adding Options does nothing
-    alias StructNameOptions = StructName;
-    StructNameOptions so;
+    // Adding Settings does nothing
+    alias StructNameSettings = StructName;
+    StructNameSettings so;
     sink.clear();
     sink.formatObjectsImpl!(No.coloured)(so);
 
@@ -419,10 +419,10 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     assert(sink.data.indexOf("double_") != -1);
     assert(sink.data.indexOf("99.9") != -1);
 
-    // Adding Options does nothing
-    alias StructName2Options = StructName2;
+    // Adding Settings does nothing
+    alias StructName2Settings = StructName2;
     immutable sinkCopy = sink.data.idup;
-    StructName2Options s2o;
+    StructName2Settings s2o;
 
     sink.clear();
     sink.formatObjectsImpl!(Yes.coloured)(s2o);

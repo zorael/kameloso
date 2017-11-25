@@ -13,7 +13,7 @@ import std.stdio;
 
 private:
 
-struct ChatbotOptions
+struct ChatbotSettings
 {
     string quotesFile = "quotes.json";
     bool eightball = true;
@@ -21,8 +21,8 @@ struct ChatbotOptions
     bool say = true;
 }
 
-/// All ChatBot plugin options gathered
-@Configurable ChatbotOptions chatbotOptions;
+/// All ChatBot plugin settings gathered
+@Configurable ChatbotSettings chatbotSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -171,7 +171,7 @@ JSONValue loadQuotes(const string filename)
 @Prefix(NickPolicy.required, "säg")
 void onCommandSay(const IRCEvent event)
 {
-    if (!chatbotOptions.say) return;
+    if (!chatbotSettings.say) return;
 
     import std.format : format;
 
@@ -205,7 +205,7 @@ void onCommandSay(const IRCEvent event)
 @Prefix(NickPolicy.required, "8ball")
 void onCommand8ball(const IRCEvent event)
 {
-    if (!chatbotOptions.eightball) return;
+    if (!chatbotSettings.eightball) return;
 
     import std.format : format;
     import std.random : uniform;
@@ -259,7 +259,7 @@ void onCommand8ball(const IRCEvent event)
 @Prefix(NickPolicy.required, "quote")
 void onCommandQuote(const IRCEvent event)
 {
-    if (!chatbotOptions.quotes) return;
+    if (!chatbotSettings.quotes) return;
 
     import std.format : format;
     import std.string : indexOf, strip;
@@ -306,7 +306,7 @@ void onCommandQuote(const IRCEvent event)
 @Prefix(NickPolicy.required, "addquote")
 void onCommanAdddQuote(const IRCEvent event)
 {
-    if (!chatbotOptions.quotes) return;
+    if (!chatbotSettings.quotes) return;
 
     import std.format : format;
 
@@ -316,7 +316,7 @@ void onCommanAdddQuote(const IRCEvent event)
     if (!nickname.length || !slice.length) return;
 
     nickname.addQuote(slice);
-    saveQuotes(chatbotOptions.quotesFile);
+    saveQuotes(chatbotSettings.quotesFile);
 
     immutable target = (event.channel.length) ?
         event.channel : event.sender.nickname;
@@ -339,7 +339,7 @@ void onCommanAdddQuote(const IRCEvent event)
 @Prefix(NickPolicy.required, "printquotes")
 void onCommandPrintQuotes()
 {
-    if (!chatbotOptions.quotes) return;
+    if (!chatbotSettings.quotes) return;
 
     writeln(quotes.toPrettyString);
 }
@@ -358,10 +358,10 @@ void onCommandPrintQuotes()
 @Prefix(NickPolicy.required, "reloadquotes")
 void onCommandReloadQuotes()
 {
-    if (!chatbotOptions.quotes) return;
+    if (!chatbotSettings.quotes) return;
 
     logger.log("Reloading quotes");
-    quotes = loadQuotes(chatbotOptions.quotesFile);
+    quotes = loadQuotes(chatbotSettings.quotesFile);
 }
 
 
@@ -372,7 +372,7 @@ void onCommandReloadQuotes()
 void start()
 {
     logger.log("Initialising quotes ...");
-    quotes = loadQuotes(chatbotOptions.quotesFile);
+    quotes = loadQuotes(chatbotSettings.quotesFile);
 }
 
 

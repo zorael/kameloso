@@ -485,7 +485,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     // present
     /++
-     +  Print some information to the screen, usually options.
+     +  Print some information to the screen, usually settings.
      +/
     void present()
     {
@@ -501,7 +501,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
      +  configuration file.
      +
      +  Params:
-     +      ref sink = Appender to fill with plugin-specific options text.
+     +      ref sink = Appender to fill with plugin-specific settings text.
      +/
     import std.array : Appender;
     void addToConfig(ref Appender!string sink)

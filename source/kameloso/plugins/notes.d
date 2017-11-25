@@ -12,13 +12,13 @@ import std.stdio;
 
 private:
 
-struct NotesOptions
+struct NotesSettings
 {
     string notesFile = "notes.json";
 }
 
-/// All Notes plugin options gathered
-@Configurable NotesOptions notesOptions;
+/// All Notes plugin settings gathered
+@Configurable NotesSettings notesSettings;
 
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
@@ -148,7 +148,7 @@ void onCommandAddNote(const IRCEvent event)
     state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :Note added".format(event.channel));
 
-    saveNotes(notesOptions.notesFile);
+    saveNotes(notesSettings.notesFile);
 }
 
 
@@ -181,7 +181,7 @@ void onCommandPrintNotes()
 void onCommandReloadQuotes()
 {
     logger.log("Reloading notes");
-    notes = loadNotes(notesOptions.notesFile);
+    notes = loadNotes(notesSettings.notesFile);
 }
 
 
@@ -295,7 +295,7 @@ void clearNotes(const string nickname)
         {
             logger.log("Clearing stored notes for ", nickname);
             notes.object.remove(nickname);
-            saveNotes(notesOptions.notesFile);
+            saveNotes(notesSettings.notesFile);
         }
     }
     catch (const Exception e)
@@ -408,13 +408,13 @@ JSONValue loadNotes(const string filename)
 void start()
 {
     logger.log("Initialising notes ...");
-    notes = loadNotes(notesOptions.notesFile);
+    notes = loadNotes(notesSettings.notesFile);
 }
 
 
 /*void present()
 {
-    printObject(notesOptions);
+    printObject(notesSettings);
 }*/
 
 

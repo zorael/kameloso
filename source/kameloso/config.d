@@ -88,7 +88,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
         if (sink.data.length) sink.put(newline);
     }
 
-    sink.formattedWrite("[%s]%s", Thing.stringof.stripSuffix("Options"), newline);
+    sink.formattedWrite("[%s]%s", Thing.stringof.stripSuffix("Settings"), newline);
 
     foreach (immutable i, member; thing.tupleof)
     {
@@ -161,7 +161,7 @@ unittest
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
-    struct FooOptions
+    struct FooSettings
     {
         string fooasdf = "foo 1";
         string bar = "foo 1";
@@ -169,7 +169,7 @@ unittest
         double pi = 3.14159;
     }
 
-    struct BarOptions
+    struct BarSettings
     {
         string foofdsa = "foo 2";
         string bar = "bar 2";
@@ -188,7 +188,7 @@ pi 3.14159
     Appender!string fooSink;
     fooSink.reserve(64);
 
-    fooSink.serialise(FooOptions.init);
+    fooSink.serialise(FooSettings.init);
     assert(fooSink.data == fooSerialised);
 
     enum barSerialised =
@@ -202,13 +202,13 @@ pipyon 3
     Appender!string barSink;
     barSink.reserve(64);
 
-    barSink.serialise(BarOptions.init);
+    barSink.serialise(BarSettings.init);
     assert(barSink.data == barSerialised);
 
     // try two at once
     Appender!string bothSink;
     bothSink.reserve(128);
-    bothSink.serialise(FooOptions.init, BarOptions.init);
+    bothSink.serialise(FooSettings.init, BarSettings.init);
     assert(bothSink.data == fooSink.data ~ newline ~ barSink.data);
 }
 
@@ -387,7 +387,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             {
                 alias T = Unqual!(typeof(thing));
 
-                if (section != T.stringof.stripSuffix("Options")) continue;
+                if (section != T.stringof.stripSuffix("Settings")) continue;
 
                 switch (hits["entry"])
                 {
