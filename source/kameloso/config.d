@@ -9,6 +9,7 @@ import std.typecons : Flag, No, Yes;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
+    import std.ascii : newline;
     import std.file : exists, isFile, removeFile = remove;
 
     if (filename.exists && filename.isFile)
@@ -74,6 +75,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
 {
     import kameloso.string : stripSuffix;
     import std.algorithm : joiner;
+    import std.ascii : newline;
     import std.array : array;
     import std.conv : to;
     import std.format : format, formattedWrite;
@@ -158,6 +160,7 @@ unittest
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
+    import std.ascii : newline;
 
     struct FooSettings
     {
@@ -425,6 +428,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 unittest
 {
     import std.algorithm : splitter;
+    import std.ascii : newline;
     import std.conv : text;
 
     struct Foo
@@ -527,6 +531,7 @@ string justifiedConfigurationText(const string origLines)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
+    import std.ascii : newline;
     import std.regex : ctRegex, matchFirst;
     import std.string : strip;
 
@@ -627,6 +632,7 @@ string justifiedConfigurationText(const string origLines)
 unittest
 {
     import std.algorithm.iteration : splitter;
+    import std.array : Appender;
     import std.conv : text;
     import kameloso.common : Separator;
 

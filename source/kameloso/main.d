@@ -2,7 +2,6 @@ module kameloso.main;
 
 import kameloso.common;
 import kameloso.connection;
-import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins;
 
@@ -137,6 +136,7 @@ Flag!"quit" checkMessages()
         // Use the bool of whether anything was received at all to decide if
         // the loop should continue. That way we neatly exhaust the mailbox
         // before returning.
+        import std.concurrency : receiveTimeout, Variant;
 
         // BUG: except if quit is true, then it returns without exhausting
         receivedSomething = receiveTimeout(0.seconds,

@@ -31,6 +31,7 @@ IRCPluginState state;
 @(IRCEvent.Type.CTCP_USERINFO)
 void onCTCPs(const IRCEvent event)
 {
+    import kameloso.common : KamelosoInfo;
     import std.concurrency : send;
     import std.format : format;
 

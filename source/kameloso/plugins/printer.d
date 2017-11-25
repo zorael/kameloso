@@ -135,9 +135,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
     import kameloso.string : enumToString, beginsWith;
 
-    import std.datetime;
-    import std.format : formattedWrite;
-    import std.string : toLower;
+    import std.datetime : DateTime, SysTime;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -150,6 +148,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     if (printerSettings.monochrome)
     {
         import std.algorithm : equal;
+        import std.format : formattedWrite;
         import std.uni : asLowerCase;
 
         //sink.formattedWrite("[%s] [%s] ", timestamp, enumToString(type));
@@ -392,6 +391,8 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (num > 0)
             {
+                import std.format : formattedWrite;
+
                 sink.colour(DefaultColour.num);
                 //sink.formattedWrite(" (#%d)", num);
                 //put(sink, " (#", num, ')');
@@ -531,6 +532,7 @@ void mapColours(ref IRCEvent event)
 
     foreach (hit; originalContent.matchAll(engine))
     {
+        import std.array : Appender;
         import std.conv : to;
 
         Appender!string sink;

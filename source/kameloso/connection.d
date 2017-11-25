@@ -17,6 +17,8 @@ import std.stdio;
 struct Connection
 {
 private:
+    import std.socket;
+
     /// Real IPv4 and IPv6 sockets to connect through.
     Socket socket4, socket6;
 
@@ -237,10 +239,10 @@ public:
  +/
 void listenFiber(Connection conn, ref bool abort)
 {
-    import core.stdc.string : memmove;
     import std.algorithm.searching : countUntil;
     import std.concurrency : yield;
     import std.datetime : Clock, SysTime;
+    import std.socket : Socket, lastSocketError;
 
     ubyte[BufferSize.socketReceive*2] buffer;
     SysTime timeLastReceived = Clock.currTime;
@@ -331,7 +333,7 @@ void listenFiber(Connection conn, ref bool abort)
         start = (end-pos);
 
         // logger.logf("REMNANT:|%s|", cast(string)buffer[pos..end]);
-
+        import core.stdc.string : memmove;
         memmove(buffer.ptr, (buffer.ptr + pos), (ubyte.sizeof * start));
     }
 }

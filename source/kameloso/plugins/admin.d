@@ -90,7 +90,9 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
 
 unittest
 {
+    import kameloso.irc;
     import std.array : Appender;
+
     Appender!string sink;
     sink.reserve(512);
 
@@ -194,7 +196,6 @@ with (bot)
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
-    import std.array : Appender;
     import std.format : formattedWrite;
 
     sink.put("{\n");
@@ -265,6 +266,8 @@ unittest
 @Prefix(NickPolicy.required, "users")
 void onCommandShowUsers()
 {
+    import kameloso.common : printObject;
+
     logger.trace("Printing Admin's users");
 
     printObject(state.bot);
@@ -346,6 +349,7 @@ void onCommandQuit(const IRCEvent event)
 @Prefix(NickPolicy.required, "addhome")
 void onCommandAddHome(const IRCEvent event)
 {
+    import kameloso.irc : isValidChannel;
     import std.algorithm.searching : canFind;
     import std.string : strip;
 
@@ -384,6 +388,7 @@ void onCommandAddHome(const IRCEvent event)
 @Prefix(NickPolicy.required, "delhome")
 void onCommandDelHome(const IRCEvent event)
 {
+    import kameloso.irc : isValidChannel;
     import std.algorithm : countUntil, remove;
     import std.string : strip;
 
@@ -511,6 +516,7 @@ void onCommandDelFriend(const IRCEvent event)
 @Prefix(NickPolicy.required, "resetterm")
 void onCommandResetTerminal()
 {
+    import kameloso.constants : TerminalToken;
     write(TerminalToken.reset);
 }
 

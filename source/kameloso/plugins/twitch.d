@@ -51,6 +51,7 @@ void postprocess(ref IRCEvent event)
  +/
 void parseTwitchTags(ref IRCEvent event)
 {
+    import kameloso.common : logger;
     import kameloso.string : nom;
     import std.algorithm.iteration : splitter;
 

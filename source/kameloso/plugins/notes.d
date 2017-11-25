@@ -93,6 +93,7 @@ void onJoin(const IRCEvent event)
 @(IRCEvent.Type.RPL_NAMREPLY)
 void onNames(const IRCEvent event)
 {
+    import kameloso.irc : stripModeSign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
     import std.datetime : Clock;
@@ -133,7 +134,6 @@ void onNames(const IRCEvent event)
 void onCommandAddNote(const IRCEvent event)
 {
     import std.format : format, formattedRead;
-    import std.string : strip;
 
     string nickname, line;
     // formattedRead advances a slice so we need a mutable copy of event.content
@@ -197,7 +197,7 @@ void onCommandReloadQuotes()
 @Prefix(NickPolicy.required, "fakejoin")
 void onCommandFakejoin(const IRCEvent event)
 {
-    import kameloso.string;
+    import kameloso.string : nom;
     import std.string : indexOf;
 
     logger.info("Faking an event");
@@ -233,7 +233,7 @@ void onCommandFakejoin(const IRCEvent event)
  +/
 auto getNotes(const string nickname)
 {
-    import std.datetime : Clock, SysTime;
+    import std.datetime : SysTime;
     import std.json : JSON_TYPE;
 
     struct Note

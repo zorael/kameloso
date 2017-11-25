@@ -174,6 +174,7 @@ void onMessage(const IRCEvent event)
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
 
+                import kameloso.common : ThreadMessage;
                 state.mainThread.send(ThreadMessage.Sendline(),
                     "PRIVMSG %s :%s | %s"
                     .format(event.channel, event.sender.nickname, result));

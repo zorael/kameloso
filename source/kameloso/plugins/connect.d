@@ -13,6 +13,8 @@ private:
 
 struct ConnectSettings
 {
+    import kameloso.common : Separator;
+
     bool sasl = true;
     bool joinOnInvite = false;
     bool exitOnSASLFailure = false;
@@ -349,6 +351,8 @@ void onAuthEnd()
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
 {
+    import kameloso.constants : altNickSign;
+
     with (state)
     {
         bot.nickname ~= altNickSign;

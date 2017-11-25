@@ -258,8 +258,9 @@ void onCommandQuote(const IRCEvent event)
 {
     if (!chatbotSettings.quotes) return;
 
+    import kameloso.irc : isValidNickname, stripModeSign;
     import std.format : format;
-    import std.string : indexOf, strip;
+    import std.string : strip;
 
     // stripModeSign to allow for quotes from @nickname and +dudebro
     immutable nickname = event.content.strip.stripModeSign();
@@ -305,6 +306,8 @@ void onCommanAdddQuote(const IRCEvent event)
 {
     if (!chatbotSettings.quotes) return;
 
+    import kameloso.irc : stripModeSign;
+    import kameloso.string : nom;
     import std.format : format;
 
     string slice = event.content;  // need mutable

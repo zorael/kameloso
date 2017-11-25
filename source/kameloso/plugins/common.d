@@ -318,6 +318,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginBasics(string module_ = __MODULE__)
 {
+    import kameloso.common : BaseSettings;
+
     // onEvent
     /++
      +  Pass on the supplied IRCEvent to the top-level .onEvent.
@@ -474,7 +476,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits;
+        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
 
         foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
         {
@@ -507,13 +509,15 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits;
+        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
 
         foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
         {
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
             {
+                import kameloso.common : printObject;
+
                 // FIXME: Hardcoded value
                 printObject!17(symbol);
             }
@@ -533,7 +537,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits;
+        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
 
         foreach (symbol; getSymbolsByUDA!(thisModule, Settings))
         {
@@ -597,7 +601,7 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits;
+        import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
 
         funloop:
         foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
@@ -849,6 +853,7 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
                             case fail:
                                 static if (verbose)
                                 {
+                                    import kameloso.common : logger;
                                     logger.warningf("%s: %s failed privilege check; continue",
                                         name, mutEvent.sender.nickname);
                                 }
@@ -882,6 +887,7 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                     catch (const Exception e)
                     {
+                        import kameloso.common : logger;
                         logger.error(name, " ", e.msg);
                     }
 
@@ -1039,6 +1045,8 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (const IRCUser newUser)
     {
+        import kameloso.common : meldInto;
+
         if (!newUser.nickname.length || (newUser.nickname == state.bot.nickname))
         {
             return;
@@ -1071,7 +1079,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
-        import std.traits : Parameters;
 
         const user = nickname in state.users;
 
