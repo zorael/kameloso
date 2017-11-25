@@ -641,6 +641,7 @@ unittest
         float someFloat = 3.14f;
         double someDouble = 99.9;
         Bar someBars = Bar.oorgle;
+        string harbl;
 
         @Separator(",")
         {
@@ -673,6 +674,7 @@ someBool true
 someFloat 3.14
 someDouble 99.9
 someBars oorgle
+#harbl
 intArray 1,2,-3,4,5
 stringArrayy hello,world,!
 boolArray true,false,true
@@ -695,6 +697,7 @@ someBool        true
 someFloat       3.14
 someDouble      99.9
 someBars        oorgle
+#harbl
 intArray        1,2,-3,4,5
 stringArrayy    hello,world,!
 boolArray       true,false,true
