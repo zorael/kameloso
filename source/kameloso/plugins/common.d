@@ -1,6 +1,6 @@
 module kameloso.plugins.common;
 
-import kameloso.common : Settings;
+import kameloso.common : BaseSettings;
 import kameloso.irc;
 
 import std.meta : AliasSeq;
@@ -32,7 +32,7 @@ interface IRCPlugin
     void postprocess(ref IRCEvent);
 
     /// Executed on update to the internal Settings struct
-    void newSettings(Settings);
+    void newSettings(BaseSettings);
 
     /// Executed upon new IRC event parsed from the server
     void onEvent(const IRCEvent);
@@ -204,7 +204,7 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     IRCBot bot;
-    Settings settings;
+    BaseSettings settings;
 
     /// Thread ID to the main thread
     Tid mainThread;
@@ -425,14 +425,14 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
 
     // newSettings
     /++
-     +  Inherits a new Settings copy.
+     +  Inherits a new BaseSettings copy.
      +
      +  Invoked on all plugins when settings have been changed.
      +
      +  Params:
      +      settings = new settings
      +/
-    void newSettings(Settings settings)
+    void newSettings(BaseSettings settings)
     {
         static if (__traits(compiles, .state.settings = settings))
         {
