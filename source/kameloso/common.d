@@ -471,17 +471,23 @@ unittest
     {
         string veryLongName;
         int i;
+        @Unconfigurable string veryVeryVeryLongNameThatIsInvalid;
+        @Hidden float likewiseWayLongerButInvalid;
     }
 
     struct Bar
     {
         string evenLongerName;
         float f;
+
+        @Unconfigurable
+        @Hidden
+        long looooooooooooooooooooooong;
     }
 
-    assert(longestMemberName!Foo == "veryLongName");
-    assert(longestMemberName!Bar == "evenLongerName");
-    assert(longestMemberName!(Foo, Bar) == "evenLongerName");
+    static assert(longestMemberName!Foo == "veryLongName");
+    static assert(longestMemberName!Bar == "evenLongerName");
+    static assert(longestMemberName!(Foo, Bar) == "evenLongerName");
 }
 
 
