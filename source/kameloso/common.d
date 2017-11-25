@@ -436,6 +436,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
  +      Things = the types to examine and count name lengths
  +/
 template longestMemberName(Things...)
+if (Things.length > 0)
 {
     enum longestMemberName = ()
     {
@@ -448,8 +449,9 @@ template longestMemberName(Things...)
             foreach (name; __traits(allMembers, T))
             {
                 static if (!isType!(__traits(getMember, T, name)) &&
-                           isConfigurableVariable!(__traits(getMember, T, name)) &&
-                           !hasUDA!(__traits(getMember, T, name), Hidden))
+                    isConfigurableVariable!(__traits(getMember, T, name)) &&
+                    !hasUDA!(__traits(getMember, T, name), Hidden) &&
+                    !hasUDA!(__traits(getMember, T, name), Unconfigurable))
                 {
                     if (name.length > longest.length)
                     {
