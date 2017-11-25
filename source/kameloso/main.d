@@ -179,6 +179,7 @@ Flag!"quit" handleGetopt(string[] args)
 
     bool shouldWriteConfig;
     bool shouldShowVersion;
+    bool shouldShowSettings;
 
     arraySep = ",";
 
@@ -201,6 +202,7 @@ Flag!"quit" handleGetopt(string[] args)
                         " (ditto)", &bot.channels,
         "s|server",      "Server address", &bot.server.address,
         "P|port",        "Server port", &bot.server.port,
+        "settings",      "Show all plugins' settings", &shouldShowSettings,
         "c|config",      "Read configuration from file (default %s)"
                             .format(BaseSettings.init.configFile), &settings.configFile,
         "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
@@ -246,6 +248,20 @@ Flag!"quit" handleGetopt(string[] args)
         initPlugins();
 
         writeConfigurationFile(settings.configFile);
+        return Yes.quit;
+    }
+
+    if (shouldShowSettings)
+    {
+        printVersionInfo(BashForeground.white);
+        writeln();
+
+        // FIXME: Hardcoded value
+        printObjects!19(bot, bot.server, settings);
+
+        initPlugins();
+        foreach (plugin; plugins) plugin.printSettings();
+
         return Yes.quit;
     }
 

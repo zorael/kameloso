@@ -52,6 +52,9 @@ interface IRCPlugin
     /// Executed when we want a plugin to print its settings and such
     void present();
 
+    /// Executed when we want a plugin to print its Settings struct
+    void printSettings();
+
     /// Executed during shutdown or plugin restart
     void teardown();
 }
@@ -497,6 +500,27 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         static if (__traits(compiles, .present()))
         {
             .present();
+        }
+    }
+
+    // printSettings
+    /++
+     +  FIXME
+     +/
+    void printSettings()
+    {
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import std.traits;
+
+        foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
+        {
+            static if (!isType!symbol && !isSomeFunction!symbol &&
+                !__traits(isTemplate, symbol))
+            {
+                // FIXME: Hardcoded value
+                printObject!19(symbol);
+            }
         }
     }
 
