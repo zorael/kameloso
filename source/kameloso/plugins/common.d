@@ -91,12 +91,9 @@ final class WHOISRequestImpl(F) : WHOISRequest
     /// Call the passed function/delegate pointer, optionally with the IRCEvent
     override void trigger()
     {
-        if (!fn)
-        {
-            import std.stdio : writeln;
-            writeln("null fn!");
-            return;
-        }
+        import std.traits : Parameters, Unqual;
+
+        assert((fn !is null), "null fn in WHOISRequestImpl!" ~ F.stringof);
 
         static if (Parameters!F.length && is(Unqual!(Parameters!F[0]) == IRCEvent))
         {
