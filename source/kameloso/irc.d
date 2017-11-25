@@ -495,12 +495,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case KICK:
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu KICK #flerrp kameloso^ :this is a reason
-        event.type = (event.target.nickname == bot.nickname) ? SELFKICK : KICK;
         //slice.formattedRead("%s %s :%s", event.channel, event.target, event.content);
         event.channel = slice.nom(' ');
         event.target.nickname = slice.nom(" :");
+        event.type = (event.target.nickname == bot.nickname) ? SELFKICK : KICK;
         event.content = slice;
-        if (event.type == SELFKICK) event.target.nickname = string.init;
         break;
 
     case INVITE:
@@ -2280,14 +2279,29 @@ unittest
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
      :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
      +/
-     immutable e24 = parser.toIRCEvent(":like.so 513 kameloso :To connect, type /QUOTE PONG 3705964477");
-     with (e24)
-     {
+    immutable e24 = parser.toIRCEvent(":like.so 513 kameloso :To connect, type /QUOTE PONG 3705964477");
+    with (e24)
+    {
         assert((sender.address == "like.so"), sender.address);
         assert((type == IRCEvent.Type.ERR_BADPING), type.to!string);
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "PONG 3705964477"), content);
-     }
+    }
+
+    {
+        parser.bot.nickname = "kameloso^";
+        immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: KICK #flerrp kameloso^ :kameloso^");
+
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFKICK), type.to!string);
+            assert((sender.nickname == "zorael"), sender.nickname);
+            assert((sender.ident == "~NaN"), sender.ident);
+            assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
+            assert((channel == "#flerrp"), channel);
+            assert((content == "kameloso^"), content);
+        }
+    }
 }
 
 
