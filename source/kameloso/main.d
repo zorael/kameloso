@@ -4,6 +4,7 @@ import kameloso.common;
 import kameloso.connection;
 import kameloso.irc;
 import kameloso.plugins;
+import kameloso.constants;
 
 import std.concurrency : Generator, thisTid;
 import std.datetime : SysTime;
