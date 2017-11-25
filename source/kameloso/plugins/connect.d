@@ -37,12 +37,13 @@ bool serverPinged;
 /++
  +  Removes a channel from the list of joined channels.
  +
- +  Fires when the bot leaves a channel.
+ +  Fires when the bot leaves a channel, one way or another.
  +
  +  Params:
  +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.SELFPART)
+@(IRCEvent.Type.SELFKICK)
 void onSelfpart(const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
@@ -52,25 +53,27 @@ void onSelfpart(const IRCEvent event)
     {
         immutable index = bot.channels.countUntil(event.channel);
 
-        if (index == -1)
+        if (index != -1)
+        {
+            bot.channels = bot.channels.remove(index);
+            bot.updated = true;
+        }
+        else
         {
             immutable homeIndex = bot.homes.countUntil(event.channel);
 
-            if (homeIndex == -1)
+            if (homeIndex != -1)
+            {
+                logger.warning("Leaving a home...");
+                bot.homes = bot.homes.remove(homeIndex);
+                bot.updated = true;
+            }
+            else
             {
                 logger.warning("Tried to remove a channel that wasn't there: ",
                     event.channel);
             }
-            else
-            {
-                logger.warning("Leaving a home ...");
-            }
-
-            return;
         }
-
-        bot.channels = bot.channels.remove(index);
-        bot.updated = true;
     }
 }
 
