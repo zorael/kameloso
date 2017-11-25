@@ -54,6 +54,7 @@ void onCTCPs(const IRCEvent event)
             Query:     VERSION
             Response:  VERSION WeeChat 1.5-rc2 (git: v1.5-rc2-1-gc1441b1) (Apr 25 2016)
          */
+
         line = "VERSION kameloso:%s:linux".format(cast(string)KamelosoInfo.version_);
         break;
 

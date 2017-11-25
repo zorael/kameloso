@@ -74,6 +74,7 @@ void onSelfpart(const IRCEvent event)
     }
 }
 
+
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
@@ -81,6 +82,7 @@ void onSelfjoin(const IRCEvent event)
 
     state.mainThread.send(ThreadMessage.Sendline(), "WHO " ~ event.channel);
 }
+
 
 // joinChannels
 /++
@@ -194,6 +196,7 @@ void onPing(const IRCEvent event)
         }
     }
 }
+
 
 void tryAuth()
 {

@@ -124,7 +124,6 @@ void parseTwitchTags(ref IRCEvent event)
             // The moderator’s reason for the timeout or ban.
             // system-msg: The message printed in chat along with this notice.
             import kameloso.irc : decodeIRCv3String;
-
             event.content = decodeIRCv3String(value);
             break;
 

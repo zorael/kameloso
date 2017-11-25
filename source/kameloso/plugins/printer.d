@@ -134,7 +134,6 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
     import kameloso.string : enumToString, beginsWith;
-
     import std.datetime : DateTime, SysTime;
 
     immutable timestamp = (cast(DateTime)SysTime

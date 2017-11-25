@@ -594,7 +594,7 @@ string justifiedConfigurationText(const string origLines)
     {
         if (!line.length)
         {
-            // Don't adda a linebreak at the top of the file
+            // Don't add a linebreak at the top of the file
             if (justified.data.length) justified.put(newline);
             continue;
         }

@@ -403,7 +403,6 @@ unittest
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.string;
-
     import std.string : strip, stripLeft, stripRight;
 
     with (parser)
@@ -1131,6 +1130,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         logger.warning("------------------------------------");
         writeln();
     }
+
     if (event.target.nickname == parser.bot.nickname)
     {
         with (IRCEvent.Type)
@@ -1140,7 +1140,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         case CHANMODE:
         case RPL_WELCOME:
         case QUERY:
-        case SELFQUERY:
+        case SELFQUERY:  // bot.nickname is *sender* though, but still
         case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
@@ -1424,7 +1424,6 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.string : toEnum;
-
     import std.algorithm.iteration : splitter;
     import std.conv : to;
     import std.string : toLower;
@@ -1706,7 +1705,6 @@ string decodeIRCv3String(const string line)
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 {
     import kameloso.string : sharedDomains;
-
     import std.algorithm.searching : endsWith;
     import std.string : toLower;
 
