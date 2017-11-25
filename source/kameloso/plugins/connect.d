@@ -19,7 +19,6 @@ struct ConnectSettings
     bool sasl = true;
     bool joinOnInvite = false;
     bool exitOnSASLFailure = false;
-    bool exitOnSASLFailureeeeeeeeeeeeeeeeeeeeeee = false;
 
     @Separator(";")
     string[] sendAfterConnect;
