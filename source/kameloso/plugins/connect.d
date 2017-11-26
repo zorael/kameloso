@@ -81,7 +81,7 @@ void onSelfpart(const IRCEvent event)
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
-    if (state.bot.server.network == "Twitch") return;
+    if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
     state.mainThread.send(ThreadMessage.Sendline(), "WHO " ~ event.channel);
 }
@@ -610,7 +610,7 @@ void register()
         }
         else
         {
-            if (bot.server.network == "Twitch")
+            if (bot.server.daemon == IRCServer.Daemon.twitch)
             {
                 logger.warning("You *need* a password to join this server");
                 mainThread.send(ThreadMessage.Quit());
