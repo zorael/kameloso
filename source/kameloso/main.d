@@ -107,8 +107,6 @@ Flag!"quit" checkMessages()
         logger.trace("--> QUIT :", line);
         conn.sendline("QUIT :", line);
 
-        teardownPlugins();
-
         quit = Yes.quit;
     }
 
