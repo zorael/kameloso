@@ -306,21 +306,24 @@ void tryAuth()
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(const IRCEvent event)
 {
-    if (state.bot.authPassword.length && !state.bot.finishedAuth) tryAuth();
-
-    if (state.bot.finishedAuth)
+    with (state)
     {
-        // tryAuth finished early with an unsuccessful login
-        logger.log("Joining channels");
-        joinChannels();
-    }
+        if (bot.authPassword.length && !bot.finishedAuth) tryAuth();
 
-    // Run commands defined in the settings
-    foreach (immutable line; connectSettings.sendAfterConnect)
-    {
-        import std.string : strip;
+        if (bot.finishedAuth || bot.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // tryAuth finished early with an unsuccessful login
+            logger.log("Joining channels");
+            joinChannels();
+        }
 
-        state.mainThread.send(ThreadMessage.Sendline(), line.strip());
+        // Run commands defined in the settings
+        foreach (immutable line; connectSettings.sendAfterConnect)
+        {
+            import std.string : strip;
+
+            mainThread.send(ThreadMessage.Sendline(), line.strip());
+        }
     }
 }
 
