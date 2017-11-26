@@ -1693,9 +1693,44 @@ string decodeIRCv3String(const string line)
 {
     import std.regex : ctRegex, replaceAll;
 
-    static spaces = ctRegex!`\\s`;
+    /++
+     +  http://ircv3.net/specs/core/message-tags-3.2.html
+     +
+     +  If a lone \ exists at the end of an escaped value (with no escape
+     +  character following it), then there SHOULD be no output character.
+     +  For example, the escaped value test\ should unescape to test.
+     +/
 
-    return line.replaceAll(spaces, " ");
+    static spaces = ctRegex!`\\s`;
+    static colons = ctRegex!`\\:`;
+    static slashes = ctRegex!`\\\\`;
+
+    immutable replaced = line
+        .replaceAll(spaces, " ")
+        .replaceAll(colons, ";")
+        .replaceAll(slashes, `\`);
+
+    return (replaced[$-1] == '\\') ? replaced[0..$-1] : replaced;
+}
+
+unittest
+{
+    immutable s1 = decodeIRCv3String(`kameloso\sjust\ssubscribed\swith\sa\s` ~
+        `$4.99\ssub.\skameloso\ssubscribed\sfor\s40\smonths\sin\sa\srow!`);
+    assert((s1 == "kameloso just subscribed with a $4.99 sub. " ~
+        "kameloso subscribed for 40 months in a row!"), s1);
+
+    immutable s2 = decodeIRCv3String(`stop\sspamming\scaps,\sautomated\sby\sNightbot`);
+    assert((s2 == "stop spamming caps, automated by Nightbot"), s2);
+
+    immutable s3 = decodeIRCv3String(`\:__\:`);
+    assert((s3 == ";__;"), s3);
+
+    immutable s4 = decodeIRCv3String(`\\o/ \\o\\ /o/ ~o~`);
+    assert((s4 == `\o/ \o\ /o/ ~o~`), s4);
+
+    immutable s5 = decodeIRCv3String(`This\sis\sa\stest\`);
+    assert((s5 == "This is a test"), s5);
 }
 
 
