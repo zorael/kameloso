@@ -19,7 +19,7 @@ interface IRCPlugin
     void newBot(IRCBot);
 
     /// Executed after a plugin has run its onEvent course to pick up bot changes
-    IRCBot yieldBot();
+    IRCBot yieldBot() const;
 
     /// Executed to get a list of nicknames a plugin wants WHOISed
     ref WHOISRequest[string] yieldWHOISRequests();
@@ -43,10 +43,10 @@ interface IRCPlugin
     void start();
 
     /// Executed when we want a plugin to print its settings and such
-    void present();
+    void present() const;
 
     /// Executed when we want a plugin to print its Settings struct
-    void printSettings();
+    void printSettings() const;
 
     /// Executed during shutdown or plugin restart
     void teardown();
@@ -388,7 +388,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
      +  Returns:
      +      a copy of the current IRCBot.
      +/
-    IRCBot yieldBot()
+    IRCBot yieldBot() const
     {
         static if (__traits(compiles, .state.bot))
         {
@@ -466,7 +466,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     /++
      +  Print some information to the screen, usually settings.
      +/
-    void present()
+    void present() const
     {
         static if (__traits(compiles, .present()))
         {
@@ -478,7 +478,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
     /++
      +  FIXME
      +/
-    void printSettings()
+    void printSettings() const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -506,7 +506,7 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
      +      ref sink = Appender to fill with plugin-specific settings text.
      +/
     import std.array : Appender;
-    void addToConfig(ref Appender!string sink)
+    void addToConfig(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
