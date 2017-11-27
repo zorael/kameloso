@@ -310,7 +310,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +      .onEvent
  +      .teardown
  +/
-mixin template IRCPluginBasics(string module_ = __MODULE__, bool debug_ = false)
+mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 {
     import kameloso.common : CoreSettings;
 
