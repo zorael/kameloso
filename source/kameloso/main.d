@@ -101,22 +101,7 @@ Flag!"quit" checkMessages()
         quit = Yes.quit;
     }
 
-    /// Fake that a string was received from the server
-    static void stringToEvent(string line)
     {
-        immutable event = parser.toIRCEvent(line);
-
-        logger.info("Forging an event!");
-
-        if (parser.bot.updated)
-        {
-            // Parsing changed the bot
-            parser.bot.updated = false;
-            bot = parser.bot;
-            propagateBot(bot);
-        }
-
-        foreach (plugin; plugins) plugin.onEvent(event);
     }
 
     import std.concurrency : receiveTimeout, Variant;
@@ -131,7 +116,6 @@ Flag!"quit" checkMessages()
             &quietline,
             &pong,
             &quitServer,
-            &stringToEvent,
             (Variant v)
             {
                 // Caught an unhandled message
