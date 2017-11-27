@@ -50,7 +50,9 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
 {
     foreach (immutable i, value; thing.tupleof)
     {
-        alias T = typeof(value);
+        import std.traits : Unqual;
+
+        alias T = Unqual!(typeof(value));
         enum memberstring = __traits(identifier, thing.tupleof[i]);
 
         static if ((memberstring == "raw") || (memberstring == "time"))
@@ -63,26 +65,41 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
         }
         else
         {
-            if (value != Thing.init.tupleof[i])
+            import std.format : formattedWrite;
+
+            static if (is(T == bool))
             {
-                import std.format : formattedWrite;
-                import std.traits : isSomeString;
-
-                static if (isSomeString!T)
-                {
-                    enum pattern = "%sassert((%s%s == \"%s\"), %s%s);\n";
-                }
-                else
-                {
-                    enum pattern = "%sassert((%s%s == %s), %s%s.to!string);\n";
-                }
-
+                enum pattern = "%sassert(%s%s%s, %s%s.to!string);\n";
                 sink.formattedWrite(pattern,
-                    depth.tabs,
-                    prefix.length ? prefix ~ '.' : string.init,
-                    memberstring, value,
-                    prefix.length ? prefix ~ '.' : string.init,
-                    memberstring);
+                        depth.tabs,
+                        !value ? "!" : string.init,
+                        prefix.length ? prefix ~ '.' : string.init,
+                        memberstring,
+                        prefix.length ? prefix ~ '.' : string.init,
+                        memberstring);
+            }
+            else
+            {
+                if (value != Thing.init.tupleof[i])
+                {
+                    import std.traits : isSomeString;
+
+                    static if (isSomeString!T)
+                    {
+                        enum pattern = "%sassert((%s%s == \"%s\"), %s%s);\n";
+                    }
+                    else
+                    {
+                        enum pattern = "%sassert((%s%s == %s), %s%s.to!string);\n";
+                    }
+
+                    sink.formattedWrite(pattern,
+                        depth.tabs,
+                        prefix.length ? prefix ~ '.' : string.init,
+                        memberstring, value,
+                        prefix.length ? prefix ~ '.' : string.init,
+                        memberstring);
+                }
             }
         }
     }
@@ -107,7 +124,9 @@ unittest
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
+        assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
+        assert(!target.special, target.special.to!string);
         assert((content == "kameloso: 8ball"), content);
 `, '\n' ~ sink.data);
 }
@@ -121,8 +140,8 @@ unittest
 void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
 {
 
-    sink.put("IRCBot bot;\n");
-    sink.put("with (bot)\n");
+    sink.put("IRCParser parser;\n");
+    sink.put("with (parser.bot)\n");
     sink.put("{\n");
 
     foreach (immutable i, value; bot.tupleof)
@@ -181,8 +200,8 @@ unittest
     sink.formatBot(bot);
 
     assert(sink.data ==
-`IRCBot bot;
-with (bot)
+`IRCParser parser;
+with (parser.bot)
 {
     nickname = "NICKNAME";
     user = "UUUUUSER";
@@ -194,14 +213,14 @@ with (bot)
 /++
  +  Constructs assert statement blocks for each changed field of an IRCEvent.
  +/
-void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
+public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
     import std.format : formattedWrite;
 
     sink.put("{\n");
-    sink.formattedWrite("%simmutable event = \"%s\"\n",
+    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
         1.tabs, event.raw);
-    sink.formattedWrite("%s                  .toIRCEvent(bot);\n", 1.tabs);
+    sink.formattedWrite("%swith (IRCEvent.Type)\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
     sink.formatAssertStatementLines(event, string.init, 2);
@@ -230,9 +249,8 @@ unittest
 
     // copy/paste the above
     sink.put("{\n");
-    sink.formattedWrite("%simmutable event = \"%s\"\n",
+    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
         1.tabs, event.raw);
-    sink.formattedWrite("%s                  .toIRCEvent(bot);\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
     sink.formatAssertStatementLines(event, string.init, 2);
@@ -241,7 +259,7 @@ unittest
 
     assert(sink.data ==
 `{
-    immutable event = ":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball"
+    immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
     with (event)
     {
         assert((type == CHAN), type.to!string);
