@@ -92,16 +92,17 @@ Flag!"quit" checkMessages()
     void quitServer(ThreadMessage.Quit, string reason)
     {
         // This will automatically close the connection.
-        // Set quit to yes to propagate the decision down the stack.
-        const line = reason.length ? reason : bot.quitReason;
-
-        logger.trace("--> QUIT :", line);
-        conn.sendline("QUIT :", line);
+        // Set quit to yes to propagate the decision up the stack.
+        logger.trace("--> QUIT :", reason);
+        conn.sendline("QUIT :", reason);
 
         quit = Yes.quit;
     }
 
+    /// Quit the server with the default reason
+    void quitEmpty(ThreadMessage.Quit)
     {
+        return quitServer(ThreadMessage.Quit(), bot.quitReason);
     }
 
     import std.concurrency : receiveTimeout, Variant;
@@ -116,6 +117,7 @@ Flag!"quit" checkMessages()
             &quietline,
             &pong,
             &quitServer,
+            &quitEmpty,
             (Variant v)
             {
                 // Caught an unhandled message
