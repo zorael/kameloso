@@ -1155,6 +1155,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 bool isSpecial(const ref IRCParser parser, const IRCEvent event)
 {
     import kameloso.string : sharedDomains;
+    import std.string : toLower;
 
     with (event)
     with (parser)
@@ -1164,17 +1165,76 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         {
             return true;
         }
-        else if ((sharedDomains(sender.address, bot.server.address) >= 2) ||
-            (sharedDomains(sender.address, bot.server.resolvedAddress) >= 2))
+
+        immutable service = event.sender.nickname.toLower();
+
+        switch (service)
         {
-            // Safe to guess?
-            /*logger.log(sender.address, "|", bot.server.address,
-                ": Safe to guess it's a proper special?");*/
+        case "nickserv":
+        case "saslserv":
+            switch (sender.ident)
+            {
+            case "NickServ":
+            case "SaslServ":
+                if (sender.address == "services.") return true;
+                break;
+
+            case "services":
+            case "service":
+                // known idents, drop to after switch
+                break;
+
+            default:
+                // Unknown ident, try the generic address check after the switch
+                break;
+            }
+            break;
+
+        case "global":
+        case "chanserv":
+        case "operserv":
+        case "memoserv":
+        case "hostserv":
+        case "botserv":
+        case "infoserv":
+        case "reportserv":
+        case "moraleserv":
+        case "gameserv":
+        case "groupserv":
+        case "helpserv":
+        case "statserv":
+        case "userserv":
+        case "alis":
+        case "chanfix":
+        case "c":
+        case "spamserv":
+            // Known services that are not nickname services
+            return true;
+
+        case "q":
+            // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
+            return ((sender.ident == "TheQBot") &&
+                (sender.address == "CServe.quakenet.org"));
+
+        case "authserv":
+            // :AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :Could not find your account
+            return ((sender.ident == "AuthServ") &&
+                (sender.address == "Services.GameSurge.net"));
+
+        default:
+            break;
+        }
+
+        if ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
+            (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2))
+        {
             return true;
         }
+        else
+        {
+            return false;
+        }
     }
-
-    return false;
 }
 
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
