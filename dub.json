@@ -6,6 +6,7 @@
     "license": "LGPL-2.1",
     "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
+    "sourcePaths": [ "source", "tests" ],
     "libs-posix-dmd": [ "phobos2" ],
     "configurations":
     [
