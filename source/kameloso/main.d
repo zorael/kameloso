@@ -539,11 +539,13 @@ Flag!"quit" mainLoop(Generator!string generator)
             {
                 plugin.postprocess(event);
 
-                if (parser.bot.updated)
+                auto yieldedBot = plugin.yieldBot();
+                if (yieldedBot.updated)
                 {
                     // Postprocessing changed the bot; propagate
-                    parser.bot.updated = false;
-                    bot = parser.bot;
+                    bot = yieldedBot;
+                    bot.updated = false;
+                    parser.bot = bot;
                     propagateBot(bot);
                 }
             }
@@ -569,6 +571,7 @@ Flag!"quit" mainLoop(Generator!string generator)
                          */
                         bot = yieldedBot;
                         bot.updated = false;
+                        parser.bot = bot;
                         propagateBot(bot);
                     }
                 }
