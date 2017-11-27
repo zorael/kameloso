@@ -82,15 +82,6 @@ Flag!"quit" checkMessages()
         conn.sendline(line);
     }
 
-    /// Receive new settings, inherit them into .settings and propagate
-    /// them to all plugins.
-    static void updateSettings(CoreSettings settings)
-    {
-        .settings = settings;
-
-        foreach (plugin; plugins) plugin.newSettings(.settings);
-    }
-
     /// Respond to PING with PONG to the supplied text as target.
     static void pong(ThreadMessage.Pong, string target)
     {

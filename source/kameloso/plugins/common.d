@@ -27,9 +27,6 @@ interface IRCPlugin
     /// Executed to let plugins modify an event mid-parse
     void postprocess(ref IRCEvent);
 
-    /// Executed on update to the internal Settings struct
-    void newSettings(CoreSettings);
-
     /// Executed upon new IRC event parsed from the server
     void onEvent(const IRCEvent);
 
@@ -423,27 +420,6 @@ mixin template IRCPluginBasics(string module_ = __MODULE__)
         static if (__traits(compiles, .state.whoisQueue))
         {
             return .state.whoisQueue;
-        }
-    }
-
-    // newSettings
-    /++
-     +  Inherits a new CoreSettings copy.
-     +
-     +  Invoked on all plugins when settings have been changed.
-     +
-     +  Params:
-     +      settings = new settings
-     +/
-    void newSettings(CoreSettings settings)
-    {
-        static if (__traits(compiles, .state.settings = settings))
-        {
-            .state.settings = settings;
-        }
-        else static if (__traits(compiles, .settings = settings))
-        {
-            .settings = settings;
         }
     }
 
