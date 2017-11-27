@@ -14,12 +14,39 @@ nothrow:
  +  The `IRCEvent` struct is a construct with fields extracted from raw server
  +  strings. Since structs are not polymorphic the `Type` enum dictates what
  +  kind of event it is.
+ +
+ +  ------------
+ +  struct IRCEvent
+ +  {
+ +      enum Type { ... }
+ +      Type type;
+ +      IRCUser sender;
+ +      IRCUser target;
+ +      string raw;
+ +      string badge;
+ +      string channel;
+ +      string content;
+ +      string tags;
+ +      string aux;
+ +      string colour;
+ +      uint num;
+ +      long time;
+ +  }
+ +  ------------
  +/
 struct IRCEvent
 {
-    /// Taken from https://tools.ietf.org/html/rfc1459 with many additions
-    /// https://www.alien.net.au/irc/irc2numerics.html
-    /// http://defs.ircdocs.horse/
+    /++
+     +  `Type`s of `IRCEvent`s.
+     +
+     +  Taken from https://tools.ietf.org/html/rfc1459 with many additions.
+     +
+     +  https://www.alien.net.au/irc/irc2numerics.html
+     +  https://defs.ircdocs.horse
+     +
+     +  Some are outright fabrications of ours, like `CHAN` and `QUERY`, to make
+     +  things easier for plugins.
+     +/
     enum Type
     {
         UNSET,      /// Invalid `IRCEvent` with no `Type`
@@ -814,7 +841,39 @@ struct IRCEvent
 }
 
 
-/// Aggregate collecting all the relevant settings, options and state needed
+/++
+ +  Aggregate collecting all the relevant settings, options and state needed for
+ +  an IRC bot. Many fields are transient and unfit to be saved to disk, and
+ +  some are simply too sensitive for it.
+ +
+ +  ------------
+ +  struct IRCBot
+ +  {
+ +      string nickname;
+ +      string user;
+ +      string ident;
+ +      string quitReason;
+ +      string master;
+ +
+ +      string authLogin;      // services login name
+ +      string authPassword;   // service password
+ +      string pass;           // registration PASS password, not auth
+ +
+ +      string[] homes;
+ +      string[] fiends;
+ +      string[] channels;
+ +
+ +      IRCServer server;
+ +      string origNickname;
+ +      bool startedRegistering;
+ +      bool finishedRegistering;
+ +      bool startedAuth;
+ +      bool finishedAuth;
+ +
+ +      bool updated;
+ +  }
+ +  ------------
+ +/
 struct IRCBot
 {
     string nickname   = "kameloso";
@@ -878,7 +937,26 @@ struct IRCBot
 }
 
 
-/// Aggregate of all information and state pertaining to the connected IRC server.
+/++
+ +  Aggregate of all information and state pertaining to the connected IRC
+ +  server. Some fields are transient on a per-connection basis and should not
+ +  be saved to the configuration file.
+ +
+ +  ------------
+ +  struct IRCServer
+ +  {
+ +      enum Daemon { ... }
+ +      Daemon daemon;
+ +      string address;
+ +      ushort port;
+ +      string network;
+ +
+ +      string resolvedAddress;
+ +      uint maxNickLength;
+ +      uint maxChannelLength;
+ +  }
+ +  ------------
+ +/
 struct IRCServer
 {
     enum Daemon
@@ -938,12 +1016,29 @@ struct IRCServer
     {
         import std.format : format;
 
-        sink("[Network.%s] %s:%d (%s)".format(network, address, port, resolvedAddress));
+        sink("[Network.%s] %s:%d (%s)"
+            .format(network, address, port,resolvedAddress));
     }
 }
 
 
-/// An aggregate of string fields that represents a single user.
+/++
+ +  An aggregate of fields representing a single user on IRC. Instances of this
+ +  should not survive a disconnect and reconnect; they are on a per-connection
+ +  basis.
+ +
+ +  ------------
+ +  struct IRCUser
+ +  {
+ +      string nickname;
+ +      string alias_;
+ +      string ident;
+ +      string address;
+ +      string login;
+ +      bool special;
+ +      size_t lastWhois;
+ }
+ +/
 struct IRCUser
 {
     string nickname;
