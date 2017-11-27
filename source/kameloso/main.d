@@ -623,7 +623,6 @@ int main(string[] args)
     Flag!"quit" quit;
     bool connectedAlready;
 
-    with (bot)
     do
     {
         if (connectedAlready)
@@ -634,18 +633,19 @@ int main(string[] args)
 
         conn.reset();
 
-        immutable resolved = conn.resolve(server.address, server.port, abort);
+        immutable resolved = conn.resolve(bot.server.address,
+            bot.server.port, abort);
         if (!resolved) return 1;
 
         conn.connect(abort);
         if (!conn.connected) return 1;
 
         // Reset fields in the bot that should not survive a reconnect
-        startedRegistering = false;
-        finishedRegistering = false;
-        startedAuth = false;
-        finishedAuth = false;
-        server.resolvedAddress = string.init;
+        bot.startedRegistering = false;
+        bot.finishedRegistering = false;
+        bot.startedAuth = false;
+        bot.finishedAuth = false;
+        bot.server.resolvedAddress = string.init;
         parser = IRCParser(bot);
 
         initPlugins();
