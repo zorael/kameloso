@@ -119,13 +119,13 @@ Flag!"quit" checkMessages()
         foreach (plugin; plugins) plugin.onEvent(event);
     }
 
+    import std.concurrency : receiveTimeout, Variant;
+
     /// Did the concurrency receive catch something?
     bool receivedSomething;
 
     do
     {
-        import std.concurrency : receiveTimeout, Variant;
-
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &quietline,
