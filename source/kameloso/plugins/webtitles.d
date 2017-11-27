@@ -282,7 +282,6 @@ void titleworker(shared Tid sMainThread)
     while (!halt)
     {
         receive(
-            &onEvent,
             (string url, string target)
             {
                 import std.format : format;
