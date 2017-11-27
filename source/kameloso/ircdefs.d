@@ -11,8 +11,9 @@ nothrow:
 /++
  +  A single IRC event, parsed from server input.
  +
- +  The IRCEvent struct is aconstruct with fields extracted from raw server strings.
- +  Since structs are not polymorphic the Type enum dictates what kind of event it is.
+ +  The `IRCEvent` struct is a construct with fields extracted from raw server
+ +  strings. Since structs are not polymorphic the `Type` enum dictates what
+ +  kind of event it is.
  +/
 struct IRCEvent
 {
@@ -21,28 +22,62 @@ struct IRCEvent
     /// http://defs.ircdocs.horse/
     enum Type
     {
-        UNSET, ANY, ERROR, NUMERIC,
-        PRIVMSG, CHAN, QUERY, EMOTE, // ACTION
-        SELFQUERY, SELFCHAN,
-        JOIN, PART, QUIT, KICK, INVITE,
-        NOTICE,
-        PING, PONG,
-        NICK,
-        MODE, CHANMODE, USERMODE,
-        SELFQUIT, SELFJOIN, SELFPART,
-        SELFMODE, SELFNICK, SELFKICK,
-        TOPIC, CAP,
-        CTCP_VERSION, CTCP_TIME, CTCP_PING,
-        CTCP_CLIENTINFO, CTCP_DCC, CTCP_SOURCE,
-        CTCP_USERINFO, CTCP_FINGER, CTCP_LAG,
-        USERSTATE, ROOMSTATE, GLOBALUSERSTATE,
-        CLEARCHAT, USERNOTICE, HOSTTARGET,
-        HOSTSTART, HOSTEND,
-        SUB, RESUB, TEMPBAN, PERMBAN, SUBGIFT,
-        ACCOUNT,
-        SASL_AUTHENTICATE,
-        AUTH_CHALLENGE,
-        AUTH_FAILURE,
+        UNSET,      /// Invalid `IRCEvent` with no `Type`
+        ANY,        /// Meta-`Type` for *any* kind of `IRCEvent`
+        ERROR,      /// Generic error `Type`
+        NUMERIC,    /// *Numeric* event of an unknown `Type`
+        PRIVMSG,    /// Private message or channel message
+        CHAN,       /// Channel message
+        QUERY,      /// Private query message
+        EMOTE,      /// CTCP **ACTION**; `/me slaps Foo with a large trout`
+        SELFQUERY,  /// A message from you in a query (CAP znc.in/self-message)
+        SELFCHAN,   /// A message from you in a channel (CAP znc.in/self-message)
+        JOIN,       /// Someone joined a channel
+        PART,       /// Someone left a channel
+        QUIT,       /// Someone quit the server
+        KICK,       /// Someone was kicked from a channel
+        INVITE,     /// You were invited to a channel
+        NOTICE,     /// A server `NOTICE` event
+        PING,       /// The server periodically `PING`ed you
+        PONG,       /// The server actually `PONG`ed you
+        NICK,       /// Someone changed nickname
+        MODE,       /// Someone changed the modes of a user
+        CHANMODE,   /// Someone changed the modes of a channel
+        USERMODE,   /// Someone changed the modes of a user
+        SELFQUIT,   /// You quit the server
+        SELFJOIN,   /// You joined a channel
+        SELFPART,   /// You left a channel
+        SELFMODE,   /// You changed your modes
+        SELFNICK,   /// You changed your nickname
+        SELFKICK,   /// You were kicked
+        TOPIC,      /// Someone changed channel topic
+        CAP,        /// CAPability exchange during connect
+        CTCP_VERSION,/// Something requested bot version info
+        CTCP_TIME,  /// Something requested your time
+        CTCP_PING,  /// Something pinged you
+        CTCP_CLIENTINFO,/// Something asked what CTCP events the bot can handle
+        CTCP_DCC,   /// Something requested a DCC connection (chat, file transfer)
+        CTCP_SOURCE,/// Something requested an URL to the bot source code
+        CTCP_USERINFO,/// Something requested the nickname and user of the bot
+        CTCP_FINGER,/// Someone requested miscellaneous info about the bot
+        CTCP_LAG,   /// Something requested LAG info?
+        USERSTATE,  /// Twitch user information
+        ROOMSTATE,  /// Twitch channel information
+        GLOBALUSERSTATE,/// Twitch information about self upon login
+        CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user
+        USERNOTICE, /// Twitch subscription or resubscription event
+        HOSTTARGET, /// Twitch channel hosting target
+        HOSTSTART,  /// Twitch channel hosting start
+        HOSTEND,    /// Twitch channel hosting end
+        SUB,        /// Twitch subscription event
+        RESUB,      /// Twitch resub event
+        TEMPBAN,    /// Twitch temporary ban (seconds in `aux`)
+        PERMBAN,    /// Twitch permanent ban
+        SUBGIFT,    /// Twitch subscription gift event
+        ACCOUNT,    /// Someone logged in on nickname services
+        SASL_AUTHENTICATE,/// SASL authentication negotiation
+        AUTH_CHALLENGE,/// Authentication challenge
+        AUTH_FAILURE,/// Authentication failure
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
@@ -745,7 +780,7 @@ struct IRCEvent
     Type type;
 
     /// The highest priority badge the sender has, in this context.
-    string badge;
+    string badge;  // FIXME: move to IRCUser
 
     /// The raw IRC string, untouched.
     string raw;
@@ -786,12 +821,19 @@ struct IRCBot
     string user       = "kameloso!";
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
+
+    /// The nickname services login of the bot's *master*
     string master;
+
+    /// Username to use for services login
     string authLogin;
 
     @Hidden
     {
+        /// Password for services login
         string authPassword;
+
+        /// Login `PASS`, different from `SASL` and services.
         string pass;
     }
 
@@ -805,11 +847,24 @@ struct IRCBot
     @Unconfigurable
     {
         IRCServer server;
+
+        /// The original bot nickname before connecting, in case it changed
         string origNickname;
+
+        /// Flag that we started the register process (USER blah * 8 : blah)
         bool startedRegistering;
+
+        /// Flag that we finished the regitser process (USER blah * 8 : blah)
         bool finishedRegistering;
+
+        /// Flag that we started authenticating with SASL or nickname services
         bool startedAuth;
+
+        /// Flag that we finished authentictaing with SASL or nickname services
         bool finishedAuth;
+
+        /// Flag that the bot was recently updated with new information that
+        /// should be propagated to everywhere else in the program.
         bool updated;
     }
 
@@ -828,7 +883,8 @@ struct IRCServer
 {
     enum Daemon
     {
-        unknown,
+        unknown,    /// invalid daemon
+
         unreal,
         inspircd,
         bahamut,
@@ -868,6 +924,7 @@ struct IRCServer
 
     @Unconfigurable
     {
+        /// The IRC server address handed to us by the round robin pool
         string resolvedAddress;
 
         /// Max nickname length as per IRC specs, but not the de facto standard
@@ -890,12 +947,18 @@ struct IRCServer
 struct IRCUser
 {
     string nickname;
+
+    /// The alternate "display name" of the user, such as those on Twitch
     string alias_;
     string ident;
     string address;
     string login;
+
+    /// Flag that the user is "special", which is usually that it is a service
+    /// like nickname services, or channel or memo or spam ...
     bool special;
 
+    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
     size_t lastWhois;
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
