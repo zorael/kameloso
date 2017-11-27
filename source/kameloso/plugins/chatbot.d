@@ -377,7 +377,6 @@ void start()
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 

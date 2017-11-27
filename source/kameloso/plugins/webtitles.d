@@ -362,7 +362,6 @@ void teardown()
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 

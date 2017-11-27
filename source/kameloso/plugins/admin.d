@@ -681,7 +681,6 @@ void joinPartImpl(const string prefix, const IRCEvent event)
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 

@@ -203,7 +203,6 @@ void onMessage(const IRCEvent event)
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 

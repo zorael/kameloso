@@ -195,8 +195,6 @@ void teardown()
 }
 
 
-mixin OnEventImpl;
-
 public:
 
 

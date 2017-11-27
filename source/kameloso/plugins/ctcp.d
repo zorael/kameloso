@@ -230,8 +230,6 @@ void onCTCPClientinfo(const IRCEvent event)
 }
 
 
-mixin OnEventImpl;
-
 public:
 
 

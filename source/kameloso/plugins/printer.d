@@ -702,7 +702,6 @@ void present()
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 

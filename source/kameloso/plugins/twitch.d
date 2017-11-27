@@ -321,7 +321,6 @@ void parseTwitchTags(ref IRCEvent event)
 
 
 mixin BasicEventHandlers;
-mixin OnEventImpl;
 
 public:
 
