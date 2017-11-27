@@ -1,7 +1,7 @@
 module kameloso.plugins.printer;
 
 import kameloso.plugins.common;
-import kameloso.ircstructs;
+import kameloso.ircdefs;
 import kameloso.common;
 import kameloso.constants;
 

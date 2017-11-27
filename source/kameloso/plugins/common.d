@@ -1,7 +1,7 @@
 module kameloso.plugins.common;
 
 import kameloso.common : CoreSettings;
-import kameloso.ircstructs;
+import kameloso.ircdefs;
 
 // IRCPlugin
 /++

@@ -1,6 +1,6 @@
 module kameloso.irc;
 
-public import kameloso.ircstructs;
+public import kameloso.ircdefs;
 
 import kameloso.common;
 import kameloso.constants;

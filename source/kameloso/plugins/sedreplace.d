@@ -1,7 +1,7 @@
 module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
-import kameloso.ircstructs;
+import kameloso.ircdefs;
 
 import std.concurrency : send;
 import std.regex : ctRegex;

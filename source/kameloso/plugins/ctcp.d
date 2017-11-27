@@ -1,7 +1,7 @@
 module kameloso.plugins.ctcp;
 
 import kameloso.plugins.common;
-import kameloso.ircstructs;
+import kameloso.ircdefs;
 import kameloso.common : ThreadMessage;
 import kameloso.constants : IRCControlCharacter;
 

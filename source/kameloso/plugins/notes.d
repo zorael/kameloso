@@ -1,7 +1,7 @@
 module kameloso.plugins.notes;
 
 import kameloso.plugins.common;
-import kameloso.ircstructs;
+import kameloso.ircdefs;
 import kameloso.common;
 
 import std.concurrency : send;

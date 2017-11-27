@@ -1,4 +1,4 @@
-module kameloso.ircstructs;
+module kameloso.ircdefs;
 
 import kameloso.common : Hidden, Separator, Unconfigurable;
 
