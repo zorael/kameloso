@@ -212,12 +212,6 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
         nickname = prefix.nom('!');
         ident = prefix.nom('@');
         address = prefix;
-
-        // FIXME: This obviously doesn't scale
-        special = (address == "services.") ||
-                  ((ident == "service") && (address == "rizon.net")) ||
-                  (address.endsWith(".rizon.net")) ||
-                  (address.endsWith(".quakenet.org"));
     }
     else if (prefix.indexOf('.') != -1)
     {
@@ -228,6 +222,8 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         nickname = prefix;
     }
+
+    event.sender.special = parser.isSpecial(event);
 }
 
 unittest
