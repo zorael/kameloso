@@ -128,16 +128,13 @@ Flag!"quit" checkMessages()
         foreach (plugin; plugins) plugin.onEvent(event);
     }
 
+    /// Did the concurrency receive catch something?
     bool receivedSomething;
 
     do
     {
-        // Use the bool of whether anything was received at all to decide if
-        // the loop should continue. That way we neatly exhaust the mailbox
-        // before returning.
         import std.concurrency : receiveTimeout, Variant;
 
-        // BUG: except if quit is true, then it returns without exhausting
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &quietline,
@@ -152,6 +149,19 @@ Flag!"quit" checkMessages()
         );
     }
     while (receivedSomething && !quit);
+
+    if (receivedSomething && quit)
+    {
+        // We received something that made us quit. Exhaust the concurrency
+        // mailbox before quitting.
+        do
+        {
+            receivedSomething = receiveTimeout(0.seconds,
+                (Variant v) {},
+            );
+        }
+        while (receivedSomething);
+    }
 
     return quit;
 }
