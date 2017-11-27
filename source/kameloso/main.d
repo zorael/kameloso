@@ -43,6 +43,13 @@ SysTime[string] whoisCalls;
 IRCParser parser;
 
 
+// signalHandler
+/++
+ +  Called when a signal is raised, usually SIGINT.
+ +
+ +  Sets the `abort` variable to `true` so other parts of the program knows to
+ +  gracefully shut down.
+ +/
 extern (C)
 void signalHandler(int signal) nothrow @nogc @system
 {
@@ -53,7 +60,8 @@ void signalHandler(int signal) nothrow @nogc @system
 
 // checkMessages
 /++
- +  Checks for concurrency messages and performs action based on what was received.
+ +  Checks for concurrency messages and performs action based on what was
+ +  received.
  +
  +  The return value tells the caller whether the received action means the bot
  +  should exit or not.
@@ -64,19 +72,20 @@ void signalHandler(int signal) nothrow @nogc @system
 Flag!"quit" checkMessages()
 {
     import core.time : seconds;
+    import std.concurrency : receiveTimeout, Variant;
 
     scope (failure) teardownPlugins();
 
     Flag!"quit" quit;
 
-    /// Echo a line to the terminal and send it to the server
+    /// Echo a line to the terminal and send it to the server.
     static void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
         conn.sendline(line);
     }
 
-    /// Send a line to the server without echoing it
+    /// Send a line to the server without echoing it.
     static void quietline(ThreadMessage.Quietline, string line)
     {
         conn.sendline(line);
@@ -104,8 +113,6 @@ Flag!"quit" checkMessages()
     {
         return quitServer(ThreadMessage.Quit(), bot.quitReason);
     }
-
-    import std.concurrency : receiveTimeout, Variant;
 
     /// Did the concurrency receive catch something?
     bool receivedSomething;
@@ -146,7 +153,8 @@ Flag!"quit" checkMessages()
 
 // handleGetopt
 /++
- +  Read command-line options and merge them with those in the configuration file.
+ +  Read command-line options and merge them with those in the configuration
+ +  file.
  +
  +  The priority of options then becomes getopt over config file over hardcoded
  +  defaults.
@@ -155,8 +163,8 @@ Flag!"quit" checkMessages()
  +      The string[] args the program was called with.
  +
  +  Returns:
- +      Yes.quit or no depending on whether the arguments chosen mean the program
- +      should not proceed.
+ +      Yes.quit or no depending on whether the arguments chosen mean the
+ +      program should proceed or not.
  +/
 Flag!"quit" handleGetopt(string[] args)
 {
@@ -198,14 +206,15 @@ Flag!"quit" handleGetopt(string[] args)
 
     meldSettingsFromFile(bot, settings);
 
+    // Give common.d a copy of CoreSettings for printObject. FIXME
+    kameloso.common.settings = settings;
+
     // We know CoreSettings now so reinitialise the logger
     initLogger();
 
-    // Give common.d a copy of CoreSettings. FIXME
-    kameloso.common.settings = settings;
-
     if (results.helpWanted)
     {
+        // --help|-h was passed; show the help table and quit
         printVersionInfo(BashForeground.white);
         writeln();
 
@@ -215,16 +224,16 @@ Flag!"quit" handleGetopt(string[] args)
         return Yes.quit;
     }
 
-    // If --version was supplied we should just show info and quit
     if (shouldShowVersion)
     {
+        // --version was passed; show info and quit
         printVersionInfo();
         return Yes.quit;
     }
 
-    // Likewise if --writeconfig was supplied we should just write and quit
     if (shouldWriteConfig)
     {
+        // --writeconfig was passed; write configuration to file and quit
         printVersionInfo(BashForeground.white);
 
         logger.info("Writing configuration to ", settings.configFile);
@@ -239,10 +248,11 @@ Flag!"quit" handleGetopt(string[] args)
 
     if (shouldShowSettings)
     {
+        // --settings was passed, show all options and quit
         printVersionInfo(BashForeground.white);
         writeln();
 
-        // FIXME: Hardcoded value
+        // FIXME: Hardcoded width
         printObjects!17(bot, bot.server, settings);
 
         initPlugins();
@@ -254,11 +264,19 @@ Flag!"quit" handleGetopt(string[] args)
     return No.quit;
 }
 
+
+// meldSettingsFromFile
+/++
+ +  Read core settings, and IRCBot from file into temporaries, then meld them
+ +  into the real ones into which the command-line arguments wil have been
+ +  applied.
+ +
+ +  Params:
+ +      ref bot = the IRCBot bot apply all changes to.
+ +      ref setttings = the core settings to apply changes to.
+ +/
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
-    // Read settings into a temporary Bot and CoreSettings struct, then meld them
-    // into the real ones into which the command-line arguments will have been
-    // applied.
     import kameloso.config : readConfigInto;
 
     IRCBot botFromConfig;
@@ -273,6 +291,16 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 }
 
 
+// writeConfigurationFile
+/++
+ +  Write all settings to the configuration filename passed.
+ +
+ +  It gathers configuration text from all plugins before formatting it into
+ +  nice columns, then writes it all in one go.
+ +
+ +  Params:
+ +      filename = the string filename of the file to write to.
+ +/
 void writeConfigurationFile(const string filename)
 {
     import kameloso.config;
@@ -287,7 +315,9 @@ void writeConfigurationFile(const string filename)
     foreach (plugin; plugins)
     {
         plugin.addToConfig(sink);
-        // Not all plugins with configuration is important enough to list
+
+        // Not all plugins with configuration is important enough to list, so
+        // not all will have something to present()
         plugin.present();
     }
 
@@ -296,6 +326,14 @@ void writeConfigurationFile(const string filename)
 }
 
 
+// printVersionInfo
+/++
+ +  Prints out the bot banner with the version number and github URL, with the
+ +  passed colouring.
+ +
+ +  Params:
+ +      colourCode = the Bash foreground colour to display the text in.
+ +/
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
@@ -307,7 +345,13 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 }
 
 
-/// Resets and initialises all plugins.
+// initPlugins
+/++
+ +  Resets and *minimally* initialises all plugins.
+ +
+ +  It only initialises them to the point where they're aware of their settings,
+ +  and not far enough to have loaded any resources.
+ +/
 void initPlugins()
 {
     teardownPlugins();
@@ -321,18 +365,23 @@ void initPlugins()
     plugins.length = 0;
     plugins.reserve(EnabledPlugins.length + 2);
 
+    // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
+    // `kameloso.plugins.package`
     foreach (Plugin; EnabledPlugins)
     {
         plugins ~= new Plugin(state);
     }
 
-    // Add Webtitles if possible
+    // Add `webtitles` if possible. If it's not being publically imported in
+    // `kameloso.plugins.package`, it's not there to instantiate, which is the
+    // case when we're not compiling the version `Webtitles`.
     static if (__traits(compiles, new WebtitlesPlugin(IRCPluginState.init)))
     {
         plugins ~= new WebtitlesPlugin(state);
     }
 
-    // Add Pipeline if possible
+    // Likewise with `pipeline`, except it depends on whether we're on a Posix
+    // system or not.
     static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
     {
         plugins ~= new PipelinePlugin(state);
@@ -345,9 +394,20 @@ void initPlugins()
 }
 
 
+// teardownPlugins
+/++
+ +  Tears down all plugins, deinitialising them and having them save their
+ +  settings for a clean shutdown.
+ +
+ +  Think of it as a plugin destructor.
+ +/
 void teardownPlugins()
 {
-    if (!plugins.length) return;
+    if (!plugins.length)
+    {
+        logger.warning("Tried to teardown empty plugin array");
+        return;
+    }
 
     logger.info("Deinitialising plugins");
 
@@ -362,6 +422,13 @@ void teardownPlugins()
 }
 
 
+// startPlugins
+/++
+ +  *start* all plugins, loading any resources they may want.
+ +
+ +  This has to happen after `initPlugins` or there will not be any plugins in
+ +  the `plugin` array to start.
+ +/
 void startPlugins()
 {
     if (!plugins.length) return;
@@ -371,10 +438,18 @@ void startPlugins()
 }
 
 
+// propagateBot
+/++
+ +  Takes a bot and passes it out to all plugins.
+ +
+ +  This is called when a change to the bot has occured and we want to update
+ +  all plugins to have an updated copy of it.
+ +
+ +  Params:
+ +      bot = IRCBot to propagate.
+ +/
 void propagateBot(IRCBot bot)
 {
-    parser.bot = bot;
-
     foreach (plugin; plugins)
     {
         plugin.newBot(bot);
@@ -382,6 +457,13 @@ void propagateBot(IRCBot bot)
 }
 
 
+// initLogger
+/++
+ +  Initialises the `KamelosoLogger` logger for use in the whole program.
+ +
+ +  We pass the `monochrome` setting bool here to control if the logger should
+ +  be coloured or not.
+ +/
 void initLogger()
 {
     import std.experimental.logger;
@@ -408,6 +490,7 @@ Flag!"quit" mainLoop(Generator!string generator)
 {
     import core.thread : Fiber;
 
+    /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
 
     while (!quit)
@@ -419,6 +502,7 @@ Flag!"quit" mainLoop(Generator!string generator)
             return No.quit;
         }
 
+        // Call the generator, query it for event lines
         generator.call();
 
         foreach (immutable line; generator)
@@ -464,12 +548,14 @@ Flag!"quit" mainLoop(Generator!string generator)
                 }
             }
 
+            // Let each plugin process the event
             foreach (plugin; plugins)
             {
                 try
                 {
                     plugin.onEvent(event);
 
+                    // Fetch any queued WHOIS requests and handle
                     auto reqs = plugin.yieldWHOISRequests();
                     reqs.handleWHOISQueue(event, event.target.nickname);
 
@@ -477,9 +563,9 @@ Flag!"quit" mainLoop(Generator!string generator)
                     if (yieldedBot.updated)
                     {
                         /*  Plugin onEvent or WHOIS reaction updated the bot.
-                            There's no need to check for both since this is just
-                            a single plugin processing; it keeps its update
-                            through both passes.
+                            There's no need to check for both separately since
+                            this is just a single plugin processing; it keeps
+                            its update internally between both passes.
                          */
                         bot = yieldedBot;
                         bot.updated = false;
@@ -493,7 +579,7 @@ Flag!"quit" mainLoop(Generator!string generator)
             }
         }
 
-        // Check concurrency messages to see if we should exit
+        // Check concurrency messages to see if we should exit, else repeat
         quit = checkMessages();
     }
 
@@ -501,12 +587,22 @@ Flag!"quit" mainLoop(Generator!string generator)
 }
 
 
-void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string nickname)
+// handleWHOISQueue
+/++
+ +  Take a queue of `WHOISRequest` objects and process them one by one,
+ +  replaying function pointers on attached `IRCEvent`s.
+ +
+ +  This is more or less a Command pattern.
+ +/
+void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event,
+    const string nickname)
 {
     if (nickname.length &&
         ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
         (event.type == IRCEvent.Type.RPL_WHOISREGNICK)))
     {
+        // If the event was one with login information, see if there is an event
+        // to replay, and trigger it if so
         auto req = nickname in reqs;
         if (!req) return;
         req.trigger();
@@ -514,6 +610,9 @@ void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string 
     }
     else
     {
+        // Walk through requests and call `WHOIS` on those that haven't been
+        // `WHOIS`ed in the last `Timeout.whois` seconds
+
         foreach (entry; reqs.byKeyValue)
         {
             if (!entry.key.length) continue;
@@ -534,7 +633,7 @@ void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string 
                 }
                 else
                 {
-                    //logger.log("Too soon... ", (now - *then));
+                    //logger.log(key, " too soon...");
                 }
             }
         }
@@ -542,9 +641,13 @@ void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event, const string 
 }
 
 
+// setupSignals
+/++
+ +  Registers `SIGINT` (and optionally `SIGHUP` on Posix systems) to redirect to
+ +  our own `signalHandler`. so we can catch Ctrl+C and gracefully shut down.
+ +/
 void setupSignals()
 {
-    // Set up signal handlers
     import core.stdc.signal : signal, SIGINT;
 
     signal(SIGINT, &signalHandler);
@@ -559,7 +662,8 @@ void setupSignals()
 
 public:
 
-/// When this is set by signal handlers, the program should exit.
+/// When this is set by signal handlers, the program should exit. Other parts of
+/// the program will be monitoring it.
 __gshared bool abort;
 
 
@@ -573,13 +677,17 @@ else
 int main(string[] args)
 {
     // Initialise the logger immediately so it's always available, reinit later
+    // when we know the settings for monochrome
     initLogger();
 
     scope(failure)
     {
         import core.stdc.signal : signal, SIGINT, SIG_DFL;
+
         logger.error("We just crashed!");
         teardownPlugins();
+
+        // Restore signal handlers to the default
         signal(SIGINT, SIG_DFL);
 
         version(Posix)
@@ -593,6 +701,7 @@ int main(string[] args)
 
     try
     {
+        // Act on arguments getopt, quit if whatever was passed demands it
         if (handleGetopt(args) == Yes.quit) return 0;
     }
     catch (const Exception e)
@@ -613,14 +722,19 @@ int main(string[] args)
 
         logger.warning("No master nor channels configured!");
         logger.logf("Use %s --writeconfig to generate a configuration file.",
-                     args[0].baseName);
+            args[0].baseName);
         return 1;
     }
 
-    // Save the original nickname *once*, outside the connection loop
+    // Save the original nickname *once*, outside the connection loop.
+    // It will change later and knowing this is useful when authenticating
     bot.origNickname = bot.nickname;
 
+    /// Flag denoting that we should quit the program.
     Flag!"quit" quit;
+
+    /// Bool whether this is the first connection attempt or if we have
+    /// connected at least once already.
     bool connectedAlready;
 
     do
@@ -651,6 +765,7 @@ int main(string[] args)
         initPlugins();
         startPlugins();
 
+        // Initialise the Generator and start the main loop
         auto generator = new Generator!string(() => listenFiber(conn, abort));
         quit = mainLoop(generator);
         connectedAlready = true;
@@ -663,6 +778,7 @@ int main(string[] args)
     }
     else if (abort)
     {
+        // Ctrl+C
         logger.warning("Aborting...");
         teardownPlugins();
         return 1;
