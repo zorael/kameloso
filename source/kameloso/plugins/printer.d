@@ -701,10 +701,10 @@ void present()
 }
 
 
-public:
-
 mixin BasicEventHandlers;
 mixin OnEventImpl;
+
+public:
 
 
 // Printer

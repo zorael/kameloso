@@ -202,10 +202,10 @@ void onMessage(const IRCEvent event)
 }
 
 
-public:
-
 mixin BasicEventHandlers;
 mixin OnEventImpl;
+
+public:
 
 
 // SedReplacePlugin

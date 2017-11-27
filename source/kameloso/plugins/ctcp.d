@@ -230,10 +230,9 @@ void onCTCPClientinfo(const IRCEvent event)
 }
 
 
-public:
-
-
 mixin OnEventImpl;
+
+public:
 
 
 // CTCP

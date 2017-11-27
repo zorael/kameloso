@@ -195,10 +195,9 @@ void teardown()
 }
 
 
-public:
-
-
 mixin OnEventImpl;
+
+public:
 
 
 // Pipeline

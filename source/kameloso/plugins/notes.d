@@ -416,10 +416,10 @@ void start()
 }*/
 
 
-public:
-
 mixin BasicEventHandlers;
 mixin OnEventImpl;
+
+public:
 
 
 // NotesPlugin

@@ -362,10 +362,10 @@ void teardown()
 }
 
 
-public:
-
 mixin BasicEventHandlers;
 mixin OnEventImpl;
+
+public:
 
 
 // Webtitles

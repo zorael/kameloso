@@ -680,10 +680,10 @@ void joinPartImpl(const string prefix, const IRCEvent event)
 }
 
 
-public:
-
 mixin BasicEventHandlers;
 mixin OnEventImpl;
+
+public:
 
 
 // AdminPlugin
