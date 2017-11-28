@@ -150,16 +150,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         import std.format : formattedWrite;
         import std.uni : asLowerCase;
 
-        //sink.formattedWrite("[%s] [%s] ", timestamp, enumToString(type));
         sink.formattedWrite("[%s] ", timestamp);
 
         string typestring = enumToString(type);
 
-        if (typestring.beginsWith("RPL_"))
-        {
-            typestring = typestring[4..$];
-        }
-        else if (typestring.beginsWith("ERR_"))
+        if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
         {
             typestring = typestring[4..$];
         }
@@ -183,8 +178,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         if (badge.length)
         {
-            //sink.formattedWrite(" [%s]", enumToString(role));
-            //put(sink," [", badge, "]");
             import std.string : toUpper;
 
             immutable badgestring = printerSettings.badgesInCaps ?
@@ -266,7 +259,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 lightgreen : DefaultColour.type;
 
             sink.colour(white);
-            //sink.formattedWrite("[%s] ", timestamp);
             put(sink, '[', timestamp, "] ");
 
             string typestring = enumToString(type);
@@ -286,7 +278,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 sink.colour(typeColour);
             }
 
-            //sink.formattedWrite("[%s] ", enumToString(type));  // typestring?
             put(sink, '[', typestring, "] ");
 
             import std.algorithm : equal;
@@ -324,7 +315,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 import std.string : toUpper;
 
                 sink.colour(white);
-                //sink.formattedWrite(" [%s]", enumToString(role));
 
                 immutable badgestring = printerSettings.badgesInCaps ?
                     badge.toUpper : badge;
@@ -339,7 +329,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 {
                     colourSenderTruecolour();
                 }
-                //sink.formattedWrite(" (%s)", alias_);
                 put(sink, " (", alias_, ')');
             }
 
@@ -355,21 +344,18 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     sink.colour(colourByHash(event.target.nickname));
                 }
 
-                //sink.formattedWrite(" (%s)", target);
                 put(sink, " (", target.nickname, ')');
             }
 
             if (channel.length)
             {
                 sink.colour(DefaultColour.channel);
-                //sink.formattedWrite(" [%s]", channel);
                 put(sink, " [", channel, ']');
             }
 
             if (content.length)
             {
                 sink.colour(DefaultColour.content);
-                //sink.formattedWrite(`: "%s"`, content);
                 if (sender.isServer || sender.nickname.length)
                 {
                     put(sink, `: "`, content, '"');
@@ -384,7 +370,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             if (aux.length)
             {
                 sink.colour(DefaultColour.aux);
-                //sink.formattedWrite(" <%s>", aux);
                 put(sink, " <", aux, '>');
             }
 
@@ -393,8 +378,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 import std.format : formattedWrite;
 
                 sink.colour(DefaultColour.num);
-                //sink.formattedWrite(" (#%d)", num);
-                //put(sink, " (#", num, ')');
                 put(sink, " (#");
                 sink.formattedWrite("%03d", num);
                 put(sink, ')');
