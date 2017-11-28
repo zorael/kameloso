@@ -125,6 +125,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
             immutable tags = raw.nom(" ");
             event = parser.toIRCEvent(raw);
             event.tags = tags;
+            return;  // avoid event.sender.special assignment below
         }
         else
         {
@@ -132,8 +133,9 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
             throw new IRCParseException(text("Unknown basic type: ",
                 typestring, " : please report this"), event);
         }
-        break;
     }
+
+    event.sender.special = true;
 }
 
 unittest

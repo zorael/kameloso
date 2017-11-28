@@ -11,7 +11,7 @@ unittest
         with (event)
         {
             assert((type == ERROR), type.to!string);
-            assert(!sender.special, sender.special.to!string);
+            assert(sender.special, sender.special.to!string);
             assert(!target.special, target.special.to!string);
             assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
         }
