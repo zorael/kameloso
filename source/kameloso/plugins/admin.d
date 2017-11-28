@@ -22,25 +22,6 @@ bool printBytes;
 bool printAsserts;
 
 
-// tabs
-/++
- +  Returns spaces equal to that of num tabs (\t).
- +/
-string tabs(uint num) pure
-{
-    enum tab = "    ";
-
-    string total;
-
-    foreach (i; 0..num)
-    {
-        total ~= tab;
-    }
-
-    return total;
-}
-
-
 // formatAssertStatementLines
 /++
  +  Constructs assert statement lines for each changed field of a type.
@@ -65,6 +46,7 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
         }
         else
         {
+            import kameloso.string : tabs;
             import std.format : formattedWrite;
 
             static if (is(T == bool))
@@ -146,6 +128,7 @@ void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
 
     foreach (immutable i, value; bot.tupleof)
     {
+        import kameloso.string : tabs;
         import std.format : formattedWrite;
         import std.traits : isSomeString;
         alias T = typeof(value);
@@ -215,6 +198,7 @@ with (parser.bot)
  +/
 public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
+    import kameloso.string : tabs;
     import std.format : format, formattedWrite;
 
     immutable raw = event.tags.length ?
@@ -239,6 +223,7 @@ public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent even
 version(none)  // FIXME
 unittest
 {
+    import kameloso.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
 

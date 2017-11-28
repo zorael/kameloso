@@ -777,3 +777,43 @@ unittest
     immutable n8 = sharedDomains("net", "net");
     assert((n8 == 1), n8.text);
 }
+
+
+// tabs
+/++
+ +  Returns spaces equal to that of num tabs (\t).
+ +/
+string tabs(int num) pure
+{
+    enum tab = "    ";
+
+    assert((num >= 0), "Negative amount of tabs");
+
+    string total;
+
+    foreach (i; 0..num)
+    {
+        total ~= tab;
+    }
+
+    return total;
+}
+
+@system
+unittest
+{
+    import std.exception : assertThrown;
+    import core.exception : AssertError;
+
+    immutable one = 1.tabs;
+    immutable two = 2.tabs;
+    immutable three = 3.tabs;
+    immutable zero = 0.tabs;
+
+    assert((one == "    "), one ~ '$');
+    assert((two == "        "), two ~ '$');
+    assert((three == "            "), three ~ '$');
+    assert((zero == string.init), zero ~ '$');
+
+    assertThrown!AssertError((-1).tabs);
+}
