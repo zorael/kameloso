@@ -12,7 +12,6 @@ unittest
         {
             assert((type == ERROR), type.to!string);
             assert(sender.special, sender.special.to!string);
-            assert(!target.special, target.special.to!string);
             assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
         }
     }
@@ -28,7 +27,6 @@ unittest
             assert((sender.address == "asdcsd.tmi.twitch.tv"), sender.address);
             assert(!sender.special, sender.special.to!string);
             assert((channel == "#lirik"), channel);
-            assert(!target.special, target.special.to!string);
             assert((content == "lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL"), content);
             assert((tags == "badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type="), tags);
         }
@@ -41,7 +39,6 @@ unittest
         {
             assert((type == NOTICE), type.to!string);
             assert(sender.special, sender.special.to!string);
-            assert(!target.special, target.special.to!string);
             assert((content == "*** If you are having problems connecting due to ping timeouts, please type /notice F94828E6 nospoof now."), content);
         }
     }
@@ -55,7 +52,6 @@ unittest
             assert((sender.address == "tmi.twitch.tv"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((channel == "#zorael"), channel);
-            assert(!target.special, target.special.to!string);
             assert((tags == "broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0"), tags);
         }
     }
@@ -256,7 +252,6 @@ unittest
             assert((type == RPL_ISUPPORT), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert(!target.special, target.special.to!string);
             assert((content == "EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459"), content);
             assert((num == 5), num.to!string);
         }
@@ -1195,7 +1190,6 @@ unittest
             assert((type == SELFMODE), type.to!string);
             assert((sender.nickname == "kameloso^"), sender.nickname);
             assert(!sender.special, sender.special.to!string);
-            assert(!target.special, target.special.to!string);
             assert((aux == "+i"), aux);
         }
     }
@@ -1208,7 +1202,6 @@ unittest
             assert((type == RPL_ISUPPORT), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert(!target.special, target.special.to!string);
             assert((content == "NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST"), content);
             assert((num == 5), num.to!string);
         }
