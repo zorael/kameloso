@@ -585,9 +585,9 @@ struct IRCEvent
         ERR_LISTSYNTAX, // = 521,
         ERR_WHOSYNTAX, // = 522,
         ERR_WHOLIMEXCEED, // = 523,
-        ERR_HELPNOTFOUND, // = 524,     // CONFLICT
         ERR_OPERSPVERIFY, // = 524,     // CONFLICT
-        ERR_QUARANTINED, // = 524,
+        ERR_QUARANTINED, // = 524,      // CONFLICT
+        ERR_HELPNOTFOUND, // = 524,
         ERR_INVALIDKEY, // = 525,       // CONFLICT
         ERR_REMOTEPFX, // = 525,
         ERR_PFXUNROUTABLE, // = 526,
@@ -1402,7 +1402,7 @@ struct Typenums
         521 : Type.ERR_LISTSYNTAX,
         522 : Type.ERR_WHOSYNTAX,
         523 : Type.ERR_WHOLIMEXCEED,
-        524 : Type.ERR_QUARANTINED,
+        524 : Type.ERR_HELPNOTFOUND,
         525 : Type.ERR_REMOTEPFX,
         526 : Type.ERR_PFXUNROUTABLE,
         531 : Type.ERR_CANTSENDTOUSER,
