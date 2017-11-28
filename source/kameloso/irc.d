@@ -419,7 +419,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         else
         {
-            if (slice.length && (slice[0] == ':'))
+            if (slice.beginsWith(':'))
             {
                 event.channel = slice[1..$];
             }
@@ -491,7 +491,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // (quakenet) :zorael!~zorael@ns3363704.ip-94-23-253.eu INVITE kameloso #hirrsteff
         event.target.nickname = slice.nom(' ');
         event.channel = slice;
-        event.channel = (slice[0] == ':') ? slice[1..$] : slice;
+        event.channel = slice.beginsWith(':') ? slice[1..$] : slice;
         break;
 
     case ERR_NOSUCHCHANNEL: // 403
@@ -526,7 +526,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.channel = slice.nom(' ');
         if (event.channel == "*") event.channel = string.init;
         immutable userOrIdent = slice.nom(' ');
-        if (userOrIdent[0] == '~') event.target.ident = userOrIdent;
+        if (userOrIdent.beginsWith('~')) event.target.ident = userOrIdent;
         event.target.address = slice.nom(' ');
         slice.nom(' ');  // server
         event.target.nickname = slice.nom(' ');
@@ -666,7 +666,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case ERR_NOTREGISTERED: // 451
-        if (slice[0] == '*')
+        if (slice.beginsWith('*'))
         {
             // :niven.freenode.net 451 * :You have not registered
             slice.nom("* :");
@@ -694,7 +694,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.target.nickname = slice.nom(" :To connect");
 
-            if (slice[0] == ',')
+            if (slice.beginsWith(','))
             {
                 // ngircd?
                 /* "NOTICE %s :To connect, type /QUOTE PONG %ld",
@@ -890,7 +890,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
                 if ((probablyBot == bot.nickname) || (probablyBot == "*"))
                 {
-                    if (targets[0] == '#')
+                    if (targets.beginsWith('#'))
                     {
                         if (targets.indexOf(' ') != -1)
                         {
@@ -932,11 +932,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         else
         {
+            // Does not start with ": "
             if (slice.indexOf(' ') != -1)
             {
                 immutable target = slice.nom(' ');
 
-                if (target[0] == '#')
+                if (target.beginsWith('#'))
                 {
                     event.channel = target;
                     event.content = slice;
@@ -950,7 +951,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             }
             else
             {
-                if (slice[0] == '#')
+                if (slice.beginsWith('#'))
                 {
                     event.channel = slice;
                 }
