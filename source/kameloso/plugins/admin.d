@@ -215,11 +215,14 @@ with (parser.bot)
  +/
 public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
-    import std.format : formattedWrite;
+    import std.format : format, formattedWrite;
+
+    immutable raw = event.tags.length ?
+        "@%s %s".format(event.tags, event.raw) : event.raw;
 
     sink.put("{\n");
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
-        1.tabs, event.raw);
+        1.tabs, raw);
     sink.formattedWrite("%swith (IRCEvent.Type)\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
