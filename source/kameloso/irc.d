@@ -1110,8 +1110,9 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
             break;
         }
 
-        if ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
-            (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2))
+        if ((parser.bot.server.daemon != IRCServer.Daemon.twitch) &&
+            ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
+            (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2)))
         {
             return true;
         }
