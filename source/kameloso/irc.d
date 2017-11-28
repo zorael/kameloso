@@ -1643,6 +1643,8 @@ string decodeIRCv3String(const string line)
      +  For example, the escaped value test\ should unescape to test.
      +/
 
+    if (!line.length) return string.init;
+
     static spaces = ctRegex!`\\s`;
     static colons = ctRegex!`\\:`;
     static slashes = ctRegex!`\\\\`;
