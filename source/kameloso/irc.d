@@ -890,20 +890,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
                 if ((probablyBot == bot.nickname) || (probablyBot == "*"))
                 {
-                    if ((targets[0] >= '0' ) && (targets[0] <= '9'))
-                    {
-                        // numeric
-                        if (targets.indexOf(' ') != -1)
-                        {
-                            event.target.nickname = targets.nom(' ');
-                            event.aux = targets;
-                        }
-                        else
-                        {
-                            event.aux = targets;
-                        }
-                    }
-                    else if (targets[0] == '#')
+                    if (targets[0] == '#')
                     {
                         if (targets.indexOf(' ') != -1)
                         {
