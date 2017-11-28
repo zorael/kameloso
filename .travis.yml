@@ -8,9 +8,9 @@ os:
     - windows
 
 script:
-    - dub test --compiler=${DC}
-    - dub test --compiler=${DC} -c nocolours
-    - dub test --compiler=${DC} -c nowebtitles-nocolours
-    - dub build -b plain --compiler=${DC}
-    - dub build -b plain --compiler=${DC} -c nocolours
-    - dub build -b plain --compiler=${DC} -c nowebtitles-nocolours
+    - dub test --compiler=${DC} --build-mode=singleFile
+    - dub test --compiler=${DC} --build-mode=singleFile -c nocolours
+    - dub test --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nocolours
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
