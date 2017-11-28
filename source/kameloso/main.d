@@ -174,6 +174,7 @@ Flag!"quit" handleGetopt(string[] args)
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
+    bool shouldGenerateAssert;
 
     arraySep = ",";
 
@@ -202,6 +203,9 @@ Flag!"quit" handleGetopt(string[] args)
         "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
         "writeconf",     &shouldWriteConfig,
         "version",       "Show version info", &shouldShowVersion,
+        "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
+                         &shouldGenerateAssert,
+        "gen",           &shouldGenerateAssert,
     );
 
     meldSettingsFromFile(bot, settings);
@@ -261,7 +265,52 @@ Flag!"quit" handleGetopt(string[] args)
         return Yes.quit;
     }
 
+    if (shouldGenerateAssert)
+    {
+        generateAssert();
+        return Yes.quit;
+    }
+
     return No.quit;
+}
+
+
+// generateAssert
+/++
+ +  Takes a raw server string, parses it to an `IRCEvent` and formats an assert
+ +  block of its contents.
+ +
+ +  This is a debugging tool.
+ +/
+void generateAssert()
+{
+    import kameloso.plugins.admin : formatEventAssertBlock;
+    import core.thread;
+    import std.array : Appender;
+
+    IRCParser parser;
+    parser.bot = bot;
+
+    Appender!(char[]) sink;
+    sink.reserve(768);
+
+    printObject(parser.bot);
+
+    string input;
+
+    while ((input = readln()) !is null)
+    {
+        import std.regex;
+
+        if (abort) return;
+
+        auto hits = input[0..$-1].matchFirst("^[ /]*(.+)");
+        immutable event = parser.toIRCEvent(hits[1]);
+        sink.formatEventAssertBlock(event);
+        writeln();
+        writeln(sink.data);
+        sink.clear();
+    }
 }
 
 
