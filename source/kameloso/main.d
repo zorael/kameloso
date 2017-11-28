@@ -285,10 +285,8 @@ Flag!"quit" handleGetopt(string[] args)
 void generateAsserts()
 {
     import kameloso.plugins.admin : formatEventAssertBlock;
-    import core.thread;
     import std.array : Appender;
 
-    IRCParser parser;
     parser.bot = bot;
 
     Appender!(char[]) sink;
@@ -300,11 +298,10 @@ void generateAsserts()
 
     while ((input = readln()) !is null)
     {
-        import std.regex;
-
+        import std.regex : matchFirst, regex;
         if (abort) return;
 
-        auto hits = input[0..$-1].matchFirst("^[ /]*(.+)");
+        auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
         immutable event = parser.toIRCEvent(hits[1]);
         sink.formatEventAssertBlock(event);
         writeln();
