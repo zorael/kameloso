@@ -964,6 +964,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             throw new IRCParseException("Uncaught NUMERIC or UNSET", event);
         }
 
+        // Generic heuristics to catch most cases
+
         if (slice.indexOf(" :") != -1)
         {
             string targets = slice.nom(" :");
@@ -974,7 +976,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
                 immutable probablyBot = targets.nom(' ');
 
-                if ((probablyBot == bot.nickname) && targets.length)
+                if ((probablyBot == bot.nickname) || (probablyBot == "*"))
                 {
                     if ((targets[0] >= '0' ) && (targets[0] <= '9'))
                     {
@@ -988,46 +990,79 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         {
                             event.aux = targets;
                         }
-
-                        event.content = slice;
                     }
                     else if (targets[0] == '#')
                     {
-                        event.channel = targets;
+                        if (targets.indexOf(' ') != -1)
+                        {
+                            event.channel = targets.nom(' ');
+                            event.content = targets;
+                        }
+                        else
+                        {
+                            event.channel = targets;
+                        }
                     }
                     else
                     {
-                        event.target.nickname = targets;
+                        if (targets.indexOf(' ') != -1)
+                        {
+                            event.target.nickname = targets.nom(' ');
+                            event.channel = targets;
+                        }
+                        else
+                        {
+                            event.target.nickname = targets;
+                        }
                     }
                 }
                 else
                 {
-                    // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
-                    //event.target.nickname = targets.nom(' ');
                     event.target.nickname = probablyBot;
                     event.channel = targets;
-                    event.content = slice;
                 }
             }
             else if (targets.beginsWith('#'))
             {
-                logger.warning("targetOrChannel.beginsWith('#') happened. Report this.");
-                printObject(event);
                 event.channel = targets;
             }
             else
             {
                 event.target.nickname = targets;
             }
-
-            event.content = slice;
         }
         else
         {
-            // :port80b.se.quakenet.org 221 kameloso +i
-            event.target.nickname = slice.nom(' ');
-            event.aux = slice;
+            if (slice.indexOf(' ') != -1)
+            {
+                immutable target = slice.nom(' ');
+
+                if (target[0] == '#')
+                {
+                    event.channel = target;
+                    event.content = slice;
+                }
+                else
+                {
+                    // :port80b.se.quakenet.org 221 kameloso +i
+                    event.target.nickname = target;
+                    event.aux = slice;
+                }
+            }
+            else
+            {
+                if (slice[0] == '#')
+                {
+                    event.channel = slice;
+                }
+                else
+                {
+                    event.target.nickname = slice;
+                }
+            }
         }
+
+        event.content = event.content.length ? event.content : slice;
         break;
     }
 
