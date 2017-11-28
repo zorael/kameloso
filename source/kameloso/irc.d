@@ -1469,19 +1469,17 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
     import std.conv : to;
     import std.string : toLower;
 
+    // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
     // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
     // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
-    // :asimov.freenode.net 004 kameloso^ asimov.freenode.net ircd-seven-1.1.4 DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI
-    // :tmi.twitch.tv 004 zorael :-
     slice.nom(' ');
-    event.content = slice;
 
-    if (event.content.indexOf(" :") != -1)
+    if (slice.indexOf(" :") != -1)
     {
-        event.aux = event.content.nom(" :");
+        event.content = slice.nom(" :");
     }
 
-    foreach (value; event.aux.splitter(' '))
+    foreach (value; event.content.splitter(' '))
     {
         if (value.indexOf('=') == -1) continue;
 
