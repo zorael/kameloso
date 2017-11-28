@@ -119,25 +119,19 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
             // @badges=broadcaster/1;color=;display-name=Zorael;emote-sets=0;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zorael
             // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
             // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
-
             import std.algorithm.iteration : splitter;
-
             // Get rid of the prepended @
             string raw = event.raw[1..$];
-            // Save tags so we can restore it in our new event
             immutable tags = raw.nom(" ");
-
             event = parser.toIRCEvent(raw);
             event.tags = tags;
         }
         else
         {
             import std.conv : text;
-
             throw new IRCParseException(text("Unknown basic type: ",
                 typestring, " : please report this"), event);
         }
-
         break;
     }
 }
@@ -215,6 +209,7 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
     }
     else
     {
+        // When does this happen?
         nickname = prefix;
     }
 
@@ -304,7 +299,6 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if ((typestring[0] >= '0') && (typestring[0] <= '9'))
     {
-        // typestring is a number (ascii 48 is 0, 57 is 9)
         try
         {
             immutable number = typestring.to!uint;
@@ -409,7 +403,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
         // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
-
         event.type = (event.sender.nickname == bot.nickname) ? SELFJOIN : JOIN;
 
         if (slice.indexOf(' ') != -1)
@@ -517,12 +510,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case RPL_NAMREPLY: // 353
         // :asimov.freenode.net 353 kameloso^ = #garderoben :kameloso^ ombudsman +kameloso @zorael @maku @klarrt
-        //event.target.nickname = slice.nom(' ');
         slice.nom(' ');
         slice.nom(' ');
         event.channel = slice.nom(" :");
-        event.content = slice; //.stripRight();
-        //event.content = event.content.stripRight();
+        event.content = slice;  // .stripRight();
         break;
 
     case RPL_WHOREPLY: // 352
@@ -693,7 +684,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' ');
         event.target.nickname = slice.nom(' ');
         event.target.login = slice.nom(" :");
-        //event.content = slice;
         event.content = event.target.login;
         break;
 
@@ -702,8 +692,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :irc.x2x.cc 307 kameloso^^ wob^2 :has identified for this nick
         slice.nom(' '); // bot nick
         event.target.nickname = slice.nom(" :");
-        //event.aux = event.target.nickname;
-        //event.content = slice;
         event.content = event.target.nickname;
         break;
 
@@ -805,7 +793,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case USERSTATE:
     case ROOMSTATE:
-    case GLOBALUSERSTATE: // ?
+    case GLOBALUSERSTATE:  // after connect, describes bot
         // :tmi.twitch.tv USERSTATE #zorael
         // :tmi.twitch.tv ROOMSTATE #zorael
         event.channel = slice;
@@ -887,7 +875,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case RPL_HOSTHIDDEN: // 396
     case RPL_VERSION: // 351
-        // irc.rizon.no 351 kameloso^^ plexus-4(hybrid-8.1.20)(20170821_0-607). irc.rizon.no :TS6ow
+        // :irc.rizon.no 351 kameloso^^ plexus-4(hybrid-8.1.20)(20170821_0-607). irc.rizon.no :TS6ow
         // :TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host
         slice.nom(' ');
         event.content = slice.nom(" :");
@@ -896,12 +884,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case RPL_YOURID: // 42
     case ERR_YOUREBANNEDCREEP: // 465
-    case ERR_HELPNOTFOUND: // 502, 524
+    case ERR_HELPNOTFOUND: // 524, also ERR_QUARANTINED
     case ERR_UNKNOWNMODE: // 472
         // :caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID
         // :irc.rizon.no 524 kameloso^^ 502 :Help not found
         // :irc.rizon.no 472 kameloso^^ X :is unknown mode char to me
-        // miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
+        // :miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
         // event.time was 1511000921
         slice.nom(' ');
         event.aux = slice.nom(" :");
@@ -1593,6 +1581,8 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     CraZyPaLaCe.Be_ChatFun.Be_Webradio.VIP  CR1.8.03-Unreal3.2.8.1
     redhispana.org                          Unreal3.2.8+UDB-3.6.1
     */
+
+    // :tmi.twitch.tv 004 zorael :-
 
     slice.nom(' ');  // nickname
 

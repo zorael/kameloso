@@ -310,7 +310,7 @@ void onEndOfMotd(const IRCEvent event)
     {
         if (bot.authPassword.length && !bot.finishedAuth) tryAuth();
 
-        if (bot.finishedAuth || bot.server.daemon == IRCServer.Daemon.twitch)
+        if (bot.finishedAuth || (bot.server.daemon == IRCServer.Daemon.twitch))
         {
             // tryAuth finished early with an unsuccessful login
             logger.log("Joining channels");

@@ -307,7 +307,9 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
  +      .initialise
- +      .onEvent
+ +      .start
+ +      .present
+ +      .writeConfig
  +      .teardown
  +/
 mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
