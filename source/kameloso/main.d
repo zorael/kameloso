@@ -174,7 +174,7 @@ Flag!"quit" handleGetopt(string[] args)
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
-    bool shouldGenerateAssert;
+    bool shouldGenerateAsserts;
 
     arraySep = ",";
 
@@ -204,8 +204,8 @@ Flag!"quit" handleGetopt(string[] args)
         "writeconf",     &shouldWriteConfig,
         "version",       "Show version info", &shouldShowVersion,
         "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
-                         &shouldGenerateAssert,
-        "gen",           &shouldGenerateAssert,
+            &shouldGenerateAsserts,
+        "gen",           &shouldGenerateAsserts,
     );
 
     meldSettingsFromFile(bot, settings);
@@ -265,9 +265,9 @@ Flag!"quit" handleGetopt(string[] args)
         return Yes.quit;
     }
 
-    if (shouldGenerateAssert)
+    if (shouldGenerateAsserts)
     {
-        generateAssert();
+        generateAsserts();
         return Yes.quit;
     }
 
@@ -275,14 +275,14 @@ Flag!"quit" handleGetopt(string[] args)
 }
 
 
-// generateAssert
+// generateAsserts
 /++
- +  Takes a raw server string, parses it to an `IRCEvent` and formats an assert
- +  block of its contents.
+ +  Reads raw server strings from `stdin`, parses them to `IRCEvent`s and
+ +  constructs assert blocks of their contents.
  +
  +  This is a debugging tool.
  +/
-void generateAssert()
+void generateAsserts()
 {
     import kameloso.plugins.admin : formatEventAssertBlock;
     import core.thread;
