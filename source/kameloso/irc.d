@@ -499,11 +499,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.channel = (slice[0] == ':') ? slice[1..$] : slice;
         break;
 
-    case ERR_INVITEONLYCHAN: // 473
+    /*case ERR_INVITEONLYCHAN: // 473
     case RPL_ENDOFNAMES: // 366
     case RPL_TOPIC: // 332
     case RPL_CHANNEL_URL: // 328
-    case ERR_NEEDREGGEDNICK: // 477
+    case ERR_NEEDREGGEDNICK: // 477*/
     case ERR_NOSUCHCHANNEL: // 403
         // :moon.freenode.net 403 kameloso archlinux :No such channel
         // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
@@ -556,19 +556,19 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.content = slice;
         break;
 
-    case RPL_AWAY: // 301
+    /*case RPL_AWAY: // 301
         // :tolkien.freenode.net 301 kameloso^ jcjordyn120 :Idle
         slice.nom(' ');
         event.target.nickname = slice.nom(" :");
         event.content = slice;
-        break;
+        break;*/
 
-    case RPL_MOTD: // 372
+    /*case RPL_MOTD: // 372
     case RPL_LUSERCLIENT: // 251
         // :asimov.freenode.net 372 kameloso^ :- In particular we would like to thank the sponsor
         slice.nom(" :");
         event.content = slice;
-        break;
+        break;*/
 
     case RPL_ISUPPORT: // 005
         parser.onISUPPORT(event, slice);
@@ -664,12 +664,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     /*case RPL_WHOISCHANNELS: // 319
-        // :leguin.freenode.net 319 kameloso^ zorael :#flerrp
-        import std.string : stripRight;
-        slice = slice.stripRight();
-        goto case RPL_ENDOFWHOIS;*/
-
-    case RPL_WHOISCHANNELS: // 319
     case RPL_WHOISSECURE: // 671
     case RPL_ENDOFWHOIS: // 318
     case ERR_NICKNAMEINUSE: // 433
@@ -684,7 +678,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' ');
         event.target.nickname = slice.nom(" :");
         event.content = slice;
-        break;
+        break;*/
 
     case RPL_WHOISSERVER: // 312
         // :asimov.freenode.net 312 kameloso^ zorael sinisalo.freenode.net :SE
@@ -803,11 +797,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.content = slice;
         break;
 
-    case TOPIC:
+    /*case TOPIC:
         // :zorael!~NaN@2001:41d0:2:80b4:: TOPIC #garderoben :en greps av hybris, sen var de bara fyra
         event.channel = slice.nom(" :");
         event.content = slice;
-        break;
+        break;*/
 
     case USERSTATE:
     case ROOMSTATE:
@@ -843,7 +837,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.aux = slice;
         break;
 
-    case USERNOTICE:
+    /*case USERNOTICE:
         // :tmi.twitch.tv USERNOTICE #drdisrespectlive :ooooo weee, it's a meeeee, Moweee!
         // :tmi.twitch.tv USERNOTICE #tsm_viss :Good luck at IEM hope you guys crush it!
         // :tmi.twitch.tv USERNOTICE #lirik
@@ -856,7 +850,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.channel = slice;
         }
-        break;
+        break;*/
 
     case CLEARCHAT:
         // :tmi.twitch.tv CLEARCHAT #zorael
@@ -928,12 +922,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // none of the fields are interesting...
         break;
 
-    case ERR_LINKCHANNEL: // 470
+    /*case ERR_LINKCHANNEL: // 470
         // :wolfe.freenode.net 470 kameloso #linux ##linux :Forwarding to another channel
         slice.nom(' ');
         event.channel = slice.nom(' ');
         event.content = slice.nom(" :");
-        break;
+        break;*/
 
     case RPL_WHOISMODES: // 379
         // :cadance.canternet.org 379 kameloso kameloso :is using modes +ix
@@ -950,13 +944,13 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.aux = slice.strip();
         break;
 
-    case ERR_USERONCHANNEL: // 443
+    /*case ERR_USERONCHANNEL: // 443
         // :orwell.freenode.net 443 kameloso^ kameloso #flerrp :is already on channel
         slice.nom(' ');
         event.target.nickname = slice.nom(' ');
         event.channel = slice.nom(" :");
         event.content = slice;
-        break;
+        break;*/
 
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
