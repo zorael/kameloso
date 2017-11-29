@@ -476,7 +476,7 @@ void onRegistrationEvent(const IRCEvent event)
                 break;
 
             default:
-                // logger.warning("Unhandled capability: ", cap);
+                //logger.warning("Unhandled capability: ", cap);
                 break;
             }
         }
@@ -509,7 +509,7 @@ void onRegistrationEvent(const IRCEvent event)
         break;
 
     default:
-        // logger.warning("Unhandled capability type: ", event.aux);
+        //logger.warning("Unhandled capability type: ", event.aux);
         break;
     }
 

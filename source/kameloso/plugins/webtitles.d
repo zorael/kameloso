@@ -100,7 +100,7 @@ void onMessage(const IRCEvent event)
         immutable url = urlHit[0];
         immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-        logger.info("Caught URL: ", url);  // race-y...
+        logger.info("Caught URL: ", url);
         workerThread.send(url, target);
     }
 }

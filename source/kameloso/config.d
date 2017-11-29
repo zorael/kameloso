@@ -148,7 +148,6 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
             else static if (is(T == enum))
             {
                 import std.conv : to;
-
                 immutable value = member.to!string;
             }
             else
@@ -330,7 +329,6 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                 valueToSet, T.stringof, e.msg);
                         }
                     }
-
                     break;
                 }
             }

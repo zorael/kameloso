@@ -2622,5 +2622,4 @@ unittest
     {
         throw new IRCParseException("adf", event, "somefile.d", 9999U);
     }());
-
 }
