@@ -302,6 +302,7 @@ void onCommandSudo(const IRCEvent event)
 }
 
 
+/*
 // onCommandFake
 /++
  +  Fake that a string was sent by the server.
@@ -319,6 +320,7 @@ void onCommandFake(const IRCEvent event)
 {
     state.mainThread.send(event.content);
 }
+*/
 
 
 // onCommandQuit
