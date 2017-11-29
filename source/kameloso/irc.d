@@ -1470,8 +1470,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             break;
 
         case "NETWORK":
-            import kameloso.common;
-
             logger.info("Detected network: ", value.colour(BashForeground.white));
 
             // Propagate change
@@ -2440,8 +2438,6 @@ struct IRCParser
     /// Sets the server daemon and melds together the needed typenums.
     void setDaemon(const Daemon daemon)
     {
-        import kameloso.common;
-
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
         // Reset

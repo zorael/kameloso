@@ -408,12 +408,6 @@ void start()
 }
 
 
-/*void present()
-{
-    printObject(notesSettings);
-}*/
-
-
 mixin BasicEventHandlers;
 
 public:

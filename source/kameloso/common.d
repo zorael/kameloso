@@ -1134,13 +1134,6 @@ if (isOutputRange!(Sink,string))
     sink.formattedWrite("%c[38;2;%d;%d;%dm",
         cast(char)TerminalToken.bashFormat, r, g, b);
 }
-else
-void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b)
-if (isOutputRange!(Sink, string))
-{
-    // noop
-}
 
 
 // truecolour

@@ -693,12 +693,6 @@ unittest
 }
 
 
-void present()
-{
-    printObject(printerSettings);
-}
-
-
 mixin BasicEventHandlers;
 
 public:
