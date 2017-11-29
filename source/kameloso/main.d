@@ -368,7 +368,7 @@ void writeConfigurationFile(const string filename)
     }
 
     immutable justified = sink.data.justifiedConfigurationText;
-    writeToDisk!(Yes.addBanner)(settings.configFile, justified);
+    writeToDisk!(Yes.addBanner)(filename, justified);
 }
 
 
