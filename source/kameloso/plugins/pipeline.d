@@ -81,7 +81,7 @@ void pipereader(shared IRCPluginState newState)
                     }
                     else
                     {
-                        mainThread.send(ThreadMessage.Quit(), string.init);
+                        mainThread.send(ThreadMessage.Quit());
                     }
 
                     break eofLoop;
