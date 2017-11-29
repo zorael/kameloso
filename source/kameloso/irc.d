@@ -87,7 +87,6 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
         //                strange to me
         event.type = IRCEvent.Type.NOTICE;
         event.content = slice;
-        event.sender.special = true;
 
         if (bot.server.address != typeof(bot.server).init.address)
         {
