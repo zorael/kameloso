@@ -57,6 +57,15 @@ Logger tlsLogger;
  +  This is both used to aggregate information about the lookup, as well as to
  +  add hysteresis to lookups, so we don't look the same one up over and over
  +  if they were pasted over and over.
+ +
+ +  ------------
+ +  struct TitleLookup
+ +  {
+ +      string title;
+ +      string domain;
+ +      size_t when;
+ +  }
+ +  ------------
  +/
 struct TitleLookup
 {
@@ -64,6 +73,8 @@ struct TitleLookup
 
     string title;
     string domain;
+
+    /// The UNIX timestamp of when the title was looked up
     size_t when;
 }
 
@@ -73,9 +84,6 @@ struct TitleLookup
  +  Parses a message to see if the message contains an URI.
  +
  +  It uses a simple regex and exhaustively tries to match every URI it detects.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
@@ -98,6 +106,15 @@ void onMessage(const IRCEvent event)
 }
 
 
+// lookupTitle
+/++
+ +  Given an URL, tries to look up the web page title of it.
+ +
+ +  It doesn't work well on YouTube if they decided your IP is spamming; it will
+ +  want you to solve a captcha to fetch the page. We hack our way around it
+ +  by rewriting the URL to be one to ListenOnRepeat with the same video ID.
+ +  Then we get our YouTube title.
+ +/
 TitleLookup lookupTitle(const string url)
 {
     import arsd.dom : Document;
@@ -145,6 +162,15 @@ TitleLookup lookupTitle(const string url)
 }
 
 
+// fixYoutubeTitles
+/++
+ +  If a YouTube video link resolves its title to just "YouTube", rewrite the
+ +  URL to ListenOnRepeat with the same video ID and fetch its title there.
+ +
+ +  Params:
+ +      ref lookup = the failing TitleLookup that we want to try hacking around
+ +      url = the original URL string
+ +/
 void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 {
     import std.regex : replaceFirst;
@@ -214,6 +240,11 @@ string getDomainFromURL(const string url) @safe
 }
 
 
+// parseTitle
+/++
+ +  Remove unwanted characters from a title, and decode HTML entities in it
+ +  (like &mdash; and &nbsp;).
+ +/
 string parseTitle(const string title)
 {
     import arsd.dom : htmlEntitiesDecode;
@@ -370,7 +401,8 @@ public:
 /++
  +  The Webtitles plugin catches HTTP URI links in an IRC channel, connects to
  +  its server and and streams the web page itself, looking for the web page's
- +  title (in its <title> tags). This is then reported to the originating channel.
+ +  title (in its <title> tags). This is then reported to the originating
+ +  channel.
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
