@@ -1596,7 +1596,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     if ((slice == ":-") && (parser.bot.server.address.indexOf(".twitch.tv") != -1))
     {
         logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
-        parser.daemon = IRCServer.Daemon.twitch;
+        parser.setDaemon(IRCServer.Daemon.twitch);
         parser.bot.server.network = "Twitch";
         parser.bot.updated = true;
         return;
@@ -1657,7 +1657,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
             daemon = unknown;
         }*/
 
-        parser.daemon = daemon;
+        parser.setDaemon(daemon);
     }
 
     import kameloso.string : enumToString;
@@ -2415,8 +2415,6 @@ struct IRCParser
     /// The current `IRCBot` with all the state needed for parsing.
     IRCBot bot;
 
-    //Daemon serverDaemon;
-
     /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric
     /// resolution.
     Type[1024] typenums = Typenums.base;
@@ -2440,12 +2438,8 @@ struct IRCParser
     /// Disallow copying of this struct.
     @disable this(this);
 
-    /*Daemon daemon() const @property
-    {
-        return serverDaemon;
-    }*/
-
-    void daemon(const Daemon daemon) @property
+    /// Sets the server daemon and melds together the needed typenums.
+    void setDaemon(const Daemon daemon)
     {
         import kameloso.common;
 
