@@ -375,7 +375,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
     struct StructName
     {
-        int i = 12345;
+        int i = 12_345;
         string s = "foo";
         bool b = true;
         float f = 3.14f;
@@ -409,12 +409,11 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
 
     // Colour
-
     import std.string : indexOf;
 
     struct StructName2
     {
-        int int_ = 12345;
+        int int_ = 12_345;
         string string_ = "foo";
         bool bool_ = true;
         float float_ = 3.14f;
@@ -1167,8 +1166,8 @@ unittest
 {
     import std.format : format;
 
-    string name = "blarbhl".truecolour!(No.normalise)(255,255,255);
-    string alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
+    immutable name = "blarbhl".truecolour!(No.normalise)(255,255,255);
+    immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.bashFormat, 255, 255, 255,
         "blarbhl", cast(char)TerminalToken.bashFormat);
 
