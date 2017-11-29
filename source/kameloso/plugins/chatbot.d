@@ -10,6 +10,20 @@ import std.stdio;
 
 private:
 
+// ChatbotSettings
+/++
+ +  Settings for a chatbot.
+ +
+ +  ------------
+ +  struct ChatbotSettings
+ +  {
+ +      string quotesFile = "quotes.json";
+ +      bool eightball = true;
+ +      bool quotes = true;
+ +      bool say = true;
+ +  }
+ +  ------------
+ +/
 struct ChatbotSettings
 {
     string quotesFile = "quotes.json";
@@ -18,7 +32,7 @@ struct ChatbotSettings
     bool say = true;
 }
 
-/// All ChatBot plugin settings gathered
+/// All Chatbot plugin settings gathered
 @Settings ChatbotSettings chatbotSettings;
 
 /// All plugin state variables gathered in a struct
@@ -27,7 +41,8 @@ IRCPluginState state;
 /++
  +  The in-memory JSON storage of all user quotes.
  +
- +  It is in the JSON form of string[][string], where the first key is the nickname.
+ +  It is in the JSON form of `string[][string]`, where the first key is the
+ +  nickname of a user.
  +/
 JSONValue quotes;
 
@@ -157,9 +172,6 @@ JSONValue loadQuotes(const string filename)
  +  Repeats text to the channel the event was sent to.
  +
  +  If it was sent in a query, respond in a private message in kind.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -383,8 +395,9 @@ public:
 
 // Chatbot
 /++
- +  Chatbot plugin to provide common chat functionality. Administrative actions have been
- +  broken out into a plugin of its own.
+ +  Chatbot plugin to provide common chat functionality.
+ +
+ +  Administrative actions have been broken out into a plugin of its own.
  +/
 final class ChatbotPlugin : IRCPlugin
 {
