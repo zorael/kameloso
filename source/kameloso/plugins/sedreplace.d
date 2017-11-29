@@ -12,14 +12,14 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-/// A Line[string] 1-buffer of the previous line every user said,
+/// A `Line[string]` 1-buffer of the previous line every user said,
 /// with nickname as key
 Line[string] prevlines;
 
-/// Lifetime of a Line in prevlines, in seconds
+/// Lifetime of a `Line` in `prevlines`, in seconds
 enum replaceTimeoutSeconds = 3600;
 
-/// Regex patterns to find lines like "s/foo/bar/"
+/// Regex patterns to find lines like `s/foo/bar/`
 enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
 enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
 enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
@@ -34,12 +34,26 @@ static openBracketRegex = ctRegex!`\[`;
 static closeBracketRegex = ctRegex!`\]`;
 
 
-/// An struct aggregate of a spoken line and the timestamp when it was said
+// Line
+/++
+ +  Struct aggregate of a spoken line and the timestamp when it was said.
+ +
+ +  ------------
+ +  struct Line
+ +  {
+ +      string content;
+ +      SysTime timestamp;
+ +  }
+ +  ------------
+ +/
 struct Line
 {
     import std.datetime : SysTime;
 
+    /// Contents of last line uttered
     string content;
+
+    /// When the last line was spoken
     SysTime timestamp;
 }
 
@@ -139,9 +153,6 @@ unittest
 /++
  +  Parses a channel message and looks for any sed-replace expressions therein,
  +  to apply on the previous message.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.anyone)  // ?
@@ -210,7 +221,7 @@ public:
 // SedReplacePlugin
 /++
  +  The SedReplace plugin stores a buffer of the last said line of every user,
- +  and if a new  message comes in with a sed-replace-like pattern in it, tries
+ +  and if a new message comes in with a sed-replace-like pattern in it, tries
  +  to apply it on the original message as a regex replace.
  +/
 final class SedReplacePlugin : IRCPlugin
