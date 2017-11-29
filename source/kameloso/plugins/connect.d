@@ -11,14 +11,34 @@ import std.stdio;
 private:
 
 
+// ConnectSettings
+/++
+ +  Connection settings.
+ +
+ +  ------------
+ +  struct ConnectSetting
+ +  {
+ +      bool sasl = true;
+ +      bool joinOnInvite = false;
+ +      bool exitOnSASLFailure = false;
+ +      string[] sendAfterConnect;
+ +  }
+ +  ------------
+ +/
 struct ConnectSettings
 {
     import kameloso.common : Separator;
 
+    /// Flag to use SASL authrentication
     bool sasl = true;
+
+    /// Flag to join channels upon being invited to them
     bool joinOnInvite = false;
+
+    /// Flag to abort and exit if SASL authentication fails
     bool exitOnSASLFailure = false;
 
+    /// Lines to send after successfully connecting and registering
     @Separator(";")
     string[] sendAfterConnect;
 }
@@ -38,9 +58,6 @@ bool serverPinged;
  +  Removes a channel from the list of joined channels.
  +
  +  Fires when the bot leaves a channel, one way or another.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
@@ -78,6 +95,10 @@ void onSelfpart(const IRCEvent event)
 }
 
 
+// onSelfjoin
+/++
+ +  Queries the server for `WHO` on a chanenl upon joining it.
+ +/
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
@@ -89,7 +110,7 @@ void onSelfjoin(const IRCEvent event)
 
 // joinChannels
 /++
- +  Joins all channels listed as homes *and* channels in the IRCBot object.
+ +  Joins all channels listed as homes *and* channels in the `IRCBot` object.
  +/
 void joinChannels()
 {
@@ -126,11 +147,8 @@ void joinChannels()
 
 // onWelcome
 /++
- +  Gets the final nickname from a WELCOME event and propagates it via the main
- +  thread to all other plugins.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  Gets the final nickname from a `WELCOME` event, update the `IRCBot` and flag
+ +  it as updated, so the change will propagate to all other plugins.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(const IRCEvent event)
@@ -153,11 +171,8 @@ void onWelcome(const IRCEvent event)
 
 // onToConnectType
 /++
- +  Responds to IRCEvent.Type.TOCONNECTTYPE events by sending the text supplied
- +  as content in the IRCEvent, to the server.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  Responds to `ERR_BADPING` events by sending the text (supplied as content in
+ +  the `IRCEvent`) to the server.
  +/
 @(IRCEvent.Type.ERR_BADPING)
 void onToConnectType(const IRCEvent event)
@@ -170,14 +185,11 @@ void onToConnectType(const IRCEvent event)
 
 // onPing
 /++
- +  Pongs the server upon PING.
+ +  Pongs the server upon `PING`.
  +
  +  We make sure to ping with the sender as target, and not the neccessarily
- +  the server as saved in the IRCServer struct. For example, TOCONNECTTYPE
+ +  the server as saved in the IRCServer struct. For example, `ERR_BADPING`
  +  generally wants you to ping a random number or string.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.PING)
 void onPing(const IRCEvent event)
@@ -201,6 +213,13 @@ void onPing(const IRCEvent event)
 }
 
 
+// tryAuth
+/++
+ +  Try to authenticate with services.
+ +
+ +  The command to send vary greatly between server daemons (and networks), so
+ +  use some heuristics and try the best guess.
+ +/
 void tryAuth()
 {
     string service = "NickServ";
@@ -299,12 +318,12 @@ void tryAuth()
 
 // onEndOfMotd
 /++
- +  Joins channels at the end of the MOTD, and tries to authenticate with
+ +  Joins channels at the end of the `MOTD`, and tries to authenticate with
  +  such services if applicable.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(const IRCEvent event)
+void onEndOfMotd()
 {
     with (state)
     {
@@ -354,8 +373,8 @@ void onAuthEnd()
 
 // onNickInUse
 /++
- +  Appends a single character to the end of the bot's nickname, and propagates
- +  the change via the main thread to all other plugins.
+ +  Appends a single character to the end of the bot's nickname and flags the
+ +  bot as updated, so as to propagate the change to all other plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse()
@@ -376,9 +395,6 @@ void onNickInUse()
 // onInvite
 /++
  +  Join the supplied channels if not already in them.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.INVITE)
 void onInvite(const IRCEvent event)
@@ -396,11 +412,11 @@ void onInvite(const IRCEvent event)
 
 // onRegistrationEvent
 /++
- +  Handle CAP exchange.
+ +  Handle `CAP` exchange.
  +
  +  This is a neccessary step to register with some IRC server; the capabilities
- +  have to be requested (CAP LS), and the negotiations need to be ended
- +  (CAP END).
+ +  have to be requested (`CAP LS`), and the negotiations need to be ended
+ +  (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
 void onRegistrationEvent(const IRCEvent event)
@@ -506,6 +522,10 @@ void onRegistrationEvent(const IRCEvent event)
 }
 
 
+// onNotice
+/++
+ +  Record the resolved address of the server from a `NOTICE` event.
+ +/
 @(IRCEvent.Type.NOTICE)
 void onNotice(const IRCEvent event)
 {
@@ -522,8 +542,13 @@ void onNotice(const IRCEvent event)
 }
 
 
+// onSASLAuthenticate
+/++
+ +  Constructs a SASL authentication token from the bot's `authLogin` and
+ +  `authPassword`, then sends it to the server, during registration.
+ +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
-void onSASLAuthenticate(const IRCEvent event)
+void onSASLAuthenticate()
 {
     with (state)
     {
@@ -540,6 +565,14 @@ void onSASLAuthenticate(const IRCEvent event)
 }
 
 
+// onSASLSuccess
+/++
+ +  On SASL authentication success, call a `CAP END` to finish the `CAP`
+ +  negotiations.
+ +
+ +  Flag the bot as having finished registering and authing, allowing the main
+ +  loop to pick it up and propagate it to all other plugins.
+ +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
 void onSASLSuccess()
 {
@@ -567,6 +600,14 @@ void onSASLSuccess()
 }
 
 
+// onSASLFailure
+/++
+ +  On SASL authentication failure, call a `CAP END` to finish the `CAP`
+ +  negotiations and finish registration.
+ +
+ +  Flag the bot as haing finished registering, allowing the main loop to
+ +  pick it up and propagate it to all other plugins.
+ +/
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure()
 {
@@ -635,8 +676,10 @@ void register()
  +
  +  This initialisation event fires immediately after a successful connect, and
  +  so instead of waiting for something from the server to trigger our
- +  registration procedure (notably NOTICEs about our IDENT and hostname), we
- +  preemptively register. It seems to work.
+ +  registration procedure (notably `NOTICE`s about our `IDENT` and hostname),
+ +  we preemptively register.
+ +
+ +  It seems to work.
  +/
 void start()
 {
@@ -653,8 +696,8 @@ public:
 /++
  +  A collection of functions and state needed to connect to an IRC server.
  +
- +  This is mostly a matter of sending USER and NICK during registration,
- +  but also incorporates logic to authenticate with nick auth services.
+ +  This is mostly a matter of sending `USER` and `NICK` during registration,
+ +  but also incorporates logic to authenticate with services.
  +/
 final class ConnectPlugin : IRCPlugin
 {
