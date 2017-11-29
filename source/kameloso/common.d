@@ -947,6 +947,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 else
 /// Dummy colour for when version != Colours
 string colour(Codes...)(Codes codes)
+if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     return string.init;
 }
@@ -1009,6 +1010,13 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.put(text);
     sink.colour(BashReset.all);
     return sink.data;
+}
+else
+deprecated("Don't use colour when version isn't Colours")
+string colour(Codes...)(const string text, const Codes codes)
+if (Codes.length && allSatisfy!(isAColourCode, Codes))
+{
+    return text;
 }
 
 
