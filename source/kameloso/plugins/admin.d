@@ -25,6 +25,8 @@ bool printAsserts;
 // formatAssertStatementLines
 /++
  +  Constructs assert statement lines for each changed field of a type.
+ +
+ +  This belongs elsewhere but will stay here for now.
  +/
 void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
     const string prefix = string.init, uint depth = 0)
@@ -116,8 +118,10 @@ unittest
 
 // formatAssertStatementLines
 /++
- +  Constructs statement lines for each changed field of an IRCBot, including
+ +  Constructs statement lines for each changed field of an `IRCBot`, including
  +  instantiating a fresh one.
+ +
+ +  This belongs elsewhere but will stay here for now.
  +/
 void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
 {
@@ -194,7 +198,9 @@ with (parser.bot)
 
 // formatEventAssertBlock
 /++
- +  Constructs assert statement blocks for each changed field of an IRCEvent.
+ +  Constructs assert statement blocks for each changed field of an `IRCEvent`.
+ +
+ +  This belongs elsewhere but will stay here for now.
  +/
 public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
@@ -264,7 +270,7 @@ unittest
 
 // onCommandShowUsers
 /++
- +  Prints out the current state.users array in the local terminal.
+ +  Prints out the current `state.users` array in the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -288,9 +294,6 @@ void onCommandShowUsers()
 // onCommandSudo
 /++
  +  Sends supplied text to the server, verbatim.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -308,9 +311,6 @@ void onCommandSudo(const IRCEvent event)
  +  Fake that a string was sent by the server.
  +
  +  Chance of infinite loop?
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -325,14 +325,11 @@ void onCommandFake(const IRCEvent event)
 
 // onCommandQuit
 /++
- +  Sends a QUIT event to the server.
+ +  Sends a `QUIT` event to the server.
  +
  +  If any extra text is following the 'quit' prefix, it uses that as the quit
  +  reason, otherwise it falls back to the default as specified in the
  +  configuration file.
- +
- +  Params:
- +      event = tshe triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -357,9 +354,6 @@ void onCommandQuit(const IRCEvent event)
 // onCommandAddChan
 /++
  +  Add a channel to the list of currently active channels.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -396,9 +390,6 @@ void onCommandAddHome(const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -439,10 +430,7 @@ void onCommandDelHome(const IRCEvent event)
 /++
  +  Add a nickname to the list of users who may trigger the bot.
  +
- +  This is at a 'friends' level, as opposed to 'anyone' and 'master'.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  This is at a `friends` level, as opposed to `anyone` and `master`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -477,9 +465,6 @@ void onCommandAddFriend(const IRCEvent event)
 // onCommandDelFriend
 /++
  +  Remove a nickname from the list of users who may trigger the bot.
- +
- +  Params:
- +      event = The triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -522,7 +507,7 @@ void onCommandDelFriend(const IRCEvent event)
 
 // onCommandResetTerminal
 /++
- +  Outputs the ASCII control character 15 to the terminal.
+ +  Outputs the ASCII control character *15* to the terminal.
  +
  +  This helps with restoring it if the bot has accidentally printed a different
  +  control character putting it would-be binary mode, like what happens when
@@ -594,7 +579,7 @@ void onCommandAsserts()
 // onAnyEvent
 /++
  +  Prints all incoming events raw if the flag to do so has been set with
- +  onCommandPrintAll, by way of the 'printall' verb. Also prints the content
+ +  `onCommandPrintAll`, by way of the `printall` verb. Also prints the content
  +  of any incomings events, cast to bytes.
  +
  +  Params:
@@ -633,10 +618,7 @@ void onAnyEvent(const IRCEvent event)
 /++
  +  Joins a supplied channel.
  +
- +  Simply defers to joinPartImpl with the prefix JOIN.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  Simply defers to `joinPartImpl` with the prefix `JOIN`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -652,10 +634,7 @@ void onCommandJoin(const IRCEvent event)
 /++
  +  Parts from a supplied channel.
  +
- +  Simply defers to joinPartImpl with the prefix PART.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  Simply defers to `joinPartImpl` with the prefix `PART`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -675,8 +654,8 @@ void onCommandPart(const IRCEvent event)
  +  channels as its list of arguments.
  +
  +  Params:
- +      prefix = the action string to send (JOIN or PART).
- +      event = the triggering IRCEvent.
+ +      prefix = the action string to send (`JOIN` or `PART`).
+ +      event = the triggering `IRCEvent`.
  +/
 void joinPartImpl(const string prefix, const IRCEvent event)
 {
@@ -707,7 +686,7 @@ public:
 /++
  +  A plugin aimed for adḿinistrative use and debugging.
  +
- +  It was historically part of Chatbot.
+ +  It was historically part of `Chatbot`.
  +/
 final class AdminPlugin : IRCPlugin
 {
