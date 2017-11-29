@@ -674,6 +674,10 @@ unittest
 }
 
 
+// stripSuffix
+/++
+ +  Strips the supplied string from the end of a string.
+ +/
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure
 {
