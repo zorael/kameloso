@@ -7,17 +7,38 @@ import std.stdio;
 
 private:
 
+// TwitchSettings
+/++
+ +  Twitch-specific settings, gathered in a struct.
+ +
+ +  ------------
+ +  struct TwitchSettings
+ +  {
+ +      bool twitchColours = true;
+ +  }
+ +  ------------
+ +/
 struct TwitchSettings
 {
+    /// Flag to store the display name colour of users that the server sends,
+    /// for use in the `Printer` plugin.
     bool twitchColours = true;
 }
 
+/// All Twitch plugin options gathered
 @Settings TwitchSettings twitchSettings;
 
+/// All plugin state variables gathered in a struct
 IRCPluginState state;
 
+
+// postprocess
 /++
- +  FIXME
+ +  Handle Twitch specifics, modifying the `IRCEvent` to add things like
+ +  `colour` and differentiate between temporary and permanent bans.
+ +
+ +  Params:
+ +      event = the `IRCEvent` to modify.
  +/
 void postprocess(ref IRCEvent event)
 {
@@ -325,6 +346,17 @@ mixin BasicEventHandlers;
 public:
 
 
+// TwitchPlugin
+/++
+ +  Twitch-specific plugin.
+ +
+ +  Twitch events are initially very basic with only skeletal functionality,
+ +  until you enable capabilites that unlock their `IRCv3` tags, at which point
+ +  events become a flood of information.
+ +
+ +  This plugin only postprocesses events and doesn't yet act on them in any
+ +  way.
+ +/
 final class TwitchPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
