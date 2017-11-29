@@ -10,21 +10,44 @@ import std.stdio;
 private:
 
 
-/// All Printer plugin options gathered in a struct
+// PrinterSettings
+/++
+ +  All Printer plugin options gathered in a struct
+ +
+ +  ------------
+ +  struct PrinterSettings
+ +  {
+ +      bool monochrome = false;  // true on Windows
+ +      bool truecolor = true;
+ +      bool randomNickColours = true;
+ +      bool filterVerbose = true;
+ +      bool badgesInCaps = false;
+ +  }
+ +  ------------
+ +/
 struct PrinterSettings
 {
     version(Windows)
     {
+        /// Flag to only show printed events in monochrome
         bool monochrome = true;
     }
     else
     {
+        /// Ditto
         bool monochrome = false;
     }
 
+    /// Flag to display advanced colours in RRGGBB rather than simple Bash
     bool truecolour = true;
+
+    /// Flag to display nicks in random colour based on their nickname hash
     bool randomNickColours = true;
+
+    /// Flag to filter away most uninteresting events
     bool filterVerbose = true;
+
+    /// Flag to print the badge field in caps (as they used to be earlier)
     bool badgesInCaps = false;
 }
 
@@ -34,14 +57,12 @@ struct PrinterSettings
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
+
 // onAnyEvent
 /++
  +  Print an event to the local terminal.
  +
  +  Write directly to a LockingTextWriter.
- +
- +  Params:
- +      event = the IRCEvent to print.
  +/
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
@@ -410,9 +431,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 // mapEffects
 /++
  +  Map mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
- +
- +  Params:
- +      ref event = the IRCEvent to modify for printing.
  +/
 version(Colours)
 void mapEffects(ref IRCEvent event)
@@ -454,9 +472,6 @@ void mapEffects(ref IRCEvent event)
 // mapColours
 /++
  +  Map mIRC effect color tokens to Bash ones.
- +
- +  Params:
- +      ref event = the IRCEvent to modify for printing.
  +/
 version(Colours)
 void mapColours(ref IRCEvent event)
@@ -691,7 +706,8 @@ public:
 
 // Printer
 /++
- +  The Printer plugin takes all IRCEvents and prints them to the local terminal.
+ +  The Printer plugin takes all `IRCEvent`s and prints them to the local
+ +  terminal, formatted and optionally in colour.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split
  +  off into its own plugin.
