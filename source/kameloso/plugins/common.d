@@ -55,28 +55,33 @@ interface IRCPlugin
 
 // WHOISRequest
 /++
- +  A queued event to be replayed upon a WHOIS request response.
+ +  A queued event to be replayed upon a `WHOIS` request response.
  +
- +  It is abstract; all objects must be of a concrete WHOISRequestImpl type.
+ +  It is abstract; all objects must be of a concrete `WHOISRequestImpl` type.
  +/
 abstract class WHOISRequest
 {
+    /// Stored `IRCEvent` to replay
     IRCEvent event;
+
+    /// When the user this concerns was last `WHOIS`ed
     size_t lastWhois;
 
+    /// Replay the event
     void trigger();
 }
 
 
 /++
- +  Implementation of a queued WHOIS request call.
+ +  Implementation of a queued `WHOIS` request call.
  +
  +  It functions like a Command pattern object in that it stores a payload and
- +  a function pointer, which we queue and do a WHOIS call. When the response
+ +  a function pointer, which we queue and do a `WHOIS` call. When the response
  +  returns we trigger the object and the original IRCEvent is replayed.
  +/
 final class WHOISRequestImpl(F) : WHOISRequest
 {
+    /// Stored function pointer/delegate
     F fn;
 
     this(IRCEvent event, F fn)
@@ -196,7 +201,16 @@ struct IRCPluginState
 {
     import std.concurrency : Tid;
 
+    /++
+     +  The current `IRCBot`, containing information pertaining to bot in the
+     +  bot in the context of the current (alive) connection.
+     +/
     IRCBot bot;
+
+    /++
+     +  The current core settings of the bot, currently only housing the
+     +  filename of the main configuration file as well as a flag monochrome.
+     +/
     CoreSettings settings;
 
     /// Thread ID to the main thread
