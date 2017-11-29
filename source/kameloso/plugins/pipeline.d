@@ -200,9 +200,9 @@ public:
 
 // Pipeline
 /++
- +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to send
- +  to the server. It is for debugging purposes until such time we figure out a
- +  way to properly input lines via the terminal.
+ +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to
+ +  send to the server. It is for debugging purposes until such time we figure
+ +  out a way to properly input lines via the terminal.
  +/
 final class PipelinePlugin : IRCPlugin
 {
