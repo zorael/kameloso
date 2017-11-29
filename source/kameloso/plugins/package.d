@@ -12,6 +12,7 @@ public import kameloso.plugins.notes;
 public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
 public import kameloso.plugins.twitch;
+public import kameloso.plugins.seen;
 
 version(Posix)
 {
@@ -35,4 +36,5 @@ public alias EnabledPlugins = AliasSeq!(
     SedReplacePlugin,
     CTCPPlugin,
     TwitchPlugin,
+    SeenPlugin,
 );
