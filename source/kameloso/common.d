@@ -45,6 +45,17 @@ alias BaseSettings = CoreSettings;
  +  string literals to differentiate between messages and then have big
  +  switches inside the catching function, but with these you can actually
  +  have separate functions for each.
+ +
+ +  ------------
+ +  struct ThreadMessage
+ +  {
+ +      struct Pong {}
+ +      struct Sendline {}
+ +      struct Quietline {}
+ +      struct Quit {}
+ +      struct Teardown {}
+ +  }
+ +  ------------
  +/
 struct ThreadMessage
 {
@@ -65,16 +76,18 @@ struct ThreadMessage
 }
 
 
-/// UDA used for conveying "this field is not to be saved in configuration files"
+/// UDA conveying that a field is not to be saved in configuration files
 struct Unconfigurable {}
 
-/// UDA used for conveying "this string is an array with this token as separator"
+/// UDA conveying that a string is an array with this token as separator
 struct Separator
 {
+    /// Separator, can be more than one character
     string token = ",";
 }
 
-/// UDA used to convey "this member should not be printed in clear text"
+/// UDA conveying that this member contains sensitive information and should not
+/// be printed in clear text; e.g. passwords
 struct Hidden {}
 
 
@@ -84,20 +97,29 @@ struct Hidden {}
  +
  +  Kept inside one struct, they're nicely gathered and easy to pass around.
  +  Some defaults are hardcoded here.
+ +
+ +  ------------
+ +  struct CoreSettings
+ +  {
+ +      bool monochrome = true;
+ +      bool reconnectOnFailure = true;
+ +      string configFile = "kameloso.conf";
+ +  }
+ +  ------------
  +/
 struct CoreSettings
 {
     version(Windows)
     {
-        bool monochrome = true;
+        bool monochrome = true;  /// Logger monochrome setting
     }
     else version(Colours)
     {
-        bool monochrome = false;
+        bool monochrome = false;  /// Ditto
     }
     else
     {
-        bool monochrome = true;
+        bool monochrome = true;  /// Ditto
     }
 
     bool reconnectOnFailure = true;
@@ -105,7 +127,7 @@ struct CoreSettings
     @Unconfigurable
     {
         @Hidden
-        string configFile = "kameloso.conf";
+        string configFile = "kameloso.conf";  /// Main configuration file
     }
 }
 
@@ -118,7 +140,7 @@ struct CoreSettings
  +  Currently it does not support static arrays.
  +
  +  Params:
- +      var = variable to examine.
+ +      var = alias of variable to examine.
  +/
 template isConfigurableVariable(alias var)
 {
@@ -165,7 +187,7 @@ unittest
  +  Prints out struct objects, with all their printable members with all their
  +  printable values.
  +
- +  This is not only convenient for deubgging but also usable to print out
+ +  This is not only convenient for debugging but also usable to print out
  +  current settings and state, where such is kept in structs.
  +
  +  Params:
@@ -199,6 +221,12 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 // printObject
 /++
  +  Single-object `printObjects`.
+ +
+ +  An alias for when there is only one object to print.
+ +
+ +  Params:
+ +      widthArgs = manually specified with of first column in the output
+ +      thing = the struct object to enumerate.
  +/
 void printObject(uint widthArg = 0, Thing)(Thing thing)
 {
@@ -428,9 +456,10 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 }
 
 
+
 // longestMemberName
 /++
- +  Gets the name of the longest member in a struct.
+ +  Gets the name of the longest member in one or more struct/class objects.
  +
  +  This is used for formatting configuration files, so that columns line up.
  +
@@ -799,12 +828,15 @@ unittest
 
 // scopeguard
 /++
- +  Generates a string mixin of scopeguards. This is a convenience function
- +  to automate basic `scope(exit|success|failure)` messages, as well as an
- +  optional entry message. Which scope to guard is passed by ORing the states.
+ +  Generates a string mixin of scopeguards.
+ +
+ +  This is a convenience function to automate basic
+ +  `scope(exit|success|failure)` messages, as well as an optional entry
+ +  message. Which scope to guard is passed by ORing the states.
  +
  +  Params:
- +      states = Bitmask of which states to guard, see the enum in `kameloso.constants`.
+ +      states = Bitmask of which states to guard, see the enum in
+ +               `kameloso.constants`.
  +      scopeName = Optional scope name to print. Otherwise the current function
  +                  name will be used.
  +
@@ -929,9 +961,6 @@ string colour(Codes...)(Codes codes)
  +
  +  Params:
  +      codes = a variadic list of Bash format codes.
- +
- +  Returns:
- +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
@@ -954,6 +983,19 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
     sink.put('m');
 }
 
+
+// colour
+/++
+ +  Convenience function to colour or format a piece of text without an output
+ +  buffer to fill into.
+ +
+ +  Params:
+ +      text = text to format
+ +      codes = Bash formatting codes (colour, underscore, bold, ...) to apply
+ +
+ +  Returns:
+ +      A Bash code sequence of the passed codes, encompassing the passed text.
+ +/
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
@@ -1092,6 +1134,12 @@ if (isOutputRange!(Sink, string))
     // noop
 }
 
+
+// truecolour
+/++
+ +  Convenience function to colour a piece of text without being passed an
+ +  output sink to fill into.
+ +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, uint r, uint g, uint b)
@@ -1160,6 +1208,8 @@ unittest
 // KamelosoLogger
 /++
  +  Modified `Logger` to print timestamped and coloured logging messages.
+ +
+ +  It is not thread-safe so instantiate more if you're threading.
  +/
 final class KamelosoLogger : Logger
 {
@@ -1374,6 +1424,15 @@ unittest
 }
 
 
+// interruptibleSleep
+/++
+ +  Sleep in small periods, checking the passed `abort` bool inbetween to see
+ +  if we should break and return.
+ +
+ +  This is useful when a different signal handler has been set up, as triggeing
+ +  it won't break sleeps. This way it does, assuming the `abort` bool is the
+ +  signal handler one.
+ +/
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
     import core.thread;
