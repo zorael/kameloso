@@ -14,14 +14,11 @@ IRCPluginState state;
 
 // onCTCPs
 /++
- +  Handle CTCP requests.
+ +  Handle `CTCP` requests.
  +
- +  This is a catch-all function handling 5/6 CTCP requests we support, instead
- +  of having five different functions each dealing with one. Either design
- +  works; both end up with a switch.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  This is a catch-all function handling 5/6 `CTCP` requests we support,
+ +  instead of having five different functions each dealing with one.
+ +  Either design works; both end up with a switch.
  +/
 @(IRCEvent.Type.CTCP_VERSION)
 @(IRCEvent.Type.CTCP_FINGER)
@@ -179,9 +176,6 @@ void onCTCPs(const IRCEvent event)
  +  This builds a string of the names of all IRCEvent.Types that begin
  +  with CTCP_, at compile-time. As such, as long as we name any new
  +  such types CTCP_SOMETHING, this list will always be correct.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(const IRCEvent event)
@@ -235,7 +229,7 @@ public:
 
 // CTCP
 /++
- +  The CTCP plugin (client-to-client protocol) answers to special queries
+ +  The `CTCP` plugin (client-to-client protocol) answers to special queries
  +  sometime made over the IRC protocol. These are generally of metadata about
  +  the client itself and its capbilities.
  +
