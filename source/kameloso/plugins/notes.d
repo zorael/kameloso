@@ -10,6 +10,16 @@ import std.stdio;
 
 private:
 
+/++
+ +  Notes plugin settings.
+ +
+ +  ------------
+ +  struct NotesSettings
+ +  {
+ +      string notesFile = "notes.json";
+ +  }
+ +  ------------
+ +/
 struct NotesSettings
 {
     string notesFile = "notes.json";
@@ -25,7 +35,7 @@ IRCPluginState state;
 /++
  +  The in-memory JSON storage of all stored notes.
  +
- +  It is in the JSON form of string[][string], where the first key is
+ +  It is in the JSON form of `string[][string]`, where the first key is
  +  a nickname.
  +/
 JSONValue notes;
@@ -36,9 +46,6 @@ JSONValue notes;
  +  Sends notes to a channel upon someone joining.
  +
  +  Nothing is sent if no notes are stored.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.JOIN)
 void onJoin(const IRCEvent event)
@@ -84,11 +91,8 @@ void onJoin(const IRCEvent event)
 /++
  +  Sends notes to a channel upon joining it.
  +
- +  Only reacting to others joinng would mean someone never leaving would never
+ +  Only reacting to others joining would mean someone never leaving would never
  +  get notes. This may be extended to trigger when they say something, too.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 void onNames(const IRCEvent event)
@@ -123,9 +127,6 @@ void onNames(const IRCEvent event)
 // onCommandAddNote
 /++
  +  Adds a note to the in-memory storage, and saves it to disk.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
@@ -188,9 +189,6 @@ void onCommandReloadQuotes()
  +  Fakes the supplied user joining a channel.
  +
  +  This is for debugging purposes.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
@@ -228,8 +226,8 @@ void onCommandFakejoin(const IRCEvent event)
  +      nickname = the user whose notes to fetch.
  +
  +  Returns:
- +      a Voldemort Note[] array, where Note is a struct containing a note and
- +      metadata thereof.
+ +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
+ +      and metadata thereof.
  +/
 auto getNotes(const string nickname)
 {
@@ -308,9 +306,9 @@ void clearNotes(const string nickname)
  +  Creates a note and saves it in the in-memory JSON storage.
  +
  +  Params:
- +      nickname: the user for whom the note is meant.
- +      sender: the originating user who places the note.
- +      line: the note text.
+ +      nickname = the user for whom the note is meant.
+ +      sender = the originating user who places the note.
+ +      line = the note text.
  +/
 void addNote(const string nickname, const string sender, const string line)
 {
@@ -423,7 +421,7 @@ public:
 
 // NotesPlugin
 /++
- +  The Notes plugin which allows people to leave messages to eachother,
+ +  The Notes plugin, which allows people to leave messages to eachother,
  +  for offline communication and such.
  +/
 final class NotesPlugin : IRCPlugin
