@@ -324,7 +324,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     sink.put(nickname);
                 }
 
-                if (special)
+                if (special && nickname.length)
                 {
                     sink.colour(DefaultColour.special);
                     sink.put('*');
