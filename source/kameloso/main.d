@@ -790,6 +790,7 @@ int main(string[] args)
     {
         if (connectedAlready)
         {
+            import core.time : seconds;
             logger.log("Please wait a few seconds...");
             interruptibleSleep(Timeout.retry.seconds, abort);
         }
