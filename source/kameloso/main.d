@@ -512,7 +512,7 @@ void propagateBot(IRCBot bot)
  +/
 void initLogger()
 {
-    import std.experimental.logger;
+    import std.experimental.logger : LogLevel;
 
     kameloso.common.logger = new KamelosoLogger(LogLevel.all,
         settings.monochrome);

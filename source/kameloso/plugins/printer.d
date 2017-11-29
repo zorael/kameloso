@@ -476,7 +476,7 @@ void mapEffects(ref IRCEvent event)
 version(Colours)
 void mapColours(ref IRCEvent event)
 {
-    import std.regex;
+    import std.regex : ctRegex, matchAll, regex, replaceAll;
 
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;

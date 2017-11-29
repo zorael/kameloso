@@ -2602,7 +2602,7 @@ final class IRCParseException : Exception
 
 unittest
 {
-    import std.exception;
+    import std.exception : assertThrown;
 
     IRCEvent event;
 

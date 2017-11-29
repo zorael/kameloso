@@ -426,7 +426,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (prefixUDA; getUDAs!(fun, Prefix))
                         {
-                            import kameloso.string;
+                            import kameloso.string : nom, beginsWith,
+                                stripPrefix;
 
                             if (matches)
                             {
