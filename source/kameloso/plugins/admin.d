@@ -340,7 +340,17 @@ void onCommandFake(const IRCEvent event)
 @Prefix(NickPolicy.required, "quit")
 void onCommandQuit(const IRCEvent event)
 {
-    state.mainThread.send(ThreadMessage.Quit(), event.content);
+    with (state)
+    {
+        if (event.content.length)
+        {
+            mainThread.send(ThreadMessage.Quit(), event.content);
+        }
+        else
+        {
+            mainThread.send(ThreadMessage.Quit());
+        }
+    }
 }
 
 
