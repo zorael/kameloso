@@ -256,7 +256,7 @@ pipyon 3
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
-    import std.conv : to;
+    import std.conv : ConvException, to;
     import std.traits;
 
     top:
@@ -303,7 +303,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                     (ElementType!T).stringof);*/
                                 thing.tupleof[i] ~= entry.strip().to!(ElementType!T);
                             }
-                            catch (const Exception e)
+                            catch (const ConvException e)
                             {
                                 logger.errorf("Can't convert array '%s' into '%s': %s",
                                     entry, T.stringof, e.msg);
@@ -323,7 +323,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                 memberstring, valueToSet, T.stringof);*/
                             thing.tupleof[i] = valueToSet.to!T;
                         }
-                        catch (const Exception e)
+                        catch (const ConvException e)
                         {
                             logger.errorf("Can't convert value '%s' into '%s': %s",
                                 valueToSet, T.stringof, e.msg);

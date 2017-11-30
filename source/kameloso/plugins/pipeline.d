@@ -110,8 +110,10 @@ void pipereader(shared IRCPluginState newState)
 
         if (!halt)
         {
+            import std.exception : ErrnoException;
+
             try fifo.reopen(fifo.name);
-            catch (const Exception e)
+            catch (const ErrnoException e)
             {
                 tlsLogger.error(e.msg);
             }

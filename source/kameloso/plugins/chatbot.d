@@ -60,6 +60,8 @@ JSONValue quotes;
  +/
 string getQuote(const string nickname)
 {
+    import std.json : JSONException;
+
     try
     {
         if (const arr = nickname in quotes)
@@ -74,7 +76,7 @@ string getQuote(const string nickname)
             return string.init;
         }
     }
-    catch (const Exception e)
+    catch (const JSONException e)
     {
         logger.error(e.msg);
         return string.init;
@@ -94,6 +96,8 @@ string getQuote(const string nickname)
  +/
 void addQuote(const string nickname, const string line)
 {
+    import std.json : JSONException;
+
     try
     {
         if (nickname in quotes)
@@ -106,7 +110,7 @@ void addQuote(const string nickname, const string line)
             quotes.object[nickname] = JSONValue([ line ]);
         }
     }
-    catch (const Exception e)
+    catch (const JSONException e)
     {
         // No quotes at all
         logger.error(e.msg);

@@ -1442,7 +1442,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.string : toEnum;
     import std.algorithm.iteration : splitter;
-    import std.conv : to;
+    import std.conv : ConvException, to;
     import std.string : toLower;
 
     // :cherryh.freenode.net 005 CHANTYPES=# EXCEPTS INVEX CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459 :are supported by this server
@@ -1484,7 +1484,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
                 bot.server.maxNickLength = value.to!uint;
                 bot.updated = true;
             }
-            catch (const Exception e)
+            catch (const ConvException e)
             {
                 throw new IRCParseException(e.msg, event, e.file, e.line);
             }
@@ -1496,7 +1496,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
                 bot.server.maxChannelLength = value.to!uint;
                 bot.updated = true;
             }
-            catch (const Exception e)
+            catch (const ConvException e)
             {
                 throw new IRCParseException(e.msg, event, e.file, e.line);
             }

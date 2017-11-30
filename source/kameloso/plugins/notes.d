@@ -232,7 +232,7 @@ void onCommandFakejoin(const IRCEvent event)
 auto getNotes(const string nickname)
 {
     import std.datetime : SysTime;
-    import std.json : JSON_TYPE;
+    import std.json : JSON_TYPE, JSONException;
 
     struct Note
     {
@@ -266,7 +266,7 @@ auto getNotes(const string nickname)
             }
         }
     }
-    catch (const Exception e)
+    catch (const JSONException e)
     {
         logger.error(e.msg);
     }
@@ -285,6 +285,10 @@ auto getNotes(const string nickname)
  +/
 void clearNotes(const string nickname)
 {
+    import std.file : FileException;
+    import std.exception : ErrnoException;
+    import std.json : JSONException;
+
     try
     {
         if (nickname in notes)
@@ -293,6 +297,18 @@ void clearNotes(const string nickname)
             notes.object.remove(nickname);
             saveNotes(notesSettings.notesFile);
         }
+    }
+    catch (const JSONException e)
+    {
+        logger.error(e.msg);
+    }
+    catch (const FileException e)
+    {
+        logger.error(e.msg);
+    }
+    catch (const ErrnoException e)
+    {
+        logger.error(e.msg);
     }
     catch (const Exception e)
     {
@@ -339,7 +355,7 @@ void addNote(const string nickname, const string sender, const string line)
             notes[nickname] = [ lineAsAA ];
         }
     }
-    catch (const Exception e)
+    catch (const JSONException e)
     {
         logger.error(e.msg);
     }

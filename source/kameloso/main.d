@@ -721,6 +721,8 @@ void main() {
 else
 int main(string[] args)
 {
+    import std.getopt : GetOptException;
+
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
     initLogger();
@@ -749,7 +751,7 @@ int main(string[] args)
         // Act on arguments getopt, quit if whatever was passed demands it
         if (handleGetopt(args) == Yes.quit) return 0;
     }
-    catch (const Exception e)
+    catch (const GetOptException e)
     {
         logger.error(e.msg);
         return 1;
