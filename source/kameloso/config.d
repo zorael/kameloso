@@ -525,7 +525,7 @@ bara    blaawp,oorgle,blaawp
 ignored completely
 because no DifferentSection struct was passed
 nil     5
-NaN     !"#¤%&/`;
+naN     !"#¤%&/`;
 
     Foo foo;
     configurationFileContents
@@ -556,7 +556,7 @@ NaN     !"#¤%&/`;
         string ignored;
         string because;
         int nil;
-        string NaN;
+        string naN;
     }
 
     // Can read other structs from the same file
@@ -571,7 +571,7 @@ NaN     !"#¤%&/`;
         assert((ignored == "completely"), ignored);
         assert((because == "no DifferentSection struct was passed"), because);
         assert((nil == 5), nil.text);
-        assert((NaN == `!"#¤%&/`), NaN);
+        assert((naN == `!"#¤%&/`), naN);
     }
 }
 
@@ -723,7 +723,7 @@ unittest
         string ignored = "completely";
         string because = "   no DifferentSeection struct was passed";
         int nil = 5;
-        string NaN = `!"#¤%&/`;
+        string naN = `!"#¤%&/`;
     }
 
     Appender!string sink;
@@ -750,7 +750,7 @@ barArray blaawp,oorgle,blaawp
 ignored completely
 because    no DifferentSeection struct was passed
 nil 5
-NaN !"#¤%&/
+naN !"#¤%&/
 `;
 
     enum justified =
@@ -773,7 +773,7 @@ barArray        blaawp,oorgle,blaawp
 ignored         completely
 because         no DifferentSeection struct was passed
 nil             5
-NaN             !"#¤%&/`;
+naN             !"#¤%&/`;
 
     sink.serialise(foo, diff);
     assert((sink.data == unjustified), sink.data);

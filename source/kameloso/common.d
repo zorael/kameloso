@@ -122,6 +122,7 @@ struct CoreSettings
         bool monochrome = true;  /// Ditto
     }
 
+    /// Flag denoting whether the program should reconnect after disconnect
     bool reconnectOnFailure = true;
 
     @Unconfigurable
@@ -767,7 +768,7 @@ unittest
 
     struct EnumThing
     {
-        enum Enum { unset, one, two, three };
+        enum Enum { unset, one, two, three }
         Enum enum_;
     }
 
@@ -1231,8 +1232,9 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
-    bool monochrome;
+    bool monochrome;  /// Whether to use colours or not in logger output
 
+    /// KamelosoLogger-specific constructor
     this(LogLevel lv = LogLevel.all, bool monochrome = false)
     {
         this.monochrome = monochrome;

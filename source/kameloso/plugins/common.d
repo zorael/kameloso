@@ -84,6 +84,7 @@ final class WHOISRequestImpl(F) : WHOISRequest
     /// Stored function pointer/delegate
     F fn;
 
+    /// Constructor taking both an `IRCEvent` and a function pointer/delegate
     this(IRCEvent event, F fn)
     {
         this.event = event;

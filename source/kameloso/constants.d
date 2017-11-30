@@ -46,10 +46,10 @@ enum Timeout
 /// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
 enum : ubyte
 {
-    entry   = 1 << 0,
-    exit    = 1 << 1,
-    success = 1 << 2,
-    failure = 1 << 3,
+    entry   = 1 << 0,  /// On entry of function
+    exit    = 1 << 1,  /// On exit of function
+    success = 1 << 2,  /// On successful exit of function
+    failure = 1 << 3,  /// On thrown exception or error in function
 }
 
 /// Special terminal control characters
