@@ -256,6 +256,9 @@ void onEndOfNames()
 @(IRCEvent.Type.PING)
 void onPing()
 {
+    /// Twitch servers don't support `WHO` commands.
+    if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+
     foreach (const channel; state.bot.homes)
     {
         import std.concurrency : send;
