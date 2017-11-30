@@ -331,8 +331,6 @@ void titleworker(shared Tid sMainThread)
                     catch (const Exception e)
                     {
                         tlsLogger.error("Could not look up title: ", e.msg);
-                        tlsLogger.log("You may need a newer version of dlang-requests.");
-                        tlsLogger.log("See https://github.com/ikod/dlang-requests/issues/62");
                     }
                 }
 
