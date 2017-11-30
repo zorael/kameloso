@@ -473,8 +473,9 @@ public:
 
 // SeenPlugin
 /++
- +  This is the instance of your plugin. It only serves as a way of proxying
- +  calls to our top-level private functions.
+ +  This is your plugin to the outside world, the only thing visible in the
+ +  entire mdule. It only serves as a way of proxying calls to our top-level
+ +  private functions.
  +/
 final class SeenPlugin : IRCPlugin
 {
