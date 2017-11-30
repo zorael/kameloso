@@ -449,11 +449,7 @@ void initPlugins()
  +/
 void teardownPlugins()
 {
-    if (!plugins.length)
-    {
-        logger.warning("Tried to teardown empty plugin array");
-        return;
-    }
+    if (!plugins.length) return;
 
     logger.info("Deinitialising plugins");
 
