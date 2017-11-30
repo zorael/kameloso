@@ -104,7 +104,7 @@ void onSelfjoin(const IRCEvent event)
 {
     if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    state.mainThread.send(ThreadMessage.Sendline(), "WHO " ~ event.channel);
+    state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ event.channel);
 }
 
 

@@ -275,7 +275,7 @@ void onPing()
          +  "types" defined in `kameloso.common`, and this is why we wanted to
          +  import that.
          +/
-        state.mainThread.send(ThreadMessage.Sendline(), "WHO " ~ channel);
+        state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
     }
 }
 
