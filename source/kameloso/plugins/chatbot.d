@@ -60,25 +60,14 @@ JSONValue quotes;
  +/
 string getQuote(const string nickname)
 {
-    import std.json : JSONException;
-
-    try
+    if (const arr = nickname in quotes)
     {
-        if (const arr = nickname in quotes)
-        {
-            import std.random : uniform;
+        import std.random : uniform;
 
-            return arr.array[uniform(0, (*arr).array.length)].str;
-        }
-        else
-        {
-            // No quotes available for nickname
-            return string.init;
-        }
+        return arr.array[uniform(0, (*arr).array.length)].str;
     }
-    catch (const JSONException e)
+    else
     {
-        logger.error(e.msg);
         return string.init;
     }
 }
@@ -272,6 +261,8 @@ void onCommand8ball(const IRCEvent event)
 @Prefix(NickPolicy.required, "quote")
 void onCommandQuote(const IRCEvent event)
 {
+    import std.json : JSONException;
+
     if (!chatbotSettings.quotes) return;
 
     import kameloso.irc : isValidNickname, stripModeSign;
@@ -287,19 +278,27 @@ void onCommandQuote(const IRCEvent event)
         return;
     }
 
-    immutable quote = nickname.getQuote();
-    immutable target = (event.channel.length) ?
-        event.channel : event.sender.nickname;
+    try
+    {
+        immutable quote = nickname.getQuote();
+        immutable target = event.channel.length ?
+            event.channel : event.sender.nickname;
 
-    if (quote.length)
-    {
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s | %s".format(target, nickname, quote));
+        if (quote.length)
+        {
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s | %s".format(target, nickname, quote));
+        }
+        else
+        {
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :No quote on record for %s"
+                .format(target, nickname));
+        }
     }
-    else
+    catch (const JSONException e)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :No quote on record for %s".format(target, nickname));
+        logger.error(e.msg);
     }
 }
 
