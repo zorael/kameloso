@@ -764,6 +764,19 @@ unittest
         assert((login == "kamelusu"), login);
         assert(!special);
     }
+
+    struct EnumThing
+    {
+        enum Enum { unset, one, two, three };
+        Enum enum_;
+    }
+
+    EnumThing e1;
+    EnumThing e2;
+    e2.enum_ = EnumThing.Enum.three;
+    assert((e1.enum_ == EnumThing.Enum.init), e1.enum_.to!string);
+    e2.meldInto(e1);
+    assert((e1.enum_ == EnumThing.Enum.three), e1.enum_.to!string);
 }
 
 
