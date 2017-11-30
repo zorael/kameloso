@@ -17,7 +17,7 @@ import std.stdio;
 struct Connection
 {
 private:
-    import std.socket;
+    import std.socket : Socket, Address;
 
     /// Real IPv4 and IPv6 sockets to connect through.
     Socket socket4, socket6;
@@ -44,6 +44,8 @@ public:
      +/
     void reset()
     {
+        import std.socket : TcpSocket, AddressFamily, SocketType;
+
         socket4 = new TcpSocket;
         socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
         socket = &socket4;
@@ -62,6 +64,8 @@ public:
      +/
     void setOptions(Socket socketToSetup)
     {
+        import std.socket : SocketOption, SocketOptionLevel;
+
         with (socketToSetup)
         with (SocketOption)
         with (SocketOptionLevel)
@@ -85,6 +89,7 @@ public:
     bool resolve(const string address, const ushort port, ref bool abort)
     {
         import core.thread : Thread;
+        import std.socket : getAddress, SocketException;
 
         foreach (immutable i; 0..5)
         {
@@ -133,6 +138,7 @@ public:
     void connect(ref bool abort)
     {
         import core.thread : Thread;
+        import std.socket : AddressFamily, SocketException;
 
         assert((ips.length > 0), "Tried to connect to an unresolved connection");
 

@@ -91,7 +91,7 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
 
 unittest
 {
-    import kameloso.irc;
+    import kameloso.irc : IRCParser;
     import std.array : Appender;
 
     Appender!string sink;

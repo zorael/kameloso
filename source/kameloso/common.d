@@ -1227,7 +1227,7 @@ unittest
 final class KamelosoLogger : Logger
 {
     import std.concurrency : Tid;
-    import std.datetime;
+    import std.datetime : SysTime;
     import std.format : formattedWrite;
     import std.array : Appender;
 
@@ -1248,6 +1248,8 @@ final class KamelosoLogger : Logger
         string prettyFuncName, string moduleName, LogLevel logLevel,
         Tid threadId, SysTime timestamp, Logger logger) @safe
     {
+        import std.datetime : DateTime;
+
         version(Colours)
         {
             if (!monochrome)
@@ -1451,7 +1453,7 @@ unittest
  +/
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
-    import core.thread;
+    import core.thread : Thread, msecs, seconds;
 
     const step = 250.msecs;
 

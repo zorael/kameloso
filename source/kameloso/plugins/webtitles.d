@@ -118,7 +118,7 @@ void onMessage(const IRCEvent event)
 TitleLookup lookupTitle(const string url)
 {
     import arsd.dom : Document;
-    import requests;
+    import requests : Request;
     import std.array : Appender;
     import std.datetime : Clock;
     import std.string : indexOf;

@@ -352,7 +352,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    import std.stdio;
+                    import std.stdio : writeln, writefln;
                 }
 
                 foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))

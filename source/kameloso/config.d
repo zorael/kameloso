@@ -113,7 +113,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
     import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
-    import std.traits;
+    import std.traits : getUDAs, hasUDA, isArray, isSomeString, isType;
 
     static if (__traits(hasMember, Sink, "data"))
     {
@@ -257,7 +257,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
     import std.conv : ConvException, to;
-    import std.traits;
+    import std.traits : getUDAs, hasUDA, isArray, isSomeString, isType;
 
     top:
     switch (memberToSet)
