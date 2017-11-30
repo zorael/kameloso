@@ -30,13 +30,14 @@ IRCBot bot;
 /// Runtime settings for bot behaviour.
 CoreSettings settings;
 
-/// A runtime array of all plugins. We iterate this when we have an IRCEvent to react to.
+/// A runtime array of all plugins. We iterate this when we have an `IRCEvent`
+/// to react to.
 IRCPlugin[] plugins;
 
 /// The socket we use to connect to the server.
 Connection conn;
 
-/// When a nickname was called WHOIS on, for hysteresis.
+/// When a nickname was called `WHOIS` on, for hysteresis.
 SysTime[string] whoisCalls;
 
 /// Parser instance.
@@ -45,7 +46,7 @@ IRCParser parser;
 
 // signalHandler
 /++
- +  Called when a signal is raised, usually SIGINT.
+ +  Called when a signal is raised, usually `SIGINT`.
  +
  +  Sets the `abort` variable to `true` so other parts of the program knows to
  +  gracefully shut down.
@@ -91,7 +92,7 @@ Flag!"quit" checkMessages()
         conn.sendline(line);
     }
 
-    /// Respond to PING with PONG to the supplied text as target.
+    /// Respond to `PING` with `PONG` to the supplied text as target.
     static void pong(ThreadMessage.Pong, string target)
     {
         conn.sendline("PONG :", target);
@@ -361,7 +362,6 @@ void writeConfigurationFile(const string filename)
     foreach (plugin; plugins)
     {
         plugin.addToConfig(sink);
-
         // Not all plugins with configuration is important enough to list, so
         // not all will have something to present()
         plugin.present();

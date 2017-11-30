@@ -108,7 +108,6 @@ public:
                 case "getaddrinfo error: Name or service not known":
                 case "getaddrinfo error: Temporary failure in name resolution":
                     // Assume net down, wait and try again
-
                     logger.warning(e.msg);
                     logger.logf("Network down? Retrying in %d seconds (attempt %d)",
                         Timeout.resolve, i+1);

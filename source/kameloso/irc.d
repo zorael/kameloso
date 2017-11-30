@@ -1179,6 +1179,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
+            // This is where we catch the resolved address
             assert(!event.sender.nickname.length, event.sender.nickname);
             bot.server.resolvedAddress = event.sender.address;
             bot.updated = true;

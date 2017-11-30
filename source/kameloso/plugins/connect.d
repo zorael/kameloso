@@ -13,7 +13,7 @@ private:
 
 // ConnectSettings
 /++
- +  Connection settings.
+ +  Connection settings, gathered in a struct.
  +
  +  ------------
  +  struct ConnectSetting
@@ -49,10 +49,10 @@ struct ConnectSettings
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
-/// Flag whether the server has sent at least one PING
+/// Flag whether the server has sent at least one `PING`
 bool serverPinged;
 
-/// Shorthand alias to `Status`
+/// Shorthand alias to `IRCBot.Status`
 alias Status = IRCBot.Status;
 
 
@@ -470,8 +470,8 @@ void onRegistrationEvent(const IRCEvent event)
             // See onSASLSuccess for info on CAP END
             mainThread.send(ThreadMessage.Quietline(), "CAP END");
         }
-
         break;
+
     case "ACK":
         switch (event.content)
         {

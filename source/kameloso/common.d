@@ -590,8 +590,8 @@ unittest
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis)
-if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const)
-    && !is(intoThis == immutable))
+if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
+    !is(intoThis == immutable))
 {
     if (meldThis == Thing.init)
     {
