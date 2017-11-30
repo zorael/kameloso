@@ -24,6 +24,7 @@ Current functionality includes:
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * Twitch events; simple Twitch bot is now easy
+* tutorial/example `seen` plugin
 
 ## Windows
 
@@ -72,7 +73,7 @@ The bot needs the *nickname services* login name of the administrator/master of 
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you have an old configuration file and you notice missing options, such as the new plugin-specific options, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
+If you have an old configuration file and you notice missing options such as the new plugin-specific settings, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with *nickname services* and whitelist your master login in the configuration file before it will listen to anything you do.
 
@@ -86,6 +87,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | you | This is a quote
          you | kameloso: note OfflinePerson Why so offline?
     kameloso | Note added
+         you | kameloso: seen OfflinePerson
+    kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago
          you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
     kameloso | this is a raw IRC command
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
@@ -94,12 +97,9 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 ## TODO
 
 * "online" help; listing of verbs/commands
-* add ExamplePlugin (work in progress)
 * investigate inverse channel behaviour (blacklists)
-* test IRCv3 more
 * sort out `main.d`
 * pipedream: DCC
-* update docs and wiki
 * throttle sending messages, anti-flood protection
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
