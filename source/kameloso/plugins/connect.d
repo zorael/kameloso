@@ -619,7 +619,9 @@ void onSASLFailure()
             return;
         }
 
-        // End CAP but don't flag as finished auth
+        // Auth failed and will fail even if we try NickServ, so flag as
+        // finishedAuth and invoke `CAP END`
+        bot.finishedAuth = true;
         bot.finishedRegistering = true;
         bot.updated = true;
 
