@@ -2,29 +2,24 @@
 
 A command-line IRC bot.
 
-**kameloso** sits and listens in the channels you specify and reacts to certain events, like bots generally do. It is a passive thing and does not (yet) respond to keyboard input, though text can be sent manually by other means.
+**kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do. It is a passive thing and does not respond to keyboard input. Features are added as plugins, written as [D](https://www.dlang.org) modules.
 
-Features are added as plugins written as [D](https://www.dlang.org) modules.
+It includes a framework that works with "all" server networks. The IRC protocol is riddled with [inconsistencies](http://defs.ircdocs.horse/defs/numerics.html), so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server *daemon*.
 
-It includes a framework that works with "all" server networks. The IRC protocol is riddled with [inconsistencies](http://defs.ircdocs.horse/defs/numerics.html), so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
-
-Networks without [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
+Use on networks without [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
-* printing of IRC events after they are parsed, all formatted and nice
-* repeating text! amazing
-* 8ball! because why not
-* storing, loading and printing quotes from users
-* saving notes to offline users that get played back when they come online
+* user `quotes` service
+* saving `notes` to offline users that get played back when they come online
+* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and an easy example of how plugins work
 * looking up titles of pasted web URLs
+* Twitch events; simple Twitch bot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* Twitch events; simple Twitch bot is now easy
-* tutorial/example `seen` plugin
 
 ## Windows
 
@@ -98,13 +93,15 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 
 * "online" help; listing of verbs/commands
 * investigate inverse channel behaviour (blacklists)
-* sort out `main.d`
+* sort out `main.d`, can't do much about it
 * pipedream: DCC
+* pipedream two: `ncurses`
 * throttle sending messages, anti-flood protection
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
 * ready for channel awareness
 * more command-line flags
+* [bash.org](http://bash.org/?random) quote fetcher (needs throttling)
 
 ## Built With
 
