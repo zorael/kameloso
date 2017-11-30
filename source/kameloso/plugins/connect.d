@@ -119,12 +119,7 @@ void joinChannels()
 {
     with (state)
     {
-        if (bot.homes.length)
-        {
-            bot.finishedAuth = true;
-            bot.updated = true;
-        }
-        else if (!bot.channels.length)
+        if (!bot.homes.length && !bot.channels.length)
         {
             logger.warning("No channels, no purpose...");
             return;
@@ -144,30 +139,6 @@ void joinChannels()
             .joiner(",");
 
         mainThread.send(ThreadMessage.Sendline(), "JOIN :%s".format(chanlist));
-    }
-}
-
-
-// onWelcome
-/++
- +  Gets the final nickname from a `WELCOME` event, update the `IRCBot` and flag
- +  it as updated, so the change will propagate to all other plugins.
- +/
-@(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(const IRCEvent event)
-{
-    with (state)
-    {
-        bot.finishedRegistering = true;
-
-        if (!bot.server.resolvedAddress.length)
-        {
-            // Must resolve here too if the server doesn't negotiate CAP
-            bot.server.resolvedAddress = event.sender.address;
-        }
-
-        bot.nickname = event.target.nickname;
-        bot.updated = true;
     }
 }
 
@@ -523,33 +494,6 @@ void onRegistrationEvent(const IRCEvent event)
     default:
         //logger.warning("Unhandled capability type: ", event.aux);
         break;
-    }
-
-    with(state)
-    if (event.sender.nickname.length && !bot.server.resolvedAddress.length)
-    {
-        bot.server.resolvedAddress = event.sender.nickname;
-        bot.updated = true;
-    }
-}
-
-
-// onNotice
-/++
- +  Record the resolved address of the server from a `NOTICE` event.
- +/
-@(IRCEvent.Type.NOTICE)
-void onNotice(const IRCEvent event)
-{
-    with (state)
-    {
-        if (!bot.finishedRegistering) return;
-
-        if (event.sender.nickname.length && !bot.server.resolvedAddress.length)
-        {
-            bot.server.resolvedAddress = event.sender.nickname;
-            bot.updated = true;
-        }
     }
 }
 
