@@ -554,48 +554,35 @@ Flag!"quit" mainLoop(Generator!string generator)
 
             IRCEvent event;
 
-            try event = parser.toIRCEvent(line);
-            catch (const IRCParseException e)
+            try
             {
-                logger.warningf("IRCParseException at %s:%d: %s",
-                    e.file, e.line, e.msg);
-                printObject(event);
-                continue;
-            }
-            catch (const Exception e)
-            {
-                logger.warningf("Unhandled exception at %s:%d: %s",
-                    e.file, e.line, e.msg);
-                continue;
-            }
+                event = parser.toIRCEvent(line);
 
-            if (parser.bot.updated)
-            {
-                // Parsing changed the bot; propagate
-                parser.bot.updated = false;
-                bot = parser.bot;
-                propagateBot(bot);
-            }
-
-            foreach (plugin; plugins)
-            {
-                plugin.postprocess(event);
-
-                auto yieldedBot = plugin.yieldBot();
-                if (yieldedBot.updated)
+                if (parser.bot.updated)
                 {
-                    // Postprocessing changed the bot; propagate
-                    bot = yieldedBot;
-                    bot.updated = false;
-                    parser.bot = bot;
+                    // Parsing changed the bot; propagate
+                    parser.bot.updated = false;
+                    bot = parser.bot;
                     propagateBot(bot);
                 }
-            }
 
-            // Let each plugin process the event
-            foreach (plugin; plugins)
-            {
-                try
+                foreach (plugin; plugins)
+                {
+                    plugin.postprocess(event);
+                    auto yieldedBot = plugin.yieldBot();
+
+                    if (yieldedBot.updated)
+                    {
+                        // Postprocessing changed the bot; propagate
+                        bot = yieldedBot;
+                        bot.updated = false;
+                        parser.bot = bot;
+                        propagateBot(bot);
+                    }
+                }
+
+                // Let each plugin process the event
+                foreach (plugin; plugins)
                 {
                     plugin.onEvent(event);
 
@@ -610,17 +597,26 @@ Flag!"quit" mainLoop(Generator!string generator)
                             There's no need to check for both separately since
                             this is just a single plugin processing; it keeps
                             its update internally between both passes.
-                         */
+                        */
                         bot = yieldedBot;
                         bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
                     }
                 }
-                catch (const Exception e)
-                {
-                    logger.error(e.msg);
-                }
+            }
+            catch (const IRCParseException e)
+            {
+                logger.warningf("IRCParseException at %s:%d: %s",
+                    e.file, e.line, e.msg);
+                printObject(event);
+                continue;
+            }
+            catch (const Exception e)
+            {
+                logger.warningf("Unhandled exception at %s:%d: %s",
+                    e.file, e.line, e.msg);
+                continue;
             }
         }
 
