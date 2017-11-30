@@ -146,14 +146,8 @@ public:
 
             try
             {
-                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
-                    Timeout.receive.seconds*5);
-
                 logger.logf("Connecting to %s ...", ip);
                 socket.connect(ip);
-
-                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
-                    Timeout.receive.seconds);
 
                 // If we're here no exception was thrown, so we're connected
                 connected = true;
