@@ -443,7 +443,8 @@ if (is(Enum == enum))
 {
     enum enumSwitch = ()
     {
-       string enumSwitch = "with (Enum) switch (enumstring)\n{";
+        string enumSwitch = "import std.conv : ConvException;\n";
+        enumSwitch ~= "with (Enum) switch (enumstring)\n{\n";
 
         foreach (memberstring; __traits(allMembers, Enum))
         {
@@ -451,7 +452,7 @@ if (is(Enum == enum))
             enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-        enumSwitch ~= `default: throw new Exception("No such enum member: "
+        enumSwitch ~= `default: throw new ConvException("No such enum member: "
             ~ enumstring);}`;
 
         return enumSwitch;

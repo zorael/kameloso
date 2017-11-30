@@ -301,7 +301,7 @@ unittest
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.string : toEnum;
-    import std.conv : to;
+    import std.conv : ConvException, to;
 
     immutable typestring = slice.nom(' ');
 
@@ -316,7 +316,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
             with (IRCEvent.Type)
             event.type = (event.type == UNSET) ? NUMERIC : event.type;
         }
-        catch (const Exception e)
+        catch (const ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
         }
@@ -324,7 +324,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     else
     {
         try event.type = typestring.toEnum!(IRCEvent.Type);
-        catch (const Exception e)
+        catch (const ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
         }
