@@ -476,7 +476,20 @@ void startPlugins()
     if (!plugins.length) return;
 
     logger.info("Starting plugins");
-    foreach (plugin; plugins) plugin.start();
+    foreach (plugin; plugins)
+    {
+        plugin.start();
+        auto yieldedBot = plugin.yieldBot();
+
+        if (yieldedBot.updated)
+        {
+            // start changed the bot; propagate
+            bot = yieldedBot;
+            bot.updated = false;
+            parser.bot = bot;
+            propagateBot(bot);
+        }
+    }
 }
 
 
