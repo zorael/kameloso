@@ -610,29 +610,21 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         }
                     }
 
-                    try
-                    {
-                        import std.meta   : AliasSeq;
-                        import std.traits : Parameters;
+                    import std.meta   : AliasSeq;
+                    import std.traits : Parameters;
 
-                        static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
-                        {
-                            fun(mutEvent);
-                        }
-                        else static if (!Parameters!fun.length)
-                        {
-                            fun();
-                        }
-                        else
-                        {
-                            static assert(0, "Unknown function signature: " ~
-                                typeof(fun).stringof);
-                        }
-                    }
-                    catch (const Exception e)
+                    static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
                     {
-                        import kameloso.common : logger;
-                        logger.error(name, " ", e.msg);
+                        fun(mutEvent);
+                    }
+                    else static if (!Parameters!fun.length)
+                    {
+                        fun();
+                    }
+                    else
+                    {
+                        static assert(0, "Unknown function signature: " ~
+                            typeof(fun).stringof);
                     }
 
                     static if (hasUDA!(fun, Terminate))
