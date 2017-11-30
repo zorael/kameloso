@@ -95,7 +95,8 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_CREATED:
     case RPL_MYINFO:
     case RPL_ENDOFWHO:
-    // case CAP:
+    case RPL_WHOREPLY:
+    case CAP:
         // These event types are too spammy; ignore
         if (!printerSettings.filterVerbose) goto default;
         break;

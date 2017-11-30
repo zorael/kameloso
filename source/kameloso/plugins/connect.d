@@ -439,7 +439,7 @@ void onRegistrationEvent(const IRCEvent event)
             {
             case "sasl":
                 if (!connectSettings.sasl || !bot.authPassword.length) continue;
-                mainThread.send(ThreadMessage.Sendline(), "CAP REQ :sasl");
+                mainThread.send(ThreadMessage.Quietline(), "CAP REQ :sasl");
                 tryingSASL = true;
                 break;
 
@@ -472,7 +472,7 @@ void onRegistrationEvent(const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                mainThread.send(ThreadMessage.Sendline(), "CAP REQ :" ~ cap);
+                mainThread.send(ThreadMessage.Quietline(), "CAP REQ :" ~ cap);
                 break;
 
             default:
@@ -485,7 +485,7 @@ void onRegistrationEvent(const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            mainThread.send(ThreadMessage.Sendline(), "CAP END");
+            mainThread.send(ThreadMessage.Quietline(), "CAP END");
         }
 
         break;
@@ -595,7 +595,7 @@ void onSASLSuccess()
         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
         +/
 
-        mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        mainThread.send(ThreadMessage.Quietline(), "CAP END");
     }
 }
 
@@ -624,7 +624,7 @@ void onSASLFailure()
         bot.updated = true;
 
         // See onSASLSuccess for info on CAP END
-        mainThread.send(ThreadMessage.Sendline(), "CAP END");
+        mainThread.send(ThreadMessage.Quietline(), "CAP END");
     }
 }
 
@@ -642,7 +642,7 @@ void register()
         bot.startedRegistering = true;
         bot.updated = true;
 
-        mainThread.send(ThreadMessage.Sendline(), "CAP LS 302");
+        mainThread.send(ThreadMessage.Quietline(), "CAP LS 302");
 
         if (bot.pass.length)
         {
