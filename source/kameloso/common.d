@@ -1402,13 +1402,16 @@ size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
         }
     }
 
-    double frac = (num / double(n));
-    uint floor_ = cast(uint)frac;
+    const frac = (num / double(n));
+    const floor_ = cast(uint)frac;
 
-    static if (oneUp) uint mod = (floor_ + 1);
+    static if (oneUp)
+    {
+        const mod = (floor_ + 1);
+    }
     else
     {
-        uint mod = (floor_ == frac) ? floor_ : (floor_ + 1);
+        const mod = (floor_ == frac) ? floor_ : (floor_ + 1);
     }
 
     return (mod * n);
