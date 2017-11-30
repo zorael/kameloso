@@ -918,18 +918,6 @@ struct IRCBot
         /// The original bot nickname before connecting, in case it changed
         string origNickname;
 
-        /// Flag that we started the register process (USER blah * 8 : blah)
-        bool startedRegistering;
-
-        /// Flag that we finished the regitser process (USER blah * 8 : blah)
-        bool finishedRegistering;
-
-        /// Flag that we started authenticating with SASL or nickname services
-        bool startedAuth;
-
-        /// Flag that we finished authentictaing with SASL or nickname services
-        bool finishedAuth;
-
         /// Status of authentication process (SASL, NickServ)
         Status authStatus;
 
