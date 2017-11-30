@@ -815,6 +815,7 @@ int main(string[] args)
         bot.registerStatus = IRCBot.Status.notStarted;
         bot.authStatus = IRCBot.Status.notStarted;
         bot.server.resolvedAddress = string.init;
+        bot.updated = false;
         parser = IRCParser(bot);
 
         initPlugins();
