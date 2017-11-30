@@ -329,7 +329,7 @@ void clearNotes(const string nickname)
 void addNote(const string nickname, const string sender, const string line)
 {
     import std.datetime : Clock;
-    import std.json : JSON_TYPE;
+    import std.json : JSONException, JSON_TYPE;
 
     if (!line.length)
     {
