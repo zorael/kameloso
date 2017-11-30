@@ -52,6 +52,9 @@ IRCPluginState state;
 /// Flag whether the server has sent at least one PING
 bool serverPinged;
 
+/// Shorthand alias to `Status`
+alias Status = IRCBot.Status;
+
 
 // onSelfpart
 /++
@@ -202,10 +205,10 @@ void onPing(const IRCEvent event)
     {
         mainThread.send(ThreadMessage.Pong(), target);
 
-        if (bot.startedAuth && !bot.finishedAuth)
+        if (bot.authStatus == Status.started)
         {
             logger.log("Auth timed out. Joining channels");
-            bot.finishedAuth = true;
+            bot.authStatus = Status.finished;
             bot.updated = true;
             joinChannels();
         }
@@ -249,7 +252,7 @@ void tryAuth()
         break;
     }
 
-    state.bot.startedAuth = true;
+    state.bot.authStatus = Status.started;
     state.bot.updated = true;
 
     with (state)
@@ -266,6 +269,8 @@ void tryAuth()
             logger.warningf("Cannot auth when you have changed your nickname " ~
                 "(%s != %s)", bot.nickname, bot.origNickname);
 
+            bot.authStatus = Status.finished;
+            bot.updated = true;
             joinChannels();
             return;
         }
@@ -300,7 +305,8 @@ void tryAuth()
 
     case twitch:
         // No registration available
-        bot.finishedAuth = true;
+        bot.authStatus = Status.finished;
+        bot.updated = true;
         return;
 
     default:
@@ -327,11 +333,15 @@ void onEndOfMotd()
 {
     with (state)
     {
-        if (bot.authPassword.length && !bot.finishedAuth) tryAuth();
-
-        if (bot.finishedAuth || (bot.server.daemon == IRCServer.Daemon.twitch))
+        if (bot.authPassword.length && (bot.authStatus == Status.notStarted))
         {
-            // tryAuth finished early with an unsuccessful login
+            tryAuth();
+        }
+
+        if (bot.authStatus == Status.finished)
+        {
+            // tryAuth finished early with an unsuccessful login, else
+            // `bot.authStatus` would be set much later.
             logger.log("Joining channels");
             joinChannels();
         }
@@ -360,11 +370,13 @@ void onAuthEnd()
 {
     with (state)
     {
-        // This can be before registration ends in case of SASL
-        if (bot.finishedAuth || !bot.finishedRegistering) return;
-
-        bot.finishedAuth = true;
+        bot.authStatus = Status.finished;
         bot.updated = true;
+
+        // This can be before registration ends in case of SASL
+        // return if still registering
+        if (bot.registerStatus == Status.started) return;
+
         logger.log("Joining channels");
         joinChannels();
     }
@@ -554,6 +566,9 @@ void onSASLAuthenticate()
     {
         import std.base64 : Base64;
 
+        bot.authStatus = Status.started;
+        bot.updated = true;
+
         immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
         immutable authToken = "%s%c%s%c%s"
             .format(bot.origNickname, '\0', authLogin, '\0', bot.authPassword);
@@ -578,9 +593,7 @@ void onSASLSuccess()
 {
     with (state)
     {
-        // Naïve, revisit
-        bot.finishedRegistering = true;
-        bot.finishedAuth = true;
+        bot.authStatus = Status.finished;
         bot.updated = true;
 
         /++
@@ -616,16 +629,16 @@ void onSASLFailure()
         if (connectSettings.exitOnSASLFailure)
         {
             mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
+            //bot.authStatus = Status.failed;
             return;
         }
 
         // Auth failed and will fail even if we try NickServ, so flag as
-        // finishedAuth and invoke `CAP END`
-        bot.finishedAuth = true;
-        bot.finishedRegistering = true;
+        // finished auth and invoke `CAP END`
+        bot.authStatus = Status.finished;
         bot.updated = true;
 
-        // See onSASLSuccess for info on CAP END
+        // See `onSASLSuccess` for info on `CAP END`
         mainThread.send(ThreadMessage.Quietline(), "CAP END");
     }
 }
@@ -639,9 +652,7 @@ void register()
 {
     with (state)
     {
-        if (bot.startedRegistering) return;
-
-        bot.startedRegistering = true;
+        bot.registerStatus = Status.started;
         bot.updated = true;
 
         mainThread.send(ThreadMessage.Quietline(), "CAP LS 302");
