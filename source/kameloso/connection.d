@@ -116,11 +116,6 @@ public:
                     return false;
                 }
             }
-            catch (const Exception e)
-            {
-                logger.error(e.msg);
-                return false;
-            }
         }
 
         logger.warning("Failed to resolve host");
@@ -168,11 +163,6 @@ public:
             catch (const SocketException e)
             {
                 logger.warning("Failed! ", e.msg);
-            }
-            catch (const Exception e)
-            {
-                logger.error(e.msg);
-                assert(0);
             }
             finally
             {
