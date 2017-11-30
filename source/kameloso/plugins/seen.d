@@ -327,14 +327,23 @@ void onCommandSeen(const IRCEvent event)
     import std.datetime : Clock, SysTime;
     import std.format : format;
 
-    const userTimestamp = event.content in seenUsers;
     immutable target = event.channel.length ?
         event.channel : event.sender.nickname;
+
+    if (event.sender.nickname == event.content)
+    {
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :That's you!"
+            .format(target));
+        return;
+    }
+
+    const userTimestamp = event.content in seenUsers;
 
     if (!userTimestamp)
     {
         state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :I have never seen %s"
+            "PRIVMSG %s :I have never seen %s."
             .format(target, event.content));
         return;
     }
@@ -343,7 +352,7 @@ void onCommandSeen(const IRCEvent event)
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
     state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :I last saw %s %s ago"
+        "PRIVMSG %s :I last saw %s %s ago."
         .format(target, event.content, elapsed));
 }
 
