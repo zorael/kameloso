@@ -812,10 +812,8 @@ int main(string[] args)
         if (!conn.connected) return 1;
 
         // Reset fields in the bot that should not survive a reconnect
-        bot.startedRegistering = false;
-        bot.finishedRegistering = false;
-        bot.startedAuth = false;
-        bot.finishedAuth = false;
+        bot.registerStatus = IRCBot.Status.notStarted;
+        bot.authStatus = IRCBot.Status.notStarted;
         bot.server.resolvedAddress = string.init;
         parser = IRCParser(bot);
 

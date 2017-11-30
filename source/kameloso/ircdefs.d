@@ -903,6 +903,14 @@ struct IRCBot
         string[] channels;
     }
 
+    enum Status
+    {
+        unset,
+        notStarted,
+        started,
+        finished,
+    }
+
     @Unconfigurable
     {
         IRCServer server;
@@ -921,6 +929,12 @@ struct IRCBot
 
         /// Flag that we finished authentictaing with SASL or nickname services
         bool finishedAuth;
+
+        /// Status of authentication process (SASL, NickServ)
+        Status authStatus;
+
+        /// Status of registration process (logon)
+        Status registerStatus;
 
         /// Flag that the bot was recently updated with new information that
         /// should be propagated to everywhere else in the program.
