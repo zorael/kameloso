@@ -142,7 +142,10 @@ Flag!"quit" checkMessages()
         do
         {
             receivedSomething = receiveTimeout(0.seconds,
-                (Variant v) {},
+                (Variant v)
+                {
+                    logger.warning("Main thread received unknown Variant: ", v);
+                }
             );
         }
         while (receivedSomething);
