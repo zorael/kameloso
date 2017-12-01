@@ -607,6 +607,8 @@ void onAnyEvent(const IRCEvent event)
         }
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
+        writeln();
+        stdout.flush();
     }
 }
 
