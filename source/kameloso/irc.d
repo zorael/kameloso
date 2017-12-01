@@ -1980,7 +1980,7 @@ unittest
  +  It needs to be passed an `IRCServer` to know the max channel name length.
  +  An alternative would be to change the `IRCServer` parameter to be an uint.
  +/
-bool isValidChannel(const string line, const IRCServer server)
+bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
 {
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
@@ -1992,28 +1992,27 @@ bool isValidChannel(const string line, const IRCServer server)
      +
      +  https://tools.ietf.org/html/rfc1459.html
      +/
+    if ((line.length < 2) || (line.length > server.maxChannelLength))
+    {
+        // Too short or too long a line
+        return false;
+    }
+
+    if ((line[0] != '#') && (line[0] != '&')) return false;
 
     if ((line.indexOf(' ') != -1) ||
         (line.indexOf(',') != -1) ||
         (line.indexOf(7) != -1))
     {
+        // Contains spaces, commas or byte 7
         return false;
     }
 
-    if ((line.length <= 1) || (line.length > server.maxChannelLength))
+    if (line.length > 3)
     {
-        return false;
-    }
-
-    if ((line[0] == '#') || (line[0] == '&'))
-    {
-        if (line.length > 3)
-        {
-           return (line[2..$].indexOf('#') == -1) &&
-                  (line[2..$].indexOf('&') == -1);
-        }
-
-        return true;
+        // Allow for two ##s (or &&s) in the name but no more
+        return (line[2..$].indexOf('#') == -1) &&
+                (line[2..$].indexOf('&') == -1);
     }
 
     return false;
