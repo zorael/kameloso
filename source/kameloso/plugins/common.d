@@ -412,7 +412,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                                 writeln(name, " ignore invalid channel ",
                                         mutEvent.channel);
                             }
-                            return;
+                            continue funloop;
                         }
                         break;
 
