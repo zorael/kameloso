@@ -103,9 +103,20 @@ void onSelfpart(const IRCEvent event)
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(const IRCEvent event)
 {
-    if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    import std.algorithm.searching : canFind;
 
-    state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ event.channel);
+    with (state)
+    {
+        if (!bot.channels.canFind(event.channel))
+        {
+            // Track new channel in the channels array
+            bot.channels ~= event.channel;
+        }
+
+        if (bot.server.daemon == IRCServer.Daemon.twitch) return;
+
+        mainThread.send(ThreadMessage.Quietline(), "WHO " ~ event.channel);
+    }
 }
 
 
