@@ -846,3 +846,43 @@ unittest
 
     assertThrown!AssertError((-1).tabs);
 }
+
+
+// escaped
+/++
+ +
+ +/
+string escaped(const string line)
+{
+    import std.stdio;
+    import std.regex : regex, replaceAll;
+
+    string[] toEscape =
+    [
+        r"\(",
+        r"\)",
+        r"\^",
+        r"\[",
+        r"\]",
+    ];
+
+    string replaced = line;
+
+    foreach (character; toEscape)
+    {
+        replaced = replaced.replaceAll(character.regex, character);
+    }
+
+    return replaced;
+}
+
+unittest
+{
+    assert("(".escaped == r"\(");
+    assert(")".escaped == r"\)");
+    assert("^".escaped == r"\^");
+    assert("[".escaped == r"\[");
+    assert("]".escaped == r"\]");
+    assert(string.init.escaped == string.init);
+    assert("Lorem ipsum (sit amet)".escaped == r"Lorem ipsum \(sit amet\)");
+}
