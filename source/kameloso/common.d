@@ -724,8 +724,16 @@ unittest
         assert((f == 0.1f), f.to!string);
     }
 
-    import kameloso.irc : IRCUser;
-    IRCUser one;
+    struct User
+    {
+        string nickname;
+        string alias_;
+        string ident;
+        string address;
+        bool special;
+    }
+
+    User one;
     with (one)
     {
         nickname = "kameloso";
@@ -734,7 +742,7 @@ unittest
         special = false;
     }
 
-    IRCUser two;
+    User two;
     with (two)
     {
         nickname = "kameloso^";
@@ -744,7 +752,7 @@ unittest
         special = true;
     }
 
-    IRCUser twoCopy = two;
+    User twoCopy = two;
 
     one.meldInto!(No.overwrite)(two);
     with (two)

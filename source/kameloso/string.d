@@ -475,19 +475,24 @@ if (is(Enum == enum))
 @system
 unittest
 {
-    import kameloso.irc   : IRCEvent;
-
-    import core.exception : AssertError;
+    import std.conv : ConvException;
     import std.exception  : assertThrown;
 
-    with (IRCEvent)
-    with (IRCEvent.Type)
+    enum Enum
     {
-        assert("QUERY".toEnum!Type == QUERY);
-        assert("PRIVMSG".toEnum!Type == PRIVMSG);
-        assert("RPL_ENDOFMOTD".toEnum!Type == RPL_ENDOFMOTD);
-        assert("UNSET".toEnum!Type == UNSET);
-        assertThrown!Exception("DOESNTEXIST".toEnum!Type);  // needs @system
+        UNSET,
+        QUERY,
+        PRIVMSG,
+        RPL_ENDOFMOTD
+    }
+
+    with (Enum)
+    {
+        assert("QUERY".toEnum!Enum == QUERY);
+        assert("PRIVMSG".toEnum!Enum == PRIVMSG);
+        assert("RPL_ENDOFMOTD".toEnum!Enum == RPL_ENDOFMOTD);
+        assert("UNSET".toEnum!Enum == UNSET);
+        assertThrown!ConvException("DOESNTEXIST".toEnum!Enum);  // needs @system
     }
 }
 
@@ -551,10 +556,15 @@ if (is(Enum == enum))
 ///
 unittest
 {
-    import kameloso.irc : IRCEvent;
+    enum Enum
+    {
+        UNSET,
+        QUERY,
+        PRIVMSG,
+        RPL_ENDOFMOTD
+    }
 
-    with (IRCEvent)
-    with (IRCEvent.Type)
+    with (Enum)
     {
         assert(enumToString(QUERY) == "QUERY");
         assert(enumToString(PRIVMSG) == "PRIVMSG");
