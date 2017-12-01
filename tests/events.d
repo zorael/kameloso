@@ -353,6 +353,7 @@ unittest
             assert((type == RPL_WHOISIDLE), type.to!string);
             assert((sender.address == "rajaniemi.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
+            assert((target.nickname == "zorael"), target.nickname);
             assert((content == "0"), content);
             assert((aux == "1510219961"), aux);
             assert((num == 317), num.to!string);
