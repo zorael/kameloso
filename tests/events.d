@@ -788,6 +788,7 @@ unittest
             assert((type == USERSTATE), type.to!string);
             assert((sender.address == "tmi.twitch.tv"), sender.address);
             assert(sender.special, sender.special.to!string);
+            assert(!content.length, content);
             assert((channel == "#zorael"), channel);
         }
     }
@@ -800,6 +801,7 @@ unittest
             assert((type == ROOMSTATE), type.to!string);
             assert((sender.address == "tmi.twitch.tv"), sender.address);
             assert(sender.special, sender.special.to!string);
+            assert(!content.length, content);
             assert((channel == "#zorael"), channel);
         }
     }

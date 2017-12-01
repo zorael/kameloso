@@ -1023,7 +1023,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             }
         }
 
-        event.content = event.content.length ? event.content : slice;
+        // If content is empty and slice hasn't already been used, assign it
+        if (!event.content.length && (slice != event.channel) &&
+            (slice != event.target.nickname))
+        {
+            event.content = slice;
+        }
         break;
     }
 
