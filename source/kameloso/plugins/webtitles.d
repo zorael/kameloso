@@ -341,6 +341,8 @@ void titleworker(shared Tid sMainThread)
 
         if (lookup == TitleLookup.init) return;
 
+        // parseTitle to fix html entities and linebreaks
+        lookup.title = parseTitle(lookup.title);
         cache[url] = lookup;
 
         if (lookup.domain.length)
