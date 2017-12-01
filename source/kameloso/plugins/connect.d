@@ -309,10 +309,12 @@ void onEndOfMotd()
             tryAuth();
         }
 
-        if (bot.authStatus == Status.finished)
+        if ((bot.authStatus == Status.finished) ||
+            (bot.server.daemon == IRCServer.Daemon.twitch))
         {
             // tryAuth finished early with an unsuccessful login, else
             // `bot.authStatus` would be set much later.
+            // Twitch servers can't auth so join immediately
             logger.log("Joining channels");
             joinChannels();
         }
