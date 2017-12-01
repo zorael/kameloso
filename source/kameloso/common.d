@@ -163,6 +163,7 @@ template isConfigurableVariable(alias var)
     }
 }
 
+///
 unittest
 {
     int i;
@@ -496,6 +497,7 @@ if (Things.length > 0)
     }();
 }
 
+///
 unittest
 {
     struct Foo
@@ -822,6 +824,7 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     }
 }
 
+///
 unittest
 {
     import std.conv : to;
@@ -1175,6 +1178,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     return sink.data;
 }
 
+///
 version(Colours)
 unittest
 {
@@ -1188,6 +1192,7 @@ unittest
     assert((name == alsoName), alsoName);
 }
 
+///
 version(Colours)
 unittest
 {
@@ -1355,6 +1360,7 @@ final class KamelosoLogger : Logger
     }
 }
 
+///
 unittest
 {
     Logger log_ = new KamelosoLogger(LogLevel.all, true);
@@ -1421,6 +1427,7 @@ size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     return (mod * n);
 }
 
+///
 unittest
 {
     import std.conv : text;

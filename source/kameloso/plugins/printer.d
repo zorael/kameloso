@@ -580,6 +580,7 @@ void mapColours(ref IRCEvent event)
     }
 }
 
+///
 version(Colours)
 unittest
 {
@@ -672,6 +673,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     event.content = sink.data;
 }
 
+///
 version(Colours)
 unittest
 {

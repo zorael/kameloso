@@ -121,6 +121,7 @@ string sedReplace(const string originalLine, const string expression) @safe
     }
 }
 
+///
 unittest
 {
     {

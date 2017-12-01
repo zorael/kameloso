@@ -1813,6 +1813,7 @@ string decodeIRCv3String(const string line)
     return (replaced[$-1] == '\\') ? replaced[0..$-1] : replaced;
 }
 
+///
 unittest
 {
     immutable s1 = decodeIRCv3String(`kameloso\sjust\ssubscribed\swith\sa\s` ~
@@ -2009,6 +2010,7 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
     return false;
 }
 
+///
 unittest
 {
     IRCServer s;
@@ -2042,6 +2044,7 @@ bool isValidNickname(const string nickname, const IRCServer server)
     return !nickname.matchAll(engine).empty;
 }
 
+///
 unittest
 {
     import std.range : repeat;
@@ -2119,6 +2122,7 @@ string stripModeSign(const string nickname)
     }
 }
 
+///
 unittest
 {
     assert("@nickname".stripModeSign == "nickname");

@@ -67,6 +67,7 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     return arr[0..index];
 }
 
+///
 unittest
 {
     {
@@ -160,6 +161,7 @@ string plurality(const int num, const string singular, const string plural) pure
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
 
+///
 unittest
 {
     assert(10.plurality("one","many") == "many");
@@ -196,6 +198,7 @@ string unquoted(const string line) pure
     }
 }
 
+///
 unittest
 {
     assert(`"Lorem ipsum sit amet"`.unquoted == "Lorem ipsum sit amet");
@@ -229,6 +232,7 @@ if (isSomeString!T)
     return (haystack[0..needle.length] == needle);
 }
 
+///
 unittest
 {
     assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
@@ -247,6 +251,7 @@ if (isSomeString!T)
     return (line[0] == charcode);
 }
 
+///
 unittest
 {
     assert(":Lorem ipsum".beginsWith(':'));
@@ -276,6 +281,7 @@ T[] arrayify(string separator = ",", T)(const T line)
     return line.splitter(separator).map!(a => a.strip).array;
 }
 
+///
 unittest
 {
     assert("foo,bar,baz".arrayify     == [ "foo", "bar", "baz" ]);
@@ -315,6 +321,7 @@ string stripPrefix(const string line, const string prefix)
     return hits[1];
 }
 
+///
 unittest
 {
     immutable lorem = "say: lorem ipsum".stripPrefix("say");
@@ -389,6 +396,7 @@ string timeSince(const Duration duration)
     return sink.data;
 }
 
+///
 unittest
 {
     immutable dur1 = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
@@ -463,6 +471,7 @@ if (is(Enum == enum))
     assert(0, "No such member " ~ enumstring);
 }
 
+///
 @system
 unittest
 {
@@ -539,6 +548,7 @@ if (is(Enum == enum))
     }
 }
 
+///
 unittest
 {
     import kameloso.irc : IRCEvent;
@@ -634,6 +644,7 @@ void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     b = numFromHex!acceptLowercase(hex[4..$]);
 }
 
+///
 unittest
 {
     import std.conv : text;
@@ -695,6 +706,7 @@ string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
         line[0..($-suffix.length)] : line;
 }
 
+///
 unittest
 {
     immutable line = "harblsnarbl";
@@ -754,6 +766,7 @@ uint sharedDomains(const string rawOne, const string rawOther)
     return dots;
 }
 
+///
 unittest
 {
     import std.conv : text;
@@ -804,6 +817,7 @@ string tabs(int num) pure
     return total;
 }
 
+///
 @system
 unittest
 {

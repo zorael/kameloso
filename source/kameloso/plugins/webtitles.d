@@ -218,6 +218,7 @@ string getDomainFromURL(const string url) @safe
     return domainHits.length ? domainHits[1] : string.init;
 }
 
+///
 @safe unittest
 {
     immutable d1 = getDomainFromURL("http://www.youtube.com/watch?asoidjsd&asd=kokofruit");
@@ -266,6 +267,7 @@ string parseTitle(const string title)
         .htmlEntitiesDecode();
 }
 
+///
 unittest
 {
     immutable t1 = "&quot;Hello&nbsp;world!&quot;";

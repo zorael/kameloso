@@ -339,6 +339,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     }
 }
 
+///
 unittest
 {
     import std.conv : to;
