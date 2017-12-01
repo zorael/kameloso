@@ -386,36 +386,34 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 {
                     import std.algorithm.searching : canFind;
 
-                    // Fastest way we know of
-                    if ((cast(ubyte[])event.content)
-                        .canFind(cast(ubyte[])state.bot.nickname))
+                    with (IRCEvent.Type)
+                    switch (type)
                     {
-                        // Nick was mentioned (naïve guess)
-                        immutable maybeInverted = content.invert(state.bot.nickname);
-
-                        if ((content != maybeInverted) &&
-                            (printerSettings.bellOnMention))
+                    case CHAN:
+                    case QUERY:
+                        if ((cast(ubyte[])event.content)
+                            .canFind(cast(ubyte[])state.bot.nickname))
                         {
-                            with (IRCEvent.Type)
-                            switch (type)
+                            // Nick was mentioned (naïve guess)
+                            immutable inverted = content.invert(state.bot.nickname);
+
+                            if ((content != inverted) &&
+                                (printerSettings.bellOnMention))
                             {
-                            case CHAN:
-                            case QUERY:
                                 sink.put(TerminalToken.bell);
-                                break;
-
-                            default:
-                                break;
                             }
-                        }
 
-                        put(sink, `: "`, maybeInverted, '"');
-                    }
-                    else
-                    {
-                        // Found the bot's nick in chat but doesn't seem to have
-                        // been a true match (else text would have been altered)
+                            put(sink, `: "`, inverted, '"');
+                        }
+                        else
+                        {
+                            goto default;
+                        }
+                        break;
+
+                    default:
                         put(sink, `: "`, content, '"');
+                        break;
                     }
                 }
                 else
