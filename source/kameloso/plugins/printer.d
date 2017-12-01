@@ -396,7 +396,17 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                         if ((content != maybeInverted) &&
                             (printerSettings.bellOnMention))
                         {
-                            sink.put(TerminalToken.bell);
+                            with (IRCEvent.Type)
+                            switch (type)
+                            {
+                            case CHAN:
+                            case QUERY:
+                                sink.put(TerminalToken.bell);
+                                break;
+
+                            default:
+                                break;
+                            }
                         }
 
                         put(sink, `: "`, maybeInverted, '"');
