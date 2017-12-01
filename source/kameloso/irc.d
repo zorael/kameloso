@@ -760,14 +760,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.content = slice;
         break;
 
-    case USERSTATE:
-    case ROOMSTATE:
-    case GLOBALUSERSTATE:  // after connect, describes bot
-        // :tmi.twitch.tv USERSTATE #zorael
-        // :tmi.twitch.tv ROOMSTATE #zorael
-        event.channel = slice;
-        break;
-
     case HOSTTARGET:
         if (slice.indexOf(" :-") != -1)
         {
