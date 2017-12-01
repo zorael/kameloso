@@ -64,6 +64,7 @@ alias Status = IRCBot.Status;
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
+@(ChannelPolicy.any)
 void onSelfpart(const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
@@ -101,6 +102,7 @@ void onSelfpart(const IRCEvent event)
  +  Queries the server for `WHO` on a chanenl upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
+@(ChannelPolicy.any)
 void onSelfjoin(const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -385,6 +387,7 @@ void onNickInUse()
  +  Join the supplied channels if not already in them.
  +/
 @(IRCEvent.Type.INVITE)
+@(ChannelPolicy.any)
 void onInvite(const IRCEvent event)
 {
     if (!connectSettings.joinOnInvite)
