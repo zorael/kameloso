@@ -730,6 +730,7 @@ unittest
         string alias_;
         string ident;
         string address;
+        string login;
         bool special;
     }
 
