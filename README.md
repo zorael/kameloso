@@ -89,6 +89,22 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [youtube.com] Danish language
 
+## Twitch
+
+To connect to Twitch servers you must supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth).
+
+Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+
+    [IRCBot]
+    nickname            twitchaccount
+    pass                oauth:the50letteroauthstringgoeshere
+    homes               #twitchaccount
+    channels            #streamer1,#streamer2,#streamer3
+
+    [IRCServer]
+    address             irc.chat.twitch.tv
+    port                6667
+
 # TODO
 
 * "online" help; listing of verbs/commands
