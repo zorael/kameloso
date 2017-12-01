@@ -166,7 +166,6 @@ void onWelcome(const IRCEvent event)
     with (state)
     {
         bot.nickname = event.target.nickname;
-        bot.updated = true;
         fifoThread = spawn(&pipereader, cast(shared)state);
     }
 }

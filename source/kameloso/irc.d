@@ -463,7 +463,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.type = SELFNICK;
             bot.nickname = event.target.nickname;
-            bot.updated = true;
         }
         break;
 
@@ -693,7 +692,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.target.nickname = slice.nom(" :");
         event.content = slice;
         bot.nickname = event.target.nickname;
-        bot.updated = true;
         break;
 
     case ERR_BADPING: // 513
@@ -1182,7 +1180,6 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
             // This is where we catch the resolved address
             assert(!event.sender.nickname.length, event.sender.nickname);
             bot.server.resolvedAddress = event.sender.address;
-            bot.updated = true;
         }
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
@@ -1475,15 +1472,12 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
             // Propagate change
             bot.server.network = value;
-            bot.updated = true;
-
             break;
 
         case "NICKLEN":
             try
             {
                 bot.server.maxNickLength = value.to!uint;
-                bot.updated = true;
             }
             catch (const ConvException e)
             {
@@ -1495,7 +1489,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             try
             {
                 bot.server.maxChannelLength = value.to!uint;
-                bot.updated = true;
             }
             catch (const ConvException e)
             {
@@ -1522,8 +1515,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             {
                 bot.server.network = "unknown";
             }
-
-            bot.updated = true;
         }
     }
 
@@ -1596,7 +1587,6 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
         logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
         parser.setDaemon(IRCServer.Daemon.twitch);
         parser.bot.server.network = "Twitch";
-        parser.bot.updated = true;
         return;
     }
 
@@ -1663,8 +1653,6 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     logger.infof("Detected daemon %s: %s", daemonstring, parser.bot.server.daemon
         .enumToString
         .colour(BashForeground.white));
-
-    parser.bot.updated = true;
 }
 
 
@@ -2358,7 +2346,6 @@ unittest
         assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
         assert((type == IRCEvent.Type.SELFNICK), type.to!string);
         assert((target.nickname == "kameloso_"), target.nickname);
-        assert(parser.bot.updated);
         assert((parser.bot.nickname == "kameloso_"), parser.bot.nickname);
     }
     /+
@@ -2445,7 +2432,6 @@ struct IRCParser
         typenums = Typenums.base;
         //this.serverDaemon = daemon;
         bot.server.daemon = daemon;
-        bot.updated = true;
 
         with (Typenums)
         with (Daemon)

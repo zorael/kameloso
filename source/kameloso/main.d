@@ -484,11 +484,10 @@ void startPlugins()
         plugin.start();
         auto yieldedBot = plugin.yieldBot();
 
-        if (yieldedBot.updated)
+        if (yieldedBot != bot)
         {
             // start changed the bot; propagate
             bot = yieldedBot;
-            bot.updated = false;
             parser.bot = bot;
             propagateBot(bot);
         }
@@ -574,10 +573,9 @@ Flag!"quit" mainLoop(Generator!string generator)
             {
                 event = parser.toIRCEvent(line);
 
-                if (parser.bot.updated)
+                if (parser.bot != bot)
                 {
                     // Parsing changed the bot; propagate
-                    parser.bot.updated = false;
                     bot = parser.bot;
                     propagateBot(bot);
                 }
@@ -587,11 +585,10 @@ Flag!"quit" mainLoop(Generator!string generator)
                     plugin.postprocess(event);
                     auto yieldedBot = plugin.yieldBot();
 
-                    if (yieldedBot.updated)
+                    if (yieldedBot != bot)
                     {
                         // Postprocessing changed the bot; propagate
                         bot = yieldedBot;
-                        bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
                     }
@@ -607,7 +604,7 @@ Flag!"quit" mainLoop(Generator!string generator)
                     reqs.handleWHOISQueue(event, event.target.nickname);
 
                     auto yieldedBot = plugin.yieldBot();
-                    if (yieldedBot.updated)
+                    if (yieldedBot != bot)
                     {
                         /*  Plugin onEvent or WHOIS reaction updated the bot.
                             There's no need to check for both separately since
@@ -615,7 +612,6 @@ Flag!"quit" mainLoop(Generator!string generator)
                             its update internally between both passes.
                         */
                         bot = yieldedBot;
-                        bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
                     }
@@ -818,7 +814,6 @@ int main(string[] args)
         bot.registerStatus = IRCBot.Status.notStarted;
         bot.authStatus = IRCBot.Status.notStarted;
         bot.server.resolvedAddress = string.init;
-        bot.updated = false;
         parser = IRCParser(bot);
 
         initPlugins();

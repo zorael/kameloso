@@ -382,7 +382,6 @@ void onCommandAddHome(const IRCEvent event)
 
         logger.info("Adding channel: ", channel);
         bot.homes ~= channel;
-        bot.updated = true;
     }
 }
 
@@ -420,7 +419,6 @@ void onCommandDelHome(const IRCEvent event)
         }
 
         bot.homes = bot.homes.remove(chanIndex);
-        bot.updated = true;
         mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
     }
 }
@@ -456,7 +454,6 @@ void onCommandAddFriend(const IRCEvent event)
     with (state)
     {
         bot.friends ~= nickname;
-        bot.updated = true;
         logger.infof("%s added to friends", nickname);
     }
 }
@@ -499,7 +496,6 @@ void onCommandDelFriend(const IRCEvent event)
     with (state)
     {
         bot.friends = bot.friends.remove(friendIndex);
-        bot.updated = true;
         logger.infof("%s removed from friends", nickname);
     }
 }

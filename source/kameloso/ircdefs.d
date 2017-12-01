@@ -869,8 +869,6 @@ struct IRCEvent
  +      bool finishedRegistering;
  +      bool startedAuth;
  +      bool finishedAuth;
- +
- +      bool updated;
  +  }
  +  ------------
  +/
@@ -923,10 +921,6 @@ struct IRCBot
 
         /// Status of registration process (logon)
         Status registerStatus;
-
-        /// Flag that the bot was recently updated with new information that
-        /// should be propagated to everywhere else in the program.
-        bool updated;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
