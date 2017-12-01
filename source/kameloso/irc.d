@@ -884,72 +884,135 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         // Generic heuristics to catch most cases
 
+        const s = parser.bot.server;
+
         if (slice.indexOf(" :") != -1)
         {
+            // Has colon-content
             string targets = slice.nom(" :");
 
-            if (targets.indexOf(' ') != -1)
+            if (targets.hasSpace)
             {
-                // More than one
+                // More than one target
 
-                immutable probablyBot = targets.nom(' ');
+                immutable firstTarget = targets.nom(' ');
 
-                if ((probablyBot == bot.nickname) || (probablyBot == "*"))
+                if ((firstTarget == bot.nickname) || (firstTarget == "*"))
                 {
+                    // More than one target, first is bot
+                    // Can't use isChan here since targets may contain spaces
+
                     if (targets.beginsWith('#'))
                     {
-                        if (targets.indexOf(' ') != -1)
+                        // More than one target, first is bot
+                        // Second target is/begins with a channel
+
+                        if (targets.hasSpace)
                         {
+                            // More than one target, first is bot
+                            // Second target is more than one, first is channel
+                            // assume third is content
                             event.channel = targets.nom(' ');
                             event.content = targets;
                         }
                         else
                         {
-                            event.channel = targets;
+                            // More than one target, first is bot
+                            // Only one second
+
+                            if (targets.isChan(s))
+                            {
+                                // First is bot, second is chanenl
+                                event.channel = targets;
+                            }
+                            else
+                            {
+                                logger.warning("Non-channel second target");
+                                logger.log("Report this.");
+                            }
                         }
                     }
                     else
                     {
-                        if (targets.indexOf(' ') != -1)
+                        // More than one target, first is bot
+                        // Second is not a channel
+
+                        if (targets.hasSpace)
                         {
+                            // More than one target, first is bot
+                            // Second target is more than one
+                            // Assume third is channel
                             event.target.nickname = targets.nom(' ');
                             event.channel = targets;
                         }
                         else
                         {
-                            event.target.nickname = targets;
+                            // Only one second target
+
+                            if (targets.isChan(s))
+                            {
+                                // Second is a channel
+                                event.channel = targets;
+                            }
+                            else
+                            {
+                                // Second is not a channel
+                                event.target.nickname = targets;
+                            }
                         }
                     }
                 }
                 else
                 {
-                    event.target.nickname = probablyBot;
-                    event.channel = targets;
+                    // More than one target, first is not bot
+
+                    if (firstTarget.isChan(s))
+                    {
+                        // First target is a channel
+                        // Assume second is a nickname
+                        event.channel = firstTarget;
+                        event.target.nickname = targets;
+                    }
+                    else
+                    {
+                        // First target is not channel, assume nick
+                        // Assume secod is channel
+                        event.target.nickname = firstTarget;
+                        event.channel = targets;
+                    }
                 }
             }
-            else if (targets.beginsWith('#'))
+            else if (targets.isChan(s))
             {
+                // Only one target, it is a channel
                 event.channel = targets;
             }
             else
             {
+                // Only one target, not a channel
                 event.target.nickname = targets;
             }
         }
         else
         {
-            // Does not start with ": "
-            if (slice.indexOf(' ') != -1)
+            // Does not have colon-content
+
+            if (slice.hasSpace)
             {
+                // More than one target
                 immutable target = slice.nom(' ');
 
-                if (target.beginsWith('#'))
+                if (target.isChan(s))
                 {
+                    // More than one target, first is a channel
+                    // Assume second is content
                     event.channel = target;
                     event.content = slice;
                 }
                 else
                 {
+                    // More than one target, first is not a channel
+                    // Assume first is nickname and second is aux
                     // :port80b.se.quakenet.org 221 kameloso +i
                     event.target.nickname = target;
                     event.aux = slice;
@@ -957,12 +1020,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             }
             else
             {
-                if (slice.beginsWith('#'))
+                // Only one target
+
+                if (slice.isChan(s))
                 {
+                    // Target is a channel
                     event.channel = slice;
                 }
                 else
                 {
+                    // Target is a nickname
                     event.target.nickname = slice;
                 }
             }
@@ -974,6 +1041,18 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     event.content = event.content.stripRight();
     parser.postparseSanityCheck(event);
+}
+
+
+bool isChan(const string line, const IRCServer server)
+{
+    return isValidChannel(line, server);
+}
+
+
+bool hasSpace(const string line)
+{
+    return (line.indexOf(' ') != -1);
 }
 
 
