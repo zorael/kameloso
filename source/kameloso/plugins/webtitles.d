@@ -310,46 +310,56 @@ void titleworker(shared Tid sMainThread)
     TitleLookup[string] cache;
     bool halt;
 
+    void catchURL(string url, string target)
+    {
+        import std.format : format;
+
+        TitleLookup lookup;
+        const inCache = url in cache;
+
+        if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
+            < Timeout.titleCache.seconds))
+        {
+            lookup = *inCache;
+        }
+        else
+        {
+            try lookup = lookupTitle(url);
+            catch (const Exception e)
+            {
+                import kameloso.string : beginsWith;
+
+                tlsLogger.error("Could not look up title: ", e.msg);
+
+                if (url.beginsWith("https"))
+                {
+                    tlsLogger.log("Rewriting https to http and retrying...");
+                    return catchURL(("http" ~ url[5..$]), target);
+                }
+            }
+        }
+
+        if (lookup == TitleLookup.init) return;
+
+        cache[url] = lookup;
+
+        if (lookup.domain.length)
+        {
+            mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :[%s] %s".format(target,
+                    lookup.domain, lookup.title));
+        }
+        else
+        {
+            mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s".format(target, lookup.title));
+        }
+    }
+
     while (!halt)
     {
         receive(
-            (string url, string target)
-            {
-                import std.format : format;
-
-                TitleLookup lookup;
-                const inCache = url in cache;
-
-                if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
-                    < Timeout.titleCache.seconds))
-                {
-                    lookup = *inCache;
-                }
-                else
-                {
-                    try lookup = lookupTitle(url);
-                    catch (const Exception e)
-                    {
-                        tlsLogger.error("Could not look up title: ", e.msg);
-                    }
-                }
-
-                if (lookup == TitleLookup.init) return;
-
-                cache[url] = lookup;
-
-                if (lookup.domain.length)
-                {
-                    mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG %s :[%s] %s".format(target,
-                            lookup.domain, lookup.title));
-                }
-                else
-                {
-                    mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG %s :%s".format(target, lookup.title));
-                }
-            },
+            &catchURL,
             (ThreadMessage.Teardown)
             {
                 halt = true;
