@@ -49,6 +49,9 @@ struct PrinterSettings
 
     /// Flag to print the badge field in caps (as they used to be earlier)
     bool badgesInCaps = false;
+
+    /// Flag to send a terminal bell signal when the bot is mentioned in chat.
+    bool bellOnMention = true;
 }
 
 /// All Printer plugin options gathered
@@ -378,9 +381,32 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             if (content.length)
             {
                 sink.colour(DefaultColour.content);
+
                 if (sender.isServer || sender.nickname.length)
                 {
-                    put(sink, `: "`, content, '"');
+                    import std.algorithm.searching : canFind;
+
+                    // Fastest way we know of
+                    if ((cast(ubyte[])event.content)
+                        .canFind(cast(ubyte[])state.bot.nickname))
+                    {
+                        // Nick was mentioned (naïve guess)
+                        immutable maybeInverted = content.invert(state.bot.nickname);
+
+                        if ((content != maybeInverted) &&
+                            (printerSettings.bellOnMention))
+                        {
+                            sink.put(TerminalToken.bell);
+                        }
+
+                        put(sink, `: "`, maybeInverted, '"');
+                    }
+                    else
+                    {
+                        // Found the bot's nick in chat but doesn't seem to have
+                        // been a true match (else text would have been altered)
+                        put(sink, `: "`, content, '"');
+                    }
                 }
                 else
                 {
