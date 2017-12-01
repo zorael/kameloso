@@ -123,7 +123,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
             import std.algorithm.iteration : splitter;
             // Get rid of the prepended @
             string raw = event.raw[1..$];
-            immutable tags = raw.nom(" ");
+            immutable tags = raw.nom(' ');
             event = parser.toIRCEvent(raw);
             event.tags = tags;
             return;  // avoid event.sender.special assignment below

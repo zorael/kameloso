@@ -445,7 +445,7 @@ void onCommandAddFriend(const IRCEvent event)
         logger.warning("No nickname supplied...");
         return;
     }
-    else if (nickname.indexOf(" ") != -1)
+    else if (nickname.indexOf(' ') != -1)
     {
         logger.warning("Nickname must not contain spaces");
         return;
@@ -479,7 +479,7 @@ void onCommandDelFriend(const IRCEvent event)
         logger.warning("No nickname supplied...");
         return;
     }
-    else if (nickname.indexOf(" ") != -1)
+    else if (nickname.indexOf(' ') != -1)
     {
         logger.warning("Only one nick at a time. Nickname must not contain spaces");
         return;
