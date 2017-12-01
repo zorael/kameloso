@@ -58,6 +58,9 @@ enum TerminalToken
     /// Character that preludes a Bash colouring code.
     bashFormat = '\033',
 
+    /// Terminal bell/beep.
+    bell = '\007',
+
     /// Character that resets a terminal that has entered "binary" mode.
     reset = 15,
 }
