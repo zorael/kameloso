@@ -91,7 +91,10 @@ void parseTwitchTags(ref IRCEvent event)
         case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            event.sender.alias_ = value;
+            import kameloso.irc : decodeIRCv3String;
+            import std.string : indexOf, stripRight;
+            event.sender.alias_ = (value.indexOf('\\') != -1) ?
+                decodeIRCv3String(value).stripRight() : value;
             break;
 
         case "badges":
