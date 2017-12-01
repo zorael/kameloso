@@ -586,6 +586,7 @@ void onCommandAsserts()
  +      event = the event whose raw IRC string to print.
  +/
 @(IRCEvent.Type.ANY)
+@(ChannelPolicy.any)
 void onAnyEvent(const IRCEvent event)
 {
     if (printAll) logger.trace(event.raw, '$');
