@@ -57,29 +57,32 @@ void onJoin(const IRCEvent event)
     const noteArray = getNotes(event.sender.nickname);
 
     with (state)
-    if (!noteArray.length) return;
-    else if (noteArray.length == 1)
     {
-        const note = noteArray[0];
-        immutable timestamp = (Clock.currTime - note.when).timeSince;
-
-        mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s! %s left note %s ago: %s"
-            .format(event.channel, event.sender.nickname, note.sender, timestamp, note.line));
-    }
-    else
-    {
-        mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s! You have %d notes."
-            .format(event.channel, event.sender.nickname, noteArray.length));
-
-        foreach (const note; noteArray)
+        if (!noteArray.length) return;
+        else if (noteArray.length == 1)
         {
+            const note = noteArray[0];
             immutable timestamp = (Clock.currTime - note.when).timeSince;
 
             mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s left note %s ago: %s"
-                .format(event.channel, note.sender, timestamp, note.line));
+                "PRIVMSG %s :%s! %s left note %s ago: %s"
+                .format(event.channel, event.sender.nickname, note.sender,
+                    timestamp, note.line));
+        }
+        else
+        {
+            mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :%s! You have %d notes."
+                .format(event.channel, event.sender.nickname, noteArray.length));
+
+            foreach (const note; noteArray)
+            {
+                immutable timestamp = (Clock.currTime - note.when).timeSince;
+
+                mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :%s left note %s ago: %s"
+                    .format(event.channel, note.sender, timestamp, note.line));
+            }
         }
     }
 

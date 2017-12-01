@@ -200,22 +200,25 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
     auto prefix = slice.nom(' ');
 
     with (event.sender)
-    if (prefix.indexOf('!') != -1)
     {
-        // user!~ident@address
-        nickname = prefix.nom('!');
-        ident = prefix.nom('@');
-        address = prefix;
-    }
-    else if (prefix.indexOf('.') != -1)
-    {
-        // dots signify an address
-        address = prefix;
-    }
-    else
-    {
-        // When does this happen?
-        nickname = prefix;
+
+        if (prefix.indexOf('!') != -1)
+        {
+            // user!~ident@address
+            nickname = prefix.nom('!');
+            ident = prefix.nom('@');
+            address = prefix;
+        }
+        else if (prefix.indexOf('.') != -1)
+        {
+            // dots signify an address
+            address = prefix;
+        }
+        else
+        {
+            // When does this happen?
+            nickname = prefix;
+        }
     }
 
     event.sender.special = parser.isSpecial(event);
