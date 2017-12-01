@@ -109,7 +109,8 @@ void onSelfjoin(const IRCEvent event)
 
     with (state)
     {
-        if (!bot.channels.canFind(event.channel))
+        if (!bot.channels.canFind(event.channel) &&
+            !bot.homes.canFind(event.channel))
         {
             // Track new channel in the channels array
             bot.channels ~= event.channel;
