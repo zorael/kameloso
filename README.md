@@ -4,16 +4,16 @@ A command-line IRC bot.
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do. It is a passive thing and does not respond to keyboard input. Features are added as plugins, written as [D](https://www.dlang.org) modules.
 
-It includes a framework that works with "all" server networks. The IRC protocol is riddled with [inconsistencies](http://defs.ircdocs.horse/defs/numerics.html), so where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server *daemon*.
+It includes a framework that works with "all" server networks. The IRC protocol comes in many [flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
-Use on networks without [*nickname services*](https://en.wikipedia.org/wiki/IRC_services) will face some issues, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and an easy example of how plugins work
+* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and a simple example of how plugins work
 * looking up titles of pasted web URLs
 * Twitch events; simple Twitch bot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
@@ -29,26 +29,26 @@ There are a few Windows caveats.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile with colours *disabled*, but they can be enabled by specifying a different build configuration.
 * Text output will *not* work well with the default `Cygwin` terminal, due to some nuances of how it does or doesn't present itself as a `tty`. There are some workarounds for most output, though they aren't exposed for now.
 
-## Getting Started
+# Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes, as well as general use.
 
-### Prerequisites
+## Prerequisites
 
-You need a D compiler and the official `dub` package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
+You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
 
 **kameloso** can be built using the reference compiler [dmd](https://dlang.org/download.html) and the `LLVM`-based [ldc](https://github.com/ldc-developers/ldc/releases), but the `GCC`-based [gdc](https://gdcproject.org/downloads) comes with a version of the standard library that is too old, at time of writing.
 
 It's *possible* to build it without `dub` but it is non-trivial if you want the `webtitles` functionality.
 
-### Downloading
+## Downloading
 
 GitHub offers downloads in ZIP format, but it's easier to use `git` and clone the repository that way.
 
     $ git clone https://github.com/zorael/kameloso.git
     $ cd kameloso
 
-### Compiling
+## Compiling
 
     $ dub build
 
@@ -60,7 +60,7 @@ Unit tests are built into the language, but you need to compile in `unittest` mo
 
 The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run the program immediately.
 
-## How to use
+# How to use
 
 The bot needs the *nickname services* login name of the administrator/master of the bot, and/or one of more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
@@ -89,7 +89,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [youtube.com] Danish language
 
-## TODO
+# TODO
 
 * "online" help; listing of verbs/commands
 * investigate inverse channel behaviour (blacklists)
@@ -102,8 +102,9 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
 * ready for channel awareness
 * more command-line flags
 * [bash.org](http://bash.org/?random) quote fetcher (needs throttling)
+* improve `dub.json`
 
-## Built With
+# Built With
 
 * [D](https://dlang.org)
 * [dub](https://code.dlang.org)
