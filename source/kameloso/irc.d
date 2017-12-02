@@ -879,8 +879,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         // Generic heuristics to catch most cases
 
-        const s = parser.bot.server;
-
         if (slice.indexOf(" :") != -1)
         {
             // Has colon-content
@@ -915,15 +913,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                             // More than one target, first is bot
                             // Only one second
 
-                            if (targets.isChan(s))
+                            if (targets.beginsWith('#'))
                             {
                                 // First is bot, second is chanenl
                                 event.channel = targets;
                             }
                             else
                             {
-                                logger.warning("Non-channel second target");
-                                logger.log("Report this.");
+                                logger.warning("Non-channel second target. Report this.");
+                                logger.trace(event.raw);
+                                event.target.nickname = targets;
                             }
                         }
                     }
@@ -944,7 +943,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         {
                             // Only one second target
 
-                            if (targets.isChan(s))
+                            if (targets.beginsWith('#'))
                             {
                                 // Second is a channel
                                 event.channel = targets;
@@ -961,7 +960,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 {
                     // More than one target, first is not bot
 
-                    if (firstTarget.isChan(s))
+                    if (firstTarget.beginsWith('#'))
                     {
                         // First target is a channel
                         // Assume second is a nickname
@@ -977,7 +976,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     }
                 }
             }
-            else if (targets.isChan(s))
+            else if (targets.beginsWith('#'))
             {
                 // Only one target, it is a channel
                 event.channel = targets;
@@ -997,7 +996,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 // More than one target
                 immutable target = slice.nom(' ');
 
-                if (target.isChan(s))
+                if (target.beginsWith('#'))
                 {
                     // More than one target, first is a channel
                     // Assume second is content
@@ -1017,7 +1016,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             {
                 // Only one target
 
-                if (slice.isChan(s))
+                if (slice.beginsWith('#'))
                 {
                     // Target is a channel
                     event.channel = slice;
@@ -1041,18 +1040,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     event.content = event.content.stripRight();
     parser.postparseSanityCheck(event);
-}
-
-
-bool isChan(const string line, const IRCServer server)
-{
-    return isValidChannel(line, server);
-}
-
-
-bool hasSpace(const string line)
-{
-    return (line.indexOf(' ') != -1);
 }
 
 
