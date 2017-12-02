@@ -1998,7 +1998,7 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
         return false;
     }
 
-    if (line.length == 2) return true;
+    if ((line.length == 2) && (line != "##")) return true;
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
@@ -2021,6 +2021,8 @@ unittest
     assert(!"notAChannelEither".isValidChannel(s));
     assert(!"#".isValidChannel(s));
     assert(!"".isValidChannel(s));
+    assert(!"##".isValidChannel(s));
+    assert("#d".isValidChannel(s));
 }
 
 
