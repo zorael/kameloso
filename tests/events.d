@@ -1210,4 +1210,16 @@ unittest
         }
     }
 
+    {
+        immutable event = parser.toIRCEvent(":server.net 465 kameloso :You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == ERR_YOUREBANNEDCREEP), type.to!string);
+            assert((sender.address == "server.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((content == "You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)"), content);
+            assert((num == 465), num.to!string);
+        }
+    }
 }

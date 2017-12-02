@@ -830,9 +830,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :irc.rizon.no 472 kameloso^^ X :is unknown mode char to me
         // :miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).
         // event.time was 1511000921
-        slice.nom(' '); // bot nickname
-        event.aux = slice.nom(" :");
+        // TRIED TO NOM TOO MUCH:':You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)' with ' :'
+        string misc = slice.nom(" :");
         event.content = slice;
+
+        if (misc.indexOf(' ') != -1)
+        {
+            misc.nom(' ');
+            event.aux = misc;
+        }
+
         break;
 
     case RPL_LIST: // 322
