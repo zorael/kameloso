@@ -886,3 +886,25 @@ unittest
     assert(string.init.escaped == string.init);
     assert("Lorem ipsum (sit amet)".escaped == r"Lorem ipsum \(sit amet\)");
 }
+
+
+// hasSpace
+/++
+ +  Shorthand UFCS function that simply checks whether a string contains a space
+ +  or not.
+ +/
+bool hasSpace(const string line)
+{
+    import std.string : indexOf;
+
+    return (line.indexOf(' ') != -1);
+}
+
+unittest
+{
+    assert("Lorem ipsum".hasSpace);
+    assert(!"Loremipsum".hasSpace);
+    assert(!"".hasSpace);
+    assert(!(string.init.hasSpace));
+    assert(" ".hasSpace);
+}
