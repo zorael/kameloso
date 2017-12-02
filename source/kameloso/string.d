@@ -900,6 +900,7 @@ bool hasSpace(const string line)
     return (line.indexOf(' ') != -1);
 }
 
+///
 unittest
 {
     assert("Lorem ipsum".hasSpace);
