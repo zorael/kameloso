@@ -99,7 +99,10 @@ void onSelfpart(const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Queries the server for `WHO` on a chanenl upon joining it.
+ +  Record a channel in the `bot.channels` array upon successfully joining it.
+ +
+ +  Calling `WHO` on them when joining were causing kicks and bans due to
+ +  flooding, so we have to do that elsewhere.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -115,7 +118,24 @@ void onSelfjoin(const IRCEvent event)
             // Track new channel in the channels array
             bot.channels ~= event.channel;
         }
+    }
+}
 
+
+// onEndOfNames
+/++
+ +  Query `WHO` on a channel after its list of names ends, to get the services
+ +  login names of everyone in it.
+ +
+ +  Do it on `RPL_ENDOFNAMES` instead of on `SELFJOIN` so as to spread the
+ +  actions out a bit and hopefully avoid a ban.
+ +/
+@(IRCEvent.Type.RPL_ENDOFNAMES)
+@(ChannelPolicy.homeOnly)
+void onEndOfNames(const IRCEvent event)
+{
+    with (state)
+    {
         if (bot.server.daemon == IRCServer.Daemon.twitch) return;
 
         mainThread.send(ThreadMessage.Quietline(), "WHO " ~ event.channel);
