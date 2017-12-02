@@ -2,9 +2,11 @@
 
 A command-line IRC bot.
 
-**kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do. It is a passive thing and does not respond to keyboard input. Features are added as plugins, written as [D](https://www.dlang.org) modules.
+**kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It includes a framework that works with "all" server networks. The IRC protocol comes in many [flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
+Features are added as plugins, written as [D](https://www.dlang.org) modules.
+
+It includes a framework that works with the vast majority of server networks. IRC servers come in many [flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png) and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
@@ -115,10 +117,10 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * throttle sending messages, anti-flood protection
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
-* ready for channel awareness
+* ready for channel-awareness
 * more command-line flags
 * [bash.org](http://bash.org/?random) quote fetcher (needs throttling)
-* improve `dub.json`
+* move Bash and/or colouring things to own module?
 
 # Built With
 
