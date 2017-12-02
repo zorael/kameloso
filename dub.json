@@ -1,9 +1,9 @@
 {
     "name": "kameloso",
-    "description": "IRC bot",
+    "description": "IRC Bot",
     "authors": [ "JR" ],
     "copyright": "Copyright © 2017, JR",
-    "license": "LGPL-2.1",
+    "license": "MIT",
     "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
     "sourcePaths": [ "source", "tests" ],
@@ -24,6 +24,35 @@
             "buildRequirements": [ "silenceDeprecations" ]
         },
         {
+            "name": "vanilla",
+            "buildRequirements": [ "silenceDeprecations" ]
+        },
+        {
+            "name": "colours",
+            "buildRequirements": [ "silenceDeprecations" ],
+            "versions": [ "Colours" ],
+        },
+        {
+            "name": "webtitles",
+            "buildRequirements": [ "silenceDeprecations" ],
+            "versions": [ "Webtitles" ],
+            "dependencies": { "requests": "~>0.6.0" }
+        },
+        {
+            "name": "colours+webtitles",
+            "buildRequirements": [ "silenceDeprecations" ],
+            "versions": [ "Colours", "Webtitles" ],
+            "dependencies": { "requests": "~>0.6.0" }
+        },
+
+        {
+            "name": "unittest",
+            "buildType": "unittest",
+            "versions": [ "Webtitles", "Colours" ],
+            "dependencies": { "requests": "~>0.6.0" }
+        },
+
+        {
             "name": "nowebtitles",
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Colours" ]
@@ -37,12 +66,6 @@
         {
             "name": "nowebtitles-nocolours",
             "buildRequirements": [ "silenceDeprecations" ]
-        },
-        {
-            "name": "unittest",
-            "buildType": "unittest",
-            "versions": [ "Webtitles", "Colours" ],
-            "dependencies": { "requests": "~>0.6.0" }
         }
     ]
 }
