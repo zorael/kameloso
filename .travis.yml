@@ -8,9 +8,13 @@ os:
     - windows
 
 script:
-    - dub test --compiler=${DC} --build-mode=singleFile
-    - dub test --compiler=${DC} --build-mode=singleFile -c nocolours
-    - dub test --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nocolours
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c nowebtitles-nocolours
+    - dub test --parallel --compiler=${DC} --build-mode=singleFile
+    - dub test --parallel --compiler=${DC} --build-mode=singleFile -c vanilla
+    - dub test --parallel --compiler=${DC} --build-mode=singleFile -c colours
+    - dub test --parallel --compiler=${DC} --build-mode=singleFile -c webtitles
+    - dub test --parallel --compiler=${DC} --build-mode=singleFile -c colours+webtitles
+    - dub build -b plain --parallel --compiler=${DC} --build-mode=singleFile
+    - dub build -b plain --parallel --compiler=${DC} --build-mode=singleFile -c vanilla
+    - dub build -b plain --parallel --compiler=${DC} --build-mode=singleFile -c colours
+    - dub build -b plain --parallel --compiler=${DC} --build-mode=singleFile -c webtitles
+    - dub build -b plain --parallel --compiler=${DC} --build-mode=singleFile -c colours+webtitles
