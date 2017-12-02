@@ -101,8 +101,8 @@ void onSelfpart(const IRCEvent event)
 /++
  +  Record a channel in the `bot.channels` array upon successfully joining it.
  +
- +  Calling `WHO` on them when joining were causing kicks and bans due to
- +  flooding, so we have to do that elsewhere.
+ +  Separate this from the `WHO` calls in `onEndOfNames` so that this can be
+ +  kept `ChannelPolicy.any` and that `ChannelPolicy.homeOnly`.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -127,8 +127,9 @@ void onSelfjoin(const IRCEvent event)
  +  Query `WHO` on a channel after its list of names ends, to get the services
  +  login names of everyone in it.
  +
- +  Do it on `RPL_ENDOFNAMES` instead of on `SELFJOIN` so as to spread the
- +  actions out a bit and hopefully avoid a ban.
+ +  Bugs: If it joins too many (home) channels at once, you will be kicked due
+ +        to flooding and possibly tempbanned. Consider disabling if you have a
+ +        lot of homes.
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(ChannelPolicy.homeOnly)
