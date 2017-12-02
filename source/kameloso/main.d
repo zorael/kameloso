@@ -43,6 +43,9 @@ SysTime[string] whoisCalls;
 /// Parser instance.
 IRCParser parser;
 
+/// Curent day of the month, so we can track changes in day
+ubyte today;
+
 
 // signalHandler
 /++
@@ -403,12 +406,15 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +/
 void initPlugins()
 {
+    import std.datetime.systime : Clock;
+
     teardownPlugins();
 
     IRCPluginState state;
     state.bot = bot;
     state.settings = settings;
     state.mainThread = thisTid;
+    today = Clock.currTime.day;
 
     // Zero out old plugins array and allocate room for new ones
     plugins.length = 0;
@@ -546,6 +552,7 @@ void initLogger()
 Flag!"quit" mainLoop(Generator!string generator)
 {
     import core.thread : Fiber;
+    import std.datetime.systime : Clock;
 
     /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
@@ -557,6 +564,15 @@ Flag!"quit" mainLoop(Generator!string generator)
             // Listening Generator disconnected; reconnect
             generator.reset();
             return No.quit;
+        }
+
+        // See if day broke
+        const now = Clock.currTime;
+
+        if (now.day != today)
+        {
+            logger.infof("[%d-%02d-%02d]", now.year, cast(int)now.month, now.day);
+            today = now.day;
         }
 
         // Call the generator, query it for event lines
