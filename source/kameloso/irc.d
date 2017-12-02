@@ -1994,7 +1994,8 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
         return false;
     }
 
-    if (line.length > 3)
+    if (line.length == 2) return true;
+    else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
         return (line[2..$].indexOf('#') == -1) &&

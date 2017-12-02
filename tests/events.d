@@ -1222,4 +1222,19 @@ unittest
             assert((num == 465), num.to!string);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":ASDphBa|zzZ!~ASDphBa@a.asdphs-tech.com PRIVMSG #d :does anyone know how the unittest stuff is working with cmake-d?");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == CHAN), type.to!string);
+            assert((sender.nickname == "ASDphBa|zzZ"), sender.nickname);
+            assert((sender.ident == "~ASDphBa"), sender.ident);
+            assert((sender.address == "a.asdphs-tech.com"), sender.address);
+            assert(!sender.special, sender.special.to!string);
+            assert((channel == "#d"), channel);
+            assert((content == "does anyone know how the unittest stuff is working with cmake-d?"), content);
+        }
+    }
 }
