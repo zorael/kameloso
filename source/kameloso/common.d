@@ -1561,3 +1561,170 @@ unittest
     immutable inverted9 = `"kameloso^"`.invert("kameloso^");
     assert((inverted9 == "\"\033[7mkameloso^\033[27m\""), inverted9);
 }
+
+@system:
+
+
+// Kameloso
+/++
+ +  State needed for the `kameloso`` bot, aggregated in a struct for easier
+ +  passing by ref.
+ +/
+struct Kameloso
+{
+    import kameloso.connection : Connection;
+    import kameloso.ircdefs : IRCBot;
+    import kameloso.irc : IRCParser;
+    import kameloso.plugins.common : IRCPlugin;
+
+    /// Nickname and other IRC variables for the bot.
+    IRCBot bot;
+
+    /// Runtime settings for bot behaviour.
+    CoreSettings settings;
+
+    /// The socket we use to connect to the server.
+    Connection conn;
+
+    /// A runtime array of all plugins. We iterate this when we have an `IRCEvent`
+    /// to react to.
+    IRCPlugin[] plugins;
+
+    /// When a nickname was called `WHOIS` on, for hysteresis.
+    SysTime[string] whoisCalls;
+
+    /// Parser instance.
+    IRCParser parser;
+
+    /// Curent day of the month, so we can track changes in day
+    ubyte today;
+
+    /// When this is set by signal handlers, the program should exit. Other parts of
+    /// the program will be monitoring it.
+    __gshared bool abort;
+
+    /// Never copy this.
+    @disable this(this);
+
+    // initPlugins
+    /++
+     +  Resets and *minimally* initialises all plugins.
+     +
+     +  It only initialises them to the point where they're aware of their settings,
+     +  and not far enough to have loaded any resources.
+     +/
+    void initPlugins()
+    {
+        import kameloso.plugins;
+        import std.concurrency : thisTid;
+        import std.datetime.systime : Clock;
+
+        teardownPlugins();
+
+        IRCPluginState state;
+        state.bot = bot;
+        state.settings = settings;
+        state.mainThread = thisTid;
+        today = Clock.currTime.day;
+
+        // Zero out old plugins array and allocate room for new ones
+        plugins.length = 0;
+        plugins.reserve(EnabledPlugins.length + 2);
+
+        // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
+        // `kameloso.plugins.package`
+        foreach (Plugin; EnabledPlugins)
+        {
+            plugins ~= new Plugin(state);
+        }
+
+        // Add `webtitles` if possible. If it's not being publically imported in
+        // `kameloso.plugins.package`, it's not there to instantiate, which is the
+        // case when we're not compiling the version `Webtitles`.
+        static if (__traits(compiles, new WebtitlesPlugin(IRCPluginState.init)))
+        {
+            plugins ~= new WebtitlesPlugin(state);
+        }
+
+        // Likewise with `pipeline`, except it depends on whether we're on a Posix
+        // system or not.
+        static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
+        {
+            plugins ~= new PipelinePlugin(state);
+        }
+
+        foreach (plugin; plugins)
+        {
+            plugin.loadConfig(state.settings.configFile);
+        }
+    }
+
+
+    // teardownPlugins
+    /++
+    +  Tears down all plugins, deinitialising them and having them save their
+    +  settings for a clean shutdown.
+    +
+    +  Think of it as a plugin destructor.
+    +/
+    void teardownPlugins()
+    {
+        if (!plugins.length) return;
+
+        logger.info("Deinitialising plugins");
+
+        foreach (plugin; plugins)
+        {
+            try plugin.teardown();
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+            }
+        }
+    }
+
+    // startPlugins
+    /++
+    +  *start* all plugins, loading any resources they may want.
+    +
+    +  This has to happen after `initPlugins` or there will not be any plugins in
+    +  the `plugin` array to start.
+    +/
+    void startPlugins()
+    {
+        if (!plugins.length) return;
+
+        logger.info("Starting plugins");
+        foreach (plugin; plugins)
+        {
+            plugin.start();
+            auto yieldedBot = plugin.yieldBot();
+
+            if (yieldedBot != bot)
+            {
+                // start changed the bot; propagate
+                bot = yieldedBot;
+                parser.bot = bot;
+                propagateBot(bot);
+            }
+        }
+    }
+
+    // propagateBot
+    /++
+    +  Takes a bot and passes it out to all plugins.
+    +
+    +  This is called when a change to the bot has occured and we want to update
+    +  all plugins to have an updated copy of it.
+    +
+    +  Params:
+    +      bot = IRCBot to propagate.
+    +/
+    void propagateBot(IRCBot bot)
+    {
+        foreach (plugin; plugins)
+        {
+            plugin.newBot(bot);
+        }
+    }
+}

@@ -24,27 +24,7 @@ shared static this()
 
 private:
 
-/// State variables and configuration for the IRC bot.
-IRCBot bot;
-
-/// Runtime settings for bot behaviour.
-CoreSettings settings;
-
-/// A runtime array of all plugins. We iterate this when we have an `IRCEvent`
-/// to react to.
-IRCPlugin[] plugins;
-
-/// The socket we use to connect to the server.
-Connection conn;
-
-/// When a nickname was called `WHOIS` on, for hysteresis.
-SysTime[string] whoisCalls;
-
-/// Parser instance.
-IRCParser parser;
-
-/// Curent day of the month, so we can track changes in day
-ubyte today;
+Kameloso botState;
 
 
 // signalHandler
@@ -60,6 +40,7 @@ void signalHandler(int sig) nothrow @nogc @system
     import core.stdc.signal : signal, SIGINT, SIG_DFL;
     printf("...caught signal %d!\n", sig);
     abort = true;
+    botState.abort = true;
 
     // Restore signal handlers to the default
     signal(SIGINT, SIG_DFL);
@@ -83,32 +64,32 @@ void signalHandler(int sig) nothrow @nogc @system
  +  Returns:
  +      Yes.quit or No.quit, depending.
  +/
-Flag!"quit" checkMessages()
+Flag!"quit" checkMessages(ref Kameloso state)
 {
     import core.time : seconds;
     import std.concurrency : receiveTimeout, Variant;
 
-    scope (failure) teardownPlugins();
+    scope (failure) state.teardownPlugins();
 
     Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server.
-    static void sendline(ThreadMessage.Sendline, string line)
+    void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
-        conn.sendline(line);
+        state.conn.sendline(line);
     }
 
     /// Send a line to the server without echoing it.
-    static void quietline(ThreadMessage.Quietline, string line)
+    void quietline(ThreadMessage.Quietline, string line)
     {
-        conn.sendline(line);
+        state.conn.sendline(line);
     }
 
     /// Respond to `PING` with `PONG` to the supplied text as target.
-    static void pong(ThreadMessage.Pong, string target)
+    void pong(ThreadMessage.Pong, string target)
     {
-        conn.sendline("PONG :", target);
+        state.conn.sendline("PONG :", target);
     }
 
     /// Quit the server with the supplied reason.
@@ -117,7 +98,7 @@ Flag!"quit" checkMessages()
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
         logger.trace("--> QUIT :", reason);
-        conn.sendline("QUIT :", reason);
+        state.conn.sendline("QUIT :", reason);
 
         quit = Yes.quit;
     }
@@ -125,7 +106,7 @@ Flag!"quit" checkMessages()
     /// Quit the server with the default reason
     void quitEmpty(ThreadMessage.Quit)
     {
-        return quitServer(ThreadMessage.Quit(), bot.quitReason);
+        return quitServer(ThreadMessage.Quit(), state.bot.quitReason);
     }
 
     /// Did the concurrency receive catch something?
@@ -183,7 +164,7 @@ Flag!"quit" checkMessages()
  +      Yes.quit or no depending on whether the arguments chosen mean the
  +      program should proceed or not.
  +/
-Flag!"quit" handleGetopt(string[] args)
+Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
 {
     import std.format : format;
     import std.getopt;
@@ -195,100 +176,103 @@ Flag!"quit" handleGetopt(string[] args)
 
     arraySep = ",";
 
-    auto results = args.getopt(
-        config.caseSensitive,
-        "n|nickname",    "Bot nickname", &bot.nickname,
-        "u|user",        "Username when registering onto server (not nickname)",
-            &bot.user,
-        "i|ident",       "IDENT string", &bot.ident,
-        "pass",          "Registration password (not auth or nick services)",
-            &bot.pass,
-        "a|auth",        "Auth service login name, if applicable",
-            &bot.authLogin,
-        "p|authpassword","Auth service password", &bot.authPassword,
-        "m|master",      "Auth login of the bot's master, who gets " ~
-                        "access to administrative functions", &bot.master,
-        "H|home",        "Home channels to operate in, comma-separated" ~
-                        " (remember to escape or enquote the #s!)", &bot.homes,
-        "C|channel",     "Non-home channels to idle in, comma-separated" ~
-                        " (ditto)", &bot.channels,
-        "s|server",      "Server address", &bot.server.address,
-        "P|port",        "Server port", &bot.server.port,
-        "settings",      "Show all plugins' settings", &shouldShowSettings,
-        "c|config",      "Read configuration from file (default %s)"
-                            .format(CoreSettings.init.configFile), &settings.configFile,
-        "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
-        "writeconf",     &shouldWriteConfig,
-        "version",       "Show version info", &shouldShowVersion,
-        "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
-            &shouldGenerateAsserts,
-        "gen",           &shouldGenerateAsserts,
-    );
-
-    meldSettingsFromFile(bot, settings);
-
-    // Give common.d a copy of CoreSettings for printObject. FIXME
-    kameloso.common.settings = settings;
-
-    // We know CoreSettings now so reinitialise the logger
-    initLogger();
-
-    if (results.helpWanted)
+    with (state)
     {
-        // --help|-h was passed; show the help table and quit
-        printVersionInfo(BashForeground.white);
-        writeln();
+        auto results = args.getopt(
+            config.caseSensitive,
+            "n|nickname",    "Bot nickname", &bot.nickname,
+            "u|user",        "Username when registering onto server (not nickname)",
+                &bot.user,
+            "i|ident",       "IDENT string", &bot.ident,
+            "pass",          "Registration password (not auth or nick services)",
+                &bot.pass,
+            "a|auth",        "Auth service login name, if applicable",
+                &bot.authLogin,
+            "p|authpassword","Auth service password", &bot.authPassword,
+            "m|master",      "Auth login of the bot's master, who gets " ~
+                            "access to administrative functions", &bot.master,
+            "H|home",        "Home channels to operate in, comma-separated" ~
+                            " (remember to escape or enquote the #s!)", &bot.homes,
+            "C|channel",     "Non-home channels to idle in, comma-separated" ~
+                            " (ditto)", &bot.channels,
+            "s|server",      "Server address", &bot.server.address,
+            "P|port",        "Server port", &bot.server.port,
+            "settings",      "Show all plugins' settings", &shouldShowSettings,
+            "c|config",      "Read configuration from file (default %s)"
+                                .format(CoreSettings.init.configFile), &settings.configFile,
+            "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
+            "writeconf",     &shouldWriteConfig,
+            "version",       "Show version info", &shouldShowVersion,
+            "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
+                &shouldGenerateAsserts,
+            "gen",           &shouldGenerateAsserts,
+        );
 
-        defaultGetoptPrinter("Command-line arguments available:\n"
-            .colour(BashForeground.lightgreen), results.options);
-        writeln();
-        return Yes.quit;
+        meldSettingsFromFile(bot, settings);
+
+        // Give common.d a copy of CoreSettings for printObject. FIXME
+        kameloso.common.settings = settings;
+
+        // We know CoreSettings now so reinitialise the logger
+        initLogger();
+
+        if (results.helpWanted)
+        {
+            // --help|-h was passed; show the help table and quit
+            printVersionInfo(BashForeground.white);
+            writeln();
+
+            defaultGetoptPrinter("Command-line arguments available:\n"
+                .colour(BashForeground.lightgreen), results.options);
+            writeln();
+            return Yes.quit;
+        }
+
+        if (shouldShowVersion)
+        {
+            // --version was passed; show info and quit
+            printVersionInfo();
+            return Yes.quit;
+        }
+
+        if (shouldWriteConfig)
+        {
+            // --writeconfig was passed; write configuration to file and quit
+            printVersionInfo(BashForeground.white);
+
+            logger.info("Writing configuration to ", settings.configFile);
+            writeln();
+
+            // If we don't initialise the plugins there'll be no plugins array
+            initPlugins();
+
+            state.writeConfigurationFile(settings.configFile);
+            return Yes.quit;
+        }
+
+        if (shouldShowSettings)
+        {
+            // --settings was passed, show all options and quit
+            printVersionInfo(BashForeground.white);
+            writeln();
+
+            // FIXME: Hardcoded width
+            printObjects!17(bot, bot.server, settings);
+
+            initPlugins();
+            foreach (plugin; plugins) plugin.printSettings();
+
+            return Yes.quit;
+        }
+
+        if (shouldGenerateAsserts)
+        {
+            state.generateAsserts();
+            return Yes.quit;
+        }
+
+        return No.quit;
     }
-
-    if (shouldShowVersion)
-    {
-        // --version was passed; show info and quit
-        printVersionInfo();
-        return Yes.quit;
-    }
-
-    if (shouldWriteConfig)
-    {
-        // --writeconfig was passed; write configuration to file and quit
-        printVersionInfo(BashForeground.white);
-
-        logger.info("Writing configuration to ", settings.configFile);
-        writeln();
-
-        // If we don't initialise the plugins there'll be no plugins array
-        initPlugins();
-
-        writeConfigurationFile(settings.configFile);
-        return Yes.quit;
-    }
-
-    if (shouldShowSettings)
-    {
-        // --settings was passed, show all options and quit
-        printVersionInfo(BashForeground.white);
-        writeln();
-
-        // FIXME: Hardcoded width
-        printObjects!17(bot, bot.server, settings);
-
-        initPlugins();
-        foreach (plugin; plugins) plugin.printSettings();
-
-        return Yes.quit;
-    }
-
-    if (shouldGenerateAsserts)
-    {
-        generateAsserts();
-        return Yes.quit;
-    }
-
-    return No.quit;
 }
 
 
@@ -299,31 +283,32 @@ Flag!"quit" handleGetopt(string[] args)
  +
  +  This is a debugging tool.
  +/
-void generateAsserts()
+void generateAsserts(ref Kameloso state)
 {
     import kameloso.plugins.admin : formatEventAssertBlock;
     import std.array : Appender;
 
-    parser.bot = bot;
-
     Appender!(char[]) sink;
     sink.reserve(768);
 
-    printObject(parser.bot);
-
-    string input;
-
-    while ((input = readln()) !is null)
+    with (state)
     {
-        import std.regex : matchFirst, regex;
-        if (abort) return;
+        printObject(parser.bot);
 
-        auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
-        immutable event = parser.toIRCEvent(hits[1]);
-        sink.formatEventAssertBlock(event);
-        writeln();
-        writeln(sink.data);
-        sink.clear();
+        string input;
+
+        while ((input = readln()) !is null)
+        {
+            import std.regex : matchFirst, regex;
+            if (abort) return;
+
+            auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
+            immutable event = parser.toIRCEvent(hits[1]);
+            sink.formatEventAssertBlock(event);
+            writeln();
+            writeln(sink.data);
+            sink.clear();
+        }
     }
 }
 
@@ -364,27 +349,31 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
  +  Params:
  +      filename = the string filename of the file to write to.
  +/
-void writeConfigurationFile(const string filename)
+void writeConfigurationFile(ref Kameloso state, const string filename)
 {
     import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
     import std.array : Appender;
 
     Appender!string sink;
     sink.reserve(512);
-    sink.serialise(bot, bot.server, settings);
 
-    printObjects(bot, bot.server, settings);
-
-    foreach (plugin; plugins)
+    with (state)
     {
-        plugin.addToConfig(sink);
-        // Not all plugins with configuration is important enough to list, so
-        // not all will have something to present()
-        plugin.present();
-    }
+        sink.serialise(bot, bot.server, settings);
 
-    immutable justified = sink.data.justifiedConfigurationText;
-    writeToDisk!(Yes.addBanner)(filename, justified);
+        printObjects(bot, bot.server, settings);
+
+        foreach (plugin; plugins)
+        {
+            plugin.addToConfig(sink);
+            // Not all plugins with configuration is important enough to list, so
+            // not all will have something to present()
+            plugin.present();
+        }
+
+        immutable justified = sink.data.justifiedConfigurationText;
+        writeToDisk!(Yes.addBanner)(filename, justified);
+    }
 }
 
 
@@ -414,7 +403,7 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  It only initialises them to the point where they're aware of their settings,
  +  and not far enough to have loaded any resources.
  +/
-void initPlugins()
+/+void initPlugins()
 {
     import std.datetime.systime : Clock;
 
@@ -456,7 +445,7 @@ void initPlugins()
     {
         plugin.loadConfig(state.settings.configFile);
     }
-}
+}+/
 
 
 // teardownPlugins
@@ -466,7 +455,7 @@ void initPlugins()
  +
  +  Think of it as a plugin destructor.
  +/
-void teardownPlugins()
+/*void teardownPlugins()
 {
     if (!plugins.length) return;
 
@@ -480,7 +469,7 @@ void teardownPlugins()
             logger.error(e.msg);
         }
     }
-}
+}*/
 
 
 // startPlugins
@@ -490,7 +479,7 @@ void teardownPlugins()
  +  This has to happen after `initPlugins` or there will not be any plugins in
  +  the `plugin` array to start.
  +/
-void startPlugins()
+/*void startPlugins()
 {
     if (!plugins.length) return;
 
@@ -508,7 +497,7 @@ void startPlugins()
             propagateBot(bot);
         }
     }
-}
+}*/
 
 
 // propagateBot
@@ -521,13 +510,13 @@ void startPlugins()
  +  Params:
  +      bot = IRCBot to propagate.
  +/
-void propagateBot(IRCBot bot)
+/*void propagateBot(IRCBot bot)
 {
     foreach (plugin; plugins)
     {
         plugin.newBot(bot);
     }
-}
+}*/
 
 
 // initLogger
@@ -559,7 +548,7 @@ void initLogger()
  +  Returns:
  +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
  +/
-Flag!"quit" mainLoop(Generator!string generator)
+Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
 {
     import core.thread : Fiber;
     import std.datetime.systime : Clock;
@@ -579,15 +568,16 @@ Flag!"quit" mainLoop(Generator!string generator)
         // See if day broke
         const now = Clock.currTime;
 
-        if (now.day != today)
+        if (now.day != state.today)
         {
             logger.infof("[%d-%02d-%02d]", now.year, cast(int)now.month, now.day);
-            today = now.day;
+            state.today = now.day;
         }
 
         // Call the generator, query it for event lines
         generator.call();
 
+        with (state)
         foreach (immutable line; generator)
         {
             // Empty line yielded means nothing received
@@ -627,7 +617,7 @@ Flag!"quit" mainLoop(Generator!string generator)
 
                     // Fetch any queued WHOIS requests and handle
                     auto reqs = plugin.yieldWHOISRequests();
-                    reqs.handleWHOISQueue(event, event.target.nickname);
+                    state.handleWHOISQueue(reqs, event, event.target.nickname);
 
                     auto yieldedBot = plugin.yieldBot();
                     if (yieldedBot != bot)
@@ -659,7 +649,7 @@ Flag!"quit" mainLoop(Generator!string generator)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        quit = checkMessages();
+        quit = checkMessages(state);
     }
 
     return Yes.quit;
@@ -673,8 +663,8 @@ Flag!"quit" mainLoop(Generator!string generator)
  +
  +  This is more or less a Command pattern.
  +/
-void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event,
-    const string nickname)
+void handleWHOISQueue(W)(ref Kameloso state, ref W[string] reqs,
+    const IRCEvent event, const string nickname)
 {
     if (nickname.length &&
         ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
@@ -701,14 +691,14 @@ void handleWHOISQueue(W)(ref W[string] reqs, const IRCEvent event,
                 import std.datetime : Clock;
                 import core.time : seconds;
 
-                const then = key in whoisCalls;
+                const then = key in state.whoisCalls;
                 const now = Clock.currTime;
 
                 if (!then || ((now - *then) > Timeout.whois.seconds))
                 {
                     logger.trace("--> WHOIS :", key);
-                    conn.sendline("WHOIS :", key);
-                    whoisCalls[key] = Clock.currTime;
+                    state.conn.sendline("WHOIS :", key);
+                    state.whoisCalls[key] = Clock.currTime;
                 }
                 else
                 {
@@ -766,7 +756,7 @@ int main(string[] args)
         import core.stdc.signal : signal, SIGINT, SIG_DFL;
 
         logger.error("We just crashed!");
-        teardownPlugins();
+        botState.teardownPlugins();
 
         // Restore signal handlers to the default
         signal(SIGINT, SIG_DFL);
@@ -783,7 +773,7 @@ int main(string[] args)
     try
     {
         // Act on arguments getopt, quit if whatever was passed demands it
-        if (handleGetopt(args) == Yes.quit) return 0;
+        if (botState.handleGetopt(args) == Yes.quit) return 0;
     }
     catch (const GetOptException e)
     {
@@ -794,76 +784,79 @@ int main(string[] args)
     printVersionInfo(BashForeground.white);
     writeln();
 
-    // Print the current settings to show what's going on.
-    printObjects(bot, bot.server);
-
-    if (!bot.homes.length && !bot.master.length && !bot.friends.length)
+    with (botState)
     {
-        import std.path : baseName;
+        // Print the current settings to show what's going on.
+        printObjects(bot, bot.server);
 
-        logger.warning("No master nor channels configured!");
-        logger.logf("Use %s --writeconfig to generate a configuration file.",
-            args[0].baseName);
-        return 1;
-    }
-
-    // Save the original nickname *once*, outside the connection loop.
-    // It will change later and knowing this is useful when authenticating
-    bot.origNickname = bot.nickname;
-
-    /// Flag denoting that we should quit the program.
-    Flag!"quit" quit;
-
-    /// Bool whether this is the first connection attempt or if we have
-    /// connected at least once already.
-    bool connectedAlready;
-
-    do
-    {
-        if (connectedAlready)
+        if (!bot.homes.length && !bot.master.length && !bot.friends.length)
         {
-            import core.time : seconds;
-            logger.log("Please wait a few seconds...");
-            interruptibleSleep(Timeout.retry.seconds, abort);
+            import std.path : baseName;
+
+            logger.warning("No master nor channels configured!");
+            logger.logf("Use %s --writeconfig to generate a configuration file.",
+                args[0].baseName);
+            return 1;
         }
 
-        conn.reset();
+        // Save the original nickname *once*, outside the connection loop.
+        // It will change later and knowing this is useful when authenticating
+        bot.origNickname = bot.nickname;
 
-        immutable resolved = conn.resolve(bot.server.address,
-            bot.server.port, abort);
-        if (!resolved) return 1;
+        /// Flag denoting that we should quit the program.
+        Flag!"quit" quit;
 
-        conn.connect(abort);
-        if (!conn.connected) return 1;
+        /// Bool whether this is the first connection attempt or if we have
+        /// connected at least once already.
+        bool connectedAlready;
 
-        // Reset fields in the bot that should not survive a reconnect
-        bot.registerStatus = IRCBot.Status.notStarted;
-        bot.authStatus = IRCBot.Status.notStarted;
-        bot.server.resolvedAddress = string.init;
-        parser = IRCParser(bot);
+        do
+        {
+            if (connectedAlready)
+            {
+                import core.time : seconds;
+                logger.log("Please wait a few seconds...");
+                interruptibleSleep(Timeout.retry.seconds, abort);
+            }
 
-        initPlugins();
-        startPlugins();
+            conn.reset();
 
-        // Initialise the Generator and start the main loop
-        auto generator = new Generator!string(() => listenFiber(conn, abort));
-        quit = mainLoop(generator);
-        connectedAlready = true;
+            immutable resolved = conn.resolve(bot.server.address,
+                bot.server.port, abort);
+            if (!resolved) return 1;
+
+            conn.connect(abort);
+            if (!conn.connected) return 1;
+
+            // Reset fields in the bot that should not survive a reconnect
+            bot.registerStatus = IRCBot.Status.notStarted;
+            bot.authStatus = IRCBot.Status.notStarted;
+            bot.server.resolvedAddress = string.init;
+            parser = IRCParser(bot);
+
+            botState.initPlugins();
+            botState.startPlugins();
+
+            // Initialise the Generator and start the main loop
+            auto generator = new Generator!string(() => listenFiber(conn, abort));
+            quit = botState.mainLoop(generator);
+            connectedAlready = true;
+        }
+        while (!quit && !abort && settings.reconnectOnFailure);
+
+        if (quit)
+        {
+            botState.teardownPlugins();
+        }
+        else if (abort)
+        {
+            // Ctrl+C
+            logger.warning("Aborting...");
+            botState.teardownPlugins();
+            return 1;
+        }
+
+        logger.info("Exiting...");
+        return 0;
     }
-    while (!quit && !abort && settings.reconnectOnFailure);
-
-    if (quit)
-    {
-        teardownPlugins();
-    }
-    else if (abort)
-    {
-        // Ctrl+C
-        logger.warning("Aborting...");
-        teardownPlugins();
-        return 1;
-    }
-
-    logger.info("Exiting...");
-    return 0;
 }
