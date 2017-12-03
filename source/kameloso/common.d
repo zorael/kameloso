@@ -159,63 +159,23 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const)
 }
 
 
-/// Bool of whether a type is a colour code enum
-enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
-                        is(T : BashFormat) || is(T : BashReset);
+enum isAColourCode(T) = false;
 
 string colour(Codes...)(Codes codes)
 {
     return string.init;
 }
 
-
-// colour
-/++
- +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset`` and composes them into a colour code token.
- +
- +  This is the composing function that fills its result into an output range.
- +
- +  Params:
- +      codes = a variadic list of Bash format codes.
- +
- +  Returns:
- +      A Bash code sequence of the passed codes.
- +/
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.bashFormat);
-    sink.put('[');
-
-    uint numCodes;
-
-    foreach (const code; codes)
-    {
-        import std.conv : to;
-
-        if (++numCodes > 1) sink.put(';');
-
-        sink.put((cast(size_t)code).to!string);
-    }
-
-    sink.put('m');
 }
 
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(text.length + 15);
-
-    sink.colour(codes);
-    sink.put(text);
-    sink.colour(BashReset.all);
-    return sink.data;
 }
 
 
@@ -231,53 +191,9 @@ alias KamelosoLogger = Logger;
 size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (Number num, ptrdiff_t n)
 {
-    assert((n > 0), "Cannot get multiple of 0 or negatives");
-    assert((num >= 0), "Cannot get multiples for a negative number");
-
-    if (num == 0) return 0;
-
-    if (num == n)
-    {
-        static if (oneUp) return (n * 2);
-        else
-        {
-            return n;
-        }
-    }
-
-    double frac = (num / double(n));
-    uint floor_ = cast(uint)frac;
-
-    static if (oneUp) uint mod = (floor_ + 1);
-    else
-    {
-        uint mod = (floor_ == frac) ? floor_ : (floor_ + 1);
-    }
-
-    return (mod * n);
+    return 1;
 }
 
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
-    import core.thread;
-
-    const step = 250.msecs;
-
-    D left = dur;
-
-    while (left > 0.seconds)
-    {
-        if (abort) return;
-
-        if ((left - step) < 0.seconds)
-        {
-            Thread.sleep(left);
-            break;
-        }
-        else
-        {
-            Thread.sleep(step);
-            left -= step;
-        }
-    }
 }
