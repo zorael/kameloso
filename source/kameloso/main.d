@@ -158,7 +158,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
  +/
 void generateAsserts(ref Kameloso state)
 {
-    import kameloso.plugins.admin : formatEventAssertBlock;
+    import kameloso.debugging : formatEventAssertBlock;
     import std.array : Appender;
 
     Appender!(char[]) sink;
