@@ -1467,9 +1467,9 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  We pass the `monochrome` setting bool here to control if the logger should
  +  be coloured or not.
  +/
-void initLogger()
+void initLogger(bool monochrome = settings.monochrome)
 {
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, settings.monochrome);
+    logger = new KamelosoLogger(LogLevel.all, monochrome);
 }

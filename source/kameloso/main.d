@@ -374,11 +374,12 @@ void main() {
 else
 int main(string[] args)
 {
+    import kameloso.bash : BashForeground;
     import std.getopt : GetOptException;
 
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
-    initLogger();
+    initLogger(botState.settings.monochrome);
 
     scope(failure)
     {
@@ -412,7 +413,10 @@ int main(string[] args)
         return 1;
     }
 
-    printVersionInfo(BashForeground.white);
+    immutable tint = botState.settings.monochrome ?
+        BashForeground.default_ : BashForeground.white;
+
+    printVersionInfo(tint);
     writeln();
 
     with (botState)
