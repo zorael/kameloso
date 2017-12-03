@@ -142,6 +142,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         state.parser.bot = bot;
 
         // Give common.d a copy of CoreSettings for printObject. FIXME
+        static import kameloso.common;
         kameloso.common.settings = settings;
 
         // We know CoreSettings now so reinitialise the logger

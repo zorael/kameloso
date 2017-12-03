@@ -1576,6 +1576,7 @@ struct Kameloso
     import kameloso.ircdefs : IRCBot;
     import kameloso.irc : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
+    import std.datetime.systime : SysTime;
 
     /// Nickname and other IRC variables for the bot.
     IRCBot bot;
