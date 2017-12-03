@@ -169,10 +169,6 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 }
 
 
-// onCommandShowUsers
-/++
- +  Prints out the current state.users array in the local terminal.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -190,13 +186,6 @@ void onCommandShowUsers()
 }
 
 
-// onCommandSudo
-/++
- +  Sends supplied text to the server, verbatim.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -207,15 +196,6 @@ void onCommandSudo(const IRCEvent event)
 }
 
 
-// onCommandFake
-/++
- +  Fake that a string was sent by the server.
- +
- +  Chance of infinite loop?
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -226,17 +206,6 @@ void onCommandFake(const IRCEvent event)
 }
 
 
-// onCommandQuit
-/++
- +  Sends a QUIT event to the server.
- +
- +  If any extra text is following the 'quit' prefix, it uses that as the quit
- +  reason, otherwise it falls back to the default as specified in the
- +  configuration file.
- +
- +  Params:
- +      event = tshe triggering IRCEvent.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -246,179 +215,6 @@ void onCommandQuit(const IRCEvent event)
     state.mainThread.send(ThreadMessage.Quit(), event.content);
 }
 
-
-// onCommandAddChan
-/++
- +  Add a channel to the list of currently active channels.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "addhome")
-void onCommandAddHome(const IRCEvent event)
-{
-    import std.algorithm.searching : canFind;
-    import std.string : strip;
-
-    immutable channel = event.content.strip();
-
-    if (!channel.isValidChannel(state.bot.server))
-    {
-        logger.warning("Invalid channel");
-        return;
-    }
-
-    with (state)
-    {
-        if (!bot.homes.canFind(channel))
-        {
-            mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
-        }
-
-        logger.info("Adding channel: ", channel);
-        bot.homes ~= channel;
-        bot.updated = true;
-    }
-}
-
-
-// onCommandDelHome
-/++
- +  Removes a channel from the list of currently active home channels.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "delhome")
-void onCommandDelHome(const IRCEvent event)
-{
-    import std.algorithm : countUntil, remove;
-    import std.string : strip;
-
-    immutable channel = event.content.strip();
-
-    if (!channel.isValidChannel(state.bot.server))
-    {
-        logger.warning("Invalid channel");
-        return;
-    }
-
-    with (state)
-    {
-        immutable chanIndex = bot.homes.countUntil(channel);
-
-        if (chanIndex == -1)
-        {
-            logger.warningf("Channel %s was not in bot.homes", channel);
-            return;
-        }
-
-        bot.homes = bot.homes.remove(chanIndex);
-        bot.updated = true;
-        mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
-    }
-}
-
-
-// onCommandAddFriend
-/++
- +  Add a nickname to the list of users who may trigger the bot.
- +
- +  This is at a 'friends' level, as opposed to 'anyone' and 'master'.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "addfriend")
-void onCommandAddFriend(const IRCEvent event)
-{
-    import std.string : indexOf, strip;
-
-    immutable nickname = event.content.strip();
-
-    if (!nickname.length)
-    {
-        logger.warning("No nickname supplied...");
-        return;
-    }
-    else if (nickname.indexOf(" ") != -1)
-    {
-        logger.warning("Nickname must not contain spaces");
-        return;
-    }
-
-    with (state)
-    {
-        bot.friends ~= nickname;
-        bot.updated = true;
-        logger.infof("%s added to friends", nickname);
-    }
-}
-
-
-// onCommandDelFriend
-/++
- +  Remove a nickname from the list of users who may trigger the bot.
- +
- +  Params:
- +      event = The triggering IRCEvent.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "delfriend")
-void onCommandDelFriend(const IRCEvent event)
-{
-    import std.algorithm : countUntil, remove;
-    import std.string : indexOf, strip;
-
-    immutable nickname = event.content.strip();
-
-    if (!nickname.length)
-    {
-        logger.warning("No nickname supplied...");
-        return;
-    }
-    else if (nickname.indexOf(" ") != -1)
-    {
-        logger.warning("Only one nick at a time. Nickname must not contain spaces");
-        return;
-    }
-
-    immutable friendIndex = state.bot.friends.countUntil(nickname);
-
-    if (friendIndex == -1)
-    {
-        logger.warning("No such friend");
-        return;
-    }
-
-    with (state)
-    {
-        bot.friends = bot.friends.remove(friendIndex);
-        bot.updated = true;
-        logger.infof("%s removed from friends", nickname);
-    }
-}
-
-
-// onCommandResetTerminal
-/++
- +  Outputs the ASCII control character 15 to the terminal.
- +
- +  This helps with restoring it if the bot has accidentally printed a different
- +  control character putting it would-be binary mode, like what happens when
- +  you try to cat a binary file.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -429,12 +225,6 @@ void onCommandResetTerminal()
 }
 
 
-// onCommandPrintAll
-/++
- +  Toggles a flag to print all incoming events raw.
- +
- +  This is for debugging purposes.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -446,12 +236,6 @@ void onCommandPrintAll()
 }
 
 
-// onCommandPrintBytes
-/++
- +  Toggles a flag to print all incoming events as bytes.
- +
- +  This is for debugging purposes.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -463,12 +247,6 @@ void onCommandPrintBytes()
 }
 
 
-// onCommandAsserts
-/++
- +  Toggles a flag to print assert statements for incoming events.
- +
- +  This is for debugging purposes.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -481,15 +259,6 @@ void onCommandAsserts()
 }
 
 
-// onAnyEvent
-/++
- +  Prints all incoming events raw if the flag to do so has been set with
- +  onCommandPrintAll, by way of the 'printall' verb. Also prints the content
- +  of any incomings events, cast to bytes.
- +
- +  Params:
- +      event = the event whose raw IRC string to print.
- +/
 @(IRCEvent.Type.ANY)
 void onAnyEvent(const IRCEvent event)
 {
@@ -519,15 +288,6 @@ void onAnyEvent(const IRCEvent event)
 }
 
 
-// onCommandJoin
-/++
- +  Joins a supplied channel.
- +
- +  Simply defers to joinPartImpl with the prefix JOIN.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -538,15 +298,6 @@ void onCommandJoin(const IRCEvent event)
 }
 
 
-// onCommandPart
-/++
- +  Parts from a supplied channel.
- +
- +  Simply defers to joinPartImpl with the prefix PART.
- +
- +  Params:
- +      event = the triggering IRCEvent.
- +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -557,17 +308,6 @@ void onCommandPart(const IRCEvent event)
 }
 
 
-// joinPartImpl
-/++
- +  Joins or parts a supplied channel.
- +
- +  Technically sends the action passed in the prefix variable with the list of
- +  channels as its list of arguments.
- +
- +  Params:
- +      prefix = the action string to send (JOIN or PART).
- +      event = the triggering IRCEvent.
- +/
 void joinPartImpl(const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
@@ -594,12 +334,6 @@ mixin BasicEventHandlers;
 mixin OnEventImpl;
 
 
-// AdminPlugin
-/++
- +  A plugin aimed for adḿinistrative use and debugging.
- +
- +  It was historically part of Chatbot.
- +/
 final class AdminPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
