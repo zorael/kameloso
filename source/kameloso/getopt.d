@@ -138,6 +138,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         );
 
         meldSettingsFromFile(bot, settings);
+        state.parser.bot = bot;
 
         // Give common.d a copy of CoreSettings for printObject. FIXME
         kameloso.common.settings = settings;
