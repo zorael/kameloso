@@ -11,64 +11,25 @@ import std.typecons : Flag, No, Yes;
 
 @safe:
 
-version(unittest)
-shared static this()
-{
-    // This is technically before settings have been read...
-    logger = new KamelosoLogger;
-}
-
-
-// logger
-/++
- +  Instance of a `KamelosoLogger`, providing timestamped and coloured logging.
- +
- +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
- +  and `fatal`. It is not thread-safe, so instantiate a thread-local Logger
- +  if threading.
- +/
 Logger logger;
 
-/// A local copy of the Settings struct, housing certain runtime options
 Settings settings;
 
-
-// ThreadMessage
-/++
- +  Aggregate of thread message types.
- +
- +  This is a way to make concurrency message passing easier. You could use
- +  string literals to differentiate between messages and then have big
- +  switches inside the catching function, but with these you can actually
- +  have separate functions for each.
- +/
 struct ThreadMessage
 {
     struct Sendline {}
     struct Quit {}
 }
 
-
-/// UDA used for conveying "this field is not to be saved in configuration files"
 struct Unconfigurable {}
 
-/// UDA used for conveying "this string is an array with this token as separator"
 struct Separator
 {
     string token = ",";
 }
 
-/// UDA used to convey "this member should not be printed in clear text"
 struct Hidden {}
 
-
-// Settings
-/++
- +  Aggregate struct containing runtime bot setting variables.
- +
- +  Kept inside one struct, they're nicely gathered and easy to pass around.
- +  Some defaults are hardcoded here.
- +/
 struct Settings
 {
     bool monochrome = true;
@@ -82,32 +43,11 @@ struct Settings
     }
 }
 
-
-// isConfigurableVariable
-/++
- +  Eponymous template bool of whether a variable can be configured via the
- +  functions in `kameloso.config` or not.
- +
- +  Currently it does not support static arrays.
- +
- +  Params:
- +      var = variable to examine.
- +/
 template isConfigurableVariable(alias var)
 {
     enum isConfigurableVariable = false;
 }
 
-
-// longestMemberName
-/++
- +  Gets the name of the longest member in a struct.
- +
- +  This is used for formatting configuration files, so that columns line up.
- +
- +  Params:
- +      Things = the types to examine and count name lengths
- +/
 template longestMemberName(Things...)
 {
     enum longestMemberName = ()
@@ -116,27 +56,13 @@ template longestMemberName(Things...)
     }();
 }
 
-
-
-// isOfAssignableType
-/++
- +  Eponymous template bool of whether a variable is "assignable"; if it is
- +  an lvalue that isn't protected from being written to.
- +/
 template isOfAssignableType(T)
 if (isType!T)
 {
     enum isOfAssignableType = false;
-    /*import std.traits : isSomeFunction;
-
-    enum isOfAssignableType = isType!T &&
-        !isSomeFunction!T &&
-        !is(T == const) &&
-        !is(T == immutable);*/
 }
 
 
-/// Ditto
 enum isOfAssignableType(alias symbol) = false;
 
 
@@ -300,33 +226,8 @@ if (isOutputRange!(Sink, string))
     // noop
 }
 
-// KamelosoLogger
-/++
- +  Modified `Logger` to print timestamped and coloured logging messages.
- +/
-final class KamelosoLogger : Logger
-{
-    bool monochrome;
+alias KamelosoLogger = Logger;
 
-    this(LogLevel lv = LogLevel.all, bool monochrome = false)
-    {
-        this.monochrome = monochrome;
-        super(lv);
-    }
-}
-
-// getMultipleOf
-/++
- +  Given a number, calculates the largest multiple of `n` needed to reach that
- +  number.
- +
- +  It rounds up, and if supplied `Yes.alwaysOneUp` it will always overshoot.
- +  This is good for when calculating format pattern widths.
- +
- +  Params:
- +      num = the number to reach
- +      n = the value to find a multiplier for
- +/
 size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (Number num, ptrdiff_t n)
 {

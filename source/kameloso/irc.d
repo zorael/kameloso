@@ -20,9 +20,6 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     import kameloso.stringutils : beginsWith;
     import std.traits : EnumMembers;
 
-    // FIXME, change so that it assigns to the proper field
-
-    string targetOrChannel;
     string ctcpEvent;
 
     /++
@@ -91,13 +88,6 @@ IRCServer.Network networkOf(const string address)
 {
     return IRCServer.Network.init;
 }
-
-version(none)
-string nickServiceOf(const IRCServer.Network network)
-{
-    return string.init;
-}
-
 
 struct IRCParser
 {
