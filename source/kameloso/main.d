@@ -55,10 +55,20 @@ ubyte today;
  +  gracefully shut down.
  +/
 extern (C)
-void signalHandler(int signal) nothrow @nogc @system
+void signalHandler(int sig) nothrow @nogc @system
 {
-    printf("...caught signal %d!\n", signal);
+    import core.stdc.signal : signal, SIGINT, SIG_DFL;
+    printf("...caught signal %d!\n", sig);
     abort = true;
+
+    // Restore signal handlers to the default
+    signal(SIGINT, SIG_DFL);
+
+    version(Posix)
+    {
+        import core.sys.posix.signal : SIGHUP;
+        signal(SIGHUP, SIG_DFL);
+    }
 }
 
 
