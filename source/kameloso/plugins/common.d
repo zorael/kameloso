@@ -116,6 +116,68 @@ final class WHOISRequestImpl(F) : WHOISRequest
 }
 
 
+unittest
+{
+    WHOISRequest[] queue;
+
+    IRCEvent event;
+    event.target.nickname = "kameloso";
+    event.content = "hirrpp";
+    event.sender.nickname = "zorael";
+
+    // delegate()
+
+    int i = 5;
+
+    void dg()
+    {
+        ++i;
+    }
+
+    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, &dg);
+    queue ~= reqdg;
+
+    with (reqdg.event)
+    {
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "hirrpp"), content);
+        assert((sender.nickname == "zorael"), sender.nickname);
+    }
+
+    assert(i == 5);
+    reqdg.trigger();
+    assert(i == 6);
+
+    // function()
+
+    static void fn() { }
+
+    auto reqfn = whoisRequest(event, &fn);
+    queue ~= reqfn;
+
+    // delegate(ref IRCEvent)
+
+    void dg2(ref IRCEvent thisEvent)
+    {
+        thisEvent.content = "blah";
+    }
+
+    auto reqdg2 = whoisRequest(event, &dg2);
+    queue ~= reqdg2;
+
+    assert((reqdg2.event.content == "hirrpp"), event.content);
+    reqdg2.trigger();
+    assert((reqdg2.event.content == "blah"), event.content);
+
+    // function(IRCEvent)
+
+    static void fn2(IRCEvent thisEvent) { }
+
+    auto reqfn2 = whoisRequest(event, &fn2);
+    queue ~= reqfn2;
+}
+
+
 // whoisRequest
 /++
  +  Convenience function that returns a WHOISRequestImpl of the right type.

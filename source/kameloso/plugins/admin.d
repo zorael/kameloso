@@ -164,6 +164,31 @@ void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
     }
 }
 
+unittest
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(128);
+
+    IRCBot bot;
+    with (bot)
+    {
+        nickname = "NICKNAME";
+        user = "UUUUUSER";
+    }
+
+    sink.formatBot(bot);
+
+    assert(sink.data ==
+`IRCBot bot;
+with (bot)
+{
+    nickname = "NICKNAME";
+    user = "UUUUUSER";
+}`, '\n' ~ sink.data);
+}
+
 
 // formatEventAssertBlock
 /++
@@ -190,12 +215,52 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
     }
 }
 
+version(none)  // FIXME
+unittest
+{
+    import std.array : Appender;
+    import std.format : formattedWrite;
+
+    Appender!string sink;
+    sink.reserve(512);
+
+    IRCBot bot;
+    auto parser = IRCParser(bot);
+
+    immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
+
+    // copy/paste the above
+    sink.put("{\n");
+    sink.formattedWrite("%simmutable event = \"%s\"\n",
+        1.tabs, event.raw);
+    sink.formattedWrite("%s                  .toIRCEvent(bot);\n", 1.tabs);
+    sink.formattedWrite("%swith (event)\n", 1.tabs);
+    sink.formattedWrite("%s{\n", 1.tabs);
+    sink.formatAssertStatementLines(event, string.init, 2);
+    sink.formattedWrite("%s}\n", 1.tabs);
+    sink.put("}");
+
+    assert(sink.data ==
+`{
+    immutable event = ":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball"
+    with (event)
+    {
+        assert((type == CHAN), type.to!string);
+        assert((sender.nickname == "zorael"), sender.nickname);
+        assert((sender.ident == "~NaN"), sender.ident);
+        assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
+        assert((channel == "#flerrp"), channel);
+        assert((content == "kameloso: 8ball"), content);
+    }
+}`, '\n' ~ sink.data);
+}
+
+
 
 // onCommandShowUsers
 /++
  +  Prints out the current state.users array in the local terminal.
  +/
-version(none)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -220,7 +285,6 @@ void onCommandShowUsers()
  +  Params:
  +      event = the triggering IRCEvent.
  +/
-version(none)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
@@ -542,6 +606,45 @@ void onAnyEvent(const IRCEvent event)
     }
 }
 
+
+// onCommandJoin
+/++
+ +  Joins a supplied channel.
+ +
+ +  Simply defers to joinPartImpl with the prefix JOIN.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "join")
+void onCommandJoin(const IRCEvent event)
+{
+    joinPartImpl("JOIN", event);
+}
+
+
+// onCommandPart
+/++
+ +  Parts from a supplied channel.
+ +
+ +  Simply defers to joinPartImpl with the prefix PART.
+ +
+ +  Params:
+ +      event = the triggering IRCEvent.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "part")
+void onCommandPart(const IRCEvent event)
+{
+    joinPartImpl("PART", event);
+}
+
+
 // joinPartImpl
 /++
  +  Joins or parts a supplied channel.
@@ -585,7 +688,6 @@ mixin OnEventImpl;
  +
  +  It was historically part of Chatbot.
  +/
-version(none)
 final class AdminPlugin : IRCPlugin
 {
     mixin IRCPluginBasics;
