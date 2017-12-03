@@ -1,15 +1,9 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.connection;
 import kameloso.constants;
-import kameloso.irc;
-import kameloso.plugins;
 
-import std.concurrency;
-import std.datetime : SysTime;
 import std.stdio;
-import std.typecons : Flag, No, Yes;
 
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {

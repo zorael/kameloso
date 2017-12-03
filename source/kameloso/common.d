@@ -44,26 +44,8 @@ Settings settings;
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server `PONG` event.
-    struct Pong {}
-
-    /// Concurrency message type asking for a to-server `PING` event.
-    struct Ping {}
-
-    /// Concurrency message type asking to verbosely send a line to the server.
     struct Sendline {}
-
-    /// Concurrency message type asking to quietly send a line to the server.
-    struct Quietline {}
-
-    /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
-
-    /// Concurrency message type asking for `WHOIS` information on a user.
-    struct Whois {}
-
-    /// Concurrency message type asking for a plugin to shut down cleanly.
-    struct Teardown {}
 }
 
 
@@ -142,290 +124,6 @@ template isConfigurableVariable(alias var)
     }
 }
 
-unittest
-{
-    int i;
-    char[] c;
-    char[8] c2;
-    struct S {}
-    class C {}
-    enum E { foo }
-    E e;
-
-    static assert(isConfigurableVariable!i);
-    static assert(isConfigurableVariable!c);
-    static assert(!isConfigurableVariable!c2); // should static arrays pass?
-    static assert(!isConfigurableVariable!S);
-    static assert(!isConfigurableVariable!C);
-    static assert(!isConfigurableVariable!E);
-    static assert(isConfigurableVariable!e);
-}
-
-
-// printObjects
-/++
- +  Prints out struct objects, with all their printable members with all their
- +  printable values.
- +
- +  This is not only convenient for deubgging but also usable to print out
- +  current settings and state, where such is kept in structs.
- +
- +  Params:
- +      things = The struct objects to enumerate.
- +/
-void printObjects(Things...)(Things things) @trusted
-{
-    // writeln trusts `lockingTextWriter` so we will too.
-
-    version(Colours)
-    {
-        if (settings.monochrome)
-        {
-            //formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
-        }
-        else
-        {
-            //formatObjectsImpl!(Yes.coloured)(stdout.lockingTextWriter, things);
-        }
-    }
-    else
-    {
-        //formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
-    }
-}
-
-
-// printObject
-/++
- +  Single-object `printObjects`.
- +/
-void printObject(Thing)(Thing thing)
-{
-    //printObjects(thing);
-}
-
-
-// formatObjectsColoured
-/++
- +  Formats a struct object, with all its printable members with all their
- +  printable values.
- +
- +  This is an implementation template and should not be called directly;
- +  instead use `printObjects(Things...)`.
- +
- +  Params:
- +      coloured = whether to display in colours or not
- +      sink = output range to write to
- +      things = one or more structs to enumerate and format.
- +/
-void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
-    (auto ref Sink sink, Things things) @system
-{
-    import kameloso.stringutils : stripSuffix;
-
-    import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isSomeFunction;
-    import std.typecons : Unqual;
-
-    // workaround formattedWrite taking Appender by value
-    version(LDC) sink.put(string.init);
-
-    enum entryPadding = longestMemberName!Things.length;
-
-    with (BashForeground)
-    foreach (thing; things)
-    {
-        alias Thing = typeof(thing);
-        static if (coloured)
-        {
-            sink.formattedWrite("%s-- %s\n", white.colour, Unqual!Thing
-                .stringof
-                .stripSuffix("Options"));
-        }
-        else
-        {
-            sink.formattedWrite("-- %s\n", Unqual!Thing
-                .stringof
-                .stripSuffix("Options"));
-        }
-
-        foreach (immutable i, member; thing.tupleof)
-        {
-            static if (!isType!member &&
-                       isConfigurableVariable!member &&
-                       !hasUDA!(thing.tupleof[i], Hidden) &&
-                       !hasUDA!(thing.tupleof[i], Unconfigurable))
-            {
-                import std.traits : isArray, isSomeString;
-
-                alias T = Unqual!(typeof(member));
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
-
-                static if (isSomeString!T)
-                {
-                    static if (coloured)
-                    {
-                        enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
-                        sink.formattedWrite(stringPattern,
-                            cyan.colour, T.stringof,
-                            white.colour, (entryPadding + 2), memberstring,
-                            lightgreen.colour, member,
-                            darkgrey.colour, member.length);
-                    }
-                    else
-                    {
-                        //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
-                        enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
-                        sink.formattedWrite(stringPattern, T.stringof,
-                            (entryPadding + 2), memberstring,
-                            member, member.length);
-                    }
-                }
-                else static if (isArray!T)
-                {
-                    static if (coloured)
-                    {
-                        immutable width = member.length ?
-                            (entryPadding + 2) : (entryPadding + 4);
-
-                        enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
-                        sink.formattedWrite(arrayPattern,
-                            cyan.colour, T.stringof,
-                            white.colour, width, memberstring,
-                            lightgreen.colour, member,
-                            darkgrey.colour, member.length);
-                    }
-                    else
-                    {
-                        immutable width = member.length ?
-                            (entryPadding + 2) : (entryPadding + 4);
-
-                        enum arrayPattern = "%9s %-*s%s(%d)\n";
-                        sink.formattedWrite(arrayPattern,
-                            T.stringof,
-                            width, memberstring,
-                            member,
-                            member.length);
-                    }
-                }
-                else
-                {
-                    static if (coloured)
-                    {
-                        enum normalPattern = "%s%9s %s%-*s  %s%s\n";
-                        sink.formattedWrite(normalPattern,
-                            cyan.colour, T.stringof,
-                            white.colour, (entryPadding + 2), memberstring,
-                            lightgreen.colour, member);
-                    }
-                    else
-                    {
-                        enum normalPattern = "%9s %-*s  %s\n";
-                        sink.formattedWrite(normalPattern, T.stringof,
-                            (entryPadding + 2), memberstring, member);
-                    }
-                }
-            }
-        }
-
-        static if (coloured)
-        {
-            sink.put(default_.colour);
-        }
-
-        sink.put('\n');
-    }
-}
-
-version(none)
-@system unittest
-{
-    import std.array : Appender;
-
-    // Monochrome
-
-    struct StructName
-    {
-        int i = 12345;
-        string s = "foo";
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-    }
-
-    StructName s;
-    Appender!(char[]) sink;
-
-    sink.reserve(128);  // ~119
-    sink.formatObjectsImpl!(No.coloured)(s);
-
-    enum structNameSerialised =
-`-- StructName
-      int i    12345
-   string s   "foo"(3)
-     bool b    true
-    float f    3.14
-   double d    99.9
-
-`;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-    // Adding Options does nothing
-    alias StructNameOptions = StructName;
-    StructNameOptions so;
-    sink.clear();
-    sink.formatObjectsImpl!(No.coloured)(so);
-
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-
-    // Colour
-
-    import std.string : indexOf;
-
-    struct StructName2
-    {
-        int int_ = 12345;
-        string string_ = "foo";
-        bool bool_ = true;
-        float float_ = 3.14f;
-        double double_ = 99.9;
-    }
-
-    StructName2 s2;
-
-    sink.clear();
-    sink.reserve(256);  // ~239
-    sink.formatObjectsImpl!(Yes.coloured)(s2);
-
-    assert((sink.data.length > 12), "Empty sink after coloured fill");
-
-    assert(sink.data.indexOf("-- StructName") != -1);
-    assert(sink.data.indexOf("int_") != -1);
-    assert(sink.data.indexOf("12345") != -1);
-
-    assert(sink.data.indexOf("string_") != -1);
-    assert(sink.data.indexOf(`"foo"`) != -1);
-
-    assert(sink.data.indexOf("bool_") != -1);
-    assert(sink.data.indexOf("true") != -1);
-
-    assert(sink.data.indexOf("float_") != -1);
-    assert(sink.data.indexOf("3.14") != -1);
-
-    assert(sink.data.indexOf("double_") != -1);
-    assert(sink.data.indexOf("99.9") != -1);
-
-    // Adding Options does nothing
-    alias StructName2Options = StructName2;
-    immutable sinkCopy = sink.data.idup;
-    StructName2Options s2o;
-
-    sink.clear();
-    sink.formatObjectsImpl!(Yes.coloured)(s2o);
-    assert((sink.data == sinkCopy), sink.data);
-}
-
 
 // longestMemberName
 /++
@@ -464,24 +162,6 @@ template longestMemberName(Things...)
     }();
 }
 
-unittest
-{
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-    }
-
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-    }
-
-    assert(longestMemberName!Foo == "veryLongName");
-    assert(longestMemberName!Bar == "evenLongerName");
-    assert(longestMemberName!(Foo, Bar) == "evenLongerName");
-}
 
 
 // isOfAssignableType
@@ -503,35 +183,6 @@ if (isType!T)
 
 /// Ditto
 enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
-
-unittest
-{
-    struct Foo
-    {
-        string bar, baz;
-    }
-
-    class Bar
-    {
-        int i;
-    }
-
-    void boo(int i) {}
-
-    enum Baz { abc, def, ghi }
-    Baz baz;
-
-    assert(isOfAssignableType!int);
-    assert(!isOfAssignableType!(const int));
-    assert(!isOfAssignableType!(immutable int));
-    assert(isOfAssignableType!(string[]));
-    assert(isOfAssignableType!Foo);
-    assert(isOfAssignableType!Bar);
-    assert(!isOfAssignableType!boo);  // room for improvement: @property
-    assert(isOfAssignableType!Baz);
-    assert(!isOfAssignableType!baz);
-    assert(isOfAssignableType!string);
-}
 
 
 // meldInto
@@ -630,105 +281,6 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const)
     }
 }
 
-unittest
-{
-    import std.conv : to;
-
-    struct Foo
-    {
-        string abc;
-        string def;
-        int i;
-        float f;
-    }
-
-    Foo f1; // = new Foo;
-    f1.abc = "ABC";
-    f1.def = "DEF";
-
-    Foo f2; // = new Foo;
-    f2.abc = "this won't get copied";
-    f2.def = "neither will this";
-    f2.i = 42;
-    f2.f = 3.14f;
-
-    f2.meldInto(f1);
-
-    with (f1)
-    {
-        assert((abc == "ABC"), abc);
-        assert((def == "DEF"), def);
-        assert((i == 42), i.to!string);
-        assert((f == 3.14f), f.to!string);
-    }
-
-    Foo f3; // new Foo;
-    f3.abc = "abc";
-    f3.def = "def";
-    f3.i = 100_135;
-    f3.f = 99.9f;
-
-    Foo f4; // new Foo;
-    f4.abc = "OVERWRITTEN";
-    f4.def = "OVERWRITTEN TOO";
-    f4.i = 0;
-    f4.f = 0.1f;
-
-    f4.meldInto!(Yes.overwrite)(f3);
-
-    with (f3)
-    {
-        assert((abc == "OVERWRITTEN"), abc);
-        assert((def == "OVERWRITTEN TOO"), def);
-        assert((i == 100_135), i.to!string); // 0 is int.init
-        assert((f == 0.1f), f.to!string);
-    }
-
-    import kameloso.irc : IRCUser;
-    IRCUser one;
-    with (one)
-    {
-        nickname = "kameloso";
-        ident = "NaN";
-        address = "herpderp.net";
-        special = false;
-    }
-
-    IRCUser two;
-    with (two)
-    {
-        nickname = "kameloso^";
-        alias_ = "Kameloso";
-        address = "asdf.org";
-        login = "kamelusu";
-        special = true;
-    }
-
-    IRCUser twoCopy = two;
-
-    one.meldInto!(No.overwrite)(two);
-    with (two)
-    {
-        assert((nickname == "kameloso^"), nickname);
-        assert((alias_ == "Kameloso"), alias_);
-        assert((ident == "NaN"), ident);
-        assert((address == "asdf.org"), address);
-        assert((login == "kamelusu"), login);
-        assert(special);
-    }
-
-    one.meldInto!(Yes.overwrite)(twoCopy);
-    with (twoCopy)
-    {
-        assert((nickname == "kameloso"), nickname);
-        assert((alias_ == "Kameloso"), alias_);
-        assert((ident == "NaN"), ident);
-        assert((address == "herpderp.net"), address);
-        assert((login == "kamelusu"), login);
-        assert(!special);
-    }
-}
-
 
 // meldInto (array)
 /++
@@ -745,6 +297,7 @@ unittest
  +      meldThis = array to meld (origin).
  +      intoThis = array to meld (target).
  +/
+version(none)
 void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
     (Array1 meldThis, ref Array2 intoThis)
 if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
@@ -771,22 +324,6 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     }
 }
 
-unittest
-{
-    import std.conv : to;
-    import std.typecons : Yes, No;
-
-    auto arr1 = [ 123, 0, 789, 0, 456, 0 ];
-    auto arr2 = [ 0, 456, 0, 123, 0, 789 ];
-    arr1.meldInto!(No.overwrite)(arr2);
-    assert((arr2 == [ 123, 456, 789, 123, 456, 789 ]), arr2.to!string);
-
-    auto yarr1 = [ 'Z', char.init, 'Z', char.init, 'Z' ];
-    auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
-    yarr1.meldInto!(Yes.overwrite)(yarr2);
-    assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
-}
-
 
 // scopeguard
 /++
@@ -802,6 +339,7 @@ unittest
  +  Returns:
  +      One or more scopeguards in string form. Mix them in to use.
  +/
+version(none)
 string scopeguard(ubyte states = exit, string scopeName = string.init)
 {
     import std.array : Appender;
@@ -889,7 +427,7 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +  Returns:
  +      A Bash code sequence of the passed codes.
  +/
-version(Colours)
+/*version(Colours)
 string colour(Codes...)(Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
@@ -903,7 +441,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.colour(codes);
     return sink.data;
 }
-else
+else*/
 /// Dummy colour for when version != Colours
 string colour(Codes...)(Codes codes)
 {
@@ -1055,64 +593,12 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
  +      g = green
  +      b = blue
  +/
-version(Colours)
-void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b)
-if (isOutputRange!(Sink,string))
-{
-    import std.format : formattedWrite;
-
-    // \033[
-    // 38 foreground
-    // 2 truecolor?
-    // r;g;bm
-
-    static if (normalise)
-    {
-        normaliseColours(r, g, b);
-    }
-
-    sink.formattedWrite("%s[38;2;%d;%d;%dm",
-        cast(char)TerminalToken.bashFormat, r, g, b);
-}
-else
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b)
 if (isOutputRange!(Sink, string))
 {
     // noop
 }
-
-version(Colours)
-unittest
-{
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-
-    // LDC workaround for not taking formattedWrite sink as auto ref
-    sink.reserve(16);
-
-    sink.truecolour!(No.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;0;0;0m", sink.data);
-    sink.clear();
-
-    sink.truecolour!(Yes.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;150;150;150m", sink.data);
-    sink.clear();
-
-    sink.truecolour(255, 255, 255);
-    assert(sink.data == "\033[38;2;255;255;255m", sink.data);
-    sink.clear();
-
-    sink.truecolour(123, 221, 0);
-    assert(sink.data == "\033[38;2;123;221;0m", sink.data);
-    sink.clear();
-
-    sink.truecolour(0, 255, 0);
-    assert(sink.data == "\033[38;2;100;255;100m", sink.data);
-}
-
 
 // KamelosoLogger
 /++
@@ -1245,28 +731,6 @@ final class KamelosoLogger : Logger
     }
 }
 
-unittest
-{
-    Logger log_ = new KamelosoLogger(LogLevel.all, true);
-
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");  // crashes the program
-    log_.trace("log: trace");
-
-    log_ = new KamelosoLogger(LogLevel.all, false);
-
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");
-    log_.trace("log: trace");
-}
-
-
 // getMultipleOf
 /++
  +  Given a number, calculates the largest multiple of `n` needed to reach that
@@ -1307,29 +771,6 @@ size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
 
     return (mod * n);
 }
-
-unittest
-{
-    import std.conv : text;
-
-    immutable n1 = 15.getMultipleOf(4);
-    assert((n1 == 16), n1.text);
-
-    immutable n2 = 16.getMultipleOf!(Yes.alwaysOneUp)(4);
-    assert((n2 == 20), n2.text);
-
-    immutable n3 = 16.getMultipleOf(4);
-    assert((n3 == 16), n3.text);
-    immutable n4 = 0.getMultipleOf(5);
-    assert((n4 == 0), n4.text);
-
-    immutable n5 = 1.getMultipleOf(1);
-    assert((n5 == 1), n5.text);
-
-    immutable n6 = 1.getMultipleOf!(Yes.alwaysOneUp)(1);
-    assert((n6 == 2), n6.text);
-}
-
 
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
