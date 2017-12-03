@@ -111,7 +111,6 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 
 * "online" help; listing of verbs/commands
 * investigate inverse channel behaviour (blacklists)
-* sort out `main.d`, can't do much about it
 * pipedream: DCC
 * pipedream two: `ncurses`
 * throttle sending messages, anti-flood protection
@@ -120,7 +119,9 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * ready for channel-awareness
 * more command-line flags
 * [bash.org](http://bash.org/?random) quote fetcher (needs throttling)
-* move Bash and/or colouring things to own module?
+* server daemon config line field worth keeping?
+* zero-prefix commands (!bash, .note, ...)
+* `\033` instead of `TerminalToken` all over the shop
 
 # Built With
 

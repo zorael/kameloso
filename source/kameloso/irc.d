@@ -1521,7 +1521,13 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             break;
 
         case "NETWORK":
-            logger.info("Detected network: ", value.colour(BashForeground.white));
+            import kameloso.bash : BashForeground, colour;
+            import kameloso.common : settings;
+
+            immutable networkName = kameloso.common.settings.monochrome ?
+                value : value.colour(BashForeground.white);
+
+            logger.info("Detected network: ", networkName);
             bot.server.network = value;
             break;
 
@@ -1586,6 +1592,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
+    import kameloso.bash : BashForeground, colour;
     import std.string : toLower;
 
     /*
@@ -1699,11 +1706,18 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
         parser.setDaemon(daemon);
     }
 
+    import kameloso.common : settings;
     import kameloso.string : enumToString;
 
-    logger.infof("Detected daemon %s: %s", daemonstring, parser.bot.server.daemon
-        .enumToString
-        .colour(BashForeground.white));
+    string daemonName = parser.bot.server.daemon.enumToString;
+
+    // FIXME
+    if (!kameloso.common.settings.monochrome)
+    {
+        daemonName = daemonName.colour(BashForeground.white);
+    }
+
+    logger.infof("Detected daemon %s: %s", daemonstring, daemonName);
 }
 
 
@@ -1998,7 +2012,7 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
         return false;
     }
 
-    if (line.length == 2) return true;
+    if ((line.length == 2) && (line != "##")) return true;
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
@@ -2021,6 +2035,8 @@ unittest
     assert(!"notAChannelEither".isValidChannel(s));
     assert(!"#".isValidChannel(s));
     assert(!"".isValidChannel(s));
+    assert(!"##".isValidChannel(s));
+    assert("#d".isValidChannel(s));
 }
 
 

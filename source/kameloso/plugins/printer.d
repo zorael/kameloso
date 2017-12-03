@@ -3,7 +3,6 @@ module kameloso.plugins.printer;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
-import kameloso.constants;
 
 import std.stdio;
 
@@ -27,17 +26,6 @@ private:
  +/
 struct PrinterSettings
 {
-    version(Windows)
-    {
-        /// Flag to only show printed events in monochrome
-        bool monochrome = true;
-    }
-    else
-    {
-        /// Ditto
-        bool monochrome = false;
-    }
-
     /// Flag to display advanced colours in RRGGBB rather than simple Bash
     bool truecolour = true;
 
@@ -158,6 +146,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
+    import kameloso.bash : BashForeground, colour, truecolour;
     import kameloso.string : enumToString, beginsWith;
     import std.datetime : DateTime, SysTime;
 
@@ -169,7 +158,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     with (BashForeground)
     with (event)
     with (event.sender)
-    if (printerSettings.monochrome)
+    if (state.settings.monochrome)
     {
         import std.algorithm : equal;
         import std.format : formattedWrite;
@@ -400,6 +389,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                             if ((content != inverted) &&
                                 (printerSettings.bellOnMention))
                             {
+                                import kameloso.constants : TerminalToken;
                                 sink.put(TerminalToken.bell);
                             }
 
@@ -453,10 +443,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
         else
         {
-            logger.warning("bot was not built with colour support yet " ~
-                "monochrome is off; forcing monochrome.");
+            /*logger.warning("bot was not built with colour support yet " ~
+                "monochrome is off; forcing monochrome.");*/
 
-            printerSettings.monochrome = true;
+            state.settings.monochrome = true;
             return formatMessage(sink, event);
         }
     }
@@ -470,11 +460,13 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 version(Colours)
 void mapEffects(ref IRCEvent event)
 {
+    import kameloso.bash : BashEffect;
+    import kameloso.constants : IRCControlCharacter;
     import std.algorithm.searching : canFind;
     import std.string : representation;
 
     alias I = IRCControlCharacter;
-    alias B = BashEffectToken;
+    alias B = BashEffect;
 
     immutable lineBytes = event.content.representation;
 
@@ -511,6 +503,7 @@ void mapEffects(ref IRCEvent event)
 version(Colours)
 void mapColours(ref IRCEvent event)
 {
+    import kameloso.bash : BashBackground, BashForeground, BashReset, colour;
     import std.regex : ctRegex, matchAll, regex, replaceAll;
 
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -711,10 +704,12 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
 version(Colours)
 unittest
 {
+    import kameloso.constants : IRCControlCharacter;
+    import kameloso.bash : BashEffect;
     import std.conv : to;
 
     alias I = IRCControlCharacter;
-    alias B = BashEffectToken;
+    alias B = BashEffect;
 
     enum bBold = "\033[" ~ (cast(ubyte)B.bold).to!string ~ "m";
     enum bReset = "\033[22m";

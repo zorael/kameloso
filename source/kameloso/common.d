@@ -1,5 +1,6 @@
 module kameloso.common;
 
+import kameloso.bash : BashForeground;
 import kameloso.constants;
 
 import std.experimental.logger;
@@ -253,8 +254,8 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @system
 {
+    import kameloso.bash : BashForeground, colour;
     import kameloso.string : stripSuffix;
-
     import std.format : format, formattedWrite;
     import std.traits : hasUDA, isSomeFunction;
     import std.typecons : Unqual;
@@ -936,303 +937,6 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 }
 
 
-/// Bool of whether a type is a colour code enum
-enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
-                        is(T : BashFormat) || is(T : BashReset);
-
-
-// colour
-/++
- +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset` and composes them into a colour code token.
- +
- +  This function creates an `Appender` and fills it with the return value of
- +  `colour(Sink, Codes...)`.
- +
- +  Params:
- +      codes = a variadic list of Bash format codes.
- +
- +  Returns:
- +      A Bash code sequence of the passed codes.
- +/
-version(Colours)
-string colour(Codes...)(Codes codes)
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    if (settings.monochrome) return string.init;
-
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(16);
-
-    sink.colour(codes);
-    return sink.data;
-}
-else
-/// Dummy colour for when version != Colours
-string colour(Codes...)(Codes codes)
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    return string.init;
-}
-
-
-// colour
-/++
- +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset`` and composes them into a colour code token.
- +
- +  This is the composing function that fills its result into an output range.
- +
- +  Params:
- +      codes = a variadic list of Bash format codes.
- +/
-version(Colours)
-void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
-if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    sink.put(TerminalToken.bashFormat);
-    sink.put('[');
-
-    uint numCodes;
-
-    foreach (const code; codes)
-    {
-        import std.conv : to;
-
-        if (++numCodes > 1) sink.put(';');
-
-        sink.put((cast(uint)code).to!string);
-    }
-
-    sink.put('m');
-}
-
-
-// colour
-/++
- +  Convenience function to colour or format a piece of text without an output
- +  buffer to fill into.
- +
- +  Params:
- +      text = text to format
- +      codes = Bash formatting codes (colour, underscore, bold, ...) to apply
- +
- +  Returns:
- +      A Bash code sequence of the passed codes, encompassing the passed text.
- +/
-version(Colours)
-string colour(Codes...)(const string text, const Codes codes)
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(text.length + 15);
-
-    sink.colour(codes);
-    sink.put(text);
-    sink.colour(BashReset.all);
-    return sink.data;
-}
-else
-deprecated("Don't use colour when version isn't Colours")
-string colour(Codes...)(const string text, const Codes codes)
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    return text;
-}
-
-
-// normaliseColours
-/++
- +  Takes a colour and, if it deems it is too dark to see on a black terminal
- +  background, makes it brighter.
- +
- +  Future improvements include reverse logic; making fonts darker to improve
- +  readability on bright background. The parameters are passed by `ref` and as
- +  such nothing is returned.
- +
- +  Params:
- +      r = red
- +      g = green
- +      b = blue
- +/
-version(Colours)
-void normaliseColours(ref uint r, ref uint g, ref uint b)
-{
-    enum pureBlackReplacement = 150;
-    enum incrementWhenOnlyOneColour = 100;
-    enum tooDarkValueThreshold = 75;
-    enum highColourHighlight = 95;
-    enum lowColourIncrement = 75;
-
-    // Sanity check
-    if (r > 255) r = 255;
-    if (g > 255) g = 255;
-    if (b > 255) b = 255;
-
-    if ((r + g + b) == 0)
-    {
-        // Specialcase pure black, set to grey and return
-        r = pureBlackReplacement;
-        b = pureBlackReplacement;
-        g = pureBlackReplacement;
-
-        return;
-    }
-
-    if ((r + g + b) == 255)
-    {
-        // Precisely one colour is saturated with the rest at 0 (probably)
-        // Make it more bland, can be difficult to see otherwise
-        r += incrementWhenOnlyOneColour;
-        b += incrementWhenOnlyOneColour;
-        g += incrementWhenOnlyOneColour;
-
-        // Sanity check
-        if (r > 255) r = 255;
-        if (g > 255) g = 255;
-        if (b > 255) b = 255;
-
-        return;
-    }
-
-    int rDark, gDark, bDark;
-
-    rDark = (r < tooDarkValueThreshold);
-    gDark = (g < tooDarkValueThreshold);
-    bDark = (b < tooDarkValueThreshold);
-
-    if ((rDark + gDark +bDark) > 1)
-    {
-        // At least two colours were below the threshold (75)
-
-        // Highlight the colours above the threshold
-        r += (rDark == 0) * highColourHighlight;
-        b += (bDark == 0) * highColourHighlight;
-        g += (gDark == 0) * highColourHighlight;
-
-        // Raise all colours to make it brighter
-        r += lowColourIncrement;
-        b += lowColourIncrement;
-        g += lowColourIncrement;
-
-        // Sanity check
-        if (r >= 255) r = 255;
-        if (g >= 255) g = 255;
-        if (b >= 255) b = 255;
-    }
-}
-
-
-// truecolour
-/++
- +  Produces a Bash colour token for the colour passed, expressed in terms of
- +  red, green and blue.
- +
- +  Params:
- +      normalise = normalise colours so that they aren't too dark.
- +      sink = output range to write the final code into
- +      r = red
- +      g = green
- +      b = blue
- +/
-version(Colours)
-void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b)
-if (isOutputRange!(Sink,string))
-{
-    import std.format : formattedWrite;
-
-    // \033[
-    // 38 foreground
-    // 2 truecolor?
-    // r;g;bm
-
-    static if (normalise)
-    {
-        normaliseColours(r, g, b);
-    }
-
-    sink.formattedWrite("%c[38;2;%d;%d;%dm",
-        cast(char)TerminalToken.bashFormat, r, g, b);
-}
-
-
-// truecolour
-/++
- +  Convenience function to colour a piece of text without being passed an
- +  output sink to fill into.
- +/
-version(Colours)
-string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, uint r, uint g, uint b)
-{
-    import std.array : Appender;
-
-    Appender!string sink;
-    // \033[38;2;255;255;255m<word>\033[m
-    sink.reserve(word.length + 23);
-
-    static if (normalise)
-    {
-        normaliseColours(r, g, b);
-    }
-
-    sink.truecolour(r, g, b);
-    sink.put(word);
-    sink.put('\033'~"[0m");
-    return sink.data;
-}
-
-///
-version(Colours)
-unittest
-{
-    import std.format : format;
-
-    immutable name = "blarbhl".truecolour!(No.normalise)(255,255,255);
-    immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
-        .format(cast(char)TerminalToken.bashFormat, 255, 255, 255,
-        "blarbhl", cast(char)TerminalToken.bashFormat);
-
-    assert((name == alsoName), alsoName);
-}
-
-///
-version(Colours)
-unittest
-{
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-
-    // LDC workaround for not taking formattedWrite sink as auto ref
-    sink.reserve(16);
-
-    sink.truecolour!(No.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;0;0;0m", sink.data);
-    sink.clear();
-
-    sink.truecolour!(Yes.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;150;150;150m", sink.data);
-    sink.clear();
-
-    sink.truecolour(255, 255, 255);
-    assert(sink.data == "\033[38;2;255;255;255m", sink.data);
-    sink.clear();
-
-    sink.truecolour(123, 221, 0);
-    assert(sink.data == "\033[38;2;123;221;0m", sink.data);
-    sink.clear();
-
-    sink.truecolour(0, 255, 0);
-    assert(sink.data == "\033[38;2;100;255;100m", sink.data);
-}
-
-
 // KamelosoLogger
 /++
  +  Modified `Logger` to print timestamped and coloured logging messages.
@@ -1241,6 +945,7 @@ unittest
  +/
 final class KamelosoLogger : Logger
 {
+    import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
     import std.concurrency : Tid;
     import std.datetime : SysTime;
     import std.format : formattedWrite;
@@ -1502,12 +1207,14 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
 string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
     (const string line, const string toInvert)
 {
+    import kameloso.constants : TerminalToken;
+    import kameloso.bash : BashEffect, BashReset;
     import kameloso.string : escaped;
     import std.format : format;
     import std.regex : matchAll, regex, replaceAll;
 
     immutable inverted = "%c[%dm%s%c[%dm"
-        .format(TerminalToken.bashFormat, BashEffectToken.reverse,
+        .format(TerminalToken.bashFormat, BashEffect.reverse,
             toInvert, TerminalToken.bashFormat, BashReset.invert);
 
     static if (elaborate)
@@ -1560,4 +1267,209 @@ unittest
 
     immutable inverted9 = `"kameloso^"`.invert("kameloso^");
     assert((inverted9 == "\"\033[7mkameloso^\033[27m\""), inverted9);
+}
+
+@system:
+
+
+// Kameloso
+/++
+ +  State needed for the `kameloso`` bot, aggregated in a struct for easier
+ +  passing by ref.
+ +/
+struct Kameloso
+{
+    import kameloso.connection : Connection;
+    import kameloso.ircdefs : IRCBot;
+    import kameloso.irc : IRCParser;
+    import kameloso.plugins.common : IRCPlugin;
+    import std.datetime.systime : SysTime;
+
+    /// Nickname and other IRC variables for the bot.
+    IRCBot bot;
+
+    /// Runtime settings for bot behaviour.
+    CoreSettings settings;
+
+    /// The socket we use to connect to the server.
+    Connection conn;
+
+    /// A runtime array of all plugins. We iterate this when we have an `IRCEvent`
+    /// to react to.
+    IRCPlugin[] plugins;
+
+    /// When a nickname was called `WHOIS` on, for hysteresis.
+    SysTime[string] whoisCalls;
+
+    /// Parser instance.
+    IRCParser parser;
+
+    /// Curent day of the month, so we can track changes in day
+    ubyte today;
+
+    /// When this is set by signal handlers, the program should exit. Other parts of
+    /// the program will be monitoring it.
+    __gshared bool abort;
+
+    /// Never copy this.
+    @disable this(this);
+
+    // initPlugins
+    /++
+     +  Resets and *minimally* initialises all plugins.
+     +
+     +  It only initialises them to the point where they're aware of their settings,
+     +  and not far enough to have loaded any resources.
+     +/
+    void initPlugins()
+    {
+        import kameloso.plugins;
+        import std.concurrency : thisTid;
+        import std.datetime.systime : Clock;
+
+        teardownPlugins();
+
+        IRCPluginState state;
+        state.bot = bot;
+        state.settings = settings;
+        state.mainThread = thisTid;
+        today = Clock.currTime.day;
+
+        // Zero out old plugins array and allocate room for new ones
+        plugins.length = 0;
+        plugins.reserve(EnabledPlugins.length + 2);
+
+        // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
+        // `kameloso.plugins.package`
+        foreach (Plugin; EnabledPlugins)
+        {
+            plugins ~= new Plugin(state);
+        }
+
+        // Add `webtitles` if possible. If it's not being publically imported in
+        // `kameloso.plugins.package`, it's not there to instantiate, which is the
+        // case when we're not compiling the version `Webtitles`.
+        static if (__traits(compiles, new WebtitlesPlugin(IRCPluginState.init)))
+        {
+            plugins ~= new WebtitlesPlugin(state);
+        }
+
+        // Likewise with `pipeline`, except it depends on whether we're on a Posix
+        // system or not.
+        static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
+        {
+            plugins ~= new PipelinePlugin(state);
+        }
+
+        foreach (plugin; plugins)
+        {
+            plugin.loadConfig(state.settings.configFile);
+        }
+    }
+
+
+    // teardownPlugins
+    /++
+    +  Tears down all plugins, deinitialising them and having them save their
+    +  settings for a clean shutdown.
+    +
+    +  Think of it as a plugin destructor.
+    +/
+    void teardownPlugins()
+    {
+        if (!plugins.length) return;
+
+        logger.info("Deinitialising plugins");
+
+        foreach (plugin; plugins)
+        {
+            try plugin.teardown();
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+            }
+        }
+    }
+
+    // startPlugins
+    /++
+    +  *start* all plugins, loading any resources they may want.
+    +
+    +  This has to happen after `initPlugins` or there will not be any plugins in
+    +  the `plugin` array to start.
+    +/
+    void startPlugins()
+    {
+        if (!plugins.length) return;
+
+        logger.info("Starting plugins");
+        foreach (plugin; plugins)
+        {
+            plugin.start();
+            auto yieldedBot = plugin.yieldBot();
+
+            if (yieldedBot != bot)
+            {
+                // start changed the bot; propagate
+                bot = yieldedBot;
+                parser.bot = bot;
+                propagateBot(bot);
+            }
+        }
+    }
+
+    // propagateBot
+    /++
+    +  Takes a bot and passes it out to all plugins.
+    +
+    +  This is called when a change to the bot has occured and we want to update
+    +  all plugins to have an updated copy of it.
+    +
+    +  Params:
+    +      bot = IRCBot to propagate.
+    +/
+    void propagateBot(IRCBot bot)
+    {
+        foreach (plugin; plugins)
+        {
+            plugin.newBot(bot);
+        }
+    }
+}
+
+
+// printVersionInfo
+/++
+ +  Prints out the bot banner with the version number and github URL, with the
+ +  passed colouring.
+ +
+ +  Params:
+ +      colourCode = the Bash foreground colour to display the text in.
+ +/
+void printVersionInfo(BashForeground colourCode = BashForeground.default_)
+{
+    import kameloso.bash : colour;
+    import kameloso.constants : KamelosoInfo;
+
+    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
+        colourCode.colour,
+        cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.built,
+        cast(string)KamelosoInfo.source,
+        BashForeground.default_.colour);
+}
+
+
+// initLogger
+/++
+ +  Initialises the `KamelosoLogger` logger for use in the whole program.
+ +
+ +  We pass the `monochrome` setting bool here to control if the logger should
+ +  be coloured or not.
+ +/
+void initLogger(bool monochrome = settings.monochrome)
+{
+    import std.experimental.logger : LogLevel;
+
+    logger = new KamelosoLogger(LogLevel.all, monochrome);
 }
