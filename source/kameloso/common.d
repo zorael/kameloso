@@ -1728,3 +1728,37 @@ struct Kameloso
         }
     }
 }
+
+
+// printVersionInfo
+/++
+ +  Prints out the bot banner with the version number and github URL, with the
+ +  passed colouring.
+ +
+ +  Params:
+ +      colourCode = the Bash foreground colour to display the text in.
+ +/
+void printVersionInfo(BashForeground colourCode = BashForeground.default_)
+{
+    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
+        colourCode.colour,
+        cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.built,
+        cast(string)KamelosoInfo.source,
+        BashForeground.default_.colour);
+}
+
+
+// initLogger
+/++
+ +  Initialises the `KamelosoLogger` logger for use in the whole program.
+ +
+ +  We pass the `monochrome` setting bool here to control if the logger should
+ +  be coloured or not.
+ +/
+void initLogger()
+{
+    import std.experimental.logger : LogLevel;
+
+    logger = new KamelosoLogger(LogLevel.all, settings.monochrome);
+}
