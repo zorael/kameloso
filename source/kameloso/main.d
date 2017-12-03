@@ -3,8 +3,8 @@ module kameloso.main;
 import kameloso.common;
 import kameloso.connection;
 import kameloso.irc;
+import kameloso.ircdefs;
 import kameloso.plugins;
-import kameloso.constants;
 
 import std.concurrency : Generator, thisTid;
 import std.datetime : SysTime;
@@ -317,6 +317,8 @@ void handleWHOISQueue(W)(ref Kameloso state, ref W[string] reqs,
 
             with (entry)
             {
+                import kameloso.constants : Timeout;
+
                 import std.datetime : Clock;
                 import core.time : seconds;
 
@@ -449,7 +451,9 @@ int main(string[] args)
         {
             if (connectedAlready)
             {
+                import kameloso.constants : Timeout;
                 import core.time : seconds;
+
                 logger.log("Please wait a few seconds...");
                 interruptibleSleep(Timeout.retry.seconds, abort);
             }

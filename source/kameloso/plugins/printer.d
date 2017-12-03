@@ -715,10 +715,12 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
 version(Colours)
 unittest
 {
+    import kameloso.constants : IRCControlCharacter;
+    import kameloso.bash : BashEffect;
     import std.conv : to;
 
     alias I = IRCControlCharacter;
-    alias B = BashEffectToken;
+    alias B = BashEffect;
 
     enum bBold = "\033[" ~ (cast(ubyte)B.bold).to!string ~ "m";
     enum bReset = "\033[22m";
