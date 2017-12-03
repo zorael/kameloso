@@ -1,5 +1,7 @@
 module kameloso.plugins.printer;
 
+__EOF__
+
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;
@@ -678,7 +680,7 @@ unittest
 
 void present()
 {
-    printObject(printerOptions);
+    //printObject(printerOptions);
 }
 
 

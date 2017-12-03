@@ -1,5 +1,6 @@
 module kameloso.plugins.chatbot;
 
+__EOF__
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;

@@ -329,7 +329,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
         catch (const Exception e)
         {
             logger.error(e.msg);
-            printObject(event);
+            //printObject(event);
         }
     }
     else
@@ -338,7 +338,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
         catch (const Exception e)
         {
             logger.error(e.msg);
-            printObject(event);
+            //printObject(event);
         }
     }
 }
@@ -414,7 +414,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     scope(failure)
     {
         logger.warning("--------- PARSE SPECIALCASES FAILURE");
-        printObject(event);
+        //printObject(event);
         logger.warning("------------------------------------");
     }
 
@@ -796,7 +796,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         if (slice.indexOf(" :To connect type ") == -1)
         {
             logger.warning("Unknown variant of TOCONNECTTYPE");
-            printObject(event);
+            //printObject(event);
             break;
         }
 
@@ -1017,7 +1017,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             writeln();
             logger.warning("--------- UNCAUGHT NUMERIC OR UNSET");
-            printObject(event);
+            //printObject(event);
             logger.warning("-----------------------------------");
             writeln();
         }
@@ -1071,7 +1071,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             else if (targets.beginsWith('#'))
             {
                 logger.warning("targetOrChannel.beginsWith('#') happened. Report this.");
-                printObject(event);
+                //printObject(event);
                 event.channel = targets;
             }
             else
@@ -1114,7 +1114,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     {
         writeln();
         logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
-        printObject(event);
+        //printObject(event);
         logger.warning("--------------------------------------");
         writeln();
     }
@@ -1124,7 +1124,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     {
         writeln();
         logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
-        printObject(event);
+        //printObject(event);
         logger.warning("------------------------------------");
         writeln();
     }
@@ -1134,7 +1134,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
     {
         writeln();
         logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
-        printObject(event);
+        //printObject(event);
         logger.warning("------------------------------------");
         writeln();
     }
@@ -1708,7 +1708,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         default:
             logger.warning("-------------------- UNKNOWN CTCP EVENT");
-            printObject(event);
+            //printObject(event);
             break;
         }
     }

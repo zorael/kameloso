@@ -269,7 +269,7 @@ void onCommandShowUsers()
 {
     logger.trace("Printing Admin's users");
 
-    printObject(state.bot);
+    //printObject(state.bot);
 
     foreach (entry; state.users.byKeyValue)
     {

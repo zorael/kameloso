@@ -1,5 +1,7 @@
 module kameloso.plugins.pipeline;
 
+__EOF__
+
 version(Posix):
 
 import kameloso.common;

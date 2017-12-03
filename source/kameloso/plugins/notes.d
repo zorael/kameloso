@@ -1,5 +1,7 @@
 module kameloso.plugins.notes;
 
+__EOF__
+
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;

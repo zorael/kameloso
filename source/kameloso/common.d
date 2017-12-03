@@ -181,16 +181,16 @@ void printObjects(Things...)(Things things) @trusted
     {
         if (settings.monochrome)
         {
-            formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
+            //formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsImpl!(Yes.coloured)(stdout.lockingTextWriter, things);
+            //formatObjectsImpl!(Yes.coloured)(stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
+        //formatObjectsImpl!(No.coloured)(stdout.lockingTextWriter, things);
     }
 }
 
@@ -201,7 +201,7 @@ void printObjects(Things...)(Things things) @trusted
  +/
 void printObject(Thing)(Thing thing)
 {
-    printObjects(thing);
+    //printObjects(thing);
 }
 
 
@@ -337,6 +337,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     }
 }
 
+version(none)
 @system unittest
 {
     import std.array : Appender;

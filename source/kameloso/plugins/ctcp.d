@@ -5,6 +5,8 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
+__EOF__
+
 import std.stdio;
 
 private:
