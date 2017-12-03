@@ -153,7 +153,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
 /++
  +  Removing this breaks `-c vanilla -b plain` compilation, dmd error -11.
  +/
-void removeMeWhenPossible(ref Kameloso state)
+void removeMeWhenPossible()
 {
     import kameloso.debugging : formatEventAssertBlock;
     import std.array : Appender;
