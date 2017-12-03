@@ -7,40 +7,5 @@
     "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
     "libs-posix-dmd": [ "phobos2" ],
-    "configurations":
-    [
-        {
-            "name": "posix",
-            "platforms": [ "posix" ],
-            "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Webtitles", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.5.0" }
-        },
-        {
-            "name": "windows",
-            "platforms": [ "windows" ],
-            "buildRequirements": [ "silenceDeprecations" ]
-        },
-        {
-            "name": "nowebtitles",
-            "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Colours" ]
-        },
-        {
-            "name": "nocolours",
-            "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Webtitles" ],
-            "dependencies-posix": { "requests": "~>0.5.0" }
-        },
-        {
-            "name": "nowebtitles-nocolours",
-            "buildRequirements": [ "silenceDeprecations" ]
-        },
-        {
-            "name": "unittest",
-            "buildType": "unittest",
-            "versions": [ "Webtitles", "Colours" ],
-            "dependencies": { "requests": "~>0.5.0" }
-        }
-    ]
+    "buildRequirements": [ "silenceDeprecations" ]
 }
