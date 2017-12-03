@@ -110,18 +110,6 @@ if (isSomeString!T)
     return (line[0] == charcode);
 }
 
-// arrayify
-/++
- +  Takes a string and, with a separator token, splits it into discrete token
- +  and makes it into a dynamic array.
- +
- +  Params:
- +      separator = The string to use when delimenating fields.
- +      line = The line to split.
- +
- +  Returns:
- +      An array with fields split out of the line argument.
- +/
 pragma(inline)
 T[] arrayify(string separator = ",", T)(const T line)
 {
@@ -133,18 +121,6 @@ T[] arrayify(string separator = ",", T)(const T line)
 }
 
 
-
-/// stripPrefix
-/++
- +  Strips a prefix word from a string.
- +
- +  Params:
- +      line = the prefixed string line.
- +      prefix = the prefix to strip.
- +
- +  Returns:
- +      The passed line with the prefix sliced away.
- +/
 pragma(inline)
 string stripPrefix(const string line, const string prefix)
 {
@@ -218,19 +194,6 @@ string timeSince(const Duration duration)
 }
 
 
-// toEnum
-/++
- +  Takes the member of an enum by string and returns that member.
- +
- +  It lowers to a big switch of the enum member strings. It is faster than
- +  std.conv.to and generates less template bloat.
- +
- +  Params:
- +      enumstring = the string name of an enum member.
- +
- +  Returns:
- +      The enum member whose name matches the enumstring string.
- +/
 pragma(inline)
 Enum toEnum(Enum)(const string enumstring) pure
 if (is(Enum == enum))
@@ -276,22 +239,6 @@ unittest
 }
 
 
-// enumToString
-/++
- +  The inverse of toEnum, this function takes an enum member value and returns
- +  its string identifier.
- +
- +  It lowers to a big switch of the enum members. It is faster than std.conv.to
- +  and generates less template bloat.
- +
- +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
- +
- +  Params:
- +      value = an enum member whose string we want
- +
- +  Returns:
- +      The string name of the passed enum value.
- +/
 pragma(inline)
 string enumToString(Enum)(Enum value) pure
 if (is(Enum == enum))
@@ -333,16 +280,6 @@ if (is(Enum == enum))
 }
 
 
-// numFromHex
-/++
- +  Returns the decimal value of a hex number in string form.
- +
- +  Params:
- +      hex = a string with a hexadecimal number.
- +
- +  Returns:
- +      An integer equalling the value of the passed hexadecimal string.
- +/
 int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex)
 {
