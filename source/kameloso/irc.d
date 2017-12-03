@@ -1521,6 +1521,8 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             break;
 
         case "NETWORK":
+            import kameloso.bash : BashForeground, colour;
+
             logger.info("Detected network: ", value.colour(BashForeground.white));
             bot.server.network = value;
             break;
@@ -1586,6 +1588,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
+    import kameloso.bash : BashForeground, colour;
     import std.string : toLower;
 
     /*

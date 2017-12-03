@@ -94,8 +94,8 @@ public:
  +/
 Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
 {
-    import kameloso.common : colour, initLogger, printVersionInfo;
-    import kameloso.constants : BashForeground;
+    import kameloso.bash : BashForeground, colour;
+    import kameloso.common : initLogger, printVersionInfo;
     import std.format : format;
     import std.getopt;
 

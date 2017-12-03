@@ -3,7 +3,6 @@ module kameloso.plugins.printer;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
-import kameloso.constants;
 
 import std.stdio;
 
@@ -158,6 +157,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
+    import kameloso.bash : BashForeground, colour, truecolour;
     import kameloso.string : enumToString, beginsWith;
     import std.datetime : DateTime, SysTime;
 
@@ -400,6 +400,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                             if ((content != inverted) &&
                                 (printerSettings.bellOnMention))
                             {
+                                import kameloso.constants : TerminalToken;
                                 sink.put(TerminalToken.bell);
                             }
 
@@ -470,11 +471,13 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 version(Colours)
 void mapEffects(ref IRCEvent event)
 {
+    import kameloso.bash : BashEffect;
+    import kameloso.constants : IRCControlCharacter;
     import std.algorithm.searching : canFind;
     import std.string : representation;
 
     alias I = IRCControlCharacter;
-    alias B = BashEffectToken;
+    alias B = BashEffect;
 
     immutable lineBytes = event.content.representation;
 
@@ -511,6 +514,7 @@ void mapEffects(ref IRCEvent event)
 version(Colours)
 void mapColours(ref IRCEvent event)
 {
+    import kameloso.bash : BashBackground, BashForeground, BashReset, colour;
     import std.regex : ctRegex, matchAll, regex, replaceAll;
 
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
