@@ -151,38 +151,16 @@ Flag!"quit" checkMessages(ref Kameloso state)
 
 // generateAsserts
 /++
- +  Reads raw server strings from `stdin`, parses them to `IRCEvent`s and
- +  constructs assert blocks of their contents.
- +
- +  This is a debugging tool.
+ +  Removing this breaks `-c vanilla -b plain` compilation, dmd error -11.
  +/
-void generateAsserts(ref Kameloso state)
+void removeMeWhenPossible(ref Kameloso state)
 {
     import kameloso.debugging : formatEventAssertBlock;
     import std.array : Appender;
 
     Appender!(char[]) sink;
-    sink.reserve(768);
-
-    with (state)
-    {
-        printObject(parser.bot);
-
-        string input;
-
-        while ((input = readln()) !is null)
-        {
-            import std.regex : matchFirst, regex;
-            if (abort) return;
-
-            auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
-            immutable event = parser.toIRCEvent(hits[1]);
-            sink.formatEventAssertBlock(event);
-            writeln();
-            writeln(sink.data);
-            sink.clear();
-        }
-    }
+    sink.formatEventAssertBlock(IRCEvent.init);
+    assert(0);
 }
 
 
