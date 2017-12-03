@@ -18,6 +18,9 @@ import std.stdio;
 struct Connection
 {
 private:
+    /// Real IPv4 and IPv6 sockets to connect through.
+    Socket socket4, socket6;
+
     /// Pointer to the socket of the AddressFamily we want to connect with
     Socket* socket;
 
@@ -34,10 +37,50 @@ public:
     /// Is the connection known to be active?
     bool connected;
 
+    // reset
+    /++
+     +  (Re-)initialises the sockets and sets the IPv4 one as the active one.
+     +/
     void reset()
     {
+        socket4 = new TcpSocket;
+        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
+        socket = &socket4;
+
+        setOptions(socket4);
+        setOptions(socket6);
     }
 
+    // setOptions
+    /++
+     +  Set up sockets with the SocketOptions needed. These include timeouts
+     +  and buffer sizes.
+     +
+     +  Params:
+     +      socketToSetup = the (reference to the) socket to modify.
+     +/
+    void setOptions(Socket socketToSetup)
+    {
+        with (socketToSetup)
+        with (SocketOption)
+        with (SocketOptionLevel)
+        {
+            setOption(SOCKET, RCVBUF, BufferSize.socketOptionReceive);
+            setOption(SOCKET, SNDBUF, BufferSize.socketOptionSend);
+            setOption(SOCKET, RCVTIMEO, Timeout.receive.seconds);
+            setOption(SOCKET, SNDTIMEO, Timeout.send.seconds);
+            blocking = true;
+        }
+    }
+
+    // resolve
+    /++
+     +  Given an address and a port, build an array of Addresses into ips.
+     +
+     +  Params:
+     +      address = The string address to look up.
+     +      port = The remote port build into the Address.
+     +/
     bool resolve(const string address, const ushort port, ref bool abort)
     {
         import core.thread : Thread;
@@ -83,6 +126,14 @@ public:
         return false;
     }
 
+    // connect
+    /++
+     +  Walks through the list of Addresses in ips and attempts to connect to
+     +  each until one succeeds.
+     +
+     +  Success is determined by whether or not an exception was thrown during
+     +  the attempt, and is kept track of with the connected boolean.
+     +/
     void connect(ref bool abort)
     {
         import core.thread : Thread;
@@ -91,19 +142,197 @@ public:
 
         foreach (immutable i, ip; ips)
         {
+            if (abort) break;
+
+            // Decide which kind of socket to use based on the AddressFamily of
+            // the resolved ip; IPv4 or IPv6
+            socket = (ip.addressFamily == AddressFamily.INET6) ? &socket6 : &socket4;
+
             try
             {
+                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
+                    Timeout.receive.seconds*5);
+
                 logger.logf("Connecting to %s ...", ip);
                 socket.connect(ip);
+
+                setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
+                    Timeout.receive.seconds);
+
+                // If we're here no exception was thrown, so we're connected
+                connected = true;
                 logger.log("Connected!");
                 return;
             }
+            catch (const SocketException e)
+            {
+                logger.warning("Failed! ", e.msg);
+            }
+            catch (const Exception e)
+            {
+                logger.error(e.msg);
+                assert(0);
+            }
             finally
             {
+                // Take care! length is unsigned
+
                 if (i && (i < ips.length))
                 {
+                    logger.infof("Trying next ip in %d seconds", Timeout.retry);
+                    interruptibleSleep(Timeout.retry.seconds, abort);
                 }
             }
         }
+
+        if (!connected)
+        {
+            logger.error("Failed to connect!");
+        }
+    }
+
+    // sendline
+    /++
+     +  Sends a line to the server.
+     +
+     +  Sadly the IRC server requires lines to end with a newline, so we need
+     +  to chain one directly after the line itself. If several threads are
+     +  allowed to write to the same socket in parallel, this would be a race
+     +  condition.
+     +
+     +  Params:
+     +      line = The string to send.
+     +/
+    pragma(inline, true)
+    void sendline(Strings...)(const Strings lines)
+    {
+        // TODO: Add throttling!
+
+        foreach (const line; lines)
+        {
+            import std.algorithm.comparison : min;
+
+            socket.send(line[0..min(line.length, 511)]);
+        }
+
+        socket.send("\n");
+    }
+}
+
+
+// listenFiber
+/++
+ +  A Generator fiber.
+ +
+ +  It maintains its own buffer into which it receives from the server, though
+ +  not neccessarily full lines. It thus keeps filling the buffer until it
+ +  finds a newline character, yields it back to the caller of the fiber,
+ +  checks for more lines to yield, and if none yields string.init to wait for
+ +  its turn to read from the sever again. The buffer logic is complex.
+ +
+ +  Params:
+ +      conn = A Connection struct via whose Socket it reads from the server.
+ +
+ +  Yields:
+ +      full IRC event strings.
+ +/
+void listenFiber(Connection conn, ref bool abort)
+{
+    import core.stdc.string : memmove;
+    import std.algorithm.searching : countUntil;
+    import std.concurrency : yield;
+    import std.datetime : Clock, SysTime;
+
+    ubyte[BufferSize.socketReceive*2] buffer;
+    SysTime timeLastReceived = Clock.currTime;
+    size_t start;
+
+    while (!abort)
+    {
+        const ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
+
+        if (!bytesReceived)
+        {
+            logger.errorf("ZERO RECEIVED! last error: '%s'", lastSocketError);
+
+            switch (lastSocketError)
+            {
+            // case "Resource temporarily unavailable":
+            case "Success":
+                logger.info("benign.");
+                break;
+
+            default:
+                logger.error("assuming dead and returning");
+                return;
+            }
+        }
+        else if (bytesReceived == Socket.ERROR)
+        {
+            auto elapsed = (Clock.currTime - timeLastReceived);
+
+            if (elapsed > Timeout.keepalive.seconds)
+            {
+                // Too much time has passed; we can reasonably assume the socket is disconnected
+                logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
+                              elapsed, Timeout.keepalive.seconds);
+                return;
+            }
+
+            switch (lastSocketError)
+            {
+            case "Resource temporarily unavailable":
+                // Nothing received
+            case "Interrupted system call":
+                // Unlucky callgrind_control -d timing
+            case "A connection attempt failed because the connected party did not " ~
+                 "properly respond after a period of time, or established connection " ~
+                 "failed because connected host has failed to respond.":
+                // Timed out read in Windows
+                yield(string.init);
+                continue;
+
+            // Others that may be benign?
+            case "An established connection was aborted by the software in your host machine.":
+            case "An existing connection was forcibly closed by the remote host.":
+            case "Connection reset by peer":
+                logger.errorf("FATAL SOCKET ERROR (%s)", lastSocketError);
+                return;
+
+            default:
+                logger.warningf("Socket.ERROR and last error %s", lastSocketError);
+                yield(string.init);
+            }
+
+            continue;
+        }
+
+        timeLastReceived = Clock.currTime;
+
+        const ptrdiff_t end = (start + bytesReceived);
+        auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
+        size_t pos;
+
+        while (newline != -1)
+        {
+            yield((cast(char[])buffer[pos..pos+newline-1]).idup);
+            pos += (newline + 1); // eat remaining newline
+            newline = buffer[pos..end].countUntil(cast(ubyte)'\n');
+        }
+
+        yield(string.init);
+
+        if (pos >= end)
+        {
+            // can be end or end+1
+            start = 0;
+            continue;
+        }
+
+        start = (end-pos);
+
+        // logger.logf("REMNANT:|%s|", cast(string)buffer[pos..end]);
+
+        memmove(buffer.ptr, (buffer.ptr + pos), (ubyte.sizeof * start));
     }
 }
