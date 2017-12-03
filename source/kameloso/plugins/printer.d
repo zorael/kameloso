@@ -26,17 +26,6 @@ private:
  +/
 struct PrinterSettings
 {
-    version(Windows)
-    {
-        /// Flag to only show printed events in monochrome
-        bool monochrome = true;
-    }
-    else
-    {
-        /// Ditto
-        bool monochrome = false;
-    }
-
     /// Flag to display advanced colours in RRGGBB rather than simple Bash
     bool truecolour = true;
 
@@ -169,7 +158,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     with (BashForeground)
     with (event)
     with (event.sender)
-    if (printerSettings.monochrome)
+    if (state.settings.monochrome)
     {
         import std.algorithm : equal;
         import std.format : formattedWrite;
@@ -454,10 +443,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
         else
         {
-            logger.warning("bot was not built with colour support yet " ~
-                "monochrome is off; forcing monochrome.");
+            /*logger.warning("bot was not built with colour support yet " ~
+                "monochrome is off; forcing monochrome.");*/
 
-            printerSettings.monochrome = true;
+            state.settings.monochrome = true;
             return formatMessage(sink, event);
         }
     }
