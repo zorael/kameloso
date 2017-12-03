@@ -70,23 +70,12 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
 pragma(inline)
 string plurality(const int num, const string singular, const string plural) pure
 {
-    return ((num == 1) || (num == -1)) ? singular : plural;
+    return string.init;
 }
 pragma(inline)
 string unquoted(const string line) pure
 {
-    if (line.length < 2)
-    {
-        return line;
-    }
-    else if ((line[0] == '"') && (line[$-1] == '"'))
-    {
-        return line[1..$-1].unquoted;
-    }
-    else
-    {
-        return line;
-    }
+    return string.init;
 }
 
 pragma(inline)
@@ -138,48 +127,9 @@ string stripPrefix(const string line, const string prefix)
     return hits[1];
 }
 
-// timeSince
-/++
- +  Express how long time has passed in a Duration, in natural language.
- +
- +  Write the result to a passed output range sink.
- +
- +  Params:
- +      duration = a period of time
- +
- +  Returns:
- +      A humanly-readable string of how long the passed duration is.
- +/
+
 void timeSince(Sink)(auto ref Sink sink, const Duration duration)
 {
-    import std.format : formattedWrite;
-
-    int days, hours, minutes, seconds;
-    duration.split!("days","hours","minutes","seconds")
-                   (days, hours, minutes, seconds);
-
-    if (days)
-    {
-        sink.formattedWrite("%d %s", days, days.plurality("day", "days"));
-    }
-    if (hours)
-    {
-        if (days)
-        {
-            if (minutes) sink.put(", ");
-            else sink.put("and ");
-        }
-        sink.formattedWrite("%d %s", hours, hours.plurality("hour", "hours"));
-    }
-    if (minutes)
-    {
-        if (hours) sink.put(" and ");
-        sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
-    }
-    if (!minutes && !hours && !days)
-    {
-        sink.formattedWrite("%d %s", seconds, seconds.plurality("second", "seconds"));
-    }
 }
 
 /// ditto
