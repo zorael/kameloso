@@ -1,5 +1,6 @@
 module kameloso.debugging;
 
+import kameloso.common : Kameloso;
 import kameloso.irc : IRCBot, IRCEvent;
 import std.stdio;
 
@@ -246,4 +247,43 @@ unittest
         assert((content == "kameloso: 8ball"), content);
     }
 }`, '\n' ~ sink.data);
+}
+
+
+// generateAsserts
+/++
+ +  Reads raw server strings from `stdin`, parses them to `IRCEvent`s and
+ +  constructs assert blocks of their contents.
+ +
+ +  We can't use an Appender or dmd will hit a stack overflow, error -11.
+ +/
+void generateAsserts(ref Kameloso state)
+{
+    import kameloso.common : printObject;
+    import kameloso.debugging : formatEventAssertBlock;
+    //import std.array : Appender;
+
+    //Appender!(char[]) sink;
+    //sink.reserve(768);
+
+    with (state)
+    {
+        printObject(parser.bot);
+
+        string input;
+
+        while ((input = readln()) !is null)
+        {
+            import std.regex : matchFirst, regex;
+            if (abort) return;
+
+            auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
+            immutable event = parser.toIRCEvent(hits[1]);
+            //sink.formatEventAssertBlock(event);
+            writeln();
+            stdout.lockingTextWriter.formatEventAssertBlock(event);
+            //writeln(sink.data);
+            //sink.clear();
+        }
+    }
 }

@@ -73,6 +73,7 @@ void writeConfigurationFile(ref Kameloso state, const string filename)
     }
 }
 
+
 public:
 
 
@@ -101,7 +102,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
-    //bool shouldGenerateAsserts;
+    bool shouldGenerateAsserts;
 
     arraySep = ",";
 
@@ -132,9 +133,9 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
             "writeconf",     &shouldWriteConfig,
             "version",       "Show version info", &shouldShowVersion,
-            /*"generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
+            "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
                 &shouldGenerateAsserts,
-            "gen",           &shouldGenerateAsserts,*/
+            "gen",           &shouldGenerateAsserts,
         );
 
         meldSettingsFromFile(bot, settings);
@@ -197,11 +198,13 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             return Yes.quit;
         }
 
-        /*if (shouldGenerateAsserts)
+        if (shouldGenerateAsserts)
         {
+            import kameloso.debugging : generateAsserts;
+
             state.generateAsserts();
             return Yes.quit;
-        }*/
+        }
 
         return No.quit;
     }
