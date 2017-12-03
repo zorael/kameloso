@@ -30,16 +30,7 @@ bool printAsserts;
  +/
 string tabs(uint num) pure
 {
-    enum tab = "    ";
-
-    string total;
-
-    foreach (i; 0..num)
-    {
-        total ~= tab;
-    }
-
-    return total;
+    return string.init;
 }
 
 
@@ -231,7 +222,6 @@ void onCommandResetTerminal()
 @Prefix(NickPolicy.required, "printall")
 void onCommandPrintAll()
 {
-    printAll = !printAll;
     logger.info("Printing all: ", printAll);
 }
 
@@ -242,8 +232,6 @@ void onCommandPrintAll()
 @Prefix(NickPolicy.required, "printbytes")
 void onCommandPrintBytes()
 {
-    printBytes = !printBytes;
-    logger.info("Printing bytes: ", printBytes);
 }
 
 
@@ -253,8 +241,6 @@ void onCommandPrintBytes()
 @Prefix(NickPolicy.required, "asserts")
 void onCommandAsserts()
 {
-    printAsserts = !printAsserts;
-    logger.info("Printing asserts: ", printAsserts);
     formatBot(stdout.lockingTextWriter, state.bot);
 }
 
@@ -294,7 +280,6 @@ void onAnyEvent(const IRCEvent event)
 @Prefix(NickPolicy.required, "join")
 void onCommandJoin(const IRCEvent event)
 {
-    joinPartImpl("JOIN", event);
 }
 
 
@@ -304,7 +289,6 @@ void onCommandJoin(const IRCEvent event)
 @Prefix(NickPolicy.required, "part")
 void onCommandPart(const IRCEvent event)
 {
-    joinPartImpl("PART", event);
 }
 
 
