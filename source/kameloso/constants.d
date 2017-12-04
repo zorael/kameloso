@@ -33,7 +33,7 @@ enum BufferSize
 /// Various timeouts in seconds.
 enum Timeout
 {
-    retry = 5,
+    retry = 10,
     send = 5,
     receive = 1,
     keepalive = 300,

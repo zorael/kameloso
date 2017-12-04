@@ -490,11 +490,13 @@ int main(string[] args)
 
         /// Bool whether this is the first connection attempt or if we have
         /// connected at least once already.
-        bool connectedAlready;
+        bool firstConnect = true;
 
         do
         {
-            if (connectedAlready)
+            import std.datetime.systime : Clock;
+
+            if (!firstConnect)
             {
                 import kameloso.constants : Timeout;
                 import core.time : seconds;
@@ -507,10 +509,12 @@ int main(string[] args)
 
             immutable resolved = conn.resolve(bot.server.address,
                 bot.server.port, abort);
-            if (!resolved) return 1;
 
-            conn.connect(abort);
-            if (!conn.connected) return 1;
+            if (!resolved)
+            {
+                // plugins not initialised so no need to teardown
+                return 1;
+            }
 
             // Reset fields in the bot that should not survive a reconnect
             bot.registerStatus = IRCBot.Status.notStarted;
@@ -519,28 +523,37 @@ int main(string[] args)
             parser = IRCParser(bot);
 
             botState.initPlugins();
+            conn.connect(abort);
+
+            if (!conn.connected)
+            {
+                teardownPlugins();
+                logger.warning("Exiting...");
+                return 1;
+            }
+
             botState.startPlugins();
 
             // Initialise the Generator and start the main loop
             auto generator = new Generator!string(() => listenFiber(conn, abort));
             quit = botState.mainLoop(generator);
-            connectedAlready = true;
+            firstConnect = false;
+
+            // Always teardown after connection ends
+            teardownPlugins();
         }
         while (!quit && !abort && settings.reconnectOnFailure);
 
-        if (quit)
-        {
-            botState.teardownPlugins();
-        }
-        else if (abort)
+        if (abort)
         {
             // Ctrl+C
             logger.warning("Aborting...");
-            botState.teardownPlugins();
             return 1;
         }
-
-        logger.info("Exiting...");
-        return 0;
+        else
+        {
+            logger.info("Exiting...");
+            return 0;
+        }
     }
 }
