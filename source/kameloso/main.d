@@ -75,6 +75,46 @@ Flag!"quit" checkMessages(ref Kameloso state)
     Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server.
+    void throttleline(ThreadMessage.Throttleline, string line)
+    {
+        import core.thread : Thread;
+        import core.time : seconds, msecs;
+        import std.datetime.systime : Clock;
+
+        if (abort) return;
+
+        with (botState.throttling)
+        {
+            if (t0 == SysTime.init) t0 = Clock.currTime;
+
+            double x = (Clock.currTime - t0).total!"msecs"/1000.0;
+            auto y = k * x + m;
+
+            if (y < 0)
+            {
+                t0 = Clock.currTime;
+                m = 0;
+                x = 0;
+                y = 0;
+            }
+
+            while (y >= burst)
+            {
+                x = (Clock.currTime - t0).total!"msecs"/1000.0;
+                y = k*x + m;
+                interruptibleSleep(100.msecs, abort);
+                if (abort) return;
+            }
+
+            logger.trace("--> ", line);
+            state.conn.sendline(line);
+
+            m = y + increment;
+            t0 = Clock.currTime;
+        }
+    }
+
+    /// Echo a line to the terminal and send it to the server.
     void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
@@ -112,12 +152,14 @@ Flag!"quit" checkMessages(ref Kameloso state)
 
     /// Did the concurrency receive catch something?
     bool receivedSomething;
+    uint receivedInARow;
 
     do
     {
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &quietline,
+            &throttleline,
             &pong,
             &quitServer,
             &quitEmpty,
@@ -127,8 +169,10 @@ Flag!"quit" checkMessages(ref Kameloso state)
                 logger.warning("Main thread received unknown Variant: ", v);
             }
         );
+
+        if (receivedSomething) ++receivedInARow;
     }
-    while (receivedSomething && !quit);
+    while (receivedSomething && !quit && (receivedInARow < 5));
 
     if (receivedSomething && quit)
     {

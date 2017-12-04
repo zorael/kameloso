@@ -70,6 +70,9 @@ struct ThreadMessage
     /// Concurrency message type asking to quietly send a line to the server.
     struct Quietline {}
 
+    /// Concurrency message type asking to verbosely send throttled messages.
+    struct Throttleline {}
+
     /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
 
@@ -1312,6 +1315,9 @@ struct Kameloso
     /// the program will be monitoring it.
     __gshared bool abort;
 
+    /// Values and state needed to throttle sending messages.
+    ThrottleValues throttling;
+
     /// Never copy this.
     @disable this(this);
 
@@ -1442,6 +1448,34 @@ struct Kameloso
             plugin.newBot(bot);
         }
     }
+}
+
+
+// ThrottleValues
+/++
+ +  Aggregate of values and state needed to throttle messages without polluting
+ +  namespace too much.
+ +/
+struct ThrottleValues
+{
+    /// Graph constant modifier (inclination, MUST be negative)
+    enum k = -1.2;
+
+    /// Origo of x-axis (last sent message)
+    SysTime t0;
+
+    /// y at t0 (ergo y at x = 0, weight at last sent message)
+    double m = 0.0;
+
+    /// Increment to y on sent message
+    double increment = 1.0;
+
+    /// Burst limit; how many messages*increment can be sent initially before
+    /// throttling kicks in
+    double burst = 3.0;
+
+    /// Don't copy this, just keep one instance
+    @disable this(this);
 }
 
 
