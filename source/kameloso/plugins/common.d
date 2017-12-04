@@ -261,9 +261,9 @@ struct Prefix
 }
 
 
-/// Flag denoting that an event-handling function should not let other functions
-/// get processed after it; move onto next plugin instead.
-struct Terminate;
+/// Flag denoting that an event-handling function let other functions in the
+/// same module process after it.
+struct Chainable;
 
 /// Flag denoting that we want verbose debug output of the plumbing when
 /// handling events, iterating through the module
@@ -628,13 +628,13 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                             typeof(fun).stringof);
                     }
 
-                    static if (hasUDA!(fun, Terminate))
+                    static if (hasUDA!(fun, Chainable))
                     {
-                        return;
+                        contine funloop;
                     }
                     else
                     {
-                        continue funloop;
+                        return;
                     }
                 }
             }
