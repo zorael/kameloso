@@ -10,12 +10,13 @@ import std.stdio;
 
 private:
 
+/// All plugin state variables gathered in a struct
 IRCPluginState state;
 
 
 // onMessage
 /++
- +
+ +  Fetch a random or specified bash.org quote.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -37,10 +38,13 @@ void onMessage(const IRCEvent event)
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;
 
-    static numengine = ctRegex!`href="\?([0-9]+)"`;
+    //static numEngine = ctRegex!`href="\?([0-9]+)"`;
     static qtEngine = ctRegex!`<p class="qt">`;
     static pEngine = ctRegex!`</p>`;
     static brEngine = ctRegex!`<br />`;
+
+    immutable target = event.channel.length ?
+        event.channel : event.target.nickname;
 
     try
     {
@@ -48,9 +52,18 @@ void onMessage(const IRCEvent event)
         auto doc = new Document;
         doc.parseGarbage(content);
 
-        /*auto num = doc.getElementsByClassName("quote")[0].toString;
-        auto hits = num.matchFirst(numEngine);
-        writeln(hits[1]);*/
+        auto numBlock = doc.getElementsByClassName("quote");
+
+        if (!numBlock.length)
+        {
+            state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :No such bash.org quote: %s"
+                .format(target, event.content));
+            return;  // invalid quote
+        }
+
+        /*auto hits = numBlock[0].toString.matchFirst(numEngine);
+        logger.log("Quote number: ", hits[1]);*/
 
         auto range = doc
             .getElementsByClassName("qt")[0]
@@ -61,10 +74,6 @@ void onMessage(const IRCEvent event)
             .replaceAll(brEngine, string.init)
             .splitter("\n");
 
-        immutable target = event.channel.length ?
-            event.channel : event.target.nickname;
-
-        foreach (i; 0..10)
         foreach (line; range)
         {
             state.mainThread.send(ThreadMessage.Throttleline(),
