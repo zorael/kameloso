@@ -377,9 +377,6 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         }
                     }
 
-                    IRCEvent mutEvent = event;  // mutable
-                    string contextPrefix;
-
                     static if (hasUDA!(fun, ChannelPolicy))
                     {
                         enum policy = getUDAs!(fun, ChannelPolicy)[0];
@@ -401,16 +398,16 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                     case homeOnly:
                         import std.algorithm.searching : canFind;
 
-                        if (!mutEvent.channel.length)
+                        if (!event.channel.length)
                         {
                             // it is a non-channel event, like a QUERY
                         }
-                        else if (!state.bot.homes.canFind(mutEvent.channel))
+                        else if (!state.bot.homes.canFind(event.channel))
                         {
                             static if (verbose)
                             {
                                 writeln(name, " ignore invalid channel ",
-                                        mutEvent.channel);
+                                        event.channel);
                             }
                             continue funloop;
                         }
@@ -421,8 +418,18 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         break;
                     }
 
+                    IRCEvent mutEvent = event;  // mutable
+                    string contextPrefix;
+
                     static if (hasUDA!(fun, Prefix))
                     {
+                        if (!event.content.length)
+                        {
+                            // Event has a Prefix set up but event.content is
+                            // empty; cannot possibly be of interest
+                            return;
+                        }
+
                         bool matches;
 
                         foreach (prefixUDA; getUDAs!(fun, Prefix))
@@ -440,6 +447,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                                 break;
                             }
 
+                            // Reset between iterations
+                            mutEvent = event;
                             contextPrefix = string.init;
 
                             with (state)
@@ -509,10 +518,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                                 // Event.content *guaranteed* to begin with
                                 // state.bot.nickname here
-
                                 mutEvent.content = content
                                     .stripPrefix(bot.nickname);
-
                                 break;
                             }
 
@@ -533,7 +540,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                                 contextPrefix = mutEvent
                                     .content
-                                    .nom!(Yes.decode)(" ")
+                                    .nom!(Yes.decode)(' ')
                                     .toLower();
                             }
 
