@@ -7,9 +7,10 @@ import kameloso.ircdefs;
 import kameloso.plugins;
 
 import std.concurrency : Generator, thisTid;
-import std.datetime : SysTime;
-import std.stdio;
+import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
+
+import std.stdio;
 
 version(Windows)
 shared static this()
@@ -74,6 +75,46 @@ Flag!"quit" checkMessages(ref Kameloso state)
     Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server.
+    void throttleline(ThreadMessage.Throttleline, string line)
+    {
+        import core.thread : Thread;
+        import core.time : seconds, msecs;
+        import std.datetime.systime : Clock, SysTime;
+
+        if (abort) return;
+
+        with (botState.throttling)
+        {
+            if (t0 == SysTime.init) t0 = Clock.currTime;
+
+            double x = (Clock.currTime - t0).total!"msecs"/1000.0;
+            auto y = k * x + m;
+
+            if (y < 0)
+            {
+                t0 = Clock.currTime;
+                m = 0;
+                x = 0;
+                y = 0;
+            }
+
+            while (y >= burst)
+            {
+                x = (Clock.currTime - t0).total!"msecs"/1000.0;
+                y = k*x + m;
+                interruptibleSleep(100.msecs, abort);
+                if (abort) return;
+            }
+
+            logger.trace("--> ", line);
+            state.conn.sendline(line);
+
+            m = y + increment;
+            t0 = Clock.currTime;
+        }
+    }
+
+    /// Echo a line to the terminal and send it to the server.
     void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
@@ -111,12 +152,14 @@ Flag!"quit" checkMessages(ref Kameloso state)
 
     /// Did the concurrency receive catch something?
     bool receivedSomething;
+    uint receivedInARow;
 
     do
     {
         receivedSomething = receiveTimeout(0.seconds,
             &sendline,
             &quietline,
+            &throttleline,
             &pong,
             &quitServer,
             &quitEmpty,
@@ -126,8 +169,10 @@ Flag!"quit" checkMessages(ref Kameloso state)
                 logger.warning("Main thread received unknown Variant: ", v);
             }
         );
+
+        if (receivedSomething) ++receivedInARow;
     }
-    while (receivedSomething && !quit);
+    while (receivedSomething && !quit && (receivedInARow < 5));
 
     if (receivedSomething && quit)
     {
@@ -445,11 +490,13 @@ int main(string[] args)
 
         /// Bool whether this is the first connection attempt or if we have
         /// connected at least once already.
-        bool connectedAlready;
+        bool firstConnect = true;
 
         do
         {
-            if (connectedAlready)
+            import std.datetime.systime : Clock;
+
+            if (!firstConnect)
             {
                 import kameloso.constants : Timeout;
                 import core.time : seconds;
@@ -462,10 +509,12 @@ int main(string[] args)
 
             immutable resolved = conn.resolve(bot.server.address,
                 bot.server.port, abort);
-            if (!resolved) return 1;
 
-            conn.connect(abort);
-            if (!conn.connected) return 1;
+            if (!resolved)
+            {
+                // plugins not initialised so no need to teardown
+                return 1;
+            }
 
             // Reset fields in the bot that should not survive a reconnect
             bot.registerStatus = IRCBot.Status.notStarted;
@@ -474,28 +523,37 @@ int main(string[] args)
             parser = IRCParser(bot);
 
             botState.initPlugins();
+            conn.connect(abort);
+
+            if (!conn.connected)
+            {
+                teardownPlugins();
+                logger.warning("Exiting...");
+                return 1;
+            }
+
             botState.startPlugins();
 
             // Initialise the Generator and start the main loop
             auto generator = new Generator!string(() => listenFiber(conn, abort));
             quit = botState.mainLoop(generator);
-            connectedAlready = true;
+            firstConnect = false;
+
+            // Always teardown after connection ends
+            teardownPlugins();
         }
         while (!quit && !abort && settings.reconnectOnFailure);
 
-        if (quit)
-        {
-            botState.teardownPlugins();
-        }
-        else if (abort)
+        if (abort)
         {
             // Ctrl+C
             logger.warning("Aborting...");
-            botState.teardownPlugins();
             return 1;
         }
-
-        logger.info("Exiting...");
-        return 0;
+        else
+        {
+            logger.info("Exiting...");
+            return 0;
+        }
     }
 }

@@ -3,6 +3,7 @@ module kameloso.getopt;
 import kameloso.common : CoreSettings, Kameloso, logger;
 import kameloso.irc : IRCBot;
 import std.typecons : Flag, No, Yes;
+
 import std.stdio;
 
 private:

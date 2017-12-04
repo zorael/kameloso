@@ -4,8 +4,9 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : ThreadMessage, logger;
 
-import std.concurrency : send;
+import std.concurrency : prioritySend, send;
 import std.format : format;
+
 import std.stdio;
 
 private:
@@ -207,7 +208,7 @@ void onPing(const IRCEvent event)
 
     with (state)
     {
-        mainThread.send(ThreadMessage.Pong(), target);
+        mainThread.prioritySend(ThreadMessage.Pong(), target);
 
         if (bot.authStatus == Status.started)
         {
@@ -276,7 +277,7 @@ void tryAuth()
             return;
         }
 
-        mainThread.send(ThreadMessage.Quietline(),
+        mainThread.prioritySend(ThreadMessage.Quietline(),
             "PRIVMSG %s :%s %s"
             .format(service, verb, bot.authPassword));
         logger.trace("--> PRIVMSG %s :%s hunter2"
@@ -297,7 +298,7 @@ void tryAuth()
             login = bot.origNickname;
         }
 
-        mainThread.send(ThreadMessage.Quietline(),
+        mainThread.prioritySend(ThreadMessage.Quietline(),
             "PRIVMSG %s :%s %s %s"
             .format(service, verb, login, bot.authPassword));
         logger.trace("--> PRIVMSG %s :%s %s hunter2"
@@ -353,7 +354,7 @@ void onEndOfMotd()
         {
             import std.string : strip;
 
-            mainThread.send(ThreadMessage.Sendline(), line.strip());
+            mainThread.prioritySend(ThreadMessage.Sendline(), line.strip());
         }
     }
 }

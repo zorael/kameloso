@@ -3,10 +3,10 @@ module kameloso.irc;
 public import kameloso.ircdefs;
 
 import kameloso.common;
-import kameloso.constants;
 import kameloso.string : nom;
 
 import std.string : indexOf;
+
 import std.stdio;
 
 @safe:
@@ -30,6 +30,7 @@ private:
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
 {
+    import kameloso.constants : failure;
     import std.algorithm.searching : canFind;
 
     mixin(scopeguard(failure));
@@ -1321,6 +1322,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
+    import kameloso.constants : IRCControlCharacter;
     import kameloso.string : beginsWith;
 
     // FIXME, change so that it assigns to the proper field

@@ -5,6 +5,7 @@ import kameloso.ircdefs;
 import kameloso.common : ThreadMessage, logger;
 
 import std.concurrency : send;
+
 import std.stdio;
 
 private:

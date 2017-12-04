@@ -8,6 +8,7 @@ import kameloso.common;
 
 import std.concurrency;
 import std.experimental.logger : LogLevel, Logger;
+
 import std.stdio;
 
 private:
@@ -54,6 +55,7 @@ void pipereader(shared IRCPluginState newState)
 
     scope(exit)
     {
+        stdout.flush();
         tlsLogger.log("Deleting FIFO from disk");
         remove(fifo.name);
     }

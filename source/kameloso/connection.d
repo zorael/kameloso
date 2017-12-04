@@ -4,6 +4,7 @@ import kameloso.common : logger, interruptibleSleep;
 import kameloso.constants;
 
 import core.time : seconds;
+
 import std.stdio;
 
 
@@ -91,7 +92,7 @@ public:
         import core.thread : Thread;
         import std.socket : getAddress, SocketException;
 
-        foreach (immutable i; 0..5)
+        foreach (immutable i; 0..20)
         {
             if (abort) return false;
 

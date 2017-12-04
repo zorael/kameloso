@@ -1,10 +1,8 @@
 module kameloso.string;
 
-import std.datetime;
+import std.datetime : Duration;
 import std.traits : isSomeString;
-import std.typecons : Flag;
-
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 @safe:
 
@@ -399,6 +397,8 @@ string timeSince(const Duration duration)
 ///
 unittest
 {
+    import core.time : msecs, seconds;
+
     immutable dur1 = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
     assert((dur1.timeSince == "9 days, 3 hours and 16 minutes"), dur1.timeSince);
 

@@ -2,8 +2,6 @@ module kameloso.plugins.webtitles;
 
 version(Webtitles):
 
-pragma(msg, "Version: Webtitles");
-
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;
@@ -12,6 +10,7 @@ import kameloso.plugins.common;
 import std.concurrency : send, Tid;
 import std.experimental.logger;
 import std.regex : ctRegex;
+
 import std.stdio;
 
 private:

@@ -3,12 +3,14 @@ module kameloso.common;
 import kameloso.bash : BashForeground;
 import kameloso.constants;
 
+import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
-import std.stdio;
 import std.traits : isType, isArray;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
+
+import std.stdio;
 
 @safe:
 
@@ -68,6 +70,9 @@ struct ThreadMessage
 
     /// Concurrency message type asking to quietly send a line to the server.
     struct Quietline {}
+
+    /// Concurrency message type asking to verbosely send throttled messages.
+    struct Throttleline {}
 
     /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
@@ -947,7 +952,6 @@ final class KamelosoLogger : Logger
 {
     import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
     import std.concurrency : Tid;
-    import std.datetime : SysTime;
     import std.format : formattedWrite;
     import std.array : Appender;
 
@@ -1283,7 +1287,6 @@ struct Kameloso
     import kameloso.ircdefs : IRCBot;
     import kameloso.irc : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
-    import std.datetime.systime : SysTime;
 
     /// Nickname and other IRC variables for the bot.
     IRCBot bot;
@@ -1311,6 +1314,9 @@ struct Kameloso
     /// the program will be monitoring it.
     __gshared bool abort;
 
+    /// Values and state needed to throttle sending messages.
+    ThrottleValues throttling;
+
     /// Never copy this.
     @disable this(this);
 
@@ -1337,7 +1343,7 @@ struct Kameloso
 
         // Zero out old plugins array and allocate room for new ones
         plugins.length = 0;
-        plugins.reserve(EnabledPlugins.length + 2);
+        plugins.reserve(EnabledPlugins.length + 3);
 
         // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
         // `kameloso.plugins.package`
@@ -1359,6 +1365,12 @@ struct Kameloso
         static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
         {
             plugins ~= new PipelinePlugin(state);
+        }
+
+        // `bashquotes` needs `dlang-requests` just like `webtitles` does.
+        static if (__traits(compiles, new BashQuotesPlugin(IRCPluginState.init)))
+        {
+            plugins ~= new BashQuotesPlugin(state);
         }
 
         foreach (plugin; plugins)
@@ -1435,6 +1447,34 @@ struct Kameloso
             plugin.newBot(bot);
         }
     }
+}
+
+
+// ThrottleValues
+/++
+ +  Aggregate of values and state needed to throttle messages without polluting
+ +  namespace too much.
+ +/
+struct ThrottleValues
+{
+    /// Graph constant modifier (inclination, MUST be negative)
+    enum k = -1.2;
+
+    /// Origo of x-axis (last sent message)
+    SysTime t0;
+
+    /// y at t0 (ergo y at x = 0, weight at last sent message)
+    double m = 0.0;
+
+    /// Increment to y on sent message
+    double increment = 1.0;
+
+    /// Burst limit; how many messages*increment can be sent initially before
+    /// throttling kicks in
+    double burst = 3.0;
+
+    /// Don't copy this, just keep one instance
+    @disable this(this);
 }
 
 
