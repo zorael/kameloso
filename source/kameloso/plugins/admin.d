@@ -340,6 +340,7 @@ void onCommandAsserts()
  +/
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
+@(Chainable)
 void onAnyEvent(const IRCEvent event)
 {
     if (printAll) logger.trace(event.raw, '$');

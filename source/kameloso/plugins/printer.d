@@ -57,6 +57,7 @@ IRCPluginState state;
  +/
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
+@(Chainable)
 void onAnyEvent(const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
