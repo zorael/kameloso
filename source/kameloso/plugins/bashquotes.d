@@ -1,7 +1,10 @@
-module kameloso.plugins.bashorg;
+module kameloso.plugins.bashquotes;
+
+version(Webtitles):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.common : logger;
 
 import std.stdio;
 

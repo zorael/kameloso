@@ -24,6 +24,7 @@ version(Webtitles)
 {
     // Implicitly enabled if imported
     public import kameloso.plugins.webtitles;
+    public import kameloso.plugins.bashquotes;
 }
 
 /// Add plugins to this list to enable them

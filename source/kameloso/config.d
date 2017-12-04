@@ -2,8 +2,9 @@ module kameloso.config;
 
 import kameloso.common;
 
-import std.stdio;
 import std.typecons : Flag, No, Yes;
+
+import std.stdio;
 
 
 // writeToDisk

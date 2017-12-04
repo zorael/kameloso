@@ -1,7 +1,8 @@
 module kameloso.debugging;
 
 import kameloso.common : Kameloso;
-import kameloso.irc : IRCBot, IRCEvent;
+import kameloso.ircdefs : IRCBot, IRCEvent;
+
 import std.stdio;
 
 

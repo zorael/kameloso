@@ -7,9 +7,10 @@ import kameloso.ircdefs;
 import kameloso.plugins;
 
 import std.concurrency : Generator, thisTid;
-import std.datetime : SysTime;
-import std.stdio;
+import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
+
+import std.stdio;
 
 version(Windows)
 shared static this()

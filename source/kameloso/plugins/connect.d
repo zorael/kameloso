@@ -4,8 +4,9 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : ThreadMessage, logger;
 
-import std.concurrency : send;
+import std.concurrency : prioritySend, send;
 import std.format : format;
+
 import std.stdio;
 
 private:

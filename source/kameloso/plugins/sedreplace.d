@@ -5,6 +5,7 @@ import kameloso.ircdefs;
 
 import std.concurrency : send;
 import std.regex : ctRegex;
+
 import std.stdio;
 
 private:

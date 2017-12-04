@@ -5,10 +5,11 @@ import kameloso.constants;
 
 import std.experimental.logger;
 import std.meta : allSatisfy;
-import std.stdio;
 import std.traits : isType, isArray;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
+
+import std.stdio;
 
 @safe:
 

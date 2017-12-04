@@ -1,10 +1,8 @@
 module kameloso.string;
 
-import std.datetime;
+import std.datetime : Duration;
 import std.traits : isSomeString;
-import std.typecons : Flag;
-
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 @safe:
 
