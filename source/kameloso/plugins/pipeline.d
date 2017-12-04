@@ -55,6 +55,7 @@ void pipereader(shared IRCPluginState newState)
 
     scope(exit)
     {
+        stdout.flush();
         tlsLogger.log("Deleting FIFO from disk");
         remove(fifo.name);
     }
