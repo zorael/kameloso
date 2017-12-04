@@ -88,6 +88,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago
          you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
     kameloso | this is a raw IRC command
+         you | kameloso: bash 85514
+    kameloso | <Reverend> IRC is just multiplayer notepad.
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [youtube.com] Danish language
 
@@ -113,12 +115,10 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * investigate inverse channel behaviour (blacklists)
 * pipedream: DCC
 * pipedream two: `ncurses`
-* throttle sending messages, anti-flood protection
 * Travis LDC tests
 * logger-less `irc.d`, to act more like a headless library
 * ready for channel-awareness
 * more command-line flags
-* [bash.org](http://bash.org/?random) quote fetcher (needs throttling)
 * server daemon config line field worth keeping?
 * zero-prefix commands (!bash, .note, ...)
 * `\033` instead of `TerminalToken` all over the shop
