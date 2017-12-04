@@ -1338,7 +1338,7 @@ struct Kameloso
 
         // Zero out old plugins array and allocate room for new ones
         plugins.length = 0;
-        plugins.reserve(EnabledPlugins.length + 2);
+        plugins.reserve(EnabledPlugins.length + 3);
 
         // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
         // `kameloso.plugins.package`
@@ -1360,6 +1360,12 @@ struct Kameloso
         static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
         {
             plugins ~= new PipelinePlugin(state);
+        }
+
+        // `bashquotes` needs `dlang-requests` just like `webtitles` does.
+        static if (__traits(compiles, new BashQuotesPlugin(IRCPluginState.init)))
+        {
+            plugins ~= new BashQuotesPlugin(state);
         }
 
         foreach (plugin; plugins)
