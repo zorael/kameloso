@@ -2,8 +2,6 @@ module kameloso.plugins.webtitles;
 
 version(Webtitles):
 
-pragma(msg, "Version: Webtitles");
-
 import kameloso.common;
 import kameloso.constants;
 import kameloso.irc;

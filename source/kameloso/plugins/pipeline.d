@@ -8,6 +8,7 @@ import kameloso.common;
 
 import std.concurrency;
 import std.experimental.logger : LogLevel, Logger;
+
 import std.stdio;
 
 private:
