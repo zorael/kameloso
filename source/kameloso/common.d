@@ -3,6 +3,7 @@ module kameloso.common;
 import kameloso.bash : BashForeground;
 import kameloso.constants;
 
+import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
 import std.traits : isType, isArray;
@@ -951,7 +952,6 @@ final class KamelosoLogger : Logger
 {
     import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
     import std.concurrency : Tid;
-    import std.datetime : SysTime;
     import std.format : formattedWrite;
     import std.array : Appender;
 
@@ -1287,7 +1287,6 @@ struct Kameloso
     import kameloso.ircdefs : IRCBot;
     import kameloso.irc : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
-    import std.datetime.systime : SysTime;
 
     /// Nickname and other IRC variables for the bot.
     IRCBot bot;

@@ -79,7 +79,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
     {
         import core.thread : Thread;
         import core.time : seconds, msecs;
-        import std.datetime.systime : Clock;
+        import std.datetime.systime : Clock, SysTime;
 
         if (abort) return;
 
