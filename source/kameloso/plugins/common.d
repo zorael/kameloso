@@ -637,7 +637,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, Chainable))
                     {
-                        contine funloop;
+                        continue funloop;
                     }
                     else
                     {
