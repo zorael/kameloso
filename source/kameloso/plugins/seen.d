@@ -164,6 +164,7 @@ JSONValue seenUsers;
  +  `homes` array will be allowed to trigger this; or `any`, in which case
  +  anywhere goes.
  +/
+@(Chainable)
 @(IRCEvent.Type.EMOTE)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)
