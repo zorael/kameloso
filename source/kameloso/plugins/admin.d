@@ -60,24 +60,6 @@ void onCommandSudo(const IRCEvent event)
 }
 
 
-/*
-// onCommandFake
-/++
- +  Fake that a string was sent by the server.
- +
- +  Chance of infinite loop?
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "fake")
-void onCommandFake(const IRCEvent event)
-{
-    state.mainThread.send(event.content);
-}
-*/
-
-
 // onCommandQuit
 /++
  +  Sends a `QUIT` event to the server.
