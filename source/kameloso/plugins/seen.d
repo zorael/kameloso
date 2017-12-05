@@ -319,6 +319,8 @@ void onPing()
 @(IRCEvent.Type.QUERY)
 @(ChannelPolicy.homeOnly)
 @Prefix(NickPolicy.required, "seen")
+@Prefix(NickPolicy.ignored, "!seen")
+@Prefix(NickPolicy.ignored, ".seen")
 @(PrivilegeLevel.master)
 void onCommandSeen(const IRCEvent event)
 {

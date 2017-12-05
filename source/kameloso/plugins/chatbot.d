@@ -172,6 +172,8 @@ JSONValue loadQuotes(const string filename)
 @(PrivilegeLevel.friend)
 @Prefix(NickPolicy.required, "say")
 @Prefix(NickPolicy.required, "säg")
+@Prefix(NickPolicy.ignored, "!say")
+@Prefix(NickPolicy.ignored, ".say")
 void onCommandSay(const IRCEvent event)
 {
     if (!chatbotSettings.say) return;
@@ -206,6 +208,8 @@ void onCommandSay(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPolicy.required, "8ball")
+@Prefix(NickPolicy.ignored, "!8ball")
+@Prefix(NickPolicy.ignored, ".8ball")
 void onCommand8ball(const IRCEvent event)
 {
     if (!chatbotSettings.eightball) return;
@@ -260,6 +264,8 @@ void onCommand8ball(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPolicy.required, "quote")
+@Prefix(NickPolicy.ignored, ".quote")
+@Prefix(NickPolicy.ignored, "!quote")
 void onCommandQuote(const IRCEvent event)
 {
     import std.json : JSONException;
@@ -318,6 +324,8 @@ void onCommandQuote(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
 @Prefix(NickPolicy.required, "addquote")
+@Prefix(NickPolicy.ignored, "!addquote")
+@Prefix(NickPolicy.ignored, ".addquote")
 void onCommanAdddQuote(const IRCEvent event)
 {
     if (!chatbotSettings.quotes) return;

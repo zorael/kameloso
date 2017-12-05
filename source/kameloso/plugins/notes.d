@@ -136,6 +136,8 @@ void onNames(const IRCEvent event)
 @(PrivilegeLevel.friend)
 @Prefix(NickPolicy.required, "addnote")
 @Prefix(NickPolicy.required, "note")
+@Prefix(NickPolicy.ignored, "!note")
+@Prefix(NickPolicy.ignored, ".note")
 void onCommandAddNote(const IRCEvent event)
 {
     import std.format : format, formattedRead;
