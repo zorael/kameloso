@@ -22,7 +22,7 @@ import std.stdio;
  +  ------------
  +/
 void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
-    const string prefix = string.init, uint depth = 0)
+    const string prefix = string.init, uint indents = 0)
 {
     foreach (immutable i, value; thing.tupleof)
     {
@@ -37,7 +37,7 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
         }
         else static if (is(T == struct))
         {
-            sink.formatAssertStatementLines(thing.tupleof[i], memberstring, depth);
+            sink.formatAssertStatementLines(thing.tupleof[i], memberstring, indents);
         }
         else
         {
@@ -48,7 +48,7 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
             {
                 enum pattern = "%sassert(%s%s%s, %s%s.to!string);\n";
                 sink.formattedWrite(pattern,
-                        depth.tabs,
+                        indents.tabs,
                         !value ? "!" : string.init,
                         prefix.length ? prefix ~ '.' : string.init,
                         memberstring,
@@ -71,7 +71,7 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
                     }
 
                     sink.formattedWrite(pattern,
-                        depth.tabs,
+                        indents.tabs,
                         prefix.length ? prefix ~ '.' : string.init,
                         memberstring, value,
                         prefix.length ? prefix ~ '.' : string.init,
