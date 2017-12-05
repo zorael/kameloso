@@ -340,6 +340,7 @@ if (isOutputRange!(Sink,string))
         cast(char)TerminalToken.bashFormat, r, g, b);
 }
 else
+deprecated("Don't use truecolour when version isn't Colours")
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
     (auto ref Sink sink, uint r, uint g, uint b)
 {
@@ -381,6 +382,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     return sink.data;
 }
 else
+deprecated("Don't use truecolour when version isn't Colours")
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, uint r, uint g, uint b)
 {
