@@ -200,6 +200,19 @@ unittest
  +
  +  Params:
  +      things = The struct objects to enumerate.
+ +
+ +  ------------
+ +  struct Foo
+ +  {
+ +      int foo;
+ +      string bar;
+ +      float f;
+ +      double d;
+ +  }
+ +
+ +  Foo foo, bar;
+ +  printObjects(foo, bar);
+ +  ------------
  +/
 void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 {
@@ -235,6 +248,19 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
  +  Params:
  +      widthArgs = manually specified with of first column in the output
  +      thing = the struct object to enumerate.
+ +
+ +  ------------
+ +  struct Foo
+ +  {
+ +      int foo;
+ +      string bar;
+ +      float f;
+ +      double d;
+ +  }
+ +
+ +  Foo foo;
+ +  printObject(foo);
+ +  ------------
  +/
 void printObject(uint widthArg = 0, Thing)(Thing thing)
 {
@@ -254,6 +280,22 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +      coloured = whether to display in colours or not
  +      sink = output range to write to
  +      things = one or more structs to enumerate and format.
+ +
+ +  ------------
+ +  struct Foo
+ +  {
+ +      int foo;
+ +      string bar;
+ +      float f;
+ +      double d;
+ +  }
+ +
+ +  Foo foo, bar;
+ +  Appender!string sink;
+ +
+ +  sink.formatObjectsColoured!(Yes.coloured)(foo);
+ +  sink.formatObjectsColoured!(No.coloured)(bar);
+ +  ------------
  +/
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
@@ -375,6 +417,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     }
 }
 
+///
 @system unittest
 {
     import std.array : Appender;
@@ -550,6 +593,7 @@ if (isType!T)
 /// Ditto
 enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
 
+///
 unittest
 {
     struct Foo
@@ -676,6 +720,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     }
 }
 
+///
 unittest
 {
     import std.conv : to;
@@ -1177,6 +1222,14 @@ unittest
  +  This is useful when a different signal handler has been set up, as triggeing
  +  it won't break sleeps. This way it does, assuming the `abort` bool is the
  +  signal handler one.
+ +
+ +  Params:
+ +      dur = duration to sleep for
+ +      abort = bool flag if we should interrupt and return early
+ +
+ +  ------------
+ +  interruptibleSleep(1.seconds, abort);
+ +  ------------
  +/
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
@@ -1278,8 +1331,28 @@ unittest
 
 // Kameloso
 /++
- +  State needed for the `kameloso`` bot, aggregated in a struct for easier
+ +  State needed for the `kameloso` bot, aggregated in a struct for easier
  +  passing by ref.
+ +
+ +  ------------
+ +  struct Kameloso
+ +  {
+ +      IRCBot bot;
+ +      CoreSettings settings;
+ +      Connection conn;
+ +      IRCPlugin[] plugins;
+ +      SysTime[string] whoisCalls;
+ +      IRCParser parser;
+ +      ubyte today;
+ +      ThrottleValues throttling;
+ +      __gshared bool abort;
+ +
+ +      void initPlugins();
+ +      void teardownPlugins();
+ +      void startPlugins();
+ +      void propagateBot(IRCBot);
+ +  }
+ +  ------------
  +/
 struct Kameloso
 {
@@ -1454,6 +1527,17 @@ struct Kameloso
 /++
  +  Aggregate of values and state needed to throttle messages without polluting
  +  namespace too much.
+ +
+ +  ------------
+ +  struct ThrottleValues
+ +  {
+ +      enum k;
+ +      SysTime t0;
+ +      double m;
+ +      double increment;
+ +      double burst;
+ +  }
+ +  ------------
  +/
 struct ThrottleValues
 {
@@ -1485,6 +1569,10 @@ struct ThrottleValues
  +
  +  Params:
  +      colourCode = the Bash foreground colour to display the text in.
+ +
+ +  ------------
+ +  printVersionInfo(BashForeground.white);
+ +  ------------
  +/
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {

@@ -18,6 +18,13 @@ private:
  +  Params:
  +      ref bot = the IRCBot bot apply all changes to.
  +      ref setttings = the core settings to apply changes to.
+ +
+ +  ------------
+ +  IRCBot bot;
+ +  CoreSettings settings;
+ +
+ +  meldSettingsFromFile(bot, settings);
+ +  ------------
  +/
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
@@ -45,6 +52,11 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
  +
  +  Params:
  +      filename = the string filename of the file to write to.
+ +
+ +  ------------
+ +  Kameloso state;
+ +  state.writeConfigurationFile(state.settings.configFile);
+ +  ------------
  +/
 void writeConfigurationFile(ref Kameloso state, const string filename)
 {
@@ -92,6 +104,14 @@ public:
  +  Returns:
  +      Yes.quit or no depending on whether the arguments chosen mean the
  +      program should proceed or not.
+ +
+ +  ------------
+ +  Kameloso state;
+ +  Flag!"quit" quit = state.handleGetopt(args);
+ +
+ +  if (quit) return 0;
+ +  // ...
+ +  ------------
  +/
 Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
 {

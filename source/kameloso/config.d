@@ -12,6 +12,13 @@ import std.stdio;
  +  Saves the passed configuration text to disk, with the given filename.
  +
  +  Optionally add the `kameloso` version banner at the head of it.
+ +
+ +  ------------
+ +  Appender!string sink;
+ +  sink.serialise(bot, bot.server, settings);
+ +  immutable configText = sink.data.justifiedConfigurationText;
+ +  writeToDisk!(Yes.addBanner)("kameloso.conf", configText);
+ +  ------------
  +/
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
@@ -41,6 +48,10 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 // configReader
 /++
  +  Read configuration file into a string.
+ +
+ +  ------------
+ +  string configText = configReader("kameloso.conf");
+ +  ------------
  +/
 string configReader(const string configFile)
 {
@@ -67,6 +78,13 @@ string configReader(const string configFile)
  +
  +  More than one can be supplied, and invalid ones for which there are no
  +  settings will be silently ignored with no errors.
+ +
+ +  ------------
+ +  IRCBot bot;
+ +  IRCServer server;
+ +
+ +  "kameloso.conf".readConfigInto(bot, server);
+ +  ------------
  +/
 void readConfigInto(T...)(const string configFile, ref T things)
 {
@@ -83,6 +101,14 @@ void readConfigInto(T...)(const string configFile, ref T things)
 // serialise
 /++
  +  Convenience method to call serialise on several objects.
+ +
+ +  ------------
+ +  Appender!string sink;
+ +  IRCBot bot;
+ +  IRCServer server;
+ +  sink.serialise(bot, server);
+ +  assert(!sink.data.empty);
+ +  ------------
  +/
 void serialise(Sink, Things...)(ref Sink sink, Things things)
 if (Things.length > 1)
@@ -104,6 +130,14 @@ if (Things.length > 1)
  +  Params:
  +      ref sink = output range to save into, usually an `Appender!string`
  +      thing = object to serialise
+ +
+ +  ------------
+ +  Appender!string sink;
+ +  IRCBot bot;
+ +
+ +  sink.serialise(bot);
+ +  assert(!sink.data.empty);
+ +  ------------
  +/
 void serialise(Sink, Thing)(ref Sink sink, Thing thing)
 {
@@ -253,6 +287,14 @@ pipyon 3
  +  specified value.
  +
  +  It does not currently recurse into other struct/class members.
+ +
+ +  ------------
+ +  IRCBot bot;
+ +
+ +  bot.setMemberByName("nickname", "kameloso");
+ +  bot.setMemberByName("address", "blarbh.hlrehg.org");
+ +  bot.setMemberByName("special", "false");
+ +  ------------
  +/
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
@@ -385,6 +427,16 @@ unittest
  +  Params:
  +      range = input range from which to read the configuration text
  +      things = one or more objects to apply the configuration to
+ +
+ +  ------------
+ +  IRCBot bot;
+ +  IRCServer server;
+ +
+ +  "kameloso.conf"
+ +      .configReader
+ +      .splitter("\n")
+ +      .applyConfiguration(bot, server);
+ +  ------------
  +/
 void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
@@ -588,6 +640,15 @@ naN     !"#¤%&/`;
  +
  +  Params:
  +      origLines = unjustified raw configuration text
+ +
+ +  ------------
+ +  IRCBot bot;
+ +  IRCServer server;
+ +  Appender!string sink;
+ +
+ +  sink.serialise(bot, server);
+ +  immutable justified = sink.data.justifiedConfigurationText;
+ +  ------------
  +/
 string justifiedConfigurationText(const string origLines)
 {

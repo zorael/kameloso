@@ -1800,6 +1800,12 @@ public:
  +
  +  Params:
  +      line = original line to decode
+ +
+ +  ------------
+ +  string encoded = "This\sline\sis\sencoded\:\swith\s\\s";
+ +  string decoded = decodeIRCv3String(encoded);
+ +  assert(decoded == "This line is encoded; with \\s");
+ +  ------------
  +/
 string decodeIRCv3String(const string line)
 {
@@ -1852,6 +1858,14 @@ unittest
 // isFromAuthService
 /++
  +  Looks at an event and decides whether it is from nickname services.
+ +
+ +  ------------
+ +  IRCEvent event;
+ +  if (parser.isFromAuthService(event))
+ +  {
+ +      // ...
+ +  }
+ +  ------------
  +/
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 {
@@ -1985,6 +1999,14 @@ unittest
  +
  +  It needs to be passed an `IRCServer` to know the max channel name length.
  +  An alternative would be to change the `IRCServer` parameter to be an uint.
+ +
+ +  ------------
+ +  IRCServer server;
+ +  assert("#channel".isValidChannel(server));
+ +  assert("##channel".isValidChannel(server));
+ +  assert(!"!channel".isValidChannel(server));
+ +  assert(!"#ch#annel".isValidChannel(server));
+ +  ------------
  +/
 bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
 {
@@ -2042,7 +2064,20 @@ unittest
 }
 
 
-/// Checks if a string *looks* like a nickname.
+// isValidNickname
+/++
+ +  Checks if a string *looks* like a nickname.
+ +
+ +  It only looks for invalid characters in the name as well as it length.
+ +
+ +  ------------
+ +  assert("kameloso".isValidNickname);
+ +  assert("kameloso^".isValidNickname);
+ +  assert("kamelåså".isValidNickname);
+ +  assert(!"#kameloso".isValidNickname);
+ +  assert(!"k&&me##so".isValidNickname);
+ +  ------------
+ +/
 bool isValidNickname(const string nickname, const IRCServer server)
 {
     import std.regex : ctRegex, matchAll;
@@ -2118,6 +2153,12 @@ unittest
  +
  +  Returns:
  +      The nickname with the sign sliced off.
+ +
+ +  ------------
+ +  string withSign = "@kameloso";
+ +  string withoutSign = withSign.stripModeSign();
+ +  assert(withoutSign == "kameloso");
+ +  ------------
  +/
 string stripModeSign(const string nickname)
 {
@@ -2193,7 +2234,15 @@ struct IRCParser
     /// Disallow copying of this struct.
     @disable this(this);
 
-    /// Sets the server daemon and melds together the needed typenums.
+    // setDaemon
+    /++
+     +  Sets the server daemon and melds together the needed typenums.
+     +
+     +  ------------
+     +  IRCParser parser;
+     +  parser.setDaemon(IRCServer.Daemon.unreal);
+     +  ------------
+     +/
     void setDaemon(const Daemon daemon)
     {
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
@@ -2357,6 +2406,7 @@ final class IRCParseException : Exception
     }
 }
 
+///
 unittest
 {
     import std.exception : assertThrown;

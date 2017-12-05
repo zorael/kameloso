@@ -86,6 +86,11 @@ public:
      +  Params:
      +      address = The string address to look up.
      +      port = The remote port build into the Address.
+     +
+     +  ------------
+     +  Connection conn;
+     +  conn.resolve("irc.freenode.net", 6667, abort);
+     +  ------------
      +/
     bool resolve(const string address, const ushort port, ref bool abort)
     {
@@ -134,6 +139,19 @@ public:
      +
      +  Success is determined by whether or not an exception was thrown during
      +  the attempt, and is kept track of with the connected boolean.
+     +
+     +  ------------
+     +  Connection conn;
+     +
+     +  conn.resolve("irc.freenode.net", 6667, abort);
+     +  conn.connect(abort);
+     +
+     +  if (!conn.connected)
+     +  {
+     +      writeln("Connection failed!");
+     +      return 1;
+     +  }
+     +  ------------
      +/
     void connect(ref bool abort)
     {
@@ -193,6 +211,11 @@ public:
      +
      +  Params:
      +      line = The string to send.
+     +
+     +  ------------
+     +  conn.sendline("NICK kameloso");
+     +  conn.sendline("PRIVMSG #channel :text");
+     +  ------------
      +/
     pragma(inline, true)
     void sendline(Strings...)(const Strings lines)
@@ -226,6 +249,18 @@ public:
  +
  +  Yields:
  +      full IRC event strings.
+ +
+ +  ------------
+ +  import std.concurrency : Generator;
+ +
+ +  auto generator = new Generator!string(() => listenFiber(conn, abort));
+ +  generator.call();
+ +
+ +  foreach (immutable line; generator)
+ +  {
+ +      /* ... */
+ +  }
+ +  ------------
  +/
 void listenFiber(Connection conn, ref bool abort)
 {

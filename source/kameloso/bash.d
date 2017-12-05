@@ -105,6 +105,14 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +
  +  Returns:
  +      A Bash code sequence of the passed codes.
+ +
+ +  ------------
+ +  string blinkOn = colour(BashForeground.white, BashBackground.yellow,
+ +      BashEffect.blink);
+ +  string blinkOff = colour(BashForeground.default_, BashBackground.default_,
+ +      BashReset.blink);
+ +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
+ +  ------------
  +/
 version(Colours)
 string colour(Codes...)(Codes codes)
@@ -139,6 +147,13 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +
  +  Params:
  +      codes = a variadic list of Bash format codes.
+ +
+ +  ------------
+ +  Appender!string sink;
+ +  sink.colour(BashForeground.red, BashEffect.bold);
+ +  sink.put("Foo");
+ +  sink.colour(BashForeground.default_, BashReset.bold);
+ +  ------------
  +/
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
@@ -173,6 +188,10 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
  +
  +  Returns:
  +      A Bash code sequence of the passed codes, encompassing the passed text.
+ +
+ +  ------------
+ +  string foo = "Foo Bar".colour(BashForeground.bold, BashEffect.reverse);
+ +  ------------
  +/
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes)
@@ -290,6 +309,15 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
  +      r = red
  +      g = green
  +      b = blue
+ +
+ +  ------------
+ +  Appender!string sink;
+ +  int r, g, b;
+ +  numFromHex("3C507D", r, g, b);
+ +  sink.truecolour(r, g, b);
+ +  sink.put("Foo");
+ +  sink.colour(BashReset.all);
+ +  ------------
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
@@ -323,6 +351,14 @@ void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
 /++
  +  Convenience function to colour a piece of text without being passed an
  +  output sink to fill into.
+ +
+ +  ------------
+ +  string foo = "Foo Bar".truecolour(172, 172, 255);
+ +
+ +  int r, g, b;
+ +  numFromHex("003388", r, g, b);
+ +  string bar = "Bar Foo".truecolour(r, g, b);
+ +  ------------
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)

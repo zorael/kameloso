@@ -10,7 +10,16 @@ import std.stdio;
 /++
  +  Constructs assert statement lines for each changed field of a type.
  +
- +  This belongs elsewhere but will stay here for now.
+ +  This should not be used directly, instead use ` formatEventAssertBlock`.
+ +
+ +  ------------
+ +  IRCEvent event;
+ +  Appender!string sink;
+ +  sink.formatAssertStatementLines(event);
+ +
+ +  IRCBot bot;
+ +  sink.formatAssertStatementLines(bot, "bot", 1);  // indented once
+ +  ------------
  +/
 void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
     const string prefix = string.init, uint depth = 0)
@@ -100,12 +109,17 @@ unittest
 }
 
 
-// formatAssertStatementLines
+// formatBot
 /++
  +  Constructs statement lines for each changed field of an `IRCBot`, including
  +  instantiating a fresh one.
  +
- +  This belongs elsewhere but will stay here for now.
+ +  ------------
+ +  IRCCBot bot;
+ +  Appender!string sink;
+ +
+ +  sink.formatBot(bot);
+ +  ------------
  +/
 void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
 {
@@ -184,7 +198,11 @@ with (parser.bot)
 /++
  +  Constructs assert statement blocks for each changed field of an `IRCEvent`.
  +
- +  This belongs elsewhere but will stay here for now.
+ +  ------------
+ +  IRCEvent event;
+ +  Appender!string sink;
+ +  sink.formatEventAssertBlock(event);
+ +  ------------
  +/
 public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
@@ -257,6 +275,11 @@ unittest
  +  constructs assert blocks of their contents.
  +
  +  We can't use an Appender or dmd will hit a stack overflow, error -11.
+ +
+ +  ------------
+ +  Kameloso state;
+ +  state.generateAsserts();
+ +  ------------
  +/
 void generateAsserts(ref Kameloso state)
 {
