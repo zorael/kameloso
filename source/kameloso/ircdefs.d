@@ -1079,11 +1079,20 @@ struct IRCUser
     }
 }
 
+// Typenums
+/++
+ +  Reverse mappings of numerics to `IRCEvent.Type`s.
+ +
+ +  One `base` table that covers most cases, and then specialised arrays for
+ +  different server daemons, to meld into `base` for a union of the two
+ +  (or more). This speeds up translation greatly and allows us to have
+ +  different mappings for different daemons.
+ +/
 struct Typenums
 {
     alias Type = IRCEvent.Type;
 
-    /// Reverse mapping of Types to their numeric form, to speed up conversion
+    /// Default mappings
     static immutable Type[1024] base =
     [
         1   : Type.RPL_WELCOME,

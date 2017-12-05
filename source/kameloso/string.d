@@ -18,6 +18,16 @@ import std.typecons : Flag, No, Yes;
  +
  +  Returns:
  +      the string arr from the start up to the separator.
+ +
+ +  ------------
+ +  string foobar = "foo bar";
+ +  string foo = foobar.nom(" ");
+ +  string bar = foobar;
+ +
+ +  assert((foo == "foo"), foo);
+ +  assert((bar == "bar"), bar);
+ +  assert(!foobar.length);
+ +  ------------
  +/
 pragma(inline)
 string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separator) @trusted
@@ -152,6 +162,11 @@ unittest
  +
  +  Returns:
  +      The singular string if num is 1 or -1, otherwise the plural string.
+ +
+ +  ------------
+ +  string one = 1.plurality("one", "two");
+ +  string two = 2.plurality("one", "two");
+ +  ------------
  +/
 pragma(inline)
 string plurality(const int num, const string singular, const string plural) pure
@@ -178,6 +193,12 @@ unittest
  +
  +  Returns:
  +      A slice of the line argument that excludes the quotes.
+ +
+ +  ------------
+ +  string quoted= `"This is a quote"`;
+ +  string unquotes = quoted.unquoted;
+ +  assert((unquoted == "This is a quote"), unquoted);
+ +  ------------
  +/
 pragma(inline)
 string unquoted(const string line) pure
@@ -216,7 +237,12 @@ unittest
  +      needle = The snippet of text to check if haystack begins with.
  +
  +  Returns:
- +      true if haystack starts with needle, otherwise false.
+ +      `true` if haystack starts with needle, otherwise `false`.
+ +
+ +  ------------
+ +  assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
+ +  assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
+ +  ------------
  +/
 pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure
@@ -268,6 +294,11 @@ unittest
  +
  +  Returns:
  +      An array with fields split out of the line argument.
+ +
+ +  ------------
+ +  string[] things = "one,two,three,four".arrayify;
+ +  assert(things == [ "one", "two", "three", "four" ]);
+ +  ------------
  +/
 pragma(inline)
 T[] arrayify(string separator = ",", T)(const T line)
@@ -293,7 +324,11 @@ unittest
 
 /// stripPrefix
 /++
- +  Strips a prefix word from a string.
+ +  Strips a prefix word from a string, also stripping away some non-word
+ +  characters.
+ +
+ +  This is to make a helper for stripping away bot prefixes, where such may be
+ +  "kameloso:".
  +
  +  Params:
  +      line = the prefixed string line.
@@ -301,6 +336,12 @@ unittest
  +
  +  Returns:
  +      The passed line with the prefix sliced away.
+ +
+ +  ------------
+ +  string prefixed = "kameloso: sudo MODE +o #channel :user";
+ +  string command = prefixed.stripPrefix("kameloso");
+ +  assert((command == "sudo MODE +o #channel :user"), command);
+ +  ------------
  +/
 pragma(inline)
 string stripPrefix(const string line, const string prefix)
@@ -350,6 +391,17 @@ unittest
  +
  +  Returns:
  +      A humanly-readable string of how long the passed duration is.
+ +
+ +  ------------
+ +  Appender!string sink;
+ +
+ +  const then = Clock.currTime;
+ +  Thread.sleep(1.seconds);
+ +  const now = Clock.currTime;
+ +
+ +  const duration = (now - then);
+ +  immutable inEnglish = sink.timeSince(duration);
+ +  ------------
  +/
 void timeSince(Sink)(auto ref Sink sink, const Duration duration)
 {
@@ -444,6 +496,13 @@ unittest
  +
  +  Returns:
  +      The enum member whose name matches the enumstring string.
+ +
+ +  ------------
+ +  enum SomeEnum { one, two, three };
+ +
+ +  SomeEnum foo = "one".toEnum!someEnum;
+ +  SomeEnum bar = "three".toEnum!someEnum;
+ +  ------------
  +/
 pragma(inline)
 Enum toEnum(Enum)(const string enumstring) pure
@@ -512,6 +571,13 @@ unittest
  +
  +  Returns:
  +      The string name of the passed enum value.
+ +
+ +  ------------
+ +  enum SomeEnum { one, two, three };
+ +
+ +  string foo = SomeEnum.one.enumToString;
+ +  assert((foo == "one"), foo);
+ +  ------------
  +/
 pragma(inline)
 string enumToString(Enum)(Enum value) pure
@@ -582,6 +648,11 @@ unittest
  +
  +  Returns:
  +      An integer equalling the value of the passed hexadecimal string.
+ +
+ +  ------------
+ +  int fifteen = numFromHex("F");
+ +  int twofiftyfive = numFromHex("FF");
+ +  ------------
  +/
 int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex)
@@ -699,6 +770,12 @@ unittest
 // stripSuffix
 /++
  +  Strips the supplied string from the end of a string.
+ +
+ +  ------------
+ +  string suffixed = "Kameloso";
+ +  string stripped = suffixed.stripSuffix("oso");
+ +  assert((stripped == "Kamel"), stripped);
+ +  ------------
  +/
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure
@@ -732,6 +809,11 @@ unittest
  +  Calculates how many dot-separated suffixes two strings share.
  +
  +  This is useful to see to what extent two addresses are similar.
+ +
+ +  ------------
+ +  int numDomains = sharedDomains("irc.freenode.net", "leguin.freenode.net");
+ +  assert(numDomains == 2);  // freenode.net
+ +  ------------
  +/
 uint sharedDomains(const string rawOne, const string rawOther)
 {
@@ -810,6 +892,11 @@ unittest
 // tabs
 /++
  +  Returns spaces equal to that of num tabs (\t).
+ +
+ +  ------------
+ +  string indentation = 2.tabs;
+ +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
+ +  ------------
  +/
 string tabs(int num) pure
 {
@@ -850,7 +937,13 @@ unittest
 
 // escaped
 /++
+ +  Escapes some common character so as to work better in regex expressions.
  +
+ +  ------------
+ +  string unescaped = "This is (very) difficult to regex[^!]";
+ +  string easier = unescaped.escaped;
+ +  assert((easier == "This is \(very\) difficult to regex\[\^!\]"), escaped);
+ +  ------------
  +/
 string escaped(const string line)
 {
@@ -876,6 +969,7 @@ string escaped(const string line)
     return replaced;
 }
 
+///
 unittest
 {
     assert("(".escaped == r"\(");
@@ -892,6 +986,11 @@ unittest
 /++
  +  Shorthand UFCS function that simply checks whether a string contains a space
  +  or not.
+ +
+ +  ------------
+ +  assert("This has spaces".hasSpace);
+ +  assert(!"thisdoesn't".hasSpace);
+ +  ------------
  +/
 bool hasSpace(const string line)
 {
