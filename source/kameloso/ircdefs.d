@@ -160,7 +160,7 @@ struct IRCEvent
         RPL_STATSWLINE, // = 220,       // CONFLICT
         //RPL_STATSPLINE, // = 220,
         RPL_UMODEIS, // = 221,          // "<user mode string>"
-        //RPL_STATSBLINE, // = 222,       // CONFLICT
+        //RPL_STATSBLINE, // = 222,     // CONFLICT
         RPL_SQLINE_NICK, // = 222,      // CONFLICT
         RPL_CODEPAGE, // = 222,         // CONFLICT
         RPL_STATSJLINE, // = 222,       // CONFLICT
@@ -170,14 +170,14 @@ struct IRCEvent
         RPL_STATSELINE, // = 223,
         RPL_STATSTLINE, // = 224,       // CONFLICT
         RPL_STATSFLINE, // = 224,
-        //RPL_STATSELINE, // = 225,       // CONFLICT
+        //RPL_STATSELINE, // = 225,     // CONFLICT
         RPL_STATSZLINE, // = 225,       // CONFLICT
         RPL_STATSCLONE, // = 225,       // CONFLICT
         RPL_STATSDLINE, // = 225,
-        //RPL_STATSNLINE, // = 226,       // CONFLICT
+        //RPL_STATSNLINE, // = 226,     // CONFLICT
         RPL_STATSALINE, // = 226,       // CONFLICT
         RPL_STATSCOUNT, // = 226,
-        //RPL_STATSGLINE, // = 227,       // CONFLICT
+        //RPL_STATSGLINE, // = 227,     // CONFLICT
         RPL_STATSVLINE, // = 227,       // CONFLICT
         //RPL_STATSBLINE, // = 227,
         RPL_STATSBANVER, // = 228,      // CONFLICT
@@ -192,7 +192,7 @@ struct IRCEvent
         RPL_SERVLISTEND, // = 235,      // (reserved numeric)
         RPL_STATSVERBOSE, // = 236,     // Verbose server list?
         RPL_STATSENGINE, // = 237,      // Engine name?
-        //RPL_STATSFLINE, // = 238,       // Feature lines?
+        //RPL_STATSFLINE, // = 238,     // Feature lines?
         RPL_STATSIAUTH, // = 239,
         RPL_STATSXLINE, // = 240,       // CONFLICT
         //RPL_STATSVLINE, // = 240,
@@ -200,20 +200,20 @@ struct IRCEvent
         RPL_STATSUPTIME, // = 242,      // ":Server Up %d days %d:%02d:%02d"
         RPL_STATSOLINE, // = 243,       // "O <hostmask> * <name>"
         RPL_STATSHLINE, // = 244,       // "H <hostmask> * <servername>"
-        //RPL_STATSTLINE, // = 245,       // CONFLICT
+        //RPL_STATSTLINE, // = 245,     // CONFLICT
         RPL_STATSSLINE, // = 245,
         RPL_STATSSERVICE, // = 246,     // CONFLICT
-        //RPL_STATSTLINE, // = 246,       // CONFLICT
+        //RPL_STATSTLINE, // = 246,     // CONFLICT
         RPL_STATSULINE, // = 246,       // CONFLICT
         RPL_STATSPING, // = 246,
-        //RPL_STATSXLINE, // = 247,       // CONFLICT
-        //RPL_STATSGLINE, // = 247,       // CONFLICT
+        //RPL_STATSXLINE, // = 247,     // CONFLICT
+        //RPL_STATSGLINE, // = 247,     // CONFLICT
         //RPL_STATSBLINE, // = 247,
         RPL_STATSDEFINE, // = 248,      // CONFLICT
         //RPL_STATSULINE, // = 248,
         RPL_STATSDEBUG, // = 249,       // CONFLICT
         //RPL_STATSULINE, // = 249,
-        //RPL_STATSDLINE, // = 250,       // CONFLICT
+        //RPL_STATSDLINE, // = 250,     // CONFLICT
         RPL_STATSCONN, // = 250,
         RPL_LUSERCLIENT, // = 251,      // ":There are <integer> users and <integer> invisible on <integer> servers"
         RPL_LUSEROP, // = 252,          // "<integer> :operator(s) online"
@@ -241,7 +241,7 @@ struct IRCEvent
         RPL_NOTIFY, // = 273,
         RPL_STATSDELTA, // = 274,       // CONFLICT
         RPL_ENDNOTIFY, // = 274,
-        //RPL_USINGSSL, // = 275,         // CONFLICT
+        //RPL_USINGSSL, // = 275,       // CONFLICT
         //RPL_STATSDLINE, // = 275,
         RPL_VCHANEXIST, // = 276,       // CONFLICT
         RPL_WHOISCERTFP, // = 276,      // CONFLICT
@@ -303,7 +303,7 @@ struct IRCEvent
         RPL_NOTIFYACTION, // = 308,
         RPL_WHOISHELPER, // = 309,      // CONFLICT
         RPL_ENDOFRULES, // = 309,       // CONFLICT
-        //RPL_WHOISADMIN, // = 309,       // CONFLICT
+        //RPL_WHOISADMIN, // = 309,     // CONFLICT
         RPL_NICKTRACE, // = 309,
         RPL_WHOISSERVICE, // = 310,     // CONFLICT
         RPL_WHOISHELPOP, // = 310,      // CONFLICT
@@ -345,9 +345,9 @@ struct IRCEvent
         RPL_WHOISTEXT, // = 335,        // CONFLICT
         RPL_WHOISACCOUNTONLY, // = 335, // CONFLICT
         RPL_WHOISBOT, // = 335,         // "<nick> <othernick> :is a Bot on <server>"
-        //RPL_WHOISBOT, // = 336,         // CONFLICT
+        //RPL_WHOISBOT, // = 336,       // CONFLICT
         RPL_INVITELIST, // = 336,
-        //RPL_WHOISTEXT, // = 337,        // CONFLICT
+        //RPL_WHOISTEXT, // = 337,      // CONFLICT
         RPL_ENDOFINVITELIST, // = 337,  // CONFLICT
         RPL_CHANPASSOK, // = 338,       // CONFLICT
         RPL_WHOISACTUALLY, // = 338,
@@ -406,9 +406,9 @@ struct IRCEvent
         RPL_RSACHALLENGE, // = 386,     // CONFLICT
         RPL_QLIST, // = 386,
         RPL_ENDOFIRCOPS, // = 387,      // CONFLICT
-        //RPL_IRCOPS, // = 387,           // CONFLICT
+        //RPL_IRCOPS, // = 387,         // CONFLICT
         RPL_ENDOFQLIST, // = 387,
-        //RPL_ENDOFIRCOPS, // = 388,      // CONFLICT
+        //RPL_ENDOFIRCOPS, // = 388,    // CONFLICT
         //RPL_ALIST, // = 388,
         //RPL_ENDOFALIST, // = 389,
         RPL_TIME, // = 391,             // "<server> :<string showing server's local time>"
@@ -451,7 +451,7 @@ struct IRCEvent
         ERR_NONICKNAMEGIVEN, // = 431,  // ":No nickname given"
         ERR_ERRONEOUSNICKNAME, // = 432,// "<nick> :Erroneus nickname"
         ERR_NICKNAMEINUSE, // = 433,    // "<nick> :Nickname is already in use"
-        ERR_SERVICENAMEINUSE, // = 434,  //CONFLICT
+        ERR_SERVICENAMEINUSE, // = 434, //CONFLICT
         ERR_NORULES, // = 434,
         ERR_SERVICECONFUSED, // = 435   // CONFLICT
         ERR_BANONCHAN, // = 435         // <nickname> <target nickname> <channel> :Cannot change nickname while banned on channel
@@ -474,7 +474,7 @@ struct IRCEvent
         ERR_NOTREGISTERED, // = 451,    // ":You have not registered"
         ERR_IDCOLLISION, // = 452,
         ERR_NICKLOST, // = 453,
-        //ERR_IDCOLLISION, // = 455       // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
+        //ERR_IDCOLLISION, // = 455     // <nickname> :Your username <nickname> contained the invalid character(s) <characters> and has been changed to mrkaufma. Please use only the characters 0-9 a-z A-Z _ - or . in your username. Your username is the part before the @ in your email address.
         ERR_HOSTILENAME, // = 455,
         ERR_ACCEPTFULL, // = 456
         ERR_ACCEPTEXIST, // = 457,
@@ -515,7 +515,7 @@ struct IRCEvent
         ERR_NOPRIVILEGES, // = 481,     // ":Permission Denied- You're not an IRC operator"
         ERR_CHANOPRIVSNEEDED, // = 482, // [sic] "<channel> :You're not channel operator"
         ERR_CANTKILLSERVER, // = 483,   // ":You cant kill a server!"
-        ERR_ATTACKDENY, // = 484,        // CONFLICT
+        ERR_ATTACKDENY, // = 484,       // CONFLICT
         ERR_DESYNC, // = 484,           // CONFLICT
         ERR_ISCHANSERVICE, // = 484,    // CONFLICT
         ERR_RESTRICTED, // = 484,
@@ -558,7 +558,7 @@ struct IRCEvent
 
         ERR_NOREHASHPARAM, // = 500,    // CONFLICT
         ERR_TOOMANYJOINS, // = 500,
-        ERR_UNKNOWNSNOMASK, // = 501,    // CONFLICT
+        ERR_UNKNOWNSNOMASK, // = 501,   // CONFLICT
         ERR_UMODEUNKNOWNFLAG, // = 501, // ":Unknown MODE flag"
         ERR_USERSDONTMATCH, // = 502,   // ":Cant change mode for other users"
         ERR_VWORLDWARN, // = 503,       // CONFLICT
@@ -581,7 +581,7 @@ struct IRCEvent
         ERR_WHOTRUNC, // = 520,         // CONFLICT
         ERR_MASKTOOWIDE, // = 520,      // CONFLICT
         ERR_OPERONLY, // = 520,
-        //ERR_NOSUCHGLINE, // = 521,      // CONFLICT
+        //ERR_NOSUCHGLINE, // = 521,    // CONFLICT
         ERR_LISTSYNTAX, // = 521,
         ERR_WHOSYNTAX, // = 522,
         ERR_WHOLIMEXCEED, // = 523,
@@ -624,16 +624,16 @@ struct IRCEvent
         RPL_ISLOCOP, // = 611,
         RPL_ISNOTOPER, // = 612,
         RPL_ENDOFISOPER, // = 613,
-        //RPL_MAPMORE, // = 615,       // CONFLICT
+        //RPL_MAPMORE, // = 615,        // CONFLICT
         //RPL_WHOISMODES, // = 615,
         //RPL_WHOISHOST, // = 616,
         RPL_WHOISSSLFP, // = 617,       // CONFLICT
-        //RPL_WHOISBOT, // = 617,         // CONFLICT
+        //RPL_WHOISBOT, // = 617,       // CONFLICT
         RPL_DCCSTATUS, // = 617,
         RPL_DCCLIST, // = 618,
         RPL_WHOWASHOST, // = 619,       // CONFLICT
         RPL_ENDOFDCCLIST, // = 619,
-        //RPL_RULESSTART, // = 620,       // CONFLICT
+        //RPL_RULESSTART, // = 620,     // CONFLICT
         RPL_DCCINFO, // = 620,
         //RPL_RULES, // = 621,
         //RPL_ENDOFRULES, // = 622,
@@ -670,7 +670,7 @@ struct IRCEvent
         RPL_WHOISLANGUAGE, // = 690,
         ERR_STARTTLS, // = 691,
 
-        //RPL_MODLIST, // = 702,          // CONFLICT
+        //RPL_MODLIST, // = 702,        // CONFLICT
         RPL_COMMANDS, // = 702,
         RPL_ENDOFMODLIST, // = 703,     // CONFLICT
         RPL_COMMANDSEND, // = 703,
@@ -1711,11 +1711,11 @@ struct Typenums
         224 : Type.RPL_STATSFLINE,
         225 : Type.RPL_STATSDLINE,
         226 : Type.RPL_STATSALINE,
-        245 : Type.RPL_STATSSLINE,   // CONFLICT: Type.RPL_STATSTLINE
-        246 : Type.RPL_STATSSERVICE, // CONFLICT: Type.RPL_STATSULINE
+        245 : Type.RPL_STATSSLINE,      // CONFLICT: Type.RPL_STATSTLINE
+        246 : Type.RPL_STATSSERVICE,    // CONFLICT: Type.RPL_STATSULINE
         247 : Type.RPL_STATSXLINE,
         249 : Type.RPL_STATSDEBUG,
-        276 : Type.RPL_WHOISCERTFP,  // oftc-hybrid?
+        276 : Type.RPL_WHOISCERTFP,     // oftc-hybrid?
         335 : Type.RPL_WHOISTEXT,
         336 : Type.RPL_INVITELIST,
         337 : Type.RPL_ENDOFINVITELIST, // CONFLICT: Type.RPL_WHOISTEXT
@@ -1738,7 +1738,7 @@ struct Typenums
         222 : Type.RPL_STATSBLINE,
         223 : Type.RPL_STATSELINE,
         224 : Type.RPL_STATSFLINE,
-        225 : Type.RPL_STATSCLONE,    // DEPRECATED CONFLICT: Type.RPL_STATSZLINE
+        225 : Type.RPL_STATSCLONE,      // DEPRECATED CONFLICT: Type.RPL_STATSZLINE
         226 : Type.RPL_STATSCOUNT,
         227 : Type.RPL_STATSGLINE,
         245 : Type.RPL_STATSSLINE,
@@ -1828,13 +1828,13 @@ struct Typenums
         357 : Type.RPL_MAP,
         358 : Type.RPL_MAPMORE,
         359 : Type.RPL_MAPEND,
-        377 : Type.RPL_SPAM,        // deprecated
+        377 : Type.RPL_SPAM,            // deprecated
         378 : Type.RPL_MOTD,
         380 : Type.RPL_YOURHELPER,
         434 : Type.ERR_SERVICENAMEINUSE,
         480 : Type.ERR_NOULINE,
         503 : Type.ERR_VWORLDWARN,
-        520 : Type.ERR_WHOTRUNC,    // deprecated
+        520 : Type.ERR_WHOTRUNC,        // deprecated
     ];
 
     static immutable Type[489] ircNet =

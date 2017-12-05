@@ -193,7 +193,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
 }
 
 
-// generateAsserts
+// removeMeWhenPossible
 /++
  +  Removing this breaks `-c vanilla -b plain` compilation, dmd error -11.
  +/
