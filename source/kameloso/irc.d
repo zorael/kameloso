@@ -1526,8 +1526,15 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             import kameloso.bash : BashForeground, colour;
             import kameloso.common : settings;
 
-            immutable networkName = kameloso.common.settings.monochrome ?
-                value : value.colour(BashForeground.white);
+            version (Colours)
+            {
+                immutable networkName = kameloso.common.settings.monochrome ?
+                    value : value.colour(BashForeground.white);
+            }
+            else
+            {
+                immutable networkName = value;
+            }
 
             logger.info("Detected network: ", networkName);
             bot.server.network = value;
@@ -1644,7 +1651,16 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if ((slice == ":-") && (parser.bot.server.address.indexOf(".twitch.tv") != -1))
     {
-        logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
+        // FIXME
+        version (Colours)
+        {
+            logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
+        }
+        else
+        {
+            logger.info("Detected daemon: twitch");
+        }
+
         parser.setDaemon(IRCServer.Daemon.twitch);
         parser.bot.server.network = "Twitch";
         return;
@@ -1714,9 +1730,12 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     string daemonName = parser.bot.server.daemon.enumToString;
 
     // FIXME
-    if (!kameloso.common.settings.monochrome)
+    version (Colours)
     {
-        daemonName = daemonName.colour(BashForeground.white);
+        if (!kameloso.common.settings.monochrome)
+        {
+            daemonName = daemonName.colour(BashForeground.white);
+        }
     }
 
     logger.infof("Detected daemon %s: %s", daemonstring, daemonName);

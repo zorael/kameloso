@@ -175,8 +175,14 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             printVersionInfo(BashForeground.white);
             writeln();
 
-            defaultGetoptPrinter("Command-line arguments available:\n"
-                .colour(BashForeground.lightgreen), results.options);
+            string headline = "Command-line arguments available:\n";
+
+            version (Colours)
+            {
+                headline = headline.colour(BashForeground.lightgreen);
+            }
+
+            defaultGetoptPrinter(headline, results.options);
             writeln();
             return Yes.quit;
         }
