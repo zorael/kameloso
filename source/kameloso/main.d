@@ -40,7 +40,6 @@ void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.signal : signal, SIGINT, SIG_DFL;
     printf("...caught signal %d!\n", sig);
-    abort = true;
     botState.abort = true;
 
     // Restore signal handlers to the default
@@ -81,7 +80,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
         import core.time : seconds, msecs;
         import std.datetime.systime : Clock, SysTime;
 
-        if (abort) return;
+        if (state.abort) return;
 
         with (botState.throttling)
         {
@@ -102,8 +101,8 @@ Flag!"quit" checkMessages(ref Kameloso state)
             {
                 x = (Clock.currTime - t0).total!"msecs"/1000.0;
                 y = k*x + m;
-                interruptibleSleep(100.msecs, abort);
-                if (abort) return;
+                interruptibleSleep(100.msecs, state.abort);
+                if (state.abort) return;
             }
 
             logger.trace("--> ", line);
@@ -406,11 +405,6 @@ void setupSignals()
 
 
 public:
-
-/// When this is set by signal handlers, the program should exit. Other parts of
-/// the program will be monitoring it.
-__gshared bool abort;
-
 
 version(unittest)
 void main() {

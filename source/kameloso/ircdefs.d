@@ -865,10 +865,8 @@ struct IRCEvent
  +
  +      IRCServer server;
  +      string origNickname;
- +      bool startedRegistering;
- +      bool finishedRegistering;
- +      bool startedAuth;
- +      bool finishedAuth;
+ +      Status authStatus;
+ +      Status registerStatus;
  +  }
  +  ------------
  +/
@@ -901,6 +899,7 @@ struct IRCBot
         string[] channels;
     }
 
+    /// Status of a process
     enum Status
     {
         unset,
@@ -955,6 +954,13 @@ struct IRCBot
  +/
 struct IRCServer
 {
+    /++
+     +  Server daemons, or families of server programs.
+     +
+     +  Many daemons handle some events slightly differently than others do, and
+     +  by tracking which daemon the server is running we can apply the
+     +  differences and always have an appropriate tables of events.
+     +/
     enum Daemon
     {
         unknown,    /// invalid daemon
@@ -991,9 +997,13 @@ struct IRCServer
         ithildin,
     }
 
+    /// The server daemon family the server is running.
     Daemon daemon;
+
     string address = "irc.freenode.net";
     ushort port = 6667;
+
+    /// Server network string, like Freenode, QuakeNet, Rizon.
     string network;
 
     @Unconfigurable
@@ -1012,8 +1022,8 @@ struct IRCServer
     {
         import std.format : format;
 
-        sink("[Network.%s] %s:%d (%s)"
-            .format(network, address, port,resolvedAddress));
+        sink("[Daemon.%s@%s] %s:%d (%s)"
+            .format(daemon, network, address, port,resolvedAddress));
     }
 }
 
