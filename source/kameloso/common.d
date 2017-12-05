@@ -1383,12 +1383,12 @@ struct Kameloso
     /// Curent day of the month, so we can track changes in day
     ubyte today;
 
+    /// Values and state needed to throttle sending messages.
+    ThrottleValues throttling;
+
     /// When this is set by signal handlers, the program should exit. Other parts of
     /// the program will be monitoring it.
     __gshared bool abort;
-
-    /// Values and state needed to throttle sending messages.
-    ThrottleValues throttling;
 
     /// Never copy this.
     @disable this(this);

@@ -224,6 +224,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         {
             import kameloso.debugging : generateAsserts;
 
+            // --gen|--generate was passed, enter assert generation
             state.generateAsserts();
             return Yes.quit;
         }

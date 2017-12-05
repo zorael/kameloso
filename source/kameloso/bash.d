@@ -212,6 +212,7 @@ deprecated("Don't use colour when version isn't Colours")
 string colour(Codes...)(const string text, const Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
+    // noop
     return text;
 }
 

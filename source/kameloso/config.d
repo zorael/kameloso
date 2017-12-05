@@ -844,4 +844,3 @@ naN             !"#¤%&/`;
 
     assert((configText == justified), configText);
 }
-
