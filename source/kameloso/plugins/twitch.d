@@ -327,6 +327,20 @@ void parseTwitchTags(ref IRCEvent event)
             // user login? what?
         case "target-user-id":
             // The target's user ID
+        case "rituals":
+            /++
+                "Rituals makes it easier for you to celebrate special moments
+                that bring your community together. Say a viewer is checking out
+                a new channel for the first time. After a minute, she’ll have
+                the choice to signal to the rest of the community that she’s new
+                to the channel. Twitch will break the ice for her in Chat, and
+                maybe she’ll make some new friends.
+
+                Rituals will help you build a more vibrant community when it
+                launches in November."
+
+                spotted in the wild as = 0
+             +/
 
             // Ignore these events
             break;
