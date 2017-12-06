@@ -238,7 +238,7 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
 
     enum highlightLowerLimit = 0;
     enum highlightUpperLimit = 50;
-    enum highlight = 30;
+    enum highlight = 50;
 
     enum roundToMaxThreshold = 240;
 
@@ -280,14 +280,14 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
         b += (b < tooDarkThreshold) * tooDarkIncrement;
 
         // Round very high to max
-        r += (r > roundToMaxThreshold) * (255-roundToMaxThreshold);
+        /*r += (r > roundToMaxThreshold) * (255-roundToMaxThreshold);
         g += (g > roundToMaxThreshold) * (255-roundToMaxThreshold);
-        b += (b > roundToMaxThreshold) * (255-roundToMaxThreshold);
+        b += (b > roundToMaxThreshold) * (255-roundToMaxThreshold);*/
 
         // Zero out colours if at least one is 255 after the above
-        r -= ((r < 255) & ((b >= 255) | (g >= 255))) * r;
+        /*r -= ((r < 255) & ((b >= 255) | (g >= 255))) * r;
         g -= ((g < 255) & ((b >= 255) | (r >= 255))) * g;
-        b -= ((b < 255) & ((r >= 255) | (g >= 255))) * b;
+        b -= ((b < 255) & ((r >= 255) | (g >= 255))) * b;*/
     }
 
     // Sanity check
@@ -531,9 +531,11 @@ unittest
     sink.clear();
 
     sink.truecolour(0, 255, 0);
-    assert(sink.data == "\033[38;2;0;255;0m", sink.data);
+    // 0;255;0 with zeroing out colours
+    assert(sink.data == "\033[38;2;100;255;100m", sink.data);
     sink.clear();
 
+    // 255;0;255
     sink.truecolour(255, 0, 255);
-    assert(sink.data == "\033[38;2;255;0;255m", sink.data);
+    assert(sink.data == "\033[38;2;255;100;255m", sink.data);
 }
