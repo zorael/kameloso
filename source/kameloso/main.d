@@ -286,23 +286,31 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
                 // Let each plugin process the event
                 foreach (plugin; plugins)
                 {
-                    plugin.onEvent(event);
-
-                    // Fetch any queued WHOIS requests and handle
-                    auto reqs = plugin.yieldWHOISRequests();
-                    state.handleWHOISQueue(reqs, event, event.target.nickname);
-
-                    auto yieldedBot = plugin.yieldBot();
-                    if (yieldedBot != bot)
+                    try
                     {
-                        /*  Plugin onEvent or WHOIS reaction updated the bot.
-                            There's no need to check for both separately since
-                            this is just a single plugin processing; it keeps
-                            its update internally between both passes.
-                        */
-                        bot = yieldedBot;
-                        parser.bot = bot;
-                        propagateBot(bot);
+                        plugin.onEvent(event);
+
+                        // Fetch any queued WHOIS requests and handle
+                        auto reqs = plugin.yieldWHOISRequests();
+                        state.handleWHOISQueue(reqs, event, event.target.nickname);
+
+                        auto yieldedBot = plugin.yieldBot();
+                        if (yieldedBot != bot)
+                        {
+                            /*  Plugin onEvent or WHOIS reaction updated the
+                                bot. There's no need to check for both
+                                separately since this is just a single plugin
+                                processing; it keeps iits update internally
+                                between both passes.
+                            */
+                            bot = yieldedBot;
+                            parser.bot = bot;
+                            propagateBot(bot);
+                        }
+                    }
+                    catch (const Exception e)
+                    {
+                        log.error("Exception onEvent: ", e.msg);
                     }
                 }
             }
