@@ -43,7 +43,8 @@ void pipereader(shared IRCPluginState newState)
     import std.file  : remove;
 
     state = cast(IRCPluginState)newState;
-    tlsLogger = new KamelosoLogger(LogLevel.all, state.settings.monochrome);
+    tlsLogger = new KamelosoLogger(LogLevel.all, state.settings.monochrome,
+        state.settings.brightTerminal);
 
     createFIFO();
 

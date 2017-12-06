@@ -428,7 +428,7 @@ int main(string[] args)
 
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
-    initLogger(botState.settings.monochrome);
+    initLogger(botState.settings.monochrome, botState.settings.brightTerminal);
 
     scope(failure)
     {

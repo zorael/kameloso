@@ -131,6 +131,9 @@ struct CoreSettings
     /// Flag denoting whether the program should reconnect after disconnect
     bool reconnectOnFailure = true;
 
+    /// Flag denoting that the terminal has a bright background
+    bool brightTerminal = false;
+
     @Unconfigurable
     {
         @Hidden

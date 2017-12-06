@@ -155,8 +155,10 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             "writeconf",     &shouldWriteConfig,
             "version",       "Show version info", &shouldShowVersion,
             "generateAsserts","(DEBUG) Parse an IRC event string and generate an assert block",
-                &shouldGenerateAsserts,
+                             &shouldGenerateAsserts,
             "gen",           &shouldGenerateAsserts,
+            "bright",        "Bright terminal colour setting (BETA)",
+                             &settings.brightTerminal,
         );
 
         meldSettingsFromFile(bot, settings);
@@ -167,7 +169,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         kameloso.common.settings = settings;
 
         // We know CoreSettings now so reinitialise the logger
-        initLogger();
+        initLogger(settings.monochrome, settings.brightTerminal);
 
         if (results.helpWanted)
         {
