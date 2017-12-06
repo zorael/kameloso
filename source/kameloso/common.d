@@ -1004,11 +1004,14 @@ final class KamelosoLogger : Logger
     import std.array : Appender;
 
     bool monochrome;  /// Whether to use colours or not in logger output
+    bool brightTerminal;   /// Whether to use colours for a bright background
 
     /// KamelosoLogger-specific constructor
-    this(LogLevel lv = LogLevel.all, bool monochrome = false)
+    this(LogLevel lv = LogLevel.all, bool monochrome = false,
+        bool brightTerminal = false)
     {
         this.monochrome = monochrome;
+        this.brightTerminal = brightTerminal;
         super(lv);
     }
 
@@ -1022,12 +1025,14 @@ final class KamelosoLogger : Logger
         Tid threadId, SysTime timestamp, Logger logger) @safe
     {
         import std.datetime : DateTime;
+        sink.put(brightTerminal);
 
         version(Colours)
         {
             if (!monochrome)
             {
-                sink.colour(BashForeground.white);
+                sink.colour(brightTerminal ? BashForeground.black :
+                    BashForeground.white);
             }
         }
 
@@ -1047,11 +1052,11 @@ final class KamelosoLogger : Logger
             break;
 
         case info:
-            sink.colour(lightgreen);
+            sink.colour(brightTerminal ? green : lightgreen);
             break;
 
         case warning:
-            sink.colour(lightred);
+            sink.colour(brightTerminal ? red : lightred);
             break;
 
         case error:
@@ -1063,7 +1068,7 @@ final class KamelosoLogger : Logger
             break;
 
         default:
-            sink.colour(white);
+            sink.colour(brightTerminal ? black : white);
             break;
         }
     }
@@ -1129,7 +1134,7 @@ final class KamelosoLogger : Logger
 ///
 unittest
 {
-    Logger log_ = new KamelosoLogger(LogLevel.all, true);
+    Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
 
     log_.log("log: log");
     log_.info("log: info");
@@ -1138,7 +1143,16 @@ unittest
     // log_.fatal("log: FATAL");  // crashes the program
     log_.trace("log: trace");
 
-    log_ = new KamelosoLogger(LogLevel.all, false);
+    log_ = new KamelosoLogger(LogLevel.all, false, true);
+
+    log_.log("log: log");
+    log_.info("log: info");
+    log_.warning("log: warning");
+    log_.error("log: error");
+    // log_.fatal("log: FATAL");
+    log_.trace("log: trace");
+
+    log_ = new KamelosoLogger(LogLevel.all, false, false);
 
     log_.log("log: log");
     log_.info("log: info");
@@ -1598,9 +1612,10 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  We pass the `monochrome` setting bool here to control if the logger should
  +  be coloured or not.
  +/
-void initLogger(bool monochrome = settings.monochrome)
+void initLogger(bool monochrome = settings.monochrome,
+    bool brightTerminal = settings.brightTerminal)
 {
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome);
+    logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
 }
