@@ -307,6 +307,104 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
     assert(b >= 0 && b <= 255);
 }
 
+version(none)
+version(Colours)
+unittest
+{
+    import std.conv : to;
+    import std.stdio : write, writeln;
+
+    writeln("r");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        r = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("g");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        g = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("b");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        b = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("rg");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        r = i;
+        g = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("rb");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        r = i;
+        b = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("gb");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        g = i;
+        b = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+    writeln("rgb");
+
+    foreach (i; 0..256)
+    {
+        int r, g, b;
+        r = i;
+        g = i;
+        b = i;
+        int n = i % 10;
+        write(n.to!string.truecolour(r, g, b));
+        if (n == 0) write(i);
+    }
+
+    writeln();
+}
+
 
 // truecolour
 /++
