@@ -89,7 +89,8 @@ enum BashReset
 
 /// Bool of whether a type is a colour code enum
 enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
-                        is(T : BashFormat) || is(T : BashReset);
+                        is(T : BashFormat) || is(T : BashReset) ||
+                        is(T == int);  // FIXME
 
 
 // colour

@@ -223,8 +223,9 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         {
             event.mapEffects();
 
-            enum DefaultColour
+            enum DefaultDark : BashForeground
             {
+                timestamp = white,
                 type    = lightblue,
                 error   = lightred,
                 sender  = lightgreen,
@@ -234,9 +235,27 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 content = default_,
                 aux     = white,
                 num     = darkgrey,
+                badge   = white,
             }
 
-            static BashForeground colourByHash(const string nickname)
+            enum DefaultBright : BashForeground
+            {
+                timestamp = black,
+                type    = blue,
+                error   = red,
+                sender  = green,
+                special = yellow,
+                target  = cyan,
+                channel = yellow,
+                content = default_,
+                aux     = black,
+                num     = lightgrey,
+                badge   = black,
+            }
+
+            immutable bright = state.settings.brightTerminal;
+
+            BashForeground colourByHash(const string nickname)
             {
                 if (printerSettings.randomNickColours)
                 {
@@ -246,12 +265,22 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                         [ EnumMembers!BashForeground ];
 
                     auto colourIndex = hashOf(nickname) % 16;
-                    if (colourIndex == 1) colourIndex = 16;  // map black to white
+
+                    // Map black to white on dark terminals, reverse on bright
+                    if (bright)
+                    {
+                        if (colourIndex == 16) colourIndex = 1;
+                    }
+                    else
+                    {
+                        if (colourIndex == 1) colourIndex = 16;
+                    }
+
                     return fg[colourIndex];
                 }
 
                 // fixme
-                return DefaultColour.sender;
+                return bright ? DefaultBright.sender : DefaultDark.sender;
             }
 
             void colourSenderTruecolour()
@@ -262,7 +291,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
-                    sink.truecolour(r, g, b);
+                    sink.truecolour(r, g, b, state.settings.brightTerminal);
                 }
                 else
                 {
@@ -270,10 +299,20 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 }
             }
 
-            BashForeground typeColour = (type == IRCEvent.Type.QUERY) ?
-                lightgreen : DefaultColour.type;
+            BashForeground typeColour;
 
-            sink.colour(white);
+            if (bright)
+            {
+                typeColour = (type == IRCEvent.Type.QUERY) ?
+                    green : DefaultBright.type;
+            }
+            else
+            {
+                typeColour = (type == IRCEvent.Type.QUERY) ?
+                    lightgreen : DefaultDark.type;
+            }
+
+            sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
             string typestring = enumToString(type);
@@ -286,7 +325,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             else if (typestring.beginsWith("ERR_"))
             {
                 typestring = typestring[4..$];
-                sink.colour(DefaultColour.error);
+                sink.colour(bright ? DefaultBright.error : DefaultDark.error);
             }
             else
             {
@@ -320,7 +359,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
                 if (special && nickname.length)
                 {
-                    sink.colour(DefaultColour.special);
+                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
             }
@@ -329,7 +368,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 import std.string : toUpper;
 
-                sink.colour(white);
+                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
                 immutable badgestring = printerSettings.badgesInCaps ?
                     badge.toUpper : badge;
@@ -352,7 +391,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 if (target.nickname[0] == '#')
                 {
                     // Let all channels be one colour
-                    sink.colour(DefaultColour.target);
+                    sink.colour(bright ? DefaultBright.target : DefaultDark.target);
                 }
                 else
                 {
@@ -364,13 +403,13 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (channel.length)
             {
-                sink.colour(DefaultColour.channel);
+                sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
                 put(sink, " [", channel, ']');
             }
 
             if (content.length)
             {
-                sink.colour(DefaultColour.content);
+                sink.colour(bright ? DefaultBright.content : DefaultDark.content);
 
                 if (sender.isServer || sender.nickname.length)
                 {
@@ -416,7 +455,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (aux.length)
             {
-                sink.colour(DefaultColour.aux);
+                sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
                 put(sink, " <", aux, '>');
             }
 
@@ -424,13 +463,13 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 import std.format : formattedWrite;
 
-                sink.colour(DefaultColour.num);
+                sink.colour(bright ? DefaultBright.num : DefaultDark.num);
                 put(sink, " (#");
                 sink.formattedWrite("%03d", num);
                 put(sink, ')');
             }
 
-            sink.colour(default_);
+            sink.colour(default_);  // same for bright and dark
 
             static if (!__traits(hasMember, Sink, "data"))
             {
