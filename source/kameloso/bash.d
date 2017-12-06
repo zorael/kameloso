@@ -584,6 +584,7 @@ unittest
 
 ///
 version(Colours)
+version(none)
 unittest
 {
     import std.array : Appender;
