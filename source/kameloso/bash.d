@@ -262,8 +262,8 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
         return;
     }
 
-    if ((r > 0) && (r < darkPurpleThreshold) &&
-        (b > 0) && (b < darkPurpleThreshold) &&
+    if ((r > 0) & (r < darkPurpleThreshold) &
+        (b > 0) & (b < darkPurpleThreshold) &
         (g == 0))
     {
         // Fix dark purple
