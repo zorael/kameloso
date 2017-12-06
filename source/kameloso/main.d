@@ -519,6 +519,9 @@ int main(string[] args)
             }
 
             // Reset fields in the bot that should not survive a reconnect
+            import kameloso.ircdefs : IRCBot;  // fix visibility warning
+            import kameloso.irc : IRCParser;
+
             bot.registerStatus = IRCBot.Status.notStarted;
             bot.authStatus = IRCBot.Status.notStarted;
             bot.server.resolvedAddress = string.init;
