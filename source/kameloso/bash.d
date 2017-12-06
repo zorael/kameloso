@@ -118,9 +118,6 @@ version(Colours)
 string colour(Codes...)(Codes codes)
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    //static import kameloso.common;
-    //if (kameloso.common.settings.monochrome) return string.init;
-
     import std.array : Appender;
 
     Appender!string sink;
