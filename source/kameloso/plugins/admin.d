@@ -252,7 +252,7 @@ void onCommandDelFriend(const IRCEvent event)
 @Prefix(NickPolicy.required, "resetterm")
 void onCommandResetTerminal()
 {
-    import kameloso.constants : TerminalToken;
+    import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
 }
 

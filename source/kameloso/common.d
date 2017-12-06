@@ -1296,8 +1296,7 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
 string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
     (const string line, const string toInvert)
 {
-    import kameloso.constants : TerminalToken;
-    import kameloso.bash : BashEffect, BashReset;
+    import kameloso.bash : BashEffect, BashReset, TerminalToken;
     import kameloso.string : escaped;
     import std.format : format;
     import std.regex : matchAll, regex, replaceAll;

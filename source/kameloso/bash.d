@@ -4,8 +4,18 @@ import std.range : isOutputRange;
 import std.traits : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
-public import kameloso.constants : TerminalToken;
+/// Special terminal control characters
+enum TerminalToken
+{
+    /// Character that preludes a Bash colouring code.
+    bashFormat = '\033',
 
+    /// Terminal bell/beep.
+    bell = '\007',
+
+    /// Character that resets a terminal that has entered "binary" mode.
+    reset = 15,
+}
 
 /// Effect codes that work like Bash colouring does, except for effects
 enum BashEffect
@@ -557,7 +567,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 
     sink.truecolour!normalise(r, g, b);
     sink.put(word);
-    sink.put('\033'~"[0m");
+    sink.put(TerminalToken.bashFormat ~ "[0m");
     return sink.data;
 }
 else

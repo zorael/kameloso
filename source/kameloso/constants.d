@@ -51,16 +51,3 @@ enum : ubyte
     success = 1 << 2,  /// On successful exit of function
     failure = 1 << 3,  /// On thrown exception or error in function
 }
-
-/// Special terminal control characters
-enum TerminalToken
-{
-    /// Character that preludes a Bash colouring code.
-    bashFormat = '\033',
-
-    /// Terminal bell/beep.
-    bell = '\007',
-
-    /// Character that resets a terminal that has entered "binary" mode.
-    reset = 15,
-}

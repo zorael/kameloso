@@ -147,7 +147,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 {
-    import kameloso.bash : BashForeground, colour, truecolour;
+    import kameloso.bash : BashForeground, TerminalToken, colour, truecolour;
     import kameloso.string : enumToString, beginsWith;
     import std.datetime : DateTime, SysTime;
 
@@ -379,7 +379,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             if (!sender.isServer && alias_.length && !aliasPrinted)
             {
                 // Don't truecolour the alias if aleady coloured
-                if (alias_[0] != '\033')
+                if (alias_[0] != TerminalToken.bashFormat)
                 {
                     colourSenderTruecolour();
                 }
@@ -429,7 +429,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                             if ((content != inverted) &&
                                 (printerSettings.bellOnMention))
                             {
-                                import kameloso.constants : TerminalToken;
                                 sink.put(TerminalToken.bell);
                             }
 
@@ -543,7 +542,8 @@ void mapEffects(ref IRCEvent event)
 version(Colours)
 void mapColours(ref IRCEvent event)
 {
-    import kameloso.bash : BashBackground, BashForeground, BashReset, colour;
+    import kameloso.bash : BashBackground, BashForeground, BashReset,
+        TerminalToken, colour;
     import std.regex : ctRegex, matchAll, regex, replaceAll;
 
     enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -614,7 +614,7 @@ void mapColours(ref IRCEvent event)
             continue;
         }
 
-        sink.put("\033[");
+        sink.put(TerminalToken.bashFormat ~ "[");
         sink.put((cast(size_t)weechatForegroundMap[fgIndex]).to!string);
 
         if (hit[2].length)
@@ -642,7 +642,8 @@ void mapColours(ref IRCEvent event)
         enum endPattern = 3 ~ "([^0-9])?";
         static endEngine = ctRegex!endPattern;
 
-        event.content = event.content.replaceAll(endEngine, "\033[0m$1");
+        event.content = event.content.replaceAll(endEngine,
+            TerminalToken.bashFormat ~ "[0m$1");
         event.content ~= colour(BashReset.all);
     }
 }
@@ -688,11 +689,13 @@ version(Colours)
 void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     (ref IRCEvent event)
 {
+    import kameloso.bash : TerminalToken;
     import std.array : Appender;
     import std.conv  : to;
     import std.regex : ctRegex, matchAll, replaceAll;
 
-    enum bashToken = "\033[" ~ (cast(ubyte)bashEffectCode).to!string ~ "m";
+    enum bashToken = TerminalToken.bashFormat ~ "[" ~
+        (cast(ubyte)bashEffectCode).to!string ~ "m";
 
     enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
     static engine = ctRegex!pattern;
@@ -713,18 +716,19 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
         case 1:
         case 2:
             // Both 1 and 2 seem to be reset by 22?
-            sink.put("\033[22m");
+            sink.put(TerminalToken.bashFormat ~ "[22m");
             break;
 
         case 3:
         ..
         case 5:
-            sink.put("\033[2" ~ bashEffectCode.to!string ~ "m");
+            sink.put(TerminalToken.bashFormat ~ "[2" ~
+                bashEffectCode.to!string ~ "m");
             break;
 
         default:
             logger.warning("Unknown Bash effect code: ", bashEffectCode);
-            sink.put("\033[0m");
+            sink.put(TerminalToken.bashFormat ~ "[0m");
             break;
         }
 
@@ -736,7 +740,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
     // End tags and commit
-    sink.put("\033[0m");
+    sink.put(TerminalToken.bashFormat ~ "[0m");
     event.content = sink.data;
 }
 
@@ -744,16 +748,16 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
 version(Colours)
 unittest
 {
+    import kameloso.bash : BashEffect, TerminalToken;
     import kameloso.constants : IRCControlCharacter;
-    import kameloso.bash : BashEffect;
     import std.conv : to;
 
     alias I = IRCControlCharacter;
     alias B = BashEffect;
 
-    enum bBold = "\033[" ~ (cast(ubyte)B.bold).to!string ~ "m";
-    enum bReset = "\033[22m";
-    enum bResetAll = "\033[0m";
+    enum bBold = TerminalToken.bashFormat ~ "[" ~ (cast(ubyte)B.bold).to!string ~ "m";
+    enum bReset = TerminalToken.bashFormat ~ "[22m";
+    enum bResetAll = TerminalToken.bashFormat ~ "[0m";
 
     immutable line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
     immutable line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bResetAll;
