@@ -320,9 +320,9 @@ void onCommandAsserts()
  +  Params:
  +      event = the event whose raw IRC string to print.
  +/
+@(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-@(Chainable)
 void onAnyEvent(const IRCEvent event)
 {
     if (printAll) logger.trace(event.raw, '$');

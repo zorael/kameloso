@@ -55,9 +55,9 @@ IRCPluginState state;
  +
  +  Write directly to a LockingTextWriter.
  +/
+@(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-@(Chainable)
 void onAnyEvent(const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
