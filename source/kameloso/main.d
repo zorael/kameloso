@@ -462,14 +462,26 @@ int main(string[] args)
         return 1;
     }
 
-    immutable tint = botState.settings.monochrome ?
-        BashForeground.default_ : BashForeground.white;
-
-    printVersionInfo(tint);
-    writeln();
 
     with (botState)
     {
+        BashForeground tint;
+
+        if (!settings.monochrome)
+        {
+            if (settings.brightTerminal)
+            {
+                tint = BashForeground.black;
+            }
+            else
+            {
+                tint = BashForeground.white;
+            }
+        }
+
+        printVersionInfo(tint);
+        writeln();
+
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 

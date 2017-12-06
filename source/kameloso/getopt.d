@@ -174,14 +174,24 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         if (results.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
-            printVersionInfo(BashForeground.white);
+            BashForeground headerTint;
+
+            version (Colours)
+            {
+                headerTint = settings.brightTerminal ?
+                    BashForeground.black : BashForeground.white;
+            }
+
+            printVersionInfo(headerTint);
             writeln();
 
             string headline = "Command-line arguments available:\n";
 
             version (Colours)
             {
-                headline = headline.colour(BashForeground.lightgreen);
+                immutable headlineTint = settings.brightTerminal ?
+                    BashForeground.green : BashForeground.lightgreen;
+                headline = headline.colour(headlineTint);
             }
 
             defaultGetoptPrinter(headline, results.options);
