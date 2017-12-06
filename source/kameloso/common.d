@@ -315,13 +315,16 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
     enum width = !widthArg ? longestMemberName!Things.length : widthArg;
 
+    immutable bright = .settings.brightTerminal;
+
     with (BashForeground)
     foreach (thing; things)
     {
         alias Thing = typeof(thing);
         static if (coloured)
         {
-            sink.formattedWrite("%s-- %s\n", white.colour, Unqual!Thing
+            immutable titleColour = bright ? black : white;
+            sink.formattedWrite("%s-- %s\n", titleColour.colour, Unqual!Thing
                 .stringof
                 .stripSuffix("Settings"));
         }
@@ -349,11 +352,15 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     static if (coloured)
                     {
                         enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
+                        immutable memberColour = bright ? black : white;
+                        immutable valueColour = bright ? green : lightgreen;
+                        immutable lengthColour = bright ? lightgrey : darkgrey;
+
                         sink.formattedWrite(stringPattern,
                             cyan.colour, T.stringof,
-                            white.colour, (width + 2), memberstring,
-                            lightgreen.colour, member,
-                            darkgrey.colour, member.length);
+                            memberColour.colour, (width + 2), memberstring,
+                            valueColour.colour, member,
+                            lengthColour.colour, member.length);
                     }
                     else
                     {
@@ -372,11 +379,15 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                             (width + 2) : (width + 4);
 
                         enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
+                        immutable memberColour = bright ? black : white;
+                        immutable valueColour = bright ? green : lightgreen;
+                        immutable lengthColour = bright ? lightgrey : darkgrey;
+
                         sink.formattedWrite(arrayPattern,
                             cyan.colour, T.stringof,
-                            white.colour, thisWidth, memberstring,
-                            lightgreen.colour, member,
-                            darkgrey.colour, member.length);
+                            memberColour.colour, thisWidth, memberstring,
+                            valueColour.colour, member,
+                            lengthColour.colour, member.length);
                     }
                     else
                     {
@@ -384,6 +395,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                             (width + 2) : (width + 4);
 
                         enum arrayPattern = "%9s %-*s%s(%d)\n";
+
                         sink.formattedWrite(arrayPattern,
                             T.stringof,
                             thisWidth, memberstring,
@@ -396,10 +408,13 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     static if (coloured)
                     {
                         enum normalPattern = "%s%9s %s%-*s  %s%s\n";
+                        immutable memberColour = bright ? black : white;
+                        immutable valueColour = bright ? green : lightgreen;
+
                         sink.formattedWrite(normalPattern,
                             cyan.colour, T.stringof,
-                            white.colour, (width + 2), memberstring,
-                            lightgreen.colour, member);
+                            memberColour.colour, (width + 2), memberstring,
+                            valueColour.colour, member);
                     }
                     else
                     {
