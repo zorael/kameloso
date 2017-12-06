@@ -424,6 +424,7 @@ else
 int main(string[] args)
 {
     import kameloso.bash : BashForeground;
+    import std.conv : ConvException;
     import std.getopt : GetOptException;
 
     // Initialise the logger immediately so it's always available, reinit later
@@ -459,6 +460,16 @@ int main(string[] args)
     catch (const GetOptException e)
     {
         logger.error(e.msg);
+        return 1;
+    }
+    catch (const ConvException e)
+    {
+        logger.error(e.msg);
+        return 1;
+    }
+    catch (const Exception e)
+    {
+        logger.error("Unhandled exception: ", e.msg);
         return 1;
     }
 
