@@ -213,6 +213,77 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     return text;
 }
 
+void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
+{
+    enum pureWhiteReplacement = 120;
+    enum pureWhiteRange = 210;
+
+    enum darkenUpperLimit = 255;
+    enum darkenLowerLimit = 200;
+    enum darken = 45;
+
+    enum tooBrightThreshold = 200;
+    enum tooBrightDecrement = -10;
+
+    enum brightYellowThreshold = 175;
+    enum brightYellowDecrement = 80;
+
+    // Sanity check
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+
+    if ((r + g + b) == 3*255)
+    {
+        // Specialcase pure white, set to grey and return
+        r = pureWhiteReplacement;
+        g = pureWhiteReplacement;
+        b = pureWhiteReplacement;
+        return;
+    }
+
+    if ((r > brightYellowThreshold) &
+        (g > brightYellowThreshold) &
+        (b == 0))
+    {
+        // Fix dark purple
+        r -= brightYellowDecrement;
+        g -= brightYellowDecrement;
+    }
+    else
+    {
+        // Darken high colours at high levels
+        r -= ((r <= darkenUpperLimit) & (r > darkenLowerLimit)) * darken;
+        g -= ((g <= darkenUpperLimit) & (g > darkenLowerLimit)) * darken;
+        b -= ((b <= darkenUpperLimit) & (b > darkenLowerLimit)) * darken;
+
+        // Raise all low colours
+        r -= (r >= tooBrightThreshold) * tooBrightDecrement;
+        g -= (g >= tooBrightThreshold) * tooBrightDecrement;
+        b -= (b >= tooBrightThreshold) * tooBrightDecrement;
+    }
+
+    if ((r > pureWhiteRange) && (b > pureWhiteRange) && (g > pureWhiteRange))
+    {
+        r = pureWhiteReplacement;
+        g = pureWhiteReplacement;
+        b = pureWhiteReplacement;
+    }
+
+    // Sanity check
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+
+    if (r < 0) r = 0;
+    if (g < 0) g = 0;
+    if (b < 0) b = 0;
+
+    assert(r >= 0 && r <= 255);
+    assert(g >= 0 && g <= 255);
+    assert(b >= 0 && b <= 255);
+}
+
 
 // normaliseColours
 /++
@@ -426,7 +497,7 @@ unittest
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b)
+    (auto ref Sink sink, uint r, uint g, uint b, bool bright = false)
 if (isOutputRange!(Sink,string))
 {
     import std.format : formattedWrite;
@@ -438,7 +509,14 @@ if (isOutputRange!(Sink,string))
 
     static if (normalise)
     {
-        normaliseColours(r, g, b);
+        if (bright)
+        {
+            normaliseColours(r, g, b);
+        }
+        else
+        {
+            normaliseColoursBright(r, g, b);
+        }
     }
 
     sink.formattedWrite("%c[38;2;%d;%d;%dm",
