@@ -381,12 +381,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     // \033[38;2;255;255;255m<word>\033[m
     sink.reserve(word.length + 23);
 
-    static if (normalise)
-    {
-        normaliseColours(r, g, b);
-    }
-
-    sink.truecolour(r, g, b);
+    sink.truecolour!normalise(r, g, b);
     sink.put(word);
     sink.put('\033'~"[0m");
     return sink.data;
