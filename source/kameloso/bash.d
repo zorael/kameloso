@@ -235,10 +235,18 @@ version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b)
 {
     enum pureBlackReplacement = 150;
-    enum incrementWhenOnlyOneColour = 100;
-    enum tooDarkValueThreshold = 75;
-    enum highColourHighlight = 95;
-    enum lowColourIncrement = 75;
+
+    enum tooDarkThreshold = 130;
+    enum tooDarkIncrement = 100;
+
+    enum highlightLowerLimit = 0;
+    enum highlightUpperLimit = 50;
+    enum highlight = 30;
+
+    enum roundToMaxThreshold = 240;
+
+    enum darkPurpleThreshold = 80;
+    enum darkPurpleIncrement = 150;
 
     // Sanity check
     if (r > 255) r = 255;
@@ -249,53 +257,54 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
     {
         // Specialcase pure black, set to grey and return
         r = pureBlackReplacement;
-        b = pureBlackReplacement;
         g = pureBlackReplacement;
-
+        b = pureBlackReplacement;
         return;
     }
 
-    if ((r + g + b) == 255)
+    if ((r > 0) && (r < darkPurpleThreshold) &&
+        (b > 0) && (b < darkPurpleThreshold) &&
+        (g == 0))
     {
-        // Precisely one colour is saturated with the rest at 0 (probably)
-        // Make it more bland, can be difficult to see otherwise
-        r += incrementWhenOnlyOneColour;
-        b += incrementWhenOnlyOneColour;
-        g += incrementWhenOnlyOneColour;
+        // Fix dark purple
+        r += darkPurpleIncrement;
+        b += darkPurpleIncrement;
+    }
+    else
+    {
+        // Highlight high colours at low levels
+        r += ((r > highlightLowerLimit) & (r < highlightUpperLimit)) * highlight;
+        g += ((g > highlightLowerLimit) & (g < highlightUpperLimit)) * highlight;
+        b += ((b > highlightLowerLimit) & (b < highlightUpperLimit)) * highlight;
 
-        // Sanity check
-        if (r > 255) r = 255;
-        if (g > 255) g = 255;
-        if (b > 255) b = 255;
+        // Raise all low colours
+        r += (r < tooDarkThreshold) * tooDarkIncrement;
+        g += (g < tooDarkThreshold) * tooDarkIncrement;
+        b += (b < tooDarkThreshold) * tooDarkIncrement;
 
-        return;
+        // Round very high to max
+        r += (r > roundToMaxThreshold) * (255-roundToMaxThreshold);
+        g += (g > roundToMaxThreshold) * (255-roundToMaxThreshold);
+        b += (b > roundToMaxThreshold) * (255-roundToMaxThreshold);
+
+        // Zero out colours if at least one is 255 after the above
+        r -= ((r < 255) & ((b >= 255) | (g >= 255))) * r;
+        g -= ((g < 255) & ((b >= 255) | (r >= 255))) * g;
+        b -= ((b < 255) & ((r >= 255) | (g >= 255))) * b;
     }
 
-    int rDark, gDark, bDark;
+    // Sanity check
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
 
-    rDark = (r < tooDarkValueThreshold);
-    gDark = (g < tooDarkValueThreshold);
-    bDark = (b < tooDarkValueThreshold);
+    if (r < 0) r = 0;
+    if (g < 0) g = 0;
+    if (b < 0) b = 0;
 
-    if ((rDark + gDark +bDark) > 1)
-    {
-        // At least two colours were below the threshold (75)
-
-        // Highlight the colours above the threshold
-        r += (rDark == 0) * highColourHighlight;
-        b += (bDark == 0) * highColourHighlight;
-        g += (gDark == 0) * highColourHighlight;
-
-        // Raise all colours to make it brighter
-        r += lowColourIncrement;
-        b += lowColourIncrement;
-        g += lowColourIncrement;
-
-        // Sanity check
-        if (r >= 255) r = 255;
-        if (g >= 255) g = 255;
-        if (b >= 255) b = 255;
-    }
+    assert(r >= 0 && r <= 255);
+    assert(g >= 0 && g <= 255);
+    assert(b >= 0 && b <= 255);
 }
 
 
