@@ -89,8 +89,12 @@ void onMessage(const IRCEvent event)
 }
 
 
+mixin BasicEventHandlers;
+
 public:
 
+
+// BashQuotesPlugin
 /++
  +  The Bash Quotes plugin fetches random or specified quotes from `bash.org`
  +  and echoes them to the channel.
