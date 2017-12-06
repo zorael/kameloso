@@ -54,40 +54,49 @@ void onJoin(const IRCEvent event)
     import kameloso.string : timeSince;
     import std.datetime : Clock;
     import std.format : format;
+    import std.json : JSONException;
 
-    const noteArray = getNotes(event.sender.nickname);
-
-    with (state)
+    try
     {
-        if (!noteArray.length) return;
-        else if (noteArray.length == 1)
-        {
-            const note = noteArray[0];
-            immutable timestamp = (Clock.currTime - note.when).timeSince;
+        const noteArray = getNotes(event.sender.nickname);
 
-            mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s! %s left note %s ago: %s"
-                .format(event.channel, event.sender.nickname, note.sender,
-                    timestamp, note.line));
-        }
-        else
+        with (state)
         {
-            mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s! You have %d notes."
-                .format(event.channel, event.sender.nickname, noteArray.length));
-
-            foreach (const note; noteArray)
+            if (!noteArray.length) return;
+            else if (noteArray.length == 1)
             {
+                const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
                 mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s left note %s ago: %s"
-                    .format(event.channel, note.sender, timestamp, note.line));
+                    "PRIVMSG %s :%s! %s left note %s ago: %s"
+                    .format(event.channel, event.sender.nickname, note.sender,
+                        timestamp, note.line));
+            }
+            else
+            {
+                mainThread.send(ThreadMessage.Sendline(),
+                    "PRIVMSG %s :%s! You have %d notes."
+                    .format(event.channel, event.sender.nickname, noteArray.length));
+
+                foreach (const note; noteArray)
+                {
+                    immutable timestamp = (Clock.currTime - note.when).timeSince;
+
+                    mainThread.send(ThreadMessage.Sendline(),
+                        "PRIVMSG %s :%s left note %s ago: %s"
+                        .format(event.channel, note.sender, timestamp, note.line));
+                }
             }
         }
-    }
 
-    clearNotes(event.sender.nickname);
+        clearNotes(event.sender.nickname);
+    }
+    catch (const JSONException e)
+    {
+        logger.error(e.msg);
+        logger.error("Something is probably wrong with the JSON storage");
+    }
 }
 
 
@@ -141,6 +150,7 @@ void onNames(const IRCEvent event)
 void onCommandAddNote(const IRCEvent event)
 {
     import std.format : format, formattedRead;
+    import std.json : JSONException;
 
     string nickname, line;
     // formattedRead advances a slice so we need a mutable copy of event.content
@@ -149,11 +159,18 @@ void onCommandAddNote(const IRCEvent event)
 
     if (hits != 2) return;
 
-    nickname.addNote(event.sender.nickname, line);
-    state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :Note added".format(event.channel));
+    try
+    {
+        nickname.addNote(event.sender.nickname, line);
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :Note added".format(event.channel));
 
-    saveNotes(notesSettings.notesFile);
+        saveNotes(notesSettings.notesFile);
+    }
+    catch (const JSONException e)
+    {
+        logger.error("Failed to add note: ", e.msg);
+    }
 }
 
 
@@ -248,33 +265,26 @@ auto getNotes(const string nickname)
 
     Note[] noteArray;
 
-    try
+    if (const arr = nickname in notes)
     {
-        if (const arr = nickname in notes)
+        if (arr.type != JSON_TYPE.ARRAY)
         {
-            if (arr.type != JSON_TYPE.ARRAY)
-            {
-                logger.warningf("Invalid notes list for %s (type is %s)",
-                         nickname, arr.type);
+            logger.warningf("Invalid notes list for %s (type is %s)",
+                        nickname, arr.type);
 
-                clearNotes(nickname);
+            clearNotes(nickname);
 
-                return noteArray;
-            }
-
-            noteArray.length = arr.array.length;
-
-            foreach (i, note; arr.array)
-            {
-                noteArray[i].sender = note["sender"].str;
-                noteArray[i].line = note["line"].str;
-                noteArray[i].when = SysTime.fromISOString(note["when"].str);
-            }
+            return noteArray;
         }
-    }
-    catch (const JSONException e)
-    {
-        logger.error(e.msg);
+
+        noteArray.length = arr.array.length;
+
+        foreach (i, note; arr.array)
+        {
+            noteArray[i].sender = note["sender"].str;
+            noteArray[i].line = note["line"].str;
+            noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+        }
     }
 
     return noteArray;
@@ -316,10 +326,6 @@ void clearNotes(const string nickname)
     {
         logger.error(e.msg);
     }
-    catch (const Exception e)
-    {
-        logger.error(e.msg);
-    }
 }
 
 
@@ -343,27 +349,27 @@ void addNote(const string nickname, const string sender, const string line)
         return;
     }
 
-    auto lineAsAA =
+    // "when" is long so can't construct a single AA and assign it in one go
+    // (it wouldn't be string[string] then)
+    auto senderAndLine =
     [
         "sender" : sender,
-        "when"   : Clock.currTime.toISOString,
-        "line"   : line
+        "line"   : line,
+        //"when" : Clock.currTime.toUnixTime,
     ];
 
-    try
+    auto asJSON = JSONValue(senderAndLine);
+    asJSON["when"] = Clock.currTime.toUnixTime;  // workaround to the above
+
+    auto nicknote = nickname in notes;
+
+    if (nicknote && ((*nicknote).type == JSON_TYPE.ARRAY))
     {
-        if ((nickname in notes) && (notes[nickname].type == JSON_TYPE.ARRAY))
-        {
-            notes[nickname].array ~= JSONValue(lineAsAA);
-        }
-        else
-        {
-            notes[nickname] = [ lineAsAA ];
-        }
+        notes[nickname].array ~= asJSON;
     }
-    catch (const JSONException e)
+    else
     {
-        logger.error(e.msg);
+        notes[nickname] = [ asJSON ];
     }
 }
 
