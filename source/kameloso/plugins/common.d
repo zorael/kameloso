@@ -243,11 +243,24 @@ deprecated alias NickPrefixPolicy = NickPolicy;
 
 
 /// If an annotated function should work in all channels or just in homes
-enum ChannelPolicy { homeOnly, any }
+enum ChannelPolicy
+{
+    /// The function will only trigger if the event happened in a home, where
+    /// applicable (not all events have channels).
+    homeOnly,
+
+    /// The function will trigger regardless of channel.
+    any,
+}
 
 
 /// What level of privilege is needed to trigger an event
-enum PrivilegeLevel { anyone, friend, master }
+enum PrivilegeLevel
+{
+    anyone, /// Anyone may trigger this event.
+    friend, /// Only those in the `friends` array may trigger this event.
+    master, /// Only you (the `master`) may trigger this event.
+}
 
 
 // Prefix
