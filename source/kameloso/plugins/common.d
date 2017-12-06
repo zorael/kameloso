@@ -231,7 +231,14 @@ enum FilterResult { fail, pass, whois }
 
 /// Whether an annotated event ignores, allows or requires the event to be
 /// prefixed with the bot's nickname
-enum NickPolicy { ignored, optional, required, hardRequired }
+enum NickPolicy
+{
+    ignored,      /// Any prefixes will be ignored.
+    direct,       /// Message should begin with `CoreSettings.prefix`.
+    optional,     /// Message may begin with bot name, if so will be stripped.
+    required,     /// Message must begin with bot name, except in `QUERY` events.
+    hardRequired, /// Message must always begin with bot name, regardless of type.
+}
 deprecated alias NickPrefixPolicy = NickPolicy;
 
 
@@ -250,6 +257,10 @@ enum PrivilegeLevel { anyone, friend, master }
  +  The prefix policy decides to what extent the actual prefix string_ is
  +  required. It isn't needed for functions that don't trigger on text messages;
  +  this is merely to gather everything needed to have trigger "verb" commands.
+ +
+ +  If no `NickPolicy` is specified then it will default to `NickPolicy.direrct`
+ +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
+ +  the string. (Usually "!", making it "!command".)
  +/
 struct Prefix
 {
@@ -258,6 +269,18 @@ struct Prefix
 
     /// The prefix string, one word with no spaces
     string string_;
+
+    this(const NickPolicy policy, const string string_)
+    {
+        this.policy = policy;
+        this.string_ = string_;
+    }
+
+    this(const string string_)
+    {
+        policy = NickPolicy.direct;
+        this.string_ = string_;
+    }
 }
 
 
@@ -457,6 +480,25 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                             final switch (prefixUDA.policy)
                             {
                             case ignored:
+                                break;
+
+                            case direct:
+                                if (settings.prefix.length &&
+                                    content.beginsWith(settings.prefix))
+                                {
+                                    static if (verbose)
+                                    {
+                                        writefln("starts with prefix (%s)",
+                                            settings.prefix);
+                                    }
+
+                                    mutEvent.content = content;
+                                    mutEvent.content.nom(settings.prefix);
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                                 break;
 
                             case optional:

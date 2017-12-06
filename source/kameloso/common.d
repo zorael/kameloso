@@ -134,6 +134,9 @@ struct CoreSettings
     /// Flag denoting that the terminal has a bright background
     bool brightTerminal = false;
 
+    /// Character(s) that prefix a bot chat command
+    string prefix = "!";
+
     @Unconfigurable
     {
         @Hidden
