@@ -224,7 +224,7 @@ void parseTwitchTags(ref IRCEvent event)
             }
             break;
 
-        case "msg-param-receipient-display-name":
+        case "msg-param-recipient-display-name":
             event.target.alias_ = value;
             break;
 
@@ -341,6 +341,9 @@ void parseTwitchTags(ref IRCEvent event)
 
                 spotted in the wild as = 0
              +/
+
+        case "msg-param-recipient-id":
+            // sub gifts
 
             // Ignore these events
             break;
