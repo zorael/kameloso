@@ -319,10 +319,9 @@ void onPing()
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(ChannelPolicy.homeOnly)
+@(PrivilegeLevel.friend)
+@Prefix("seen")
 @Prefix(NickPolicy.required, "seen")
-@Prefix(NickPolicy.ignored, "!seen")
-@Prefix(NickPolicy.ignored, ".seen")
-@(PrivilegeLevel.master)
 void onCommandSeen(const IRCEvent event)
 {
     import kameloso.string : timeSince;
@@ -368,8 +367,8 @@ void onCommandSeen(const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(ChannelPolicy.homeOnly)
-@Prefix(NickPolicy.required, "printseen")
 @(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "printseen")
 void onCommandPrintSeen()
 {
     writeln(seenUsers.toPrettyString);

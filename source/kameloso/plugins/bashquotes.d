@@ -21,9 +21,9 @@ IRCPluginState state;
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(ChannelPolicy.homeOnly)
+@(PrivilegeLevel.friend)
+@Prefix("bash")
 @Prefix(NickPolicy.required, "bash")
-@Prefix(NickPolicy.ignored, "!bash")
-@Prefix(NickPolicy.ignored, ".bash")
 void onMessage(const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
