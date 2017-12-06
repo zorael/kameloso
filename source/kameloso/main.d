@@ -310,7 +310,7 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
                     }
                     catch (const Exception e)
                     {
-                        log.error("Exception onEvent: ", e.msg);
+                        logger.error("Exception onEvent: ", e.msg);
                     }
                 }
             }
