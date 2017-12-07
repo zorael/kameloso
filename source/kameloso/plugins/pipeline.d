@@ -50,7 +50,7 @@ void pipereader(shared IRCPluginState newState)
 
     if (!fifo.isOpen)
     {
-        tlsLogger.warning("Could not create FIFO. Pipereader will not function.");
+        tlsLogger.error("Could not create FIFO. Pipereader will not function.");
         return;
     }
 
@@ -107,7 +107,7 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                tlsLogger.error("pipeline received Variant: ", v);
+                tlsLogger.warning("pipeline received Variant: ", v);
             }
         );
 

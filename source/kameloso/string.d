@@ -57,7 +57,7 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     {
         import kameloso.common : logger;
 
-        logger.errorf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
+        logger.warningf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
         return string.init;
     }
 

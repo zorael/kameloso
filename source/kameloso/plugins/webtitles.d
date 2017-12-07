@@ -188,7 +188,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
     {
-        tlsLogger.warning("Failed to ListenOnRepeatify YouTube title");
+        tlsLogger.error("Failed to ListenOnRepeatify YouTube title");
         return;
     }
 
@@ -330,12 +330,15 @@ void titleworker(shared Tid sMainThread)
             {
                 import kameloso.string : beginsWith;
 
-                tlsLogger.errorf("Could not look up URL '%s': %s", url, e.msg);
-
                 if (url.beginsWith("https"))
                 {
+                    tlsLogger.warningf("Could not look up URL '%s': %s", url, e.msg);
                     tlsLogger.log("Rewriting https to http and retrying...");
                     return catchURL(("http" ~ url[5..$]), target);
+                }
+                else
+                {
+                    tlsLogger.errorf("Could not look up URL '%s': %s", url, e.msg);
                 }
             }
         }
@@ -373,7 +376,7 @@ void titleworker(shared Tid sMainThread)
             },
             (Variant v)
             {
-                tlsLogger.error("titleworker received Variant: ", v);
+                tlsLogger.warning("titleworker received Variant: ", v);
             }
         );
     }

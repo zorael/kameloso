@@ -171,7 +171,7 @@ void onCommandSay(const IRCEvent event)
 
     if (!event.content.length)
     {
-        logger.warning("No text to send...");
+        logger.error("No text to send...");
         return;
     }
 
@@ -268,7 +268,7 @@ void onCommandQuote(const IRCEvent event)
 
     if (!nickname.isValidNickname(state.bot.server))
     {
-        logger.warningf("Invalid nickname: '%s'", nickname);
+        logger.errorf("Invalid nickname: '%s'", nickname);
         return;
     }
 

@@ -344,7 +344,7 @@ void addNote(const string nickname, const string sender, const string line)
 
     if (!line.length)
     {
-        logger.warning("No message to create note from");
+        logger.error("No message to create note from");
         return;
     }
 

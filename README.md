@@ -72,6 +72,8 @@ Open the new `kameloso.conf` in a text editor and fill in the fields.
 
 If you have an old configuration file and you notice missing options such as the new plugin-specific settings, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
 
+The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file (`brightTerminal` under `Core`).
+
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master login in the configuration file before it will listen to anything you do. It will look you up before letting you trigger any functionality.
 
          you | !say herp
@@ -126,7 +128,7 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * logger-less `irc.d`, to act more like a headless library
 * ready for channel-awareness
 * more command-line flags
-* server daemon config line field worth keeping?
+* disambiguate warnings and errors, consistency
 
 # Built With
 

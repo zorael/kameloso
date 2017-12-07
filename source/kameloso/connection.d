@@ -114,7 +114,7 @@ public:
                 case "getaddrinfo error: Name or service not known":
                 case "getaddrinfo error: Temporary failure in name resolution":
                     // Assume net down, wait and try again
-                    logger.warning(e.msg);
+                    logger.warning("Socket exception: ", e.msg);
                     logger.logf("Network down? Retrying in %d seconds (attempt %d)",
                         Timeout.resolve, i+1);
                     interruptibleSleep(Timeout.resolve.seconds, abort);
@@ -128,7 +128,7 @@ public:
             }
         }
 
-        logger.warning("Failed to resolve host");
+        logger.error("Failed to resolve host");
         return false;
     }
 
@@ -180,7 +180,7 @@ public:
             }
             catch (const SocketException e)
             {
-                logger.warning("Failed! ", e.msg);
+                logger.error("Failed! ", e.msg);
             }
             finally
             {

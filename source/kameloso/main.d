@@ -310,7 +310,7 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
                     }
                     catch (const Exception e)
                     {
-                        logger.error("Exception onEvent: ", e.msg);
+                        logger.warning("Exception onEvent: ", e.msg);
                     }
                 }
             }
@@ -500,7 +500,7 @@ int main(string[] args)
         {
             import std.path : baseName;
 
-            logger.warning("No master nor channels configured!");
+            logger.error("No master nor channels configured!");
             logger.logf("Use %s --writeconfig to generate a configuration file.",
                 args[0].baseName);
             return 1;
@@ -556,7 +556,7 @@ int main(string[] args)
             if (!conn.connected)
             {
                 teardownPlugins();
-                logger.warning("Exiting...");
+                logger.error("Exiting...");
                 return 1;
             }
 
@@ -575,7 +575,7 @@ int main(string[] args)
         if (abort)
         {
             // Ctrl+C
-            logger.warning("Aborting...");
+            logger.error("Aborting...");
             return 1;
         }
         else

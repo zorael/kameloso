@@ -1508,7 +1508,7 @@ struct Kameloso
             try plugin.teardown();
             catch (const Exception e)
             {
-                logger.error("Exception when tearing down plugins: ", e.msg);
+                logger.warning("Exception when tearing down plugins: ", e.msg);
             }
         }
     }

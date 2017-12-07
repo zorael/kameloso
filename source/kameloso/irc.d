@@ -1951,7 +1951,8 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
 
     default:
         // Not a known nick registration nick
-        logger.warning("Unknown nickname service nick");
+        logger.warningf("Unknown nickname service nick: %s!%s@%s",
+            sender.nickname, sender.ident, sender.address);
         printObject(event);
         return false;
     }

@@ -106,7 +106,7 @@ void onCommandAddHome(const IRCEvent event)
 
     if (!channel.isValidChannel(state.bot.server))
     {
-        logger.warning("Invalid channel");
+        logger.error("Invalid channel");
         return;
     }
 
@@ -141,7 +141,7 @@ void onCommandDelHome(const IRCEvent event)
 
     if (!channel.isValidChannel(state.bot.server))
     {
-        logger.warning("Invalid channel");
+        logger.error("Invalid channel");
         return;
     }
 
@@ -151,7 +151,7 @@ void onCommandDelHome(const IRCEvent event)
 
         if (chanIndex == -1)
         {
-            logger.warningf("Channel %s was not in bot.homes", channel);
+            logger.errorf("Channel %s was not in bot.homes", channel);
             return;
         }
 
@@ -179,12 +179,12 @@ void onCommandAddFriend(const IRCEvent event)
 
     if (!nickname.length)
     {
-        logger.warning("No nickname supplied...");
+        logger.error("No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(' ') != -1)
     {
-        logger.warning("Nickname must not contain spaces");
+        logger.error("Nickname must not contain spaces");
         return;
     }
 
@@ -213,12 +213,12 @@ void onCommandDelFriend(const IRCEvent event)
 
     if (!nickname.length)
     {
-        logger.warning("No nickname supplied...");
+        logger.error("No nickname supplied...");
         return;
     }
     else if (nickname.indexOf(' ') != -1)
     {
-        logger.warning("Only one nick at a time. Nickname must not contain spaces");
+        logger.error("Only one nick at a time. Nickname must not contain spaces");
         return;
     }
 
@@ -226,7 +226,7 @@ void onCommandDelFriend(const IRCEvent event)
 
     if (friendIndex == -1)
     {
-        logger.warning("No such friend");
+        logger.error("No such friend");
         return;
     }
 
@@ -408,7 +408,7 @@ void joinPartImpl(const string prefix, const IRCEvent event)
 
     if (!event.content.length)
     {
-        logger.warning("No channels supplied...");
+        logger.error("No channels supplied...");
         return;
     }
 

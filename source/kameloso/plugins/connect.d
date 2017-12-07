@@ -90,7 +90,7 @@ void onSelfpart(const IRCEvent event)
             }
             else
             {
-                logger.warning("Tried to remove a channel that wasn't there: ",
+                logger.error("Tried to remove a channel that wasn't there: ",
                     event.channel);
             }
         }
@@ -155,7 +155,7 @@ void joinChannels()
     {
         if (!bot.homes.length && !bot.channels.length)
         {
-            logger.warning("No channels, no purpose...");
+            logger.error("No channels, no purpose...");
             return;
         }
 
@@ -640,7 +640,7 @@ void register()
         {
             if (bot.server.daemon == IRCServer.Daemon.twitch)
             {
-                logger.warning("You *need* a password to join this server");
+                logger.error("You *need* a password to join this server");
                 mainThread.send(ThreadMessage.Quit());
                 return;
             }

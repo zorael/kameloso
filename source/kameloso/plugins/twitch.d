@@ -219,7 +219,7 @@ void parseTwitchTags(ref IRCEvent event)
                 break;
 
             default:
-                logger.info("unhandled message: ", value);
+                logger.warning("unhandled message: ", value);
                 break;
             }
             break;

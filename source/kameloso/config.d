@@ -349,7 +349,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                             }
                             catch (const ConvException e)
                             {
-                                logger.errorf("Can't convert array '%s' into '%s': %s",
+                                logger.warningf("Can't convert array '%s' into '%s': %s",
                                     entry, T.stringof, e.msg);
                                 break top;
                             }
@@ -369,7 +369,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                         }
                         catch (const ConvException e)
                         {
-                            logger.errorf("Can't convert value '%s' into '%s': %s",
+                            logger.warningf("Can't convert value '%s' into '%s': %s",
                                 valueToSet, T.stringof, e.msg);
                         }
                     }
@@ -473,7 +473,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             }
             catch (const Exception e)
             {
-                logger.errorf(`Malformed configuration line "%s": %s`,
+                logger.warningf(`Malformed configuration line "%s": %s`,
                     line, e.msg);
             }
             break;
@@ -482,7 +482,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             // entry-value line
             if (!section.length)
             {
-                logger.errorf(`Malformed configuration line, orphan "%s"`, line);
+                logger.warningf(`Malformed configuration line, orphan "%s"`, line);
                 continue;
             }
 
