@@ -194,9 +194,6 @@ unittest
  +  Returns:
  +      A slice of the line argument that excludes the quotes.
  +
- +  Bugs:
- +      Does not honour escapes.
- +
  +  ------------
  +  string quoted= `"This is a quote"`;
  +  string unquotes = quoted.unquoted;
@@ -212,6 +209,12 @@ string unquoted(Flag!"recurse" recurse = Yes.recurse)(const string line)
     }
     else if ((line[0] == '"') && (line[$-1] == '"'))
     {
+        if ((line.length >= 3) && (line[$-2..$] == `\"`))
+        {
+            // End quote is escaped
+            return line;
+        }
+
         static if (recurse)
         {
             return line[1..$-1].unquoted;
@@ -234,6 +237,9 @@ unittest
     assert(`"""""Lorem ipsum sit amet"""""`.unquoted == "Lorem ipsum sit amet");
     // Unbalanced quotes are left untouched
     assert(`"Lorem ipsum sit amet`.unquoted == `"Lorem ipsum sit amet`);
+    assert(`"Lorem \"`.unquoted == `"Lorem \"`);
+    assert("\"Lorem \\\"".unquoted == "\"Lorem \\\"");
+    assert(`"\"`.unquoted == `"\"`);
 }
 
 
