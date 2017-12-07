@@ -299,6 +299,7 @@ pipyon 3
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
+    import kameloso.string : unquoted;
     import std.conv : ConvException, to;
     import std.traits : getUDAs, hasUDA, isArray, isSomeString, isType;
 
@@ -341,10 +342,10 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                 import std.range : ElementType;
                                 import std.string : strip;
 
-                                /*writefln("%s.%s ~= %s.to!%s", Thing.stringof,
-                                    memberstring, entry.strip(),
-                                    (ElementType!T).stringof);*/
-                                thing.tupleof[i] ~= entry.strip().to!(ElementType!T);
+                                thing.tupleof[i] ~= entry
+                                    .strip()  // needed?
+                                    .unquoted
+                                    .to!(ElementType!T);
                             }
                             catch (const ConvException e)
                             {
@@ -356,7 +357,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                     }
                     else static if (isSomeString!T)
                     {
-                        thing.tupleof[i] = valueToSet;
+                        thing.tupleof[i] = valueToSet.unquoted;
                     }
                     else
                     {
@@ -364,7 +365,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                         {
                             /*writefln("%s.%s = %s.to!%s", Thing.stringof,
                                 memberstring, valueToSet, T.stringof);*/
-                            thing.tupleof[i] = valueToSet.to!T;
+                            thing.tupleof[i] = valueToSet.unquoted.to!T;
                         }
                         catch (const ConvException e)
                         {
@@ -401,6 +402,7 @@ unittest
         @Separator(";;")
         {
             string[] parrots;
+            string[] withSpaces;
         }
     }
 
@@ -416,6 +418,9 @@ unittest
     foo.setMemberByName("parrots", "squaawk;;parrot sounds;;repeating");
     assert((foo.parrots == [ "squaawk", "parrot sounds", "repeating"]),
         foo.parrots.to!string);
+    foo.setMemberByName("withSpaces", `         squoonk         ;;"  spaced  ";;" "`);
+    assert((foo.withSpaces == [ "squoonk", `  spaced  `, " "]),
+        foo.withSpaces.to!string);
 }
 
 
