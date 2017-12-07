@@ -229,6 +229,10 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
     /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
 
+    /// Keep track of daemon and network so we know when to report detection
+    IRCServer.Daemon detectedDaemon;
+    string detectedNetwork;
+
     while (!quit)
     {
         if (generator.state == Fiber.State.TERM)
@@ -249,9 +253,6 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
 
         // Call the generator, query it for event lines
         generator.call();
-
-        IRCServer.Daemon detectedDaemon;
-        string detectedNetwork;
 
         with (state)
         foreach (immutable line; generator)
