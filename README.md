@@ -93,7 +93,12 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [youtube.com] Danish language
 
-The *prefix* character (here '`!`') is configurable; see your generated configuration file. Common alternatives are '`.`' and '`~`', making it `.note` and `~quote` respectively. It can technically be any string and not just one character.
+The *prefix* character (here '`!`') is configurable; see your generated configuration file. Common alternatives are '`.`' and '`~`', making it `.note` and `~quote` respectively.
+
+    [Core]
+    prefix              !
+
+It can technically be any string and not just one character. Enquote it if you want spaces inbetween, like `"please "`.
 
 ## Twitch
 
