@@ -194,6 +194,9 @@ unittest
  +  Returns:
  +      A slice of the line argument that excludes the quotes.
  +
+ +  Bugs:
+ +      Does not honour escapes.
+ +
  +  ------------
  +  string quoted= `"This is a quote"`;
  +  string unquotes = quoted.unquoted;
@@ -201,7 +204,7 @@ unittest
  +  ------------
  +/
 pragma(inline)
-string unquoted(const string line) pure
+string unquoted(Flag!"recurse" recurse = Yes.recurse)(const string line)
 {
     if (line.length < 2)
     {
@@ -209,7 +212,14 @@ string unquoted(const string line) pure
     }
     else if ((line[0] == '"') && (line[$-1] == '"'))
     {
-        return line[1..$-1].unquoted;
+        static if (recurse)
+        {
+            return line[1..$-1].unquoted;
+        }
+        else
+        {
+            return line[1..$-1];
+        }
     }
     else
     {
