@@ -1637,24 +1637,14 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if ((slice == ":-") && (parser.bot.server.address.indexOf(".twitch.tv") != -1))
     {
-        // FIXME
-        version (Colours)
-        {
-            logger.infof("Detected daemon: %s", "twitch".colour(BashForeground.white));
-        }
-        else
-        {
-            logger.info("Detected daemon: twitch");
-        }
-
-        parser.setDaemon(IRCServer.Daemon.twitch);
+        parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
         parser.bot.server.network = "Twitch";
         return;
     }
 
     slice.nom(' ');  // server address
     immutable daemonstringRaw = slice.nom(' ');
-    immutable daemonstring = daemonstringRaw.toLower();
+    immutable daemonstring_ = daemonstringRaw.toLower();
     event.content = slice;
     event.aux = daemonstringRaw;
 
@@ -1663,23 +1653,23 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     with (parser.bot.server)
     with (IRCServer.Daemon)
     {
-        if (daemonstring.indexOf("unreal") != -1)
+        if (daemonstring_.indexOf("unreal") != -1)
         {
             daemon = unreal;
         }
-        else if (daemonstring.indexOf("inspircd") != -1)
+        else if (daemonstring_.indexOf("inspircd") != -1)
         {
             daemon = inspircd;
         }
-        else if (daemonstring.indexOf("u2.") != -1)
+        else if (daemonstring_.indexOf("u2.") != -1)
         {
             daemon = u2;
         }
-        else if (daemonstring.indexOf("bahamut") != -1)
+        else if (daemonstring_.indexOf("bahamut") != -1)
         {
             daemon = bahamut;
         }
-        else if (daemonstring.indexOf("hybrid") != -1)
+        else if (daemonstring_.indexOf("hybrid") != -1)
         {
             if (address.indexOf(".rizon.") != -1)
             {
@@ -1690,41 +1680,25 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
                 daemon = hybrid;
             }
         }
-        else if (daemonstring.indexOf("ratbox") != -1)
+        else if (daemonstring_.indexOf("ratbox") != -1)
         {
             daemon = ratbox;
         }
-        else if (daemonstring.indexOf("charybdis") != -1)
+        else if (daemonstring_.indexOf("charybdis") != -1)
         {
             daemon = charybdis;
         }
-        else if (daemonstring.indexOf("ircd-seven") != -1)
+        else if (daemonstring_.indexOf("ircd-seven") != -1)
         {
             daemon = ircdseven;
         }
-        /*else if (daemonstring.indexOf("") != -1)
+        /*else if (daemonstring_.indexOf("") != -1)
         {
             daemon = unknown;
         }*/
 
-        parser.setDaemon(daemon);
+        parser.setDaemon(daemon, daemonstringRaw);
     }
-
-    import kameloso.common : settings;
-    import kameloso.string : enumToString;
-
-    string daemonName = parser.bot.server.daemon.enumToString;
-
-    // FIXME
-    version (Colours)
-    {
-        if (!kameloso.common.settings.monochrome)
-        {
-            daemonName = daemonName.colour(BashForeground.white);
-        }
-    }
-
-    logger.infof("Detected daemon %s: %s", daemonstring, daemonName);
 }
 
 
