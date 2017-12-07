@@ -336,6 +336,8 @@ unittest
     import std.conv : to;
     import std.stdio : write, writeln;
 
+    enum bright = true;
+
     writeln("r");
 
     foreach (i; 0..256)
@@ -343,7 +345,7 @@ unittest
         int r, g, b;
         r = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -355,7 +357,7 @@ unittest
         int r, g, b;
         g = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -367,7 +369,7 @@ unittest
         int r, g, b;
         b = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -380,7 +382,7 @@ unittest
         r = i;
         g = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -393,7 +395,7 @@ unittest
         r = i;
         b = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -406,7 +408,7 @@ unittest
         g = i;
         b = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
@@ -420,7 +422,7 @@ unittest
         g = i;
         b = i;
         int n = i % 10;
-        write(n.to!string.truecolour(r, g, b));
+        write(n.to!string.truecolour(r, g, b, bright));
         if (n == 0) write(i);
     }
 
