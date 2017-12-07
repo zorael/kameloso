@@ -16,7 +16,7 @@ Current functionality includes:
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and a simple example of how plugins work
-* looking up titles of pasted web URLs
+* looking up titles of pasted web URLs (optionally with Reddit lookup)
 * Twitch events; simple Twitch chatbot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
@@ -94,6 +94,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | <Reverend> IRC is just multiplayer notepad.
          you | https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | [youtube.com] Danish language
+    kameloso | Reddit: https://www.reddit.com/r/languagelearning/comments/7dcxfa/norwegian_comedy_about_the_danish_language_4m15s/
 
 The *prefix* character (here '`!`') is configurable; see your generated configuration file. Common alternatives are '`.`' and '`~`', making it `.note` and `~quote` respectively.
 
