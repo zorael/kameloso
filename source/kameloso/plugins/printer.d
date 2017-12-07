@@ -16,8 +16,8 @@ private:
  +  ------------
  +  struct PrinterSettings
  +  {
- +      bool monochrome = false;  // true on Windows
  +      bool truecolor = true;
+ +      bool normaliseTrueclour = true;
  +      bool randomNickColours = true;
  +      bool filterVerbose = true;
  +      bool badgesInCaps = false;
@@ -28,6 +28,9 @@ struct PrinterSettings
 {
     /// Flag to display advanced colours in RRGGBB rather than simple Bash
     bool truecolour = true;
+
+    /// Flag to normalise truecolours; make dark brighter and bright darker
+    bool normaliseTruecolour = true;
 
     /// Flag to display nicks in random colour based on their nickname hash
     bool randomNickColours = true;
@@ -288,10 +291,21 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 if (event.colour.length && printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
+                    import std.typecons : No, Yes;
 
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
-                    sink.truecolour(r, g, b, state.settings.brightTerminal);
+
+                    if (printerSettings.normaliseTruecolour)
+                    {
+                        sink.truecolour!(Yes.normalise)
+                            (r, g, b, state.settings.brightTerminal);
+                    }
+                    else
+                    {
+                        sink.truecolour!(No.normalise)
+                            (r, g, b, state.settings.brightTerminal);
+                    }
                 }
                 else
                 {
