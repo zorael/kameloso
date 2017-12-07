@@ -942,11 +942,12 @@ struct IRCBot
  +  struct IRCServer
  +  {
  +      enum Daemon { ... }
- +      Daemon daemon;
  +      string address;
  +      ushort port;
  +      string network;
  +
+ +      Daemon daemon;
+ +      string daemonstring;
  +      string resolvedAddress;
  +      uint maxNickLength;
  +      uint maxChannelLength;
@@ -1008,6 +1009,9 @@ struct IRCServer
     {
         /// The server daemon family the server is running.
         Daemon daemon;
+
+        /// The reported daemon, with version.
+        string daemonstring;
 
         /// The IRC server address handed to us by the round robin pool
         string resolvedAddress;
