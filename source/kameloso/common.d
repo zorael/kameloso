@@ -109,6 +109,9 @@ struct Hidden {}
  +  {
  +      bool monochrome = true;
  +      bool reconnectOnFailure = true;
+ +      bool brightTerminal = false;
+ +      string prefix = "!";
+ +
  +      string configFile = "kameloso.conf";
  +  }
  +  ------------
