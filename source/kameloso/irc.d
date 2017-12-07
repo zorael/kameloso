@@ -2205,7 +2205,7 @@ unittest
  +      IRCBot bot;
  +      Type[1024] typenums;
  +      IRCEvent toIRCEvent(const string);
- +      void setDaemon(const Daemon)
+ +      void setDaemon(const Daemon, const string)
  +  }
  +  ------------
  +/
@@ -2246,17 +2246,18 @@ struct IRCParser
      +
      +  ------------
      +  IRCParser parser;
-     +  parser.setDaemon(IRCServer.Daemon.unreal);
+     +  parser.setDaemon(IRCServer.Daemon.unreal, daemonstring);
      +  ------------
      +/
-    void setDaemon(const Daemon daemon)
+    void setDaemon(const Daemon daemon, const string daemonstring)
     {
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
         // Reset
         typenums = Typenums.base;
-        //this.serverDaemon = daemon;
+
         bot.server.daemon = daemon;
+        bot.server.daemonstring = daemonstring;
 
         with (Typenums)
         with (Daemon)
