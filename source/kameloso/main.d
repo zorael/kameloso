@@ -250,6 +250,9 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
         // Call the generator, query it for event lines
         generator.call();
 
+        IRCServer.Daemon detectedDaemon;
+        string detectedNetwork;
+
         with (state)
         foreach (immutable line; generator)
         {
@@ -267,6 +270,54 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
                     // Parsing changed the bot; propagate
                     bot = parser.bot;
                     propagateBot(bot);
+
+                    if ((detectedDaemon == IRCServer.Daemon.init) &&
+                        (bot.server.daemon != detectedDaemon))
+                    {
+                        import kameloso.string : enumToString;
+
+                        // We know the Daemon
+
+                        detectedDaemon = bot.server.daemon;
+                        string daemonName = bot.server.daemon.enumToString;
+
+                        version (Colours)
+                        {
+                            if (!settings.monochrome)
+                            {
+                                import kameloso.bash : colour;
+
+                                immutable tint = settings.brightTerminal ?
+                                    BashForeground.black : BashForeground.white;
+                                daemonName = daemonName.colour(tint);
+                            }
+                        }
+
+                        logger.infof("Detected daemon: %s (%s)",
+                            daemonName, bot.server.daemonstring);
+                    }
+
+                    if (!detectedNetwork.length && bot.server.network != detectedNetwork)
+                    {
+                        import kameloso.bash : BashForeground, colour;
+
+                        // We know the network string
+
+                        detectedNetwork = bot.server.network;
+                        string networkName = bot.server.network;
+
+                        version (Colours)
+                        {
+                            if (!settings.monochrome)
+                            {
+                                immutable tint = settings.brightTerminal ?
+                                    BashForeground.black : BashForeground.white;
+                                networkName = networkName.colour(tint);
+                            }
+                        }
+
+                        logger.info("Detected network: ", networkName);
+                    }
                 }
 
                 foreach (plugin; plugins)
