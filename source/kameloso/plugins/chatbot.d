@@ -86,24 +86,14 @@ string getQuote(const string nickname)
  +/
 void addQuote(const string nickname, const string line)
 {
-    import std.json : JSONException;
-
-    try
+    if (nickname in quotes)
     {
-        if (nickname in quotes)
-        {
-            quotes[nickname].array ~= JSONValue(line);
-        }
-        else
-        {
-            // No quotes for nickname
-            quotes.object[nickname] = JSONValue([ line ]);
-        }
+        quotes[nickname].array ~= JSONValue(line);
     }
-    catch (const JSONException e)
+    else
     {
-        // No quotes at all
-        logger.error(e.msg);
+        // No quotes for nickname
+        quotes.object[nickname] = JSONValue([ line ]);
     }
 }
 
@@ -329,21 +319,29 @@ void onCommanAdddQuote(const IRCEvent event)
     import kameloso.irc : stripModeSign;
     import kameloso.string : nom;
     import std.format : format;
+    import std.json : JSONException;
 
     string slice = event.content;  // need mutable
     immutable nickname = slice.nom!(Yes.decode)(' ').stripModeSign();
 
     if (!nickname.length || !slice.length) return;
 
-    nickname.addQuote(slice);
-    saveQuotes(chatbotSettings.quotesFile);
+    try
+    {
+        nickname.addQuote(slice);
+        saveQuotes(chatbotSettings.quotesFile);
 
-    immutable target = (event.channel.length) ?
-        event.channel : event.sender.nickname;
+        immutable target = (event.channel.length) ?
+            event.channel : event.sender.nickname;
 
-    state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :Quote for %s saved (%d on record)"
-        .format(target, nickname, quotes[nickname].array.length));
+        state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :Quote for %s saved (%d on record)"
+            .format(target, nickname, quotes[nickname].array.length));
+    }
+    catch (const JSONException e)
+    {
+        logger.error("Could not add quote: ", e.msg);
+    }
 }
 
 
