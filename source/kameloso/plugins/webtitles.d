@@ -330,7 +330,7 @@ void titleworker(shared Tid sMainThread)
             {
                 import kameloso.string : beginsWith;
 
-                tlsLogger.error("Could not look up title: ", e.msg);
+                tlsLogger.errorf("Could not look up URL '%s': %s", url, e.msg);
 
                 if (url.beginsWith("https"))
                 {

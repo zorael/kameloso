@@ -292,7 +292,7 @@ void onCommandQuote(const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.error(e.msg);
+        logger.errorf("Could not quote '%s': %s", nickname, e.msg);
     }
 }
 
@@ -340,7 +340,7 @@ void onCommanAdddQuote(const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.error("Could not add quote: ", e.msg);
+        logger.errorf("Could not add quote for '%s': %s", nickname, e.msg);
     }
 }
 

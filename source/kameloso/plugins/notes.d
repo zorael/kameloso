@@ -94,8 +94,8 @@ void onJoin(const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.error(e.msg);
-        logger.error("Something is probably wrong with the JSON storage");
+        logger.errorf("Could not fetch and/or replay notes for '%s': %s",
+            event.sender.nickname, e.msg);
     }
 }
 
@@ -315,15 +315,15 @@ void clearNotes(const string nickname)
     }
     catch (const JSONException e)
     {
-        logger.error(e.msg);
+        logger.error("Failed to clear notes: ", e.msg);
     }
     catch (const FileException e)
     {
-        logger.error(e.msg);
+        logger.error("Failed to save notes: ", e.msg);
     }
     catch (const ErrnoException e)
     {
-        logger.error(e.msg);
+        logger.error("Failed to open/close notes file: ", e.msg);
     }
 }
 

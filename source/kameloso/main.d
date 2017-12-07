@@ -459,17 +459,17 @@ int main(string[] args)
     }
     catch (const GetOptException e)
     {
-        logger.error(e.msg);
+        logger.error("Error parsing command-line arguments: ", e.msg);
         return 1;
     }
     catch (const ConvException e)
     {
-        logger.error(e.msg);
+        logger.error("Error converting command-line arguments: ", e.msg);
         return 1;
     }
     catch (const Exception e)
     {
-        logger.error("Unhandled exception: ", e.msg);
+        logger.error("Unhandled exception handling command-line arguments: ", e.msg);
         return 1;
     }
 

@@ -118,7 +118,7 @@ void pipereader(shared IRCPluginState newState)
             try fifo.reopen(fifo.name);
             catch (const ErrnoException e)
             {
-                tlsLogger.error(e.msg);
+                tlsLogger.error("Failed to reopen FIFO: ", e.msg);
             }
         }
     }
