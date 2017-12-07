@@ -15,6 +15,21 @@ import std.stdio;
 
 private:
 
+
+// WebtitlesSettings
+/++
+ +  All Webtitles plugin options gathered in a struct.
+ +
+ +/
+struct WebtitlesSettings
+{
+    /// Flag to look up URLs on Reddit to see if they've been posted there
+    bool redditLookups = true;
+}
+
+/// All Webtitles plugin options gathered
+@Settings WebtitlesSettings webtitlesSettings;
+
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
@@ -72,6 +87,7 @@ struct TitleLookup
 
     string title;
     string domain;
+    string reddit;
 
     /// The UNIX timestamp of when the title was looked up
     size_t when;
@@ -116,6 +132,7 @@ void onMessage(const IRCEvent event)
  +/
 TitleLookup lookupTitle(const string url)
 {
+    import kameloso.string : beginsWith;
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
@@ -133,7 +150,12 @@ TitleLookup lookupTitle(const string url)
     req.bufferSize = BufferSize.titleLookup;
 
     auto res = req.get(url);
-    if (res.code >= 400) return lookup;
+
+    if (res.code >= 400)
+    {
+        tlsLogger.error("Response code: ", res.code);
+        return lookup;
+    }
 
     auto stream = res.receiveAsRange();
 
@@ -144,19 +166,45 @@ TitleLookup lookupTitle(const string url)
         if (doc.title.length) break;
     }
 
-    if (!doc.title.length) return lookup;
+    if (!doc.title.length) return lookup;  // throw Exception, really
 
     lookup.title = doc.title;
 
-    if (lookup.title == "YouTube" &&
+    if ((lookup.title == "YouTube") &&
         (url.indexOf("youtube.com/watch?") != -1))
     {
         lookup.fixYoutubeTitles(url);
     }
 
-    lookup.domain = getDomainFromURL(url);
-    lookup.when = Clock.currTime.toUnixTime;
+    lookup.domain = res.finalURI.host;
 
+    if (lookup.domain.beginsWith("www"))
+    {
+        import kameloso.string : nom;
+        lookup.domain.nom('.');
+    }
+
+    if (!url.beginsWith("https://www.reddit.com"))
+    {
+        Request redditReq;
+        redditReq.useStreaming = true;  // we only want as little as possible
+        redditReq.keepAlive = false;
+        redditReq.bufferSize = BufferSize.titleLookup;
+
+        auto redditRes = redditReq.get("https://www.reddit.com/" ~ url);
+
+        with (redditRes.finalURI)
+        {
+            if (!uri.beginsWith("https://www.reddit.com/login") &&
+                !uri.beginsWith("https://www.reddit.com/submit"))
+            {
+                // Has been posted to Reddit
+                lookup.reddit = uri;
+            }
+        }
+    }
+
+    lookup.when = Clock.currTime.toUnixTime;
     return lookup;
 }
 
@@ -321,6 +369,7 @@ void titleworker(shared Tid sMainThread)
         if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
             < Timeout.titleCache.seconds))
         {
+            tlsLogger.log("Found title lookup in cache");
             lookup = *inCache;
         }
         else
@@ -343,7 +392,11 @@ void titleworker(shared Tid sMainThread)
             }
         }
 
-        if (lookup == TitleLookup.init) return;
+        if (lookup == TitleLookup.init)
+        {
+            tlsLogger.error("Failed.");
+            return;
+        }
 
         // parseTitle to fix html entities and linebreaks
         lookup.title = parseTitle(lookup.title);
@@ -352,13 +405,19 @@ void titleworker(shared Tid sMainThread)
         if (lookup.domain.length)
         {
             mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :[%s] %s".format(target,
-                    lookup.domain, lookup.title));
+                "PRIVMSG %s :[%s] %s"
+                    .format(target, lookup.domain, lookup.title));
         }
         else
         {
             mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :%s".format(target, lookup.title));
+        }
+
+        if (lookup.reddit.length)
+        {
+            mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
         }
     }
 
