@@ -997,9 +997,6 @@ struct IRCServer
         ithildin,
     }
 
-    /// The server daemon family the server is running.
-    Daemon daemon;
-
     string address = "irc.freenode.net";
     ushort port = 6667;
 
@@ -1008,6 +1005,9 @@ struct IRCServer
 
     @Unconfigurable
     {
+        /// The server daemon family the server is running.
+        Daemon daemon;
+
         /// The IRC server address handed to us by the round robin pool
         string resolvedAddress;
 
