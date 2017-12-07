@@ -1523,20 +1523,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             break;
 
         case "NETWORK":
-            import kameloso.bash : BashForeground, colour;
-            import kameloso.common : settings;
-
-            version (Colours)
-            {
-                immutable networkName = kameloso.common.settings.monochrome ?
-                    value : value.colour(BashForeground.white);
-            }
-            else
-            {
-                immutable networkName = value;
-            }
-
-            logger.info("Detected network: ", networkName);
             bot.server.network = value;
             break;
 
