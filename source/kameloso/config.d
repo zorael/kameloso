@@ -343,7 +343,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                 import std.string : strip;
 
                                 thing.tupleof[i] ~= entry
-                                    .strip()  // needed?
+                                    .strip()
                                     .unquoted
                                     .to!(ElementType!T);
                             }

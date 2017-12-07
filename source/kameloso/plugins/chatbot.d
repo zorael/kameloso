@@ -312,7 +312,7 @@ void onCommandQuote(const IRCEvent event)
 @(PrivilegeLevel.friend)
 @Prefix("addquote")
 @Prefix(NickPolicy.required, "addquote")
-void onCommanAdddQuote(const IRCEvent event)
+void onCommanAddQuote(const IRCEvent event)
 {
     if (!chatbotSettings.quotes) return;
 

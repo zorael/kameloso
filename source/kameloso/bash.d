@@ -322,7 +322,7 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
     enum highlightUpperLimit = 50;
     enum highlight = 50;
 
-    enum roundToMaxThreshold = 240;
+    //enum roundToMaxThreshold = 240;
 
     enum darkPurpleThreshold = 80;
     enum darkPurpleIncrement = 150;
