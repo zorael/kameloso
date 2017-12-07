@@ -88,6 +88,7 @@ struct IRCEvent
         CTCP_USERINFO,/// Something requested the nickname and user of the bot
         CTCP_FINGER,/// Someone requested miscellaneous info about the bot
         CTCP_LAG,   /// Something requested LAG info?
+        CTCP_AVATAR,/// Someone requested an avatar image
         USERSTATE,  /// Twitch user information
         ROOMSTATE,  /// Twitch channel information
         GLOBALUSERSTATE,/// Twitch information about self upon login

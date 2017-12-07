@@ -152,6 +152,27 @@ void onCTCPs(const IRCEvent event)
          */
         break;
 
+    case CTCP_AVATAR:
+        /*  http://www.kvirc.net/doc/doc_ctcp_avatar.html
+
+            Every IRC user has a client-side property called AVATAR.
+
+            Let's say that there are two users: A and B.
+            When user A wants to see the B's avatar he simply sends a CTCP
+            AVATAR request to B (the request is sent through a PRIVMSG IRC
+            command). User B replies with a CTCP AVATAR notification (sent
+            through a NOTICE IRC command) with the name or URL of his avatar.
+
+            The actual syntax for the notification is:
+
+            AVATAR <avatar_file> [<filesize>]
+
+            The <avatar_file> may be either the name of a B's local image file
+            or a URL pointing to an image on some web server.
+         */
+        // FIXME: return something hardcoded?
+        break;
+
     case CTCP_LAG:
         // g-line fishing? do nothing?
         break;
