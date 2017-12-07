@@ -224,6 +224,17 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     return text;
 }
 
+
+// normaliseColoursBright
+/++
+ +  Takes a colour and, if it deems it is too bright to see on a light terminal
+ +  background, makes it darker.
+ +
+ +  Params:
+ +      ref r = red
+ +      ref g = green
+ +      ref b = blue
+ +/
 void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
 {
     enum pureWhiteReplacement = 120;
@@ -279,14 +290,10 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
  +  Takes a colour and, if it deems it is too dark to see on a black terminal
  +  background, makes it brighter.
  +
- +  Future improvements include reverse logic; making fonts darker to improve
- +  readability on bright background. The parameters are passed by `ref` and as
- +  such nothing is returned.
- +
  +  Params:
- +      r = red
- +      g = green
- +      b = blue
+ +      ref r = red
+ +      ref g = green
+ +      ref b = blue
  +/
 version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b)
