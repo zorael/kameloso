@@ -1002,13 +1002,13 @@ struct IRCServer
     string address = "irc.freenode.net";
     ushort port = 6667;
 
-    /// Server network string, like Freenode, QuakeNet, Rizon.
-    string network;
-
     @Unconfigurable
     {
         /// The server daemon family the server is running.
         Daemon daemon;
+
+        /// Server network string, like Freenode, QuakeNet, Rizon.
+        string network;
 
         /// The reported daemon, with version.
         string daemonstring;
