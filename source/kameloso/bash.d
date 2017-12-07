@@ -227,17 +227,11 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
 {
     enum pureWhiteReplacement = 120;
-    enum pureWhiteRange = 210;
+    enum pureWhiteRange = 200;
 
     enum darkenUpperLimit = 255;
     enum darkenLowerLimit = 200;
     enum darken = 45;
-
-    enum tooBrightThreshold = 200;
-    enum tooBrightDecrement = -10;
-
-    enum brightYellowThreshold = 175;
-    enum brightYellowDecrement = 80;
 
     // Sanity check
     if (r > 255) r = 255;
@@ -253,26 +247,10 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
         return;
     }
 
-    if ((r > brightYellowThreshold) &
-        (g > brightYellowThreshold) &
-        (b == 0))
-    {
-        // Fix dark purple
-        r -= brightYellowDecrement;
-        g -= brightYellowDecrement;
-    }
-    else
-    {
-        // Darken high colours at high levels
-        r -= ((r <= darkenUpperLimit) & (r > darkenLowerLimit)) * darken;
-        g -= ((g <= darkenUpperLimit) & (g > darkenLowerLimit)) * darken;
-        b -= ((b <= darkenUpperLimit) & (b > darkenLowerLimit)) * darken;
-
-        // Raise all low colours
-        r -= (r >= tooBrightThreshold) * tooBrightDecrement;
-        g -= (g >= tooBrightThreshold) * tooBrightDecrement;
-        b -= (b >= tooBrightThreshold) * tooBrightDecrement;
-    }
+    // Darken high colours at high levels
+    r -= ((r <= darkenUpperLimit) & (r > darkenLowerLimit)) * darken;
+    g -= ((g <= darkenUpperLimit) & (g > darkenLowerLimit)) * darken;
+    b -= ((b <= darkenUpperLimit) & (b > darkenLowerLimit)) * darken;
 
     if ((r > pureWhiteRange) && (b > pureWhiteRange) && (g > pureWhiteRange))
     {
@@ -315,17 +293,8 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
 {
     enum pureBlackReplacement = 150;
 
-    enum tooDarkThreshold = 130;
-    enum tooDarkIncrement = 100;
-
-    enum highlightLowerLimit = 0;
-    enum highlightUpperLimit = 50;
-    enum highlight = 50;
-
-    //enum roundToMaxThreshold = 240;
-
-    enum darkPurpleThreshold = 80;
-    enum darkPurpleIncrement = 150;
+    enum tooDarkThreshold = 140;
+    enum tooDarkIncrement = 80;
 
     // Sanity check
     if (r > 255) r = 255;
@@ -341,36 +310,10 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
         return;
     }
 
-    if ((r > 0) & (r < darkPurpleThreshold) &
-        (b > 0) & (b < darkPurpleThreshold) &
-        (g == 0))
-    {
-        // Fix dark purple
-        r += darkPurpleIncrement;
-        b += darkPurpleIncrement;
-    }
-    else
-    {
-        // Highlight high colours at low levels
-        r += ((r > highlightLowerLimit) & (r < highlightUpperLimit)) * highlight;
-        g += ((g > highlightLowerLimit) & (g < highlightUpperLimit)) * highlight;
-        b += ((b > highlightLowerLimit) & (b < highlightUpperLimit)) * highlight;
-
-        // Raise all low colours
-        r += (r < tooDarkThreshold) * tooDarkIncrement;
-        g += (g < tooDarkThreshold) * tooDarkIncrement;
-        b += (b < tooDarkThreshold) * tooDarkIncrement;
-
-        // Round very high to max
-        /*r += (r > roundToMaxThreshold) * (255-roundToMaxThreshold);
-        g += (g > roundToMaxThreshold) * (255-roundToMaxThreshold);
-        b += (b > roundToMaxThreshold) * (255-roundToMaxThreshold);*/
-
-        // Zero out colours if at least one is 255 after the above
-        /*r -= ((r < 255) & ((b >= 255) | (g >= 255))) * r;
-        g -= ((g < 255) & ((b >= 255) | (r >= 255))) * g;
-        b -= ((b < 255) & ((r >= 255) | (g >= 255))) * b;*/
-    }
+    // Raise all low colours
+    r += (r < tooDarkThreshold) * tooDarkIncrement;
+    g += (g < tooDarkThreshold) * tooDarkIncrement;
+    b += (b < tooDarkThreshold) * tooDarkIncrement;
 
     // Sanity check
     if (r > 255) r = 255;
