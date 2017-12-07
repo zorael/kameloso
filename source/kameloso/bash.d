@@ -522,11 +522,11 @@ if (isOutputRange!(Sink,string))
     {
         if (bright)
         {
-            normaliseColours(r, g, b);
+            normaliseColoursBright(r, g, b);
         }
         else
         {
-            normaliseColoursBright(r, g, b);
+            normaliseColours(r, g, b);
         }
     }
 
@@ -557,7 +557,7 @@ void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, uint r, uint g, uint b)
+    (const string word, uint r, uint g, uint b, bool bright = false)
 {
     import std.array : Appender;
 
@@ -565,7 +565,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     // \033[38;2;255;255;255m<word>\033[m
     sink.reserve(word.length + 23);
 
-    sink.truecolour!normalise(r, g, b);
+    sink.truecolour!normalise(r, g, b, bright);
     sink.put(word);
     sink.put(TerminalToken.bashFormat ~ "[0m");
     return sink.data;
