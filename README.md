@@ -72,7 +72,7 @@ Open the new `kameloso.conf` in a text editor and fill in the fields.
 
 If you have an old configuration file and you notice missing options such as the new plugin-specific settings, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
 
-The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file (`brightTerminal` under `Core`).
+The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [ANSI colours](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master login in the configuration file before it will listen to anything you do. It will look you up before letting you trigger any functionality.
 
