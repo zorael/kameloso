@@ -50,6 +50,9 @@ interface IRCPlugin
 
     /// Executed during shutdown or plugin restart
     void teardown();
+
+    /// Returns the name of the plugin, sliced off the module name
+    string name() @property const;
 }
 
 
@@ -930,6 +933,28 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
         {
             .teardown();
         }
+    }
+
+    // name
+    /++
+     +  Returns the name of the plugin.
+     +
+     +  Slices the last field of the module name; ergo, kameloso.plugins.xxx
+     +  would return the name xxx, as would kameloso.xxx and xxx.
+     +/
+    string name() @property const
+    {
+        import kameloso.string : nom;
+        import std.string : indexOf;
+
+        string moduleName = module_;
+
+        while (moduleName.indexOf('.') != -1)
+        {
+            moduleName.nom('.');
+        }
+
+        return moduleName;
     }
 }
 
