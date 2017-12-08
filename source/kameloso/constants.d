@@ -42,12 +42,3 @@ enum Timeout
     whois = 15,
     titleCache = 600,
 }
-
-/// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
-enum : ubyte
-{
-    entry   = 1 << 0,  /// On entry of function
-    exit    = 1 << 1,  /// On exit of function
-    success = 1 << 2,  /// On successful exit of function
-    failure = 1 << 3,  /// On thrown exception or error in function
-}

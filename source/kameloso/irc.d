@@ -30,7 +30,6 @@ private:
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
 {
-    import kameloso.constants : failure;
     import std.algorithm.searching : canFind;
 
     mixin(scopeguard(failure));
