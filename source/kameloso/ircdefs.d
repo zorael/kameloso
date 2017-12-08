@@ -7,6 +7,7 @@ final:
 pure:
 nothrow:
 
+
 // IRCEvent
 /++
  +  A single IRC event, parsed from server input.
@@ -1083,6 +1084,7 @@ struct IRCUser
         return (!nickname.length && (address.indexOf('.') != -1));
     }
 }
+
 
 // Typenums
 /++

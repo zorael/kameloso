@@ -2120,6 +2120,7 @@ unittest
     }
 }
 
+
 // stripModeSign
 /++
  +  Takes a nickname and strips it of any prepended mode signs, like the `@` in

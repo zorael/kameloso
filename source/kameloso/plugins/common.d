@@ -3,6 +3,7 @@ module kameloso.plugins.common;
 import kameloso.common : CoreSettings;
 import kameloso.ircdefs;
 
+
 // IRCPlugin
 /++
  +  Interface that all IRCPlugins must adhere to.

@@ -7,6 +7,7 @@ import std.stdio;
 
 private:
 
+
 // TwitchSettings
 /++
  +  Twitch-specific settings, gathered in a struct.

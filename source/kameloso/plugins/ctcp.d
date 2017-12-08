@@ -12,6 +12,7 @@ private:
 /// All plugin state variables gathered in a struct
 IRCPluginState state;
 
+
 // onCTCPs
 /++
  +  Handle `CTCP` requests.
