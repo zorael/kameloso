@@ -827,8 +827,22 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
             static if (!isType!symbol && !isSomeFunction!symbol &&
                 !__traits(isTemplate, symbol))
             {
+                alias T = typeof(symbol);
+
+                if (symbol != T.init)
+                {
+                    // This symbol was already configured earlier;
+                    // --> this is a reconnect
+                    continue;
+                }
+
+                import kameloso.common : meldInto;
                 import kameloso.config : readConfigInto;
-                configFile.readConfigInto(symbol);
+                import std.typecons : No, Yes;
+
+                T tempSymbol;
+                configFile.readConfigInto(tempSymbol);
+                tempSymbol.meldInto!(Yes.overwrite)(symbol);
             }
         }
     }
