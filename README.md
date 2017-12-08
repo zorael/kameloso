@@ -64,7 +64,7 @@ The tests are run at the *start* of the program, not during compilation. You can
 
 # How to use
 
-The bot needs the *services* login name of the administrator/master of the bot, and/or one of more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the *services* login name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
@@ -126,10 +126,8 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * pipedream: DCC
 * pipedream two: `ncurses`
 * Travis LDC tests
-* logger-less `irc.d`, to act more like a headless library
 * ready for channel-awareness
 * more command-line flags
-* disambiguate warnings and errors, consistency
 
 # Built With
 
