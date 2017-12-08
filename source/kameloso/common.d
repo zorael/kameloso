@@ -1463,8 +1463,6 @@ struct Kameloso
         state.mainThread = thisTid;
         today = Clock.currTime.day;
 
-        // Zero out old plugins array and allocate room for new ones
-        plugins.length = 0;
         plugins.reserve(EnabledPlugins.length + 3);
 
         // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
@@ -1523,6 +1521,9 @@ struct Kameloso
                 logger.warning("Exception when tearing down plugins: ", e.msg);
             }
         }
+
+        // Zero out old plugins array
+        plugins.length = 0;
     }
 
     // startPlugins
