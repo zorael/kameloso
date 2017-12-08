@@ -599,7 +599,19 @@ int main(string[] args)
 
             bot.registerStatus = IRCBot.Status.notStarted;
             bot.authStatus = IRCBot.Status.notStarted;
+
+            /+
+             +  If we're reconnecting we're connecting to the same server, so we
+             +  can likely assume the daemon, daemonstring and network stay the
+             +  unchanged. Not so for the resolvedAddress, as we're likely
+             +  connecting to a server that redirects by round-robin to other
+             +  servers.
+             +/
+            /*bot.server.daemon = IRCServer.Daemon.init;
+            bot.server.daemontring = string.init;
+            bot.server.network = string.init;*/
             bot.server.resolvedAddress = string.init;
+
             parser = IRCParser(bot);
 
             botState.initPlugins();
