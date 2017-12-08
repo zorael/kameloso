@@ -152,8 +152,8 @@ void createFIFO()
         return;
     }
 
-    tlsLogger.info("Pipe text to ./", filename,
-        " to send raw commands to the server");
+    tlsLogger.info("Pipe text to [", filename,
+        "] to send raw commands to the server");
 
     fifo = File(filename, "r");
 }
