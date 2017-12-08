@@ -1,6 +1,6 @@
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Kameloso, logger;
+import kameloso.common : CoreSettings, Client, logger;
 import kameloso.irc : IRCBot;
 import std.typecons : Flag, No, Yes;
 
@@ -54,11 +54,11 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
  +      filename = the string filename of the file to write to.
  +
  +  ------------
- +  Kameloso state;
- +  state.writeConfigurationFile(state.settings.configFile);
+ +  Client client;
+ +  client.writeConfigurationFile(client.settings.configFile);
  +  ------------
  +/
-void writeConfigurationFile(ref Kameloso state, const string filename)
+void writeConfigurationFile(ref Client client, const string filename)
 {
     import kameloso.common : printObjects;
     import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
@@ -67,7 +67,7 @@ void writeConfigurationFile(ref Kameloso state, const string filename)
     Appender!string sink;
     sink.reserve(512);
 
-    with (state)
+    with (client)
     {
         sink.serialise(bot, bot.server, settings);
 
@@ -106,14 +106,14 @@ public:
  +      program should proceed or not.
  +
  +  ------------
- +  Kameloso state;
- +  Flag!"quit" quit = state.handleGetopt(args);
+ +  Client client;
+ +  Flag!"quit" quit = client.handleGetopt(args);
  +
  +  if (quit) return 0;
  +  // ...
  +  ------------
  +/
-Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
+Flag!"quit" handleGetopt(ref Client client, string[] args)
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.common : initLogger, printVersionInfo;
@@ -127,7 +127,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
 
     arraySep = ",";
 
-    with (state)
+    with (client)
     {
         auto results = args.getopt(
             config.caseSensitive,
@@ -162,7 +162,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
         );
 
         meldSettingsFromFile(bot, settings);
-        state.parser.bot = bot;
+        client.parser.bot = bot;
 
         // Give common.d a copy of CoreSettings for printObject. FIXME
         static import kameloso.common;
@@ -217,7 +217,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             // If we don't initialise the plugins there'll be no plugins array
             initPlugins();
 
-            state.writeConfigurationFile(settings.configFile);
+            client.writeConfigurationFile(settings.configFile);
             return Yes.quit;
         }
 
@@ -243,7 +243,7 @@ Flag!"quit" handleGetopt(ref Kameloso state, string[] args)
             import kameloso.debugging : generateAsserts;
 
             // --gen|--generate was passed, enter assert generation
-            state.generateAsserts();
+            client.generateAsserts();
             return Yes.quit;
         }
 

@@ -25,7 +25,7 @@ shared static this()
 
 private:
 
-Kameloso botState;
+Client client;
 
 
 // signalHandler
@@ -40,7 +40,7 @@ void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.signal : signal, SIGINT, SIG_DFL;
     printf("...caught signal %d!\n", sig);
-    botState.abort = true;
+    client.abort = true;
 
     // Restore signal handlers to the default
     signal(SIGINT, SIG_DFL);
@@ -64,12 +64,12 @@ void signalHandler(int sig) nothrow @nogc @system
  +  Returns:
  +      Yes.quit or No.quit, depending.
  +/
-Flag!"quit" checkMessages(ref Kameloso state)
+Flag!"quit" checkMessages(ref Client client)
 {
     import core.time : seconds;
     import std.concurrency : receiveTimeout, Variant;
 
-    scope (failure) state.teardownPlugins();
+    scope (failure) client.teardownPlugins();
 
     Flag!"quit" quit;
 
@@ -80,9 +80,9 @@ Flag!"quit" checkMessages(ref Kameloso state)
         import core.time : seconds, msecs;
         import std.datetime.systime : Clock, SysTime;
 
-        if (state.abort) return;
+        if (client.abort) return;
 
-        with (botState.throttling)
+        with (client.throttling)
         {
             if (t0 == SysTime.init) t0 = Clock.currTime;
 
@@ -101,12 +101,12 @@ Flag!"quit" checkMessages(ref Kameloso state)
             {
                 x = (Clock.currTime - t0).total!"msecs"/1000.0;
                 y = k*x + m;
-                interruptibleSleep(100.msecs, state.abort);
-                if (state.abort) return;
+                interruptibleSleep(100.msecs, client.abort);
+                if (client.abort) return;
             }
 
             logger.trace("--> ", line);
-            state.conn.sendline(line);
+            client.conn.sendline(line);
 
             m = y + increment;
             t0 = Clock.currTime;
@@ -117,19 +117,19 @@ Flag!"quit" checkMessages(ref Kameloso state)
     void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
-        state.conn.sendline(line);
+        client.conn.sendline(line);
     }
 
     /// Send a line to the server without echoing it.
     void quietline(ThreadMessage.Quietline, string line)
     {
-        state.conn.sendline(line);
+        client.conn.sendline(line);
     }
 
     /// Respond to `PING` with `PONG` to the supplied text as target.
     void pong(ThreadMessage.Pong, string target)
     {
-        state.conn.sendline("PONG :", target);
+        client.conn.sendline("PONG :", target);
     }
 
     /// Quit the server with the supplied reason.
@@ -138,7 +138,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
         logger.trace("--> QUIT :", reason);
-        state.conn.sendline("QUIT :", reason);
+        client.conn.sendline("QUIT :", reason);
 
         quit = Yes.quit;
     }
@@ -146,7 +146,7 @@ Flag!"quit" checkMessages(ref Kameloso state)
     /// Quit the server with the default reason
     void quitEmpty(ThreadMessage.Quit)
     {
-        return quitServer(ThreadMessage.Quit(), state.bot.quitReason);
+        return quitServer(ThreadMessage.Quit(), client.bot.quitReason);
     }
 
     /// Did the concurrency receive catch something?
@@ -221,7 +221,7 @@ void removeMeWhenPossible()
  +  Returns:
  +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
  +/
-Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
+Flag!"quit" mainLoop(ref Client client, Generator!string generator)
 {
     import core.thread : Fiber;
     import std.datetime.systime : Clock;
@@ -245,16 +245,16 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
         // See if day broke
         const now = Clock.currTime;
 
-        if (now.day != state.today)
+        if (now.day != client.today)
         {
             logger.infof("[%d-%02d-%02d]", now.year, cast(int)now.month, now.day);
-            state.today = now.day;
+            client.today = now.day;
         }
 
         // Call the generator, query it for event lines
         generator.call();
 
-        with (state)
+        with (client)
         foreach (immutable line; generator)
         {
             // Empty line yielded means nothing received
@@ -344,7 +344,7 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
 
                         // Fetch any queued WHOIS requests and handle
                         auto reqs = plugin.yieldWHOISRequests();
-                        state.handleWHOISQueue(reqs, event, event.target.nickname);
+                        client.handleWHOISQueue(reqs, event, event.target.nickname);
 
                         auto yieldedBot = plugin.yieldBot();
                         if (yieldedBot != bot)
@@ -382,7 +382,7 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        quit = checkMessages(state);
+        quit = checkMessages(client);
     }
 
     return Yes.quit;
@@ -396,7 +396,7 @@ Flag!"quit" mainLoop(ref Kameloso state, Generator!string generator)
  +
  +  This is more or less a Command pattern.
  +/
-void handleWHOISQueue(W)(ref Kameloso state, ref W[string] reqs,
+void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
     const IRCEvent event, const string nickname)
 {
     if (nickname.length &&
@@ -426,14 +426,14 @@ void handleWHOISQueue(W)(ref Kameloso state, ref W[string] reqs,
                 import std.datetime : Clock;
                 import core.time : seconds;
 
-                const then = key in state.whoisCalls;
+                const then = key in client.whoisCalls;
                 const now = Clock.currTime;
 
                 if (!then || ((now - *then) > Timeout.whois.seconds))
                 {
                     logger.trace("--> WHOIS :", key);
-                    state.conn.sendline("WHOIS :", key);
-                    state.whoisCalls[key] = Clock.currTime;
+                    client.conn.sendline("WHOIS :", key);
+                    client.whoisCalls[key] = Clock.currTime;
                 }
                 else
                 {
@@ -481,14 +481,14 @@ int main(string[] args)
 
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
-    initLogger(botState.settings.monochrome, botState.settings.brightTerminal);
+    initLogger(client.settings.monochrome, client.settings.brightTerminal);
 
     scope(failure)
     {
         import core.stdc.signal : signal, SIGINT, SIG_DFL;
 
         logger.error("We just crashed!");
-        botState.teardownPlugins();
+        client.teardownPlugins();
 
         // Restore signal handlers to the default
         signal(SIGINT, SIG_DFL);
@@ -507,7 +507,7 @@ int main(string[] args)
         import kameloso.getopt : handleGetopt;
 
         // Act on arguments getopt, quit if whatever was passed demands it
-        if (botState.handleGetopt(args) == Yes.quit) return 0;
+        if (client.handleGetopt(args) == Yes.quit) return 0;
     }
     catch (const GetOptException e)
     {
@@ -526,7 +526,7 @@ int main(string[] args)
     }
 
 
-    with (botState)
+    with (client)
     {
         BashForeground tint;
 
@@ -614,7 +614,7 @@ int main(string[] args)
 
             parser = IRCParser(bot);
 
-            botState.initPlugins();
+            initPlugins();
             conn.connect(abort);
 
             if (!conn.connected)
@@ -624,11 +624,11 @@ int main(string[] args)
                 return 1;
             }
 
-            botState.startPlugins();
+            startPlugins();
 
             // Initialise the Generator and start the main loop
             auto generator = new Generator!string(() => listenFiber(conn, abort));
-            quit = botState.mainLoop(generator);
+            quit = client.mainLoop(generator);
             firstConnect = false;
 
             // Always teardown after connection ends

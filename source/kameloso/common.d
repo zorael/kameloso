@@ -1384,7 +1384,7 @@ unittest
  +  passing by ref.
  +
  +  ------------
- +  struct Kameloso
+ +  struct Client
  +  {
  +      IRCBot bot;
  +      CoreSettings settings;
@@ -1403,7 +1403,7 @@ unittest
  +  }
  +  ------------
  +/
-struct Kameloso
+struct Client
 {
     import kameloso.connection : Connection;
     import kameloso.ircdefs : IRCBot;
@@ -1571,6 +1571,9 @@ struct Kameloso
         }
     }
 }
+
+deprecated("struct Kameloso is superseded by Client, use that instead.")
+alias Kameloso = Client;
 
 
 // ThrottleValues

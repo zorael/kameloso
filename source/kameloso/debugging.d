@@ -1,6 +1,6 @@
 module kameloso.debugging;
 
-import kameloso.common : Kameloso;
+import kameloso.common : Client;
 import kameloso.ircdefs : IRCBot, IRCEvent;
 
 import std.stdio;
@@ -277,11 +277,11 @@ unittest
  +  We can't use an Appender or dmd will hit a stack overflow, error -11.
  +
  +  ------------
- +  Kameloso state;
- +  state.generateAsserts();
+ +  Client client;
+ +  client.generateAsserts();
  +  ------------
  +/
-void generateAsserts(ref Kameloso state)
+void generateAsserts(ref Client client)
 {
     import kameloso.common : printObject;
     import kameloso.debugging : formatEventAssertBlock;
@@ -290,7 +290,7 @@ void generateAsserts(ref Kameloso state)
     //Appender!(char[]) sink;
     //sink.reserve(768);
 
-    with (state)
+    with (client)
     {
         printObject(parser.bot);
 
