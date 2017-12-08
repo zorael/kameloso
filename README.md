@@ -126,8 +126,11 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * pipedream: DCC
 * pipedream two: `ncurses`
 * Travis LDC tests
-* ready for channel-awareness
+* ready for channel-awareness (+channel modes)
 * more command-line flags
+* formalise outgoing messages instead of just raw strings
+* more modules? uda.d/attribute.d?
+* more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 
 # Built With
 
