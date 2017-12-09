@@ -349,7 +349,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             void colourSenderTruecolour()
             {
-                if (!event.sender.isServer && event.colour.length &&
+                if (!sender.isServer && event.colour.length &&
                     printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
@@ -375,6 +375,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 }
             }
 
+            import std.algorithm : equal;
+            import std.string : toLower;
+            import std.uni : asLowerCase;
+
             BashForeground typeColour;
 
             if (bright)
@@ -390,8 +394,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
-
-            import std.string : toLower;
 
             string typestring = printerSettings.typesInCaps ?
                 enumToString(type) : enumToString(type).toLower;
@@ -412,9 +414,6 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             }
 
             put(sink, '[', typestring, "] ");
-
-            import std.algorithm : equal;
-            import std.uni : asLowerCase;
 
             bool aliasPrinted;
 
@@ -457,26 +456,12 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             if (!sender.isServer && alias_.length && !aliasPrinted)
             {
-                // Don't truecolour the alias if aleady coloured
-                if (alias_[0] != TerminalToken.bashFormat)
-                {
-                    colourSenderTruecolour();
-                }
                 put(sink, " (", alias_, ')');
             }
 
             if (target.nickname.length)
             {
-                if (target.nickname[0] == '#')
-                {
-                    // Let all channels be one colour
-                    sink.colour(bright ? DefaultBright.target : DefaultDark.target);
-                }
-                else
-                {
-                    sink.colour(colourByHash(event.target.nickname));
-                }
-
+                sink.colour(colourByHash(target.nickname));
                 put(sink, " (", target.nickname, ')');
             }
 
@@ -490,7 +475,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.colour(bright ? DefaultBright.content : DefaultDark.content);
 
-                if (sender.isServer || sender.nickname.length)
+                if (sender.isServer || nickname.length)
                 {
                     import std.algorithm.searching : canFind;
 
@@ -553,8 +538,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             {
                 sink.put('\n');
             }
-
-            version(Cygwin)
+            else version(Cygwin)
             {
                 stdout.flush();
             }
