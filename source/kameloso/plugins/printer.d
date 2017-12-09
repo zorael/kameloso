@@ -21,6 +21,7 @@ private:
  +      bool randomNickColours = true;
  +      bool filterVerbose = true;
  +      bool badgesInCaps = false;
+ +      bool typesInCaps = true;
  +  }
  +  ------------
  +/
@@ -43,6 +44,9 @@ struct PrinterSettings
 
     /// Flag to send a terminal bell signal when the bot is mentioned in chat.
     bool bellOnMention = true;
+
+    /// Flag to have the type names be in capital letters.
+    bool typesInCaps = true;
 }
 
 /// All Printer plugin options gathered
@@ -330,14 +334,17 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
-            string typestring = enumToString(type);
+            import std.string : toLower;
 
-            if (typestring.beginsWith("RPL_"))
+            string typestring = printerSettings.typesInCaps ?
+                enumToString(type) : enumToString(type).toLower;
+
+            if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_"))
             {
                 typestring = typestring[4..$];
                 sink.colour(typeColour);
             }
-            else if (typestring.beginsWith("ERR_"))
+            else if (typestring.beginsWith("ERR_") || typestring.beginsWith("err_"))
             {
                 typestring = typestring[4..$];
                 sink.colour(bright ? DefaultBright.error : DefaultDark.error);
