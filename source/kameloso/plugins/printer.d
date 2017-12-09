@@ -169,19 +169,23 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
     if (state.settings.monochrome)
     {
         import std.algorithm : equal;
-        import std.format : formattedWrite;
+        import std.string : toLower;
         import std.uni : asLowerCase;
 
-        sink.formattedWrite("[%s] ", timestamp);
+        put(sink, '[', timestamp, "] ");
 
-        string typestring = enumToString(type);
+        string typestring = printerSettings.typesInCaps ?
+            enumToString(type) : enumToString(type).toLower;
 
-        if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
+        if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_") ||
+            typestring.beginsWith("ERR_") || typestring.beginsWith("err_"))
         {
             typestring = typestring[4..$];
         }
 
-        sink.formattedWrite("[%s] ", typestring);
+        put(sink, '[', typestring, "] ");
+
+        bool aliasPrinted;
 
         if (sender.isServer)
         {
@@ -189,8 +193,15 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
         else
         {
-            sink.put((alias_.length && alias_.asLowerCase.equal(nickname)) ?
-                alias_ : nickname);
+            if (alias_.length && alias_.asLowerCase.equal(nickname))
+            {
+                sink.put(alias_);
+                aliasPrinted = true;
+            }
+            else
+            {
+                sink.put(nickname);
+            }
 
             if (special)
             {
@@ -208,20 +219,66 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             put(sink, " [", badgestring, ']');
         }
 
-        if (!sender.isServer && alias_.length && (alias_ != nickname))
+        if (!sender.isServer && alias_.length && !aliasPrinted)
         {
-            sink.formattedWrite(" (%s)", alias_);
+            put(sink, " (", alias_, ')');
         }
 
-        if (target.nickname.length) sink.formattedWrite(" (%s)",  target.nickname);
-        if (channel.length) sink.formattedWrite(" [%s]",  channel);
-        if (content.length) sink.formattedWrite(`: "%s"`, content);
-        if (aux.length)     sink.formattedWrite(" <%s>",  aux);
-        if (num > 0)        sink.formattedWrite(" (#%03d)", num);
+        if (target.nickname.length) put(sink, " (", target.nickname, ')');
+        if (channel.length)         put(sink, " [", channel, ']');
+
+        if (content.length)
+        {
+            if (sender.isServer || nickname.length)
+            {
+                import std.algorithm.searching : canFind;
+
+                with (IRCEvent.Type)
+                switch (type)
+                {
+                case CHAN:
+                case QUERY:
+                    if ((cast(ubyte[])event.content)
+                        .canFind(cast(ubyte[])state.bot.nickname))
+                    {
+                        // Nick was mentioned (VERY naïve guess)
+                        if (printerSettings.bellOnMention)
+                        {
+                            sink.put(TerminalToken.bell);
+                        }
+                    }
+                    goto default;
+
+                default:
+                    put(sink, `: "`, content, '"');
+                    break;
+                }
+            }
+            else
+            {
+                // PING or ERROR likely
+                put(sink, content);
+            }
+        }
+
+        if (aux.length) put(sink, " <", aux, '>');
+
+        if (num > 0)
+        {
+            import std.format : formattedWrite;
+
+            put(sink, " (#");
+            sink.formattedWrite("%03d", num);
+            put(sink, ')');
+        }
 
         static if (!__traits(hasMember, Sink, "data"))
         {
             sink.put('\n');
+        }
+        else version(Cygwin)
+        {
+            stdout.flush();
         }
     }
     else
