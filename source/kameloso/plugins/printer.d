@@ -288,7 +288,8 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
             void colourSenderTruecolour()
             {
-                if (event.colour.length && printerSettings.truecolour)
+                if (!event.sender.isServer && event.colour.length &&
+                    printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
                     import std.typecons : No, Yes;
