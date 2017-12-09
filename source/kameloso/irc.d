@@ -1191,6 +1191,10 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         {
             return true;
         }
+        else if (event.sender.address.indexOf("/staff/") != -1)
+        {
+            return true;
+        }
         else
         {
             return false;
@@ -1917,6 +1921,12 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
             (sender.address == "Services.GameSurge.net"));
 
     default:
+        if (sender.address.indexOf("/staff/") != -1)
+        {
+            // Staff notice
+            return false;
+        }
+
         // Not a known nick registration nick
         logger.warningf("Unknown nickname service nick: %s!%s@%s",
             sender.nickname, sender.ident, sender.address);
