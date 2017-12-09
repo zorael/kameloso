@@ -1168,6 +1168,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         case "chanfix":
         case "c":
         case "spamserv":
+        case "services.":
             // Known services that are not nickname services
             return true;
 
@@ -1907,6 +1908,7 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
     case "chanfix":
     case "c":
     case "spamserv":
+    case "services.":
         // Known services that are not nickname services
         return false;
 
