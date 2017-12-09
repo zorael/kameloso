@@ -922,6 +922,9 @@ struct IRCBot
 
         /// Status of registration process (logon)
         Status registerStatus;
+
+        /// Flag signifying that the bot was altered.
+        bool updated;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const

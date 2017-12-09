@@ -78,6 +78,7 @@ void onSelfpart(const IRCEvent event)
         if (index != -1)
         {
             bot.channels = bot.channels.remove(index);
+            bot.updated = true;
         }
         else
         {
@@ -87,6 +88,7 @@ void onSelfpart(const IRCEvent event)
             {
                 logger.warning("Leaving a home...");
                 bot.homes = bot.homes.remove(homeIndex);
+                bot.updated = true;
             }
             else
             {
@@ -214,6 +216,7 @@ void onPing(const IRCEvent event)
         {
             logger.log("Auth timed out. Joining channels");
             bot.authStatus = Status.finished;
+            bot.updated = true;
             joinChannels();
         }
     }
@@ -257,6 +260,7 @@ void tryAuth()
     }
 
     state.bot.authStatus = Status.started;
+    state.bot.updated = true;
 
     with (state)
     with (IRCServer.Daemon)
@@ -273,6 +277,7 @@ void tryAuth()
                 "(%s != %s)", bot.nickname, bot.origNickname);
 
             bot.authStatus = Status.finished;
+            bot.updated = true;
             joinChannels();
             return;
         }
@@ -308,6 +313,7 @@ void tryAuth()
     case twitch:
         // No registration available
         bot.authStatus = Status.finished;
+        bot.updated = true;
         return;
 
     default:
@@ -374,6 +380,7 @@ void onAuthEnd()
     with (state)
     {
         bot.authStatus = Status.finished;
+        bot.updated = true;
 
         // This can be before registration ends in case of SASL
         // return if still registering
@@ -542,6 +549,7 @@ void onSASLAuthenticate()
         import std.base64 : Base64;
 
         bot.authStatus = Status.started;
+        bot.updated = true;
 
         immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
         immutable authToken = "%s%c%s%c%s"
@@ -568,6 +576,7 @@ void onSASLSuccess()
     with (state)
     {
         bot.authStatus = Status.finished;
+        bot.updated = true;
 
         /++
         +  The END subcommand signals to the server that capability negotiation
@@ -609,6 +618,7 @@ void onSASLFailure()
         // Auth failed and will fail even if we try NickServ, so flag as
         // finished auth and invoke `CAP END`
         bot.authStatus = Status.finished;
+        bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
         mainThread.send(ThreadMessage.Quietline(), "CAP END");
@@ -625,6 +635,7 @@ void register()
     with (state)
     {
         bot.registerStatus = Status.started;
+        bot.updated = true;
 
         mainThread.send(ThreadMessage.Quietline(), "CAP LS 302");
 

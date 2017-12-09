@@ -156,6 +156,7 @@ void onCommandDelHome(const IRCEvent event)
         }
 
         bot.homes = bot.homes.remove(chanIndex);
+        bot.updated = true;
         mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
     }
 }
@@ -233,6 +234,7 @@ void onCommandDelFriend(const IRCEvent event)
     with (state)
     {
         bot.friends = bot.friends.remove(friendIndex);
+        bot.updated = true;
         logger.infof("%s removed from friends", nickname);
     }
 }

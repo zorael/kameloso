@@ -266,9 +266,10 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
             {
                 event = parser.toIRCEvent(line);
 
-                if (parser.bot != bot)
+                if (parser.bot.updated)
                 {
                     // Parsing changed the bot; propagate
+                    parser.bot.updated = false;
                     bot = parser.bot;
                     propagateBot(bot);
 
@@ -326,10 +327,11 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     plugin.postprocess(event);
                     auto yieldedBot = plugin.yieldBot();
 
-                    if (yieldedBot != bot)
+                    if (yieldedBot.updated)
                     {
                         // Postprocessing changed the bot; propagate
                         bot = yieldedBot;
+                        bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
                     }
@@ -347,7 +349,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         client.handleWHOISQueue(reqs, event, event.target.nickname);
 
                         auto yieldedBot = plugin.yieldBot();
-                        if (yieldedBot != bot)
+
+                        if (yieldedBot.updated)
                         {
                             /*  Plugin onEvent or WHOIS reaction updated the
                                 bot. There's no need to check for both
@@ -356,6 +359,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                                 between both passes.
                             */
                             bot = yieldedBot;
+                            bot.updated = false;
                             parser.bot = bot;
                             propagateBot(bot);
                         }

@@ -446,6 +446,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.type = SELFNICK;
             bot.nickname = event.target.nickname;
+            bot.updated = true;
         }
         break;
 
@@ -675,6 +676,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.target.nickname = slice.nom(" :");
         event.content = slice;
         bot.nickname = event.target.nickname;
+        //bot.updated = true;
         break;
 
     case ERR_BADPING: // 513
@@ -1233,11 +1235,12 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
             // This is where we catch the resolved address
             assert(!event.sender.nickname.length, event.sender.nickname);
             bot.server.resolvedAddress = event.sender.address;
+            bot.updated = true;
         }
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
         {
-            event.sender.special = true; // by definition
+            //event.sender.special = true; // by definition
 
             if (event.content.toLower.indexOf("/msg nickserv identify") != -1)
             {
@@ -1523,12 +1526,14 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         case "NETWORK":
             bot.server.network = value;
+            bot.updated = true;
             break;
 
         case "NICKLEN":
             try
             {
                 bot.server.maxNickLength = value.to!uint;
+                bot.updated = true;
             }
             catch (const ConvException e)
             {
@@ -1540,6 +1545,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             try
             {
                 bot.server.maxChannelLength = value.to!uint;
+                bot.updated = true;
             }
             catch (const ConvException e)
             {
@@ -1566,9 +1572,10 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             {
                 bot.server.network = "unknown";
             }
+
+            bot.updated = true;
         }
     }
-
 }
 
 
@@ -1638,6 +1645,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
         parser.bot.server.network = "Twitch";
+        parser.bot.updated = true;
         return;
     }
 
@@ -2232,6 +2240,7 @@ struct IRCParser
 
         bot.server.daemon = daemon;
         bot.server.daemonstring = daemonstring;
+        bot.updated = true;
 
         with (Typenums)
         with (Daemon)
