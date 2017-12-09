@@ -303,6 +303,11 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
     enum tooDarkThreshold = 140;
     enum tooDarkIncrement = 80;
 
+    enum highlight = 20;
+
+    enum darkenThreshold = 200;
+    enum darken = 20;
+
     // Sanity check
     if (r > 255) r = 255;
     if (g > 255) g = 255;
@@ -321,6 +326,16 @@ void normaliseColours(ref uint r, ref uint g, ref uint b)
     r += (r < tooDarkThreshold) * tooDarkIncrement;
     g += (g < tooDarkThreshold) * tooDarkIncrement;
     b += (b < tooDarkThreshold) * tooDarkIncrement;
+
+    // Make dark colours more vibrant
+    r += ((r > g) & (r > b)) * highlight;
+    g += ((g > b) & (g > r)) * highlight;
+    b += ((b > g) & (b > r)) * highlight;
+
+    // Make bright colours more biased toward one colour
+    r -= ((r > darkenThreshold) & ((r < b) | (r < g))) * darken;
+    g -= ((g > darkenThreshold) & ((g < r) | (g < b))) * darken;
+    b -= ((b > darkenThreshold) & ((b < r) | (b < g))) * darken;
 
     // Sanity check
     if (r > 255) r = 255;
@@ -344,8 +359,9 @@ unittest
     import std.stdio : write, writeln;
 
     enum bright = true;
+    // ▄█▀
 
-    writeln("r");
+    writeln("BRIGHT: ", bright);
 
     foreach (i; 0..256)
     {
@@ -357,7 +373,6 @@ unittest
     }
 
     writeln();
-    writeln("g");
 
     foreach (i; 0..256)
     {
@@ -369,7 +384,6 @@ unittest
     }
 
     writeln();
-    writeln("b");
 
     foreach (i; 0..256)
     {
@@ -381,7 +395,6 @@ unittest
     }
 
     writeln();
-    writeln("rg");
 
     foreach (i; 0..256)
     {
@@ -394,7 +407,6 @@ unittest
     }
 
     writeln();
-    writeln("rb");
 
     foreach (i; 0..256)
     {
@@ -407,7 +419,6 @@ unittest
     }
 
     writeln();
-    writeln("gb");
 
     foreach (i; 0..256)
     {
@@ -420,7 +431,6 @@ unittest
     }
 
     writeln();
-    writeln("rgb");
 
     foreach (i; 0..256)
     {
