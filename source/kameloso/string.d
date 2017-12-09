@@ -270,6 +270,8 @@ if (isSomeString!T)
         return false;
     }
 
+    if (needle.length && (haystack[0] != needle[0])) return false;
+
     return (haystack[0..needle.length] == needle);
 }
 
