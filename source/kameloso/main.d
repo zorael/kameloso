@@ -286,7 +286,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         {
                             if (!settings.monochrome)
                             {
-                                import kameloso.bash : colour;
+                                import kameloso.bash : BashForeground, colour;
 
                                 immutable tint = settings.brightTerminal ?
                                     BashForeground.black : BashForeground.white;
