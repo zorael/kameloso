@@ -444,5 +444,5 @@ public:
  +/
 final class NotesPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

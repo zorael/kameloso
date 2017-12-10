@@ -431,5 +431,5 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

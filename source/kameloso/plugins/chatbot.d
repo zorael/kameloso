@@ -408,5 +408,5 @@ public:
  +/
 final class ChatbotPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

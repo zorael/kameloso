@@ -225,5 +225,5 @@ public:
  +/
 final class SedReplacePlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

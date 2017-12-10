@@ -479,5 +479,5 @@ public:
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

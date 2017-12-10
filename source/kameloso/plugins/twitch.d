@@ -377,5 +377,5 @@ public:
  +/
 final class TwitchPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

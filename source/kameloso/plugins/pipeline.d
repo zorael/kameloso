@@ -211,5 +211,5 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

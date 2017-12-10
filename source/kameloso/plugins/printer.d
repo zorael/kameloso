@@ -847,5 +847,5 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

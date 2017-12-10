@@ -259,5 +259,5 @@ public:
  +/
 final class CTCPPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

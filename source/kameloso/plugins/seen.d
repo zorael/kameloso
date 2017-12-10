@@ -496,5 +496,5 @@ final class SeenPlugin : IRCPlugin
      +  pass on things to the private functions we limit the surface area of
      +  the plugin to be really small.
      +/
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

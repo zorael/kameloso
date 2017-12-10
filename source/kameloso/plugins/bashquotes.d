@@ -98,5 +98,5 @@ public:
  +/
 final class BashQuotesPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

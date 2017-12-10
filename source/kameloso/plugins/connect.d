@@ -696,5 +696,5 @@ public:
  +/
 final class ConnectPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }
