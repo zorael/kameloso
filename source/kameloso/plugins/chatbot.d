@@ -383,11 +383,12 @@ void onCommandReloadQuotes()
 }
 
 
-// initialise
+// onEndOfMotd
 /++
  +  Initialises the Chatbot plugin. Loads the quotes from disk.
  +/
-void start()
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd()
 {
     logger.log("Initialising quotes ...");
     quotes = loadQuotes(chatbotSettings.quotesFile);

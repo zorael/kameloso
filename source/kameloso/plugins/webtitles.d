@@ -442,16 +442,16 @@ void titleworker(shared Tid sMainThread)
 }
 
 
-// initialise
+// onEndOfMotd
 /++
  +  Initialises the Webtitles plugin. Spawns the titleworker thread.
  +/
-void initialise()
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : spawn;
 
-    const stateCopy = state;
-    workerThread = spawn(&titleworker, cast(shared)(stateCopy.mainThread));
+    workerThread = spawn(&titleworker, cast(shared)(plugin.state.mainThread));
 }
 
 

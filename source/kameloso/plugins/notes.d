@@ -420,13 +420,12 @@ JSONValue loadNotes(const string filename)
 }
 
 
-// initialise
+// onEndOfMotd
 /++
  +  Initialises the Notes plugin. Loads the notes from disk.
- +
- +  This is executed immediately after a successful connect.
  +/
-void start()
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd()
 {
     logger.log("Initialising notes ...");
     notes = loadNotes(notesSettings.notesFile);
