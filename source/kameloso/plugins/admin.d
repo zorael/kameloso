@@ -119,6 +119,7 @@ void onCommandAddHome(const IRCEvent event)
 
         logger.info("Adding channel: ", channel);
         bot.homes ~= channel;
+        bot.updated = true;
     }
 }
 
