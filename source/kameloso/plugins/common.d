@@ -41,7 +41,7 @@ interface IRCPlugin
     void addToConfig(ref Appender!string);
 
     /// Executed when connection has been established
-    void start();
+    void start(IRCPlugin);
 
     /// Executed when we want a plugin to print its settings and such
     void present() const;
@@ -991,11 +991,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Activates the plugin, run when connection has been established.
      +/
-    void start()
+    void start(IRCPlugin plugin)
     {
-        static if (__traits(compiles, .start()))
+        static if (__traits(compiles, .start(plugin)))
         {
-            .start();
+            .start(plugin);
         }
     }
 
