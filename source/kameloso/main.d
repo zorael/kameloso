@@ -371,7 +371,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     }
                     catch (const Exception e)
                     {
-                        logger.warning("Exception onEvent: ", e.msg);
+                        logger.warningf("Exception %s.onEvent: %s",
+                            plugin.name, e.msg);
                     }
                 }
             }

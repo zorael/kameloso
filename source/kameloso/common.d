@@ -1514,7 +1514,8 @@ struct Client
             try plugin.teardown();
             catch (const Exception e)
             {
-                logger.warning("Exception when tearing down plugins: ", e.msg);
+                logger.warningf("Exception when tearing down %s: %s",
+                    plugin.name, e.msg);
             }
         }
 
