@@ -707,10 +707,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                        __traits(identifier, fun), event.type);
                                 }
 
-                                import std.meta   : AliasSeq, staticMap;
+                                import std.meta   : AliasSeq, Filter, staticMap;
                                 import std.traits : Parameters, Unqual, arity;
 
                                 alias Params = staticMap!(Unqual, Parameters!fun);
+                                enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
                                 static if (is(Params : AliasSeq!IRCEvent) ||
                                     (is(Params : AliasSeq!(IRCPluginState, IRCEvent)) ||
                                     is(Params : AliasSeq!IRCPluginState) ||
@@ -723,10 +725,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 {
                                     return this.doWhois(this, mutEvent, mutEvent.sender.nickname, &fun);
                                 }
+                                else static if (Filter!(isIRCPluginParam, Params).length)
+                                {
+                                    pragma(msg, typeof(fun).stringof);
+                                    pragma(msg, __traits(identifier, fun));
+                                    pragma(msg, Params);
+                                    static assert(0, "Function signature has " ~
+                                        "IRCPlugin instead of concrete plugin.");
+                                }
                                 else
                                 {
-                                    static assert(0, "Unknown function signature: " ~
-                                        typeof(fun).stringof);
+                                    pragma(msg, typeof(fun).stringof);
+                                    pragma(msg, __traits(identifier, fun));
+                                    pragma(msg, Params);
+                                    static assert(0, "Unknown function signature.");
                                 }
 
                             case fail:
