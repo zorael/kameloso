@@ -1205,24 +1205,27 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     import std.typecons : Flag, Yes;
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-        (ref IRCPluginState state, const IRCUser newUser)
+        (IRCPlugin plugin, const IRCUser newUser)
     {
         import kameloso.common : meldInto;
 
-        if (!newUser.nickname.length || (newUser.nickname == state.bot.nickname))
+        if (!newUser.nickname.length || (newUser.nickname == plugin.state.bot.nickname))
         {
             return;
         }
 
-        auto user = newUser.nickname in state.users;
-
-        if (!user)
+        with (plugin)
         {
-            state.users[newUser.nickname] = IRCUser.init;
-            user = newUser.nickname in state.users;
-        }
+            auto user = newUser.nickname in state.users;
 
-        newUser.meldInto!overwrite(*user);
+            if (!user)
+            {
+                state.users[newUser.nickname] = IRCUser.init;
+                user = newUser.nickname in state.users;
+            }
+
+            newUser.meldInto!overwrite(*user);
+        }
     }
 
 
@@ -1237,13 +1240,13 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +      event = the IRCEvent to replay once we have WHOIS login information.
      +      fp = the function pointer to call when that happens.
      +/
-    void doWhois(F)(ref IRCPluginState state, const IRCEvent event,
-        const string nickname, F fn)
+    void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
+        const IRCEvent event, const string nickname, F fn)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
 
-        const user = nickname in state.users;
+        const user = nickname in plugin.state.users;
 
         if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
             < Timeout.whois.seconds))
