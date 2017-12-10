@@ -397,7 +397,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +      .writeConfig
  +      .teardown
  +/
-mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
+mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     IRCPluginState state;
 
@@ -989,6 +989,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
         return moduleName;
     }
 }
+
+deprecated("Use IRCPluginImpl instead of IRCPluginBasics")
+alias IRCPluginBasics = IRCPluginImpl;
 
 
 // OnEventImpl
