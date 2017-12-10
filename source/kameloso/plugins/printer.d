@@ -52,9 +52,6 @@ struct PrinterSettings
 /// All Printer plugin options gathered
 @Settings PrinterSettings printerSettings;
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // onAnyEvent
 /++
@@ -65,7 +62,7 @@ IRCPluginState state;
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(const IRCEvent origEvent)
+void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
 
@@ -105,7 +102,7 @@ void onAnyEvent(const IRCEvent origEvent)
         break;
 
     default:
-        formatMessage(stdout.lockingTextWriter, event);
+        plugin.formatMessage(stdout.lockingTextWriter, event);
         break;
     }
 }
@@ -152,7 +149,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +      sink = output range to format the IRCEvent into
  +      event = the reference event that is being formatted
  +/
-void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
+void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event)
 {
     import kameloso.bash : BashForeground, TerminalToken, colour, truecolour;
     import kameloso.string : enumToString, beginsWith;
@@ -164,9 +161,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         .toString();
 
     with (BashForeground)
+    with (plugin.state)
     with (event)
     with (event.sender)
-    if (state.settings.monochrome)
+    if (settings.monochrome)
     {
         import std.algorithm : equal;
         import std.string : toLower;
@@ -239,7 +237,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 case CHAN:
                 case QUERY:
                     if ((cast(ubyte[])event.content)
-                        .canFind(cast(ubyte[])state.bot.nickname))
+                        .canFind(cast(ubyte[])bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
                         if (printerSettings.bellOnMention)
@@ -317,7 +315,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 badge   = black,
             }
 
-            immutable bright = state.settings.brightTerminal;
+            immutable bright = settings.brightTerminal;
 
             BashForeground colourByHash(const string nickname)
             {
@@ -361,12 +359,12 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     if (printerSettings.normaliseTruecolour)
                     {
                         sink.truecolour!(Yes.normalise)
-                            (r, g, b, state.settings.brightTerminal);
+                            (r, g, b, settings.brightTerminal);
                     }
                     else
                     {
                         sink.truecolour!(No.normalise)
-                            (r, g, b, state.settings.brightTerminal);
+                            (r, g, b, settings.brightTerminal);
                     }
                 }
                 else
@@ -485,10 +483,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     case CHAN:
                     case QUERY:
                         if ((cast(ubyte[])event.content)
-                            .canFind(cast(ubyte[])state.bot.nickname))
+                            .canFind(cast(ubyte[])bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
-                            immutable inverted = content.invert(state.bot.nickname);
+                            immutable inverted = content.invert(bot.nickname);
 
                             if ((content != inverted) &&
                                 (printerSettings.bellOnMention))
@@ -548,8 +546,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             /*logger.warning("bot was not built with colour support yet " ~
                 "monochrome is off; forcing monochrome.");*/
 
-            state.settings.monochrome = true;
-            return formatMessage(sink, event);
+            // This will only change this plugin's monochrome setting...
+            // We have no way to propagate it
+            settings.monochrome = true;
+            return plugin.formatMessage(sink, event);
         }
     }
 }
