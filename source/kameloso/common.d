@@ -1033,6 +1033,26 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
+    static immutable BashForeground[193] logcoloursDark  =
+    [
+        1 : BashForeground.white,
+        LogLevel.trace   : BashForeground.default_,
+        LogLevel.info    : BashForeground.lightgreen,
+        LogLevel.warning : BashForeground.lightred,
+        LogLevel.error   : BashForeground.red,
+        LogLevel.fatal   : BashForeground.red,
+    ];
+
+    static immutable BashForeground[193] logcoloursBright  =
+    [
+        1 : BashForeground.black,
+        LogLevel.trace   : BashForeground.default_,
+        LogLevel.info    : BashForeground.green,
+        LogLevel.warning : BashForeground.red,
+        LogLevel.error   : BashForeground.red,
+        LogLevel.fatal   : BashForeground.red,
+    ];
+
     bool monochrome;  /// Whether to use colours or not in logger output
     bool brightTerminal;   /// Whether to use colours for a bright background
 
@@ -1073,33 +1093,9 @@ final class KamelosoLogger : Logger
         if (monochrome) return;
 
         version(Colours)
-        with (LogLevel)
-        with (BashForeground)
-        switch (logLevel)
         {
-        case trace:
-            sink.colour(default_);
-            break;
-
-        case info:
-            sink.colour(brightTerminal ? green : lightgreen);
-            break;
-
-        case warning:
-            sink.colour(brightTerminal ? red : lightred);
-            break;
-
-        case error:
-            sink.colour(red);
-            break;
-
-        case fatal:
-            sink.colour(red, BashFormat.blink);
-            break;
-
-        default:
-            sink.colour(brightTerminal ? black : white);
-            break;
+            sink.colour(brightTerminal ? logcoloursBright[logLevel] :
+                logcoloursDark[logLevel]);
         }
     }
 
