@@ -190,6 +190,7 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
     with (plugin.state)
     {
         bot.friends ~= nickname;
+        bot.updated = true;
         logger.infof("%s added to friends", nickname);
     }
 }
