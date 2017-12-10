@@ -794,6 +794,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                     else
                     {
+                        pragma(mg, typeof(fun).stringof);
+                        pragma(msg, __traits(identifier, fun));
+                        pragma(msg, Params);
                         static assert(0, "Unknown function signature: " ~
                             typeof(fun).stringof);
                     }
