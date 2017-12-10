@@ -302,11 +302,14 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     if (!detectedNetwork.length && bot.server.network != detectedNetwork)
                     {
                         import kameloso.bash : BashForeground, colour;
+                        import std.string : capitalize;
+                        import std.uni : isLower;
 
                         // We know the network string
 
                         detectedNetwork = bot.server.network;
-                        string networkName = bot.server.network;
+                        string networkName = bot.server.network[0].isLower ?
+                            bot.server.network.capitalize() : bot.server.network;
 
                         version (Colours)
                         {
