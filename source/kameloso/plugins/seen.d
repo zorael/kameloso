@@ -132,7 +132,7 @@ struct SeenSettings
  +     to be played back when the `WHOIS` results return, as well as a function
  +     pointer to call with that event.
  +/
-IRCPluginState state;
+//IRCPluginState state;
 
 /++
  +  Our JSON storage of seen users; an array keyed with users' nicknames and
@@ -255,12 +255,12 @@ void onEndOfNames()
  +  the channels occasionally enough.
  +/
 @(IRCEvent.Type.PING)
-void onPing()
+void onPing(SeenPlugin plugin)
 {
     /// Twitch servers don't support `WHO` commands.
-    if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    foreach (const channel; state.bot.homes)
+    foreach (const channel; plugin.state.bot.homes)
     {
         import std.concurrency : send;
 
@@ -276,7 +276,7 @@ void onPing()
          +  "types" defined in `kameloso.common`, and this is why we wanted to
          +  import that.
          +/
-        state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
+        plugin.state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
     }
 }
 
@@ -322,7 +322,7 @@ void onPing()
 @(PrivilegeLevel.friend)
 @Prefix("seen")
 @Prefix(NickPolicy.required, "seen")
-void onCommandSeen(const IRCEvent event)
+void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
     import std.concurrency : send;
@@ -334,7 +334,7 @@ void onCommandSeen(const IRCEvent event)
 
     if (event.sender.nickname == event.content)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :That's you!"
             .format(target));
         return;
@@ -344,7 +344,7 @@ void onCommandSeen(const IRCEvent event)
 
     if (!userTimestamp)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :I have never seen %s."
             .format(target, event.content));
         return;
@@ -353,7 +353,7 @@ void onCommandSeen(const IRCEvent event)
     const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :I last saw %s %s ago."
         .format(target, event.content, elapsed));
 }
