@@ -54,6 +54,12 @@ interface IRCPlugin
 
     /// Returns the name of the plugin, sliced off the module name
     string name() @property const;
+
+    /// Returns a reference to the current `IRCPluginState`
+    ref IRCPluginState state() @property;
+
+    /// Sets a new `IRCPluginState`
+    void state(IRCPluginState) @property;
 }
 
 
@@ -399,7 +405,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
-    IRCPluginState state;
+    IRCPluginState privateState;
 
     // onEvent
     /++
@@ -768,7 +774,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     this(IRCPluginState state)
     {
         // Plugin has a state variable; assign to it
-        this.state = state;
+        this.privateState = state;
 
         static if (__traits(compiles, .initialise()))
         {
@@ -787,7 +793,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void newBot(IRCBot bot)
     {
-        state.bot = bot;
+        privateState.bot = bot;
     }
 
     // yieldBot
@@ -802,7 +808,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     IRCBot yieldBot()
     {
-        return state.bot;
+        return privateState.bot;
     }
 
     void postprocess(ref IRCEvent event)
@@ -826,7 +832,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     ref WHOISRequest[string] yieldWHOISRequests()
     {
-        return state.whoisQueue;
+        return privateState.whoisQueue;
     }
 
     // writeConfig
@@ -987,6 +993,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
 
         return moduleName;
+    }
+
+    ref IRCPluginState state() @property
+    {
+        return this.privateState;
+    }
+
+    void state(IRCPluginState state) @property
+    {
+        this.privateState = state;
     }
 }
 
