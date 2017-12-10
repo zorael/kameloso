@@ -404,6 +404,7 @@ void onNickInUse(ConnectPlugin plugin)
     with (plugin.state)
     {
         bot.nickname ~= altNickSign;
+        bot.updated = true;
 
         mainThread.send(ThreadMessage.Sendline(),
             "NICK %s".format(bot.nickname));
