@@ -10,9 +10,6 @@ import std.stdio;
 
 private:
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // onMessage
 /++
@@ -24,7 +21,7 @@ IRCPluginState state;
 @(PrivilegeLevel.friend)
 @Prefix("bash")
 @Prefix(NickPolicy.required, "bash")
-void onMessage(const IRCEvent event)
+void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
     import arsd.dom : Document, htmlEntitiesDecode;
@@ -58,7 +55,7 @@ void onMessage(const IRCEvent event)
 
         if (!numBlock.length)
         {
-            state.mainThread.send(ThreadMessage.Sendline(),
+            plugin.state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :No such bash.org quote: %s"
                 .format(target, event.content));
             return;  // invalid quote
@@ -78,7 +75,7 @@ void onMessage(const IRCEvent event)
 
         foreach (line; range)
         {
-            state.mainThread.send(ThreadMessage.Throttleline(),
+            plugin.state.mainThread.send(ThreadMessage.Throttleline(),
                 "PRIVMSG %s :%s".format(target, line));
         }
     }
