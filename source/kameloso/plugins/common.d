@@ -706,7 +706,28 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     writefln("%s:%s (%s)", module_,
                                        __traits(identifier, fun), event.type);
                                 }
-                                return state.doWhois(mutEvent, mutEvent.sender.nickname, &fun);
+
+                                import std.meta   : AliasSeq, staticMap;
+                                import std.traits : Parameters, Unqual, arity;
+
+                                alias Params = staticMap!(Unqual, Parameters!fun);
+                                static if (is(Params : AliasSeq!IRCEvent) ||
+                                    (is(Params : AliasSeq!(IRCPluginState, IRCEvent)) ||
+                                    is(Params : AliasSeq!IRCPluginState) ||
+                                    (arity!fun == 0)))
+                                {
+                                    return this.doWhois(mutEvent, mutEvent.sender.nickname, &fun);
+                                }
+                                else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                                    (is(Params : AliasSeq!(typeof(this)))))
+                                {
+                                    return this.doWhois(this, mutEvent, mutEvent.sender.nickname, &fun);
+                                }
+                                else
+                                {
+                                    static assert(0, "Unknown function signature: " ~
+                                        typeof(fun).stringof);
+                                }
 
                             case fail:
                                 static if (verbose)
@@ -735,17 +756,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                     else static if (is(Params : AliasSeq!(IRCPluginState, IRCEvent)))
                     {
-                        fun(state, mutEvent);
+                        pragma(msg, __traits(identifier, fun) ~
+                            " is using an IRCPluginState parameter, change to plugin");
+                        fun(privateState, mutEvent);
                     }
                     else static if (is(Params : AliasSeq!IRCPluginState))
                     {
-                        fun(state);
+                        pragma(msg, __traits(identifier, fun) ~
+                            " is using an IRCPluginState parameter, change to plugin");
+                        fun(privateState);
                     }
-                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)))
+                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                        is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
                     {
                         fun(this, mutEvent);
                     }
-                    else static if (is(Params : AliasSeq!IRCEvent))
+                    else static if (is(Params : AliasSeq!(typeof(this))) ||
+                        is(Params : AliasSeq!IRCPlugin))
                     {
                         fun(this);
                     }
@@ -1211,6 +1238,20 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             return;
         }
 
-        state.whoisQueue[nickname] = whoisRequest(state, event, fn);
+        static if (!is(Payload == typeof(null)))
+        {
+            plugin.state.whoisQueue[nickname] = whoisRequest(payload, event, fn);
+        }
+        else
+        {
+            plugin.state.whoisQueue[nickname] = whoisRequest(plugin.state, event, fn);
+        }
+    }
+
+    /// Ditto
+    void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
+        const string nickname, F fn)
+    {
+        return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
     }
 }
