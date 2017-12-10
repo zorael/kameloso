@@ -1540,7 +1540,7 @@ struct Client
         logger.info("Starting plugins");
         foreach (plugin; plugins)
         {
-            plugin.start();
+            plugin.start(plugin);
             auto yieldedBot = plugin.yieldBot();
 
             if (yieldedBot != bot)
