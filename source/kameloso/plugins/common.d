@@ -1074,9 +1074,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
-    void onLeaveMixin(ref IRCPluginState state, const IRCEvent event)
+    void onLeaveMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.users.remove(event.sender.nickname);
+        plugin.state.users.remove(event.sender.nickname);
     }
 
 
@@ -1086,16 +1086,19 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  point to the new nickname.
      +/
     @(IRCEvent.Type.NICK)
-    void onNickMixin(ref IRCPluginState state, const IRCEvent event)
+    void onNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if (auto oldUser = event.sender.nickname in state.users)
+        with (plugin)
         {
-            state.users[event.target.nickname] = *oldUser;
-            state.users.remove(event.sender.nickname);
-        }
-        else
-        {
-            state.users[event.target.nickname] = event.sender;
+            if (auto oldUser = event.sender.nickname in state.users)
+            {
+                state.users[event.target.nickname] = *oldUser;
+                state.users.remove(event.sender.nickname);
+            }
+            else
+            {
+                state.users[event.target.nickname] = event.sender;
+            }
         }
     }
 
@@ -1106,15 +1109,19 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  with a timestamp of the last WHOIS call, which is this.
      +/
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(ref IRCPluginState state, const IRCEvent event)
+    void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.datetime : Clock;
-        state.catchUser(event.target);
 
-        // Record lastWhois here so it happens even if no RPL_WHOISACCOUNT event
-        auto user = event.target.nickname in state.users;
-        if (!user) return;  // probably the bot
-        (*user).lastWhois = Clock.currTime.toUnixTime;
+        with (plugin)
+        {
+            plugin.catchUser(event.target);
+
+            // Record lastWhois here so it happens even if no RPL_WHOISACCOUNT event
+            auto user = event.target.nickname in state.users;
+            if (!user) return;  // probably the bot
+            (*user).lastWhois = Clock.currTime.toUnixTime;
+        }
     }
 
 
@@ -1128,14 +1135,17 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onLoginInfoSenderMixin(ref IRCPluginState state, const IRCEvent event)
+    void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.catchUser(event.sender);
-
-        if (event.sender.login == "*")
+        with (plugin)
         {
-            assert(event.sender.nickname in state.users);
-            state.users[event.sender.nickname].login = string.init;
+            plugin.catchUser(event.sender);
+
+            if (event.sender.login == "*")
+            {
+                assert(event.sender.nickname in state.users);
+                state.users[event.sender.nickname].login = string.init;
+            }
         }
     }
 
@@ -1147,16 +1157,19 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onLoginInfoTargetMixin(ref IRCPluginState state, const IRCEvent event)
+    void onLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // No point catching the entire user
-        if (auto user = event.target.nickname in state.users)
+        with (plugin)
         {
-            (*user).login = event.target.login;
-        }
-        else
-        {
-            state.users[event.target.nickname] = event.target;
+            // No point catching the entire user
+            if (auto user = event.target.nickname in state.users)
+            {
+                (*user).login = event.target.login;
+            }
+            else
+            {
+                state.users[event.target.nickname] = event.target;
+            }
         }
     }
 
@@ -1168,9 +1181,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  It usually contains everything interesting except login.
      +/
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(ref IRCPluginState state, const IRCEvent event)
+    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.catchUser(event.target);
+        plugin.catchUser(event.target);
     }
 
 
@@ -1179,9 +1192,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Remove an exhausted WHOIS request from the queue upon end of WHOIS.
      +/
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWHOISMixin(ref IRCPluginState state, const IRCEvent event)
+    void onEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.whoisQueue.remove(event.target.nickname);
+        plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
     // catchUser
