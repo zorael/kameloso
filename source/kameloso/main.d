@@ -603,6 +603,47 @@ int main(string[] args)
                 return 1;
             }
 
+
+            version(Colours)
+            {
+                import kameloso.bash : BashForeground, colour;
+                import std.array : Appender;
+                import std.conv : to;
+
+                Appender!string sink;
+                sink.reserve(64);
+
+                with (settings)
+                with (BashForeground)
+                {
+                    // "%s resolved into %d IPs."
+
+                    immutable infotint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    sink.colour(infotint);
+                    sink.put(bot.server.address);
+                    sink.colour(logtint);
+                    sink.put(" resolved into ");
+                    sink.colour(infotint);
+                    sink.put(conn.ips.length.to!string);
+                    sink.colour(logtint);
+                    sink.put(" IPs.");
+
+                    logger.trace(sink.data);
+                }
+            }
+            else
+            {
+                logger.infof("%s resolved into %d IPs.", bot.server.address,
+                    conn.ips.length);
+            }
+
             // Reset fields in the bot that should not survive a reconnect
             import kameloso.ircdefs : IRCBot;  // fix visibility warning
             import kameloso.irc : IRCParser;
