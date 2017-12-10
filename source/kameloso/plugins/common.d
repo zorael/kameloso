@@ -20,7 +20,7 @@ interface IRCPlugin
     void newBot(IRCBot);
 
     /// Executed after a plugin has run its onEvent course to pick up bot changes
-    IRCBot yieldBot() const;
+    IRCBot yieldBot();
 
     /// Executed to get a list of nicknames a plugin wants WHOISed
     ref WHOISRequest[string] yieldWHOISRequests();
@@ -68,6 +68,9 @@ abstract class WHOISRequest
     /// Stored `IRCEvent` to replay
     IRCEvent event;
 
+    /// Stored `IRCPluginState` for context
+    IRCPluginState state;
+
     /// When the user this concerns was last `WHOIS`ed
     size_t lastWhois;
 
@@ -88,27 +91,44 @@ final class WHOISRequestImpl(F) : WHOISRequest
     /// Stored function pointer/delegate
     F fn;
 
-    /// Constructor taking both an `IRCEvent` and a function pointer/delegate
-    this(IRCEvent event, F fn)
+    this(IRCPluginState, IRCEvent event, F fn)
     {
+        this.state = state;
         this.event = event;
         this.fn = fn;
     }
 
-    /// Call the passed function/delegate pointer, optionally with the IRCEvent
+    /// Call the passed function/delegate pointer, optionally with the stored
+    /// `IRCEvent` and/or `IRCPluginState`
     override void trigger()
     {
-        import std.traits : Parameters, Unqual;
+        import std.meta : AliasSeq, staticMap;
+        import std.traits : Parameters, Unqual, arity;
 
         assert((fn !is null), "null fn in WHOISRequestImpl!" ~ F.stringof);
 
-        static if (Parameters!F.length && is(Unqual!(Parameters!F[0]) == IRCEvent))
+        alias Params = staticMap!(Unqual, Parameters!fn);
+
+        static if (is(Params : AliasSeq!IRCEvent))
         {
             fn(event);
         }
-        else
+        else static if (is(Params : AliasSeq!(IRCPluginState, IRCEvent)))
+        {
+            fn(state, event);
+        }
+        else static if (is(Params : AliasSeq!IRCPluginState))
+        {
+            fn(state);
+        }
+        else static if (arity!fn == 0)
         {
             fn();
+        }
+        else
+        {
+            static assert(0, "Unknown function signature in WHOISReply: " ~
+                typeof(fn).stringof);
         }
     }
 
@@ -193,6 +213,16 @@ WHOISRequest whoisRequest(F)(const IRCEvent event, F fn)
     return new WHOISRequestImpl!F(event, fn);
 }
 
+
+// whoisRequest
+/++
+ +  Different convenience function that returns a WHOISRequestImpl of a
+ +  different type.
+ +/
+WHOISRequest whoisRequest(F)(IRCPluginState state, IRCEvent event, F fn)
+{
+    return new WHOISRequestImpl!F(state, event, fn);
+}
 
 // IRCPluginState
 /++
@@ -369,7 +399,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.common : CoreSettings;
+    IRCPluginState state;
 
     // onEvent
     /++
@@ -659,7 +689,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                                     writefln("%s:%s (%s)", module_,
                                        __traits(identifier, fun), event.type);
                                 }
-                                return mutEvent.doWhois(mutEvent.sender.nickname, &fun);
+                                return state.doWhois(mutEvent, mutEvent.sender.nickname, &fun);
 
                             case fail:
                                 static if (verbose)
@@ -677,14 +707,32 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         }
                     }
 
-                    import std.meta   : AliasSeq;
-                    import std.traits : Parameters;
+                    import std.meta   : AliasSeq, staticMap;
+                    import std.traits : Parameters, Unqual, arity;
 
-                    static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
+                    alias Params = staticMap!(Unqual, Parameters!fun);
+
+                    static if (is(Params : AliasSeq!IRCEvent))
                     {
                         fun(mutEvent);
                     }
-                    else static if (!Parameters!fun.length)
+                    else static if (is(Params : AliasSeq!(IRCPluginState, IRCEvent)))
+                    {
+                        fun(state, mutEvent);
+                    }
+                    else static if (is(Params : AliasSeq!IRCPluginState))
+                    {
+                        fun(state);
+                    }
+                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)))
+                    {
+                        fun(this, mutEvent);
+                    }
+                    else static if (is(Params : AliasSeq!IRCEvent))
+                    {
+                        fun(this);
+                    }
+                    else static if (arity!fun == 0)
                     {
                         fun();
                     }
@@ -719,16 +767,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     this(IRCPluginState state)
     {
-        static if (__traits(compiles, .state = state))
-        {
-            // Plugin has a state variable; assign to it
-            .state = state;
-        }
-        else static if (__traits(compiles, .settings = state.settings))
-        {
-            // No state variable but at least there are some Settings
-            .settings = state.settings;
-        }
+        // Plugin has a state variable; assign to it
+        this.state = state;
 
         static if (__traits(compiles, .initialise()))
         {
@@ -747,10 +787,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     void newBot(IRCBot bot)
     {
-        static if (__traits(compiles, .state.bot = bot))
-        {
-            .state.bot = bot;
-        }
+        state.bot = bot;
     }
 
     // yieldBot
@@ -763,12 +800,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a copy of the current IRCBot.
      +/
-    IRCBot yieldBot() const
+    IRCBot yieldBot()
     {
-        static if (__traits(compiles, .state.bot))
-        {
-            return .state.bot;
-        }
+        return state.bot;
     }
 
     void postprocess(ref IRCEvent event)
@@ -792,10 +826,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     ref WHOISRequest[string] yieldWHOISRequests()
     {
-        static if (__traits(compiles, .state.whoisQueue))
-        {
-            return .state.whoisQueue;
-        }
+        return state.whoisQueue;
     }
 
     // writeConfig
@@ -986,7 +1017,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
-    void onLeaveMixin(const IRCEvent event)
+    void onLeaveMixin(ref IRCPluginState state, const IRCEvent event)
     {
         state.users.remove(event.sender.nickname);
     }
@@ -998,7 +1029,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  point to the new nickname.
      +/
     @(IRCEvent.Type.NICK)
-    void onNickMixin(const IRCEvent event)
+    void onNickMixin(ref IRCPluginState state, const IRCEvent event)
     {
         if (auto oldUser = event.sender.nickname in state.users)
         {
@@ -1018,10 +1049,10 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  with a timestamp of the last WHOIS call, which is this.
      +/
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(const IRCEvent event)
+    void onUserInfoMixin(ref IRCPluginState state, const IRCEvent event)
     {
         import std.datetime : Clock;
-        catchUser(event.target);
+        state.catchUser(event.target);
 
         // Record lastWhois here so it happens even if no RPL_WHOISACCOUNT event
         auto user = event.target.nickname in state.users;
@@ -1040,9 +1071,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onLoginInfoSenderMixin(const IRCEvent event)
+    void onLoginInfoSenderMixin(ref IRCPluginState state, const IRCEvent event)
     {
-        catchUser(event.sender);
+        state.catchUser(event.sender);
 
         if (event.sender.login == "*")
         {
@@ -1059,7 +1090,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onLoginInfoTargetMixin(const IRCEvent event)
+    void onLoginInfoTargetMixin(ref IRCPluginState state, const IRCEvent event)
     {
         // No point catching the entire user
         if (auto user = event.target.nickname in state.users)
@@ -1080,9 +1111,9 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  It usually contains everything interesting except login.
      +/
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(const IRCEvent event)
+    void onWHOReplyMixin(ref IRCPluginState state, const IRCEvent event)
     {
-        catchUser(event.target);
+        state.catchUser(event.target);
     }
 
 
@@ -1091,7 +1122,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Remove an exhausted WHOIS request from the queue upon end of WHOIS.
      +/
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWHOISMixin(const IRCEvent event)
+    void onEndOfWHOISMixin(ref IRCPluginState state, const IRCEvent event)
     {
         state.whoisQueue.remove(event.target.nickname);
     }
@@ -1104,7 +1135,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +/
     import std.typecons : Flag, Yes;
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-        (const IRCUser newUser)
+        (ref IRCPluginState state, const IRCUser newUser)
     {
         import kameloso.common : meldInto;
 
@@ -1136,7 +1167,8 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +      event = the IRCEvent to replay once we have WHOIS login information.
      +      fp = the function pointer to call when that happens.
      +/
-    void doWhois(F)(const IRCEvent event, const string nickname, F fn)
+    void doWhois(F)(ref IRCPluginState state, const IRCEvent event,
+        const string nickname, F fn)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
@@ -1149,6 +1181,6 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             return;
         }
 
-        state.whoisQueue[nickname] = whoisRequest(event, fn);
+        state.whoisQueue[nickname] = whoisRequest(state, event, fn);
     }
 }
