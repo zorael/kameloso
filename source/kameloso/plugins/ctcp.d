@@ -9,9 +9,6 @@ import std.stdio;
 
 private:
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // onCTCPs
 /++
@@ -27,7 +24,7 @@ IRCPluginState state;
 @(IRCEvent.Type.CTCP_PING)
 @(IRCEvent.Type.CTCP_TIME)
 @(IRCEvent.Type.CTCP_USERINFO)
-void onCTCPs(const IRCEvent event)
+void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : KamelosoInfo;
     import std.concurrency : send;
@@ -37,7 +34,7 @@ void onCTCPs(const IRCEvent event)
 
     string line;
 
-    with (state)
+    with (plugin.state)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -186,7 +183,7 @@ void onCTCPs(const IRCEvent event)
         event.sender.address: event.sender.nickname;
 
     with (IRCControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
 }
 
@@ -200,7 +197,7 @@ void onCTCPs(const IRCEvent event)
  +  such types CTCP_SOMETHING, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
-void onCTCPClientinfo(const IRCEvent event)
+void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : send;
     import std.format : format;
@@ -239,6 +236,7 @@ void onCTCPClientinfo(const IRCEvent event)
 
     // Don't forget to add ACTION, it's handed elsewhere
 
+    with (plugin)
     with (IRCControlCharacter)
     state.mainThread.send(ThreadMessage.Sendline(),
         ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
