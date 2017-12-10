@@ -10,9 +10,6 @@ import std.stdio;
 
 private:
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 /// Toggles whether onAnyEvent prints the raw strings of all incoming events
 bool printAll;
 
@@ -31,15 +28,15 @@ bool printAsserts;
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "users")
-void onCommandShowUsers()
+void onCommandShowUsers(AdminPlugin plugin)
 {
     import kameloso.common : printObject;
 
     logger.trace("Printing Admin's users");
 
-    printObject(state.bot);
+    printObject(plugin.state.bot);
 
-    foreach (entry; state.users.byKeyValue)
+    foreach (entry; plugin.state.users.byKeyValue)
     {
         writefln("%-12s [%s]", entry.key, entry.value);
     }
@@ -54,9 +51,9 @@ void onCommandShowUsers()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "sudo")
-void onCommandSudo(const IRCEvent event)
+void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    state.mainThread.send(ThreadMessage.Sendline(), event.content);
+    plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
 }
 
 
@@ -72,9 +69,9 @@ void onCommandSudo(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "quit")
-void onCommandQuit(const IRCEvent event)
+void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
-    with (state)
+    with (plugin.state)
     {
         if (event.content.length)
         {
@@ -96,7 +93,7 @@ void onCommandQuit(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "addhome")
-void onCommandAddHome(const IRCEvent event)
+void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
     import std.algorithm.searching : canFind;
@@ -104,13 +101,13 @@ void onCommandAddHome(const IRCEvent event)
 
     immutable channel = event.content.strip();
 
-    if (!channel.isValidChannel(state.bot.server))
+    if (!channel.isValidChannel(plugin.state.bot.server))
     {
         logger.error("Invalid channel");
         return;
     }
 
-    with (state)
+    with (plugin.state)
     {
         if (!bot.homes.canFind(channel))
         {
@@ -132,7 +129,7 @@ void onCommandAddHome(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "delhome")
-void onCommandDelHome(const IRCEvent event)
+void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
     import std.algorithm : countUntil, remove;
@@ -140,13 +137,13 @@ void onCommandDelHome(const IRCEvent event)
 
     immutable channel = event.content.strip();
 
-    if (!channel.isValidChannel(state.bot.server))
+    if (!channel.isValidChannel(plugin.state.bot.server))
     {
         logger.error("Invalid channel");
         return;
     }
 
-    with (state)
+    with (plugin.state)
     {
         immutable chanIndex = bot.homes.countUntil(channel);
 
@@ -173,7 +170,7 @@ void onCommandDelHome(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "addfriend")
-void onCommandAddFriend(const IRCEvent event)
+void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 {
     import std.string : indexOf, strip;
 
@@ -190,7 +187,7 @@ void onCommandAddFriend(const IRCEvent event)
         return;
     }
 
-    with (state)
+    with (plugin.state)
     {
         bot.friends ~= nickname;
         logger.infof("%s added to friends", nickname);
@@ -206,7 +203,7 @@ void onCommandAddFriend(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "delfriend")
-void onCommandDelFriend(const IRCEvent event)
+void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
 {
     import std.algorithm : countUntil, remove;
     import std.string : indexOf, strip;
@@ -224,7 +221,7 @@ void onCommandDelFriend(const IRCEvent event)
         return;
     }
 
-    immutable friendIndex = state.bot.friends.countUntil(nickname);
+    immutable friendIndex = plugin.state.bot.friends.countUntil(nickname);
 
     if (friendIndex == -1)
     {
@@ -232,7 +229,7 @@ void onCommandDelFriend(const IRCEvent event)
         return;
     }
 
-    with (state)
+    with (plugin.state)
     {
         bot.friends = bot.friends.remove(friendIndex);
         bot.updated = true;
@@ -304,13 +301,13 @@ void onCommandPrintBytes()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "asserts")
-void onCommandAsserts()
+void onCommandAsserts(AdminPlugin plugin)
 {
     import kameloso.debugging : formatBot;
 
     printAsserts = !printAsserts;
     logger.info("Printing asserts: ", printAsserts);
-    formatBot(stdout.lockingTextWriter, state.bot);
+    formatBot(stdout.lockingTextWriter, plugin.state.bot);
 }
 
 
@@ -367,9 +364,9 @@ void onAnyEvent(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "join")
-void onCommandJoin(const IRCEvent event)
+void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 {
-    joinPartImpl("JOIN", event);
+    plugin.joinPartImpl("JOIN", event);
 }
 
 
@@ -383,9 +380,9 @@ void onCommandJoin(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "part")
-void onCommandPart(const IRCEvent event)
+void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 {
-    joinPartImpl("PART", event);
+    plugin.joinPartImpl("PART", event);
 }
 
 
@@ -400,7 +397,7 @@ void onCommandPart(const IRCEvent event)
  +      prefix = the action string to send (`JOIN` or `PART`).
  +      event = the triggering `IRCEvent`.
  +/
-void joinPartImpl(const string prefix, const IRCEvent event)
+void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
     import std.format : format;
@@ -415,7 +412,7 @@ void joinPartImpl(const string prefix, const IRCEvent event)
         return;
     }
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "%s :%s".format(prefix, event.content.splitter(' ').joiner(",")));
 }
 
