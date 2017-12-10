@@ -713,6 +713,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 alias Params = staticMap!(Unqual, Parameters!fun);
                                 enum isIRCPluginParam(T) = is(T == IRCPlugin);
 
+                                static if (verbose)
+                                {
+                                    writeln("%s.%s WHOIS for %s",
+                                        typeof(this).stringof,
+                                        __traits(identifier, fun), event.type);
+                                }
+
                                 static if (is(Params : AliasSeq!IRCEvent) ||
                                     (is(Params : AliasSeq!(IRCPluginState, IRCEvent)) ||
                                     is(Params : AliasSeq!IRCPluginState) ||
@@ -761,6 +768,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.traits : Parameters, Unqual, arity;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);
+
+                    static if (verbose)
+                    {
+                        writeln("%s.%s on %s", typeof(this).stringof,
+                            __traits(identifier, fun), event.type);
+                    }
 
                     static if (is(Params : AliasSeq!IRCEvent))
                     {
