@@ -1227,10 +1227,6 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
     slice.nom(" :");
     event.content = slice;
 
-    // FIXME: This obviously doesn't scale either
-    /*if (event.target.nickname == "*") event.target.nickname = string.init;
-    else*/
-
     with (parser)
     {
         event.sender.special = parser.isSpecial(event);
