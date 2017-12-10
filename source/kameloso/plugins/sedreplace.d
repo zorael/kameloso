@@ -10,9 +10,6 @@ import std.stdio;
 
 private:
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 /// A `Line[string]` 1-buffer of the previous line every user said,
 /// with nickname as key
 Line[string] prevlines;
@@ -158,7 +155,7 @@ unittest
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.anyone)  // ?
-void onMessage(const IRCEvent event)
+void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.string : beginsWith;
     import std.datetime : Clock, seconds;
@@ -188,7 +185,7 @@ void onMessage(const IRCEvent event)
                 if ((result == event.content) || !result.length) return;
 
                 import kameloso.common : ThreadMessage;
-                state.mainThread.send(ThreadMessage.Sendline(),
+                plugin.state.mainThread.send(ThreadMessage.Sendline(),
                     "PRIVMSG %s :%s | %s"
                     .format(event.channel, event.sender.nickname, result));
 

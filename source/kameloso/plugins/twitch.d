@@ -29,9 +29,6 @@ struct TwitchSettings
 /// All Twitch plugin options gathered
 @Settings TwitchSettings twitchSettings;
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // postprocess
 /++
@@ -41,11 +38,11 @@ IRCPluginState state;
  +  Params:
  +      event = the `IRCEvent` to modify.
  +/
-void postprocess(ref IRCEvent event)
+void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
-    if (!state.bot.server.address.endsWith(".twitch.tv")) return;
+    if (!plugin.state.bot.server.address.endsWith(".twitch.tv")) return;
 
     parseTwitchTags(event);
 
