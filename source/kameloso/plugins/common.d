@@ -74,9 +74,6 @@ abstract class WHOISRequest
     /// Stored `IRCEvent` to replay
     IRCEvent event;
 
-    /// Stored `IRCPluginState` for context
-    IRCPluginState state;
-
     /// When the user this concerns was last `WHOIS`ed
     size_t lastWhois;
 
@@ -92,20 +89,34 @@ abstract class WHOISRequest
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
  +  returns we trigger the object and the original IRCEvent is replayed.
  +/
-final class WHOISRequestImpl(F) : WHOISRequest
+final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {
     /// Stored function pointer/delegate
     F fn;
 
-    this(IRCPluginState, IRCEvent event, F fn)
+    static if (!is(Payload == typeof(null)))
     {
-        this.state = state;
-        this.event = event;
-        this.fn = fn;
+        /// Command payload aside from the `IRCEvent`
+        Payload payload;
+
+        this(Payload payload, IRCEvent event, F fn)
+        {
+            this.payload = payload;
+            this.event = event;
+            this.fn = fn;
+        }
+    }
+    else
+    {
+        this(IRCEvent event, F fn)
+        {
+            this.event = event;
+            this.fn = fn;
+        }
     }
 
     /// Call the passed function/delegate pointer, optionally with the stored
-    /// `IRCEvent` and/or `IRCPluginState`
+    /// `IRCEvent` and/or `Payload`
     override void trigger()
     {
         import std.meta : AliasSeq, staticMap;
@@ -119,13 +130,13 @@ final class WHOISRequestImpl(F) : WHOISRequest
         {
             fn(event);
         }
-        else static if (is(Params : AliasSeq!(IRCPluginState, IRCEvent)))
+        else static if (is(Params : AliasSeq!(Payload, IRCEvent)))
         {
-            fn(state, event);
+            fn(payload, event);
         }
-        else static if (is(Params : AliasSeq!IRCPluginState))
+        else static if (is(Params : AliasSeq!Payload))
         {
-            fn(state);
+            fn(payload);
         }
         else static if (arity!fn == 0)
         {
@@ -133,7 +144,7 @@ final class WHOISRequestImpl(F) : WHOISRequest
         }
         else
         {
-            static assert(0, "Unknown function signature in WHOISReply: " ~
+            static assert(0, "Unknown function signature in WHOISRequestImpl: " ~
                 typeof(fn).stringof);
         }
     }
@@ -212,22 +223,22 @@ unittest
 
 // whoisRequest
 /++
- +  Convenience function that returns a WHOISRequestImpl of the right type.
+ +  Convenience function that returns a WHOISRequestImpl of the right type,
+ +  with a payload attached.
  +/
-WHOISRequest whoisRequest(F)(const IRCEvent event, F fn)
+WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event, F fn)
 {
-    return new WHOISRequestImpl!F(event, fn);
+    return new WHOISRequestImpl!(F, Payload)(payload, event, fn);
 }
-
 
 // whoisRequest
 /++
- +  Different convenience function that returns a WHOISRequestImpl of a
- +  different type.
+ +  Convenience function that returns a WHOISRequestImpl of the right type,
+ +  without a payload attached.
  +/
-WHOISRequest whoisRequest(F)(IRCPluginState state, IRCEvent event, F fn)
+WHOISRequest whoisRequest(F)(IRCEvent event, F fn)
 {
-    return new WHOISRequestImpl!F(state, event, fn);
+    return new WHOISRequestImpl!F(event, fn);
 }
 
 // IRCPluginState
