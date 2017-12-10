@@ -427,7 +427,6 @@ JSONValue loadNotes(const string filename)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd()
 {
-    logger.log("Initialising notes ...");
     notes = loadNotes(notesSettings.notesFile);
 }
 

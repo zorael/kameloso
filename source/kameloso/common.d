@@ -1531,9 +1531,6 @@ struct Client
     +/
     void startPlugins()
     {
-        if (!plugins.length) return;
-
-        logger.info("Starting plugins");
         foreach (plugin; plugins)
         {
             plugin.start(plugin);

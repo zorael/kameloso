@@ -390,7 +390,6 @@ void onCommandReloadQuotes()
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd()
 {
-    logger.log("Initialising quotes ...");
     quotes = loadQuotes(chatbotSettings.quotesFile);
 }
 

@@ -56,8 +56,6 @@ void pipereader(shared IRCPluginState newState)
 
     scope(exit)
     {
-        stdout.flush();
-        tlsLogger.log("Deleting FIFO from disk");
         remove(fifo.name);
     }
 
@@ -137,8 +135,6 @@ void createFIFO()
     import std.process : execute;
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
-
-    tlsLogger.log("Creating FIFO");
 
     if (!filename.exists)
     {
