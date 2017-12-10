@@ -29,10 +29,8 @@ struct NotesSettings
 /// All Notes plugin settings gathered
 @Settings NotesSettings notesSettings;
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
 
-
+// notes
 /++
  +  The in-memory JSON storage of all stored notes.
  +
@@ -49,7 +47,7 @@ JSONValue notes;
  +  Nothing is sent if no notes are stored.
  +/
 @(IRCEvent.Type.JOIN)
-void onJoin(const IRCEvent event)
+void onJoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
     import std.datetime : Clock;
@@ -60,7 +58,7 @@ void onJoin(const IRCEvent event)
     {
         const noteArray = getNotes(event.sender.nickname);
 
-        with (state)
+        with (plugin.state)
         {
             if (!noteArray.length) return;
             else if (noteArray.length == 1)
@@ -108,19 +106,19 @@ void onJoin(const IRCEvent event)
  +  get notes. This may be extended to trigger when they say something, too.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
-void onNames(const IRCEvent event)
+void onNames(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : stripModeSign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
     import std.datetime : Clock;
 
-    if (!state.bot.homes.canFind(event.channel)) return;
+    if (!plugin.state.bot.homes.canFind(event.channel)) return;
 
     foreach (immutable prefixedNickname; event.content.splitter)
     {
         immutable nickname = prefixedNickname.stripModeSign();
-        if (nickname == state.bot.nickname) continue;
+        if (nickname == plugin.state.bot.nickname) continue;
 
         IRCEvent fakeEvent;
 
@@ -132,7 +130,7 @@ void onNames(const IRCEvent event)
             time = Clock.currTime.toUnixTime;
         }
 
-        onJoin(fakeEvent);
+        plugin.onJoin(fakeEvent);
     }
 }
 
@@ -146,7 +144,7 @@ void onNames(const IRCEvent event)
 @Prefix("note")
 @Prefix(NickPolicy.required, "addnote")
 @Prefix(NickPolicy.required, "note")
-void onCommandAddNote(const IRCEvent event)
+void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     import std.format : format, formattedRead;
     import std.json : JSONException;
@@ -161,7 +159,7 @@ void onCommandAddNote(const IRCEvent event)
     try
     {
         nickname.addNote(event.sender.nickname, line);
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :Note added".format(event.channel));
 
         saveNotes(notesSettings.notesFile);
@@ -215,7 +213,7 @@ void onCommandReloadQuotes()
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "fakejoin")
-void onCommandFakejoin(const IRCEvent event)
+void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : nom;
     import std.string : indexOf;
@@ -236,7 +234,7 @@ void onCommandFakejoin(const IRCEvent event)
         newEvent.sender.nickname = event.content;
     }
 
-    return onJoin(newEvent);  // or onEvent?
+    return plugin.onJoin(newEvent);  // or onEvent?
 }
 
 
