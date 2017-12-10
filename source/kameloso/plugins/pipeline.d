@@ -131,6 +131,8 @@ void pipereader(shared IRCPluginState newState)
  +/
 void createFIFO()
 {
+    import kameloso.bash : BashForeground, BashReset, colour;
+    import std.array : Appender;
     import std.file : exists, isDir;
     import std.process : execute;
 
@@ -148,8 +150,29 @@ void createFIFO()
         return;
     }
 
-    tlsLogger.info("Pipe text to [", filename,
-        "] to send raw commands to the server");
+    version(Colours)
+    {
+        Appender!string sink;
+        sink.reserve(128);
+
+        immutable BashForeground[] logcolours = state.settings.monochrome ?
+            KamelosoLogger.logcoloursBright : KamelosoLogger.logcoloursDark;
+
+        sink.colour(logcolours[LogLevel.info]);
+        sink.put("Pipe text to [");
+        sink.colour(logcolours[LogLevel.all]);
+        sink.put(filename);
+        sink.colour(logcolours[LogLevel.info]);
+        sink.put("] to send raw commands to the server.");
+
+        writeln(sink.data.length);
+        tlsLogger.trace(sink.data);
+    }
+    else
+    {
+        tlsLogger.info("Pipe text to [", filename,
+            "] to send raw commands to the server");
+    }
 
     fifo = File(filename, "r");
 }
