@@ -47,9 +47,6 @@ struct ConnectSettings
 /// All Connect plugin settings gathered
 @Settings ConnectSettings connectSettings;
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 /// Flag whether the server has sent at least one `PING`
 bool serverPinged;
 
@@ -66,12 +63,12 @@ alias Status = IRCBot.Status;
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @(ChannelPolicy.any)
-void onSelfpart(const IRCEvent event)
+void onSelfpart(ConnectPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
     import std.algorithm.searching : countUntil;
 
-    with (state)
+    with (plugin.state)
     {
         immutable index = bot.channels.countUntil(event.channel);
 
@@ -109,11 +106,11 @@ void onSelfpart(const IRCEvent event)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
-void onSelfjoin(const IRCEvent event)
+void onSelfjoin(ConnectPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
-    with (state)
+    with (plugin.state)
     {
         if (!bot.channels.canFind(event.channel) &&
             !bot.homes.canFind(event.channel))
@@ -136,9 +133,9 @@ void onSelfjoin(const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(ChannelPolicy.homeOnly)
-void onEndOfNames(const IRCEvent event)
+void onEndOfNames(ConnectPlugin plugin, const IRCEvent event)
 {
-    with (state)
+    with (plugin.state)
     {
         if (bot.server.daemon == IRCServer.Daemon.twitch) return;
 
@@ -151,9 +148,9 @@ void onEndOfNames(const IRCEvent event)
 /++
  +  Joins all channels listed as homes *and* channels in the `IRCBot` object.
  +/
-void joinChannels()
+void joinChannels(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         if (!bot.homes.length && !bot.channels.length)
         {
@@ -185,11 +182,11 @@ void joinChannels()
  +  the `IRCEvent`) to the server.
  +/
 @(IRCEvent.Type.ERR_BADPING)
-void onToConnectType(const IRCEvent event)
+void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
 {
     if (serverPinged) return;
 
-    state.mainThread.send(ThreadMessage.Sendline(), event.content);
+    plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
 }
 
 
@@ -202,13 +199,13 @@ void onToConnectType(const IRCEvent event)
  +  generally wants you to ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
-void onPing(const IRCEvent event)
+void onPing(ConnectPlugin plugin, const IRCEvent event)
 {
     serverPinged = true;
     immutable target = (event.content.length) ?
         event.content : event.sender.address;
 
-    with (state)
+    with (plugin.state)
     {
         mainThread.prioritySend(ThreadMessage.Pong(), target);
 
@@ -217,7 +214,7 @@ void onPing(const IRCEvent event)
             logger.log("Auth timed out. Joining channels");
             bot.authStatus = Status.finished;
             bot.updated = true;
-            joinChannels();
+            plugin.joinChannels();
         }
     }
 }
@@ -230,100 +227,102 @@ void onPing(const IRCEvent event)
  +  The command to send vary greatly between server daemons (and networks), so
  +  use some heuristics and try the best guess.
  +/
-void tryAuth()
+void tryAuth(ConnectPlugin plugin)
 {
     string service = "NickServ";
     string verb = "IDENTIFY";
 
-    // Specialcase networks
-    switch (state.bot.server.network)
+    with (plugin.state)
     {
-    case "DALnet":
-        service = "NickServ@services.dal.net";
-        break;
-
-    case "GameSurge":
-        service = "AuthServ@Services.GameSurge.net";
-        break;
-
-    case "EFNet":
-        // Can't auth
-        return;
-
-    case "QuakeNet":
-        service = "Q@CServe.quakenet.org";
-        verb = "AUTH";
-        break;
-
-    default:
-        break;
-    }
-
-    state.bot.authStatus = Status.started;
-    state.bot.updated = true;
-
-    with (state)
-    with (IRCServer.Daemon)
-    switch (bot.server.daemon)
-    {
-    case rizon:
-    case unreal:
-    case hybrid:
-    case bahamut:
-        // Only accepts password, no auth nickname
-        if (bot.nickname != bot.origNickname)
+        // Specialcase networks
+        switch (bot.server.network)
         {
-            logger.warningf("Cannot auth when you have changed your nickname " ~
-                "(%s != %s)", bot.nickname, bot.origNickname);
+        case "DALnet":
+            service = "NickServ@services.dal.net";
+            break;
 
+        case "GameSurge":
+            service = "AuthServ@Services.GameSurge.net";
+            break;
+
+        case "EFNet":
+            // Can't auth
+            return;
+
+        case "QuakeNet":
+            service = "Q@CServe.quakenet.org";
+            verb = "AUTH";
+            break;
+
+        default:
+            break;
+        }
+
+        bot.authStatus = Status.started;
+        bot.updated = true;
+
+        with (IRCServer.Daemon)
+        switch (bot.server.daemon)
+        {
+        case rizon:
+        case unreal:
+        case hybrid:
+        case bahamut:
+            // Only accepts password, no auth nickname
+            if (bot.nickname != bot.origNickname)
+            {
+                logger.warningf("Cannot auth when you have changed your nickname " ~
+                    "(%s != %s)", bot.nickname, bot.origNickname);
+
+                bot.authStatus = Status.finished;
+                bot.updated = true;
+                plugin.joinChannels();
+                return;
+            }
+
+            mainThread.prioritySend(ThreadMessage.Quietline(),
+                "PRIVMSG %s :%s %s"
+                .format(service, verb, bot.authPassword));
+            logger.trace("--> PRIVMSG %s :%s hunter2"
+                .format(service, verb));
+            break;
+
+        case quakenet:
+        case ircdseven:
+        case u2:
+            // Accepts auth login
+            // GameSurge is AuthServ
+
+            string login = bot.authLogin;
+
+            if (!bot.authLogin.length)
+            {
+                logger.log("No auth login specified! Trying ", bot.origNickname);
+                login = bot.origNickname;
+            }
+
+            mainThread.prioritySend(ThreadMessage.Quietline(),
+                "PRIVMSG %s :%s %s %s"
+                .format(service, verb, login, bot.authPassword));
+            logger.trace("--> PRIVMSG %s :%s %s hunter2"
+                .format(service, verb, login));
+            break;
+
+        case twitch:
+            // No registration available
             bot.authStatus = Status.finished;
             bot.updated = true;
-            joinChannels();
             return;
-        }
 
-        mainThread.prioritySend(ThreadMessage.Quietline(),
-            "PRIVMSG %s :%s %s"
-            .format(service, verb, bot.authPassword));
-        logger.trace("--> PRIVMSG %s :%s hunter2"
-            .format(service, verb));
-        break;
+        default:
+            logger.warning("Unsure of what AUTH approach to use.");
+            logger.log("Need information about what approach succeeded!");
 
-    case quakenet:
-    case ircdseven:
-    case u2:
-        // Accepts auth login
-        // GameSurge is AuthServ
-
-        string login = bot.authLogin;
-
-        if (!bot.authLogin.length)
-        {
-            logger.log("No auth login specified! Trying ", bot.origNickname);
-            login = bot.origNickname;
-        }
-
-        mainThread.prioritySend(ThreadMessage.Quietline(),
-            "PRIVMSG %s :%s %s %s"
-            .format(service, verb, login, bot.authPassword));
-        logger.trace("--> PRIVMSG %s :%s %s hunter2"
-            .format(service, verb, login));
-        break;
-
-    case twitch:
-        // No registration available
-        bot.authStatus = Status.finished;
-        bot.updated = true;
-        return;
-
-    default:
-        logger.warning("Unsure of what AUTH approach to use.");
-        logger.log("Need information about what approach succeeded!");
-
-        if (bot.authLogin.length) goto case ircdseven;
-        else
-        {
-            goto case bahamut;
+            if (bot.authLogin.length) goto case ircdseven;
+            else
+            {
+                goto case bahamut;
+            }
         }
     }
 }
@@ -336,13 +335,13 @@ void tryAuth()
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd()
+void onEndOfMotd(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         if (bot.authPassword.length && (bot.authStatus == Status.notStarted))
         {
-            tryAuth();
+            plugin.tryAuth();
         }
 
         if ((bot.authStatus == Status.finished) ||
@@ -352,7 +351,7 @@ void onEndOfMotd()
             // `bot.authStatus` would be set much later.
             // Twitch servers can't auth so join immediately
             logger.log("Joining channels");
-            joinChannels();
+            plugin.joinChannels();
         }
 
         // Run commands defined in the settings
@@ -375,9 +374,9 @@ void onEndOfMotd()
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
-void onAuthEnd()
+void onAuthEnd(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         bot.authStatus = Status.finished;
         bot.updated = true;
@@ -387,7 +386,7 @@ void onAuthEnd()
         if (bot.registerStatus == Status.started) return;
 
         logger.log("Joining channels");
-        joinChannels();
+        plugin.joinChannels();
     }
 }
 
@@ -398,11 +397,11 @@ void onAuthEnd()
  +  bot as updated, so as to propagate the change to all other plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
-void onNickInUse()
+void onNickInUse(ConnectPlugin plugin)
 {
     import kameloso.constants : altNickSign;
 
-    with (state)
+    with (plugin.state)
     {
         bot.nickname ~= altNickSign;
 
@@ -418,7 +417,7 @@ void onNickInUse()
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
-void onInvite(const IRCEvent event)
+void onInvite(ConnectPlugin plugin, const IRCEvent event)
 {
     if (!connectSettings.joinOnInvite)
     {
@@ -426,7 +425,7 @@ void onInvite(const IRCEvent event)
         return;
     }
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "JOIN :" ~ event.channel);
 }
 
@@ -440,12 +439,12 @@ void onInvite(const IRCEvent event)
  +  (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
-void onRegistrationEvent(const IRCEvent event)
+void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
 {
     /// http://ircv3.net/irc
     /// https://blog.irccloud.com/ircv3
 
-    with (state)
+    with (plugin.state)
     switch (event.aux)
     {
     case "LS":
@@ -542,9 +541,9 @@ void onRegistrationEvent(const IRCEvent event)
  +  `authPassword`, then sends it to the server, during registration.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
-void onSASLAuthenticate()
+void onSASLAuthenticate(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         import std.base64 : Base64;
 
@@ -571,9 +570,9 @@ void onSASLAuthenticate()
  +  loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
-void onSASLSuccess()
+void onSASLSuccess(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         bot.authStatus = Status.finished;
         bot.updated = true;
@@ -604,9 +603,9 @@ void onSASLSuccess()
  +  pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
-void onSASLFailure()
+void onSASLFailure(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         if (connectSettings.exitOnSASLFailure)
         {
@@ -630,9 +629,9 @@ void onSASLFailure()
 /++
  +  Register with/log onto an IRC server.
  +/
-void register()
+void register(ConnectPlugin plugin)
 {
-    with (state)
+    with (plugin.state)
     {
         bot.registerStatus = Status.started;
         bot.updated = true;
@@ -676,9 +675,9 @@ void register()
  +
  +  It seems to work.
  +/
-void start()
+void start(IRCPlugin plugin)
 {
-    register();
+    register(cast(ConnectPlugin)plugin);
 }
 
 
