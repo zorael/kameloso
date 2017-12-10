@@ -489,7 +489,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             // it is a non-channel event, like a QUERY
                         }
-                        else if (!state.bot.homes.canFind(event.channel))
+                        else if (!privateState.bot.homes.canFind(event.channel))
                         {
                             static if (verbose)
                             {
@@ -538,7 +538,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             mutEvent = event;
                             contextPrefix = string.init;
 
-                            with (state)
+                            with (privateState)
                             with (event)
                             with (NickPolicy)
                             final switch (prefixUDA.policy)
@@ -623,7 +623,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 }
 
                                 // Event.content *guaranteed* to begin with
-                                // state.bot.nickname here
+                                // privateState.bot.nickname here
                                 mutEvent.content = content
                                     .stripPrefix(bot.nickname);
                                 break;
@@ -680,15 +680,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                         case friend:
                         case master:
-                            immutable result = state.filterUser(mutEvent);
+                            immutable result = privateState.filterUser(mutEvent);
 
                             with (FilterResult)
                             final switch (result)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (state.users[mutEvent.sender.nickname].login !=
-                                        state.bot.master))
+                                    (privateState.users[mutEvent.sender.nickname].login !=
+                                        privateState.bot.master))
                                 {
                                     static if (verbose)
                                     {
