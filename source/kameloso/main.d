@@ -260,11 +260,11 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            IRCEvent event;
+            IRCEvent mutEvent;
 
             try
             {
-                event = parser.toIRCEvent(line);
+                mutEvent = parser.toIRCEvent(line);
 
                 if (parser.bot.updated)
                 {
@@ -324,7 +324,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
 
                 foreach (plugin; plugins)
                 {
-                    plugin.postprocess(event);
+                    plugin.postprocess(mutEvent);
                     auto yieldedBot = plugin.yieldBot();
 
                     if (yieldedBot.updated)
@@ -336,6 +336,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         propagateBot(bot);
                     }
                 }
+
+                immutable IRCEvent event = mutEvent;
 
                 // Let each plugin process the event
                 foreach (plugin; plugins)
@@ -374,7 +376,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
             {
                 logger.warningf("IRCParseException at %s:%d: %s",
                     e.file, e.line, e.msg);
-                printObject(event);
+                printObject(mutEvent);
                 continue;
             }
             catch (const Exception e)
