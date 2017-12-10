@@ -61,9 +61,6 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
             return;  // invalid quote
         }
 
-        /*auto hits = numBlock[0].toString.matchFirst(numEngine);
-        logger.log("Quote number: ", hits[1]);*/
-
         auto range = doc
             .getElementsByClassName("qt")[0]
             .toString

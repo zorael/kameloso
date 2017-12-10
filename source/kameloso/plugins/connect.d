@@ -211,7 +211,7 @@ void onPing(ConnectPlugin plugin, const IRCEvent event)
 
         if (bot.authStatus == Status.started)
         {
-            logger.log("Auth timed out. Joining channels");
+            logger.log("Auth timed out. Joining channels ...");
             bot.authStatus = Status.finished;
             bot.updated = true;
             plugin.joinChannels();
@@ -350,7 +350,7 @@ void onEndOfMotd(ConnectPlugin plugin)
             // tryAuth finished early with an unsuccessful login, else
             // `bot.authStatus` would be set much later.
             // Twitch servers can't auth so join immediately
-            logger.log("Joining channels");
+            logger.log("Joining channels ...");
             plugin.joinChannels();
         }
 
@@ -385,7 +385,7 @@ void onAuthEnd(ConnectPlugin plugin)
         // return if still registering
         if (bot.registerStatus == Status.started) return;
 
-        logger.log("Joining channels");
+        logger.log("Joining channels ...");
         plugin.joinChannels();
     }
 }

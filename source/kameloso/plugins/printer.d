@@ -543,9 +543,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         }
         else
         {
-            /*logger.warning("bot was not built with colour support yet " ~
-                "monochrome is off; forcing monochrome.");*/
-
             // This will only change this plugin's monochrome setting...
             // We have no way to propagate it
             settings.monochrome = true;
