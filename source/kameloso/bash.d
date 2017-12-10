@@ -525,11 +525,12 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 
     Appender!string sink;
     // \033[38;2;255;255;255m<word>\033[m
+    // \033[48 for background
     sink.reserve(word.length + 23);
 
     sink.truecolour!normalise(r, g, b, bright);
     sink.put(word);
-    sink.put(TerminalToken.bashFormat ~ "[0m");
+    sink.colour(BashReset.all);
     return sink.data;
 }
 else

@@ -752,7 +752,7 @@ version(Colours)
 void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     (ref IRCEvent event)
 {
-    import kameloso.bash : TerminalToken;
+    import kameloso.bash : BashReset, TerminalToken, colour;
     import std.array : Appender;
     import std.conv  : to;
     import std.regex : ctRegex, matchAll, replaceAll;
@@ -791,7 +791,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
 
         default:
             logger.warning("Unknown Bash effect code: ", bashEffectCode);
-            sink.put(TerminalToken.bashFormat ~ "[0m");
+            sink.colour(BashReset.all);
             break;
         }
 
@@ -803,7 +803,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
     // End tags and commit
-    sink.put(TerminalToken.bashFormat ~ "[0m");
+    sink.colour(BashReset.all);
     event.content = sink.data;
 }
 
