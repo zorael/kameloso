@@ -44,11 +44,6 @@ struct ConnectSettings
     string[] sendAfterConnect;
 }
 
-/// All Connect plugin settings gathered
-@Settings ConnectSettings connectSettings;
-
-/// Flag whether the server has sent at least one `PING`
-bool serverPinged;
 
 /// Shorthand alias to `IRCBot.Status`
 alias Status = IRCBot.Status;
@@ -184,7 +179,7 @@ void joinChannels(ConnectPlugin plugin)
 @(IRCEvent.Type.ERR_BADPING)
 void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
 {
-    if (serverPinged) return;
+    if (plugin.serverPinged) return;
 
     plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
 }
@@ -201,7 +196,7 @@ void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.PING)
 void onPing(ConnectPlugin plugin, const IRCEvent event)
 {
-    serverPinged = true;
+    plugin.serverPinged = true;
     immutable target = (event.content.length) ?
         event.content : event.sender.address;
 
@@ -355,7 +350,7 @@ void onEndOfMotd(ConnectPlugin plugin)
         }
 
         // Run commands defined in the settings
-        foreach (immutable line; connectSettings.sendAfterConnect)
+        foreach (immutable line; plugin.connectSettings.sendAfterConnect)
         {
             import std.string : strip;
 
@@ -420,7 +415,7 @@ void onNickInUse(ConnectPlugin plugin)
 @(ChannelPolicy.any)
 void onInvite(ConnectPlugin plugin, const IRCEvent event)
 {
-    if (!connectSettings.joinOnInvite)
+    if (!plugin.connectSettings.joinOnInvite)
     {
         logger.log("Invited, but joinOnInvite is false so not joining");
         return;
@@ -459,7 +454,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!connectSettings.sasl || !bot.authPassword.length) continue;
+                if (!plugin.connectSettings.sasl || !bot.authPassword.length) continue;
                 mainThread.send(ThreadMessage.Quietline(), "CAP REQ :sasl");
                 tryingSASL = true;
                 break;
@@ -608,7 +603,7 @@ void onSASLFailure(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        if (connectSettings.exitOnSASLFailure)
+        if (plugin.connectSettings.exitOnSASLFailure)
         {
             mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
             //bot.authStatus = Status.failed;
@@ -711,5 +706,11 @@ public:
  +/
 final class ConnectPlugin : IRCPlugin
 {
+    /// All Connect plugin settings gathered
+    @Settings ConnectSettings connectSettings;
+
+    /// Flag whether the server has sent at least one `PING`
+    bool serverPinged;
+
     mixin IRCPluginImpl;
 }
