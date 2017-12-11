@@ -6,7 +6,7 @@ import kameloso.constants;
 import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
-import std.traits : isType, isArray;
+import std.traits : Unqual, isType, isArray;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
@@ -1648,4 +1648,28 @@ void initLogger(bool monochrome = settings.monochrome,
     import std.experimental.logger : LogLevel;
 
     logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
+}
+
+
+// UnqualArray
+/++
+ +  Given an array of qualified elements, aliases itself to one such of
+ +  unqualified elements.
+ +/
+alias UnqualArray(QualArray : QualType[], QualType) = Unqual!QualType[];
+
+///
+unittest
+{
+    alias ConstStrings = const(string)[];
+    alias UnqualStrings = UnqualArray!ConstStrings;
+    static assert(is(UnqualStrings == string[]));
+
+    alias ImmChars = string;
+    alias UnqualChars = UnqualArray!ImmChars;
+    static assert(is(UnqualChars == char[]));
+
+    alias InoutBools = inout(bool)[];
+    alias UnqualBools = UnqualArray!InoutBools;
+    static assert(is(UnqualBools == bool[]));
 }
