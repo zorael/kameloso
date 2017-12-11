@@ -7,6 +7,8 @@ unittest
     import kameloso.constants : IRCControlCharacter;
     IRCParser parser;
 
+    parser.bot.nickname = "kameloso";
+
     /+
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
     :tepper.freenode.net NOTICE * :*** Checking Ident
@@ -31,6 +33,8 @@ unittest
         assert((content == "Nickname is already in use."), content);
         assert((num == 433), num.to!string);
     }
+
+    parser.bot.nickname = "kameloso^";
 
     /+
     [RPL_WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)

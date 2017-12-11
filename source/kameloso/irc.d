@@ -675,8 +675,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
         event.target.nickname = slice.nom(" :");
         event.content = slice;
-        bot.nickname = event.target.nickname;
-        //bot.updated = true;
         break;
 
     case ERR_BADPING: // 513
