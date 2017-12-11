@@ -196,7 +196,8 @@ TitleLookup lookupTitle(const string url)
         with (redditRes.finalURI)
         {
             if (!uri.beginsWith("https://www.reddit.com/login") &&
-                !uri.beginsWith("https://www.reddit.com/submit"))
+                !uri.beginsWith("https://www.reddit.com/submit") &&
+                !uri.beginsWith("https://www.reddit.com/http"))
             {
                 // Has been posted to Reddit
                 lookup.reddit = uri;
