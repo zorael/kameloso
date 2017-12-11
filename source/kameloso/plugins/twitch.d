@@ -245,7 +245,10 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 
         case "color":
             // Hexadecimal RGB color code. This is empty if it is never set.
-            if (value.length) event.colour = value[1..$];
+            if (plugin.twitchSettings.twitchColours && value.length)
+            {
+                event.colour = value[1..$];
+            }
             break;
 
         case "msg-param-sub-plan-name":
