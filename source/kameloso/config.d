@@ -139,7 +139,7 @@ if (Things.length > 1)
  +  assert(!sink.data.empty);
  +  ------------
  +/
-void serialise(Sink, Thing)(ref Sink sink, Thing thing)
+void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
     import std.algorithm : joiner;
@@ -148,7 +148,7 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
     import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
-    import std.traits : getUDAs, hasUDA, isArray, isSomeString, isType;
+    import std.traits : Unqual, getUDAs, hasUDA, isArray, isSomeString, isType;
 
     static if (__traits(hasMember, Sink, "data"))
     {
@@ -156,11 +156,13 @@ void serialise(Sink, Thing)(ref Sink sink, Thing thing)
         if (sink.data.length) sink.put(newline);
     }
 
+    alias Thing = Unqual!QualThing;
+
     sink.formattedWrite("[%s]%s", Thing.stringof.stripSuffix("Settings"), newline);
 
     foreach (immutable i, member; thing.tupleof)
     {
-        alias T = typeof(member);
+        alias T = Unqual!(typeof(member));
 
         static if (!isType!member &&
             isConfigurableVariable!(member) &&
@@ -301,14 +303,14 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
 {
     import kameloso.string : unquoted;
     import std.conv : ConvException, to;
-    import std.traits : getUDAs, hasUDA, isArray, isSomeString, isType;
+    import std.traits : Unqual, getUDAs, hasUDA, isArray, isSomeString, isType;
 
     top:
     switch (memberToSet)
     {
         foreach (immutable i, member; thing.tupleof)
         {
-            alias T = typeof(member);
+            alias T = Unqual!(typeof(member));
 
             static if (!isType!member &&
                 isConfigurableVariable!member &&
