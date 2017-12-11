@@ -7,8 +7,8 @@ import kameloso.constants;
 import kameloso.irc;
 import kameloso.plugins.common;
 
-import std.concurrency : send, Tid;
 import std.experimental.logger;
+import std.concurrency : Tid;
 import std.regex : ctRegex;
 
 import std.stdio;
@@ -24,23 +24,8 @@ private:
 struct WebtitlesSettings
 {
     /// Flag to look up URLs on Reddit to see if they've been posted there
-    bool redditLookups = true;
+    bool redditLookups = false;
 }
-
-/// All Webtitles plugin options gathered
-@Settings WebtitlesSettings webtitlesSettings;
-
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
-/// Thread ID of the working thread that does the lookups
-Tid workerThread;
-
-/// Regex pattern to grep a web page title from the HTTP body
-enum titlePattern = `<title>([^<]+)</title>`;
-
-/// Regex engine to catch web titles
-static titleRegex = ctRegex!(titlePattern, "i");
 
 /// Regex pattern to match a URI, to see if one was pasted
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
@@ -48,20 +33,11 @@ enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 /// Regex engine to catch URIs
 static urlRegex = ctRegex!stephenhay;
 
-/// Regex engine to match only the domain in a URI
-enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
-
-/// Regex engine to catch domains
-static domainRegex = ctRegex!domainPattern;
-
 /// Regex pattern to match YouTube urls
 enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
 /// Regex engine to match YouTube urls for replacement
 static youtubeRegex = ctRegex!youtubePattern;
-
-/// Thread-local logger
-Logger tlsLogger;
 
 
 // TitleLookup
@@ -94,6 +70,30 @@ struct TitleLookup
 }
 
 
+// TitleRequest
+/++
+ +  A record of an URI lookup request.
+ +
+ +  This is used to aggregate information about a lookup request, making it
+ +  easier to pass it inbetween functions. It serves no greater purpose.
+ +
+ +  ------------
+ +  struct TitleRequest
+ +  {
+ +      string url;
+ +      string target;
+ +      bool redditLookup;
+ +  }
+ +  ------------
+ +/
+struct TitleRequest
+{
+    string url;
+    string target;
+    bool redditLookup;
+}
+
+
 // onMessage
 /++
  +  Parses a message to see if the message contains an URI.
@@ -102,8 +102,11 @@ struct TitleLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-void onMessage(const IRCEvent event)
+void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
+    import core.time : seconds;
+    import std.concurrency : spawn;
+    import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
 
     auto matches = event.content.matchAll(urlRegex);
@@ -116,7 +119,87 @@ void onMessage(const IRCEvent event)
         immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
         logger.info("Caught URL: ", url);
-        workerThread.send(url, target);
+
+        // Garbage-collect entries too old to use
+        plugin.cache.prune();
+
+        const inCache = url in plugin.cache;
+
+        if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
+            < Timeout.titleCache.seconds))
+        {
+            logger.log("Found title lookup in cache");
+            plugin.state.mainThread.reportURL(*inCache, target);
+            continue;
+        }
+
+        // There were no cached entries for this URL
+
+        TitleRequest titleReq;
+        titleReq.url = url;
+        titleReq.target = target;
+        titleReq.redditLookup = plugin.webtitlesSettings.redditLookups;
+
+        shared IRCPluginState sState = cast(shared)plugin.state;
+        spawn(&worker, sState, titleReq);
+    }
+}
+
+
+// worker
+/++
+ +  Looks up an URL and reports the title to the main thread, for printing in a
+ +  channel.
+ +
+ +  Supposed to be run in its own, shortlived thread.
+ +/
+void worker(shared IRCPluginState sState, const TitleRequest titleReq)
+{
+    IRCPluginState state = cast(IRCPluginState)sState;
+
+    kameloso.common.settings = state.settings;
+    initLogger(state.settings.monochrome, state.settings.brightTerminal);
+
+    try
+    {
+        auto lookup = lookupTitle(titleReq);
+        state.mainThread.reportURL(lookup, titleReq.target);
+    }
+    catch (const Exception e)
+    {
+        logger.error(e.msg);
+    }
+}
+
+
+// reportURL
+/++
+ +  Prints the result of a web title lookup in the channel or as a message to
+ +  the user specified.
+ +
+ +  Optionally also reports the Reddit page that links to said URL.
+ +/
+void reportURL(Tid tid, const TitleLookup lookup, const string target)
+{
+    import std.concurrency : send;
+    import std.format : format;
+
+    if (lookup.domain.length)
+    {
+        tid.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :[%s] %s"
+            .format(target, lookup.domain, lookup.title));
+    }
+    else
+    {
+        tid.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :%s".format(target, lookup.title));
+    }
+
+    if (lookup.reddit.length)
+    {
+        tid.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
     }
 }
 
@@ -130,7 +213,7 @@ void onMessage(const IRCEvent event)
  +  by rewriting the URL to be one to ListenOnRepeat with the same video ID.
  +  Then we get our YouTube title.
  +/
-TitleLookup lookupTitle(const string url)
+TitleLookup lookupTitle(const TitleRequest titleReq)
 {
     import kameloso.string : beginsWith;
     import arsd.dom : Document;
@@ -149,12 +232,12 @@ TitleLookup lookupTitle(const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    auto res = req.get(url);
+    auto res = req.get(titleReq.url);
 
     if (res.code >= 400)
     {
-        tlsLogger.error("Response code: ", res.code);
-        return lookup;
+        import std.conv : text;
+        throw new Exception("Could not fetch URL; response code: " ~ res.code.text);
     }
 
     auto stream = res.receiveAsRange();
@@ -166,17 +249,20 @@ TitleLookup lookupTitle(const string url)
         if (doc.title.length) break;
     }
 
-    if (!doc.title.length) return lookup;  // throw Exception, really
+    if (!doc.title.length)
+    {
+        throw new Exception("Could not find a title tag");
+    }
 
     lookup.title = doc.title;
 
     if ((lookup.title == "YouTube") &&
-        (url.indexOf("youtube.com/watch?") != -1))
+        (titleReq.url.indexOf("youtube.com/watch?") != -1))
     {
-        lookup.fixYoutubeTitles(url);
+        fixYoutubeTitles(lookup, titleReq);
     }
 
-    lookup.domain = res.finalURI.host;
+    lookup.domain = res.finalURI.host; // original_host;  // thanks to ikod
 
     if (lookup.domain.beginsWith("www"))
     {
@@ -184,19 +270,26 @@ TitleLookup lookupTitle(const string url)
         lookup.domain.nom('.');
     }
 
-    if (!url.beginsWith("https://www.reddit.com"))
+    if (titleReq.redditLookup && !titleReq.url.beginsWith("https://www.reddit.com"))
     {
         Request redditReq;
         redditReq.useStreaming = true;  // we only want as little as possible
         redditReq.keepAlive = false;
         redditReq.bufferSize = BufferSize.titleLookup;
 
-        auto redditRes = redditReq.get("https://www.reddit.com/" ~ url);
+        logger.log("Checking Reddit ...");
+
+        auto redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
 
         with (redditRes.finalURI)
         {
-            if (!uri.beginsWith("https://www.reddit.com/login") &&
-                !uri.beginsWith("https://www.reddit.com/submit"))
+            if (uri.beginsWith("https://www.reddit.com/login") ||
+                uri.beginsWith("https://www.reddit.com/submit") ||
+                uri.beginsWith("https://www.reddit.com/http"))
+            {
+                logger.log("No corresponding Reddit post.");
+            }
+            else
             {
                 // Has been posted to Reddit
                 lookup.reddit = uri;
@@ -218,25 +311,25 @@ TitleLookup lookupTitle(const string url)
  +      ref lookup = the failing TitleLookup that we want to try hacking around
  +      url = the original URL string
  +/
-void fixYoutubeTitles(ref TitleLookup lookup, const string url)
+void fixYoutubeTitles(ref TitleLookup lookup, const TitleRequest titleReq)
 {
     import std.regex : replaceFirst;
     import std.string : indexOf;
 
-    tlsLogger.log("Bland YouTube title...");
+    logger.log("Bland YouTube title ...");
 
-    immutable onRepeatURL = url.replaceFirst(youtubeRegex,
+    immutable onRepeatURL = titleReq.url.replaceFirst(youtubeRegex,
         "https://www.listenonrepeat.com/watch/");
 
-    tlsLogger.log("ListenOnRepeat URL: ", onRepeatURL);
+    logger.log("ListenOnRepeat URL: ", onRepeatURL);
 
-    TitleLookup onRepeatLookup = lookupTitle(onRepeatURL);
+    auto onRepeatLookup = lookupTitle(titleReq);
 
-    tlsLogger.log("ListenOnRepeat title: ", onRepeatLookup.title);
+    logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
     if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
     {
-        tlsLogger.error("Failed to ListenOnRepeatify YouTube title");
+        logger.error("Failed to ListenOnRepeatify YouTube title");
         return;
     }
 
@@ -244,47 +337,6 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
     onRepeatLookup.title = onRepeatLookup.title[0..$-17];
     onRepeatLookup.domain = "youtube.com";
     lookup = onRepeatLookup;
-}
-
-
-// getDomainFromURL
-/++
- +  Fetches the slice of the domain name from a URL.
- +
- +  Params:
- +      url = an URL string.
- +
- +  Returns:
- +      the domain part of the URL string, or an empty string if no matches.
- +/
-string getDomainFromURL(const string url) @safe
-{
-    import std.regex : matchFirst;
-
-    auto domainHits = url.matchFirst(domainRegex);
-    return domainHits.length ? domainHits[1] : string.init;
-}
-
-///
-@safe unittest
-{
-    immutable d1 = getDomainFromURL("http://www.youtube.com/watch?asoidjsd&asd=kokofruit");
-    assert((d1 == "youtube.com"), d1);
-
-    immutable d2 = getDomainFromURL("https://www.com");
-    assert((d2 == "com"), d2);
-
-    immutable d3 = getDomainFromURL("ftp://ftp.sunet.se");
-    assert(!d3.length, d3);
-
-    immutable d4 = getDomainFromURL("http://");
-    assert(!d4.length, d4);
-
-    immutable d5 = getDomainFromURL("invalid line");
-    assert(!d5.length, d5);
-
-    immutable d6 = getDomainFromURL("");
-    assert(!d6.length, d6);
 }
 
 
@@ -335,133 +387,33 @@ unittest
 }
 
 
-// titleworker
+// prune
 /++
- +  Worker thread of the Webtitles plugin.
- +
- +  It sits and waits for concurrency messages of URLs to look up.
- +
- +  Params:
- +      sMainThread = a shared copy of the mainThread Tid, to which every
- +                    outgoing messages will be sent.
+ +  Garbage-collects old entries in a `TitleLookup[string]` lookup cache.
  +/
-void titleworker(shared Tid sMainThread)
+void prune(TitleLookup[string] cache)
 {
-    import core.time : seconds;
-    import std.concurrency : OwnerTerminated, receive;
-    import std.datetime : Clock, SysTime;
-    import std.variant : Variant;
+    enum expireSeconds = 600;
 
-    Tid mainThread = cast(Tid)sMainThread;
-    tlsLogger = new KamelosoLogger(LogLevel.all);
+    string[] garbage;
 
-    /// Cache buffer of recently looked-up URIs
-    TitleLookup[string] cache;
-    bool halt;
-
-    void catchURL(string url, string target)
+    foreach (key, entry; cache)
     {
-        import std.format : format;
+        import std.datetime : Clock;
+        import core.time : minutes;
 
-        TitleLookup lookup;
-        const inCache = url in cache;
+        const now = Clock.currTime;
 
-        if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
-            < Timeout.titleCache.seconds))
+        if ((now.toUnixTime - entry.when) > expireSeconds)
         {
-            tlsLogger.log("Found title lookup in cache");
-            lookup = *inCache;
-        }
-        else
-        {
-            try lookup = lookupTitle(url);
-            catch (const Exception e)
-            {
-                import kameloso.string : beginsWith;
-
-                if (url.beginsWith("https"))
-                {
-                    tlsLogger.warningf("Could not look up URL '%s': %s", url, e.msg);
-                    tlsLogger.log("Rewriting https to http and retrying...");
-                    return catchURL(("http" ~ url[5..$]), target);
-                }
-                else
-                {
-                    tlsLogger.errorf("Could not look up URL '%s': %s", url, e.msg);
-                }
-            }
-        }
-
-        if (lookup == TitleLookup.init)
-        {
-            tlsLogger.error("Failed.");
-            return;
-        }
-
-        // parseTitle to fix html entities and linebreaks
-        lookup.title = parseTitle(lookup.title);
-        cache[url] = lookup;
-
-        if (lookup.domain.length)
-        {
-            mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :[%s] %s"
-                    .format(target, lookup.domain, lookup.title));
-        }
-        else
-        {
-            mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s".format(target, lookup.title));
-        }
-
-        if (lookup.reddit.length)
-        {
-            mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
+            garbage ~= key;
         }
     }
 
-    while (!halt)
+    foreach (key; garbage)
     {
-        receive(
-            &catchURL,
-            (ThreadMessage.Teardown)
-            {
-                halt = true;
-            },
-            (OwnerTerminated o)
-            {
-                halt = true;
-            },
-            (Variant v)
-            {
-                tlsLogger.warning("titleworker received Variant: ", v);
-            }
-        );
+        cache.remove(key);
     }
-}
-
-
-// initialise
-/++
- +  Initialises the Webtitles plugin. Spawns the titleworker thread.
- +/
-void initialise()
-{
-    import std.concurrency : spawn;
-
-    const stateCopy = state;
-    workerThread = spawn(&titleworker, cast(shared)(stateCopy.mainThread));
-}
-
-
-// teardown
-/++
- +  Deinitialises the Webtitles plugin. Shuts down the titleworker thread.
- +/
-void teardown()
-{
-    workerThread.send(ThreadMessage.Teardown());
 }
 
 
@@ -474,10 +426,18 @@ public:
 /++
  +  The Webtitles plugin catches HTTP URI links in an IRC channel, connects to
  +  its server and and streams the web page itself, looking for the web page's
- +  title (in its <title> tags). This is then reported to the originating
- +  channel.
+ +  title. This is then reported to the originating channel or personal query.
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    /// All Webtitles plugin options gathered
+    @Settings WebtitlesSettings webtitlesSettings;
+
+    /// Thread ID of the working thread that does the lookups
+    Tid workerThread;
+
+    /// Cache of recently looked-up web titles
+    TitleLookup[string] cache;
+
+    mixin IRCPluginImpl;
 }

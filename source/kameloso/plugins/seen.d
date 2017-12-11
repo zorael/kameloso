@@ -91,7 +91,7 @@ struct SeenSettings
  +  This is the hook that makes the program save the `SeenSettings` in the
  +  configuration file. Merely annotate it such and it'll be there.
  +/
-@Settings SeenSettings seenSettings;
+//@Settings SeenSettings seenSettings;
 
 
 // IRCPluginState
@@ -132,7 +132,7 @@ struct SeenSettings
  +     to be played back when the `WHOIS` results return, as well as a function
  +     pointer to call with that event.
  +/
-IRCPluginState state;
+//IRCPluginState state;
 
 /++
  +  Our JSON storage of seen users; an array keyed with users' nicknames and
@@ -146,7 +146,7 @@ IRCPluginState state;
  +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"].integer));
  +  --------------
  +/
-JSONValue seenUsers;
+//JSONValue seenUsers;
 
 
 // onSomeAction
@@ -172,7 +172,7 @@ JSONValue seenUsers;
 @(IRCEvent.Type.PART)
 @(IRCEvent.Type.QUIT)
 @(ChannelPolicy.homeOnly)
-void onSomeAction(const IRCEvent event)
+void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     /++
      +  This will, as such, be automatically called on `EMOTE`, `QUERY`, `JOIN`,
@@ -182,7 +182,7 @@ void onSomeAction(const IRCEvent event)
      +
      +  Update the user's timestamp to the current time.
      +/
-    updateUser(event.sender.nickname);
+    plugin.updateUser(event.sender.nickname);
 }
 
 
@@ -198,10 +198,10 @@ void onSomeAction(const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.homeOnly)
-void onWHOReply(const IRCEvent event)
+void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
     /// Update the user's entry in the JSON storage.
-    updateUser(event.target.nickname);
+    plugin.updateUser(event.target.nickname);
 }
 
 
@@ -214,7 +214,7 @@ void onWHOReply(const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.homeOnly)
-void onNameReply(const IRCEvent event)
+void onNameReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
     /++
@@ -223,7 +223,7 @@ void onNameReply(const IRCEvent event)
      +/
     foreach (const nickname; event.content.splitter(" "))
     {
-        updateUser(nickname);
+        plugin.updateUser(nickname);
     }
 }
 
@@ -239,10 +239,10 @@ void onNameReply(const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFWHO)
 @(IRCEvent.Type.RPL_ENDOFNAMES)
-void onEndOfNames()
+void onEndOfNames(SeenPlugin plugin)
 {
     /// Save seen users to disk as persistent storage.
-    seenUsers.saveSeen(seenSettings.seenFile);
+    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 
 
@@ -255,12 +255,12 @@ void onEndOfNames()
  +  the channels occasionally enough.
  +/
 @(IRCEvent.Type.PING)
-void onPing()
+void onPing(SeenPlugin plugin)
 {
     /// Twitch servers don't support `WHO` commands.
-    if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    foreach (const channel; state.bot.homes)
+    foreach (const channel; plugin.state.bot.homes)
     {
         import std.concurrency : send;
 
@@ -276,7 +276,7 @@ void onPing()
          +  "types" defined in `kameloso.common`, and this is why we wanted to
          +  import that.
          +/
-        state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
+        plugin.state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
     }
 }
 
@@ -322,7 +322,7 @@ void onPing()
 @(PrivilegeLevel.friend)
 @Prefix("seen")
 @Prefix(NickPolicy.required, "seen")
-void onCommandSeen(const IRCEvent event)
+void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
     import std.concurrency : send;
@@ -334,17 +334,17 @@ void onCommandSeen(const IRCEvent event)
 
     if (event.sender.nickname == event.content)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :That's you!"
             .format(target));
         return;
     }
 
-    const userTimestamp = event.content in seenUsers;
+    const userTimestamp = event.content in plugin.seenUsers;
 
     if (!userTimestamp)
     {
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :I have never seen %s."
             .format(target, event.content));
         return;
@@ -353,7 +353,7 @@ void onCommandSeen(const IRCEvent event)
     const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :I last saw %s %s ago."
         .format(target, event.content, elapsed));
 }
@@ -369,9 +369,9 @@ void onCommandSeen(const IRCEvent event)
 @(ChannelPolicy.homeOnly)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "printseen")
-void onCommandPrintSeen()
+void onCommandPrintSeen(SeenPlugin plugin)
 {
-    writeln(seenUsers.toPrettyString);
+    writeln(plugin.seenUsers.toPrettyString);
 }
 
 
@@ -380,13 +380,13 @@ void onCommandPrintSeen()
  +  Update a given nickname's entry in the `JSON` seen storage with the current
  +  time, expressed in UNIX time.
  +/
-void updateUser(const string nickname)
+void updateUser(SeenPlugin plugin, const string nickname)
 {
     import kameloso.irc : stripModeSign;
     import std.datetime : Clock;
 
     /// Make sure to strip the modesign, so @foo is the same person as foo.
-    seenUsers[nickname.stripModeSign] = Clock.currTime.toUnixTime;
+    plugin.seenUsers[nickname.stripModeSign] = Clock.currTime.toUnixTime;
 }
 
 
@@ -440,9 +440,10 @@ void saveSeen(const JSONValue jsonStorage, const string filename)
  +  Late during program start, when connection has just been established, load
  +  the seen users from file.
  +/
-void start()
+void start(IRCPlugin rawPlugin)
 {
-    seenUsers = loadSeenFile(seenSettings.seenFile);
+    auto plugin = cast(SeenPlugin)rawPlugin;
+    plugin.seenUsers = loadSeenFile(plugin.seenSettings.seenFile);
 }
 
 
@@ -451,9 +452,10 @@ void start()
  +  When closing the program or when crashing with grace, save the seen users
  +  array to disk for later re-reading.
  +/
-void teardown()
+void teardown(IRCPlugin basePlugin)
 {
-    seenUsers.saveSeen(seenSettings.seenFile);
+    auto plugin = cast(SeenPlugin)basePlugin;
+    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 
 
@@ -481,6 +483,9 @@ public:
  +/
 final class SeenPlugin : IRCPlugin
 {
+    @Settings SeenSettings seenSettings;
+
+    JSONValue seenUsers;
     /++
      +  The final mixin and the final piece of the puzzle.
      +
@@ -496,5 +501,5 @@ final class SeenPlugin : IRCPlugin
      +  pass on things to the private functions we limit the surface area of
      +  the plugin to be really small.
      +/
-    mixin IRCPluginBasics;
+    mixin IRCPluginImpl;
 }

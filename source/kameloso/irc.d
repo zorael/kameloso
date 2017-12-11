@@ -1168,6 +1168,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         case "chanfix":
         case "c":
         case "spamserv":
+        case "services.":
             // Known services that are not nickname services
             return true;
 
@@ -1225,10 +1226,6 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     slice.nom(" :");
     event.content = slice;
-
-    // FIXME: This obviously doesn't scale either
-    /*if (event.target.nickname == "*") event.target.nickname = string.init;
-    else*/
 
     with (parser)
     {
@@ -1907,6 +1904,7 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
     case "chanfix":
     case "c":
     case "spamserv":
+    case "services.":
         // Known services that are not nickname services
         return false;
 

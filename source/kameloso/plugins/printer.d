@@ -49,12 +49,6 @@ struct PrinterSettings
     bool typesInCaps = true;
 }
 
-/// All Printer plugin options gathered
-@Settings PrinterSettings printerSettings;
-
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // onAnyEvent
 /++
@@ -65,7 +59,7 @@ IRCPluginState state;
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(const IRCEvent origEvent)
+void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
 {
     IRCEvent event = origEvent; // need a mutable copy
 
@@ -97,7 +91,7 @@ void onAnyEvent(const IRCEvent origEvent)
     case RPL_WHOREPLY:
     case CAP:
         // These event types are too spammy; ignore
-        if (!printerSettings.filterVerbose) goto default;
+        if (!plugin.printerSettings.filterVerbose) goto default;
         break;
 
     case PING:
@@ -105,7 +99,7 @@ void onAnyEvent(const IRCEvent origEvent)
         break;
 
     default:
-        formatMessage(stdout.lockingTextWriter, event);
+        plugin.formatMessage(stdout.lockingTextWriter, event);
         break;
     }
 }
@@ -152,7 +146,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +      sink = output range to format the IRCEvent into
  +      event = the reference event that is being formatted
  +/
-void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
+void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event)
 {
     import kameloso.bash : BashForeground, TerminalToken, colour, truecolour;
     import kameloso.string : enumToString, beginsWith;
@@ -164,9 +158,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         .toString();
 
     with (BashForeground)
+    with (plugin.state)
     with (event)
     with (event.sender)
-    if (state.settings.monochrome)
+    if (settings.monochrome)
     {
         import std.algorithm : equal;
         import std.string : toLower;
@@ -174,7 +169,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
         put(sink, '[', timestamp, "] ");
 
-        string typestring = printerSettings.typesInCaps ?
+        string typestring = plugin.printerSettings.typesInCaps ?
             enumToString(type) : enumToString(type).toLower;
 
         if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_") ||
@@ -213,7 +208,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         {
             import std.string : toUpper;
 
-            immutable badgestring = printerSettings.badgesInCaps ?
+            immutable badgestring = plugin.printerSettings.badgesInCaps ?
                 badge.toUpper : badge;
 
             put(sink, " [", badgestring, ']');
@@ -239,10 +234,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 case CHAN:
                 case QUERY:
                     if ((cast(ubyte[])event.content)
-                        .canFind(cast(ubyte[])state.bot.nickname))
+                        .canFind(cast(ubyte[])bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
-                        if (printerSettings.bellOnMention)
+                        if (plugin.printerSettings.bellOnMention)
                         {
                             sink.put(TerminalToken.bell);
                         }
@@ -317,11 +312,11 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                 badge   = black,
             }
 
-            immutable bright = state.settings.brightTerminal;
+            immutable bright = settings.brightTerminal;
 
             BashForeground colourByHash(const string nickname)
             {
-                if (printerSettings.randomNickColours)
+                if (plugin.printerSettings.randomNickColours)
                 {
                     import std.traits : EnumMembers;
 
@@ -350,7 +345,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             void colourSenderTruecolour()
             {
                 if (!sender.isServer && event.colour.length &&
-                    printerSettings.truecolour)
+                    plugin.printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
                     import std.typecons : No, Yes;
@@ -358,15 +353,15 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
 
-                    if (printerSettings.normaliseTruecolour)
+                    if (plugin.printerSettings.normaliseTruecolour)
                     {
                         sink.truecolour!(Yes.normalise)
-                            (r, g, b, state.settings.brightTerminal);
+                            (r, g, b, settings.brightTerminal);
                     }
                     else
                     {
                         sink.truecolour!(No.normalise)
-                            (r, g, b, state.settings.brightTerminal);
+                            (r, g, b, settings.brightTerminal);
                     }
                 }
                 else
@@ -395,7 +390,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
-            string typestring = printerSettings.typesInCaps ?
+            string typestring = plugin.printerSettings.typesInCaps ?
                 enumToString(type) : enumToString(type).toLower;
 
             if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_"))
@@ -448,7 +443,7 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                immutable badgestring = printerSettings.badgesInCaps ?
+                immutable badgestring = plugin.printerSettings.badgesInCaps ?
                     badge.toUpper : badge;
 
                 put(sink, " [", badgestring, ']');
@@ -485,13 +480,13 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
                     case CHAN:
                     case QUERY:
                         if ((cast(ubyte[])event.content)
-                            .canFind(cast(ubyte[])state.bot.nickname))
+                            .canFind(cast(ubyte[])bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
-                            immutable inverted = content.invert(state.bot.nickname);
+                            immutable inverted = content.invert(bot.nickname);
 
                             if ((content != inverted) &&
-                                (printerSettings.bellOnMention))
+                                (plugin.printerSettings.bellOnMention))
                             {
                                 sink.put(TerminalToken.bell);
                             }
@@ -545,11 +540,10 @@ void formatMessage(Sink)(auto ref Sink sink, IRCEvent event)
         }
         else
         {
-            /*logger.warning("bot was not built with colour support yet " ~
-                "monochrome is off; forcing monochrome.");*/
-
-            state.settings.monochrome = true;
-            return formatMessage(sink, event);
+            // This will only change this plugin's monochrome setting...
+            // We have no way to propagate it
+            settings.monochrome = true;
+            return plugin.formatMessage(sink, event);
         }
     }
 }
@@ -752,7 +746,7 @@ version(Colours)
 void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     (ref IRCEvent event)
 {
-    import kameloso.bash : TerminalToken;
+    import kameloso.bash : BashReset, TerminalToken, colour;
     import std.array : Appender;
     import std.conv  : to;
     import std.regex : ctRegex, matchAll, replaceAll;
@@ -791,7 +785,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
 
         default:
             logger.warning("Unknown Bash effect code: ", bashEffectCode);
-            sink.put(TerminalToken.bashFormat ~ "[0m");
+            sink.colour(BashReset.all);
             break;
         }
 
@@ -803,7 +797,7 @@ void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
     sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
     // End tags and commit
-    sink.put(TerminalToken.bashFormat ~ "[0m");
+    sink.colour(BashReset.all);
     event.content = sink.data;
 }
 
@@ -847,5 +841,8 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    /// All Printer plugin options gathered
+    @Settings PrinterSettings printerSettings;
+
+    mixin IRCPluginImpl;
 }

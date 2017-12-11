@@ -525,11 +525,12 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 
     Appender!string sink;
     // \033[38;2;255;255;255m<word>\033[m
+    // \033[48 for background
     sink.reserve(word.length + 23);
 
     sink.truecolour!normalise(r, g, b, bright);
     sink.put(word);
-    sink.put(TerminalToken.bashFormat ~ "[0m");
+    sink.colour(BashReset.all);
     return sink.data;
 }
 else
@@ -552,42 +553,4 @@ unittest
         "blarbhl", cast(char)TerminalToken.bashFormat);
 
     assert((name == alsoName), alsoName);
-}
-
-///
-version(Colours)
-version(none)
-unittest
-{
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-
-    // LDC workaround for not taking formattedWrite sink as auto ref
-    sink.reserve(16);
-
-    sink.truecolour!(No.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;0;0;0m", sink.data);
-    sink.clear();
-
-    sink.truecolour!(Yes.normalise)(0, 0, 0);
-    assert(sink.data == "\033[38;2;150;150;150m", sink.data);
-    sink.clear();
-
-    sink.truecolour(255, 255, 255);
-    assert(sink.data == "\033[38;2;255;255;255m", sink.data);
-    sink.clear();
-
-    sink.truecolour(123, 221, 0);
-    assert(sink.data == "\033[38;2;223;221;100m", sink.data);
-    sink.clear();
-
-    sink.truecolour(0, 255, 0);
-    // 0;255;0 with zeroing out colours
-    assert(sink.data == "\033[38;2;100;255;100m", sink.data);
-    sink.clear();
-
-    // 255;0;255
-    sink.truecolour(255, 0, 255);
-    assert(sink.data == "\033[38;2;255;100;255m", sink.data);
 }

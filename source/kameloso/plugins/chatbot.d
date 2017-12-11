@@ -34,20 +34,6 @@ struct ChatbotSettings
     bool say = true;
 }
 
-/// All Chatbot plugin settings gathered
-@Settings ChatbotSettings chatbotSettings;
-
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
-/++
- +  The in-memory JSON storage of all user quotes.
- +
- +  It is in the JSON form of `string[][string]`, where the first key is the
- +  nickname of a user.
- +/
-JSONValue quotes;
-
 
 // getQuote
 /++
@@ -60,9 +46,9 @@ JSONValue quotes;
  +      a random quote string. If no quote is available it returns an empty
  +      string instead.
  +/
-string getQuote(const string nickname)
+string getQuote(ChatbotPlugin plugin, const string nickname)
 {
-    if (const arr = nickname in quotes)
+    if (const arr = nickname in plugin.quotes)
     {
         import std.random : uniform;
 
@@ -85,16 +71,16 @@ string getQuote(const string nickname)
  +      nickname = nickname of the quoted user.
  +      line = the quote itself.
  +/
-void addQuote(const string nickname, const string line)
+void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
 {
-    if (nickname in quotes)
+    if (nickname in plugin.quotes)
     {
-        quotes[nickname].array ~= JSONValue(line);
+        plugin.quotes[nickname].array ~= JSONValue(line);
     }
     else
     {
         // No quotes for nickname
-        quotes.object[nickname] = JSONValue([ line ]);
+        plugin.quotes.object[nickname] = JSONValue([ line ]);
     }
 }
 
@@ -108,7 +94,7 @@ void addQuote(const string nickname, const string line)
  +  Params:
  +      filename = filename of the JSON storage.
  +/
-void saveQuotes(const string filename)
+void saveQuotes(ChatbotPlugin plugin, const string filename)
 {
     import std.ascii : newline;
     import std.file  : exists, isFile, remove;
@@ -120,7 +106,7 @@ void saveQuotes(const string filename)
 
     auto file = File(filename, "a");
 
-    file.write(quotes.toPrettyString);
+    file.write(plugin.quotes.toPrettyString);
     file.write(newline);
 }
 
@@ -164,9 +150,9 @@ JSONValue loadQuotes(const string filename)
 @Prefix("say")
 @Prefix(NickPolicy.required, "say")
 @Prefix(NickPolicy.required, "säg")
-void onCommandSay(const IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!chatbotSettings.say) return;
+    if (!plugin.chatbotSettings.say) return;
 
     import std.format : format;
 
@@ -178,7 +164,7 @@ void onCommandSay(const IRCEvent event)
 
     immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, event.content));
 }
 
@@ -199,9 +185,9 @@ void onCommandSay(const IRCEvent event)
 @(PrivilegeLevel.friend)
 @Prefix("8ball")
 @Prefix(NickPolicy.required, "8ball")
-void onCommand8ball(const IRCEvent event)
+void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!chatbotSettings.eightball) return;
+    if (!plugin.chatbotSettings.eightball) return;
 
     import std.format : format;
     import std.random : uniform;
@@ -234,7 +220,7 @@ void onCommand8ball(const IRCEvent event)
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
     immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-    state.mainThread.send(ThreadMessage.Sendline(),
+    plugin.state.mainThread.send(ThreadMessage.Sendline(),
         "PRIVMSG %s :%s".format(target, reply));
 }
 
@@ -254,11 +240,11 @@ void onCommand8ball(const IRCEvent event)
 @(PrivilegeLevel.friend)
 @Prefix("quote")
 @Prefix(NickPolicy.required, "quote")
-void onCommandQuote(const IRCEvent event)
+void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     import std.json : JSONException;
 
-    if (!chatbotSettings.quotes) return;
+    if (!plugin.chatbotSettings.quotes) return;
 
     import kameloso.irc : isValidNickname, stripModeSign;
     import std.format : format;
@@ -267,7 +253,7 @@ void onCommandQuote(const IRCEvent event)
     // stripModeSign to allow for quotes from @nickname and +dudebro
     immutable nickname = event.content.strip.stripModeSign();
 
-    if (!nickname.isValidNickname(state.bot.server))
+    if (!nickname.isValidNickname(plugin.state.bot.server))
     {
         logger.errorf("Invalid nickname: '%s'", nickname);
         return;
@@ -275,18 +261,18 @@ void onCommandQuote(const IRCEvent event)
 
     try
     {
-        immutable quote = nickname.getQuote();
+        immutable quote = plugin.getQuote(nickname);
         immutable target = event.channel.length ?
             event.channel : event.sender.nickname;
 
         if (quote.length)
         {
-            state.mainThread.send(ThreadMessage.Sendline(),
+            plugin.state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :%s | %s".format(target, nickname, quote));
         }
         else
         {
-            state.mainThread.send(ThreadMessage.Sendline(),
+            plugin.state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :No quote on record for %s"
                 .format(target, nickname));
         }
@@ -313,9 +299,9 @@ void onCommandQuote(const IRCEvent event)
 @(PrivilegeLevel.friend)
 @Prefix("addquote")
 @Prefix(NickPolicy.required, "addquote")
-void onCommanAddQuote(const IRCEvent event)
+void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!chatbotSettings.quotes) return;
+    if (!plugin.chatbotSettings.quotes) return;
 
     import kameloso.irc : stripModeSign;
     import kameloso.string : nom;
@@ -329,15 +315,15 @@ void onCommanAddQuote(const IRCEvent event)
 
     try
     {
-        nickname.addQuote(slice);
-        saveQuotes(chatbotSettings.quotesFile);
+        plugin.addQuote(nickname, slice);
+        plugin.saveQuotes(plugin.chatbotSettings.quotesFile);
 
         immutable target = (event.channel.length) ?
             event.channel : event.sender.nickname;
 
-        state.mainThread.send(ThreadMessage.Sendline(),
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :Quote for %s saved (%d on record)"
-            .format(target, nickname, quotes[nickname].array.length));
+            .format(target, nickname, plugin.quotes[nickname].array.length));
     }
     catch (const JSONException e)
     {
@@ -356,11 +342,11 @@ void onCommanAddQuote(const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "printquotes")
-void onCommandPrintQuotes()
+void onCommandPrintQuotes(ChatbotPlugin plugin)
 {
-    if (!chatbotSettings.quotes) return;
+    if (!plugin.chatbotSettings.quotes) return;
 
-    writeln(quotes.toPrettyString);
+    writeln(plugin.quotes.toPrettyString);
 }
 
 
@@ -375,23 +361,23 @@ void onCommandPrintQuotes()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "reloadquotes")
-void onCommandReloadQuotes()
+void onCommandReloadQuotes(ChatbotPlugin plugin)
 {
-    if (!chatbotSettings.quotes) return;
+    if (!plugin.chatbotSettings.quotes) return;
 
     logger.log("Reloading quotes");
-    quotes = loadQuotes(chatbotSettings.quotesFile);
+    plugin.quotes = loadQuotes(plugin.chatbotSettings.quotesFile);
 }
 
 
-// initialise
+// onEndOfMotd
 /++
  +  Initialises the Chatbot plugin. Loads the quotes from disk.
  +/
-void start()
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd(ChatbotPlugin plugin)
 {
-    logger.log("Initialising quotes ...");
-    quotes = loadQuotes(chatbotSettings.quotesFile);
+    plugin.quotes = loadQuotes(plugin.chatbotSettings.quotesFile);
 }
 
 
@@ -408,5 +394,17 @@ public:
  +/
 final class ChatbotPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    /// All Chatbot plugin settings gathered
+    @Settings ChatbotSettings chatbotSettings;
+
+    // quotes
+    /++
+    +  The in-memory JSON storage of all user quotes.
+    +
+    +  It is in the JSON form of `string[][string]`, where the first key is the
+    +  nickname of a user.
+    +/
+    JSONValue quotes;
+
+    mixin IRCPluginImpl;
 }

@@ -10,13 +10,6 @@ import std.stdio;
 
 private:
 
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
-/// A `Line[string]` 1-buffer of the previous line every user said,
-/// with nickname as key
-Line[string] prevlines;
-
 /// Lifetime of a `Line` in `prevlines`, in seconds
 enum replaceTimeoutSeconds = 3600;
 
@@ -158,7 +151,7 @@ unittest
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.anyone)  // ?
-void onMessage(const IRCEvent event)
+void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.string : beginsWith;
     import std.datetime : Clock, seconds;
@@ -174,13 +167,13 @@ void onMessage(const IRCEvent event)
         case '/':
         case '|':
         case '#':
-            if (const line = event.sender.nickname in prevlines)
+            if (const line = event.sender.nickname in plugin.prevlines)
             {
                 if ((Clock.currTime - line.timestamp) >
                     replaceTimeoutSeconds.seconds)
                 {
                     // Entry is too old, remove it
-                    prevlines.remove(event.sender.nickname);
+                    plugin.prevlines.remove(event.sender.nickname);
                     return;
                 }
 
@@ -188,11 +181,11 @@ void onMessage(const IRCEvent event)
                 if ((result == event.content) || !result.length) return;
 
                 import kameloso.common : ThreadMessage;
-                state.mainThread.send(ThreadMessage.Sendline(),
+                plugin.state.mainThread.send(ThreadMessage.Sendline(),
                     "PRIVMSG %s :%s | %s"
                     .format(event.channel, event.sender.nickname, result));
 
-                prevlines.remove(event.sender.nickname);
+                plugin.prevlines.remove(event.sender.nickname);
             }
 
             // Processed a sed-replace command (succesfully or not); return
@@ -211,7 +204,7 @@ void onMessage(const IRCEvent event)
     Line line;
     line.content = stripped;
     line.timestamp = Clock.currTime;
-    prevlines[event.sender.nickname] = line;
+    plugin.prevlines[event.sender.nickname] = line;
 }
 
 
@@ -228,5 +221,9 @@ public:
  +/
 final class SedReplacePlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    /// A `Line[string]` 1-buffer of the previous line every user said,
+    /// with nickname as key
+    Line[string] prevlines;
+
+    mixin IRCPluginImpl;
 }

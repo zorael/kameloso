@@ -260,11 +260,11 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
             // Empty line yielded means nothing received
             if (!line.length) break;
 
-            IRCEvent event;
+            IRCEvent mutEvent;
 
             try
             {
-                event = parser.toIRCEvent(line);
+                mutEvent = parser.toIRCEvent(line);
 
                 if (parser.bot.updated)
                 {
@@ -302,11 +302,14 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     if (!detectedNetwork.length && bot.server.network != detectedNetwork)
                     {
                         import kameloso.bash : BashForeground, colour;
+                        import std.string : capitalize;
+                        import std.uni : isLower;
 
                         // We know the network string
 
                         detectedNetwork = bot.server.network;
-                        string networkName = bot.server.network;
+                        string networkName = bot.server.network[0].isLower ?
+                            bot.server.network.capitalize() : bot.server.network;
 
                         version (Colours)
                         {
@@ -324,7 +327,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
 
                 foreach (plugin; plugins)
                 {
-                    plugin.postprocess(event);
+                    plugin.postprocess(mutEvent);
                     auto yieldedBot = plugin.yieldBot();
 
                     if (yieldedBot.updated)
@@ -336,6 +339,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         propagateBot(bot);
                     }
                 }
+
+                immutable IRCEvent event = mutEvent;
 
                 // Let each plugin process the event
                 foreach (plugin; plugins)
@@ -366,7 +371,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     }
                     catch (const Exception e)
                     {
-                        logger.warning("Exception onEvent: ", e.msg);
+                        logger.warningf("Exception %s.onEvent: %s",
+                            plugin.name, e.msg);
                     }
                 }
             }
@@ -374,7 +380,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
             {
                 logger.warningf("IRCParseException at %s:%d: %s",
                     e.file, e.line, e.msg);
-                printObject(event);
+                printObject(mutEvent);
                 continue;
             }
             catch (const Exception e)
@@ -595,6 +601,57 @@ int main(string[] args)
             {
                 // plugins not initialised so no need to teardown
                 return 1;
+            }
+
+
+            version(Colours)
+            {
+                import kameloso.bash : BashForeground, BashReset, colour;
+                import std.array : Appender;
+                import std.conv : to;
+                import std.experimental.logger : LogLevel;
+
+                Appender!string sink;
+                sink.reserve(64);
+
+                if (!settings.monochrome)
+                {
+                    with (settings)
+                    with (BashForeground)
+                    {
+                        // "%s resolved into %d IPs."
+
+                        immutable infotint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.info] :
+                            KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                        immutable logtint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.all] :
+                            KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                        sink.colour(infotint);
+                        sink.put(bot.server.address);
+                        sink.colour(logtint);
+                        sink.put(" resolved into ");
+                        sink.colour(infotint);
+                        sink.put(conn.ips.length.to!string);
+                        sink.colour(logtint);
+                        sink.put(" IPs.");
+                        sink.colour(BashReset.all);
+
+                        logger.trace(sink.data);
+                    }
+                }
+                else
+                {
+                    logger.infof("%s resolved into %d IPs.", bot.server.address,
+                    conn.ips.length);
+                }
+            }
+            else
+            {
+                logger.infof("%s resolved into %d IPs.", bot.server.address,
+                    conn.ips.length);
             }
 
             // Reset fields in the bot that should not survive a reconnect

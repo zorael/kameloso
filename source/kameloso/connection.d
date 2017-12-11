@@ -26,10 +26,10 @@ private:
     /// Pointer to the socket of the AddressFamily we want to connect with
     Socket* socket;
 
+public:
     /// IPs already resolved using Connection.resolve.
     Address[] ips;
 
-public:
     /++
      +  Implicitly proxy calls to the current Socket.
      +  This successfully proxies to Socket.receive.
@@ -104,7 +104,6 @@ public:
             try
             {
                 ips = getAddress(address, port);
-                logger.infof("%s resolved into %d ips.", address, ips.length);
                 return true;
             }
             catch (const SocketException e)

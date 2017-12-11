@@ -6,7 +6,7 @@ import kameloso.constants;
 import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
-import std.traits : isType, isArray;
+import std.traits : Unqual, isType, isArray;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
@@ -277,7 +277,7 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
 }
 
 
-// formatObjectsColoured
+// formatObjectsImpl
 /++
  +  Formats a struct object, with all its printable members with all their
  +  printable values.
@@ -302,8 +302,8 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +  Foo foo, bar;
  +  Appender!string sink;
  +
- +  sink.formatObjectsColoured!(Yes.coloured)(foo);
- +  sink.formatObjectsColoured!(No.coloured)(bar);
+ +  sink.formatObjectsImpl!(Yes.coloured)(foo);
+ +  sink.formatObjectsImpl!(No.coloured)(bar);
  +  ------------
  +/
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
@@ -312,9 +312,8 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.string : stripSuffix;
-    import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isSomeFunction;
-    import std.typecons : Unqual;
+    import std.format : formattedWrite;
+    import std.traits : Unqual, hasUDA;
 
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
@@ -326,7 +325,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     with (BashForeground)
     foreach (thing; things)
     {
-        alias Thing = typeof(thing);
+        alias Thing = Unqual!(typeof(thing));
         static if (coloured)
         {
             immutable titleColour = bright ? black : white;
@@ -370,7 +369,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
                         enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, T.stringof,
                             (width + 2), memberstring,
@@ -390,7 +388,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
                         sink.formattedWrite(arrayPattern,
-                            cyan.colour, T.stringof,
+                            cyan.colour, UnqualArray!T.stringof,
                             memberColour.colour, thisWidth, memberstring,
                             valueColour.colour, member,
                             lengthColour.colour, member.length);
@@ -1033,6 +1031,26 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
+    static immutable BashForeground[193] logcoloursDark  =
+    [
+        1 : BashForeground.white,
+        LogLevel.trace   : BashForeground.default_,
+        LogLevel.info    : BashForeground.lightgreen,
+        LogLevel.warning : BashForeground.lightred,
+        LogLevel.error   : BashForeground.red,
+        LogLevel.fatal   : BashForeground.red,
+    ];
+
+    static immutable BashForeground[193] logcoloursBright  =
+    [
+        1 : BashForeground.black,
+        LogLevel.trace   : BashForeground.default_,
+        LogLevel.info    : BashForeground.green,
+        LogLevel.warning : BashForeground.red,
+        LogLevel.error   : BashForeground.red,
+        LogLevel.fatal   : BashForeground.red,
+    ];
+
     bool monochrome;  /// Whether to use colours or not in logger output
     bool brightTerminal;   /// Whether to use colours for a bright background
 
@@ -1073,33 +1091,9 @@ final class KamelosoLogger : Logger
         if (monochrome) return;
 
         version(Colours)
-        with (LogLevel)
-        with (BashForeground)
-        switch (logLevel)
         {
-        case trace:
-            sink.colour(default_);
-            break;
-
-        case info:
-            sink.colour(brightTerminal ? green : lightgreen);
-            break;
-
-        case warning:
-            sink.colour(brightTerminal ? red : lightred);
-            break;
-
-        case error:
-            sink.colour(red);
-            break;
-
-        case fatal:
-            sink.colour(red, BashFormat.blink);
-            break;
-
-        default:
-            sink.colour(brightTerminal ? black : white);
-            break;
+            sink.colour(brightTerminal ? logcoloursBright[logLevel] :
+                logcoloursDark[logLevel]);
         }
     }
 
@@ -1518,7 +1512,8 @@ struct Client
             try plugin.teardown();
             catch (const Exception e)
             {
-                logger.warning("Exception when tearing down plugins: ", e.msg);
+                logger.warningf("Exception when tearing down %s: %s",
+                    plugin.name, e.msg);
             }
         }
 
@@ -1535,9 +1530,6 @@ struct Client
     +/
     void startPlugins()
     {
-        if (!plugins.length) return;
-
-        logger.info("Starting plugins");
         foreach (plugin; plugins)
         {
             plugin.start();
@@ -1654,4 +1646,28 @@ void initLogger(bool monochrome = settings.monochrome,
     import std.experimental.logger : LogLevel;
 
     logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
+}
+
+
+// UnqualArray
+/++
+ +  Given an array of qualified elements, aliases itself to one such of
+ +  unqualified elements.
+ +/
+alias UnqualArray(QualArray : QualType[], QualType) = Unqual!QualType[];
+
+///
+unittest
+{
+    alias ConstStrings = const(string)[];
+    alias UnqualStrings = UnqualArray!ConstStrings;
+    static assert(is(UnqualStrings == string[]));
+
+    alias ImmChars = string;
+    alias UnqualChars = UnqualArray!ImmChars;
+    static assert(is(UnqualChars == char[]));
+
+    alias InoutBools = inout(bool)[];
+    alias UnqualBools = UnqualArray!InoutBools;
+    static assert(is(UnqualBools == bool[]));
 }

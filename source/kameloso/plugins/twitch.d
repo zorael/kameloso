@@ -26,12 +26,6 @@ struct TwitchSettings
     bool twitchColours = true;
 }
 
-/// All Twitch plugin options gathered
-@Settings TwitchSettings twitchSettings;
-
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
 
 // postprocess
 /++
@@ -41,13 +35,13 @@ IRCPluginState state;
  +  Params:
  +      event = the `IRCEvent` to modify.
  +/
-void postprocess(ref IRCEvent event)
+void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
-    if (!state.bot.server.address.endsWith(".twitch.tv")) return;
+    if (!plugin.state.bot.server.address.endsWith(".twitch.tv")) return;
 
-    parseTwitchTags(event);
+    plugin.parseTwitchTags(event);
 
     if (event.sender.isServer)
     {
@@ -71,7 +65,7 @@ void postprocess(ref IRCEvent event)
  +  Params:
  +      ref event = A reference to the IRCEvent whose tags should be parsed.
  +/
-void parseTwitchTags(ref IRCEvent event)
+void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 {
     import kameloso.common : logger;
     import kameloso.string : nom;
@@ -251,7 +245,10 @@ void parseTwitchTags(ref IRCEvent event)
 
         case "color":
             // Hexadecimal RGB color code. This is empty if it is never set.
-            if (value.length) event.colour = value[1..$];
+            if (plugin.twitchSettings.twitchColours && value.length)
+            {
+                event.colour = value[1..$];
+            }
             break;
 
         case "msg-param-sub-plan-name":
@@ -380,5 +377,8 @@ public:
  +/
 final class TwitchPlugin : IRCPlugin
 {
-    mixin IRCPluginBasics;
+    /// All Twitch plugin options gathered
+    @Settings TwitchSettings twitchSettings;
+
+    mixin IRCPluginImpl;
 }

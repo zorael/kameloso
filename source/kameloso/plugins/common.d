@@ -6,23 +6,25 @@ import kameloso.ircdefs;
 
 // IRCPlugin
 /++
- +  Interface that all IRCPlugins must adhere to.
+ +  Interface that all `IRCPlugin`s must adhere to.
  +
  +  There will obviously be more functions but only these are absolutely needed.
  +  It is neccessary so that all plugins may be kept in one array, and foreached
  +  through when new events have been generated.
+ +
+ +  TODO: Revisit this list and remove those that aren't being used.
  +/
 interface IRCPlugin
 {
     import std.array : Appender;
 
-    /// Executed on update to the internal IRCBot struct
+    /// Executed on update to the internal `IRCBot` struct
     void newBot(IRCBot);
 
-    /// Executed after a plugin has run its onEvent course to pick up bot changes
-    IRCBot yieldBot() const;
+    /// Executed after a plugin has run its `onEvent` course to pick up bot changes
+    IRCBot yieldBot();
 
-    /// Executed to get a list of nicknames a plugin wants WHOISed
+    /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
     ref WHOISRequest[string] yieldWHOISRequests();
 
     /// Executed to let plugins modify an event mid-parse
@@ -54,6 +56,9 @@ interface IRCPlugin
 
     /// Returns the name of the plugin, sliced off the module name
     string name() @property const;
+
+    /// Returns a reference to the current `IRCPluginState`
+    ref IRCPluginState state() @property;
 }
 
 
@@ -83,32 +88,65 @@ abstract class WHOISRequest
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
  +  returns we trigger the object and the original IRCEvent is replayed.
  +/
-final class WHOISRequestImpl(F) : WHOISRequest
+final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {
     /// Stored function pointer/delegate
     F fn;
 
-    /// Constructor taking both an `IRCEvent` and a function pointer/delegate
-    this(IRCEvent event, F fn)
+    static if (!is(Payload == typeof(null)))
     {
-        this.event = event;
-        this.fn = fn;
+        /// Command payload aside from the `IRCEvent`
+        Payload payload;
+
+        this(Payload payload, IRCEvent event, F fn)
+        {
+            this.payload = payload;
+            this.event = event;
+            this.fn = fn;
+        }
+    }
+    else
+    {
+        this(IRCEvent event, F fn)
+        {
+            this.event = event;
+            this.fn = fn;
+        }
     }
 
-    /// Call the passed function/delegate pointer, optionally with the IRCEvent
+    /++
+     +  Call the passed function/delegate pointer, optionally with the stored
+     +  `IRCEvent` and/or `Payload`.
+     +/
     override void trigger()
     {
-        import std.traits : Parameters, Unqual;
+        import std.meta : AliasSeq, staticMap;
+        import std.traits : Parameters, Unqual, arity;
 
         assert((fn !is null), "null fn in WHOISRequestImpl!" ~ F.stringof);
 
-        static if (Parameters!F.length && is(Unqual!(Parameters!F[0]) == IRCEvent))
+        alias Params = staticMap!(Unqual, Parameters!fn);
+
+        static if (is(Params : AliasSeq!IRCEvent))
         {
             fn(event);
         }
-        else
+        else static if (is(Params : AliasSeq!(Payload, IRCEvent)))
+        {
+            fn(payload, event);
+        }
+        else static if (is(Params : AliasSeq!Payload))
+        {
+            fn(payload);
+        }
+        else static if (arity!fn == 0)
         {
             fn();
+        }
+        else
+        {
+            static assert(0, "Unknown function signature in WHOISRequestImpl: "~
+                typeof(fn).stringof);
         }
     }
 
@@ -186,9 +224,21 @@ unittest
 
 // whoisRequest
 /++
- +  Convenience function that returns a WHOISRequestImpl of the right type.
+ +  Convenience function that returns a `WHOISRequestImpl` of the right type,
+ +  *with* a payload attached.
  +/
-WHOISRequest whoisRequest(F)(const IRCEvent event, F fn)
+WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event, F fn)
+{
+    return new WHOISRequestImpl!(F, Payload)(payload, event, fn);
+}
+
+
+// whoisRequest
+/++
+ +  Convenience function that returns a `WHOISRequestImpl` of the right type,
+ +  *without* a payload attached.
+ +/
+WHOISRequest whoisRequest(F)(IRCEvent event, F fn)
 {
     return new WHOISRequestImpl!F(event, fn);
 }
@@ -200,7 +250,8 @@ WHOISRequest whoisRequest(F)(const IRCEvent event, F fn)
  +
  +  This neatly tidies up the amount of top-level variables in each plugin
  +  module. This allows for making more or less all functions top-level
- +  functions, since any state could be passed to it with variables of this type.
+ +  functions, since any state could be passed to it with variables of this
+ +  type.
  +/
 struct IRCPluginState
 {
@@ -224,7 +275,7 @@ struct IRCPluginState
     /// Hashmap of IRC user details
     IRCUser[string] users;
 
-    /// Queued WHOIS requests and pertaining IRCEvents to replay
+    /// Queued `WHOIS` requests and pertaining `IRCEvents` to replay
     WHOISRequest[string] whoisQueue;
 }
 
@@ -233,15 +284,17 @@ struct IRCPluginState
 enum FilterResult { fail, pass, whois }
 
 
-/// Whether an annotated event ignores, allows or requires the event to be
-/// prefixed with the bot's nickname
+/++
+ +  Whether an annotated event ignores, allows or requires the event to be
+ +  prefixed with the bot's nickname.
+ +/
 enum NickPolicy
 {
     ignored,      /// Any prefixes will be ignored.
     direct,       /// Message should begin with `CoreSettings.prefix`.
     optional,     /// Message may begin with bot name, if so will be stripped.
     required,     /// Message must begin with bot name, except in `QUERY` events.
-    hardRequired, /// Message must always begin with bot name, regardless of type.
+    hardRequired, /// Message must begin with bot name, regardless of type.
 }
 deprecated alias NickPrefixPolicy = NickPolicy;
 
@@ -249,8 +302,10 @@ deprecated alias NickPrefixPolicy = NickPolicy;
 /// If an annotated function should work in all channels or just in homes
 enum ChannelPolicy
 {
-    /// The function will only trigger if the event happened in a home, where
-    /// applicable (not all events have channels).
+    /++
+     +  The function will only trigger if the event happened in a home, where
+     +  applicable (not all events have channels).
+     +/
     homeOnly,
 
     /// The function will trigger regardless of channel.
@@ -301,19 +356,25 @@ struct Prefix
 }
 
 
-/// Flag denoting that an event-handling function let other functions in the
-/// same module process after it.
+/++
+ +  Flag denoting that an event-handling function let other functions in the
+ +  same module process after it.
+ +/
 struct Chainable;
 
-/// Flag denoting that we want verbose debug output of the plumbing when
-/// handling events, iterating through the module
+/++
+ +  Flag denoting that we want verbose debug output of the plumbing when
+ +  handling events, iterating through the module
+ +/
 struct Verbose;
 
-/// Flag denoting that a variable is to be considered settings and should be
-/// saved in the configuration file.
+/++
+ +  Flag denoting that a variable is to be considered settings and should be
+ +  saved in the configuration file.
+ +/
 struct Settings;
 
-/// Alias to allow the old annotation to  still work
+/// Alias to allow the old annotation to still work
 deprecated("Use @Settings instead of @Configurable. " ~
            "This alias will eventually be removed.")
 alias Configurable = Settings;
@@ -321,7 +382,7 @@ alias Configurable = Settings;
 
 // filterUser
 /++
- +  Decides whether a nick is known good, known bad, or needs WHOIS.
+ +  Decides whether a nick is known good, known bad, or needs `WHOIS`.
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
@@ -361,19 +422,29 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
- +      .initialise
- +      .start
- +      .present
+ +      .onEvent            (doesn't proxy anymore)
+ +      .newBot             (assigns bot)
+ +      .yieldBot           (returns bot)
+ +      .postprocess
+ +      .yieldWHOISRequests (returns queue)
  +      .writeConfig
+ +      .loadConfig
+ +      .present
+ +      .printSettings      (prints settings)
+ +      .addToConfig
+ +      .start
  +      .teardown
+ +      .name               (returns plugin type name)
+ +      .state              (returns privateState)
+ +      .initialise         (via this())
  +/
-mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
+mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.common : CoreSettings;
+    IRCPluginState privateState;
 
     // onEvent
     /++
-     +  Pass on the supplied IRCEvent to functions annotated with the right
+     +  Pass on the supplied `IRCEvent` to functions annotated with the right
      +  `IRCEvent.Types`.
      +/
     void onEvent(const IRCEvent event)
@@ -405,7 +476,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (eventTypeUDA == IRCEvent.Type.ANY)
                     {
-                        // UDA is ANY, let pass
+                        // UDA is `ANY`, let pass
                     }
                     else
                     {
@@ -423,6 +494,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                     }
                     else
                     {
+                        // Default policy if none given is `homeOnly`
                         enum policy = ChannelPolicy.homeOnly;
                     }
 
@@ -440,9 +512,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
                         if (!event.channel.length)
                         {
-                            // it is a non-channel event, like a QUERY
+                            // it is a non-channel event, like a `QUERY`
                         }
-                        else if (!state.bot.homes.canFind(event.channel))
+                        else if (!privateState.bot.homes.canFind(event.channel))
                         {
                             static if (verbose)
                             {
@@ -465,8 +537,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                     {
                         if (!event.content.length)
                         {
-                            // Event has a Prefix set up but event.content is
-                            // empty; cannot possibly be of interest
+                            // Event has a `Prefix` set up but `event.content`
+                            // is empty; cannot possibly be of interest
                             return;
                         }
 
@@ -491,7 +563,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                             mutEvent = event;
                             contextPrefix = string.init;
 
-                            with (state)
+                            with (privateState)
                             with (event)
                             with (NickPolicy)
                             final switch (prefixUDA.policy)
@@ -576,7 +648,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                                 }
 
                                 // Event.content *guaranteed* to begin with
-                                // state.bot.nickname here
+                                // privateState.bot.nickname here
                                 mutEvent.content = content
                                     .stripPrefix(bot.nickname);
                                 break;
@@ -633,15 +705,16 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         {
                         case friend:
                         case master:
-                            immutable result = state.filterUser(mutEvent);
+                            immutable result = privateState.filterUser(mutEvent);
 
+                            with (privateState)
                             with (FilterResult)
                             final switch (result)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (state.users[mutEvent.sender.nickname].login !=
-                                        state.bot.master))
+                                    (users[mutEvent.sender.nickname].login !=
+                                        bot.master))
                                 {
                                     static if (verbose)
                                     {
@@ -659,14 +732,57 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                                     writefln("%s:%s (%s)", module_,
                                        __traits(identifier, fun), event.type);
                                 }
-                                return mutEvent.doWhois(mutEvent.sender.nickname, &fun);
+
+                                import std.meta   : AliasSeq, Filter, staticMap;
+                                import std.traits : Parameters, Unqual, arity;
+
+                                alias Params = staticMap!(Unqual, Parameters!fun);
+                                enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
+                                static if (verbose)
+                                {
+                                    writeln("%s.%s WHOIS for %s",
+                                        typeof(this).stringof,
+                                        __traits(identifier, fun), event.type);
+                                }
+
+                                static if (is(Params : AliasSeq!IRCEvent) ||
+                                    (is(Params : AliasSeq!(IRCPluginState, IRCEvent)) ||
+                                    is(Params : AliasSeq!IRCPluginState) ||
+                                    (arity!fun == 0)))
+                                {
+                                    return this.doWhois(mutEvent,
+                                        mutEvent.sender.nickname, &fun);
+                                }
+                                else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                                    (is(Params : AliasSeq!(typeof(this)))))
+                                {
+                                    return this.doWhois(this, mutEvent,
+                                        mutEvent.sender.nickname, &fun);
+                                }
+                                else static if (Filter!(isIRCPluginParam, Params).length)
+                                {
+                                    pragma(msg, typeof(fun).stringof);
+                                    pragma(msg, __traits(identifier, fun));
+                                    pragma(msg, Params);
+                                    static assert(0, "Function signature takes " ~
+                                        "IRCPlugin instead of subclass plugin.");
+                                }
+                                else
+                                {
+                                    pragma(msg, typeof(fun).stringof);
+                                    pragma(msg, __traits(identifier, fun));
+                                    pragma(msg, Params);
+                                    static assert(0, "Unknown function signature.");
+                                }
 
                             case fail:
                                 static if (verbose)
                                 {
                                     import kameloso.common : logger;
-                                    logger.warningf("%s: %s failed privilege check; continue",
-                                        name, mutEvent.sender.nickname);
+                                    logger.warningf("%s: %s failed privilege " ~
+                                        "check; continue", name,
+                                        mutEvent.sender.nickname);
                                 }
                                 continue;
                             }
@@ -677,29 +793,54 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                         }
                     }
 
-                    import std.meta   : AliasSeq;
-                    import std.traits : Parameters;
+                    import std.meta   : AliasSeq, staticMap;
+                    import std.traits : Parameters, Unqual, arity;
 
-                    static if (is(Parameters!fun : AliasSeq!(const IRCEvent)))
+                    alias Params = staticMap!(Unqual, Parameters!fun);
+
+                    static if (verbose)
+                    {
+                        writeln("%s.%s on %s", typeof(this).stringof,
+                            __traits(identifier, fun), event.type);
+                    }
+
+                    static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                        is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+                    {
+                        fun(this, mutEvent);
+                    }
+                    else static if (is(Params : AliasSeq!(typeof(this))) ||
+                        is(Params : AliasSeq!IRCPlugin))
+                    {
+                        fun(this);
+                    }
+                    else static if (is(Params : AliasSeq!IRCEvent))
                     {
                         fun(mutEvent);
                     }
-                    else static if (!Parameters!fun.length)
+                    else static if (arity!fun == 0)
                     {
                         fun();
                     }
                     else
                     {
+                        pragma(mg, typeof(fun).stringof);
+                        pragma(msg, __traits(identifier, fun));
+                        pragma(msg, Params);
                         static assert(0, "Unknown function signature: " ~
                             typeof(fun).stringof);
                     }
 
                     static if (hasUDA!(fun, Chainable))
                     {
+                        // onEvent found an event and triggered a function, but
+                        // it's Chainable and there may be more, so keep looking
                         continue funloop;
                     }
                     else
                     {
+                        // The triggered function is not Chainable so return and
+                        // let the main loop continue with the next plugin.
                         return;
                     }
                 }
@@ -714,25 +855,16 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +  It passes execution to the top-level .initialise() if it exists.
      +
      +  Params:
-     +      origState = the aggregate of all plugin state variables, making
-     +                  this the "original state" of the plugin.
+     +      state = the aggregate of all plugin state variables, making
+     +              this the "original state" of the plugin.
      +/
     this(IRCPluginState state)
     {
-        static if (__traits(compiles, .state = state))
-        {
-            // Plugin has a state variable; assign to it
-            .state = state;
-        }
-        else static if (__traits(compiles, .settings = state.settings))
-        {
-            // No state variable but at least there are some Settings
-            .settings = state.settings;
-        }
+        this.privateState = state;
 
-        static if (__traits(compiles, .initialise()))
+        static if (__traits(compiles, .initialise(this)))
         {
-            .initialise();
+            .initialise(this);
         }
     }
 
@@ -747,10 +879,7 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     void newBot(IRCBot bot)
     {
-        static if (__traits(compiles, .state.bot = bot))
-        {
-            .state.bot = bot;
-        }
+        privateState.bot = bot;
     }
 
     // yieldBot
@@ -763,39 +892,42 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a copy of the current IRCBot.
      +/
-    IRCBot yieldBot() const
+    IRCBot yieldBot()
     {
-        static if (__traits(compiles, .state.bot))
-        {
-            return .state.bot;
-        }
+        return privateState.bot;
     }
 
+    // postprocess
+    /++
+     +  Lets a plugin modify an `IRCEvent` while it's begin constructed, before
+     +  it's finalised and passed on to be handled.
+     +
+     +  Params:
+     +      ref event = an `IRCEvent` undergoing parsing.
+     +/
     void postprocess(ref IRCEvent event)
     {
-        static if (__traits(compiles, .postprocess(event)))
+        static if (__traits(compiles, .postprocess(this, event)))
         {
-            .postprocess(event);
+            .postprocess(this, event);
         }
     }
 
     // yieldWHOISReuests
     /++
-     +  Yields a reference to the WHOIS request queue.
+     +  Yields a reference to the `WHOIS` request queue.
      +
      +  The main loop does this after processing all on-event functions so as to
-     +  know what nicks the plugin wants a WHOI for. After the WHOIS response
-     +  returns, the event bundled in the WHOISRequest will be replayed.
+     +  know what nicks the plugin wants a` WHOIS` for. After the `WHOIS`
+     +  response returns, the event bundled with the `WHOISRequest` will be
+     +  replayed.
      +
      +  Returns:
-     +      a reference to the local WHOIS request queue.
+     +      a reference to the local `WHOIS` request queue.
      +/
     ref WHOISRequest[string] yieldWHOISRequests()
     {
-        static if (__traits(compiles, .state.whoisQueue))
-        {
-            return .state.whoisQueue;
-        }
+        return privateState.whoisQueue;
     }
 
     // writeConfig
@@ -807,9 +939,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
      void writeConfig(const string configFile)
      {
-         static if (__traits(compiles, .writeConfig(string.init)))
+         static if (__traits(compiles, .writeConfig(this, string.init)))
          {
-             .writeConfig(configFile);
+             .writeConfig(this, configFile);
          }
      }
 
@@ -817,19 +949,18 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Loads configuration from disk.
      +
-     +  This does not proxy a cal but merely loads configuration from disk for
-     +  all variables annotated Settings.
+     +  This does not proxy a call but merely loads configuration from disk for
+     +  all variables annotated `Settings`.
      +/
     void loadConfig(const string configFile)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
         foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
                 alias T = typeof(symbol);
 
@@ -837,6 +968,29 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // This symbol was already configured earlier;
                     // --> this is a reconnect
+                    continue;
+                }
+
+                import kameloso.common : meldInto;
+                import kameloso.config : readConfigInto;
+                import std.typecons : No, Yes;
+
+                T tempSymbol;
+                configFile.readConfigInto(tempSymbol);
+                tempSymbol.meldInto!(Yes.overwrite)(symbol);
+            }
+        }
+
+        foreach (immutable i, ref symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
+                alias T = typeof(symbol);
+
+                if (symbol != T.init)
+                {
+                    // As above
                     continue;
                 }
 
@@ -857,31 +1011,50 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     void present() const
     {
-        static if (__traits(compiles, .present()))
+        static if (__traits(compiles, .present(this)))
         {
-            .present();
+            .present(this);
         }
     }
 
     // printSettings
     /++
-     +  FIXME
+     +  Prints the plugin's `Settings`-annotated structs, with a hardcoded width
+     +  to suit all the other plugins' settings member name lengths, to date.
+     +
+     +  It both prints module-level structs as well as structs in the
+     +  `IRCPlugin` (subtype) itself.
      +/
     void printSettings() const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import kameloso.common : printObject;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
+        enum width = 18;
+
+        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
+
+        foreach (symbol; moduleLevelSymbols)
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
-                import kameloso.common : printObject;
+                import std.format : format;
+                import std.traits : Unqual;
 
                 // FIXME: Hardcoded value
-                printObject!17(symbol);
+                printObject!width(symbol);
+            }
+        }
+
+        foreach (immutable i, symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
+                // FIXME: Hardcoded value
+                printObject!width(symbol);
             }
         }
     }
@@ -892,21 +1065,31 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +  configuration file.
      +
      +  Params:
-     +      ref sink = Appender to fill with plugin-specific settings text.
+     +      ref sink = `Appender` to fill with plugin-specific settings text.
      +/
     import std.array : Appender;
     void addToConfig(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import kameloso.config : serialise;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (symbol; getSymbolsByUDA!(thisModule, Settings))
+        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
+
+        foreach (symbol; moduleLevelSymbols)
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
-                import kameloso.config : serialise;
+                sink.serialise(symbol);
+            }
+        }
+
+        foreach (immutable i, symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
                 sink.serialise(symbol);
             }
         }
@@ -918,9 +1101,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     void start()
     {
-        static if (__traits(compiles, .start()))
+        static if (__traits(compiles, .start(this)))
         {
-            .start();
+            .start(this);
         }
     }
 
@@ -930,9 +1113,9 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
      +/
     void teardown()
     {
-        static if (__traits(compiles, .teardown()))
+        static if (__traits(compiles, .teardown(this)))
         {
-            .teardown();
+            .teardown(this);
         }
     }
 
@@ -940,8 +1123,8 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Returns the name of the plugin.
      +
-     +  Slices the last field of the module name; ergo, kameloso.plugins.xxx
-     +  would return the name xxx, as would kameloso.xxx and xxx.
+     +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
+     +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
      +/
     string name() @property const
     {
@@ -957,23 +1140,47 @@ mixin template IRCPluginBasics(bool debug_ = false, string module_ = __MODULE__)
 
         return moduleName;
     }
+
+    // state
+    /++
+     +  Accessor and mutator, returns a reference to the current private
+     +  `IRCPluginState`.
+     +
+     +  This is needed to have `state` be part of the `IRCPlugin` interface, so
+     +  `main.d` can access the property, albeit indirectly.
+     +/
+    pragma(inline)
+    ref IRCPluginState state() @property
+    {
+        return this.privateState;
+    }
 }
+
+deprecated("Use IRCPluginImpl instead of IRCPluginBasics")
+alias IRCPluginBasics = IRCPluginImpl;
 
 
 // OnEventImpl
 /++
  +  Not needed anymore, the functionality was moved into `IRCPlugin`.
  +/
-mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__) {}
+mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
+{
+    pragma(msg, "OnEventImpl is deprecated and is no longer needed. " ~
+        "The on-event functionality has been moved into class IRCPlugin.");
+}
 
 
 // BasicEventHandlers
 /++
  +  Rudimentary IRCEvent handlers.
  +
- +  Almost any plugin will need handlers for RPL_WHOISACCOUNT, RPL_ENDOFWHOIS,
- +  PART, QUIT, and SELFNICK. This mixin provides those. If more elaborate ones
- +  are needed, additional functions can be written and annotated appropriately.
+ +  Almost any plugin will need handlers for `RPL_WHOISACCOUNT`,
+ +  `RPL_ENDOFWHOIS`, `PART`, `QUIT`, and `SELFNICK`. This mixin provides those
+ +  as well as some convenience functions to look up users and do `WHOIS` calls.
+ +
+ +  If more elaborate ones are needed, additional functions can be written and,
+ +  where applicable, annotated appropriately.
  +/
 mixin template BasicEventHandlers(string module_ = __MODULE__)
 {
@@ -984,49 +1191,59 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  This automatically deauthenticates them from the bot's service, as all
      +  track of them will have disappeared. A new WHOIS must be made then.
      +/
+    @(Chainable)
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
-    void onLeaveMixin(const IRCEvent event)
+    void onLeaveMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.users.remove(event.sender.nickname);
+        plugin.state.users.remove(event.sender.nickname);
     }
 
 
     // onNickMixin
     /++
-     +  Tracks a nick change, moving any old IRCUser entry in state.users to
-     +  point to the new nickname.
+     +  Tracks a nick change, moving any old `IRCUser` entry in
+     +  `privateState.users` to point to the new nickname.
      +/
+    @(Chainable)
     @(IRCEvent.Type.NICK)
-    void onNickMixin(const IRCEvent event)
+    void onNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if (auto oldUser = event.sender.nickname in state.users)
+        with (plugin)
         {
-            state.users[event.target.nickname] = *oldUser;
-            state.users.remove(event.sender.nickname);
-        }
-        else
-        {
-            state.users[event.target.nickname] = event.sender;
+            if (auto oldUser = event.sender.nickname in state.users)
+            {
+                state.users[event.target.nickname] = *oldUser;
+                state.users.remove(event.sender.nickname);
+            }
+            else
+            {
+                state.users[event.target.nickname] = event.sender;
+            }
         }
     }
 
 
     // onUserInfoMixin
     /++
-     +  Catches a user's information and saves it in the IRCUser array, along
-     +  with a timestamp of the last WHOIS call, which is this.
+     +  Catches a user's information and saves it in the `IRCUser` array, along
+     +  with a timestamp of the last `WHOIS` call, which is this.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(const IRCEvent event)
+    void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.datetime : Clock;
-        catchUser(event.target);
 
-        // Record lastWhois here so it happens even if no RPL_WHOISACCOUNT event
-        auto user = event.target.nickname in state.users;
-        if (!user) return;  // probably the bot
-        (*user).lastWhois = Clock.currTime.toUnixTime;
+        with (plugin)
+        {
+            plugin.catchUser(event.target);
+
+            // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
+            auto user = event.target.nickname in state.users;
+            if (!user) return;  // probably the bot
+            (*user).lastWhois = Clock.currTime.toUnixTime;
+        }
     }
 
 
@@ -1038,110 +1255,125 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  login name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to WHOIS them later.
      +/
+    @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onLoginInfoSenderMixin(const IRCEvent event)
+    void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        catchUser(event.sender);
-
-        if (event.sender.login == "*")
+        with (plugin)
         {
-            assert(event.sender.nickname in state.users);
-            state.users[event.sender.nickname].login = string.init;
+            plugin.catchUser(event.sender);
+
+            if (event.sender.login == "*")
+            {
+                assert(event.sender.nickname in state.users);
+                state.users[event.sender.nickname].login = string.init;
+            }
         }
     }
 
 
     // onLoginInfoTargetMixin
     /++
-     +  Records a user's NickServ login by saving it to the user's IRCBot in
-     +  the state.users associative array.
+     +  Records a user's NickServ login by saving it to the user's `IRCBot` in
+     +  the `privateState.users` associative array.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onLoginInfoTargetMixin(const IRCEvent event)
+    void onLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // No point catching the entire user
-        if (auto user = event.target.nickname in state.users)
+        with (plugin)
         {
-            (*user).login = event.target.login;
-        }
-        else
-        {
-            state.users[event.target.nickname] = event.target;
+            // No point catching the entire user
+            if (auto user = event.target.nickname in state.users)
+            {
+                (*user).login = event.target.login;
+            }
+            else
+            {
+                state.users[event.target.nickname] = event.target;
+            }
         }
     }
 
 
     // onWHOReplyMixin
     /++
-     +  Catches a user's information from a WHO reply event.
+     +  Catches a user's information from a `WHO` reply event.
      +
      +  It usually contains everything interesting except login.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(const IRCEvent event)
+    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        catchUser(event.target);
+        plugin.catchUser(event.target);
     }
 
 
     // onEndOfWHOIS
     /++
-     +  Remove an exhausted WHOIS request from the queue upon end of WHOIS.
+     +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWHOISMixin(const IRCEvent event)
+    void onEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        state.whoisQueue.remove(event.target.nickname);
+        plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
     // catchUser
     /++
-     +  Catch an IRCUser, saving it to the state.users array.
+     +  Catch an `IRCUser`, saving it to the `privateState.users` array.
      +
      +  If a user already exists, meld the new information into the old one.
      +/
     import std.typecons : Flag, Yes;
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-        (const IRCUser newUser)
+        (IRCPlugin plugin, const IRCUser newUser)
     {
         import kameloso.common : meldInto;
 
-        if (!newUser.nickname.length || (newUser.nickname == state.bot.nickname))
+        if (!newUser.nickname.length ||
+            (newUser.nickname == plugin.state.bot.nickname))
         {
             return;
         }
 
-        auto user = newUser.nickname in state.users;
-
-        if (!user)
+        with (plugin)
         {
-            state.users[newUser.nickname] = IRCUser.init;
-            user = newUser.nickname in state.users;
-        }
+            auto user = newUser.nickname in state.users;
 
-        newUser.meldInto!overwrite(*user);
+            if (!user)
+            {
+                state.users[newUser.nickname] = IRCUser.init;
+                user = newUser.nickname in state.users;
+            }
+
+            newUser.meldInto!overwrite(*user);
+        }
     }
 
 
     // doWhois
     /++
-     +  Construct and queue a WHOIS request in the local request queue.
+     +  Construct and queue a `WHOIS` request in the local request queue.
      +
-     +  The main loop will catch up on it and do the neccessary WHOIS calls,
+     +  The main loop will catch up on it and do the neccessary `WHOIS` calls,
      +  then replay the event.
      +
      +  Params:
-     +      event = the IRCEvent to replay once we have WHOIS login information.
+     +      event = the event to replay once we have `WHOIS` login information.
      +      fp = the function pointer to call when that happens.
      +/
-    void doWhois(F)(const IRCEvent event, const string nickname, F fn)
+    void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
+        const IRCEvent event, const string nickname, F fn)
     {
         import kameloso.constants : Timeout;
         import std.datetime : Clock, SysTime, seconds;
 
-        const user = nickname in state.users;
+        const user = nickname in plugin.state.users;
 
         if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
             < Timeout.whois.seconds))
@@ -1149,6 +1381,23 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
             return;
         }
 
-        state.whoisQueue[nickname] = whoisRequest(event, fn);
+        with (plugin)
+        {
+            static if (!is(Payload == typeof(null)))
+            {
+                state.whoisQueue[nickname] = whoisRequest(payload, event, fn);
+            }
+            else
+            {
+                state.whoisQueue[nickname] = whoisRequest(state, event, fn);
+            }
+        }
+    }
+
+    /// Ditto
+    void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
+        const string nickname, F fn)
+    {
+        return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
     }
 }
