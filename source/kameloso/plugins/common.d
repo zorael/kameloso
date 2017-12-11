@@ -41,7 +41,7 @@ interface IRCPlugin
     void addToConfig(ref Appender!string);
 
     /// Executed when connection has been established
-    void start(IRCPlugin);
+    void start();
 
     /// Executed when we want a plugin to print its settings and such
     void present() const;
@@ -50,7 +50,7 @@ interface IRCPlugin
     void printSettings() const;
 
     /// Executed during shutdown or plugin restart
-    void teardown(IRCPlugin);
+    void teardown();
 
     /// Returns the name of the plugin, sliced off the module name
     string name() @property const;
@@ -842,9 +842,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         // Plugin has a state variable; assign to it
         this.privateState = state;
 
-        static if (__traits(compiles, .initialise()))
+        static if (__traits(compiles, .initialise(this)))
         {
-            .initialise();
+            .initialise(this);
         }
     }
 
@@ -877,11 +877,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return privateState.bot;
     }
 
+    // postprocess
+    /++
+     +  FIXME
+     +/
     void postprocess(ref IRCEvent event)
     {
-        static if (__traits(compiles, .postprocess(event)))
+        static if (__traits(compiles, .postprocess(this, event)))
         {
-            .postprocess(event);
+            .postprocess(this, event);
         }
     }
 
@@ -910,9 +914,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
      void writeConfig(const string configFile)
      {
-         static if (__traits(compiles, .writeConfig(string.init)))
+         static if (__traits(compiles, .writeConfig(this, string.init)))
          {
-             .writeConfig(configFile);
+             .writeConfig(this, configFile);
          }
      }
 
@@ -982,9 +986,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void present() const
     {
-        static if (__traits(compiles, .present()))
+        static if (__traits(compiles, .present(this)))
         {
-            .present();
+            .present(this);
         }
     }
 
@@ -1054,11 +1058,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Activates the plugin, run when connection has been established.
      +/
-    void start(IRCPlugin plugin)
+    void start()
     {
-        static if (__traits(compiles, .start(plugin)))
+        static if (__traits(compiles, .start(this)))
         {
-            .start(plugin);
+            .start(this);
         }
     }
 
@@ -1066,11 +1070,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Deinitialises the plugin.
      +/
-    void teardown(IRCPlugin plugin)
+    void teardown()
     {
-        static if (__traits(compiles, .teardown(plugin)))
+        static if (__traits(compiles, .teardown(this)))
         {
-            .teardown(plugin);
+            .teardown(this);
         }
     }
 
