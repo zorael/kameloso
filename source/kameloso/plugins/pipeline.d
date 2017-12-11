@@ -159,7 +159,7 @@ File createFIFO(const IRCPluginState state)
         if (!state.settings.monochrome)
         {
             Appender!string sink;
-            sink.reserve(128);
+            sink.reserve(128);  // ~96
 
             immutable BashForeground[] logcolours = state.settings.monochrome ?
                 KamelosoLogger.logcoloursBright : KamelosoLogger.logcoloursDark;
@@ -172,7 +172,6 @@ File createFIFO(const IRCPluginState state)
             sink.put("] to send raw commands to the server.");
             sink.colour(BashReset.all);
 
-            writeln(sink.data.length);
             logger.trace(sink.data);
         }
         else
