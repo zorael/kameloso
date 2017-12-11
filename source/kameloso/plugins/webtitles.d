@@ -27,15 +27,6 @@ struct WebtitlesSettings
     bool redditLookups = true;
 }
 
-/// All Webtitles plugin options gathered
-@Settings WebtitlesSettings webtitlesSettings;
-
-/// All plugin state variables gathered in a struct
-IRCPluginState state;
-
-/// Thread ID of the working thread that does the lookups
-Tid workerThread;
-
 /// Regex pattern to grep a web page title from the HTTP body
 enum titlePattern = `<title>([^<]+)</title>`;
 
@@ -102,7 +93,7 @@ struct TitleLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-void onMessage(const IRCEvent event)
+void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import std.regex : matchAll;
 
@@ -116,7 +107,7 @@ void onMessage(const IRCEvent event)
         immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
         logger.info("Caught URL: ", url);
-        workerThread.send(url, target);
+        plugin.workerThread.send(url, target);
     }
 }
 
@@ -130,7 +121,7 @@ void onMessage(const IRCEvent event)
  +  by rewriting the URL to be one to ListenOnRepeat with the same video ID.
  +  Then we get our YouTube title.
  +/
-TitleLookup lookupTitle(const string url)
+TitleLookup lookupTitle(const string url, bool redditLookups)
 {
     import kameloso.string : beginsWith;
     import arsd.dom : Document;
@@ -173,7 +164,7 @@ TitleLookup lookupTitle(const string url)
     if ((lookup.title == "YouTube") &&
         (url.indexOf("youtube.com/watch?") != -1))
     {
-        lookup.fixYoutubeTitles(url);
+        lookup.fixYoutubeTitles(url, redditLookups);
     }
 
     lookup.domain = res.finalURI.host;
@@ -184,20 +175,26 @@ TitleLookup lookupTitle(const string url)
         lookup.domain.nom('.');
     }
 
-    if (!url.beginsWith("https://www.reddit.com"))
+    if (redditLookups && !url.beginsWith("https://www.reddit.com"))
     {
         Request redditReq;
         redditReq.useStreaming = true;  // we only want as little as possible
         redditReq.keepAlive = false;
         redditReq.bufferSize = BufferSize.titleLookup;
 
+        tlsLogger.log("Checking Reddit ...");
+
         auto redditRes = redditReq.get("https://www.reddit.com/" ~ url);
 
         with (redditRes.finalURI)
         {
-            if (!uri.beginsWith("https://www.reddit.com/login") &&
-                !uri.beginsWith("https://www.reddit.com/submit") &&
-                !uri.beginsWith("https://www.reddit.com/http"))
+            if (uri.beginsWith("https://www.reddit.com/login") ||
+                uri.beginsWith("https://www.reddit.com/submit") ||
+                uri.beginsWith("https://www.reddit.com/http"))
+            {
+                tlsLogger.log("No corresponding Reddit post.");
+            }
+            else
             {
                 // Has been posted to Reddit
                 lookup.reddit = uri;
@@ -219,7 +216,7 @@ TitleLookup lookupTitle(const string url)
  +      ref lookup = the failing TitleLookup that we want to try hacking around
  +      url = the original URL string
  +/
-void fixYoutubeTitles(ref TitleLookup lookup, const string url)
+void fixYoutubeTitles(ref TitleLookup lookup, const string url, bool redditLookups)
 {
     import std.regex : replaceFirst;
     import std.string : indexOf;
@@ -231,7 +228,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     tlsLogger.log("ListenOnRepeat URL: ", onRepeatURL);
 
-    TitleLookup onRepeatLookup = lookupTitle(onRepeatURL);
+    TitleLookup onRepeatLookup = lookupTitle(onRepeatURL, redditLookups);
 
     tlsLogger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
@@ -346,7 +343,7 @@ unittest
  +      sMainThread = a shared copy of the mainThread Tid, to which every
  +                    outgoing messages will be sent.
  +/
-void titleworker(shared Tid sMainThread)
+void titleworker(shared Tid sMainThread, bool redditLookups)
 {
     import core.time : seconds;
     import std.concurrency : OwnerTerminated, receive;
@@ -375,7 +372,7 @@ void titleworker(shared Tid sMainThread)
         }
         else
         {
-            try lookup = lookupTitle(url);
+            try lookup = lookupTitle(url, redditLookups);
             catch (const Exception e)
             {
                 import kameloso.string : beginsWith;
@@ -415,7 +412,7 @@ void titleworker(shared Tid sMainThread)
                 "PRIVMSG %s :%s".format(target, lookup.title));
         }
 
-        if (lookup.reddit.length)
+        if (redditLookups && lookup.reddit.length)
         {
             mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
@@ -452,7 +449,9 @@ void onEndOfMotd(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : spawn;
 
-    workerThread = spawn(&titleworker, cast(shared)(plugin.state.mainThread));
+    plugin.workerThread = spawn(&titleworker,
+        cast(shared)(plugin.state.mainThread),
+        plugin.webtitlesSettings.redditLookups);
 }
 
 
@@ -462,7 +461,8 @@ void onEndOfMotd(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 void teardown(IRCPlugin basePlugin)
 {
-    workerThread.send(ThreadMessage.Teardown());
+    auto plugin = cast(WebtitlesPlugin)basePlugin;
+    plugin.workerThread.send(ThreadMessage.Teardown());
 }
 
 
@@ -480,5 +480,11 @@ public:
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
+    /// All Webtitles plugin options gathered
+    @Settings WebtitlesSettings webtitlesSettings;
+
+    /// Thread ID of the working thread that does the lookups
+    Tid workerThread;
+
     mixin IRCPluginImpl;
 }
