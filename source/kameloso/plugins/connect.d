@@ -626,6 +626,21 @@ void onSASLFailure(ConnectPlugin plugin)
 }
 
 
+// onWelcome
+/++
+ +  On RPL_WELCOME (001) the registration will be completed, so mark it as such.
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(ConnectPlugin plugin)
+{
+    with (plugin.state)
+    {
+        bot.registerStatus = IRCBot.Status.finished;
+        bot.updated = true;
+    }
+}
+
+
 // register
 /++
  +  Register with/log onto an IRC server.
