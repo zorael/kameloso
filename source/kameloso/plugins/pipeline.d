@@ -28,7 +28,7 @@ private:
 void pipereader(shared IRCPluginState newState)
 {
     import core.time : seconds;
-    import std.file  : remove;
+    import std.file  : FileException, remove;
 
     auto state = cast(IRCPluginState)newState;
 
@@ -36,12 +36,20 @@ void pipereader(shared IRCPluginState newState)
     initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
     /// Named pipe (FIFO) to send messages to the server through
-    auto fifo = createFIFO(state);
+    File fifo;
 
-    if (!fifo.isOpen)
+    try
     {
-        logger.error("Could not create FIFO. Pipereader will not function.");
+        fifo = createFIFO(state);
+    }
+    catch (FileException e)
+    {
+        logger.error("Failed to create pipeline FIFO: ", e.msg);
         return;
+    }
+    catch (Exception e)
+    {
+        logger.error("Unhandled exception creating pipeline FIFO: ", e.msg);
     }
 
     scope(exit) remove(fifo.name);
