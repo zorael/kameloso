@@ -606,36 +606,46 @@ int main(string[] args)
 
             version(Colours)
             {
-                import kameloso.bash : BashForeground, colour;
+                import kameloso.bash : BashForeground, BashReset, colour;
                 import std.array : Appender;
                 import std.conv : to;
+                import std.experimental.logger : LogLevel;
 
                 Appender!string sink;
                 sink.reserve(64);
 
-                with (settings)
-                with (BashForeground)
+                if (!settings.monochrome)
                 {
-                    // "%s resolved into %d IPs."
+                    with (settings)
+                    with (BashForeground)
+                    {
+                        // "%s resolved into %d IPs."
 
-                    immutable infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
+                        immutable infotint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.info] :
+                            KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                    immutable logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
+                        immutable logtint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.all] :
+                            KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                    sink.colour(infotint);
-                    sink.put(bot.server.address);
-                    sink.colour(logtint);
-                    sink.put(" resolved into ");
-                    sink.colour(infotint);
-                    sink.put(conn.ips.length.to!string);
-                    sink.colour(logtint);
-                    sink.put(" IPs.");
+                        sink.colour(infotint);
+                        sink.put(bot.server.address);
+                        sink.colour(logtint);
+                        sink.put(" resolved into ");
+                        sink.colour(infotint);
+                        sink.put(conn.ips.length.to!string);
+                        sink.colour(logtint);
+                        sink.put(" IPs.");
+                        sink.colour(BashReset.all);
 
-                    logger.trace(sink.data);
+                        logger.trace(sink.data);
+                    }
+                }
+                else
+                {
+                    logger.infof("%s resolved into %d IPs.", bot.server.address,
+                    conn.ips.length);
                 }
             }
             else
