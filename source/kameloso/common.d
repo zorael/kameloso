@@ -326,7 +326,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     with (BashForeground)
     foreach (thing; things)
     {
-        alias Thing = typeof(thing);
+        alias Thing = Unqual!(typeof(thing));
         static if (coloured)
         {
             immutable titleColour = bright ? black : white;
@@ -390,7 +390,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
                         sink.formattedWrite(arrayPattern,
-                            cyan.colour, T.stringof,
+                            cyan.colour, UnqualArray!T.stringof,
                             memberColour.colour, thisWidth, memberstring,
                             valueColour.colour, member,
                             lengthColour.colour, member.length);
