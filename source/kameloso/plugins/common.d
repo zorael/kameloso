@@ -1069,14 +1069,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import kameloso.config : serialise;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (symbol; getSymbolsByUDA!(thisModule, Settings))
+        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
+
+        foreach (symbol; moduleLevelSymbols)
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
-                import kameloso.config : serialise;
+                sink.serialise(symbol);
+            }
+        }
+
+        foreach (immutable i, symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
                 sink.serialise(symbol);
             }
         }
