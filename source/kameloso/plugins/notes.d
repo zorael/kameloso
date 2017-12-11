@@ -26,19 +26,6 @@ struct NotesSettings
     string notesFile = "notes.json";
 }
 
-/// All Notes plugin settings gathered
-@Settings NotesSettings notesSettings;
-
-
-// notes
-/++
- +  The in-memory JSON storage of all stored notes.
- +
- +  It is in the JSON form of `string[][string]`, where the first key is
- +  a nickname.
- +/
-JSONValue notes;
-
 
 // onJoin
 /++
@@ -56,7 +43,7 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
 
     try
     {
-        const noteArray = getNotes(event.sender.nickname);
+        const noteArray = plugin.getNotes(event.sender.nickname);
 
         with (plugin.state)
         {
@@ -88,7 +75,7 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
             }
         }
 
-        clearNotes(event.sender.nickname);
+        plugin.clearNotes(event.sender.nickname);
     }
     catch (const JSONException e)
     {
@@ -158,11 +145,11 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 
     try
     {
-        nickname.addNote(event.sender.nickname, line);
+        plugin.addNote(nickname, event.sender.nickname, line);
         plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :Note added".format(event.channel));
 
-        saveNotes(notesSettings.notesFile);
+        plugin.saveNotes(plugin.notesSettings.notesFile);
     }
     catch (const JSONException e)
     {
@@ -181,9 +168,9 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "printnotes")
-void onCommandPrintNotes()
+void onCommandPrintNotes(NotesPlugin plugin)
 {
-    writeln(notes.toPrettyString);
+    writeln(plugin.notes.toPrettyString);
 }
 
 
@@ -197,10 +184,10 @@ void onCommandPrintNotes()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "reloadnotes")
-void onCommandReloadQuotes()
+void onCommandReloadQuotes(NotesPlugin plugin)
 {
     logger.log("Reloading notes");
-    notes = loadNotes(notesSettings.notesFile);
+    plugin.notes = loadNotes(plugin.notesSettings.notesFile);
 }
 
 
@@ -249,7 +236,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
  +      and metadata thereof.
  +/
-auto getNotes(const string nickname)
+auto getNotes(NotesPlugin plugin, const string nickname)
 {
     import std.datetime : SysTime;
     import std.json : JSON_TYPE, JSONException;
@@ -262,14 +249,14 @@ auto getNotes(const string nickname)
 
     Note[] noteArray;
 
-    if (const arr = nickname in notes)
+    if (const arr = nickname in plugin.notes)
     {
         if (arr.type != JSON_TYPE.ARRAY)
         {
             logger.warningf("Invalid notes list for %s (type is %s)",
                         nickname, arr.type);
 
-            clearNotes(nickname);
+            plugin.clearNotes(nickname);
 
             return noteArray;
         }
@@ -296,7 +283,7 @@ auto getNotes(const string nickname)
  +  Params:
  +      nickname = the nickname whose notes to clear.
  +/
-void clearNotes(const string nickname)
+void clearNotes(NotesPlugin plugin, const string nickname)
 {
     import std.file : FileException;
     import std.exception : ErrnoException;
@@ -304,11 +291,11 @@ void clearNotes(const string nickname)
 
     try
     {
-        if (nickname in notes)
+        if (nickname in plugin.notes)
         {
             logger.log("Clearing stored notes for ", nickname);
-            notes.object.remove(nickname);
-            saveNotes(notesSettings.notesFile);
+            plugin.notes.object.remove(nickname);
+            plugin.saveNotes(plugin.notesSettings.notesFile);
         }
     }
     catch (const JSONException e)
@@ -335,7 +322,8 @@ void clearNotes(const string nickname)
  +      sender = the originating user who places the note.
  +      line = the note text.
  +/
-void addNote(const string nickname, const string sender, const string line)
+void addNote(NotesPlugin plugin, const string nickname, const string sender,
+    const string line)
 {
     import std.datetime : Clock;
     import std.json : JSONException, JSON_TYPE;
@@ -358,15 +346,15 @@ void addNote(const string nickname, const string sender, const string line)
     auto asJSON = JSONValue(senderAndLine);
     asJSON["when"] = Clock.currTime.toUnixTime;  // workaround to the above
 
-    auto nicknote = nickname in notes;
+    auto nicknote = nickname in plugin.notes;
 
     if (nicknote && ((*nicknote).type == JSON_TYPE.ARRAY))
     {
-        notes[nickname].array ~= asJSON;
+        plugin.notes[nickname].array ~= asJSON;
     }
     else
     {
-        notes[nickname] = [ asJSON ];
+        plugin.notes[nickname] = [ asJSON ];
     }
 }
 
@@ -378,7 +366,7 @@ void addNote(const string nickname, const string sender, const string line)
  +  Params:
  +      filename = the filename to save to.
  +/
-void saveNotes(const string filename)
+void saveNotes(NotesPlugin plugin, const string filename)
 {
     import std.ascii : newline;
     import std.file  : exists, isFile, remove;
@@ -390,7 +378,7 @@ void saveNotes(const string filename)
 
     auto file = File(filename, "a");
 
-    file.write(notes.toPrettyString);
+    file.write(plugin.notes.toPrettyString);
     file.write(newline);
 }
 
@@ -425,9 +413,9 @@ JSONValue loadNotes(const string filename)
  +  Initialises the Notes plugin. Loads the notes from disk.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
-void onEndOfMotd()
+void onEndOfMotd(NotesPlugin plugin)
 {
-    notes = loadNotes(notesSettings.notesFile);
+    plugin.notes = loadNotes(plugin.notesSettings.notesFile);
 }
 
 
@@ -443,5 +431,17 @@ public:
  +/
 final class NotesPlugin : IRCPlugin
 {
+    /// All Notes plugin settings gathered
+    @Settings NotesSettings notesSettings;
+
+    // notes
+    /++
+    +  The in-memory JSON storage of all stored notes.
+    +
+    +  It is in the JSON form of `string[][string]`, where the first key is
+    +  a nickname.
+    +/
+    JSONValue notes;
+
     mixin IRCPluginImpl;
 }
