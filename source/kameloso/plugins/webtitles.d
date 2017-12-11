@@ -27,23 +27,11 @@ struct WebtitlesSettings
     bool redditLookups = true;
 }
 
-/// Regex pattern to grep a web page title from the HTTP body
-enum titlePattern = `<title>([^<]+)</title>`;
-
-/// Regex engine to catch web titles
-static titleRegex = ctRegex!(titlePattern, "i");
-
 /// Regex pattern to match a URI, to see if one was pasted
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 
 /// Regex engine to catch URIs
 static urlRegex = ctRegex!stephenhay;
-
-/// Regex engine to match only the domain in a URI
-enum domainPattern = `(?:https?://)(?:www\.)?([^/ ]+)/?.*`;
-
-/// Regex engine to catch domains
-static domainRegex = ctRegex!domainPattern;
 
 /// Regex pattern to match YouTube urls
 enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
@@ -239,47 +227,6 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url, bool redditLooku
     onRepeatLookup.title = onRepeatLookup.title[0..$-17];
     onRepeatLookup.domain = "youtube.com";
     lookup = onRepeatLookup;
-}
-
-
-// getDomainFromURL
-/++
- +  Fetches the slice of the domain name from a URL.
- +
- +  Params:
- +      url = an URL string.
- +
- +  Returns:
- +      the domain part of the URL string, or an empty string if no matches.
- +/
-string getDomainFromURL(const string url) @safe
-{
-    import std.regex : matchFirst;
-
-    auto domainHits = url.matchFirst(domainRegex);
-    return domainHits.length ? domainHits[1] : string.init;
-}
-
-///
-@safe unittest
-{
-    immutable d1 = getDomainFromURL("http://www.youtube.com/watch?asoidjsd&asd=kokofruit");
-    assert((d1 == "youtube.com"), d1);
-
-    immutable d2 = getDomainFromURL("https://www.com");
-    assert((d2 == "com"), d2);
-
-    immutable d3 = getDomainFromURL("ftp://ftp.sunet.se");
-    assert(!d3.length, d3);
-
-    immutable d4 = getDomainFromURL("http://");
-    assert(!d4.length, d4);
-
-    immutable d5 = getDomainFromURL("invalid line");
-    assert(!d5.length, d5);
-
-    immutable d6 = getDomainFromURL("");
-    assert(!d6.length, d6);
 }
 
 
