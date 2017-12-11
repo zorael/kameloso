@@ -24,7 +24,7 @@ private:
 struct WebtitlesSettings
 {
     /// Flag to look up URLs on Reddit to see if they've been posted there
-    bool redditLookups = true;
+    bool redditLookups = false;
 }
 
 /// Regex pattern to match a URI, to see if one was pasted
