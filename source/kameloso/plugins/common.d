@@ -927,12 +927,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
         foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
                 alias T = typeof(symbol);
 
@@ -940,6 +939,29 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // This symbol was already configured earlier;
                     // --> this is a reconnect
+                    continue;
+                }
+
+                import kameloso.common : meldInto;
+                import kameloso.config : readConfigInto;
+                import std.typecons : No, Yes;
+
+                T tempSymbol;
+                configFile.readConfigInto(tempSymbol);
+                tempSymbol.meldInto!(Yes.overwrite)(symbol);
+            }
+        }
+
+        foreach (immutable i, ref symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
+                alias T = typeof(symbol);
+
+                if (symbol != T.init)
+                {
+                    // As above
                     continue;
                 }
 
@@ -974,15 +996,28 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import std.traits : getSymbolsByUDA, isType, isSomeFunction;
+        import kameloso.common : printObject;
+        import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
+        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
+
+        foreach (immutable i, symbol; moduleLevelSymbols)
         {
-            static if (!isType!symbol && !isSomeFunction!symbol &&
-                !__traits(isTemplate, symbol))
+            static if (is(typeof(symbol) == struct))
             {
-                import kameloso.common : printObject;
+                import std.format : format;
+                import std.traits : Unqual;
 
+                // FIXME: Hardcoded value
+                printObject!17(symbol);
+            }
+        }
+
+        foreach (immutable i, symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
                 // FIXME: Hardcoded value
                 printObject!17(symbol);
             }
