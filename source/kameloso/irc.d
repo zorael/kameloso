@@ -671,12 +671,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
-    case RPL_WELCOME: // 001
-        // :adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^
-        event.target.nickname = slice.nom(" :");
-        event.content = slice;
-        break;
-
     case ERR_BADPING: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
         if (slice.indexOf(" :To connect"))
