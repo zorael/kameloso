@@ -51,9 +51,6 @@ enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 /// Regex engine to match YouTube urls for replacement
 static youtubeRegex = ctRegex!youtubePattern;
 
-/// Thread-local logger
-Logger tlsLogger;
-
 
 // TitleLookup
 /++
@@ -144,7 +141,7 @@ TitleLookup lookupTitle(const string url, bool redditLookups)
 
     if (res.code >= 400)
     {
-        tlsLogger.error("Response code: ", res.code);
+        logger.error("Response code: ", res.code);
         return lookup;
     }
 
@@ -167,7 +164,7 @@ TitleLookup lookupTitle(const string url, bool redditLookups)
         lookup.fixYoutubeTitles(url, redditLookups);
     }
 
-    lookup.domain = res.finalURI.host;
+    lookup.domain = res.finalURI.original_host;
 
     if (lookup.domain.beginsWith("www"))
     {
@@ -182,7 +179,7 @@ TitleLookup lookupTitle(const string url, bool redditLookups)
         redditReq.keepAlive = false;
         redditReq.bufferSize = BufferSize.titleLookup;
 
-        tlsLogger.log("Checking Reddit ...");
+        logger.log("Checking Reddit ...");
 
         auto redditRes = redditReq.get("https://www.reddit.com/" ~ url);
 
@@ -192,7 +189,7 @@ TitleLookup lookupTitle(const string url, bool redditLookups)
                 uri.beginsWith("https://www.reddit.com/submit") ||
                 uri.beginsWith("https://www.reddit.com/http"))
             {
-                tlsLogger.log("No corresponding Reddit post.");
+                logger.log("No corresponding Reddit post.");
             }
             else
             {
@@ -221,20 +218,20 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url, bool redditLooku
     import std.regex : replaceFirst;
     import std.string : indexOf;
 
-    tlsLogger.log("Bland YouTube title...");
+    logger.log("Bland YouTube title...");
 
     immutable onRepeatURL = url.replaceFirst(youtubeRegex,
         "https://www.listenonrepeat.com/watch/");
 
-    tlsLogger.log("ListenOnRepeat URL: ", onRepeatURL);
+    logger.log("ListenOnRepeat URL: ", onRepeatURL);
 
     TitleLookup onRepeatLookup = lookupTitle(onRepeatURL, redditLookups);
 
-    tlsLogger.log("ListenOnRepeat title: ", onRepeatLookup.title);
+    logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
     if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
     {
-        tlsLogger.error("Failed to ListenOnRepeatify YouTube title");
+        logger.error("Failed to ListenOnRepeatify YouTube title");
         return;
     }
 
@@ -343,15 +340,18 @@ unittest
  +      sMainThread = a shared copy of the mainThread Tid, to which every
  +                    outgoing messages will be sent.
  +/
-void titleworker(shared Tid sMainThread, bool redditLookups)
+//void titleworker(shared Tid sMainThread, bool redditLookups)
+void titleworker(shared IRCPluginState sState, bool redditLookups)
 {
     import core.time : seconds;
     import std.concurrency : OwnerTerminated, receive;
     import std.datetime : Clock, SysTime;
     import std.variant : Variant;
 
-    Tid mainThread = cast(Tid)sMainThread;
-    tlsLogger = new KamelosoLogger(LogLevel.all);
+    IRCPluginState state = cast(IRCPluginState)sState;
+
+    kameloso.common.settings = state.settings;
+    initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
     /// Cache buffer of recently looked-up URIs
     TitleLookup[string] cache;
@@ -367,7 +367,7 @@ void titleworker(shared Tid sMainThread, bool redditLookups)
         if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
             < Timeout.titleCache.seconds))
         {
-            tlsLogger.log("Found title lookup in cache");
+            logger.log("Found title lookup in cache");
             lookup = *inCache;
         }
         else
@@ -379,20 +379,20 @@ void titleworker(shared Tid sMainThread, bool redditLookups)
 
                 if (url.beginsWith("https"))
                 {
-                    tlsLogger.warningf("Could not look up URL '%s': %s", url, e.msg);
-                    tlsLogger.log("Rewriting https to http and retrying...");
+                    logger.warningf("Could not look up URL '%s': %s", url, e.msg);
+                    logger.log("Rewriting https to http and retrying...");
                     return catchURL(("http" ~ url[5..$]), target);
                 }
                 else
                 {
-                    tlsLogger.errorf("Could not look up URL '%s': %s", url, e.msg);
+                    logger.errorf("Could not look up URL '%s': %s", url, e.msg);
                 }
             }
         }
 
         if (lookup == TitleLookup.init)
         {
-            tlsLogger.error("Failed.");
+            logger.error("Failed.");
             return;
         }
 
@@ -402,19 +402,19 @@ void titleworker(shared Tid sMainThread, bool redditLookups)
 
         if (lookup.domain.length)
         {
-            mainThread.send(ThreadMessage.Sendline(),
+            state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :[%s] %s"
                     .format(target, lookup.domain, lookup.title));
         }
         else
         {
-            mainThread.send(ThreadMessage.Sendline(),
+            state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :%s".format(target, lookup.title));
         }
 
         if (redditLookups && lookup.reddit.length)
         {
-            mainThread.send(ThreadMessage.Sendline(),
+            state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
         }
     }
@@ -433,7 +433,7 @@ void titleworker(shared Tid sMainThread, bool redditLookups)
             },
             (Variant v)
             {
-                tlsLogger.warning("titleworker received Variant: ", v);
+                logger.warning("titleworker received Variant: ", v);
             }
         );
     }
@@ -449,8 +449,7 @@ void onEndOfMotd(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : spawn;
 
-    plugin.workerThread = spawn(&titleworker,
-        cast(shared)(plugin.state.mainThread),
+    plugin.workerThread = spawn(&titleworker, cast(shared)(plugin.state),
         plugin.webtitlesSettings.redditLookups);
 }
 
