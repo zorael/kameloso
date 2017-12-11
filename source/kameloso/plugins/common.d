@@ -3,6 +3,8 @@ module kameloso.plugins.common;
 import kameloso.common : CoreSettings;
 import kameloso.ircdefs;
 
+import std.array : Appender;
+
 
 // IRCPlugin
 /++
@@ -16,8 +18,6 @@ import kameloso.ircdefs;
  +/
 interface IRCPlugin
 {
-    import std.array : Appender;
-
     /// Executed on update to the internal `IRCBot` struct
     void newBot(IRCBot);
 
@@ -1068,7 +1068,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      ref sink = `Appender` to fill with plugin-specific settings text.
      +/
-    import std.array : Appender;
     void addToConfig(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
