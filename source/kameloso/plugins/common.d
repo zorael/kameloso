@@ -775,23 +775,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             __traits(identifier, fun), event.type);
                     }
 
-                    static if (is(Params : AliasSeq!IRCEvent))
-                    {
-                        fun(mutEvent);
-                    }
-                    else static if (is(Params : AliasSeq!(IRCPluginState, IRCEvent)))
-                    {
-                        pragma(msg, __traits(identifier, fun) ~
-                            " is using an IRCPluginState parameter, change to plugin");
-                        fun(privateState, mutEvent);
-                    }
-                    else static if (is(Params : AliasSeq!IRCPluginState))
-                    {
-                        pragma(msg, __traits(identifier, fun) ~
-                            " is using an IRCPluginState parameter, change to plugin");
-                        fun(privateState);
-                    }
-                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                    static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
                     {
                         fun(this, mutEvent);
@@ -800,6 +784,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         is(Params : AliasSeq!IRCPlugin))
                     {
                         fun(this);
+                    }
+                    else static if (is(Params : AliasSeq!IRCEvent))
+                    {
+                        fun(mutEvent);
                     }
                     else static if (arity!fun == 0)
                     {
