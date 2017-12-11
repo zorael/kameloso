@@ -26,9 +26,6 @@ struct TwitchSettings
     bool twitchColours = true;
 }
 
-/// All Twitch plugin options gathered
-@Settings TwitchSettings twitchSettings;
-
 
 // postprocess
 /++
@@ -44,7 +41,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if (!plugin.state.bot.server.address.endsWith(".twitch.tv")) return;
 
-    parseTwitchTags(event);
+    plugin.parseTwitchTags(event);
 
     if (event.sender.isServer)
     {
@@ -68,7 +65,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +  Params:
  +      ref event = A reference to the IRCEvent whose tags should be parsed.
  +/
-void parseTwitchTags(ref IRCEvent event)
+void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 {
     import kameloso.common : logger;
     import kameloso.string : nom;
@@ -377,5 +374,8 @@ public:
  +/
 final class TwitchPlugin : IRCPlugin
 {
+    /// All Twitch plugin options gathered
+    @Settings TwitchSettings twitchSettings;
+
     mixin IRCPluginImpl;
 }
