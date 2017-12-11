@@ -49,9 +49,6 @@ struct PrinterSettings
     bool typesInCaps = true;
 }
 
-/// All Printer plugin options gathered
-@Settings PrinterSettings printerSettings;
-
 
 // onAnyEvent
 /++
@@ -94,7 +91,7 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
     case RPL_WHOREPLY:
     case CAP:
         // These event types are too spammy; ignore
-        if (!printerSettings.filterVerbose) goto default;
+        if (!plugin.printerSettings.filterVerbose) goto default;
         break;
 
     case PING:
@@ -172,7 +169,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         put(sink, '[', timestamp, "] ");
 
-        string typestring = printerSettings.typesInCaps ?
+        string typestring = plugin.printerSettings.typesInCaps ?
             enumToString(type) : enumToString(type).toLower;
 
         if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_") ||
@@ -211,7 +208,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             import std.string : toUpper;
 
-            immutable badgestring = printerSettings.badgesInCaps ?
+            immutable badgestring = plugin.printerSettings.badgesInCaps ?
                 badge.toUpper : badge;
 
             put(sink, " [", badgestring, ']');
@@ -240,7 +237,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         .canFind(cast(ubyte[])bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
-                        if (printerSettings.bellOnMention)
+                        if (plugin.printerSettings.bellOnMention)
                         {
                             sink.put(TerminalToken.bell);
                         }
@@ -319,7 +316,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             BashForeground colourByHash(const string nickname)
             {
-                if (printerSettings.randomNickColours)
+                if (plugin.printerSettings.randomNickColours)
                 {
                     import std.traits : EnumMembers;
 
@@ -348,7 +345,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             void colourSenderTruecolour()
             {
                 if (!sender.isServer && event.colour.length &&
-                    printerSettings.truecolour)
+                    plugin.printerSettings.truecolour)
                 {
                     import kameloso.string : numFromHex;
                     import std.typecons : No, Yes;
@@ -356,7 +353,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
 
-                    if (printerSettings.normaliseTruecolour)
+                    if (plugin.printerSettings.normaliseTruecolour)
                     {
                         sink.truecolour!(Yes.normalise)
                             (r, g, b, settings.brightTerminal);
@@ -393,7 +390,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
-            string typestring = printerSettings.typesInCaps ?
+            string typestring = plugin.printerSettings.typesInCaps ?
                 enumToString(type) : enumToString(type).toLower;
 
             if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_"))
@@ -446,7 +443,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                immutable badgestring = printerSettings.badgesInCaps ?
+                immutable badgestring = plugin.printerSettings.badgesInCaps ?
                     badge.toUpper : badge;
 
                 put(sink, " [", badgestring, ']');
@@ -489,7 +486,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             immutable inverted = content.invert(bot.nickname);
 
                             if ((content != inverted) &&
-                                (printerSettings.bellOnMention))
+                                (plugin.printerSettings.bellOnMention))
                             {
                                 sink.put(TerminalToken.bell);
                             }
@@ -844,5 +841,8 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
+    /// All Printer plugin options gathered
+    @Settings PrinterSettings printerSettings;
+
     mixin IRCPluginImpl;
 }
