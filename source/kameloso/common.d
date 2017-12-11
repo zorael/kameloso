@@ -1511,7 +1511,7 @@ struct Client
 
         foreach (plugin; plugins)
         {
-            try plugin.teardown();
+            try plugin.teardown(plugin);
             catch (const Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s",

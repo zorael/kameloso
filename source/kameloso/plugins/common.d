@@ -50,7 +50,7 @@ interface IRCPlugin
     void printSettings() const;
 
     /// Executed during shutdown or plugin restart
-    void teardown();
+    void teardown(IRCPlugin);
 
     /// Returns the name of the plugin, sliced off the module name
     string name() @property const;
@@ -1031,11 +1031,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Deinitialises the plugin.
      +/
-    void teardown()
+    void teardown(IRCPlugin plugin)
     {
-        static if (__traits(compiles, .teardown()))
+        static if (__traits(compiles, .teardown(plugin)))
         {
-            .teardown();
+            .teardown(plugin);
         }
     }
 
