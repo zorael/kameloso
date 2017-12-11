@@ -459,7 +459,7 @@ void onEndOfMotd(WebtitlesPlugin plugin, const IRCEvent event)
 /++
  +  Deinitialises the Webtitles plugin. Shuts down the titleworker thread.
  +/
-void teardown()
+void teardown(IRCPlugin basePlugin)
 {
     workerThread.send(ThreadMessage.Teardown());
 }
