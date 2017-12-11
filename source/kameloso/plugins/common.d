@@ -1034,7 +1034,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
-        foreach (immutable i, symbol; moduleLevelSymbols)
+        foreach (symbol; moduleLevelSymbols)
         {
             static if (is(typeof(symbol) == struct))
             {
