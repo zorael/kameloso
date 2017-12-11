@@ -152,7 +152,7 @@ TitleLookup lookupTitle(const string url, bool redditLookups)
         lookup.fixYoutubeTitles(url, redditLookups);
     }
 
-    lookup.domain = res.finalURI.original_host;
+    lookup.domain = res.finalURI.host;
 
     if (lookup.domain.beginsWith("www"))
     {
