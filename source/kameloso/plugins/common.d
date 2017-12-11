@@ -1139,6 +1139,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  This automatically deauthenticates them from the bot's service, as all
      +  track of them will have disappeared. A new WHOIS must be made then.
      +/
+    @(Chainable)
     @(IRCEvent.Type.PART)
     @(IRCEvent.Type.QUIT)
     void onLeaveMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1152,6 +1153,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Tracks a nick change, moving any old IRCUser entry in state.users to
      +  point to the new nickname.
      +/
+    @(Chainable)
     @(IRCEvent.Type.NICK)
     void onNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1175,6 +1177,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Catches a user's information and saves it in the IRCUser array, along
      +  with a timestamp of the last WHOIS call, which is this.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1200,6 +1203,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  login name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to WHOIS them later.
      +/
+    @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
     void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1222,6 +1226,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  Records a user's NickServ login by saving it to the user's IRCBot in
      +  the state.users associative array.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1247,6 +1252,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +
      +  It usually contains everything interesting except login.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1258,6 +1264,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     /++
      +  Remove an exhausted WHOIS request from the queue upon end of WHOIS.
      +/
+    @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
