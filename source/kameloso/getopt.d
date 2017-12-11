@@ -230,7 +230,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
             writeln();
 
             // FIXME: Hardcoded width
-            printObjects!17(bot, bot.server, settings);
+            printObjects!18(bot, bot.server, settings);
 
             initPlugins();
             foreach (plugin; plugins) plugin.printSettings();

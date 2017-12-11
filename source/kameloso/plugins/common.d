@@ -1032,6 +1032,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import kameloso.common : printObject;
         import std.traits : getSymbolsByUDA, hasUDA;
 
+        enum width = 18;
+
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
         foreach (symbol; moduleLevelSymbols)
@@ -1042,7 +1044,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import std.traits : Unqual;
 
                 // FIXME: Hardcoded value
-                printObject!17(symbol);
+                printObject!width(symbol);
             }
         }
 
@@ -1052,7 +1054,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 (is(typeof(this.tupleof[i]) == struct)))
             {
                 // FIXME: Hardcoded value
-                printObject!17(symbol);
+                printObject!width(symbol);
             }
         }
     }
