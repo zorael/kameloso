@@ -106,6 +106,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import core.time : seconds;
     import std.concurrency : spawn;
+    import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
 
     auto matches = event.content.matchAll(urlRegex);

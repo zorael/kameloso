@@ -220,6 +220,8 @@ void teardown(IRCPlugin basePlugin)
     with (plugin)
     with (plugin.state)
     {
+        import std.concurrency : Tid;
+
         if (fifoThread == Tid.init) return;
 
         fifoThread.send(ThreadMessage.Teardown());
