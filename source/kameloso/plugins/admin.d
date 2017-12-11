@@ -10,15 +10,6 @@ import std.stdio;
 
 private:
 
-/// Toggles whether onAnyEvent prints the raw strings of all incoming events
-bool printAll;
-
-/// Toggles whether onAnyEvent prints the raw bytes of the *contents* of events
-bool printBytes;
-
-/// Toggles whether onAnyEvent prints assert statements for incoming events
-bool printAsserts;
-
 
 // onCommandShowUsers
 /++
@@ -268,10 +259,10 @@ void onCommandResetTerminal()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "printall")
-void onCommandPrintAll()
+void onCommandPrintAll(AdminPlugin plugin)
 {
-    printAll = !printAll;
-    logger.info("Printing all: ", printAll);
+    plugin.printAll = !plugin.printAll;
+    logger.info("Printing all: ", plugin.printAll);
 }
 
 
@@ -285,10 +276,10 @@ void onCommandPrintAll()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @Prefix(NickPolicy.required, "printbytes")
-void onCommandPrintBytes()
+void onCommandPrintBytes(AdminPlugin plugin)
 {
-    printBytes = !printBytes;
-    logger.info("Printing bytes: ", printBytes);
+    plugin.printBytes = !plugin.printBytes;
+    logger.info("Printing bytes: ", plugin.printBytes);
 }
 
 
@@ -306,8 +297,8 @@ void onCommandAsserts(AdminPlugin plugin)
 {
     import kameloso.debugging : formatBot;
 
-    printAsserts = !printAsserts;
-    logger.info("Printing asserts: ", printAsserts);
+    plugin.printAsserts = !plugin.printAsserts;
+    logger.info("Printing asserts: ", plugin.printAsserts);
     formatBot(stdout.lockingTextWriter, plugin.state.bot);
 }
 
@@ -324,11 +315,11 @@ void onCommandAsserts(AdminPlugin plugin)
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(const IRCEvent event)
+void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    if (printAll) logger.trace(event.raw, '$');
+    if (plugin.printAll) logger.trace(event.raw, '$');
 
-    if (printBytes)
+    if (plugin.printBytes)
     {
         import std.string : representation;
 
@@ -338,7 +329,7 @@ void onAnyEvent(const IRCEvent event)
         }
     }
 
-    if (printAsserts)
+    if (plugin.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
         import std.algorithm.searching : canFind;
@@ -431,5 +422,14 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
+    /// Toggles whether onAnyEvent prints the raw strings of all incoming events
+    bool printAll;
+
+    /// Toggles whether onAnyEvent prints the raw bytes of the *contents* of events
+    bool printBytes;
+
+    /// Toggles whether onAnyEvent prints assert statements for incoming events
+    bool printAsserts;
+
     mixin IRCPluginImpl;
 }
