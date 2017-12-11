@@ -174,7 +174,8 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 // array, join it together
                 static assert (hasUDA!(thing.tupleof[i], Separator),
                     "%s.%s is not annotated with a Separator"
-                    .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
+                    .format(Thing.stringof,
+                    __traits(identifier, thing.tupleof[i])));
 
                 enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
                 static assert(separator.length, "Invalid separator (empty)");

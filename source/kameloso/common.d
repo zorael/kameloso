@@ -277,7 +277,7 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
 }
 
 
-// formatObjectsColoured
+// formatObjectsImpl
 /++
  +  Formats a struct object, with all its printable members with all their
  +  printable values.
@@ -302,8 +302,8 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +  Foo foo, bar;
  +  Appender!string sink;
  +
- +  sink.formatObjectsColoured!(Yes.coloured)(foo);
- +  sink.formatObjectsColoured!(No.coloured)(bar);
+ +  sink.formatObjectsImpl!(Yes.coloured)(foo);
+ +  sink.formatObjectsImpl!(No.coloured)(bar);
  +  ------------
  +/
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
@@ -312,9 +312,8 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.string : stripSuffix;
-    import std.format : format, formattedWrite;
-    import std.traits : hasUDA, isSomeFunction;
-    import std.typecons : Unqual;
+    import std.format : formattedWrite;
+    import std.traits : Unqual, hasUDA;
 
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
@@ -370,7 +369,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        //enum stringPattern = "%9s %-*s \"%s\"(%d)\n";
                         enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, T.stringof,
                             (width + 2), memberstring,
