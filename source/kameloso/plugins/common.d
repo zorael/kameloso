@@ -59,9 +59,6 @@ interface IRCPlugin
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
-
-    /// Sets a new `IRCPluginState`
-    void state(IRCPluginState) @property;
 }
 
 
@@ -1133,7 +1130,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // state
     /++
-     +  Accessor, returns a reference to the current private `IRCPluginState`.
+     +  Accessor and mutator, returns a reference to the current private
+     +  `IRCPluginState`.
      +
      +  This is needed to have `state` be part of the `IRCPlugin` interface, so
      +  `main.d` can access the property, albeit indirectly.
@@ -1142,18 +1140,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref IRCPluginState state() @property
     {
         return this.privateState;
-    }
-
-    // state
-    /++
-     +  Mutator, reassigns the current private `IRCPluginState`.
-     +
-     +  This is needed to have `state` be part of the `IRCPlugin` interface, so
-     +  `main.d` can access the property, albeit indirectly.
-     +/
-    void state(IRCPluginState state) @property
-    {
-        this.privateState = state;
     }
 }
 
