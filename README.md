@@ -15,7 +15,7 @@ Current functionality includes:
 * bedazzling coloured terminal output like it's the 90s
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and a simple example of how plugins work
+* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and a simple example of how plugins work (slightly outdated)
 * looking up titles of pasted web URLs (optionally with Reddit lookup)
 * Twitch events; simple Twitch chatbot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
@@ -131,6 +131,8 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * formalise outgoing messages instead of just raw strings
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
+* concurrency message-checking as Fiber?
+* fix `seen.d`, update to current standards
 
 # Built With
 
