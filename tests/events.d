@@ -45,7 +45,6 @@ unittest
     {
         assert((sender.address == "tepper.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.RPL_WELCOME), type.to!string);
-        assert((target.nickname == "kameloso^"), target.nickname);
         assert((content == "Welcome to the freenode Internet Relay Chat Network kameloso^"),
                content);
         assert((num == 1), num.to!string);
@@ -986,7 +985,6 @@ unittest
             assert((type == RPL_WELCOME), type.to!string);
             assert((sender.address == "adams.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert((target.nickname == "kameloso^"), target.nickname);
             assert((content == "Welcome to the freenode Internet Relay Chat Network kameloso^"), content);
             assert((num == 1), num.to!string);
         }
