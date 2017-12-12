@@ -197,13 +197,7 @@ File createFIFO(const IRCPluginState state)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PipelinePlugin plugin, const IRCEvent event)
 {
-    with (plugin)
-    with (plugin.state)
-    {
-        bot.nickname = event.target.nickname;
-        bot.updated = true;
-        fifoThread = spawn(&pipereader, cast(shared)state);
-    }
+    plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state);
 }
 
 
