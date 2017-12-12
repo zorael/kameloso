@@ -1311,7 +1311,7 @@ string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
     import kameloso.bash : BashEffect, BashReset, TerminalToken;
     import kameloso.string : escaped;
     import std.format : format;
-    import std.regex : matchAll, regex, replaceAll;
+    import std.regex : matchAll, regex, replaceFirst;
 
     immutable inverted = "%c[%dm%s%c[%dm"
         .format(TerminalToken.bashFormat, BashEffect.reverse,
@@ -1323,14 +1323,22 @@ string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
     }
     else
     {
-        auto engine = toInvert.escaped.format!`\b%s\b`.regex;
+        //auto engine = toInvert.escaped.format!`\b%s\b`.regex;
+        auto engine = toInvert.escaped.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
     }
 
     string replaced = line;
 
     foreach (hit; line.matchAll(engine))
     {
-        replaced = replaced.replaceAll(engine, inverted ~ hit[1]);
+        if (hit.empty)
+        {
+            replaced = replaced.replaceFirst(engine, inverted);
+        }
+        else
+        {
+            replaced = replaced.replaceFirst(engine, inverted ~ hit[1]);
+        }
     }
 
     return replaced;
@@ -1339,34 +1347,94 @@ string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
 ///
 unittest
 {
-    immutable inverted1 = "foo kameloso bar".invert("kameloso");
-    assert((inverted1 == "foo \033[7mkameloso\033[27m bar"), inverted1);
+    {
+        immutable inverted = "foo kameloso bar".invert("kameloso");
+        assert((inverted == "foo \033[7mkameloso\033[27m bar"), inverted);
+    }
 
-    immutable inverted2 = "fookameloso bar".invert("kameloso");
-    assert((inverted2 == "fookameloso bar"), inverted2);
+    {
+        immutable inverted = "fookameloso bar".invert("kameloso");
+        assert((inverted == "fookameloso bar"), inverted);
+    }
 
-    immutable inverted3 = "foo kamelosobar".invert("kameloso");
-    assert((inverted3 == "foo kamelosobar"), inverted3);
+    {
+        immutable inverted = "foo kamelosobar".invert("kameloso");
+        assert((inverted == "foo kamelosobar"), inverted);
+    }
 
-    immutable inverted4 = "foo(kameloso)bar".invert("kameloso");
-    assert((inverted4 == "foo(\033[7mkameloso\033[27m)bar"), inverted4);
+    {
+        immutable inverted = "foo(kameloso)bar".invert("kameloso");
+        assert((inverted == "foo(\033[7mkameloso\033[27m)bar"), inverted);
+    }
 
-    immutable inverted5 = "kameloso: 8ball".invert("kameloso");
-    assert((inverted5 == "\033[7mkameloso\033[27m: 8ball"), inverted5);
+    {
+        immutable inverted = "kameloso: 8ball".invert("kameloso");
+        assert((inverted == "\033[7mkameloso\033[27m: 8ball"), inverted);
+    }
 
-    immutable inverted6 = "Welcome to the freenode Internet Relay Chat Network kameloso^"
-        .invert("kameloso^");
-    assert((inverted6 == "Welcome to the freenode Internet Relay Chat Network \033[7mkameloso^\033[27m"),
-        inverted6);
+    {
+        immutable inverted = "Welcome to the freenode Internet Relay Chat Network kameloso^"
+            .invert("kameloso^");
+        assert((inverted == "Welcome to the freenode Internet Relay Chat Network \033[7mkameloso^\033[27m"),
+            inverted);
+    }
 
-    immutable inverted7 = "kameloso^: wfwef".invert("kameloso^");
-    assert((inverted7 == "\033[7mkameloso^\033[27m: wfwef"), inverted7);
+    {
+        immutable inverted = "kameloso^: wfwef".invert("kameloso^");
+        assert((inverted == "\033[7mkameloso^\033[27m: wfwef"), inverted);
+    }
 
-    immutable inverted8 = "[kameloso^]".invert("kameloso^");
-    assert((inverted8 == "[\033[7mkameloso^\033[27m]"), inverted8);
+    {
+        immutable inverted = "[kameloso^]".invert("kameloso^");
+        assert((inverted == "[\033[7mkameloso^\033[27m]"), inverted);
+    }
 
-    immutable inverted9 = `"kameloso^"`.invert("kameloso^");
-    assert((inverted9 == "\"\033[7mkameloso^\033[27m\""), inverted9);
+    {
+        immutable inverted = `"kameloso^"`.invert("kameloso^");
+        assert((inverted == "\"\033[7mkameloso^\033[27m\""), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso^".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso^"), inverted);
+    }
+
+    {
+        immutable inverted = "That guy kameloso? is a bot".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "That guy \033[7mkameloso\033[27m? is a bot"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso`".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso`"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso9".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso9"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso-".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso-"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso_".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso_"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso_".invert!(Yes.elaborateBoundary)("kameloso_");
+        assert((inverted == "\033[7mkameloso_\033[27m"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso kameloso kameloso kameloso kameloso".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "\033[7mkameloso\033[27m \033[7mkameloso\033[27m " ~
+            "\033[7mkameloso\033[27m \033[7mkameloso\033[27m \033[7mkameloso\033[27m"),
+            "'" ~ inverted ~ "'");
+    }
 }
 
 @system:
