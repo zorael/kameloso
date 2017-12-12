@@ -112,6 +112,7 @@ void onSelfjoin(ConnectPlugin plugin, const IRCEvent event)
         {
             // Track new channel in the channels array
             bot.channels ~= event.channel;
+            bot.updated = true;
         }
     }
 }
