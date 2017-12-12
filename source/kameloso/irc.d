@@ -1080,9 +1080,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         {
         case MODE:
         case CHANMODE:
-        case RPL_WELCOME:
         case QUERY:
-        case SELFQUERY:  // bot.nickname is *sender* though, but still
         case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
