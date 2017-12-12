@@ -160,14 +160,28 @@ void worker(shared IRCPluginState sState, const TitleRequest titleReq)
     kameloso.common.settings = state.settings;
     initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
+    logger.info("Webtitles worker spawned.");
+
     try
     {
+        import kameloso.string : beginsWith;
+
+        // First look up and report the normal URL, *then* look up Reddit
+        // This to make things be snappier, since Reddit can be very slow
+
         auto lookup = lookupTitle(titleReq);
         state.mainThread.reportURL(lookup, titleReq.target);
+
+        if (titleReq.redditLookup &&
+            !titleReq.url.beginsWith("https://www.reddit.com"))
+        {
+            lookupReddit(lookup, titleReq);
+            state.mainThread.reportReddit(lookup, titleReq.target);
+        }
     }
     catch (const Exception e)
     {
-        logger.error(e.msg);
+        logger.error("Webtitles worker exception: ", e.msg);
     }
 }
 
@@ -195,6 +209,17 @@ void reportURL(Tid tid, const TitleLookup lookup, const string target)
         tid.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :%s".format(target, lookup.title));
     }
+}
+
+
+// reportReddit
+/++
+ +  Report found Reddit post to the channel or user specified.
+ +/
+void reportReddit(Tid tid, const TitleLookup lookup, const string target)
+{
+    import std.concurrency : send;
+    import std.format : format;
 
     if (lookup.reddit.length)
     {
@@ -270,35 +295,44 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
         lookup.domain.nom('.');
     }
 
-    if (titleReq.redditLookup && !titleReq.url.beginsWith("https://www.reddit.com"))
-    {
-        Request redditReq;
-        redditReq.useStreaming = true;  // we only want as little as possible
-        redditReq.keepAlive = false;
-        redditReq.bufferSize = BufferSize.titleLookup;
-
-        logger.log("Checking Reddit ...");
-
-        auto redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
-
-        with (redditRes.finalURI)
-        {
-            if (uri.beginsWith("https://www.reddit.com/login") ||
-                uri.beginsWith("https://www.reddit.com/submit") ||
-                uri.beginsWith("https://www.reddit.com/http"))
-            {
-                logger.log("No corresponding Reddit post.");
-            }
-            else
-            {
-                // Has been posted to Reddit
-                lookup.reddit = uri;
-            }
-        }
-    }
-
     lookup.when = Clock.currTime.toUnixTime;
     return lookup;
+}
+
+
+// lookupReddit
+/++
+ +  Look up an URL on Reddit, see if it has been posted there. If so, get the
+ +  link and modify the passed ref `TitleLookup` to contain it.
+ +/
+void lookupReddit(ref TitleLookup lookup, const TitleRequest titleReq)
+{
+    import kameloso.string : beginsWith;
+    import requests : Request;
+
+    Request redditReq;
+    redditReq.useStreaming = true;  // we only want as little as possible
+    redditReq.keepAlive = false;
+    redditReq.bufferSize = BufferSize.titleLookup;
+
+    logger.log("Checking Reddit ...");
+
+    auto redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
+
+    with (redditRes.finalURI)
+    {
+        if (uri.beginsWith("https://www.reddit.com/login") ||
+            uri.beginsWith("https://www.reddit.com/submit") ||
+            uri.beginsWith("https://www.reddit.com/http"))
+        {
+            logger.log("No corresponding Reddit post.");
+        }
+        else
+        {
+            // Has been posted to Reddit
+            lookup.reddit = uri;
+        }
+    }
 }
 
 
@@ -311,7 +345,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +      ref lookup = the failing TitleLookup that we want to try hacking around
  +      url = the original URL string
  +/
-void fixYoutubeTitles(ref TitleLookup lookup, const TitleRequest titleReq)
+void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 {
     import std.regex : replaceFirst;
     import std.string : indexOf;
@@ -322,6 +356,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const TitleRequest titleReq)
         "https://www.listenonrepeat.com/watch/");
 
     logger.log("ListenOnRepeat URL: ", onRepeatURL);
+    titleReq.url = onRepeatURL;
 
     auto onRepeatLookup = lookupTitle(titleReq);
 
