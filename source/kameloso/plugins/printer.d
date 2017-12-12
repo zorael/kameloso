@@ -105,6 +105,92 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
 }
 
 
+// onWelcome
+/++
+ +  After connect, record whether the bot's nickname has an elaborate boundary,
+ +  so we don't check it every single time we try to invert it and send a bell
+ +  (on mention).
+ +
+ +  It doesn't have to be `RPL_WELCOME` but it's as good a choice as any.
+ +/
+@(IRCEvent.Type.RPL_WELCOME)
+void onWelcome(PrinterPlugin plugin)
+{
+    plugin.nicknameHasElaborateBoundary = plugin.state.bot.nickname.hasElaborateBoundary;
+    logger.log("hasElaborateBounary: ", plugin.nicknameHasElaborateBoundary);
+}
+
+
+// onSELFNICK
+/++
+ +  Reevaluate whether the bot's nickname has an elaborate boundary upon nick
+ +  change.
+ +/
+@(IRCEvent.Type.SELFNICK)
+void onSELFNICK(PrinterPlugin plugin, const IRCEvent event)
+{
+    printObject(event);
+    plugin.nicknameHasElaborateBoundary = event.target.nickname.hasElaborateBoundary;
+    logger.log("hasElaborateBounary: ", plugin.nicknameHasElaborateBoundary);
+}
+
+
+// hasElaborateBoundary
+/++
+ +  Determine whether the bot's nickname has an elaborate boundary.
+ +
+ +  An elaborate boundary is when the bot's nickname ends with a sign, or any
+ +  non-word character, such as `kameloso^`. We need to know this when we're
+ +  trying to highlight the bot being mentioned in chat; we use a different
+ +  regex if the nickname ends with something weird, and another for normal
+ +  nicks. There will be false positves if we don't differentiate between them.
+ +/
+bool hasElaborateBoundary(const string nickname)
+{
+    import std.regex : ctRegex, matchAll;
+
+    static boundaryEngine = ctRegex!r"^.*?[\W0-9_-]$";
+
+    return !nickname.matchAll(boundaryEngine).empty;
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        immutable b = "kameloso".hasElaborateBoundary;
+        assert((b == false), b.text);
+    }
+
+    {
+        immutable b = "kameloso^".hasElaborateBoundary;
+        assert((b == true), b.text);
+    }
+
+    {
+        immutable b = "kameloso`".hasElaborateBoundary;
+        assert((b == true), b.text);
+    }
+
+    {
+        immutable b = "kameloso123".hasElaborateBoundary;
+        assert((b == true), b.text);
+    }
+
+    {
+        immutable b = "kameloso_".hasElaborateBoundary;
+        assert((b == true), b.text);
+    }
+
+    {
+        immutable b = "kameloso-".hasElaborateBoundary;
+        assert((b == true), b.text);
+    }
+}
+
+
 // put
 /++
  +  Puts a variadic list of values into an output range sink.
@@ -843,6 +929,8 @@ final class PrinterPlugin : IRCPlugin
 {
     /// All Printer plugin options gathered
     @Settings PrinterSettings printerSettings;
+
+    bool nicknameHasElaborateBoundary;
 
     mixin IRCPluginImpl;
 }
