@@ -1307,7 +1307,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     // FIXME, change so that it assigns to the proper field
 
-    immutable targetOrChannel = slice.nom(" :");
+    immutable target = slice.nom(" :");
     event.content = slice;
 
     /*  When a server sends a PRIVMSG/NOTICE to someone else on behalf of a
@@ -1328,21 +1328,19 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         (common requested cap: znc.in/self-message)
      */
 
-    if (targetOrChannel.isValidChannel(parser.bot.server))
+    if (target.isValidChannel(parser.bot.server))
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
         event.type = (event.sender.nickname == parser.bot.nickname) ?
             IRCEvent.Type.SELFCHAN : IRCEvent.Type.CHAN;
-
-        event.channel = targetOrChannel;
+        event.channel = target;
     }
     else
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
         event.type = (event.sender.nickname == parser.bot.nickname) ?
             IRCEvent.Type.SELFQUERY : IRCEvent.Type.QUERY;
-
-        event.target.nickname = targetOrChannel;
+        event.target.nickname = target;
     }
 
     if (slice.length < 3) return;
@@ -1427,11 +1425,11 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    immutable targetOrChannel = slice.nom(' ');
+    immutable target = slice.nom(' ');
 
-    if (targetOrChannel.isValidChannel(parser.bot.server))
+    if (target.isValidChannel(parser.bot.server))
     {
-        event.channel = targetOrChannel;
+        event.channel = target;
 
         if (slice.indexOf(' ') != -1)
         {
@@ -1452,7 +1450,7 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         // :kameloso^ MODE kameloso^ :+i
         event.type = IRCEvent.Type.SELFMODE;
-        //event.target.nickname = targetOrChannel;
+        //event.target.nickname = target;
         event.aux = slice[1..$];
     }
 }
