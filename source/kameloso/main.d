@@ -540,16 +540,23 @@ int main(string[] args)
     {
         BashForeground tint;
 
-        if (!settings.monochrome)
+        version(Colours)
         {
-            if (settings.brightTerminal)
+            if (!settings.monochrome)
             {
-                tint = BashForeground.black;
+                if (settings.brightTerminal)
+                {
+                    tint = BashForeground.black;
+                }
+                else
+                {
+                    tint = BashForeground.white;
+                }
             }
-            else
-            {
-                tint = BashForeground.white;
-            }
+        }
+        else
+        {
+            tint = BashForeground.default_;
         }
 
         printVersionInfo(tint);
