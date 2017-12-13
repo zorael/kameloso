@@ -236,11 +236,12 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 
     // Don't forget to add ACTION, it's handed elsewhere
 
-    with (plugin)
     with (IRCControlCharacter)
-    state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
-        .format(event.sender.nickname, allCTCPTypes));
+    {
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
+            ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+            .format(event.sender.nickname, allCTCPTypes));
+    }
 }
 
 

@@ -342,9 +342,9 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
         foreach (immutable i, member; thing.tupleof)
         {
             static if (!isType!member &&
-                       isConfigurableVariable!member &&
-                       !hasUDA!(thing.tupleof[i], Hidden) &&
-                       !hasUDA!(thing.tupleof[i], Unconfigurable))
+                isConfigurableVariable!member &&
+                !hasUDA!(thing.tupleof[i], Hidden) &&
+                !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
                 import std.traits : isArray, isSomeString;
 

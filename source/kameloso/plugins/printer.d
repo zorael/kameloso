@@ -55,14 +55,14 @@ struct PrinterSettings
 /++
  +  Print an event to the local terminal.
  +
- +  Write directly to a LockingTextWriter.
+ +  Does not allocate, writes directly to a `LockingTextWriter`.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
+void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    IRCEvent event = origEvent; // need a mutable copy
+    IRCEvent mutEvent = event; // need a mutable copy
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -100,7 +100,7 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent origEvent)
         break;
 
     default:
-        plugin.formatMessage(stdout.lockingTextWriter, event);
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent);
         break;
     }
 }
@@ -612,9 +612,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 import std.format : formattedWrite;
 
                 sink.colour(bright ? DefaultBright.num : DefaultDark.num);
-                put(sink, " (#");
-                sink.formattedWrite("%03d", num);
-                put(sink, ')');
+                sink.formattedWrite(" (#%03d)", num);
             }
 
             sink.colour(default_);  // same for bright and dark
@@ -793,7 +791,7 @@ void mapColours(ref IRCEvent event)
 
         event.content = event.content.replaceAll(endEngine,
             TerminalToken.bashFormat ~ "[0m$1");
-        event.content ~= colour(BashReset.all);
+        event.content ~= BashReset.all.colour;
     }
 }
 
