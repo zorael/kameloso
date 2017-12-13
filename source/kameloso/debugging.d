@@ -228,9 +228,10 @@ public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent even
     }
 }
 
-version(none)  // FIXME
 unittest
 {
+    import kameloso.irc : IRCParser;
+    import kameloso.ircdefs : IRCBot;
     import kameloso.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -262,7 +263,9 @@ unittest
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
+        assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
+        assert(!target.special, target.special.to!string);
         assert((content == "kameloso: 8ball"), content);
     }
 }`, '\n' ~ sink.data);
