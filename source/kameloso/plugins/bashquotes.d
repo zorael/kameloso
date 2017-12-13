@@ -30,8 +30,8 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     import core.time : msecs;
     import std.algorithm.iteration : splitter;
     import std.concurrency : send;
-    import std.format : format;
     import std.datetime : Clock;
+    import std.format : format;
     import std.regex : ctRegex, matchFirst, replaceAll;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :

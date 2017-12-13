@@ -1,13 +1,12 @@
 module kameloso.common;
 
 import kameloso.bash : BashForeground;
-import kameloso.constants;
 
 import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
-import std.traits : Unqual, isType, isArray;
 import std.range : isOutputRange;
+import std.traits : Unqual, isType, isArray;
 import std.typecons : Flag, No, Yes;
 
 import std.stdio;
@@ -310,10 +309,10 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @system
 {
-    import kameloso.bash : BashForeground, colour;
+    import kameloso.bash : colour;
     import kameloso.string : stripSuffix;
     import std.format : formattedWrite;
-    import std.traits : Unqual, hasUDA;
+    import std.traits : hasUDA;
 
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);

@@ -4,6 +4,7 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
 
+import std.typecons : No, Yes;
 import std.stdio;
 
 private:
@@ -234,9 +235,13 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +/
 void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event)
 {
-    import kameloso.bash : BashForeground, TerminalToken, colour, truecolour;
+    import kameloso.bash : BashForeground;
     import kameloso.string : enumToString, beginsWith;
-    import std.datetime : DateTime, SysTime;
+    import std.algorithm : equal;
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+    import std.string : toLower;
+    import std.uni : asLowerCase;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -249,10 +254,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     with (event.sender)
     if (settings.monochrome)
     {
-        import std.algorithm : equal;
-        import std.string : toLower;
-        import std.uni : asLowerCase;
-
         put(sink, '[', timestamp, "] ");
 
         string typestring = plugin.printerSettings.typesInCaps ?
@@ -325,6 +326,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         // Nick was mentioned (VERY naïve guess)
                         if (plugin.printerSettings.bellOnMention)
                         {
+                            import kameloso.bash : TerminalToken;
                             sink.put(TerminalToken.bell);
                         }
                     }
@@ -366,6 +368,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     {
         version(Colours)
         {
+            import kameloso.bash : colour;
+
             event.mapEffects();
 
             enum DefaultDark : BashForeground
@@ -455,10 +459,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     sink.colour(colourByHash(sender.isServer ? address : nickname));
                 }
             }
-
-            import std.algorithm : equal;
-            import std.string : toLower;
-            import std.uni : asLowerCase;
 
             BashForeground typeColour;
 
@@ -577,6 +577,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             if ((content != inverted) &&
                                 (plugin.printerSettings.bellOnMention))
                             {
+                                import kameloso.bash : TerminalToken;
                                 sink.put(TerminalToken.bell);
                             }
 
@@ -785,7 +786,9 @@ void mapColours(ref IRCEvent event)
 
     if (colouredSomething)
     {
-        enum endPattern = 3 ~ "([^0-9])?";
+        import kameloso.constants : IRCControlCharacter;
+
+        enum endPattern = IRCControlCharacter.colour ~ "([^0-9])?";
         static endEngine = ctRegex!endPattern;
 
         event.content = event.content.replaceAll(endEngine,

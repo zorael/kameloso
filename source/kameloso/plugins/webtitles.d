@@ -2,12 +2,10 @@ module kameloso.plugins.webtitles;
 
 version(Webtitles):
 
-import kameloso.common;
-import kameloso.constants;
-import kameloso.irc;
 import kameloso.plugins.common;
+import kameloso.ircdefs;
+import kameloso.common : logger;
 
-import std.experimental.logger;
 import std.concurrency : Tid;
 import std.regex : ctRegex;
 
@@ -104,6 +102,7 @@ struct TitleRequest
 @(PrivilegeLevel.friend)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
+    import kameloso.constants : Timeout;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
@@ -155,6 +154,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 void worker(shared IRCPluginState sState, const TitleRequest titleReq)
 {
+    import kameloso.common;
+
     IRCPluginState state = cast(IRCPluginState)sState;
 
     kameloso.common.settings = state.settings;
@@ -195,6 +196,7 @@ void worker(shared IRCPluginState sState, const TitleRequest titleReq)
  +/
 void reportURL(Tid tid, const TitleLookup lookup, const string target)
 {
+    import kameloso.common : ThreadMessage;
     import std.concurrency : send;
     import std.format : format;
 
@@ -218,6 +220,7 @@ void reportURL(Tid tid, const TitleLookup lookup, const string target)
  +/
 void reportReddit(Tid tid, const TitleLookup lookup, const string target)
 {
+    import kameloso.common : ThreadMessage;
     import std.concurrency : send;
     import std.format : format;
 
@@ -240,6 +243,7 @@ void reportReddit(Tid tid, const TitleLookup lookup, const string target)
  +/
 TitleLookup lookupTitle(const TitleRequest titleReq)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.string : beginsWith;
     import arsd.dom : Document;
     import requests : Request;
@@ -307,6 +311,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +/
 void lookupReddit(ref TitleLookup lookup, const TitleRequest titleReq)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.string : beginsWith;
     import requests : Request;
 

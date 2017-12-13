@@ -1,6 +1,5 @@
 module kameloso.plugins.common;
 
-import kameloso.common : CoreSettings;
 import kameloso.ircdefs;
 
 
@@ -255,6 +254,7 @@ WHOISRequest whoisRequest(F)(IRCEvent event, F fn)
  +/
 struct IRCPluginState
 {
+    import kameloso.common : CoreSettings;
     import std.concurrency : Tid;
 
     /++

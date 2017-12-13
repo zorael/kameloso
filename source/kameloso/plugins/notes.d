@@ -238,8 +238,8 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +/
 auto getNotes(NotesPlugin plugin, const string nickname)
 {
-    import std.datetime : SysTime;
-    import std.json : JSON_TYPE, JSONException;
+    import std.datetime.systime : SysTime;
+    import std.json : JSON_TYPE;
 
     struct Note
     {
@@ -325,8 +325,8 @@ void clearNotes(NotesPlugin plugin, const string nickname)
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string line)
 {
-    import std.datetime : Clock;
-    import std.json : JSONException, JSON_TYPE;
+    import std.datetime.systime : Clock;
+    import std.json : JSON_TYPE;
 
     if (!line.length)
     {

@@ -7,7 +7,6 @@ import kameloso.ircdefs;
 import kameloso.common;
 
 import std.concurrency;
-import std.experimental.logger : LogLevel, Logger;
 
 import std.stdio;
 
@@ -159,6 +158,8 @@ File createFIFO(const IRCPluginState state)
     {
         if (!state.settings.monochrome)
         {
+            import std.experimental.logger : LogLevel;
+
             Appender!string sink;
             sink.reserve(128);  // ~96
 

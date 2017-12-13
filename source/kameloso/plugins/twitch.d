@@ -68,7 +68,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 {
     import kameloso.common : logger;
-    import kameloso.string : nom;
+    import kameloso.irc : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
@@ -78,6 +78,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
     with (IRCEvent)
     foreach (tag; event.tags.splitter(";"))
     {
+        import kameloso.string : nom;
         immutable key = tag.nom("=");
         immutable value = tag;
 
@@ -86,7 +87,6 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
         case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            import kameloso.irc : decodeIRCv3String;
             import std.string : indexOf, stripRight;
             event.sender.alias_ = (value.indexOf('\\') != -1) ?
                 decodeIRCv3String(value).stripRight() : value;
@@ -142,7 +142,6 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
             // The moderator’s reason for the timeout or ban.
             // system-msg: The message printed in chat along with this notice.
-            import kameloso.irc : decodeIRCv3String;
             event.content = decodeIRCv3String(value);
             break;
 

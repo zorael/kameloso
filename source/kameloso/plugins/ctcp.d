@@ -26,7 +26,7 @@ private:
 @(IRCEvent.Type.CTCP_USERINFO)
 void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : KamelosoInfo;
+    import kameloso.constants : KamelosoInfo;
     import std.concurrency : send;
     import std.format : format;
 
