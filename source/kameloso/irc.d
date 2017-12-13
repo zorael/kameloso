@@ -175,8 +175,6 @@ unittest
  +/
 void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import std.algorithm.searching : endsWith;
-
     auto prefix = slice.nom(' ');
 
     with (event.sender)
@@ -2055,7 +2053,6 @@ unittest
 bool isValidNickname(const string nickname, const IRCServer server)
 {
     import std.regex : ctRegex, matchAll;
-    import std.string : representation;
 
     // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
 

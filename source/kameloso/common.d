@@ -1516,7 +1516,8 @@ struct Client
      +/
     void initPlugins()
     {
-        import kameloso.plugins;
+        import kameloso.plugins : EnabledPlugins;
+        import kameloso.plugins.common : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
 

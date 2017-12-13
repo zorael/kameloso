@@ -174,7 +174,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
         if (results.helpWanted)
         {
             // --help|-h was passed; show the help table and quit
-            BashForeground headerTint;
 
             version (Colours)
             {

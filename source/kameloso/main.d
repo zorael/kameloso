@@ -67,7 +67,8 @@ void signalHandler(int sig) nothrow @nogc @system
 Flag!"quit" checkMessages(ref Client client)
 {
     import core.time : seconds;
-    import std.concurrency : receiveTimeout, Variant;
+    import std.concurrency : receiveTimeout;
+    import std.variant : Variant;
 
     scope (failure) client.teardownPlugins();
 
@@ -485,7 +486,6 @@ void main() {
 else
 int main(string[] args)
 {
-    import kameloso.bash : BashForeground;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
@@ -538,6 +538,8 @@ int main(string[] args)
 
     with (client)
     {
+        import kameloso.bash : BashForeground;
+
         BashForeground tint;
 
         version(Colours)
@@ -613,7 +615,7 @@ int main(string[] args)
 
             version(Colours)
             {
-                import kameloso.bash : BashForeground, BashReset, colour;
+                import kameloso.bash : BashReset, colour;
                 import std.array : Appender;
                 import std.conv : to;
                 import std.experimental.logger : LogLevel;

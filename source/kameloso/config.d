@@ -139,7 +139,6 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
     import kameloso.string : stripSuffix;
     import std.algorithm : joiner;
     import std.ascii : newline;
-    import std.array : array;
     import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;

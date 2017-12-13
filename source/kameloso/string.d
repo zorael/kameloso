@@ -977,7 +977,6 @@ unittest
  +/
 string escaped(const string line)
 {
-    import std.stdio;
     import std.regex : regex, replaceAll;
 
     string[] toEscape =
