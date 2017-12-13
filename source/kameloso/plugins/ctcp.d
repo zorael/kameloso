@@ -99,7 +99,7 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
         break;
 
     case CTCP_TIME:
-        import std.datetime : Clock;
+        import std.datetime.systime : Clock;
         /*  This extended query is used to return the client’s local time in an
             unspecified human-readable format. We recommend ISO 8601 format, but
             raw ctime() output appears to be the most common in practice.

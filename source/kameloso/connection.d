@@ -265,7 +265,7 @@ void listenFiber(Connection conn, ref bool abort)
 {
     import std.algorithm.searching : countUntil;
     import std.concurrency : yield;
-    import std.datetime : Clock, SysTime;
+    import std.datetime.systime : Clock, SysTime;
     import std.socket : Socket, lastSocketError;
 
     ubyte[BufferSize.socketReceive*2] buffer;

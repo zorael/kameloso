@@ -56,7 +56,7 @@ static youtubeRegex = ctRegex!youtubePattern;
  +/
 struct TitleLookup
 {
-    import std.datetime : SysTime;
+    import std.datetime.systime : SysTime;
 
     string title;
     string domain;
@@ -247,7 +247,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
     import std.string : indexOf;
 
     TitleLookup lookup;
@@ -438,7 +438,7 @@ void prune(TitleLookup[string] cache)
 
     foreach (key, entry; cache)
     {
-        import std.datetime : Clock;
+        import std.datetime.systime : Clock;
         import core.time : minutes;
 
         const now = Clock.currTime;

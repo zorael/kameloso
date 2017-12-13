@@ -326,7 +326,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
     import std.concurrency : send;
-    import std.datetime : Clock, SysTime;
+    import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
     immutable target = event.channel.length ?
@@ -383,7 +383,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
 void updateUser(SeenPlugin plugin, const string nickname)
 {
     import kameloso.irc : stripModeSign;
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
 
     /// Make sure to strip the modesign, so @foo is the same person as foo.
     plugin.seenUsers[nickname.stripModeSign] = Clock.currTime.toUnixTime;

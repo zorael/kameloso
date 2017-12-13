@@ -42,7 +42,7 @@ static closeBracketRegex = ctRegex!`\]`;
  +/
 struct Line
 {
-    import std.datetime : SysTime;
+    import std.datetime.systime : SysTime;
 
     /// Contents of last line uttered
     string content;
@@ -154,7 +154,8 @@ unittest
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.string : beginsWith;
-    import std.datetime : Clock, seconds;
+    import core.time : seconds;
+    import std.datetime.systime : Clock;
     import std.format : format;
     import std.string : strip;
 

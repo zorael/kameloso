@@ -391,9 +391,9 @@ alias Configurable = Settings;
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
-    import std.algorithm.searching : canFind;
-    import std.datetime : Clock, SysTime;
     import core.time : seconds;
+    import std.algorithm.searching : canFind;
+    import std.datetime.systime : Clock, SysTime;
 
     auto user = event.sender.nickname in state.users;
 
@@ -1234,7 +1234,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.datetime : Clock;
+        import std.datetime.systime : Clock;
 
         with (plugin)
         {
@@ -1372,7 +1372,8 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         const IRCEvent event, const string nickname, F fn)
     {
         import kameloso.constants : Timeout;
-        import std.datetime : Clock, SysTime, seconds;
+        import core.time : seconds;
+        import std.datetime.systime : Clock, SysTime;
 
         const user = nickname in plugin.state.users;
 

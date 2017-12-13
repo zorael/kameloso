@@ -433,7 +433,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
             {
                 import kameloso.constants : Timeout;
 
-                import std.datetime : Clock;
+                import std.datetime.systime : Clock;
                 import core.time : seconds;
 
                 const then = key in client.whoisCalls;

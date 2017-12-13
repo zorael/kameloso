@@ -30,7 +30,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     import core.time : msecs;
     import std.algorithm.iteration : splitter;
     import std.concurrency : send;
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
     import std.format : format;
     import std.regex : ctRegex, matchFirst, replaceAll;
 

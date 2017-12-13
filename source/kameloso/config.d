@@ -35,7 +35,7 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 
     static if (banner)
     {
-        import std.datetime : Clock;
+        import std.datetime.systime : Clock;
         file.writefln("# kameloso bot config (%s)", Clock.currTime);
         file.write(newline);
     }

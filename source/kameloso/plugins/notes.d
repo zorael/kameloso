@@ -37,7 +37,7 @@ struct NotesSettings
 void onJoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
 
@@ -98,7 +98,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import kameloso.irc : stripModeSign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
 
     if (!plugin.state.bot.homes.canFind(event.channel)) return;
 

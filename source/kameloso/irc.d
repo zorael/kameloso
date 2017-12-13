@@ -1716,7 +1716,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
-    import std.datetime : Clock;
+    import std.datetime.systime : Clock;
 
     IRCEvent event;
 

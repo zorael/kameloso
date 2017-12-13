@@ -1,6 +1,6 @@
 module kameloso.string;
 
-import std.datetime : Duration;
+import core.time : Duration;
 import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
