@@ -21,8 +21,10 @@ private:
  +/
 struct TwitchSettings
 {
-    /// Flag to store the display name colour of users that the server sends,
-    /// for use in the `Printer` plugin.
+    /++
+     +  Flag to store the display name colour of users that the server sends,
+     +  for use in the `Printer` plugin.
+     +/
     bool twitchColours = true;
 }
 

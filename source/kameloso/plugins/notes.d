@@ -137,6 +137,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     import std.json : JSONException;
 
     string nickname, line;
+
     // formattedRead advances a slice so we need a mutable copy of event.content
     string content = event.content;
     immutable hits = content.formattedRead("%s %s", nickname, line);

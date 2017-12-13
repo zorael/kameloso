@@ -410,7 +410,7 @@ void onNickInUse(ConnectPlugin plugin)
 
 // onInvite
 /++
- +  Join the supplied channels if not already in them.
+ +  Upon being invited to a channel, join it if the settings say we should.
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
@@ -445,7 +445,6 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
     switch (event.aux)
     {
     case "LS":
-        // Specialcase some Twitch capabilities
         import std.algorithm.iteration : splitter;
 
         bool tryingSASL;
@@ -513,12 +512,6 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
             mainThread.send(ThreadMessage.Sendline(), "AUTHENTICATE PLAIN");
             break;
 
-        /*case "twitch.tv/membership":
-        case "twitch.tv/tags":
-        case "twitch.tv/commands":
-            // Uncomment if we ever need this
-            break;*/
-
         default:
             //logger.warning("Unhandled capability ACK: ", event.content);
             break;
@@ -536,6 +529,13 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
 /++
  +  Constructs a SASL authentication token from the bot's `authLogin` and
  +  `authPassword`, then sends it to the server, during registration.
+ +
+ +  A SASL authentication token is composed like so:
+
+ +     `base64(nickname \0 authLogin \0 authPassword`)
+
+ +  ...where `nickname` is the bot's wanted nickname, `authLogin` is the
+ +  services login name and `authPassword` is the services login password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectPlugin plugin)
@@ -607,7 +607,6 @@ void onSASLFailure(ConnectPlugin plugin)
         if (plugin.connectSettings.exitOnSASLFailure)
         {
             mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
-            //bot.authStatus = Status.failed;
             return;
         }
 

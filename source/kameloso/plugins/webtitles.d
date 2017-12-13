@@ -17,7 +17,6 @@ private:
 // WebtitlesSettings
 /++
  +  All Webtitles plugin options gathered in a struct.
- +
  +/
 struct WebtitlesSettings
 {

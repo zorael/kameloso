@@ -21,7 +21,7 @@ private:
  +  It is to be run in a separate thread.
  +
  +  Params:
- +      newState = a shared IRCPluginState, to provide the main thread's Tid
+ +      newState = a shared `IRCPluginState`, to provide the main thread's `Tid`
  +                 for concurrency messages.
  +/
 void pipereader(shared IRCPluginState newState)

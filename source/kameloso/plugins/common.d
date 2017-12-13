@@ -245,12 +245,14 @@ WHOISRequest whoisRequest(F)(IRCEvent event, F fn)
 
 // IRCPluginState
 /++
- +  An aggregate of all variables that make up the state of a given plugin.
+ +  An aggregate of all variables that make up the common state of plugins.
  +
  +  This neatly tidies up the amount of top-level variables in each plugin
  +  module. This allows for making more or less all functions top-level
  +  functions, since any state could be passed to it with variables of this
  +  type.
+ +
+ +  Plugin-specific state will be kept inside the `IRCPlugin` itself.
  +/
 struct IRCPluginState
 {
@@ -263,10 +265,7 @@ struct IRCPluginState
      +/
     IRCBot bot;
 
-    /++
-     +  The current core settings of the bot, currently only housing the
-     +  filename of the main configuration file as well as a flag monochrome.
-     +/
+    /// The current settings of the bot, non-specific to any plugins.
     CoreSettings settings;
 
     /// Thread ID to the main thread
@@ -418,7 +417,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 
 // IRCPluginBasics
 /++
- +  Mixin with the basics of any plugin.
+ +  Mixin that fully implements an `IRCPlugin`.
  +
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
@@ -853,7 +852,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Basic constructor for a plugin.
      +
-     +  It passes execution to the top-level .initialise() if it exists.
+     +  It passes execution to the top-level `.initialise(IRCPlugin)` if it
+     +  exists.
      +
      +  Params:
      +      state = the aggregate of all plugin state variables, making
@@ -871,7 +871,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // newBot
     /++
-     +  Inherits a new IRCBot.
+     +  Inherits a new `IRCBot`.
      +
      +  Invoked on all plugins when changes has been made to the bot.
      +
@@ -885,13 +885,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // yieldBot
     /++
-     +  Yields a copy of the current IRCot to the caller.
+     +  Yields a copy of the current `IRCBot` to the caller.
      +
      +  This is used to let the main loop examine it for updates to propagate
      +  to other plugins.
      +
      +  Returns:
-     +      a copy of the current IRCBot.
+     +      a copy of the current `IRCBot`.
      +/
     IRCBot yieldBot()
     {
@@ -951,7 +951,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Loads configuration from disk.
      +
      +  This does not proxy a call but merely loads configuration from disk for
-     +  all variables annotated `Settings`.
+     +  all struct variables annotated `Settings`.
      +/
     void loadConfig(const string configFile)
     {

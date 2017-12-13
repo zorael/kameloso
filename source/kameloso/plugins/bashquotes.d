@@ -60,7 +60,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
             plugin.state.mainThread.send(ThreadMessage.Sendline(),
                 "PRIVMSG %s :No such bash.org quote: %s"
                 .format(target, event.content));
-            return;  // invalid quote
+            return;
         }
 
         auto range = doc

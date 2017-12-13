@@ -14,7 +14,7 @@ private:
 /++
  +  Handle `CTCP` requests.
  +
- +  This is a catch-all function handling 5/6 `CTCP` requests we support,
+ +  This is a catch-all function handling most `CTCP` requests we support,
  +  instead of having five different functions each dealing with one.
  +  Either design works; both end up with a switch.
  +/
@@ -183,18 +183,20 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
         event.sender.address: event.sender.nickname;
 
     with (IRCControlCharacter)
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+    {
+        plugin.state.mainThread.send(ThreadMessage.Sendline(),
+            ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+    }
 }
 
 
 // onCTCPClientinfo
 /++
- +  Sends a list of which CTCP events we understand.
+ +  Sends a list of which `CTCP` events we understand.
  +
- +  This builds a string of the names of all IRCEvent.Types that begin
- +  with CTCP_, at compile-time. As such, as long as we name any new
- +  such types CTCP_SOMETHING, this list will always be correct.
+ +  This builds a string of the names of all `IRCEvent.Types` that begin
+ +  with `CTCP_`, at compile-time. As such, as long as we name any new
+ +  such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)

@@ -349,7 +349,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     {
                         plugin.onEvent(event);
 
-                        // Fetch any queued WHOIS requests and handle
+                        // Fetch any queued `WHOIS` requests and handle
                         auto reqs = plugin.yieldWHOISRequests();
                         client.handleWHOISQueue(reqs, event, event.target.nickname);
 
@@ -357,10 +357,10 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
 
                         if (yieldedBot.updated)
                         {
-                            /*  Plugin onEvent or WHOIS reaction updated the
+                            /*  Plugin `onEvent` or `WHOIS` reaction updated the
                                 bot. There's no need to check for both
                                 separately since this is just a single plugin
-                                processing; it keeps iits update internally
+                                processing; it keeps its update internally
                                 between both passes.
                             */
                             bot = yieldedBot;

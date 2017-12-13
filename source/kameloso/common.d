@@ -1026,7 +1026,7 @@ enum : ubyte
 /++
  +  Modified `Logger` to print timestamped and coloured logging messages.
  +
- +  It is not thread-safe so instantiate more if you're threading.
+ +  It is thread-local so instantiate more if you're threading.
  +/
 final class KamelosoLogger : Logger
 {
@@ -1058,7 +1058,6 @@ final class KamelosoLogger : Logger
     bool monochrome;  /// Whether to use colours or not in logger output
     bool brightTerminal;   /// Whether to use colours for a bright background
 
-    /// KamelosoLogger-specific constructor
     this(LogLevel lv = LogLevel.all, bool monochrome = false,
         bool brightTerminal = false)
     {
@@ -1707,10 +1706,8 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 
 // initLogger
 /++
- +  Initialises the `KamelosoLogger` logger for use in the whole program.
- +
- +  We pass the `monochrome` setting bool here to control if the logger should
- +  be coloured or not.
+ +  Initialises the `KamelosoLogger` logger for use in this thread of the whole
+ +  program.
  +/
 void initLogger(bool monochrome = settings.monochrome,
     bool brightTerminal = settings.brightTerminal)

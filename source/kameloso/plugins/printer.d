@@ -221,13 +221,13 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
 
 // formatMessage
 /++
- +  Formats an IRCEvent into an output range sink.
+ +  Formats an `IRCEvent` into an output range sink.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  By default output is in colours, unless on Windows. The behaviour is stored
- +  and read from the printerSettings struct.
+ +  and read from the `printerSettings` struct.
  +
  +  Params:
  +      sink = output range to format the IRCEvent into
@@ -934,6 +934,7 @@ final class PrinterPlugin : IRCPlugin
     /// All Printer plugin options gathered
     @Settings PrinterSettings printerSettings;
 
+    /// Bot's nickname ends with a non-word character
     bool nicknameHasElaborateBoundary;
 
     mixin IRCPluginImpl;
