@@ -736,6 +736,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 import std.meta   : AliasSeq, Filter, staticMap;
                                 import std.traits : Parameters, Unqual, arity;
 
+                                alias This = typeof(this);
                                 alias Params = staticMap!(Unqual, Parameters!fun);
                                 enum isIRCPluginParam(T) = is(T == IRCPlugin);
 
@@ -747,31 +748,31 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 }
 
                                 static if (is(Params : AliasSeq!IRCEvent) ||
-                                    (is(Params : AliasSeq!(IRCPluginState, IRCEvent)) ||
-                                    is(Params : AliasSeq!IRCPluginState) ||
-                                    (arity!fun == 0)))
+                                    (arity!fun == 0))
                                 {
                                     return this.doWhois(mutEvent,
                                         mutEvent.sender.nickname, &fun);
                                 }
-                                else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                                    (is(Params : AliasSeq!(typeof(this)))))
+                                else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
+                                    is(Params : AliasSeq!This))
                                 {
                                     return this.doWhois(this, mutEvent,
                                         mutEvent.sender.nickname, &fun);
                                 }
                                 else static if (Filter!(isIRCPluginParam, Params).length)
                                 {
+                                    pragma(msg, module_ ~ "." ~
+                                        __traits(identifier, fun));
                                     pragma(msg, typeof(fun).stringof);
-                                    pragma(msg, __traits(identifier, fun));
                                     pragma(msg, Params);
                                     static assert(0, "Function signature takes " ~
                                         "IRCPlugin instead of subclass plugin.");
                                 }
                                 else
                                 {
+                                    pragma(msg, module_ ~ "." ~
+                                        __traits(identifier, fun));
                                     pragma(msg, typeof(fun).stringof);
-                                    pragma(msg, __traits(identifier, fun));
                                     pragma(msg, Params);
                                     static assert(0, "Unknown function signature.");
                                 }
@@ -824,8 +825,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                     else
                     {
-                        pragma(mg, typeof(fun).stringof);
-                        pragma(msg, __traits(identifier, fun));
+                        pragma(msg, module_ ~ "." ~ __traits(identifier, fun));
+                        pragma(msg, typeof(fun).stringof);
                         pragma(msg, Params);
                         static assert(0, "Unknown function signature: " ~
                             typeof(fun).stringof);
