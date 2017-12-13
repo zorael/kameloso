@@ -121,7 +121,8 @@ public:
 
                 default:
                     logger.error(e.msg);
-                    logger.log("Could not connect. Verify your server address");
+                    logger.log("Could not resolve address to IPs. " ~
+                        "Verify your server address.");
                     return false;
                 }
             }
@@ -313,7 +314,7 @@ void listenFiber(Connection conn, ref bool abort)
                  "failed because connected host has failed to respond.":
                 // Timed out read in Windows
                 yield(string.init);
-                continue;
+                break;
 
             // Others that may be benign?
             case "An established connection was aborted by the software in your host machine.":
@@ -325,6 +326,7 @@ void listenFiber(Connection conn, ref bool abort)
             default:
                 logger.warningf("Socket.ERROR and last error %s", lastSocketError);
                 yield(string.init);
+                break;
             }
 
             continue;
@@ -352,7 +354,7 @@ void listenFiber(Connection conn, ref bool abort)
             continue;
         }
 
-        start = (end-pos);
+        start = (end - pos);
 
         // logger.logf("REMNANT:|%s|", cast(string)buffer[pos..end]);
         import core.stdc.string : memmove;

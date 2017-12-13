@@ -324,7 +324,7 @@ T[] arrayify(string separator = ",", T)(const T line)
     import std.array : array;
     import std.string : strip;
 
-    return line.splitter(separator).map!(a => a.strip).array;
+    return line.splitter(separator).map!(a => a.strip()).array;
 }
 
 ///
@@ -976,7 +976,7 @@ string escaped(const string line) @safe
 {
     import std.regex : regex, replaceAll;
 
-    string[] toEscape =
+    const string[] toEscape =
     [
         r"\(",
         r"\)",

@@ -114,7 +114,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         if (!urlHit.length) continue;
 
         immutable url = urlHit[0];
-        immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
+        immutable target = event.channel.length ? event.channel : event.sender.nickname;
 
         logger.info("Caught URL: ", url);
 
@@ -321,7 +321,7 @@ void lookupReddit(ref TitleLookup lookup, const TitleRequest titleReq)
 
     logger.log("Checking Reddit ...");
 
-    auto redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
+    const redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
 
     with (redditRes.finalURI)
     {
