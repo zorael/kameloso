@@ -23,21 +23,16 @@ import std.stdio;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
-    import std.ascii : newline;
     import std.file : exists, isFile, removeFile = remove;
 
-    if (filename.exists && filename.isFile)
-    {
-        removeFile(filename); // Is this wise? What else to do?
-    }
-
-    auto file = File(filename, "a");
+    auto file = File(filename, "w");
 
     static if (banner)
     {
         import std.datetime.systime : Clock;
+
         file.writefln("# kameloso bot config (%s)", Clock.currTime);
-        file.write(newline);
+        file.writeln();
     }
 
     file.writeln(configurationText);
