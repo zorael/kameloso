@@ -50,6 +50,7 @@ void pipereader(shared IRCPluginState newState)
     catch (Exception e)
     {
         logger.error("Unhandled exception creating pipeline FIFO: ", e.msg);
+        return;
     }
 
     scope(exit) remove(fifo.name);
