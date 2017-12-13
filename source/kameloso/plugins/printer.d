@@ -428,13 +428,13 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 return bright ? DefaultBright.sender : DefaultDark.sender;
             }
 
-            void colourSenderTruecolour()
+            void colourSenderTruecolour(Sink)(auto ref Sink sink)
             {
                 if (!sender.isServer && event.colour.length &&
                     plugin.printerSettings.truecolour)
                 {
+                    import kameloso.bash : truecolour;
                     import kameloso.string : numFromHex;
-                    import std.typecons : No, Yes;
 
                     int r, g, b;
                     event.colour.numFromHex(r, g, b);
@@ -498,7 +498,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             bool aliasPrinted;
 
-            colourSenderTruecolour();
+            colourSenderTruecolour(sink);
 
             if (sender.isServer)
             {
