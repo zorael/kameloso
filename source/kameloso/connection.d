@@ -219,8 +219,6 @@ public:
     pragma(inline, true)
     void sendline(Strings...)(const Strings lines)
     {
-        // TODO: Add throttling!
-
         foreach (const line; lines)
         {
             import std.algorithm.comparison : min;

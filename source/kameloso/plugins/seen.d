@@ -483,9 +483,12 @@ public:
  +/
 final class SeenPlugin : IRCPlugin
 {
+    /// An instance of settings for the Seen plugin.
     @Settings SeenSettings seenSettings;
 
+    /// The in-memory JSON storage of seen users.
     JSONValue seenUsers;
+
     /++
      +  The final mixin and the final piece of the puzzle.
      +

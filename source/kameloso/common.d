@@ -1035,6 +1035,7 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.array : Appender;
 
+    /// Logger colours to use with a dark terminal
     static immutable BashForeground[193] logcoloursDark  =
     [
         LogLevel.all     : BashForeground.white,
@@ -1045,6 +1046,7 @@ final class KamelosoLogger : Logger
         LogLevel.fatal   : BashForeground.red,
     ];
 
+    /// Logger colours to use with a bright terminal
     static immutable BashForeground[193] logcoloursBright  =
     [
         LogLevel.all     : BashForeground.black,

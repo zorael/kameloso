@@ -10,7 +10,7 @@ import std.stdio;
 /++
  +  Constructs assert statement lines for each changed field of a type.
  +
- +  This should not be used directly, instead use ` formatEventAssertBlock`.
+ +  This should not be used directly, instead use `formatEventAssertBlock`.
  +
  +  ------------
  +  IRCEvent event;
