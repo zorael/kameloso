@@ -177,7 +177,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
             version (Colours)
             {
-                headerTint = settings.brightTerminal ?
+                immutable headerTint = settings.brightTerminal ?
                     BashForeground.black : BashForeground.white;
             }
 
