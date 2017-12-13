@@ -135,7 +135,7 @@ void onEndOfNames(ConnectPlugin plugin, const IRCEvent event)
     {
         if (bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-        mainThread.send(ThreadMessage.Quietline(), "WHO " ~ event.channel);
+        mainThread.send(ThreadMessage.Throttleline(), "WHO " ~ event.channel);
     }
 }
 
