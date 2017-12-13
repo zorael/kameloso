@@ -133,6 +133,7 @@ void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
         import kameloso.string : tabs;
         import std.format : formattedWrite;
         import std.traits : isSomeString;
+
         alias T = typeof(value);
         enum memberstring = __traits(identifier, bot.tupleof[i]);
 

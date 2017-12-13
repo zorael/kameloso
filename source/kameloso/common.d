@@ -1078,6 +1078,7 @@ final class KamelosoLogger : Logger
         Tid threadId, SysTime timestamp, Logger logger) @safe
     {
         import std.datetime : DateTime;
+
         sink.put(brightTerminal);
 
         version(Colours)
