@@ -1084,9 +1084,9 @@ final class KamelosoLogger : Logger
             }
         }
 
-        sink.formattedWrite("[%s] ", (cast(DateTime)timestamp)
-            .timeOfDay
-            .toString());
+        sink.put('[');
+        sink.put((cast(DateTime)timestamp).timeOfDay.toString());
+        sink.put("] ");
 
         if (monochrome) return;
 
