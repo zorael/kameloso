@@ -1033,7 +1033,7 @@ final class KamelosoLogger : Logger
 
     static immutable BashForeground[193] logcoloursDark  =
     [
-        1 : BashForeground.white,
+        LogLevel.all     : BashForeground.white,
         LogLevel.trace   : BashForeground.default_,
         LogLevel.info    : BashForeground.lightgreen,
         LogLevel.warning : BashForeground.lightred,
@@ -1043,7 +1043,7 @@ final class KamelosoLogger : Logger
 
     static immutable BashForeground[193] logcoloursBright  =
     [
-        1 : BashForeground.black,
+        LogLevel.all     : BashForeground.black,
         LogLevel.trace   : BashForeground.default_,
         LogLevel.info    : BashForeground.green,
         LogLevel.warning : BashForeground.red,
