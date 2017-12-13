@@ -175,10 +175,23 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
         {
             // --help|-h was passed; show the help table and quit
 
+            BashForeground headerTint;
+
             version (Colours)
             {
-                immutable headerTint = settings.brightTerminal ?
-                    BashForeground.black : BashForeground.white;
+                if (!settings.monochrome)
+                {
+                    headerTint = settings.brightTerminal ?
+                        BashForeground.black : BashForeground.white;
+                }
+                else
+                {
+                    headerTint = BashForeground.default_;
+                }
+            }
+            else
+            {
+                headerTint = BashForeground.default_;
             }
 
             printVersionInfo(headerTint);
