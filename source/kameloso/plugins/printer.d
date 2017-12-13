@@ -118,7 +118,6 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
 void onWelcome(PrinterPlugin plugin)
 {
     plugin.nicknameHasElaborateBoundary = plugin.state.bot.nickname.hasElaborateBoundary;
-    logger.log("hasElaborateBounary: ", plugin.nicknameHasElaborateBoundary);
 }
 
 
@@ -132,7 +131,6 @@ void onSELFNICK(PrinterPlugin plugin, const IRCEvent event)
 {
     printObject(event);
     plugin.nicknameHasElaborateBoundary = event.target.nickname.hasElaborateBoundary;
-    logger.log("hasElaborateBounary: ", plugin.nicknameHasElaborateBoundary);
 }
 
 
