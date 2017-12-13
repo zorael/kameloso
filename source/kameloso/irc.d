@@ -776,17 +776,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
-    case RPL_LOGGEDIN: // 900
-    case RPL_SASLSUCCESS: // 903
-        // :weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.
-        // :weber.freenode.net 903 kameloso :SASL authentication successful
-        // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
-        if (event.target.nickname.indexOf(' ') != -1)
-        {
-            event.target.nickname = bot.nickname;
-        }
-        break;
-
     case ACCOUNT:
         //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
         event.sender.login = slice;
