@@ -47,11 +47,13 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 
     try
     {
-        auto content = cast(string)(getContent(url).data);
+        import std.exception : assumeUnique;
+
+        immutable content = (cast(char[])getContent(url).data).assumeUnique;
         auto doc = new Document;
         doc.parseGarbage(content);
 
-        auto numBlock = doc.getElementsByClassName("quote");
+        const numBlock = doc.getElementsByClassName("quote");
 
         if (!numBlock.length)
         {
