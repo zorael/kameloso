@@ -369,14 +369,9 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 void saveNotes(NotesPlugin plugin, const string filename)
 {
     import std.ascii : newline;
-    import std.file  : exists, isFile, remove;
+    import std.file  : exists, isFile;
 
-    if (filename.exists && filename.isFile)
-    {
-        remove(filename); // Wise?
-    }
-
-    auto file = File(filename, "a");
+    auto file = File(filename, "w");
 
     file.write(plugin.notes.toPrettyString);
     file.write(newline);
