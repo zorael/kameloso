@@ -708,7 +708,8 @@ int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
             break;
 
         default:
-            assert(0, "Invalid hex string: " ~ hex);
+            import std.conv : ConvException;
+            throw new ConvException("Invalid hex string: " ~ hex);
         }
     }
 
