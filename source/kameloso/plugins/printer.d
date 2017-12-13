@@ -347,10 +347,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         if (num > 0)
         {
             import std.format : formattedWrite;
-
-            put(sink, " (#");
-            sink.formattedWrite("%03d", num);
-            put(sink, ')');
+            sink.formattedWrite(" (#%03d)", num);
         }
 
         static if (!__traits(hasMember, Sink, "data"))
