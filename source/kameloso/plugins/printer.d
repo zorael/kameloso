@@ -129,7 +129,6 @@ void onWelcome(PrinterPlugin plugin)
 @(IRCEvent.Type.SELFNICK)
 void onSELFNICK(PrinterPlugin plugin, const IRCEvent event)
 {
-    printObject(event);
     plugin.nicknameHasElaborateBoundary = event.target.nickname.hasElaborateBoundary;
 }
 
