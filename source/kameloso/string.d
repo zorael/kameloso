@@ -918,9 +918,19 @@ unittest
  +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
  +  ------------
  +/
-string tabs(int num) pure
+string tabs(uint spaces = 4)(int num) pure
 {
-    enum tab = "    ";
+    enum tab = ()
+    {
+        string indentation;
+
+        foreach (i; 0..spaces)
+        {
+            indentation ~= ' ';
+        }
+
+        return indentation;
+    }();
 
     assert((num >= 0), "Negative amount of tabs");
 
@@ -941,14 +951,14 @@ unittest
     import std.exception : assertThrown;
     import core.exception : AssertError;
 
-    immutable one = 1.tabs;
-    immutable two = 2.tabs;
-    immutable three = 3.tabs;
+    immutable one = 1.tabs!4;
+    immutable two = 2.tabs!3;
+    immutable three = 3.tabs!2;
     immutable zero = 0.tabs;
 
     assert((one == "    "), one ~ '$');
-    assert((two == "        "), two ~ '$');
-    assert((three == "            "), three ~ '$');
+    assert((two == "      "), two ~ '$');
+    assert((three == "      "), three ~ '$');
     assert((zero == string.init), zero ~ '$');
 
     assertThrown!AssertError((-1).tabs);
