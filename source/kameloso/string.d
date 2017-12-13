@@ -201,8 +201,7 @@ unittest
  +  assert((unquoted == "This is a quote"), unquoted);
  +  ------------
  +/
-pragma(inline)
-string unquoted(Flag!"recurse" recurse = Yes.recurse)(const string line)
+string unquoted(Flag!"recurse" recurse = Yes.recurse)(const string line) @property
 {
     if (line.length < 2)
     {
@@ -319,7 +318,6 @@ unittest
  +  assert(things == [ "one", "two", "three", "four" ]);
  +  ------------
  +/
-pragma(inline)
 T[] arrayify(string separator = ",", T)(const T line)
 {
     import std.algorithm.iteration : map, splitter;
@@ -362,7 +360,6 @@ unittest
  +  assert((command == "sudo MODE +o #channel :user"), command);
  +  ------------
  +/
-pragma(inline)
 string stripPrefix(const string line, const string prefix)
 {
     import std.regex : ctRegex, matchFirst;
@@ -975,7 +972,7 @@ unittest
  +  assert((easier == "This is \(very\) difficult to regex\[\^!\]"), escaped);
  +  ------------
  +/
-string escaped(const string line)
+string escaped(const string line) @safe
 {
     import std.regex : regex, replaceAll;
 
@@ -1021,7 +1018,7 @@ unittest
  +  assert(!"thisdoesn't".hasSpace);
  +  ------------
  +/
-bool hasSpace(const string line)
+bool hasSpace(const string line) pure nothrow @safe @nogc
 {
     import std.string : indexOf;
 
