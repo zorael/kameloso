@@ -669,8 +669,13 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
 {
     if (meldThis == Thing.init)
     {
-        // We're merging an .init with something; just return, should be faster
-        return;
+        // We're merging an .init with something
+
+        static if (!overwrite)
+        {
+            // No value will get melded at all, so just return
+            return;
+        }
     }
 
     foreach (immutable i, ref member; intoThis.tupleof)
