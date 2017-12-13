@@ -355,7 +355,7 @@ void onEndOfMotd(ConnectPlugin plugin)
         {
             import std.string : strip;
 
-            mainThread.prioritySend(ThreadMessage.Sendline(), line.strip());
+            mainThread.send(ThreadMessage.Sendline(), line.strip());
         }
     }
 }
