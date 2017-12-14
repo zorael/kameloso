@@ -1063,11 +1063,11 @@ unittest
  +  assert(!"thisdoesn't".hasSpace);
  +  ------------
  +/
-bool hasSpace(const string line) pure nothrow @safe @nogc
+bool hasSpace(const string line) pure @safe @nogc
 {
     import std.string : indexOf;
 
-    return (line.indexOf(' ') != -1);
+    return line.has(' ');
 }
 
 ///
