@@ -1180,6 +1180,23 @@ unittest
     }
 
     {
+        immutable event = parser.toIRCEvent(":weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_LOGGEDIN), type.to!string);
+            assert((sender.address == "weber.freenode.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((target.ident == "NaN"), target.ident);
+            assert((target.address == "194.117.188.126"), target.address);
+            assert((target.login == "kameloso"), target.login);
+            assert((content == "You are now logged in as kameloso."), content);
+            assert((num == 900), num.to!string);
+        }
+    }
+
+    {
         immutable event = parser.toIRCEvent(":ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777");
         with (IRCEvent.Type)
         with (event)
