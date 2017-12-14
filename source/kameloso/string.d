@@ -1,7 +1,8 @@
 module kameloso.string;
 
 import core.time : Duration;
-import std.traits : isSomeString;
+import std.range.primitives : ElementEncodingType, ElementType;
+import std.traits : isArray, isSomeString;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -31,13 +32,14 @@ import std.typecons : Flag, No, Yes;
  +  ------------
  +/
 pragma(inline)
-string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separator) @trusted
+T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator) @trusted
+if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
-    static if (decode)
+    static if (decode || is(T : dstring) || is(T : wstring))
     {
         import std.string : indexOf;
-
-        immutable index = arr.indexOf(separator);
+        // dstring and wstring only work with indexOf, not countUntil
+        immutable index = line.indexOf(separator);
     }
     else
     {
@@ -46,11 +48,11 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
 
         static if (isSomeString!C)
         {
-            immutable index = (cast(ubyte[])arr).countUntil(cast(ubyte[])separator);
+            immutable index = (cast(ubyte[])line).countUntil(cast(ubyte[])separator);
         }
         else
         {
-            immutable index = (cast(ubyte[])arr).countUntil(cast(ubyte)separator);
+            immutable index = (cast(ubyte[])line).countUntil(cast(ubyte)separator);
         }
     }
 
@@ -58,8 +60,8 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
     {
         import kameloso.common : logger;
 
-        logger.warningf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", arr, separator);
-        return string.init;
+        logger.warningf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", line, separator);
+        return T.init;
     }
 
     static if (isSomeString!C)
@@ -71,14 +73,16 @@ string nom(Flag!"decode" decode = No.decode, T, C)(ref T[] arr, const C separato
         enum separatorLength = 1;
     }
 
-    scope(exit) arr = arr[(index+separatorLength)..$];
+    scope(exit) line = line[(index+separatorLength)..$];
 
-    return arr[0..index];
+    return line[0..index];
 }
 
 ///
 unittest
 {
+    import std.conv : to;
+
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom(" :");
@@ -147,6 +151,46 @@ unittest
         immutable lorem = line.nom!(Yes.decode)("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
+    }
+
+    {
+        string line = "Lorem ipsum :sit amet";
+        immutable dchar dspace = ' ';
+        immutable lorem = line.nom(dspace);
+        assert(lorem == "Lorem", lorem);
+        assert(line == "ipsum :sit amet", line);
+    }
+
+    {
+        dstring dline = "Lorem ipsum :sit amet"d;
+        immutable dspace = " "d;
+        immutable lorem = dline.nom(dspace);
+        assert((lorem == "Lorem"d), lorem.to!string);
+        assert((dline == "ipsum :sit amet"d), dline.to!string);
+    }
+
+    {
+        dstring dline = "Lorem ipsum :sit amet"d;
+        immutable wchar wspace = ' ';
+        immutable lorem = dline.nom(wspace);
+        assert((lorem == "Lorem"d), lorem.to!string);
+        assert((dline == "ipsum :sit amet"d), dline.to!string);
+    }
+
+    {
+        wstring wline = "Lorem ipsum :sit amet"w;
+        immutable wchar wspace = ' ';
+        immutable lorem = wline.nom(wspace);
+        assert((lorem == "Lorem"w), lorem.to!string);
+        assert((wline == "ipsum :sit amet"w), wline.to!string);
+    }
+
+    {
+        wstring wline = "Lorem ipsum :sit amet"w;
+        immutable wspace = " "w;
+        immutable lorem = wline.nom(wspace);
+        assert((lorem == "Lorem"w), lorem.to!string);
+        assert((wline == "ipsum :sit amet"w), wline.to!string);
     }
 }
 
