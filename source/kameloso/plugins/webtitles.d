@@ -148,7 +148,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         titleReq.redditLookup = plugin.webtitlesSettings.redditLookups;
 
         shared IRCPluginState sState = cast(shared)plugin.state;
-        spawn(&worker, sState, titleReq);
+        spawn(&worker, sState, plugin.cache, titleReq);
     }
 }
 
@@ -160,7 +160,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +
  +  Supposed to be run in its own, shortlived thread.
  +/
-void worker(shared IRCPluginState sState, const TitleRequest titleReq)
+void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
+    const TitleRequest titleReq)
 {
     import kameloso.common;
 
@@ -187,6 +188,8 @@ void worker(shared IRCPluginState sState, const TitleRequest titleReq)
             lookupReddit(lookup, titleReq);
             state.mainThread.reportReddit(lookup, titleReq.target);
         }
+
+        cache[titleReq.url] = lookup;
     }
     catch (const Exception e)
     {
@@ -439,7 +442,7 @@ unittest
 /++
  +  Garbage-collects old entries in a `TitleLookup[string]` lookup cache.
  +/
-void prune(TitleLookup[string] cache)
+void prune(shared TitleLookup[string] cache)
 {
     enum expireSeconds = 600;
 
@@ -485,7 +488,7 @@ final class WebtitlesPlugin : IRCPlugin
     Tid workerThread;
 
     /// Cache of recently looked-up web titles
-    TitleLookup[string] cache;
+    shared TitleLookup[string] cache;
 
     mixin IRCPluginImpl;
 }
