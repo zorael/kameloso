@@ -408,6 +408,24 @@ void onNickInUse(ConnectPlugin plugin)
 }
 
 
+// onErroneousNickname
+/++
+ +  Aborts a registration attempt if the nickname is too long or contains
+ +  invalid characters.
+ +/
+@(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
+void onBadNick(ConnectPlugin plugin)
+{
+    if (plugin.state.bot.registerStatus == IRCBot.Status.started)
+    {
+        // Mid-registration and invalid nickname; abort
+        logger.error("Your nickname is too long or contains invalid characters");
+        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(),
+            "Invalid nickname");
+    }
+}
+
+
 // onInvite
 /++
  +  Upon being invited to a channel, join it if the settings say we should.
