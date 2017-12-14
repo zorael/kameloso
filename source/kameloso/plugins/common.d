@@ -660,18 +660,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             if (mutEvent.content.has!(Yes.decode)(' '))
                             {
-                                // single word, not a prefix
-                                contextPrefix = mutEvent.content;
-                                mutEvent.content = string.init;
-                            }
-                            else
-                            {
                                 import std.typecons : Yes;
 
                                 contextPrefix = mutEvent
                                     .content
                                     .nom!(Yes.decode)(' ')
                                     .toLower();
+                            }
+                            else
+                            {
+                                // single word, not a prefix
+                                contextPrefix = mutEvent.content;
+                                mutEvent.content = string.init;
                             }
 
                             // case-sensitive check goes here
