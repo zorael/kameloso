@@ -4,63 +4,94 @@ version(Webtitles):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.common : logger;
+
+import std.concurrency : Tid;
+
+import std.stdio;
 
 private:
 
+
+// RedditLookup
+/++
+ +  A record of a Reddit post lookup.
+ +
+ +  Merely pairs an URL with a timestamp.
+ +/
 struct RedditLookup
 {
     import std.datetime.systime : SysTime;
 
-    string reddit;
+    string url;
 
-    /// The UNI timestamp of when the URL was looked up
+    /// The UNIX timestamp of when the URL was looked up
     size_t when;
 }
 
 
-struct RedditRequest
-{
-    string url;
-    string target;
-}
-
-
+// onMessage
+/++
+ +  On a message prefixed with "reddit", look the subsequent URL up and see if
+ +  it has been posted on Reddit. If it has, report the Reddit post URL to the
+ +  channel or to the private message query.
+ +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @Prefix(NickPolicy.direct, "reddit")
 @Prefix(NickPolicy.required, "reddit")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
-    immutable url = event.content;
+    import kameloso.constants : Timeout;
+    import core.time : seconds;
+    import std.concurrency : spawn;
+    import std.datetime.systime : Clock, SysTime;
+    import std.string : indexOf, strip;
 
-    if (url.indexOf(' '))
+    immutable url = event.content.strip();
+
+    if (!url.length || url.indexOf(' ') != -1)
     {
-        logger.info("Invalid URL");
+        logger.error("Cannot look up Reddit post; invalid URL");
         return;
     }
 
+    immutable target = event.channel.length ? event.channel : event.sender.nickname;
+
+    // Garbage-collect entries too old to use
+    plugin.cache.prune();
+
     const inCache = url in plugin.cache;
+
+    if (inCache) writeln("in cache");
 
     if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
         < Timeout.titleCache.seconds))
     {
         logger.log("Found Reddit lookup in cache");
-        plugin.state.mainThread.reportURL(*inCache, target);
+        plugin.state.mainThread.reportReddit((*inCache).url, target);
         return;
     }
 
-    RedditRequest redditReq;
-    redditReq.url = url;
-    redditReq.target = event.channel.length ? event.channel : event.sender.nickname;
+    // There were no cached entries for this URL
 
     shared IRCPluginState sState = cast(shared)plugin.state;
-    spawn(&worker, sState, redditReq);
+    spawn(&worker, sState, plugin.cache, url, target);
 }
 
 
-void worker(shared IRCPluginState sState, const RedditRequest redditReq)
+// worker
+/++
+ +  Looks up an URL on Reddit and reports the corresponding Reddit post to the
+ +  channel or in the private message query.
+ +
+ +  Run in it own thread, so arguments have to be value types or shared.
+ +/
+void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
+    const string url, const string target)
 {
     import kameloso.common;
+    import std.datetime.systime : Clock;
 
     IRCPluginState state = cast(IRCPluginState)sState;
 
@@ -71,8 +102,13 @@ void worker(shared IRCPluginState sState, const RedditRequest redditReq)
 
     try
     {
-        immutable reddit = lookupReddit(redditReq);
-        state.mainThread.reportReddit(reddit, redditReq.target);
+        immutable redditURL = lookupReddit(url);
+        state.mainThread.reportReddit(redditURL, target);
+
+        RedditLookup lookup;
+        lookup.url = redditURL;
+        lookup.when = Clock.currTime.toUnixTime;
+        cache[url] = lookup;
     }
     catch (const Exception e)
     {
@@ -81,6 +117,10 @@ void worker(shared IRCPluginState sState, const RedditRequest redditReq)
 }
 
 
+// lookupReddit
+/++
+ +  Given an URL, looks it up on Reddit to see if it has been posted there.
+ +/
 string lookupReddit(const string url)
 {
     import kameloso.constants : BufferSize;
@@ -93,11 +133,9 @@ string lookupReddit(const string url)
 
     logger.log("Checking Reddit ...");
 
-    RedditLookup lookup;
+    auto res = req.get("https://www.reddit.com/" ~ url);
 
-    auto redditRes = req.get("https://www.reddit.com/" ~ url);
-
-    with (redditRes.finalURI)
+    with (res.finalURI)
     {
         import kameloso.string : beginsWith;
 
@@ -106,18 +144,21 @@ string lookupReddit(const string url)
             uri.beginsWith("https://www.reddit.com/http"))
         {
             logger.log("No corresponding Reddit post.");
-
             return string.init;
         }
         else
         {
             // Has been posted to Reddit
-            return redditRes.finalURI.uri;
+            return res.finalURI.uri;
         }
     }
 }
 
 
+// reportReddit
+/++
+ +  Reports the result of a Reddit lookup to a channel or in a private message.
+ +/
 void reportReddit(Tid tid, const string reddit, const string target)
 {
     import kameloso.common : ThreadMessage;
@@ -127,8 +168,59 @@ void reportReddit(Tid tid, const string reddit, const string target)
     if (reddit.length)
     {
         tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :Reddit: %s".format(target, reddit));
+            "PRIVMSG %s :Reddit post: %s".format(target, reddit));
     }
+    else
+    {
+        tid.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :No corresponding reddit post found.".format(target));
+    }
+
+}
+
+
+// prune
+/++
+ +  Garbage-collects old entries in a `RedditLookup[string]` lookup cache.
+ +/
+void prune(shared RedditLookup[string] cache)
+{
+    enum expireSeconds = 600;
+
+    string[] garbage;
+
+    foreach (key, entry; cache)
+    {
+        import std.datetime : Clock;
+        import core.time : minutes;
+
+        const now = Clock.currTime;
+
+        if ((now.toUnixTime - entry.when) > expireSeconds)
+        {
+            garbage ~= key;
+        }
+    }
+
+    foreach (key; garbage)
+    {
+        cache.remove(key);
+    }
+}
+
+
+// start
+/++
+ +  Initialise the shared cache, else it won't retain changes.
+ +
+ +  Just assign it an entry and remove it.
+ +/
+void start(IRCPlugin basePlugin)
+{
+    auto plugin = cast(RedditPlugin)basePlugin;
+
+    plugin.cache[string.init] = RedditLookup.init;
+    plugin.cache.remove(string.init);
 }
 
 
@@ -136,10 +228,20 @@ public:
 
 mixin BasicEventHandlers;
 
+
+// RedditPlugin
+/++
+ +  The Reddit plugin takes an URL and looks it up on Reddit, to see if it has
+ +  been posted there.
+ +
+ +  It does this by simply appending the URL to https://www.reddit.com/, which
+ +  makes Reddit either rediret you to a login page, to a submit-this-link page,
+ +  or to a/the post that links to that URL.
+ +/
 final class RedditPlugin : IRCPlugin
 {
     /// Cache of recently looked-up URLs
-    RedditLookup[string] cache;
+    shared RedditLookup[string] cache;
 
     mixin IRCPluginImpl;
 }
