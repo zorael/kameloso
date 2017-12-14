@@ -181,7 +181,7 @@ void reportReddit(Tid tid, const string reddit, const string target)
     else
     {
         tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :No corresponding reddit post found.".format(target));
+            "PRIVMSG %s :No corresponding Reddit post found.".format(target));
     }
 
 }
