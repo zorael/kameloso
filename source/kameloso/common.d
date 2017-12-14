@@ -1541,7 +1541,7 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
-        version(Webtitles)
+        version(Web)
         {
             plugins ~= new WebtitlesPlugin(state);
             plugins ~= new RedditPlugin(state);

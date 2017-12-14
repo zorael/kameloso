@@ -13,7 +13,6 @@ public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
 public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
-public import kameloso.plugins.reddit;
 
 version(Posix)
 {
@@ -21,11 +20,12 @@ version(Posix)
     public import kameloso.plugins.pipeline;
 }
 
-version(Webtitles)
+version(Web)
 {
     // Implicitly enabled if imported
     public import kameloso.plugins.webtitles;
     public import kameloso.plugins.bashquotes;
+    public import kameloso.plugins.reddit;
 }
 
 /// Add plugins to this list to enable them

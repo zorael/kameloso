@@ -1,6 +1,6 @@
 module kameloso.plugins.reddit;
 
-version(Webtitles):
+version(Web):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;

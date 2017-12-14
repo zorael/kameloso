@@ -15,7 +15,7 @@
             "name": "posix",
             "platforms": [ "posix" ],
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Webtitles", "Colours" ],
+            "versions": [ "Web", "Colours" ],
             "dependencies-posix": { "requests": "~>0.6.0" }
         },
         {
@@ -30,25 +30,25 @@
         {
             "name": "colours",
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Colours" ],
+            "versions": [ "Colours" ]
         },
         {
-            "name": "webtitles",
+            "name": "web",
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Webtitles" ],
+            "versions": [ "Web" ],
             "dependencies": { "requests": "~>0.6.0" }
         },
         {
-            "name": "colours+webtitles",
+            "name": "colours+web",
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Colours", "Webtitles" ],
+            "versions": [ "Colours", "Web" ],
             "dependencies": { "requests": "~>0.6.0" }
         },
 
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions": [ "Webtitles", "Colours" ],
+            "versions": [ "Web", "Colours" ],
             "dependencies": { "requests": "~>0.6.0" }
         },
 
@@ -60,7 +60,7 @@
         {
             "name": "nocolours",
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Webtitles" ],
+            "versions": [ "Web" ],
             "dependencies-posix": { "requests": "~>0.6.0" }
         },
         {
