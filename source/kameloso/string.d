@@ -1079,3 +1079,48 @@ unittest
     assert(!(string.init.hasSpace));
     assert(" ".hasSpace);
 }
+
+
+// has
+/++
+ +  Checks a string to see if it contains a given substring or character.
+ +
+ +  This is not UTF-8 safe. It is naive in how it thinks a string always
+ +  correspond to one set of codepoints and one set only.
+ +/
+bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) @trusted
+if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+{
+    static if (is(C : T)) if (haystack == needle) return true;
+
+    static if (decode || is(T : dstring) || is(T : wstring))
+    {
+        import std.string : indexOf;
+        // dstring and wstring only work with indexOf, not countUntil
+        return haystack.indexOf(needle) != 1;
+    }
+    else
+    {
+        // Only do this if we know it's not user text
+        import std.algorithm.searching : canFind;
+
+        static if (isSomeString!C)
+        {
+            return (cast(ubyte[])haystack).canFind(cast(ubyte[])needle);
+        }
+        else
+        {
+            return (cast(ubyte[])haystack).canFind(cast(ubyte)needle);
+        }
+    }
+}
+
+///
+unittest
+{
+    assert("Lorem ipsum sit amet".has("sit"));
+    assert("".has(""));
+    assert(!"Lorem ipsum".has("sit amet"));
+    assert("Lorem ipsum".has(' '));
+    assert(!"Lorem ipsum".has('!'));
+}
