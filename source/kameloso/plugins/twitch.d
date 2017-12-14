@@ -80,7 +80,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
     with (IRCEvent)
     foreach (tag; event.tags.splitter(";"))
     {
-        import kameloso.string : nom;
+        import kameloso.string : has, nom;
         immutable key = tag.nom("=");
         immutable value = tag;
 
@@ -89,8 +89,9 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
         case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            import std.string : indexOf, stripRight;
-            event.sender.alias_ = (value.indexOf('\\') != -1) ?
+            import std.string : stripRight;
+
+            event.sender.alias_ = value.has('\\') ?
                 decodeIRCv3String(value).stripRight() : value;
             break;
 

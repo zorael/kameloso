@@ -545,7 +545,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (prefixUDA; getUDAs!(fun, Prefix))
                         {
-                            import kameloso.string : nom, beginsWith,
+                            import kameloso.string : beginsWith, has, nom,
                                 stripPrefix;
 
                             if (matches)
@@ -656,9 +656,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static assert(prefixUDA.string_.length,
                                 name ~ " had an empty Prefix string");
 
-                            import std.string : indexOf, toLower;
+                            import std.string : toLower;
 
-                            if (mutEvent.content.indexOf(' ') == -1)
+                            if (mutEvent.content.has!(Yes.decode)(' '))
                             {
                                 // single word, not a prefix
                                 contextPrefix = mutEvent.content;
@@ -1129,12 +1129,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     string name() @property const
     {
-        import kameloso.string : nom;
-        import std.string : indexOf;
+        import kameloso.string : has, nom;
 
         string moduleName = module_;
 
-        while (moduleName.indexOf('.') != -1)
+        while (moduleName.has('.'))
         {
             moduleName.nom('.');
         }

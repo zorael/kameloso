@@ -209,12 +209,11 @@ void reportURL(Tid tid, const TitleLookup lookup, const string target)
 TitleLookup lookupTitle(const TitleRequest titleReq)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.string : beginsWith;
+    import kameloso.string : beginsWith, has;
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
     import std.datetime.systime : Clock;
-    import std.string : indexOf;
 
     TitleLookup lookup;
     auto doc = new Document;
@@ -251,7 +250,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
     lookup.title = doc.title;
 
     if ((lookup.title == "YouTube") &&
-        (titleReq.url.indexOf("youtube.com/watch?") != -1))
+        titleReq.url.has("youtube.com/watch?"))
     {
         fixYoutubeTitles(lookup, titleReq);
     }
@@ -280,8 +279,8 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +/
 void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 {
+    import kameloso.string : has;
     import std.regex : replaceFirst;
-    import std.string : indexOf;
 
     logger.log("Bland YouTube title ...");
 
@@ -295,7 +294,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 
     logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
-    if (onRepeatLookup.title.indexOf(" - ListenOnRepeat") == -1)
+    if (onRepeatLookup.title.has(" - ListenOnRepeat"))
     {
         logger.error("Failed to ListenOnRepeatify YouTube title");
         return;

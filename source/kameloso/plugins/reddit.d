@@ -51,14 +51,15 @@ struct RedditLookup
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
+    import kameloso.string : has;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
-    import std.string : indexOf, strip;
+    import std.string : strip;
 
     immutable url = event.content.strip();
 
-    if (!url.length || url.indexOf(' ') != -1)
+    if (!url.length || url.has(' '))
     {
         logger.error("Cannot look up Reddit post; invalid URL");
         return;

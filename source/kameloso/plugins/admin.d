@@ -163,7 +163,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @Prefix(NickPolicy.required, "addfriend")
 void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 {
-    import std.string : indexOf, strip;
+    import kameloso.string : has;
+    import std.string : strip;
 
     immutable nickname = event.content.strip();
 
@@ -172,7 +173,7 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
         logger.error("No nickname supplied...");
         return;
     }
-    else if (nickname.indexOf(' ') != -1)
+    else if (nickname.has!(Yes.decode)(' ') != -1)
     {
         logger.error("Nickname must not contain spaces");
         return;
@@ -197,8 +198,9 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 @Prefix(NickPolicy.required, "delfriend")
 void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
 {
+    import kameloso.string : has;
     import std.algorithm : countUntil, remove;
-    import std.string : indexOf, strip;
+    import std.string : strip;
 
     immutable nickname = event.content.strip();
 
@@ -207,7 +209,7 @@ void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
         logger.error("No nickname supplied...");
         return;
     }
-    else if (nickname.indexOf(' ') != -1)
+    else if (nickname.has!(Yes.decode)(' ') != -1)
     {
         logger.error("Only one nick at a time. Nickname must not contain spaces");
         return;

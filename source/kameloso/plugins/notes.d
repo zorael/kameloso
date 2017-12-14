@@ -203,8 +203,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
 @Prefix(NickPolicy.required, "fakejoin")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : nom;
-    import std.string : indexOf;
+    import kameloso.string : has, nom;
 
     logger.info("Faking an event");
 
@@ -212,7 +211,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     newEvent.type = IRCEvent.Type.JOIN;
     string nickname = event.content;
 
-    if (nickname.indexOf(' ') != -1)
+    if (nickname.has!(Yes.decode)(' '))
     {
         // contains more than one word
         newEvent.sender.nickname = nickname.nom!(Yes.decode)(' ');
