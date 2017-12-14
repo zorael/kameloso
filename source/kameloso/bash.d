@@ -554,3 +554,146 @@ unittest
 
     assert((name == alsoName), alsoName);
 }
+
+
+// invert
+/++
+ +  Bash-inverts the colours of a piece of text in a string.
+ +
+ +  ------------
+ +  immutable line = "This is an example!";
+ +  writeln(line.invert("example"));  // "example" inverted
+ +  ------------
+ +/
+version(Colours)
+string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
+    (const string line, const string toInvert)
+{
+    import kameloso.string : escaped;
+    import std.format : format;
+    import std.regex : matchAll, regex, replaceFirst;
+
+    immutable inverted = "%c[%dm%s%c[%dm"
+        .format(TerminalToken.bashFormat, BashEffect.reverse,
+            toInvert, TerminalToken.bashFormat, BashReset.invert);
+
+    static if (elaborate)
+    {
+        auto engine = toInvert.escaped.format!`\b%s(\b|\W|$)`.regex;
+    }
+    else
+    {
+        //auto engine = toInvert.escaped.format!`\b%s\b`.regex;
+        auto engine = toInvert.escaped.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
+    }
+
+    string replaced = line;
+
+    foreach (hit; line.matchAll(engine))
+    {
+        if (hit.empty)
+        {
+            replaced = replaced.replaceFirst(engine, inverted);
+        }
+        else
+        {
+            replaced = replaced.replaceFirst(engine, inverted ~ hit[1]);
+        }
+    }
+
+    return replaced;
+}
+
+///
+version(Colours)
+unittest
+{
+    {
+        immutable inverted = "foo kameloso bar".invert("kameloso");
+        assert((inverted == "foo \033[7mkameloso\033[27m bar"), inverted);
+    }
+
+    {
+        immutable inverted = "fookameloso bar".invert("kameloso");
+        assert((inverted == "fookameloso bar"), inverted);
+    }
+
+    {
+        immutable inverted = "foo kamelosobar".invert("kameloso");
+        assert((inverted == "foo kamelosobar"), inverted);
+    }
+
+    {
+        immutable inverted = "foo(kameloso)bar".invert("kameloso");
+        assert((inverted == "foo(\033[7mkameloso\033[27m)bar"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso: 8ball".invert("kameloso");
+        assert((inverted == "\033[7mkameloso\033[27m: 8ball"), inverted);
+    }
+
+    {
+        immutable inverted = "Welcome to the freenode Internet Relay Chat Network kameloso^"
+            .invert("kameloso^");
+        assert((inverted == "Welcome to the freenode Internet Relay Chat Network \033[7mkameloso^\033[27m"),
+            inverted);
+    }
+
+    {
+        immutable inverted = "kameloso^: wfwef".invert("kameloso^");
+        assert((inverted == "\033[7mkameloso^\033[27m: wfwef"), inverted);
+    }
+
+    {
+        immutable inverted = "[kameloso^]".invert("kameloso^");
+        assert((inverted == "[\033[7mkameloso^\033[27m]"), inverted);
+    }
+
+    {
+        immutable inverted = `"kameloso^"`.invert("kameloso^");
+        assert((inverted == "\"\033[7mkameloso^\033[27m\""), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso^".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso^"), inverted);
+    }
+
+    {
+        immutable inverted = "That guy kameloso? is a bot".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "That guy \033[7mkameloso\033[27m? is a bot"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso`".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso`"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso9".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso9"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso-".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso-"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso_".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "kameloso_"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso_".invert!(Yes.elaborateBoundary)("kameloso_");
+        assert((inverted == "\033[7mkameloso_\033[27m"), inverted);
+    }
+
+    {
+        immutable inverted = "kameloso kameloso kameloso kameloso kameloso".invert!(No.elaborateBoundary)("kameloso");
+        assert((inverted == "\033[7mkameloso\033[27m \033[7mkameloso\033[27m " ~
+            "\033[7mkameloso\033[27m \033[7mkameloso\033[27m \033[7mkameloso\033[27m"),
+            "'" ~ inverted ~ "'");
+    }
+}

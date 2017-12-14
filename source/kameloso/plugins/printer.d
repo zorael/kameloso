@@ -362,7 +362,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     {
         version(Colours)
         {
-            import kameloso.bash : colour;
+            import kameloso.bash : colour, invert;
 
             event.mapEffects();
 
