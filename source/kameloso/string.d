@@ -1053,34 +1053,6 @@ unittest
 }
 
 
-// hasSpace
-/++
- +  Shorthand UFCS function that simply checks whether a string contains a space
- +  or not.
- +
- +  ------------
- +  assert("This has spaces".hasSpace);
- +  assert(!"thisdoesn't".hasSpace);
- +  ------------
- +/
-bool hasSpace(const string line) pure @safe @nogc
-{
-    import std.string : indexOf;
-
-    return line.has(' ');
-}
-
-///
-unittest
-{
-    assert("Lorem ipsum".hasSpace);
-    assert(!"Loremipsum".hasSpace);
-    assert(!"".hasSpace);
-    assert(!(string.init.hasSpace));
-    assert(" ".hasSpace);
-}
-
-
 // has
 /++
  +  Checks a string to see if it contains a given substring or character.
