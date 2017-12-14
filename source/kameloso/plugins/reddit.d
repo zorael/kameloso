@@ -18,6 +18,14 @@ private:
  +  A record of a Reddit post lookup.
  +
  +  Merely pairs an URL with a timestamp.
+ +
+ +  ------------
+ +  struct RedditLookup
+ +  {
+ +      string url;
+ +      size_t when;
+ +  }
+ +  ------------
  +/
 struct RedditLookup
 {
