@@ -773,6 +773,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
+    case RPL_LOGGEDIN: // 900
+        // :weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.
+        event.target.nickname = slice.nom(' ');  // bot nick
+        slice.nom('!');  // user
+        event.target.ident = slice.nom('@');
+        event.target.address = slice.nom(' ');
+        event.target.login = slice.nom(" :");
+        event.content = slice;
+        break;
+
     case ACCOUNT:
         //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
         event.sender.login = slice;
@@ -1070,6 +1080,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
+        case RPL_LOGGEDIN:
             break;
 
         default:
