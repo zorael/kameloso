@@ -235,6 +235,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +      ref g = green
  +      ref b = blue
  +/
+version(Colours)
 void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
 {
     enum pureWhiteReplacement = 120;
