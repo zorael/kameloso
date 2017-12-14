@@ -1571,8 +1571,6 @@ struct Client
     {
         if (!plugins.length) return;
 
-        logger.info("Deinitialising plugins");
-
         foreach (plugin; plugins)
         {
             try plugin.teardown();
