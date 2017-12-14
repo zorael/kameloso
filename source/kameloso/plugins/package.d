@@ -13,6 +13,7 @@ public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
 public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
+public import kameloso.plugins.reddit;
 
 version(Posix)
 {
@@ -38,4 +39,5 @@ public alias EnabledPlugins = AliasSeq!(
     CTCPPlugin,
     TwitchPlugin,
     SeenPlugin,
+    RedditPlugin,
 );

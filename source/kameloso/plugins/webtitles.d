@@ -13,17 +13,6 @@ import std.stdio;
 
 private:
 
-
-// WebtitlesSettings
-/++
- +  All Webtitles plugin options gathered in a struct.
- +/
-struct WebtitlesSettings
-{
-    /// Flag to look up URLs on Reddit to see if they've been posted there
-    bool redditLookups = false;
-}
-
 /// Regex pattern to match a URI, to see if one was pasted
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 
@@ -60,7 +49,6 @@ struct TitleLookup
 
     string title;
     string domain;
-    string reddit;
 
     /// The UNIX timestamp of when the title was looked up
     size_t when;
@@ -79,7 +67,6 @@ struct TitleLookup
  +  {
  +      string url;
  +      string target;
- +      bool redditLookup;
  +  }
  +  ------------
  +/
@@ -87,7 +74,6 @@ struct TitleRequest
 {
     string url;
     string target;
-    bool redditLookup;
 }
 
 
@@ -102,10 +88,19 @@ struct TitleRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
+    import kameloso.string : beginsWith;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
+
+    immutable prefix = plugin.state.settings.prefix;
+    if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
+        (event.content[prefix.length] != ' '))
+    {
+        // Message started with a prefix followed by a space --> ignore
+        return;
+    }
 
     auto matches = event.content.matchAll(urlRegex);
 
@@ -116,7 +111,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         immutable url = urlHit[0];
         immutable target = event.channel.length ? event.channel : event.sender.nickname;
 
-        logger.info("Caught URL: ", url);
+        logger.log("Caught URL: ", url);
 
         // Garbage-collect entries too old to use
         plugin.cache.prune();
@@ -136,10 +131,9 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         TitleRequest titleReq;
         titleReq.url = url;
         titleReq.target = target;
-        titleReq.redditLookup = plugin.webtitlesSettings.redditLookups;
 
         shared IRCPluginState sState = cast(shared)plugin.state;
-        spawn(&worker, sState, titleReq);
+        spawn(&worker, sState, plugin.cache, titleReq);
     }
 }
 
@@ -151,7 +145,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +
  +  Supposed to be run in its own, shortlived thread.
  +/
-void worker(shared IRCPluginState sState, const TitleRequest titleReq)
+void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
+    const TitleRequest titleReq)
 {
     import kameloso.common;
 
@@ -166,18 +161,9 @@ void worker(shared IRCPluginState sState, const TitleRequest titleReq)
     {
         import kameloso.string : beginsWith;
 
-        // First look up and report the normal URL, *then* look up Reddit
-        // This to make things be snappier, since Reddit can be very slow
-
         auto lookup = lookupTitle(titleReq);
         state.mainThread.reportURL(lookup, titleReq.target);
-
-        if (titleReq.redditLookup &&
-            !titleReq.url.beginsWith("https://www.reddit.com"))
-        {
-            lookupReddit(lookup, titleReq);
-            state.mainThread.reportReddit(lookup, titleReq.target);
-        }
+        cache[titleReq.url] = lookup;
     }
     catch (const Exception e)
     {
@@ -190,8 +176,6 @@ void worker(shared IRCPluginState sState, const TitleRequest titleReq)
 /++
  +  Prints the result of a web title lookup in the channel or as a message to
  +  the user specified.
- +
- +  Optionally also reports the Reddit page that links to said URL.
  +/
 void reportURL(Tid tid, const TitleLookup lookup, const string target)
 {
@@ -209,24 +193,6 @@ void reportURL(Tid tid, const TitleLookup lookup, const string target)
     {
         tid.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :%s".format(target, lookup.title));
-    }
-}
-
-
-// reportReddit
-/++
- +  Report found Reddit post to the channel or user specified.
- +/
-void reportReddit(Tid tid, const TitleLookup lookup, const string target)
-{
-    import kameloso.common : ThreadMessage;
-    import std.concurrency : send;
-    import std.format : format;
-
-    if (lookup.reddit.length)
-    {
-        tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :Reddit: %s".format(target, lookup.reddit));
     }
 }
 
@@ -300,43 +266,6 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
 
     lookup.when = Clock.currTime.toUnixTime;
     return lookup;
-}
-
-
-// lookupReddit
-/++
- +  Look up an URL on Reddit, see if it has been posted there. If so, get the
- +  link and modify the passed ref `TitleLookup` to contain it.
- +/
-void lookupReddit(ref TitleLookup lookup, const TitleRequest titleReq)
-{
-    import kameloso.constants : BufferSize;
-    import kameloso.string : beginsWith;
-    import requests : Request;
-
-    Request redditReq;
-    redditReq.useStreaming = true;  // we only want as little as possible
-    redditReq.keepAlive = false;
-    redditReq.bufferSize = BufferSize.titleLookup;
-
-    logger.log("Checking Reddit ...");
-
-    const redditRes = redditReq.get("https://www.reddit.com/" ~ titleReq.url);
-
-    with (redditRes.finalURI)
-    {
-        if (uri.beginsWith("https://www.reddit.com/login") ||
-            uri.beginsWith("https://www.reddit.com/submit") ||
-            uri.beginsWith("https://www.reddit.com/http"))
-        {
-            logger.log("No corresponding Reddit post.");
-        }
-        else
-        {
-            // Has been posted to Reddit
-            lookup.reddit = uri;
-        }
-    }
 }
 
 
@@ -430,7 +359,7 @@ unittest
 /++
  +  Garbage-collects old entries in a `TitleLookup[string]` lookup cache.
  +/
-void prune(TitleLookup[string] cache)
+void prune(shared TitleLookup[string] cache)
 {
     enum expireSeconds = 600;
 
@@ -456,6 +385,21 @@ void prune(TitleLookup[string] cache)
 }
 
 
+// start
+/++
+ +  Initialise the shared cache, else it won't retain changes.
+ +
+ +  Just assign it an entry and remove it.
+ +/
+void start(IRCPlugin basePlugin)
+{
+    auto plugin = cast(WebtitlesPlugin)basePlugin;
+
+    plugin.cache[string.init] = TitleLookup.init;
+    plugin.cache.remove(string.init);
+}
+
+
 mixin BasicEventHandlers;
 
 public:
@@ -469,14 +413,8 @@ public:
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
-    /// All Webtitles plugin options gathered
-    @Settings WebtitlesSettings webtitlesSettings;
-
-    /// Thread ID of the working thread that does the lookups
-    Tid workerThread;
-
     /// Cache of recently looked-up web titles
-    TitleLookup[string] cache;
+    shared TitleLookup[string] cache;
 
     mixin IRCPluginImpl;
 }
