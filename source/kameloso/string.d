@@ -1059,6 +1059,12 @@ unittest
  +
  +  This is not UTF-8 safe. It is naive in how it thinks a string always
  +  correspond to one set of codepoints and one set only.
+ +
+ +  ------------
+ +  assert("Lorem ipsum".has("Lorem"));
+ +  assert(!"Lorem ipsum".has('l'));
+ +  assert("Lorem ipsum".has!(Yes.decode)(" "));
+ +  ------------
  +/
 bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) @trusted
 if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
@@ -1095,4 +1101,5 @@ unittest
     assert(!"Lorem ipsum".has("sit amet"));
     assert("Lorem ipsum".has(' '));
     assert(!"Lorem ipsum".has('!'));
+    assert("Lorem ipsum"d.has("m"d));
 }
