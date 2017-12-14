@@ -174,22 +174,6 @@ Flag!"quit" checkMessages(ref Client client)
     }
     while (receivedSomething && !quit && (receivedInARow < 5));
 
-    if (receivedSomething && quit)
-    {
-        // We received something that made us quit. Exhaust the concurrency
-        // mailbox before quitting.
-        do
-        {
-            receivedSomething = receiveTimeout(0.seconds,
-                (Variant v)
-                {
-                    logger.warning("Main thread received unknown Variant: ", v);
-                }
-            );
-        }
-        while (receivedSomething);
-    }
-
     return quit;
 }
 
