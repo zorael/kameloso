@@ -715,7 +715,7 @@ unittest
  +  int twofiftyfive = numFromHex("FF");
  +  ------------
  +/
-int numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
+uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex)
 {
     int val = -1;
