@@ -1549,6 +1549,13 @@ struct Client
             plugins ~= new WebtitlesPlugin(state);
         }
 
+        // `reddit` largely goes hand in hand with `webtitles`, but we'll have
+        // it separate here anyway.
+        static if (__traits(compiles, new RedditPlugin(IRCPluginState.init)))
+        {
+            plugins ~= new RedditPlugin(state);
+        }
+
         // Likewise with `pipeline`, except it depends on whether we're on a Posix
         // system or not.
         static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))

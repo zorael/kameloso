@@ -39,5 +39,4 @@ public alias EnabledPlugins = AliasSeq!(
     CTCPPlugin,
     TwitchPlugin,
     SeenPlugin,
-    RedditPlugin,
 );
