@@ -205,10 +205,10 @@ void onPing(ConnectPlugin plugin, const IRCEvent event)
     {
         mainThread.prioritySend(ThreadMessage.Pong(), target);
 
-        if (bot.authStatus == Status.started)
+        if (bot.authentication == Status.started)
         {
             logger.log("Auth timed out. Joining channels ...");
-            bot.authStatus = Status.finished;
+            bot.authentication = Status.finished;
             bot.updated = true;
             plugin.joinChannels();
         }
@@ -254,7 +254,7 @@ void tryAuth(ConnectPlugin plugin)
             break;
         }
 
-        bot.authStatus = Status.started;
+        bot.authentication = Status.started;
         bot.updated = true;
 
         with (IRCServer.Daemon)
@@ -270,7 +270,7 @@ void tryAuth(ConnectPlugin plugin)
                 logger.warningf("Cannot auth when you have changed your nickname " ~
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
-                bot.authStatus = Status.finished;
+                bot.authentication = Status.finished;
                 bot.updated = true;
                 plugin.joinChannels();
                 return;
@@ -306,7 +306,7 @@ void tryAuth(ConnectPlugin plugin)
 
         case twitch:
             // No registration available
-            bot.authStatus = Status.finished;
+            bot.authentication = Status.finished;
             bot.updated = true;
             return;
 
@@ -335,16 +335,16 @@ void onEndOfMotd(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        if (bot.authPassword.length && (bot.authStatus == Status.notStarted))
+        if (bot.authPassword.length && (bot.authentication == Status.notStarted))
         {
             plugin.tryAuth();
         }
 
-        if ((bot.authStatus == Status.finished) ||
+        if ((bot.authentication == Status.finished) ||
             (bot.server.daemon == IRCServer.Daemon.twitch))
         {
             // tryAuth finished early with an unsuccessful login, else
-            // `bot.authStatus` would be set much later.
+            // `bot.authentication` would be set much later.
             // Twitch servers can't auth so join immediately
             logger.log("Joining channels ...");
             plugin.joinChannels();
@@ -374,12 +374,12 @@ void onAuthEnd(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        bot.authStatus = Status.finished;
+        bot.authentication = Status.finished;
         bot.updated = true;
 
         // This can be before registration ends in case of SASL
         // return if still registering
-        if (bot.registerStatus == Status.started) return;
+        if (bot.registration == Status.started) return;
 
         logger.log("Joining channels ...");
         plugin.joinChannels();
@@ -416,7 +416,7 @@ void onNickInUse(ConnectPlugin plugin)
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectPlugin plugin)
 {
-    if (plugin.state.bot.registerStatus == IRCBot.Status.started)
+    if (plugin.state.bot.registration == IRCBot.Status.started)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters");
@@ -562,7 +562,7 @@ void onSASLAuthenticate(ConnectPlugin plugin)
     {
         import std.base64 : Base64;
 
-        bot.authStatus = Status.started;
+        bot.authentication = Status.started;
         bot.updated = true;
 
         immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
@@ -589,7 +589,7 @@ void onSASLSuccess(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        bot.authStatus = Status.finished;
+        bot.authentication = Status.finished;
         bot.updated = true;
 
         /++
@@ -630,7 +630,7 @@ void onSASLFailure(ConnectPlugin plugin)
 
         // Auth failed and will fail even if we try NickServ, so flag as
         // finished auth and invoke `CAP END`
-        bot.authStatus = Status.finished;
+        bot.authentication = Status.finished;
         bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
@@ -648,7 +648,7 @@ void onWelcome(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        bot.registerStatus = IRCBot.Status.finished;
+        bot.registration = IRCBot.Status.finished;
         bot.updated = true;
     }
 }
@@ -662,7 +662,7 @@ void register(ConnectPlugin plugin)
 {
     with (plugin.state)
     {
-        bot.registerStatus = Status.started;
+        bot.registration = Status.started;
         bot.updated = true;
 
         mainThread.send(ThreadMessage.Quietline(), "CAP LS 302");

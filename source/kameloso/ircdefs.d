@@ -867,8 +867,8 @@ struct IRCEvent
  +
  +      IRCServer server;
  +      string origNickname;
- +      Status authStatus;
- +      Status registerStatus;
+ +      Status authentication;
+ +      Status registration;
  +  }
  +  ------------
  +/
@@ -918,10 +918,10 @@ struct IRCBot
         string origNickname;
 
         /// Status of authentication process (SASL, NickServ)
-        Status authStatus;
+        Status authentication;
 
         /// Status of registration process (logon)
-        Status registerStatus;
+        Status registration;
 
         /// Flag signifying that the bot was altered.
         bool updated;
