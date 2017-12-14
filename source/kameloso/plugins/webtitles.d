@@ -294,7 +294,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 
     logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
-    if (onRepeatLookup.title.has(" - ListenOnRepeat"))
+    if (!onRepeatLookup.title.has(" - ListenOnRepeat"))
     {
         logger.error("Failed to ListenOnRepeatify YouTube title");
         return;
