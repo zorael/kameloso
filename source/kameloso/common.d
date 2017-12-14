@@ -1519,7 +1519,7 @@ struct Client
      +/
     void initPlugins()
     {
-        import kameloso.plugins : EnabledPlugins;
+        import kameloso.plugins;
         import kameloso.plugins.common : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
@@ -1532,7 +1532,7 @@ struct Client
         state.mainThread = thisTid;
         today = Clock.currTime.day;
 
-        plugins.reserve(EnabledPlugins.length + 3);
+        plugins.reserve(EnabledPlugins.length + 4);
 
         // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
         // `kameloso.plugins.package`
@@ -1541,32 +1541,16 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
-        // Add `webtitles` if possible. If it's not being publically imported in
-        // `kameloso.plugins.package`, it's not there to instantiate, which is the
-        // case when we're not compiling the version `Webtitles`.
-        static if (__traits(compiles, new WebtitlesPlugin(IRCPluginState.init)))
+        version(Webtitles)
         {
             plugins ~= new WebtitlesPlugin(state);
-        }
-
-        // `reddit` largely goes hand in hand with `webtitles`, but we'll have
-        // it separate here anyway.
-        static if (__traits(compiles, new RedditPlugin(IRCPluginState.init)))
-        {
             plugins ~= new RedditPlugin(state);
+            plugins ~= new BashQuotesPlugin(state);
         }
 
-        // Likewise with `pipeline`, except it depends on whether we're on a Posix
-        // system or not.
-        static if (__traits(compiles, new PipelinePlugin(IRCPluginState.init)))
+        version(Posix)
         {
             plugins ~= new PipelinePlugin(state);
-        }
-
-        // `bashquotes` needs `dlang-requests` just like `webtitles` does.
-        static if (__traits(compiles, new BashQuotesPlugin(IRCPluginState.init)))
-        {
-            plugins ~= new BashQuotesPlugin(state);
         }
 
         foreach (plugin; plugins)
