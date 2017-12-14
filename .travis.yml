@@ -12,8 +12,8 @@ script:
     - dub test --compiler=${DC} --build-mode=singleFile
     - dub test --compiler=${DC} --build-mode=singleFile -c vanilla
     - dub test --compiler=${DC} --build-mode=singleFile -c colours
-    - dub test --compiler=${DC} --build-mode=singleFile -c colours+webtitles
+    - dub test --compiler=${DC} --build-mode=singleFile -c colours+web
     - dub build -b plain --compiler=${DC} --build-mode=singleFile
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c vanilla
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours+webtitles
+    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours+web
