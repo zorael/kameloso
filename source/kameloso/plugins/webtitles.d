@@ -125,7 +125,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         immutable url = urlHit[0];
         immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-        logger.info("Caught URL: ", url);
+        logger.log("Caught URL: ", url);
 
         // Garbage-collect entries too old to use
         plugin.cache.prune();
