@@ -1082,9 +1082,9 @@ struct IRCUser
 
     bool isServer() @property const
     {
-        import std.string : indexOf;
+        import kameloso.string : has;
 
-        return (!nickname.length && (address.indexOf('.') != -1));
+        return (!nickname.length && address.has('.'));
     }
 }
 
