@@ -3,7 +3,7 @@ module kameloso.irc;
 public import kameloso.ircdefs;
 
 import kameloso.common;
-import kameloso.string : nom;
+import kameloso.string : has, nom;
 
 import std.string : indexOf;
 
@@ -58,7 +58,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
         // PING :weber.freenode.net
         event.type = IRCEvent.Type.PING;
 
-        if (slice.indexOf('.') != -1)
+        if (slice.has('.'))
         {
             event.sender.address = slice;
         }
@@ -180,14 +180,14 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
     with (event.sender)
     {
 
-        if (prefix.indexOf('!') != -1)
+        if (prefix.has('!'))
         {
             // user!~ident@address
             nickname = prefix.nom('!');
             ident = prefix.nom('@');
             address = prefix;
         }
-        else if (prefix.indexOf('.') != -1)
+        else if (prefix.has('.'))
         {
             // dots signify an address
             address = prefix;
@@ -395,7 +395,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
         event.type = (event.sender.nickname == bot.nickname) ? SELFJOIN : JOIN;
 
-        if (slice.indexOf(' ') != -1)
+        if (slice.has(' '))
         {
             // :nick!user@host JOIN #channelname accountname :Real Name
             // :nick!user@host JOIN #channelname * :Real Name
@@ -423,7 +423,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
         event.type = (event.sender.nickname == bot.nickname) ? SELFPART : PART;
 
-        if (slice.indexOf(' ') != -1)
+        if (slice.has(' '))
         {
             event.channel = slice.nom(" :");
             event.content = slice;
@@ -562,16 +562,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case ERR_UNKNOWNCOMMAND: // 421
         slice.nom(' ');  // bot nickname
 
-        if (slice.indexOf(':') == -1)
-        {
-            // :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,...
-            event.content = slice;
-        }
-        else
+        if (slice.has(':'))
         {
             // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
             event.content = slice.nom(" :");
             event.aux = slice;
+        }
+        else
+        {
+            // :karatkievich.freenode.net 421 kameloso^ systemd,#kde,#kubuntu,...
+            event.content = slice;
         }
         break;
 
@@ -605,7 +605,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :irc.rizon.no 266 kameloso^^ :Current global users: 16115  Max: 17360
         slice.nom(' ');  // bot nickname
 
-        if (slice.indexOf(" :") != -1)
+        if (slice.has(" :"))
         {
             event.aux = slice.nom(" :");
             event.content = slice;
@@ -670,7 +670,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case ERR_BADPING: // 513
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
-        if (slice.indexOf(" :To connect"))
+        if (slice.has(" :To connect"))
         {
             event.target.nickname = slice.nom(" :To connect");
 
@@ -715,7 +715,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case CAP:
-        if (slice.indexOf('*') != -1)
+        if (slice.has('*'))
         {
             // :tmi.twitch.tv CAP * LS :twitch.tv/tags twitch.tv/commands twitch.tv/membership
             slice.nom("* ");
@@ -732,7 +732,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case HOSTTARGET:
-        if (slice.indexOf(" :-") != -1)
+        if (slice.has(" :-"))
         {
             event.type = HOSTEND;
             goto case HOSTEND;
@@ -760,7 +760,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case CLEARCHAT:
         // :tmi.twitch.tv CLEARCHAT #zorael
         // :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-        if (slice.indexOf(" :") != -1)
+        if (slice.has(" :"))
         {
             // Banned
             // Whether it's a tempban or a permban is decided in the Twitch plugin
@@ -811,7 +811,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         string misc = slice.nom(" :");
         event.content = slice;
 
-        if (misc.indexOf(' ') != -1)
+        if (misc.has(' '))
         {
             misc.nom(' ');
             event.aux = misc;
@@ -856,12 +856,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         // Generic heuristics to catch most cases
 
-        if (slice.indexOf(" :") != -1)
+        if (slice.has(" :"))
         {
             // Has colon-content
             string targets = slice.nom(" :");
 
-            if (targets.hasSpace)
+            if (targets.has(' '))
             {
                 // More than one target
 
@@ -877,7 +877,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         // More than one target, first is bot
                         // Second target is/begins with a channel
 
-                        if (targets.hasSpace)
+                        if (targets.has(' '))
                         {
                             // More than one target, first is bot
                             // Second target is more than one, first is channel
@@ -908,7 +908,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         // More than one target, first is bot
                         // Second is not a channel
 
-                        if (targets.hasSpace)
+                        if (targets.has(' '))
                         {
                             // More than one target, first is bot
                             // Second target is more than one
@@ -968,7 +968,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             // Does not have colon-content
 
-            if (slice.hasSpace)
+            if (slice.has(' '))
             {
                 // More than one target
                 immutable target = slice.nom(' ');
@@ -1037,8 +1037,8 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 {
     import kameloso.string : beginsWith;
 
-    if ((event.target.nickname.indexOf(' ') != -1) ||
-        (event.channel.indexOf(' ') != -1))
+    if (event.target.nickname.has(' ') ||
+        event.channel.has(' '))
     {
         writeln();
         logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
@@ -1179,7 +1179,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
         {
             return true;
         }
-        else if (event.sender.address.indexOf("/staff/") != -1)
+        else if (event.sender.address.has("/staff/"))
         {
             return true;
         }
@@ -1230,7 +1230,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
         {
             //event.sender.special = true; // by definition
 
-            if (event.content.toLower.indexOf("/msg nickserv identify") != -1)
+            if (event.content.toLower.has("/msg nickserv identify"))
             {
                 event.type = IRCEvent.Type.AUTH_CHALLENGE;
                 return;
@@ -1278,10 +1278,10 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
                 if ((content == rizon) ||
                     (content == quakenet) ||
                     (content == gamesurge) ||
-                    (content.indexOf(freenodeInvalid) != -1) ||
+                     content.has(freenodeInvalid) ||
                     (content.beginsWith(freenodeRejected)) ||
-                    (content.indexOf(dalnet) != -1) ||
-                    (content.indexOf(unreal) != -1))
+                     content.has(dalnet) ||
+                     content.has(unreal))
                 {
                     event.type = IRCEvent.Type.AUTH_FAILURE;
                 }
@@ -1359,7 +1359,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         (slice[$-1] == IRCControlCharacter.ctcp))
     {
         slice = slice[1..$-1];
-        immutable ctcpEvent = (slice.indexOf(' ') != -1) ? slice.nom(' ') : slice;
+        immutable ctcpEvent = slice.has(' ') ? slice.nom(' ') : slice;
         event.content = slice;
 
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :ACTION test test content
@@ -1441,7 +1441,7 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         event.channel = target;
 
-        if (slice.indexOf(' ') != -1)
+        if (slice.has(' '))
         {
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
@@ -1490,14 +1490,14 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
     // :cherryh.freenode.net 005 CHARSET=ascii NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST :are supported by this server
     slice.nom(' ');
 
-    if (slice.indexOf(" :") != -1)
+    if (slice.has(" :"))
     {
         event.content = slice.nom(" :");
     }
 
     foreach (value; event.content.splitter(' '))
     {
-        if (value.indexOf('=') == -1) continue;
+        if (!value.has('=')) continue;
 
         immutable key = value.nom('=');
 
@@ -1627,7 +1627,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     slice.nom(' ');  // nickname
 
-    if ((slice == ":-") && (parser.bot.server.address.indexOf(".twitch.tv") != -1))
+    if ((slice == ":-") && (parser.bot.server.address.has(".twitch.tv")))
     {
         parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
         parser.bot.server.network = "Twitch";
@@ -1646,25 +1646,25 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
     with (parser.bot.server)
     with (IRCServer.Daemon)
     {
-        if (daemonstring_.indexOf("unreal") != -1)
+        if (daemonstring_.has("unreal"))
         {
             daemon = unreal;
         }
-        else if (daemonstring_.indexOf("inspircd") != -1)
+        else if (daemonstring_.has("inspircd"))
         {
             daemon = inspircd;
         }
-        else if (daemonstring_.indexOf("u2.") != -1)
+        else if (daemonstring_.has("u2."))
         {
             daemon = u2;
         }
-        else if (daemonstring_.indexOf("bahamut") != -1)
+        else if (daemonstring_.has("bahamut"))
         {
             daemon = bahamut;
         }
-        else if (daemonstring_.indexOf("hybrid") != -1)
+        else if (daemonstring_.has("hybrid"))
         {
-            if (address.indexOf(".rizon.") != -1)
+            if (address.has(".rizon."))
             {
                 daemon = rizon;
             }
@@ -1673,19 +1673,19 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
                 daemon = hybrid;
             }
         }
-        else if (daemonstring_.indexOf("ratbox") != -1)
+        else if (daemonstring_.has("ratbox"))
         {
             daemon = ratbox;
         }
-        else if (daemonstring_.indexOf("charybdis") != -1)
+        else if (daemonstring_.has("charybdis"))
         {
             daemon = charybdis;
         }
-        else if (daemonstring_.indexOf("ircd-seven") != -1)
+        else if (daemonstring_.has("ircd-seven"))
         {
             daemon = ircdseven;
         }
-        /*else if (daemonstring_.indexOf("") != -1)
+        /*else if (daemonstring_.has(""))
         {
             daemon = unknown;
         }*/
@@ -1905,7 +1905,7 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
             (sender.address == "Services.GameSurge.net"));
 
     default:
-        if (sender.address.indexOf("/staff/") != -1)
+        if (sender.address.has("/staff/"))
         {
             // Staff notice
             return false;
@@ -2009,9 +2009,9 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
 
     if ((line[0] != '#') && (line[0] != '&')) return false;
 
-    if ((line.indexOf(' ') != -1) ||
-        (line.indexOf(',') != -1) ||
-        (line.indexOf(7) != -1))
+    if (line.has(' ') ||
+        line.has(',') ||
+        line.has(7))
     {
         // Contains spaces, commas or byte 7
         return false;
@@ -2021,8 +2021,8 @@ bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
-        return (line[2..$].indexOf('#') == -1) &&
-                (line[2..$].indexOf('&') == -1);
+        return (!line[2..$].has('#')) &&
+                (!line[2..$].has('&'));
     }
 
     return false;
