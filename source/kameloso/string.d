@@ -214,7 +214,8 @@ unittest
  +  ------------
  +/
 pragma(inline)
-string plurality(const int num, const string singular, const string plural) pure
+T plurality(T)(const int num, const T singular, const T plural)
+if (isSomeString!T)
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
