@@ -11,6 +11,49 @@ import std.stdio;
 private:
 
 
+// onAnyEvent
+/++
+ +  Prints all incoming events raw if the flag to do so has been set with
+ +  `onCommandPrintAll`, by way of the `printall` verb. Also prints the content
+ +  of any incomings events, cast to bytes.
+ +
+ +  Params:
+ +      event = the event whose raw IRC string to print.
+ +/
+@(Chainable)
+@(IRCEvent.Type.ANY)
+@(ChannelPolicy.any)
+void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
+{
+    if (plugin.printAll) logger.trace(event.raw, '$');
+
+    if (plugin.printBytes)
+    {
+        import std.string : representation;
+
+        foreach (i, c; event.content.representation)
+        {
+            writefln("[%d] %s : %03d", i, cast(char)c, c);
+        }
+    }
+
+    if (plugin.printAsserts)
+    {
+        import kameloso.debugging : formatEventAssertBlock;
+        import std.algorithm.searching : canFind;
+
+        if ((cast(ubyte[])event.raw).canFind(1))
+        {
+            logger.warning("event.raw contains CTCP 1 which might not get printed");
+        }
+
+        formatEventAssertBlock(stdout.lockingTextWriter, event);
+        writeln();
+        stdout.flush();
+    }
+}
+
+
 // onCommandShowUsers
 /++
  +  Prints out the current `state.users` array in the local terminal.
@@ -302,49 +345,6 @@ void onCommandAsserts(AdminPlugin plugin)
     plugin.printAsserts = !plugin.printAsserts;
     logger.info("Printing asserts: ", plugin.printAsserts);
     formatBot(stdout.lockingTextWriter, plugin.state.bot);
-}
-
-
-// onAnyEvent
-/++
- +  Prints all incoming events raw if the flag to do so has been set with
- +  `onCommandPrintAll`, by way of the `printall` verb. Also prints the content
- +  of any incomings events, cast to bytes.
- +
- +  Params:
- +      event = the event whose raw IRC string to print.
- +/
-@(Chainable)
-@(IRCEvent.Type.ANY)
-@(ChannelPolicy.any)
-void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
-{
-    if (plugin.printAll) logger.trace(event.raw, '$');
-
-    if (plugin.printBytes)
-    {
-        import std.string : representation;
-
-        foreach (i, c; event.content.representation)
-        {
-            writefln("[%d] %s : %03d", i, cast(char)c, c);
-        }
-    }
-
-    if (plugin.printAsserts)
-    {
-        import kameloso.debugging : formatEventAssertBlock;
-        import std.algorithm.searching : canFind;
-
-        if ((cast(ubyte[])event.raw).canFind(1))
-        {
-            logger.warning("event.raw contains CTCP 1 which might not get printed");
-        }
-
-        formatEventAssertBlock(stdout.lockingTextWriter, event);
-        writeln();
-        stdout.flush();
-    }
 }
 
 
