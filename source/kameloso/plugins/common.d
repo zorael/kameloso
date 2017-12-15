@@ -752,7 +752,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                                 static if (verbose)
                                 {
-                                    writeln("%s.%s WHOIS for %s",
+                                    writefln("%s.%s WHOIS for %s",
                                         typeof(this).stringof,
                                         __traits(identifier, fun), event.type);
                                 }
@@ -811,7 +811,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (verbose)
                     {
-                        writeln("%s.%s on %s", typeof(this).stringof,
+                        writefln("%s.%s on %s", typeof(this).stringof,
                             __traits(identifier, fun), event.type);
                     }
 
