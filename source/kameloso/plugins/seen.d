@@ -221,28 +221,15 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
      +  Use a `splitter` to iterate each name and call `updateUser` to update
      +  (or create) their entry in the seenUsers `JSON` storage.
      +/
-    foreach (const nickname; event.content.splitter(" "))
+    foreach (const signed; event.content.splitter(" "))
     {
+        import kameloso.irc : stripModeSign;
+
+        immutable nickname = signed.stripModeSign();
+        if (nickname == plugin.state.bot.nickname) continue;
+
         plugin.updateUser(nickname);
     }
-}
-
-
-/++
- +  When the batch of `RPL_NAMREPLY` and/or `RPL_WHOREPLY` events end (and there
- +  may be a *lot* of replies) an `RPL_ENDOFNAMES` and `RPL_ENDOFWHO` event is
- +  always fired, respectively.
- +
- +  We know there are likely some outstanding changes from all the
- +  `RPL_NAMREPLY` and/or `RPL_WHOREPLY` events, so use this as a hook to
- +  batch-save all seen nicknames to disk. It's as good a time as any.
- +/
-@(IRCEvent.Type.RPL_ENDOFWHO)
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-void onEndOfNames(SeenPlugin plugin)
-{
-    /// Save seen users to disk as persistent storage.
-    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 
 
