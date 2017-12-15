@@ -1075,7 +1075,7 @@ if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncod
     {
         import std.string : indexOf;
         // dstring and wstring only work with indexOf, not countUntil
-        return haystack.indexOf(needle) != 1;
+        return haystack.indexOf(needle) != -1;
     }
     else
     {
