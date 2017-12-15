@@ -79,8 +79,6 @@ void onSelfpart(ConnectPlugin plugin, const IRCEvent event)
             if (homeIndex != -1)
             {
                 logger.warning("Leaving a home...");
-                bot.homes = bot.homes.remove(homeIndex);
-                bot.updated = true;
             }
             else
             {
