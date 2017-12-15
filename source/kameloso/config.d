@@ -29,9 +29,13 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 
     static if (banner)
     {
+        import core.time : msecs;
         import std.datetime.systime : Clock;
 
-        file.writefln("# kameloso bot config (%s)", Clock.currTime);
+        auto timestamp = Clock.currTime;
+        timestamp.fracSecs = 0.msecs;
+
+        file.writefln("# kameloso bot config (%s)", timestamp);
         file.writeln();
     }
 
