@@ -179,15 +179,15 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     with (plugin.state)
     {
-        immutable chanIndex = bot.homes.countUntil(channel);
+        immutable homeIndex = bot.homes.countUntil(channel);
 
-        if (chanIndex == -1)
+        if (homeIndex == -1)
         {
             logger.errorf("Channel %s was not in bot.homes", channel);
             return;
         }
 
-        bot.homes = bot.homes.remove(chanIndex);
+        bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
         mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
     }
