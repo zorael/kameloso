@@ -23,8 +23,6 @@ import std.stdio;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
-    import std.file : exists, isFile, removeFile = remove;
-
     auto file = File(filename, "w");
 
     static if (banner)

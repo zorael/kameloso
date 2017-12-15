@@ -419,18 +419,10 @@ JSONValue loadSeenFile(const string filename)
  +/
 void saveSeen(const JSONValue jsonStorage, const string filename)
 {
-    import std.ascii : newline;
-    import std.file  : exists, isFile, remove;
-
-    if (filename.exists && filename.isFile)
-    {
-        remove(filename); // Wise?
-    }
-
-    auto file = File(filename, "a");
+    auto file = File(filename, "w");
 
     file.write(jsonStorage.toPrettyString);
-    file.write(newline);
+    file.writeln();
 }
 
 

@@ -96,18 +96,10 @@ void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
  +/
 void saveQuotes(ChatbotPlugin plugin, const string filename)
 {
-    import std.ascii : newline;
-    import std.file  : exists, isFile, remove;
-
-    if (filename.exists && filename.isFile)
-    {
-        remove(filename); // Wise?
-    }
-
-    auto file = File(filename, "a");
+    auto file = File(filename, "w");
 
     file.write(plugin.quotes.toPrettyString);
-    file.write(newline);
+    file.writeln();
 }
 
 
