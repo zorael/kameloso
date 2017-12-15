@@ -590,9 +590,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 break;
 
                             case optional:
-                                if (content.beginsWith(bot.nickname))
+                                if (content.beginsWith('@'))
                                 {
-                                    mutEvent.content = content
+                                    // Using @name to refer to someonen is not
+                                    // uncommon; allow for it and strip it away
+                                    mutEvent.content = content[1..$];
+                                }
+
+                                if (mutEvent.content.beginsWith(bot.nickname))
+                                {
+                                    mutEvent.content = mutEvent.content
                                         .stripPrefix(bot.nickname);
                                 }
                                 break;
@@ -610,16 +617,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 goto case hardRequired;
 
                             case hardRequired:
-                                if (content.beginsWith(bot.nickname) &&
-                                   (content.length > bot.nickname.length))
+                                if (content.beginsWith('@'))
+                                {
+                                    mutEvent.content = content[1..$];
+                                }
+
+                                if (mutEvent.content.beginsWith(bot.nickname) &&
+                                   (mutEvent.content.length > bot.nickname.length))
                                 {
                                     static if (verbose)
                                     {
                                         writefln("%s trailing character '%s'",
-                                            name, content[bot.nickname.length]);
+                                            name, mutEvent.content[bot.nickname.length]);
                                     }
 
-                                    switch (content[bot.nickname.length])
+                                    switch (mutEvent.content[bot.nickname.length])
                                     {
                                     case ':':
                                     case ' ':
@@ -648,7 +660,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                                 // Event.content *guaranteed* to begin with
                                 // privateState.bot.nickname here
-                                mutEvent.content = content
+                                mutEvent.content = mutEvent.content
                                     .stripPrefix(bot.nickname);
                                 break;
                             }
@@ -662,8 +674,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                                 import std.typecons : Yes;
 
-                                contextPrefix = mutEvent
-                                    .content
+                                contextPrefix = mutEvent.content
                                     .nom!(Yes.decode)(' ')
                                     .toLower();
                             }
