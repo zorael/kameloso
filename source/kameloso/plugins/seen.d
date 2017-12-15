@@ -243,26 +243,39 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
 {
-    /// Twitch servers don't support `WHO` commands.
-    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
-
-    foreach (const channel; plugin.state.bot.homes)
+    with (plugin)
     {
-        import std.concurrency : send;
+        /// Twitch servers don't support `WHO` commands.
+        if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-        /++
-         +  The bot uses concurrency messages to queue strings to be sent to the
-         +  server. This has benefits such as that even a multi-threaded program
-         +  will have synchronous messages sent, and it's overall an easy and
-         +  convenient way for plugin to send messages up the stack.
-         +
-         +  Future work may change this.
-         +
-         +  The `ThreadMessage.Sendline` is one of several concurrency message
-         +  "types" defined in `kameloso.common`, and this is why we wanted to
-         +  import that.
-         +/
-        plugin.state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
+        foreach (const channel; state.bot.homes)
+        {
+            import std.concurrency : send;
+
+            /++
+            +  The bot uses concurrency messages to queue strings to be sent to the
+            +  server. This has benefits such as that even a multi-threaded program
+            +  will have synchronous messages sent, and it's overall an easy and
+            +  convenient way for plugin to send messages up the stack.
+            +
+            +  Future work may change this.
+            +
+            +  The `ThreadMessage.Sendline` is one of several concurrency message
+            +  "types" defined in `kameloso.common`, and this is why we wanted to
+            +  import that.
+            +/
+            state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
+        }
+
+        import std.datetime.systime : Clock;
+
+        const now = Clock.currTime;
+        if (now.day != plugin.today)
+        {
+            /// Once a day, save the JSON storage to disk.
+            plugin.today = now.day;
+            seenUsers.saveSeen(seenSettings.seenFile);
+        }
     }
 }
 
@@ -428,8 +441,12 @@ void saveSeen(const JSONValue jsonStorage, const string filename)
  +/
 void start(IRCPlugin rawPlugin)
 {
+    import std.datetime.systime : Clock;
+
     auto plugin = cast(SeenPlugin)rawPlugin;
     plugin.seenUsers = loadSeenFile(plugin.seenSettings.seenFile);
+
+    plugin.today = Clock.currTime.day;
 }
 
 
@@ -471,6 +488,9 @@ final class SeenPlugin : IRCPlugin
 {
     /// An instance of settings for the Seen plugin.
     @Settings SeenSettings seenSettings;
+
+    /// The current day of the week, tracked so we can do stuff when it changes
+    uint today;
 
     /// The in-memory JSON storage of seen users.
     JSONValue seenUsers;
