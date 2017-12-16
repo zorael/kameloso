@@ -82,6 +82,9 @@ private:
  +/
 struct SeenSettings
 {
+    /// How often to save seen users to disk (aside from program exit).
+    int hoursBetweenSaves = 6;
+
     /// A file to persistently store our seen users inbetween executions.
     string seenFile = "seen.conf";
 }
@@ -270,10 +273,11 @@ void onPing(SeenPlugin plugin)
         import std.datetime.systime : Clock;
 
         const now = Clock.currTime;
-        if (now.day != plugin.today)
+
+        /// Once every n hours, save the JSON storage to disk.
+        if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
-            /// Once a day, save the JSON storage to disk.
-            plugin.today = now.day;
+            nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
             seenUsers.saveSeen(seenSettings.seenFile);
         }
     }
@@ -435,10 +439,26 @@ void start(IRCPlugin rawPlugin)
 {
     import std.datetime.systime : Clock;
 
-    auto plugin = cast(SeenPlugin)rawPlugin;
-    plugin.seenUsers = loadSeenFile(plugin.seenSettings.seenFile);
+    SeenPlugin plugin = cast(SeenPlugin)rawPlugin;
+    with (plugin)
+    {
+        seenUsers = loadSeenFile(seenSettings.seenFile);
 
-    plugin.today = Clock.currTime.day;
+        if ((seenSettings.hoursBetweenSaves > 24) ||
+            (seenSettings.hoursBetweenSaves < 0))
+        {
+            logger.warning("Invalid setting for hours between saves: ",
+                seenSettings.hoursBetweenSaves);
+            logger.warning("It must be a number between 1 and 24 (0 disables)");
+
+            seenSettings.hoursBetweenSaves = 0;
+        }
+        else
+        {
+            // Initialise nextHour to occur in hoursBetweenSaves h
+            nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
+        }
+    }
 }
 
 
@@ -481,8 +501,8 @@ final class SeenPlugin : IRCPlugin
     /// An instance of settings for the Seen plugin.
     @Settings SeenSettings seenSettings;
 
-    /// The current day of the week, tracked so we can do stuff when it changes
-    uint today;
+    /// The next hour we should save to disk.
+    uint nextHour;
 
     /// The in-memory JSON storage of seen users.
     JSONValue seenUsers;
