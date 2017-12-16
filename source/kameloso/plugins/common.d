@@ -581,7 +581,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     }
 
                                     mutEvent.content = content;
-                                    mutEvent.content.nom(settings.prefix);
+                                    mutEvent.content.nom!(Yes.decode)
+                                        (settings.prefix);
                                 }
                                 else
                                 {

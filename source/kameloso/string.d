@@ -413,7 +413,7 @@ string stripPrefix(const string line, const string prefix)
     string slice = line.stripLeft();
 
     // the onus is on the caller that slice begins with prefix
-    slice.nom(prefix);
+    slice.nom!(Yes.decode)(prefix);
 
     enum pattern = "[:?! ]*(.+)";
     static engine = ctRegex!pattern;
