@@ -59,7 +59,7 @@ Unit tests are built into the language, but you need to compile in `unittest` mo
 
     $ dub build -b unittest
 
-The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run the program immediately.
+The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run the program in one go.
 
 The available *build configurations* are:
 
@@ -68,7 +68,7 @@ The available *build configurations* are:
 * `web`, compiles in plugins with web lookup (`bashquotes`, `webtitles` and `reddit`)
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, compiles both `colours` and `web`
-* `windows`, default on Window, equals `vanilla`
+* `windows`, default on Windows, equals `vanilla`
 
 You can specify which to build with the `-c` switch.
 
@@ -114,7 +114,7 @@ The *prefix* character (here '`!`') is configurable; see your generated configur
     [Core]
     prefix              !
 
-It can technically be any string and not just one character. Enquote it if you want spaces inbetween, like `"please "`.
+It can technically be any string and not just one character. Enquote it if you want spaces as part of the keyword, like `"please "`.
 
 ## Twitch
 
