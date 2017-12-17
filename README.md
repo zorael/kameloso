@@ -4,18 +4,18 @@
 
 Features are added as plugins, written as [D](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. Ideas welcome.
 
-It includes a framework that works with the vast majority of server networks. IRC servers come in many [flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png) and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
+It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png) and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their `NickServ`/`Q`/`AuthServ` login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a tutorial and a simple example of how plugins work (moderately outdated)
+* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
 * looking up titles of pasted web URLs
-* Reddit post lookup (which Reddit post links to this or that URL)
+* Reddit post lookup
 * Twitch events; simple Twitch chatbot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
@@ -26,7 +26,7 @@ Current functionality includes:
 
 There are a few Windows caveats.
 
-* Web URL title lookup may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
+* Web URL title lookup, including the Bash and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours *disabled*, but they can be enabled by specifying a different *build configuration*.
 * Text output will *not* work well with the default **Cygwin** terminal, due to some nuances of how it does or doesn't present itself as a `tty`. There are some workarounds for most output, though they aren't exposed for now.
 
@@ -65,7 +65,7 @@ The available *build configurations* are:
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
-* `web`, compiles in plugins with web lookup (`bashquotes`, `webtitles` and `reddit`)
+* `web`, compiles in plugins with web lookup (`webtitles`, `bashquotes` and `reddit`)
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, compiles both `colours` and `web`
 * `windows`, default on Windows, equals `vanilla`
@@ -76,13 +76,13 @@ You can specify which to build with the `-c` switch.
 
 # How to use
 
-The bot needs the *services* login name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the services login name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you have an old configuration file and you notice missing options such as plugin-specific settings, just run `--writeconfig` again and your file should be updated with all fields. There are *many* more plugin-specific and less important options available than what is displayed at program start.
+If you have an old configuration file and you notice missing options, such as plugin-specific settings, just run `--writeconfig` again and your file should be updated with all entries. There are *many* more plugin-specific and less important options available than what is displayed at program start.
 
 The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [ANSI colours](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
 
@@ -114,7 +114,7 @@ The *prefix* character (here '`!`') is configurable; see your generated configur
     [Core]
     prefix              !
 
-It can technically be any string and not just one character. Enquote it if you want spaces as part of the keyword, like `"please "`.
+It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix token, like `"please "`.
 
 ## Twitch
 
@@ -147,7 +147,6 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 * concurrency message-checking as Fiber?
-* fix `seen.d`, update to current standards
 * hot-saving of configuration files (for `addfriend` and such)
 
 # Built With
