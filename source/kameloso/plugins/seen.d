@@ -7,18 +7,20 @@
  +  We will implement this by keeping an internal `JSON` array of nicknames
  +  paired with timestamps. Whenever we see a user do something, we will update
  +  his or her timestamp with the current time. We'll save this array to disk
- +  when closing the program and read it from file when starting it.
+ +  when closing the program and read it from file when starting it, as well as
+ +  occasionally once every few hours.
  +
  +  To be more thorough we will also query the server for the users in our home
- +  channels, once per `PING`. This will give us a bit more precision, as it
- +  will catch users who otherwise haven't performed any action we were
- +  listening for. Otherwise, a completely silent participant will never get
- +  recorded as being seen.
+ +  channels, once per `PING`. Pings occur once every few minutes. This will
+ +  give us a bit more precision, as it will catch users who otherwise haven't
+ +  performed any action we were listening for. Otherwise, a completely silent
+ +  participant will never get recorded as being seen.
  +
- +  kameloso does not use callbacks, but instead annotate functions with `UDA`s,
- +  or *User Defined Annotations*. In essence, we will tag our functions with
- +  the kind or kinds of IRC events that should invoke them. Annotations look
- +  like so:
+ +  kameloso does not use callbacks, but instead annotates functions with
+ +  `UDA`s, or *User Defined Annotations*. In essence, we will tag our functions
+ +  with the kind or kinds of IRC events that should invoke them.
+ +
+ +  Annotations look like so:
  +
  +  --------------
  +  @SomeUDA
@@ -41,115 +43,66 @@
  +/
 module kameloso.plugins.seen;
 
-/// We need things from `kameloso.plugins.common` for obvious reasons, so we
-/// import it.
+/++
+ +  We'll want to import parts of the rest of the program, else it won't
+ +  function.
+ +
+ +  We need things from `kameloso.plugins.common` for obvious reasons, so we
+ +  import that.
+ +/
 import kameloso.plugins.common;
 
-/// Likewise `kameloso.ircdefs` for the definitions of an IRC event.
+/// Likewise `kameloso.ircdefs`, for the definitions of an IRC event.
 import kameloso.ircdefs;
 
-/// `kameloso.common` is also a good idea; we will need it when we want to send
-/// text to the server.
+/++
+ +  `kameloso.common` is also a good idea; we will need it when we want to send
+ +  text to the server.
+ +/
 import kameloso.common;
 
 /// `std.json` for our `JSON` storage.
 import std.json;
 
-/// `std.stdio` may come in handy if we want to debug something.
+/// `std.stdio` may come in handy if we want to printf-debug something.
 import std.stdio;
 
 
 /++
- +  Most of the plugin can be kept private. There is one exceptions that we will
- +  take care of at the end of the file, but the rest might as well be hidden to
- +  the outside world.
+ +  Most of the module can (and ideally should) be kept private. Even if
+ +  something is private it will be visible to eveything in the same module, so
+ +  we're essentially only limiting what other modules can see.
  +
- +  Even if something is private it will be visible to eveything in the same
- +  module, so we're essentially only limiting what other modules can see.
+ +  Our surface area here will be only one `IRCPlugin` class, which we'll define
+ +  in the end.
  +/
 private:
 
 
 /++
  +  We want our plugin to be *configurable* with a section for itself in the
- +  configuration file. For this purpose we create a `Settings` struct housing
+ +  configuration file. For this purpose we create a "Settings" struct housing
  +  our configurable bits.
  +
  +  If the name ends with "Settings", that will be stripped from its section
  +  header in the file. Hence, this plugin will get the header `[Seen]`.
  +
  +  Each member of the struct will be given its own line in there.
+ +
+ +  We will leave it for now; just know that we'll be able to access any
+ +  settings therein from elsewhere in the plugin.
  +/
 struct SeenSettings
 {
     /// How often to save seen users to disk (aside from program exit).
     int hoursBetweenSaves = 6;
 
-    /// A file to persistently store our seen users inbetween executions.
+    /+
+     +  The filename to which to persistently store our list of seen users
+     +  between executions of the program.
+     +/
     string seenFile = "seen.conf";
 }
-
-/++
- +  We need one instance of those settings, and we annotate it `@Settings`.
- +  This is the hook that makes the program save the `SeenSettings` in the
- +  configuration file. Merely annotate it such and it'll be there.
- +/
-//@Settings SeenSettings seenSettings;
-
-
-// IRCPluginState
-/++
- +  The `IRCPluginState` is a struct housing various variables that together
- +  make the plugin's *state*. This is where information is kept about the bot,
- +  the server, and some metathings allowing us to send messages to the server.
- +
- +  --------------
- +  struct IRCPluginState
- +  {
- +      IRCBot bot;
- +      CoreSettings settings;
- +      Tid mainThread;
- +      IRCUser[string] users;
- +      WHOISRequest[string] whoisQueue;
- +  }
- +  --------------
- +
- +  * `bot` houses information about the bot itself, and the server you're
- +    connected to.
- +
- +  * `settings` contains a few program-wide settings, not specific to a plugin.
- +
- +  * `mainThread` is the *thread ID* of the thread running the main loop. We
- +    will use it to send messages to the server, via concurrency messages to
- +    it.
- +
- +  * `users` is an associative array keyed with users' nicknames. The value to
- +     that key is an `IRCUser` representing that user in terms of nickname,
- +     address, ident, and nickname services login. This is a way to keep
- +     track of users by more than merely their name. It is however not saved at
- +     the end of the program; it is merely state.
- +
- +  * `whoisQueue` is also an associative array into which we place
- +    `WHOISRequest`s. The main loop will pick up on these and call `WHOIS` on
- +     the nickname in the key. A `WHOISRequest` is otherwie just an `IRCEvent`
- +     to be played back when the `WHOIS` results return, as well as a function
- +     pointer to call with that event.
- +/
-//IRCPluginState state;
-
-/++
- +  Our JSON storage of seen users; an array keyed with users' nicknames and
- +  with values that are UNIX timetamps, denoting when that user was last seen.
- +  It is in essence an associative array of type `long[string]`, where the
- +  string key is the nickname and the long the timestamp.
- +
- +  --------------
- +  seenUsers["joe"] = Clock.currTime.toUnixTime;
- +  auto now = Clock.currTime.toUnixTime;
- +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"].integer));
- +  --------------
- +/
-//JSONValue seenUsers;
 
 
 // onSomeAction
@@ -160,6 +113,12 @@ struct SeenSettings
  +  This function will be called whenever an `IRCEvent` is being processed of
  +  the `IRCEvent.Type`s that we annotate the function with. There are still no
  +  callbacks involved.
+ +
+ +  The `Chainable` annotations mean that the plugin will also process other
+ +  functions with the same `IRCEvent.Type` annotations, even if this one
+ +  matched. The default is otherwise that it will end early after one match,
+ +  but this doesn't ring well with catch-all functions like these. It's faster
+ +  to save `Chainable` for the functions that actually need it.
  +
  +  The `ChannelPolicy` annotation decides whether this function should be
  +  called based on the `channel` the event took place in, if applicable.
@@ -178,9 +137,16 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     /++
      +  This will, as such, be automatically called on `EMOTE`, `QUERY`, `JOIN`,
-     +  `PART` and `QUIT` events. Furthermore, in the case where there is a
-     +  channel (all but `QUIT`), it will only trigger if it took place in a
-     +  home channel.
+     +  and `PART` events. Furthermore, it will only trigger if it took place in
+     +  a home channel.
+     +
+     +  It says `plugin.updateUser(...)` but there is no method `updateUser` in
+     +  the `SeenPlugin plugin`. This is an example of *UFCS*, or Uniform
+     +  Function Call Syntax. It is rewritten into `updateUser(plugin, ...)`,
+     +  and we'll make heavy use of it. With it, top-level functions can act as
+     +  *pseudomembers* of (here) `SeenPlugin`. Virtually the entirety of our
+     +  implementation will be top-level, outside of the `SeenPlugin`, and then
+     +  called like this to act as if they were class member methods.
      +
      +  Update the user's timestamp to the current time.
      +/
@@ -188,7 +154,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 }
 
 
-// onNames
+// onWHOReply
 /++
  +  Whenever a channel has its members enumerated, such as when requesting
  +  `WHO #channel`, it returns several replies, one per each user in the
@@ -210,9 +176,12 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 /++
  +  When requesting `NAMES` on a channel, the server will do a big list of every
  +  participant in it, in a big string of nicknames separated by spaces. This
- +  is done automatically when you join a channel.
+ +  is done automatically when you join a channel. Nicknames are prefixed with
+ +  mode signs if they are operators, voiced or similar, so we'll need to strip
+ +  that away.
  +
- +  We want to catch that as well and record each person as having been seen.
+ +  We want to catch the `NAMES` reply and record each person as having been
+ +  seen.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.homeOnly)
@@ -256,17 +225,18 @@ void onPing(SeenPlugin plugin)
             import std.concurrency : send;
 
             /++
-            +  The bot uses concurrency messages to queue strings to be sent to the
-            +  server. This has benefits such as that even a multi-threaded program
-            +  will have synchronous messages sent, and it's overall an easy and
-            +  convenient way for plugin to send messages up the stack.
-            +
-            +  Future work may change this.
-            +
-            +  The `ThreadMessage.Sendline` is one of several concurrency message
-            +  "types" defined in `kameloso.common`, and this is why we wanted to
-            +  import that.
-            +/
+             +  The bot uses concurrency messages to queue strings to be sent to
+             +  the server. This has benefits such as that even a multi-threaded
+             +  program will have synchronous messages sent, and it's overall an
+             +  easy and convenient way for plugin to send messages up the
+             +  stack.
+             +
+             +  Future work may change this.
+             +
+             +  The `ThreadMessage.Sendline` is one of several concurrency
+             +  message "types" defined in `kameloso.common`, and this is part
+             +  of why we wanted to import that.
+             +/
             state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
         }
 
@@ -294,11 +264,11 @@ void onPing(SeenPlugin plugin)
  +  whether the message has to start with the name of the *bot* or not, and to
  +  what extent. It can be one of:
  +  * `optional`, where the bot's nickname will be allowed and stripped away,
- +    but the function will still be invoked given the right prefix string.
+ +     but the function will still be invoked given the right prefix string.
  +  * `required`, where the message has to start with the name of the bot if in
- +    a `CHAN` message, but it needn't be there in a `QUERY`.
+ +     a `CHAN` message, but it needn't be there in a `QUERY`.
  +  * `hardRequired`, where the message *has* to start with the bot's nickname
- +    at all times, or this function will not be called.
+ +     at all times, or this function will not be called.
  +
  +  The `IRCEvent` will probably look something like this:
  +
@@ -311,7 +281,7 @@ void onPing(SeenPlugin plugin)
  +  --------------
  +
  +  The plugin system will have made certain we only get messages starting with
- +  "seen", since we annotated this funtcion with such a `Prefix`. It will since
+ +  "seen", since we annotated this function with such a `Prefix`. It will since
  +  have been sliced off, so we're left only with the "arguments" to "seen".
  +
  +  If this is a `CHAN` event, the original lines was probably
@@ -337,6 +307,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
     if (event.sender.nickname == event.content)
     {
+        // The person is asking for seen information about him-/herself.
+
         plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :That's you!"
             .format(target));
@@ -347,6 +319,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
     if (!userTimestamp)
     {
+        // No matches for nickname `event.content` in `plugin.seenUsers`.
+
         plugin.state.mainThread.send(ThreadMessage.Sendline(),
             "PRIVMSG %s :I have never seen %s."
             .format(target, event.content));
@@ -366,6 +340,16 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 /++
  +  As a tool to help debug, print the current `seenUsers` JSON storage to the
  +  local terminal.
+ +
+ +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
+ +  function. It has three modes; `anyone`, `friend` and `master`.
+ +
+ +  * `anyone` will let precisely anyone trigger it, without looking them up.
+ +  * `friend will look whoever up and compare their *services login* with the
+ +  *  whitelist in the `friends` array in the configuration file.
+ +  * `master` will allow only you. It will still look you up, but compare your
+ +     services login name with the one in the `master` field in the
+ +     configuration file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -382,14 +366,17 @@ void onCommandPrintSeen(SeenPlugin plugin)
 /++
  +  Update a given nickname's entry in the `JSON` seen storage with the current
  +  time, expressed in UNIX time.
+ +
+ +  This is not annotated with an IRC event type and will merely be invoked from
+ +  elsewhere, like any normal function.
  +/
 void updateUser(SeenPlugin plugin, const string nickname)
 {
     import kameloso.irc : stripModeSign;
     import std.datetime.systime : Clock;
 
-    /// Make sure to strip the modesign, so @foo is the same person as foo.
-    plugin.seenUsers[nickname.stripModeSign] = Clock.currTime.toUnixTime;
+    /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
+    plugin.seenUsers[nickname.stripModeSign()] = Clock.currTime.toUnixTime;
 }
 
 
@@ -430,16 +417,16 @@ void saveSeen(const JSONValue jsonStorage, const string filename)
 }
 
 
-// start
+// onEndOfMotd
 /++
- +  Late during program start, when connection has just been established, load
- +  the seen users from file.
+ +  After we have registered on the server and seen the message of the day spam,
+ +  load our seen users from file.
  +/
-void start(IRCPlugin rawPlugin)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd(SeenPlugin plugin)
 {
     import std.datetime.systime : Clock;
 
-    SeenPlugin plugin = cast(SeenPlugin)rawPlugin;
     with (plugin)
     {
         seenUsers = loadSeenFile(seenSettings.seenFile);
@@ -453,9 +440,9 @@ void start(IRCPlugin rawPlugin)
 
             seenSettings.hoursBetweenSaves = 0;
         }
-        else
+        else if (seenSettings.hoursBetweenSaves > 0)
         {
-            // Initialise nextHour to occur in hoursBetweenSaves h
+            // Initialise nextHour to occur in `hoursBetweenSaves` hours
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
         }
     }
@@ -469,7 +456,7 @@ void start(IRCPlugin rawPlugin)
  +/
 void teardown(IRCPlugin basePlugin)
 {
-    auto plugin = cast(SeenPlugin)basePlugin;
+    SeenPlugin plugin = cast(SeenPlugin)basePlugin;
     plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 
@@ -479,32 +466,92 @@ void teardown(IRCPlugin basePlugin)
  +  `kameloso.plugins.common` to deal with common housekeeping that every plugin
  +  wants done. Mixing it in copies and pastes it here.
  +
- +  It's boilerplate so you don't have to deal with some very basic things, like
- +  managing users saved in our `IRCPluginState.users` array. It is not
- +  mandatory but highly recommended in the vast majority of cases.
+ +  It's boilerplate so you don't have to deal with some very basic things. It
+ +  is not mandatory but highly recommended in nearly all cases.
  +/
 mixin BasicEventHandlers;
 
 
-// We're done with all private bits, remaining is the thing that must be public.
+/++
+ +  Finally, our public bits.
+ +/
 public:
 
 
 // SeenPlugin
 /++
  +  This is your plugin to the outside world, the only thing visible in the
- +  entire mdule. It only serves as a way of proxying calls to our top-level
+ +  entire module. It only serves as a way of proxying calls to our top-level
  +  private functions.
+ +
+ +  It also houses this plugin's *state*, notably its instance of `SeenSettings`
+ +  and its `IRCPluginState`.
+ +
+ +  The `IRCPluginState` is a struct housing various variables that together
+ +  make the plugin's *state*. This is where information is kept about the bot,
+ +  the server, and some metathings allowing us to send messages to the server.
+ +
+ +  --------------
+ +  struct IRCPluginState
+ +  {
+ +      IRCBot bot;
+ +      CoreSettings settings;
+ +      Tid mainThread;
+ +      IRCUser[string] users;
+ +      WHOISRequest[string] whoisQueue;
+ +  }
+ +  --------------
+ +
+ +  * `bot` houses information about the bot itself, and the server you're
+ +     connected to.
+ +
+ +  * `settings` contains a few program-wide settings, not specific to a plugin.
+ +
+ +  * `mainThread` is the *thread ID* of the thread running the main loop. We
+ +     will use it to send messages to the server, via concurrency messages to
+ +     it.
+ +
+ +  * `users` is an associative array keyed with users' nicknames. The value to
+ +     that key is an `IRCUser` representing that user in terms of nickname,
+ +     address, ident, and nickname services login. This is a way to keep
+ +     track of users by more than merely their name. It is however not saved at
+ +     the end of the program; it is merely state.
+ +
+ +  * `whoisQueue` is also an associative array into which we place
+ +    `WHOISRequest`s. The main loop will pick up on these and call `WHOIS` on
+ +     the nickname in the key. A `WHOISRequest` is otherwie just an `IRCEvent`
+ +     to be played back when the `WHOIS` results return, as well as a function
+ +     pointer to call with that event.
  +/
 final class SeenPlugin : IRCPlugin
 {
-    /// An instance of settings for the Seen plugin.
+    /++
+     +  An instance of *settings* for the Seen plugin. We defined this at the
+     +  top; the members of it will be saved to and loaded from the
+     +  configuration file, for use in our module. Merely annotating it
+     +  `@Settings` will ensure it ends up there.
+     +/
     @Settings SeenSettings seenSettings;
 
-    /// The next hour we should save to disk.
+    /++
+     +  The next hour we should save to disk. We set it up to do it
+     +  occasionally, once every `seenSettings.hoursBetweenSaves`.
+     +/
     uint nextHour;
 
-    /// The in-memory JSON storage of seen users.
+    /++
+     +  Our JSON storage of seen users; an array keyed with users' nicknames and
+     +  with values that are UNIX timetamps, denoting when that user was last
+     +  seen. It is in essence an associative array or dictionary of type
+     +  `long[string]`, where the `string` key is the nickname and the `long`
+     +  the timestamp.
+     +
+     +  --------------
+     +  seenUsers["joe"] = Clock.currTime.toUnixTime;
+     +  auto now = Clock.currTime.toUnixTime;
+     +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"].integer));
+     +  --------------
+     +/
     JSONValue seenUsers;
 
     /++
