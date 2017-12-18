@@ -54,6 +54,22 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandSave
+/++
+ +  Saves current configuration to disk.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "save")
+@Prefix(NickPolicy.required, "writeconfig")
+void onCommandSave(AdminPlugin plugin)
+{
+    logger.info("Saving configuration to disk.");
+    plugin.state.mainThread.send(ThreadMessage.Save());
+}
+
+
 // onCommandShowUsers
 /++
  +  Prints out the current `state.users` array in the local terminal.
