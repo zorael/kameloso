@@ -56,6 +56,7 @@ alias BaseSettings = CoreSettings;
  +      struct Quietline {}
  +      struct Quit {}
  +      struct Teardown {}
+ +      struct Save {}
  +  }
  +  ------------
  +/
@@ -78,6 +79,9 @@ struct ThreadMessage
 
     /// Concurrency message type asking for a plugin to shut down cleanly.
     struct Teardown {}
+
+    /// Concurrency message type asking to have plugins' configuration saved.
+    struct Save {}
 }
 
 
