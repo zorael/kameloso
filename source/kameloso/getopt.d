@@ -1,6 +1,6 @@
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Client, logger;
+import kameloso.common : CoreSettings, Client, logger, printObjects;
 import kameloso.irc : IRCBot;
 import std.typecons : Flag, No, Yes;
 
@@ -202,8 +202,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
         if (shouldShowSettings)
         {
-            import kameloso.common : printObjects;
-
             // --settings was passed, show all options and quit
             printVersionInfo(BashForeground.white);
             writeln();
