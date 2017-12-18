@@ -150,6 +150,11 @@ Flag!"quit" checkMessages(ref Client client)
         return quitServer(ThreadMessage.Quit(), client.bot.quitReason);
     }
 
+    void save(ThreadMessage.Save)
+    {
+        client.writeConfigurationFile(client.settings.configFile);
+    }
+
     /// Did the concurrency receive catch something?
     bool receivedSomething;
     uint receivedInARow;
@@ -163,6 +168,7 @@ Flag!"quit" checkMessages(ref Client client)
             &pong,
             &quitServer,
             &quitEmpty,
+            &save,
             (Variant v)
             {
                 // Caught an unhandled message
