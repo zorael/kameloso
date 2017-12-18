@@ -679,6 +679,12 @@ int main(string[] args)
 
             if (!conn.connected)
             {
+                // Save if configuration says we should
+                if (settings.saveOnExit)
+                {
+                    client.writeConfigurationFile(settings.configFile);
+                }
+
                 teardownPlugins();
                 logger.error("Exiting...");
                 return 1;
@@ -690,6 +696,12 @@ int main(string[] args)
             auto generator = new Generator!string(() => listenFiber(conn, abort));
             quit = client.mainLoop(generator);
             firstConnect = false;
+
+            // Save if we're exiting and configuration says we should.
+            if ((quit || abort) && settings.saveOnExit)
+            {
+                client.writeConfigurationFile(settings.configFile);
+            }
 
             // Always teardown after connection ends
             teardownPlugins();

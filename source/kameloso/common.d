@@ -140,6 +140,9 @@ struct CoreSettings
     /// Flag denoting that the terminal has a bright background
     bool brightTerminal = false;
 
+    /// Flag denoting that we should save to file on exit
+    bool saveOnExit = false;
+
     /// Character(s) that prefix a bot chat command
     string prefix = "!";
 
