@@ -1601,3 +1601,41 @@ unittest
     alias UnqualBools = UnqualArray!InoutBools;
     static assert(is(UnqualBools == bool[]));
 }
+
+
+// writeConfigurationFile
+/++
+ +  Write all settings to the configuration filename passed.
+ +
+ +  It gathers configuration text from all plugins before formatting it into
+ +  nice columns, then writes it all in one go.
+ +
+ +  Params:
+ +      filename = the string filename of the file to write to.
+ +
+ +  ------------
+ +  Client client;
+ +  client.writeConfigurationFile(client.settings.configFile);
+ +  ------------
+ +/
+void writeConfigurationFile(ref Client client, const string filename)
+{
+    import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(512);
+
+    with (client)
+    {
+        sink.serialise(bot, bot.server, settings);
+
+        foreach (plugin; plugins)
+        {
+            plugin.addToConfig(sink);
+        }
+
+        immutable justified = sink.data.justifiedConfigurationText;
+        writeToDisk!(Yes.addBanner)(filename, justified);
+    }
+}

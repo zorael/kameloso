@@ -43,50 +43,6 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 }
 
 
-// writeConfigurationFile
-/++
- +  Write all settings to the configuration filename passed.
- +
- +  It gathers configuration text from all plugins before formatting it into
- +  nice columns, then writes it all in one go.
- +
- +  Params:
- +      filename = the string filename of the file to write to.
- +
- +  ------------
- +  Client client;
- +  client.writeConfigurationFile(client.settings.configFile);
- +  ------------
- +/
-void writeConfigurationFile(ref Client client, const string filename)
-{
-    import kameloso.common : printObjects;
-    import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(512);
-
-    with (client)
-    {
-        sink.serialise(bot, bot.server, settings);
-
-        printObjects(bot, bot.server, settings);
-
-        foreach (plugin; plugins)
-        {
-            plugin.addToConfig(sink);
-            // Not all plugins with configuration is important enough to list, so
-            // not all will have something to present()
-            plugin.present();
-        }
-
-        immutable justified = sink.data.justifiedConfigurationText;
-        writeToDisk!(Yes.addBanner)(filename, justified);
-    }
-}
-
-
 public:
 
 
@@ -220,6 +176,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
         if (shouldWriteConfig)
         {
+            import kameloso.common : writeConfigurationFile;
+
             // --writeconfig was passed; write configuration to file and quit
             printVersionInfo(BashForeground.white);
 
@@ -228,6 +186,15 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
             // If we don't initialise the plugins there'll be no plugins array
             initPlugins();
+
+            printObjects(bot, bot.server, settings);
+
+            foreach (plugin; plugins)
+            {
+                // Not all plugins with configuration is important enough to list, so
+                // not all will have something to present()
+                plugin.present();
+            }
 
             client.writeConfigurationFile(settings.configFile);
             return Yes.quit;
