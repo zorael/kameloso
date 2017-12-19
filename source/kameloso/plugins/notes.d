@@ -2,6 +2,7 @@ module kameloso.plugins.notes;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.outgoing;
 import kameloso.common;
 
 import std.concurrency : send;
@@ -53,24 +54,20 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s! %s left note %s ago: %s"
-                    .format(event.channel, event.sender.nickname, note.sender,
-                        timestamp, note.line));
+                plugin.toServer.chan(event.channel, "%s! %s left note %s ago: %s"
+                    .format(event.sender.nickname, note.sender, timestamp, note.line));
             }
             else
             {
-                mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s! You have %d notes."
-                    .format(event.channel, event.sender.nickname, noteArray.length));
+                plugin.toServer.chan(event.channel, "%s! You have %d notes."
+                    .format(event.sender.nickname, noteArray.length));
 
                 foreach (const note; noteArray)
                 {
                     immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                    mainThread.send(ThreadMessage.Sendline(),
-                        "PRIVMSG %s :%s left note %s ago: %s"
-                        .format(event.channel, note.sender, timestamp, note.line));
+                    plugin.toServer.chan(event.channel, "%s left note %s ago: %s"
+                        .format(note.sender, timestamp, note.line));
                 }
             }
         }
@@ -147,8 +144,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, line);
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :Note added".format(event.channel));
+        plugin.toServer.chan(event.channel, "Note added.");
 
         plugin.saveNotes(plugin.notesSettings.notesFile);
     }

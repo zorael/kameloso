@@ -2,7 +2,7 @@ module kameloso.plugins.ctcp;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage;
+import kameloso.outgoing;
 import kameloso.constants : IRCControlCharacter;
 
 import std.stdio;
@@ -184,8 +184,7 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            ("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+        plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
     }
 }
 
@@ -240,8 +239,7 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            ("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+        plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
             .format(event.sender.nickname, allCTCPTypes));
     }
 }

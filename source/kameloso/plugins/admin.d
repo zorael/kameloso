@@ -2,7 +2,8 @@ module kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage, logger;
+import kameloso.outgoing;
+import kameloso.common : logger;
 
 import std.concurrency : send;
 
@@ -65,6 +66,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @Prefix(NickPolicy.required, "writeconfig")
 void onCommandSave(AdminPlugin plugin)
 {
+    import kameloso.common : ThreadMessage;
+
     logger.info("Saving configuration to disk.");
     plugin.state.mainThread.send(ThreadMessage.Save());
 }
@@ -103,7 +106,7 @@ void onCommandShowUsers(AdminPlugin plugin)
 @Prefix(NickPolicy.required, "sudo")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
+    plugin.toServer.raw(event.content);
 }
 
 
@@ -125,11 +128,11 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.content.length)
         {
-            mainThread.send(ThreadMessage.Quit(), event.content);
+            plugin.toServer.quit(event.content);
         }
         else
         {
-            mainThread.send(ThreadMessage.Quit());
+            plugin.toServer.quit();
         }
     }
 }
@@ -161,7 +164,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (!bot.homes.canFind(channel))
         {
-            mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
+            plugin.toServer.join(channel);
         }
 
         logger.info("Adding channel: ", channel);
@@ -205,7 +208,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
-        mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
+        plugin.toServer.part(channel);
     }
 }
 
@@ -410,6 +413,8 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
+    import std.array : array;
+    import std.conv : to;
     import std.format : format;
 
     // The prefix could be in lowercase. Do we care?
@@ -422,8 +427,20 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
         return;
     }
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "%s :%s".format(prefix, event.content.splitter(' ').joiner(",")));
+    immutable string channels = event.content
+        .splitter(' ')
+        .joiner(",")
+        .array
+        .to!string;
+
+    if (prefix == "JOIN")
+    {
+        plugin.toServer.join(channels);
+    }
+    else
+    {
+        plugin.toServer.part(channels);
+    }
 }
 
 

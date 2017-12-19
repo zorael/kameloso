@@ -4,6 +4,7 @@ version(Web):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.outgoing;
 import kameloso.common : logger;
 
 import std.stdio;
@@ -23,7 +24,6 @@ private:
 @Prefix(NickPolicy.required, "bash")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : ThreadMessage;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import core.thread : Thread;
@@ -42,9 +42,6 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     static pEngine = ctRegex!`</p>`;
     static brEngine = ctRegex!`<br />`;
 
-    immutable target = event.channel.length ?
-        event.channel : event.target.nickname;
-
     try
     {
         import std.exception : assumeUnique;
@@ -57,9 +54,8 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 
         if (!numBlock.length)
         {
-            plugin.state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :No such bash.org quote: %s"
-                .format(target, event.content));
+            plugin.toServer.privmsg(event.channel, event.sender.nickname,
+                "No such bash.org quote: %s".format(event.content));
             return;
         }
 
@@ -74,8 +70,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 
         foreach (line; range)
         {
-            plugin.state.mainThread.send(ThreadMessage.Throttleline(),
-                "PRIVMSG %s :%s".format(target, line));
+            plugin.toServer.privmsg(event.channel, event.sender.nickname, line);
         }
     }
     catch (const Exception e)

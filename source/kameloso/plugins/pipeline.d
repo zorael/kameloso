@@ -4,6 +4,7 @@ version(Posix):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.outgoing;
 import kameloso.common;
 
 import std.concurrency;
@@ -73,18 +74,18 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
                     {
-                        mainThread.send(ThreadMessage.Quit(), line[6..$]);
+                        mainThread.quit(line[6..$]);
                     }
                     else
                     {
-                        mainThread.send(ThreadMessage.Quit());
+                        mainThread.quit();
                     }
 
                     break eofLoop;
                 }
                 else
                 {
-                    mainThread.send(ThreadMessage.Sendline(), line);
+                    mainThread.raw(line);
                 }
             }
         }
