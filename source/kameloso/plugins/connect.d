@@ -546,10 +546,10 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
  +
  +  A SASL authentication token is composed like so:
 
- +     `base64(nickname \0 authLogin \0 authPassword`)
+ +     `base64(authLogin \0 authLogin \0 authPassword`)
 
- +  ...where `nickname` is the bot's wanted nickname, `authLogin` is the
- +  services login name and `authPassword` is the services login password.
+ +  ...where `authLogin` is the services login name and `authPassword` is
+ +  the services login password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectPlugin plugin)
@@ -563,7 +563,7 @@ void onSASLAuthenticate(ConnectPlugin plugin)
 
         immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
         immutable authToken = "%s%c%s%c%s"
-            .format(bot.origNickname, '\0', authLogin, '\0', bot.authPassword);
+            .format(authLogin, '\0', authLogin, '\0', bot.authPassword);
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
