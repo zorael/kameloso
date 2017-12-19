@@ -42,6 +42,9 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     static pEngine = ctRegex!`</p>`;
     static brEngine = ctRegex!`<br />`;
 
+    immutable target = event.channel.length ?
+        event.channel : event.target.nickname;
+
     try
     {
         import std.exception : assumeUnique;
@@ -70,7 +73,10 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 
         foreach (line; range)
         {
-            plugin.toServer.privmsg(event.channel, event.sender.nickname, line);
+            import kameloso.common : ThreadMessage;
+            //plugin.toServer.privmsg(event.channel, event.sender.nickname, line);
+            plugin.state.mainThread.send(ThreadMessage.Throttleline(),
+                "PRIVMSG %s :%s".format(target, line));
         }
     }
     catch (const Exception e)
