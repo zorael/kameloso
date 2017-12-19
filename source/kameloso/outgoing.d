@@ -3,19 +3,24 @@ module kameloso.outgoing;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
+import std.concurrency : Tid, send;
+import std.typecons : Flag, No, Yes;
+
 
 // chan
 /++
  +  FIXME
  +/
-void chan(IRCPlugin plugin, const string channel, const string content)
+void chan(Tid tid, const string channel, const string content, bool quiet = false)
 {
+    assert((channel[0] == '#'), "chan was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
     event.channel = channel;
     event.content = content;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -23,14 +28,41 @@ void chan(IRCPlugin plugin, const string channel, const string content)
 /++
  +  FIXME
  +/
-void query(IRCPlugin plugin, const string nickname, const string content)
+void query(Tid tid, const string nickname, const string content, bool quiet = false)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
     event.target.nickname = nickname;
     event.content = content;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
+}
+
+
+// privmsg
+/++
+ +  FIXME
+ +/
+void privmsg(Tid tid, const string channel, const string nickname,
+    const string content, bool quiet = false)
+{
+    if (channel.length)
+    {
+        assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
+        if (quiet) tid.chan(channel, content, true);
+        else tid.chan(channel, content);
+    }
+    else if (nickname.length)
+    {
+        assert((channel[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
+        if (quiet) tid.query(nickname, content, true);
+        else tid.query(nickname, content);
+    }
+    else
+    {
+        assert(0, "Empty privmsg");
+    }
 }
 
 
@@ -38,7 +70,8 @@ void query(IRCPlugin plugin, const string nickname, const string content)
 /++
  +  FIXME
  +/
-void emote(IRCPlugin plugin, const string emoteTarget, const string content)
+void emote(Tid tid, const string emoteTarget, const string content,
+    bool quiet = false)
 {
     import kameloso.string : beginsWith;
 
@@ -55,7 +88,8 @@ void emote(IRCPlugin plugin, const string emoteTarget, const string content)
         event.target.nickname = emoteTarget;
     }
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -63,16 +97,18 @@ void emote(IRCPlugin plugin, const string emoteTarget, const string content)
 /++
  +  FIXME
  +/
-void chanmode(IRCPlugin plugin, const string channel, const string modes,
-    const string content = string.init)
+void chanmode(Tid tid, const string channel, const string modes,
+    const string content = string.init, bool quiet = false)
 {
+    assert((channel[0] == '#'), "chanmode was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.CHANMODE;
     event.channel = channel;
     event.aux = modes;
     event.content = content;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -80,14 +116,16 @@ void chanmode(IRCPlugin plugin, const string channel, const string modes,
 /++
  +  FIXME
  +/
-void usermode(IRCPlugin plugin, const string nickname, const string modes)
+void usermode(Tid tid, const string nickname, const string modes, bool quiet = false)
 {
+    assert((nickname[0] != '#'), "usermode was passed channel as nickname: " ~ nickname);
     IRCEvent event;
     event.type = IRCEvent.Type.USERMODE;
     event.target.nickname = nickname;
     event.aux = modes;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -95,14 +133,16 @@ void usermode(IRCPlugin plugin, const string nickname, const string modes)
 /++
  +  FIXME
  +/
-void topic(IRCPlugin plugin, const string channel, const string content)
+void topic(Tid tid, const string channel, const string content, bool quiet = false)
 {
+    assert((channel[0] == '#'), "topic was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
     event.channel = channel;
     event.content = content;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -110,14 +150,16 @@ void topic(IRCPlugin plugin, const string channel, const string content)
 /++
  +  FIXME
  +/
-void invite(IRCPlugin plugin, const string channel, const string nickname)
+void invite(Tid tid, const string channel, const string nickname, bool quiet = false)
 {
+    assert((channel[0] == '#'), "invite was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
     event.channel = channel;
     event.target.nickname = nickname;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -125,13 +167,15 @@ void invite(IRCPlugin plugin, const string channel, const string nickname)
 /++
  +  FIXME
  +/
-void join(IRCPlugin plugin, const string channel)
+void join(Tid tid, const string channel, bool quiet = false)
 {
+    assert((channel[0] == '#'), "join was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
     event.channel = channel;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -139,16 +183,19 @@ void join(IRCPlugin plugin, const string channel)
 /++
  +  FIXME
  +/
-void kick(IRCPlugin plugin, const string channel, const string nickname,
-    const string reason = string.init)
+void kick(Tid tid, const string channel, const string nickname,
+    const string reason = string.init, bool quiet = false)
 {
+    assert((channel[0] == '#'), "kick was passed invalid channel: " ~ channel);
+    assert((nickname[0] != '#'), "kick was passed channel as nickname: " ~ nickname);
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -156,13 +203,15 @@ void kick(IRCPlugin plugin, const string channel, const string nickname,
 /++
  +  FIXME
  +/
-void part(IRCPlugin plugin, const string channel)
+void part(Tid tid, const string channel, bool quiet = false)
 {
+    assert((channel[0] == '#'), "part was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
     event.channel = channel;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
 
 
@@ -170,11 +219,27 @@ void part(IRCPlugin plugin, const string channel)
 /++
  +  FIXME
  +/
-void quit(IRCPlugin plugin, const string reason = string.init)
+void quit(Tid tid, const string reason = string.init, bool quiet = false)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUIT;
     event.content = reason;
 
-    plugin.state.mainThread.send(event);
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
+}
+
+
+// raw
+/++
+ +  FIXME
+ +/
+void raw(Tid tid, const string line, bool quiet = false)
+{
+    IRCEvent event;
+    event.type = IRCEvent.Type.UNSET;
+    event.content = line;
+
+    if (quiet) tid.send(event, true);
+    else tid.send(event);
 }
