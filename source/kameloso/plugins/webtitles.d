@@ -72,8 +72,8 @@ struct TitleLookup
  +/
 struct TitleRequest
 {
+    IRCEvent event;
     string url;
-    string target;
 }
 
 
@@ -109,28 +109,27 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         if (!urlHit.length) continue;
 
         immutable url = urlHit[0];
-        immutable target = event.channel.length ? event.channel : event.sender.nickname;
 
         logger.log("Caught URL: ", url);
 
         // Garbage-collect entries too old to use
         plugin.cache.prune();
 
-        const inCache = url in plugin.cache;
+        const cachedLookup = url in plugin.cache;
 
-        if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
+        if (cachedLookup && ((Clock.currTime - SysTime.fromUnixTime(cachedLookup.when))
             < Timeout.titleCache.seconds))
         {
             logger.log("Found title lookup in cache");
-            plugin.state.mainThread.reportURL(*inCache, target);
+            plugin.state.mainThread.reportURL(*inCache, event);
             continue;
         }
 
         // There were no cached entries for this URL
 
         TitleRequest titleReq;
+        titleReq.event = event;
         titleReq.url = url;
-        titleReq.target = target;
 
         shared IRCPluginState sState = cast(shared)plugin.state;
         spawn(&worker, sState, plugin.cache, titleReq);
@@ -162,7 +161,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
         import kameloso.string : beginsWith;
 
         auto lookup = lookupTitle(titleReq);
-        state.mainThread.reportURL(lookup, titleReq.target);
+        state.mainThread.reportURL(lookup, titleReq.event);
         cache[titleReq.url] = lookup;
     }
     catch (const Exception e)
@@ -177,23 +176,24 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
  +  Prints the result of a web title lookup in the channel or as a message to
  +  the user specified.
  +/
-void reportURL(Tid tid, const TitleLookup lookup, const string target)
+void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
 {
-    import kameloso.common : ThreadMessage;
+    import kameloso.outgoing : chan, query;
     import std.concurrency : send;
     import std.format : format;
 
+    string line;
+
     if (lookup.domain.length)
     {
-        tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :[%s] %s"
-            .format(target, lookup.domain, lookup.title));
+        line = "[%] %s".format(lookup.domain, lookup.title);
     }
     else
     {
-        tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :%s".format(target, lookup.title));
+        line = lookup.title;
     }
+
+    tid.privmsg(event.channel, event.sender.nickname, line);
 }
 
 
