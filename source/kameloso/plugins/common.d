@@ -2,6 +2,8 @@ module kameloso.plugins.common;
 
 import kameloso.ircdefs;
 
+import std.concurrency : Tid, send;
+
 
 // IRCPlugin
 /++
@@ -58,6 +60,9 @@ interface IRCPlugin
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
+
+    /// Returns the thread ID of the main thread
+    Tid toServer() @property;
 }
 
 
@@ -439,6 +444,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
+    import std.concurrency : Tid;
+
     IRCPluginState privateState;
 
     // onEvent
@@ -1165,6 +1172,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref IRCPluginState state() @property
     {
         return this.privateState;
+    }
+
+    // toServer
+    /++
+     +  FIXME
+     +/
+    pragma(inline)
+    Tid toServer() @property
+    {
+        return state.mainThread;
     }
 }
 
