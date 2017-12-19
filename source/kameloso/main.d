@@ -157,9 +157,11 @@ Flag!"quit" checkMessages(ref Client client)
     }
 
     /// Reverse-formats an event and sends it to the server
-    void eventToServer(IRCEvent event)
+    void eventToServer(IRCEvent event, bool quiet)
     {
         import std.format : format;
+
+        string line;
 
         with (IRCEvent.Type)
         with (event)
@@ -167,11 +169,11 @@ Flag!"quit" checkMessages(ref Client client)
         switch (event.type)
         {
         case CHAN:
-            conn.sendline("PRIVMSG %s :%s".format(channel, content));
+            line = "PRIVMSG %s :%s".format(channel, content);
             break;
 
         case QUERY:
-            conn.sendline("PRIVMSG %s :%s".format(target.nickname, content));
+            line = "PRIVMSG %s :%s".format(target.nickname, content);
             break;
 
         case EMOTE:
@@ -181,33 +183,33 @@ Flag!"quit" checkMessages(ref Client client)
             immutable emoteTarget = target.nickname.length ?
                 target.nickname : channel;
 
-            conn.sendline("PRIVMSG %s :%s%s%s".format(emoteTarget,
-                cast(size_t)I.ctcp, content, cast(size_t)I.ctcp));
+            line = "PRIVMSG %s :%s%s%s".format(emoteTarget,
+                cast(size_t)I.ctcp, content, cast(size_t)I.ctcp);
             break;
 
         case CHANMODE:
-            conn.sendline("MODE %s %s :%s".format(channel, aux, content));
+            line = "MODE %s %s :%s".format(channel, aux, content);
             break;
 
         case USERMODE:
-            conn.sendline("MODE %s %s".format(aux), target.nickname);
+            line = "MODE %s %s".format(aux, target.nickname);
             break;
 
         case TOPIC:
-            conn.sendline("TOPIC %s :%s".format(channel, content));
+            line = "TOPIC %s :%s".format(channel, content);
             break;
 
         case INVITE:
-            conn.sendline("INVITE %s :%s".format(channel, target.nickname));
+            line = "INVITE %s :%s".format(channel, target.nickname);
             break;
 
         case JOIN:
-            conn.sendline("JOIN %s".format(channel));
+            line = "JOIN %s".format(channel);
             break;
 
         case KICK:
             immutable reason = content.length ? " :" ~ content : string.init;
-            conn.sendline("KICK %s%s".format(channel, reason));
+            line = "KICK %s%s".format(channel, reason);
             break;
 
         case PART:
@@ -217,11 +219,11 @@ Flag!"quit" checkMessages(ref Client client)
 
         case QUIT:
             immutable reason = content.length ? " :" ~ content : string.init;
-            conn.sendline("QUIT %s%s".format(channel, reason));
+            line = "QUIT %s%s".format(channel, reason);
             break;
 
         case NICK:
-            conn.sendline("NICK %s".format(target.nickname));
+            line = "NICK %s".format(target.nickname);
             break;
 
         case PRIVMSG:
@@ -233,14 +235,29 @@ Flag!"quit" checkMessages(ref Client client)
             else goto case USERMODE;
 
         case UNSET:
-            conn.sendline(content);
+            line = content;
             break;
 
         default:
             logger.warning("No outgoing event case for type ", type);
-            conn.sendline(content);
+            line = content;
             break;
         }
+
+        if (quiet)
+        {
+            quietline(ThreadMessage.Quietline(), line);
+        }
+        else
+        {
+            sendline(ThreadMessage.Sendline(), line);
+        }
+    }
+
+    /// FIXME
+    void eventToServerSilent(IRCEvent event)
+    {
+        return eventToServer(event, true);
     }
 
     /// Did the concurrency receive catch something?
@@ -255,6 +272,7 @@ Flag!"quit" checkMessages(ref Client client)
             &throttleline,
             &pong,
             &eventToServer,
+            &eventToServerSilent,
             &quitServer,
             &quitEmpty,
             &save,
