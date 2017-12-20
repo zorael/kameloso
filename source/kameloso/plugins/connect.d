@@ -2,7 +2,6 @@ module kameloso.plugins.connect;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common : ThreadMessage, logger;
 
 import std.concurrency : prioritySend, send;

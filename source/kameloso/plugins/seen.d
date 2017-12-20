@@ -61,9 +61,6 @@ import kameloso.ircdefs;
  +/
 import kameloso.common;
 
-/// FIXME
-import kameloso.outgoing;
-
 /// `std.json` for our `JSON` storage.
 import std.json;
 

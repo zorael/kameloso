@@ -2,7 +2,6 @@ module kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common : logger;
 
 import std.concurrency : send;

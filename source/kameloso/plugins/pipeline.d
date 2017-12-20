@@ -4,7 +4,6 @@ version(Posix):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common;
 
 import std.concurrency;
