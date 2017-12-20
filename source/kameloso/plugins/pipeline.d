@@ -5,6 +5,7 @@ version(Posix):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
+import kameloso.messaging;
 
 import std.concurrency;
 
@@ -65,6 +66,7 @@ void pipereader(shared IRCPluginState newState)
             foreach (const line; fifo.byLineCopy)
             {
                 import kameloso.string : beginsWith;
+                import std.format : format;
                 import std.string : toLower;
 
                 if (!line.length) break eofLoop;
@@ -73,21 +75,18 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
                     {
-                        // FIXME
-                        //mainThread.quit(line[6..$]);
+                        mainThread.quit(line[6..$]);
                     }
                     else
                     {
-                        // FIXME
-                        //mainThread.quit();
+                        mainThread.quit();
                     }
 
                     break eofLoop;
                 }
                 else
                 {
-                    // FIXME
-                    //mainThread.raw(line);
+                    mainThread.raw(line);
                 }
             }
         }

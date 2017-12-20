@@ -5,6 +5,7 @@ version(Web):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
+import kameloso.messaging;
 
 import std.concurrency : Tid;
 
