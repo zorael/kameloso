@@ -238,7 +238,7 @@ void onPing(SeenPlugin plugin)
              +  of why we wanted to import that.
              +/
             // FIXME
-            //plugin.toServer.raw("WHO " ~ channel);
+            raw("WHO " ~ channel);
         }
 
         import std.datetime.systime : Clock;
@@ -306,8 +306,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     if (event.sender.nickname == event.content)
     {
         // The person is asking for seen information about him-/herself.
-        // FIXME
-        //plugin.toServer.privmsg(event.channel, event.sender.nickname, "That's you!");
+        plugin.privmsg(event.channel, event.sender.nickname, "That's you!");
         return;
     }
 
@@ -317,20 +316,16 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     {
         // No matches for nickname `event.content` in `plugin.seenUsers`.
 
-        // FIXME
-        /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
-            "I have never seen %s."
-            .format(event.content));*/
+        plugin.privmsg(event.channel, event.sender.nickname,
+            "I have never seen %s.".format(event.content));
         return;
     }
 
     const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-    // FIXME
-    /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
-        "I last saw %s %s ago."
-        .format(event.content, elapsed));*/
+    plugin.privmsg(event.channel, event.sender.nickname,
+        "I last saw %s %s ago.".format(event.content, elapsed));
 }
 
 
@@ -568,4 +563,5 @@ final class SeenPlugin : IRCPlugin
      +  the plugin to be really small.
      +/
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

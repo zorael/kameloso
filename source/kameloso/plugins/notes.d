@@ -54,21 +54,19 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                // FIXME
-                plugin.toServer.chan(event.channel, "%s! %s left note %s ago: %s"
+                plugin.chan(event.channel, "%s! %s left note %s ago: %s"
                     .format(event.sender.nickname, note.sender, timestamp, note.line));
             }
             else
             {
-                // FIXME x2
-                plugin.toServer.chan(event.channel, "%s! You have %d notes."
+                plugin.chan(event.channel, "%s! You have %d notes."
                     .format(event.sender.nickname, noteArray.length));
 
                 foreach (const note; noteArray)
                 {
                     immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                    plugin.toServer.chan(event.channel, "%s left note %s ago: %s"
+                    plugin.chan(event.channel, "%s left note %s ago: %s"
                         .format(note.sender, timestamp, note.line));
                 }
             }
@@ -146,8 +144,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, line);
-        // FIXME
-        //plugin.toServer.chan(event.channel, "Note added.");
+        plugin.chan(event.channel, "Note added.");
 
         plugin.saveNotes(plugin.notesSettings.notesFile);
     }
@@ -438,4 +435,5 @@ final class NotesPlugin : IRCPlugin
     JSONValue notes;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }
