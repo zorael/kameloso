@@ -1200,6 +1200,154 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 }
 
 
+// MessagingProxy
+/++
+ +  FIXME
+ +/
+mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
+{
+    static import kameloso.messaging;
+    import std.typecons : Flag, No, Yes;
+
+    // chan
+    /++
+    +  FIXME
+    +/
+    void chan(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string content)
+    {
+        return kameloso.messaging.chan!quiet(state.mainThread, channel, content);
+    }
+
+    // query
+    /++
+    +  FIXME
+    +/
+    void query(Flag!"quiet" quiet = No.quiet)(const string nickname,
+        const string content)
+    {
+        return kameloso.messaging.query!quiet(state.mainThread, nickname, content);
+    }
+
+    // privmsg
+    /++
+    +  FIXME
+    +/
+    void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string nickname, const string content)
+    {
+        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
+    }
+
+    // throttleline
+    /++
+    +  FIXME
+    +/
+    void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string nickname, const string content)
+    {
+        return kameloso.messaging.throttleline!quiet(state.mainThread, channel,
+            nickname, content);
+    }
+
+    // emote
+    /++
+    +  FIXME
+    +/
+    void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
+        const string content)
+    {
+        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
+    }
+
+    // chanmode
+    /++
+    +  FIXME
+    +/
+    void chanmode(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string modes, const string content = string.init)
+    {
+        return kameloso.messaging.chanmode!quiet(state.mainThread, channel, modes, content);
+    }
+
+    // usermode
+    /++
+    +  FIXME
+    +/
+    void usermode(Flag!"quiet" quiet = No.quiet)(const string nickname,
+        const string modes)
+    {
+        return kameloso.messaging.usermode!quiet(state.mainThread, nickname, modes);
+    }
+
+    // topic
+    /++
+    +  FIXME
+    +/
+    void topic(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string content)
+    {
+        return kameloso.messaging.topic!quiet(state.mainThread, channel, content);
+    }
+
+    // invite
+    /++
+    +  FIXME
+    +/
+    void invite(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string nickname)
+    {
+        return kameloso.messaging.invite!quiet(state.mainThread, channel, nickname);
+    }
+
+    // join
+    /++
+    +  FIXME
+    +/
+    void join(Flag!"quiet" quiet = No.quiet)(const string channel)
+    {
+        return kameloso.messaging.join!quiet(state.mainThread, channel);
+    }
+
+    // kick
+    /++
+    +  FIXME
+    +/
+    void kick(Flag!"quiet" quiet = No.quiet)(const string channel,
+        const string nickname, const string reason = string.init)
+    {
+        return kameloso.messaging.kick!quiet(state.mainThread, channel, nickname, reason);
+    }
+
+    // part
+    /++
+    +  FIXME
+    +/
+    void part(Flag!"quiet" quiet = No.quiet)(const string channel)
+    {
+        return kameloso.messaging.part!quiet(state.mainThread, channel);
+    }
+
+    // quit
+    /++
+    +  FIXME
+    +/
+    void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
+    {
+        return kameloso.messaging.quit!quiet(state.mainThread, reason);
+    }
+
+    // raw
+    /++
+    +  FIXME
+    +/
+    void raw(Flag!"quiet" quiet = No.quiet)(const string line)
+    {
+        return kameloso.messaging.raw!quiet(state.mainThread, line);
+    }
+}
+
+
 // BasicEventHandlers
 /++
  +  Rudimentary IRCEvent handlers.
