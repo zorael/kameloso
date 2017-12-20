@@ -66,6 +66,37 @@ void privmsg(Tid tid, const string channel, const string nickname,
 }
 
 
+// privmsg
+/++
+ +  FIXME
+ +/
+void throttleline(Tid tid, const string channel, const string nickname,
+    const string content, bool quiet = false)
+{
+    import kameloso.common : ThreadMessage;
+    import std.format : format;
+
+    string line;
+
+    if (channel.length)
+    {
+        assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
+        line = "PRIVMSG %s :%s".format(channel, content);
+    }
+    else if (nickname.length)
+    {
+        assert((channel[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
+        line = "PRIVMSG %s :%s".format(nickname, content);
+    }
+    else
+    {
+        assert(0, "Empty privmsg");
+    }
+
+    tid.send(ThreadMessage.Throttleline(), line);
+}
+
+
 // emote
 /++
  +  FIXME
