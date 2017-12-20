@@ -50,14 +50,12 @@ void privmsg(Tid tid, const string channel, const string nickname,
     if (channel.length)
     {
         assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
-        if (quiet) tid.chan(channel, content, true);
-        else tid.chan(channel, content);
+        tid.chan(channel, content, quiet);
     }
     else if (nickname.length)
     {
         assert((channel[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
-        if (quiet) tid.query(nickname, content, true);
-        else tid.query(nickname, content);
+        tid.query(nickname, content, quiet);
     }
     else
     {
