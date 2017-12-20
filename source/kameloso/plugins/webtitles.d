@@ -186,7 +186,7 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
 
     if (lookup.domain.length)
     {
-        line = "[%] %s".format(lookup.domain, lookup.title);
+        line = "[%s] %s".format(lookup.domain, lookup.title);
     }
     else
     {
