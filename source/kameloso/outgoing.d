@@ -11,7 +11,9 @@ import std.typecons : Flag, No, Yes;
 /++
  +  FIXME
  +/
-void chan(Tid tid, const string channel, const string content, bool quiet = false)
+version(none)
+void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string content)
 {
     assert((channel[0] == '#'), "chan was passed invalid channel: " ~ channel);
     IRCEvent event;
@@ -19,7 +21,7 @@ void chan(Tid tid, const string channel, const string content, bool quiet = fals
     event.channel = channel;
     event.content = content;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -28,14 +30,16 @@ void chan(Tid tid, const string channel, const string content, bool quiet = fals
 /++
  +  FIXME
  +/
-void query(Tid tid, const string nickname, const string content, bool quiet = false)
+version(none)
+void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
+    const string content)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
     event.target.nickname = nickname;
     event.content = content;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -44,18 +48,21 @@ void query(Tid tid, const string nickname, const string content, bool quiet = fa
 /++
  +  FIXME
  +/
-void privmsg(Tid tid, const string channel, const string nickname,
-    const string content, bool quiet = false)
+version(none)
+void privmsg(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string nickname, const string content)
 {
     if (channel.length)
     {
         assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
-        tid.chan(channel, content, quiet);
+        static if (quiet) tid.chan(channel, content, true);
+        else tid.chan(channel, content);
     }
     else if (nickname.length)
     {
         assert((channel[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
-        tid.query(nickname, content, quiet);
+        static if (quiet) tid.query(nickname, content, true);
+        else tid.query(nickname, content);
     }
     else
     {
@@ -68,6 +75,7 @@ void privmsg(Tid tid, const string channel, const string nickname,
 /++
  +  FIXME
  +/
+version(none)
 void throttleline(Tid tid, const string channel, const string nickname,
     const string content, bool quiet = false)
 {
@@ -99,8 +107,9 @@ void throttleline(Tid tid, const string channel, const string nickname,
 /++
  +  FIXME
  +/
-void emote(Tid tid, const string emoteTarget, const string content,
-    bool quiet = false)
+version(none)
+void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget,
+    const string content)
 {
     import kameloso.string : beginsWith;
 
@@ -117,7 +126,7 @@ void emote(Tid tid, const string emoteTarget, const string content,
         event.target.nickname = emoteTarget;
     }
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -126,8 +135,9 @@ void emote(Tid tid, const string emoteTarget, const string content,
 /++
  +  FIXME
  +/
-void chanmode(Tid tid, const string channel, const string modes,
-    const string content = string.init, bool quiet = false)
+version(none)
+void chanmode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string modes, const string content = string.init)
 {
     assert((channel[0] == '#'), "chanmode was passed invalid channel: " ~ channel);
     IRCEvent event;
@@ -136,7 +146,7 @@ void chanmode(Tid tid, const string channel, const string modes,
     event.aux = modes;
     event.content = content;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -145,7 +155,9 @@ void chanmode(Tid tid, const string channel, const string modes,
 /++
  +  FIXME
  +/
-void usermode(Tid tid, const string nickname, const string modes, bool quiet = false)
+version(none)
+void usermode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
+    const string modes)
 {
     assert((nickname[0] != '#'), "usermode was passed channel as nickname: " ~ nickname);
     IRCEvent event;
@@ -153,7 +165,7 @@ void usermode(Tid tid, const string nickname, const string modes, bool quiet = f
     event.target.nickname = nickname;
     event.aux = modes;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -162,7 +174,9 @@ void usermode(Tid tid, const string nickname, const string modes, bool quiet = f
 /++
  +  FIXME
  +/
-void topic(Tid tid, const string channel, const string content, bool quiet = false)
+version(none)
+void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string content)
 {
     assert((channel[0] == '#'), "topic was passed invalid channel: " ~ channel);
     IRCEvent event;
@@ -170,7 +184,7 @@ void topic(Tid tid, const string channel, const string content, bool quiet = fal
     event.channel = channel;
     event.content = content;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -179,7 +193,9 @@ void topic(Tid tid, const string channel, const string content, bool quiet = fal
 /++
  +  FIXME
  +/
-void invite(Tid tid, const string channel, const string nickname, bool quiet = false)
+version(none)
+void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string nickname)
 {
     assert((channel[0] == '#'), "invite was passed invalid channel: " ~ channel);
     IRCEvent event;
@@ -187,7 +203,7 @@ void invite(Tid tid, const string channel, const string nickname, bool quiet = f
     event.channel = channel;
     event.target.nickname = nickname;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -196,14 +212,15 @@ void invite(Tid tid, const string channel, const string nickname, bool quiet = f
 /++
  +  FIXME
  +/
-void join(Tid tid, const string channel, bool quiet = false)
+version(none)
+void join(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 {
     assert((channel[0] == '#'), "join was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
     event.channel = channel;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -212,8 +229,9 @@ void join(Tid tid, const string channel, bool quiet = false)
 /++
  +  FIXME
  +/
-void kick(Tid tid, const string channel, const string nickname,
-    const string reason = string.init, bool quiet = false)
+version(none)
+void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+    const string nickname, const string reason = string.init)
 {
     assert((channel[0] == '#'), "kick was passed invalid channel: " ~ channel);
     assert((nickname[0] != '#'), "kick was passed channel as nickname: " ~ nickname);
@@ -223,7 +241,7 @@ void kick(Tid tid, const string channel, const string nickname,
     event.target.nickname = nickname;
     event.content = reason;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -232,14 +250,15 @@ void kick(Tid tid, const string channel, const string nickname,
 /++
  +  FIXME
  +/
-void part(Tid tid, const string channel, bool quiet = false)
+version(none)
+void part(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 {
     assert((channel[0] == '#'), "part was passed invalid channel: " ~ channel);
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
     event.channel = channel;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -248,13 +267,14 @@ void part(Tid tid, const string channel, bool quiet = false)
 /++
  +  FIXME
  +/
-void quit(Tid tid, const string reason = string.init, bool quiet = false)
+version(none)
+void quit(Flag!"quiet" quiet = No.quiet)(Tid tid, const string reason = string.init)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUIT;
     event.content = reason;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }
 
@@ -263,12 +283,13 @@ void quit(Tid tid, const string reason = string.init, bool quiet = false)
 /++
  +  FIXME
  +/
-void raw(Tid tid, const string line, bool quiet = false)
+version(none)
+void raw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
     event.content = line;
 
-    if (quiet) tid.send(event, true);
+    static if (quiet) tid.send(event, true);
     else tid.send(event);
 }

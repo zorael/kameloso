@@ -29,7 +29,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event);
+    //spawn(&worker, cast(shared)plugin.state, event);
 }
 
 
@@ -40,6 +40,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +
  +  Suppose to be run in its own, shortlived thread.
  +/
+version(none)
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
     import kameloso.common;
@@ -76,8 +77,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         if (!numBlock.length)
         {
-            toServer.privmsg(event.channel, event.sender.nickname,
-                "No such bash.org quote: %s".format(event.content));
+            // FIXME
+            /*toServer.privmsg(event.channel, event.sender.nickname,
+                "No such bash.org quote: %s".format(event.content));*/
             return;
         }
 
@@ -95,12 +97,14 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
             .replaceAll(brEngine, string.init)
             .splitter("\n");
 
-        toServer.throttleline(event.channel, event.sender.nickname,
-            "[bash.org] #%s".format(num));
+        // FIXME
+        /*toServer.throttleline(event.channel, event.sender.nickname,
+            "[bash.org] #%s".format(num));*/
 
         foreach (line; range)
         {
-            toServer.throttleline(event.channel, event.sender.nickname, line);
+            // FIXME
+            //toServer.throttleline(event.channel, event.sender.nickname, line);
         }
     }
     catch (const Exception e)

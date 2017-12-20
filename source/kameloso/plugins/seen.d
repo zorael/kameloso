@@ -240,7 +240,8 @@ void onPing(SeenPlugin plugin)
              +  message "types" defined in `kameloso.common`, and this is part
              +  of why we wanted to import that.
              +/
-            plugin.toServer.raw("WHO " ~ channel);
+            // FIXME
+            //plugin.toServer.raw("WHO " ~ channel);
         }
 
         import std.datetime.systime : Clock;
@@ -308,7 +309,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     if (event.sender.nickname == event.content)
     {
         // The person is asking for seen information about him-/herself.
-        plugin.toServer.privmsg(event.channel, event.sender.nickname, "That's you!");
+        // FIXME
+        //plugin.toServer.privmsg(event.channel, event.sender.nickname, "That's you!");
         return;
     }
 
@@ -318,18 +320,20 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     {
         // No matches for nickname `event.content` in `plugin.seenUsers`.
 
-        plugin.toServer.privmsg(event.channel, event.sender.nickname,
+        // FIXME
+        /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
             "I have never seen %s."
-            .format(event.content));
+            .format(event.content));*/
         return;
     }
 
     const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-    plugin.toServer.privmsg(event.channel, event.sender.nickname,
+    // FIXME
+    /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
         "I last saw %s %s ago."
-        .format(event.content, elapsed));
+        .format(event.content, elapsed));*/
 }
 
 

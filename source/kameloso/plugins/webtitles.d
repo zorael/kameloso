@@ -178,7 +178,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
  +/
 void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
 {
-    import kameloso.outgoing : chan, query;
+    //import kameloso.outgoing : privmsg;
     import std.concurrency : send;
     import std.format : format;
 
@@ -193,7 +193,8 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
         line = lookup.title;
     }
 
-    tid.privmsg(event.channel, event.sender.nickname, line);
+    // FIXME
+    //tid.privmsg(event.channel, event.sender.nickname, line);
 }
 
 

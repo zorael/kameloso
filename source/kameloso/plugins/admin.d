@@ -106,7 +106,8 @@ void onCommandShowUsers(AdminPlugin plugin)
 @Prefix(NickPolicy.required, "sudo")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    plugin.toServer.raw(event.content);
+    // FIXME
+    //plugin.toServer.raw(event.content);
 }
 
 
@@ -128,11 +129,12 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.content.length)
         {
-            plugin.toServer.quit(event.content);
+            // FIXME
+            //plugin.toServer.quit(event.content);
         }
         else
         {
-            plugin.toServer.quit();
+            //plugin.toServer.quit();
         }
     }
 }
@@ -164,7 +166,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (!bot.homes.canFind(channel))
         {
-            plugin.toServer.join(channel);
+            // FIXME
+            //plugin.toServer.join(channel);
         }
 
         logger.info("Adding channel: ", channel);
@@ -208,7 +211,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
-        plugin.toServer.part(channel);
+        // FIXME
+        //plugin.toServer.part(channel);
     }
 }
 
@@ -435,11 +439,12 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 
     if (prefix == "JOIN")
     {
-        plugin.toServer.join(channels);
+        // FIXME
+        //plugin.toServer.join(channels);
     }
     else
     {
-        plugin.toServer.part(channels);
+        //plugin.toServer.part(channels);
     }
 }
 

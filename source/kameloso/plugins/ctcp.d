@@ -184,7 +184,8 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+        // FIXME
+        //plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
     }
 }
 
@@ -239,8 +240,9 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
-            .format(event.sender.nickname, allCTCPTypes));
+        // FIXME
+        /*plugin.toServer.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+            .format(event.sender.nickname, allCTCPTypes));*/
     }
 }
 

@@ -2,8 +2,8 @@ module kameloso.plugins.notes;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.json : JSONValue;
@@ -54,11 +54,13 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
+                // FIXME
                 plugin.toServer.chan(event.channel, "%s! %s left note %s ago: %s"
                     .format(event.sender.nickname, note.sender, timestamp, note.line));
             }
             else
             {
+                // FIXME x2
                 plugin.toServer.chan(event.channel, "%s! You have %d notes."
                     .format(event.sender.nickname, noteArray.length));
 
@@ -144,7 +146,8 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, line);
-        plugin.toServer.chan(event.channel, "Note added.");
+        // FIXME
+        //plugin.toServer.chan(event.channel, "Note added.");
 
         plugin.saveNotes(plugin.notesSettings.notesFile);
     }

@@ -2,8 +2,8 @@ module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common : logger;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.json : JSONValue;
@@ -155,7 +155,8 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    plugin.toServer.privmsg(event.channel, event.sender.nickname, event.content);
+    // FIXME
+    //plugin.toServer.privmsg(event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -209,7 +210,8 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
-    plugin.toServer.privmsg(event.channel, event.sender.nickname, reply);
+    // FIXME
+    //plugin.toServer.privmsg(event.channel, event.sender.nickname, reply);
 }
 
 
@@ -253,13 +255,15 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 
         if (quote.length)
         {
-            plugin.toServer.privmsg(event.channel, event.sender.nickname,
-                "%s | %s".format(nickname, quote));
+            // FIXME
+            /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
+                "%s | %s".format(nickname, quote));*/
         }
         else
         {
-            plugin.toServer.privmsg(event.channel, event.sender.nickname,
-                "No quote on record for %s".format(nickname));
+            // FIXME
+            /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
+                "No quote on record for %s".format(nickname));*/
         }
     }
     catch (const JSONException e)
@@ -306,9 +310,10 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
         immutable target = (event.channel.length) ?
             event.channel : event.sender.nickname;
 
-        plugin.toServer.privmsg(event.channel, event.sender.nickname,
+        // FIXME
+        /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
             "Quote for %s saved (%d on record)"
-            .format(nickname, plugin.quotes[nickname].array.length));
+            .format(nickname, plugin.quotes[nickname].array.length));*/
     }
     catch (const JSONException e)
     {

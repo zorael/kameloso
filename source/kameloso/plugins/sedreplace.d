@@ -2,7 +2,7 @@ module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.regex : ctRegex;
@@ -182,6 +182,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
 
+                // FIXME
                 plugin.toServer.chan(event.channel, "%s | %s"
                     .format(event.sender.nickname, result));
 

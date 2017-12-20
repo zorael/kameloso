@@ -7,6 +7,7 @@ import kameloso.common : ThreadMessage, logger;
 
 import std.concurrency : prioritySend, send;
 import std.format : format;
+import std.typecons : Flag, No, Yes;
 
 import std.stdio;
 
@@ -169,7 +170,8 @@ void joinChannels(ConnectPlugin plugin)
             .array
             .to!string;
 
-        plugin.toServer.join(chanlist);
+        // FIXME
+        //plugin.toServer.join(chanlist);
     }
 }
 
@@ -184,7 +186,8 @@ void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
 {
     if (plugin.serverPinged) return;
 
-    plugin.toServer.raw(event.content);
+    // FIXME
+    //plugin.toServer.raw(event.content);
 }
 
 
@@ -278,7 +281,9 @@ void tryAuth(ConnectPlugin plugin)
                 return;
             }
 
-            plugin.toServer.query(service, "%s %s".format(verb, bot.authPassword));
+            // FIXME
+            /*plugin.toServer.query!(Yes.quiet)(service, "%s %s"
+                .format(verb, bot.authPassword));*/
             logger.trace("--> PRIVMSG %s :%s hunter2"
                 .format(service, verb));
             break;
@@ -297,8 +302,9 @@ void tryAuth(ConnectPlugin plugin)
                 login = bot.origNickname;
             }
 
-            plugin.toServer.query(service, "%s %s %s"
-                .format(verb, login, bot.authPassword), true);
+            // FIXME
+            /*plugin.toServer.query!(Yes.quiet)(service, "%s %s %s"
+                .format(verb, login, bot.authPassword));*/
             logger.trace("--> PRIVMSG %s :%s %s hunter2"
                 .format(service, verb, login));
             break;
@@ -354,7 +360,8 @@ void onEndOfMotd(ConnectPlugin plugin)
         {
             import std.string : strip;
 
-            plugin.toServer.raw(line.strip());
+            // FIXME
+            //plugin.toServer.raw(line.strip());
         }
     }
 }
@@ -437,7 +444,8 @@ void onInvite(ConnectPlugin plugin, const IRCEvent event)
         return;
     }
 
-    plugin.toServer.join(event.channel);
+    // FIXME
+    //plugin.toServer.join(event.channel);
 }
 
 
@@ -469,7 +477,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
             {
             case "sasl":
                 if (!plugin.connectSettings.sasl || !bot.authPassword.length) continue;
-                plugin.toServer.raw("CAP REQ :sasl", true);
+                // FIXME
+                //plugin.toServer.raw!(Yes.quiet)("CAP REQ :sasl");
                 tryingSASL = true;
                 break;
 
@@ -502,7 +511,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                plugin.toServer.raw("CAP REQ :" ~ cap, true);
+                // FIXME
+                //plugin.toServer.raw!(Yes.quiet)("CAP REQ :" ~ cap);
                 break;
 
             default:
@@ -515,7 +525,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            plugin.toServer.raw("CAP END", true);
+            // FIXME
+            //plugin.toServer.raw!(Yes.quiet)("CAP END");
         }
         break;
 
@@ -523,7 +534,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         switch (event.content)
         {
         case "sasl":
-            plugin.toServer.raw("AUTHENTICATE PLAIN");
+            // FIXME
+            //plugin.toServer.raw("AUTHENTICATE PLAIN");
             break;
 
         default:
@@ -567,7 +579,8 @@ void onSASLAuthenticate(ConnectPlugin plugin)
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
-        plugin.toServer.raw("AUTHENTICATE " ~ encoded, true);
+        // FIXME
+        //plugin.toServer.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
         logger.trace("--> AUTHENTICATE hunter2");
     }
 }
@@ -601,7 +614,8 @@ void onSASLSuccess(ConnectPlugin plugin)
         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
         +/
 
-        plugin.toServer.raw("CAP END", true);
+        // FIXME
+        //plugin.toServer.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -621,7 +635,8 @@ void onSASLFailure(ConnectPlugin plugin)
     {
         if (plugin.connectSettings.exitOnSASLFailure)
         {
-            plugin.toServer.quit("SASL Negotiation Failure");
+            // FIXME
+            //plugin.toServer.quit("SASL Negotiation Failure");
             return;
         }
 
@@ -631,7 +646,8 @@ void onSASLFailure(ConnectPlugin plugin)
         bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
-        plugin.toServer.raw("CAP END", true);
+        // FIXME
+        //plugin.toServer.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -662,11 +678,13 @@ void register(ConnectPlugin plugin)
         bot.registration = Status.started;
         bot.updated = true;
 
-        plugin.toServer.raw("CAP LS 302", true);
+        // FIXME
+        //plugin.toServer.raw!(Yes.quiet)("CAP LS 302");
 
         if (bot.pass.length)
         {
-            plugin.toServer.raw("PASS " ~ bot.pass, true);
+            // FIXME
+            //plugin.toServer.raw!(Yes.quiet)("PASS " ~ bot.pass);
 
             // fake it
             logger.trace("--> PASS hunter2");
@@ -676,13 +694,15 @@ void register(ConnectPlugin plugin)
             if (bot.server.daemon == IRCServer.Daemon.twitch)
             {
                 logger.error("You *need* a password to join this server");
-                plugin.toServer.quit();
+                // FIXME
+                //plugin.toServer.quit();
                 return;
             }
         }
 
-        plugin.toServer.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
-        plugin.toServer.raw("NICK " ~ bot.nickname);
+        // FIXME
+        //plugin.toServer.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
+        //plugin.toServer.raw("NICK " ~ bot.nickname);
     }
 }
 
