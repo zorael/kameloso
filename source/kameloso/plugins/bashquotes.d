@@ -4,8 +4,8 @@ version(Web):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.outgoing;
 import kameloso.common : logger;
+import kameloso.messaging;
 
 import std.stdio;
 
@@ -29,7 +29,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
-    //spawn(&worker, cast(shared)plugin.state, event);
+    spawn(&worker, cast(shared)plugin.state, event);
 }
 
 
@@ -40,7 +40,6 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +
  +  Suppose to be run in its own, shortlived thread.
  +/
-version(none)
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
     import kameloso.common;
@@ -61,6 +60,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;
 
+    immutable target = event.channel.length ?
+        event.channel : event.sender.nickname;
+
     static qtEngine = ctRegex!`<p class="qt">`;
     static pEngine = ctRegex!`</p>`;
     static brEngine = ctRegex!`<br />`;
@@ -77,9 +79,11 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         if (!numBlock.length)
         {
-            // FIXME
-            /*toServer.privmsg(event.channel, event.sender.nickname,
-                "No such bash.org quote: %s".format(event.content));*/
+            toServer.privmsg(event.channel, event.sender.nickname,
+                "No such bash.org quote: %s".format(event.content));
+            /*state.mainThread.send(ThreadMessage.Sendline(),
+                "PRIVMSG %s :No such bash.org quote: %s"
+                .format(target, event.content));*/
             return;
         }
 
@@ -97,19 +101,21 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
             .replaceAll(brEngine, string.init)
             .splitter("\n");
 
-        // FIXME
-        /*toServer.throttleline(event.channel, event.sender.nickname,
-            "[bash.org] #%s".format(num));*/
+        toServer.throttleline(event.channel, event.sender.nickname,
+            "[bash.org] #%s".format(num));
+        /*state.mainThread.send(ThreadMessage.Sendline(),
+            "PRIVMSG %s :[bash.org] #%s".format(target, num));*/
 
         foreach (line; range)
         {
-            // FIXME
-            //toServer.throttleline(event.channel, event.sender.nickname, line);
+            toServer.throttleline(event.channel, event.sender.nickname, line);
+            /*state.mainThread.send(ThreadMessage.Throttleline(),
+                "PRIVMSG %s :%s".format(target, line));*/
         }
     }
     catch (const Exception e)
     {
-        logger.error("Bashquoes could not fetch ", url, ": ", e.msg);
+        logger.error("Bashquotes could not fetch ", url, ": ", e.msg);
     }
 }
 

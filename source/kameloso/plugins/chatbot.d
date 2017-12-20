@@ -155,8 +155,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    // FIXME
-    //plugin.toServer.privmsg(event.channel, event.sender.nickname, event.content);
+    plugin.privmsg(event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -210,8 +209,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
-    // FIXME
-    //plugin.toServer.privmsg(event.channel, event.sender.nickname, reply);
+    plugin.privmsg(event.channel, event.sender.nickname, reply);
 }
 
 
@@ -255,15 +253,13 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 
         if (quote.length)
         {
-            // FIXME
-            /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
-                "%s | %s".format(nickname, quote));*/
+            plugin.privmsg(event.channel, event.sender.nickname,
+                "%s | %s".format(nickname, quote));
         }
         else
         {
-            // FIXME
-            /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
-                "No quote on record for %s".format(nickname));*/
+            plugin.privmsg(event.channel, event.sender.nickname,
+                "No quote on record for %s".format(nickname));
         }
     }
     catch (const JSONException e)
@@ -310,10 +306,9 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
         immutable target = (event.channel.length) ?
             event.channel : event.sender.nickname;
 
-        // FIXME
-        /*plugin.toServer.privmsg(event.channel, event.sender.nickname,
+        plugin.privmsg(event.channel, event.sender.nickname,
             "Quote for %s saved (%d on record)"
-            .format(nickname, plugin.quotes[nickname].array.length));*/
+            .format(nickname, plugin.quotes[nickname].array.length));
     }
     catch (const JSONException e)
     {
@@ -397,4 +392,5 @@ final class ChatbotPlugin : IRCPlugin
     JSONValue quotes;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }
