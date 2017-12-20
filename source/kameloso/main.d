@@ -157,7 +157,7 @@ Flag!"quit" checkMessages(ref Client client)
     }
 
     /// Reverse-formats an event and sends it to the server
-    void eventToServer(IRCEvent event, bool quiet)
+    void eventToServer(IRCEvent event)
     {
         import std.format : format;
 
@@ -244,7 +244,7 @@ Flag!"quit" checkMessages(ref Client client)
             break;
         }
 
-        if (quiet)
+        if (event.target.special)
         {
             quietline(ThreadMessage.Quietline(), line);
         }
@@ -252,12 +252,6 @@ Flag!"quit" checkMessages(ref Client client)
         {
             sendline(ThreadMessage.Sendline(), line);
         }
-    }
-
-    /// FIXME
-    void eventToServerSilent(IRCEvent event)
-    {
-        return eventToServer(event, true);
     }
 
     /// Did the concurrency receive catch something?
@@ -272,7 +266,6 @@ Flag!"quit" checkMessages(ref Client client)
             &throttleline,
             &pong,
             &eventToServer,
-            &eventToServerSilent,
             &quitServer,
             &quitEmpty,
             &save,
