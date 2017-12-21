@@ -101,6 +101,7 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
 
     default:
         plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
+        flushIfCygwin();
         break;
     }
 }
@@ -353,10 +354,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         static if (!__traits(hasMember, Sink, "data"))
         {
             sink.put('\n');
-        }
-        else version(Cygwin)
-        {
-            stdout.flush();
         }
     }
     else

@@ -2,7 +2,7 @@ module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
+import kameloso.common : flushIfCygwin, logger;
 import kameloso.messaging;
 
 import std.concurrency : send;
@@ -329,6 +329,7 @@ void onCommandPrintQuotes(ChatbotPlugin plugin)
     if (!plugin.chatbotSettings.quotes) return;
 
     writeln(plugin.quotes.toPrettyString);
+    flushIfCygwin();
 }
 
 

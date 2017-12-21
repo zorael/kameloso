@@ -352,6 +352,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 void onCommandPrintSeen(SeenPlugin plugin)
 {
     writeln(plugin.seenUsers.toPrettyString);
+    flushIfCygwin();
 }
 
 
