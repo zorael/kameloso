@@ -232,7 +232,6 @@ void teardown(IRCPlugin basePlugin)
             // Tell the reader of the pipe to exit
             auto fifo = File(filename, "w");
             fifo.writeln();
-            fifo.flush();
         }
     }
 }

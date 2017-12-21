@@ -38,7 +38,6 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     }
 
     file.writeln(configurationText);
-    file.flush();
 }
 
 
