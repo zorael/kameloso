@@ -25,7 +25,7 @@ private:
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    if (plugin.printAll) logger.trace(event.raw, '$');
+    if (plugin.printAll) writeln(event.raw, '$');
 
     if (plugin.printBytes)
     {
