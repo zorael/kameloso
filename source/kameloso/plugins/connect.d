@@ -244,7 +244,9 @@ void tryAuth(ConnectPlugin plugin)
             break;
 
         case "EFNet":
-            // Can't auth
+            // No registration available
+            bot.authentication = Status.finished;
+            bot.updated = true;
             return;
 
         case "QuakeNet":
