@@ -302,6 +302,7 @@ void generateAsserts(ref Client client)
 
         while ((input = readln()) !is null)
         {
+            import kameloso.common : flushIfCygwin;
             import std.regex : matchFirst, regex;
             if (abort) return;
 
@@ -310,6 +311,7 @@ void generateAsserts(ref Client client)
             //sink.formatEventAssertBlock(event);
             writeln();
             stdout.lockingTextWriter.formatEventAssertBlock(event);
+            flushIfCygwin();
             //writeln(sink.data);
             //sink.clear();
         }

@@ -1049,6 +1049,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("--------------------------------------");
         writeln();
+        flushIfCygwin();
     }
     else if (event.target.nickname.beginsWith('#') &&
         (event.type != IRCEvent.Type.ERR_NOSUCHNICK) &&
@@ -1059,6 +1060,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("------------------------------------");
         writeln();
+        flushIfCygwin();
     }
     else if (event.channel.length && !event.channel.beginsWith('#') &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
@@ -1071,6 +1073,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("------------------------------------");
         writeln();
+        flushIfCygwin();
     }
 
     if (event.target.nickname == parser.bot.nickname)
@@ -1380,19 +1383,18 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         import std.traits : EnumMembers;
 
         /++
-            +  This iterates through all IRCEvent.Types that begin with
-            +  "CTCP_" and generates switch cases for the string of each.
-            +  Inside it will assign event.type to the corresponding
-            +  IRCEvent.Type.
-            +
-            +  Like so, except automatically generated through compile-time
-            +  introspection:
-            +
-            +      case "CTCP_PING":
-            +          event.type = CTCP_PING;
-            +          event.aux = "PING";
-            +          break;
-            +/
+         +  This iterates through all IRCEvent.Types that begin with `CTCP_` and
+         +  generates switch cases for the string of each. Inside it will assign
+         +  `event.type` to the corresponding `IRCEvent.Type`.
+         +
+         +  Like so, except automatically generated through compile-time
+         +  introspection:
+         +
+         +      case "CTCP_PING":
+         +          event.type = CTCP_PING;
+         +          event.aux = "PING";
+         +          break;
+         +/
 
         with (IRCEvent.Type)
         top:
@@ -1552,7 +1554,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         if (!bot.server.network.length)
         {
-            import std.string : endsWith;
+            import std.algorithm.searching : endsWith;
 
             if (bot.server.address.endsWith(".twitch.tv"))
             {

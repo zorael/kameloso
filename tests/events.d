@@ -1,10 +1,11 @@
 import kameloso.irc;
-import std.conv : to;
+import kameloso.constants : IRCControlCharacter;
 
+import std.conv : to;
 
 unittest
 {
-    import kameloso.constants : IRCControlCharacter;
+
     IRCParser parser;
 
     parser.bot.nickname = "kameloso";

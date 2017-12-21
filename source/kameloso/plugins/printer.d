@@ -100,7 +100,8 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        plugin.formatMessage(stdout.lockingTextWriter, mutEvent);
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
+        flushIfCygwin();
         break;
     }
 }
@@ -230,7 +231,8 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +      sink = output range to format the IRCEvent into
  +      event = the reference event that is being formatted
  +/
-void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event)
+void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
+    bool monochrome)
 {
     import kameloso.bash : BashForeground;
     import kameloso.string : enumToString, beginsWith;
@@ -249,7 +251,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     with (plugin.state)
     with (event)
     with (event.sender)
-    if (settings.monochrome)
+    if (monochrome)
     {
         put(sink, '[', timestamp, "] ");
 
@@ -352,10 +354,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         static if (!__traits(hasMember, Sink, "data"))
         {
             sink.put('\n');
-        }
-        else version(Cygwin)
-        {
-            stdout.flush();
         }
     }
     else
@@ -625,7 +623,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             // This will only change this plugin's monochrome setting...
             // We have no way to propagate it
             settings.monochrome = true;
-            return plugin.formatMessage(sink, event);
+            return plugin.formatMessage(sink, event, settings.monochrome);
         }
     }
 }

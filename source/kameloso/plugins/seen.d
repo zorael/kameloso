@@ -237,7 +237,8 @@ void onPing(SeenPlugin plugin)
              +  message "types" defined in `kameloso.common`, and this is part
              +  of why we wanted to import that.
              +/
-            state.mainThread.send(ThreadMessage.Quietline(), "WHO " ~ channel);
+            // FIXME
+            raw!(Yes.quiet)("WHO " ~ channel);
         }
 
         import std.datetime.systime : Clock;
@@ -302,16 +303,10 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
-    immutable target = event.channel.length ?
-        event.channel : event.sender.nickname;
-
     if (event.sender.nickname == event.content)
     {
         // The person is asking for seen information about him-/herself.
-
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :That's you!"
-            .format(target));
+        plugin.privmsg(event.channel, event.sender.nickname, "That's you!");
         return;
     }
 
@@ -321,18 +316,16 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     {
         // No matches for nickname `event.content` in `plugin.seenUsers`.
 
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :I have never seen %s."
-            .format(target, event.content));
+        plugin.privmsg(event.channel, event.sender.nickname,
+            "I have never seen %s.".format(event.content));
         return;
     }
 
     const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :I last saw %s %s ago."
-        .format(target, event.content, elapsed));
+    plugin.privmsg(event.channel, event.sender.nickname,
+        "I last saw %s %s ago.".format(event.content, elapsed));
 }
 
 
@@ -359,6 +352,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 void onCommandPrintSeen(SeenPlugin plugin)
 {
     writeln(plugin.seenUsers.toPrettyString);
+    flushIfCygwin();
 }
 
 
@@ -570,4 +564,5 @@ final class SeenPlugin : IRCPlugin
      +  the plugin to be really small.
      +/
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

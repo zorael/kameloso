@@ -2,7 +2,7 @@ module kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage, logger;
+import kameloso.common : flushIfCygwin, logger;
 
 import std.concurrency : send;
 
@@ -35,6 +35,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
+
+        flushIfCygwin();
     }
 
     if (plugin.printAsserts)
@@ -49,7 +51,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
         writeln();
-        stdout.flush();
+        flushIfCygwin();
     }
 }
 
@@ -65,6 +67,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @Prefix(NickPolicy.required, "writeconfig")
 void onCommandSave(AdminPlugin plugin)
 {
+    import kameloso.common : ThreadMessage;
+
     logger.info("Saving configuration to disk.");
     plugin.state.mainThread.send(ThreadMessage.Save());
 }
@@ -90,6 +94,8 @@ void onCommandShowUsers(AdminPlugin plugin)
     {
         writefln("%-12s [%s]", entry.key, entry.value);
     }
+
+    flushIfCygwin();
 }
 
 
@@ -103,7 +109,8 @@ void onCommandShowUsers(AdminPlugin plugin)
 @Prefix(NickPolicy.required, "sudo")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
+    // FIXME
+    plugin.raw(event.content);
 }
 
 
@@ -125,11 +132,11 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.content.length)
         {
-            mainThread.send(ThreadMessage.Quit(), event.content);
+            plugin.quit(event.content);
         }
         else
         {
-            mainThread.send(ThreadMessage.Quit());
+            plugin.quit();
         }
     }
 }
@@ -161,7 +168,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (!bot.homes.canFind(channel))
         {
-            mainThread.send(ThreadMessage.Sendline(), "JOIN :" ~ channel);
+            plugin.join(channel);
         }
 
         logger.info("Adding channel: ", channel);
@@ -205,7 +212,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
-        mainThread.send(ThreadMessage.Sendline(), "PART :" ~ channel);
+        plugin.part(channel);
     }
 }
 
@@ -307,6 +314,7 @@ void onCommandResetTerminal()
 {
     import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
+    flushIfCygwin();
 }
 
 
@@ -361,6 +369,7 @@ void onCommandAsserts(AdminPlugin plugin)
     plugin.printAsserts = !plugin.printAsserts;
     logger.info("Printing asserts: ", plugin.printAsserts);
     formatBot(stdout.lockingTextWriter, plugin.state.bot);
+    flushIfCygwin();
 }
 
 
@@ -410,6 +419,8 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
+    import std.array : array;
+    import std.conv : to;
     import std.format : format;
 
     // The prefix could be in lowercase. Do we care?
@@ -422,8 +433,20 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
         return;
     }
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "%s :%s".format(prefix, event.content.splitter(' ').joiner(",")));
+    immutable string channels = event.content
+        .splitter(' ')
+        .joiner(",")
+        .array
+        .to!string;
+
+    if (prefix == "JOIN")
+    {
+        plugin.join(channels);
+    }
+    else
+    {
+        plugin.part(channels);
+    }
 }
 
 
@@ -450,4 +473,5 @@ final class AdminPlugin : IRCPlugin
     bool printAsserts;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

@@ -2,6 +2,7 @@ module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.regex : ctRegex;
@@ -181,10 +182,8 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
 
-                import kameloso.common : ThreadMessage;
-                plugin.state.mainThread.send(ThreadMessage.Sendline(),
-                    "PRIVMSG %s :%s | %s"
-                    .format(event.channel, event.sender.nickname, result));
+                plugin.chan(event.channel, "%s | %s"
+                    .format(event.sender.nickname, result));
 
                 plugin.prevlines.remove(event.sender.nickname);
             }
@@ -227,4 +226,5 @@ final class SedReplacePlugin : IRCPlugin
     Line[string] prevlines;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

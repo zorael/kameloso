@@ -6,6 +6,7 @@ import kameloso.common : ThreadMessage, logger;
 
 import std.concurrency : prioritySend, send;
 import std.format : format;
+import std.typecons : Flag, No, Yes;
 
 import std.stdio;
 
@@ -155,6 +156,7 @@ void joinChannels(ConnectPlugin plugin)
         import std.algorithm.iteration : joiner, uniq;
         import std.algorithm.sorting : sort;
         import std.array : array;
+        import std.conv : to;
         import std.range : chain;
 
         // FIXME: line should split if it reaches 512 characters
@@ -163,9 +165,11 @@ void joinChannels(ConnectPlugin plugin)
             .array
             .sort()
             .uniq
-            .joiner(",");
+            .joiner(",")
+            .array
+            .to!string;
 
-        mainThread.send(ThreadMessage.Sendline(), "JOIN :%s".format(chanlist));
+        plugin.join(chanlist);
     }
 }
 
@@ -180,7 +184,7 @@ void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
 {
     if (plugin.serverPinged) return;
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(), event.content);
+    plugin.raw(event.content);
 }
 
 
@@ -240,7 +244,9 @@ void tryAuth(ConnectPlugin plugin)
             break;
 
         case "EFNet":
-            // Can't auth
+            // No registration available
+            bot.authentication = Status.finished;
+            bot.updated = true;
             return;
 
         case "QuakeNet":
@@ -274,9 +280,8 @@ void tryAuth(ConnectPlugin plugin)
                 return;
             }
 
-            mainThread.prioritySend(ThreadMessage.Quietline(),
-                "PRIVMSG %s :%s %s"
-                .format(service, verb, bot.authPassword));
+            plugin.query!(Yes.quiet)(service, "%s %s"
+                .format(verb, bot.authPassword));
             logger.trace("--> PRIVMSG %s :%s hunter2"
                 .format(service, verb));
             break;
@@ -295,9 +300,8 @@ void tryAuth(ConnectPlugin plugin)
                 login = bot.origNickname;
             }
 
-            mainThread.prioritySend(ThreadMessage.Quietline(),
-                "PRIVMSG %s :%s %s %s"
-                .format(service, verb, login, bot.authPassword));
+            plugin.query!(Yes.quiet)(service, "%s %s %s"
+                .format(verb, login, bot.authPassword));
             logger.trace("--> PRIVMSG %s :%s %s hunter2"
                 .format(service, verb, login));
             break;
@@ -353,7 +357,7 @@ void onEndOfMotd(ConnectPlugin plugin)
         {
             import std.string : strip;
 
-            mainThread.send(ThreadMessage.Sendline(), line.strip());
+            plugin.raw(line.strip());
         }
     }
 }
@@ -399,9 +403,7 @@ void onNickInUse(ConnectPlugin plugin)
     {
         bot.nickname ~= altNickSign;
         bot.updated = true;
-
-        mainThread.send(ThreadMessage.Sendline(),
-            "NICK %s".format(bot.nickname));
+        plugin.raw("NICK " ~ bot.nickname);
     }
 }
 
@@ -438,8 +440,7 @@ void onInvite(ConnectPlugin plugin, const IRCEvent event)
         return;
     }
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "JOIN :" ~ event.channel);
+    plugin.join(event.channel);
 }
 
 
@@ -471,7 +472,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
             {
             case "sasl":
                 if (!plugin.connectSettings.sasl || !bot.authPassword.length) continue;
-                mainThread.send(ThreadMessage.Quietline(), "CAP REQ :sasl");
+                plugin.raw!(Yes.quiet)("CAP REQ :sasl");
                 tryingSASL = true;
                 break;
 
@@ -504,7 +505,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                mainThread.send(ThreadMessage.Quietline(), "CAP REQ :" ~ cap);
+                plugin.raw!(Yes.quiet)("CAP REQ :" ~ cap);
                 break;
 
             default:
@@ -517,7 +518,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            mainThread.send(ThreadMessage.Quietline(), "CAP END");
+            plugin.raw!(Yes.quiet)("CAP END");
         }
         break;
 
@@ -525,7 +526,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         switch (event.content)
         {
         case "sasl":
-            mainThread.send(ThreadMessage.Sendline(), "AUTHENTICATE PLAIN");
+            plugin.raw("AUTHENTICATE PLAIN");
             break;
 
         default:
@@ -568,7 +569,8 @@ void onSASLAuthenticate(ConnectPlugin plugin)
             .format(authLogin, '\0', authLogin, '\0', bot.authPassword);
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
-        mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
+        //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
+        plugin.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
         logger.trace("--> AUTHENTICATE hunter2");
     }
 }
@@ -602,7 +604,7 @@ void onSASLSuccess(ConnectPlugin plugin)
         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
         +/
 
-        mainThread.send(ThreadMessage.Quietline(), "CAP END");
+        plugin.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -622,7 +624,7 @@ void onSASLFailure(ConnectPlugin plugin)
     {
         if (plugin.connectSettings.exitOnSASLFailure)
         {
-            mainThread.send(ThreadMessage.Quit(), "SASL Negotiation Failure");
+            plugin.quit("SASL Negotiation Failure");
             return;
         }
 
@@ -632,7 +634,7 @@ void onSASLFailure(ConnectPlugin plugin)
         bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
-        mainThread.send(ThreadMessage.Quietline(), "CAP END");
+        plugin.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -663,12 +665,11 @@ void register(ConnectPlugin plugin)
         bot.registration = Status.started;
         bot.updated = true;
 
-        mainThread.send(ThreadMessage.Quietline(), "CAP LS 302");
+        plugin.raw!(Yes.quiet)("CAP LS 302");
 
         if (bot.pass.length)
         {
-            mainThread.send(ThreadMessage.Quietline(),
-                "PASS " ~ bot.pass);
+            plugin.raw!(Yes.quiet)("PASS " ~ bot.pass);
 
             // fake it
             logger.trace("--> PASS hunter2");
@@ -678,15 +679,13 @@ void register(ConnectPlugin plugin)
             if (bot.server.daemon == IRCServer.Daemon.twitch)
             {
                 logger.error("You *need* a password to join this server");
-                mainThread.send(ThreadMessage.Quit());
+                plugin.quit();
                 return;
             }
         }
 
-        mainThread.send(ThreadMessage.Sendline(),
-            "USER %s * 8 : %s".format(bot.ident, bot.user));
-        mainThread.send(ThreadMessage.Sendline(),
-            "NICK " ~ bot.nickname);
+        plugin.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
+        plugin.raw("NICK " ~ bot.nickname);
     }
 }
 
@@ -729,4 +728,5 @@ final class ConnectPlugin : IRCPlugin
     bool serverPinged;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

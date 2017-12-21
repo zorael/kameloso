@@ -2,7 +2,8 @@ module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage, logger;
+import kameloso.common : flushIfCygwin, logger;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.json : JSONValue;
@@ -154,10 +155,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
-
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :%s".format(target, event.content));
+    plugin.privmsg(event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -210,10 +208,8 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
     ];
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-    immutable target = (event.channel.length) ? event.channel : event.sender.nickname;
 
-    plugin.state.mainThread.send(ThreadMessage.Sendline(),
-        "PRIVMSG %s :%s".format(target, reply));
+    plugin.privmsg(event.channel, event.sender.nickname, reply);
 }
 
 
@@ -254,19 +250,16 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
     try
     {
         immutable quote = plugin.getQuote(nickname);
-        immutable target = event.channel.length ?
-            event.channel : event.sender.nickname;
 
         if (quote.length)
         {
-            plugin.state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :%s | %s".format(target, nickname, quote));
+            plugin.privmsg(event.channel, event.sender.nickname,
+                "%s | %s".format(nickname, quote));
         }
         else
         {
-            plugin.state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :No quote on record for %s"
-                .format(target, nickname));
+            plugin.privmsg(event.channel, event.sender.nickname,
+                "No quote on record for %s".format(nickname));
         }
     }
     catch (const JSONException e)
@@ -310,12 +303,9 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
         plugin.addQuote(nickname, slice);
         plugin.saveQuotes(plugin.chatbotSettings.quotesFile);
 
-        immutable target = (event.channel.length) ?
-            event.channel : event.sender.nickname;
-
-        plugin.state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :Quote for %s saved (%d on record)"
-            .format(target, nickname, plugin.quotes[nickname].array.length));
+        plugin.privmsg(event.channel, event.sender.nickname,
+            "Quote for %s saved (%d on record)"
+            .format(nickname, plugin.quotes[nickname].array.length));
     }
     catch (const JSONException e)
     {
@@ -339,6 +329,7 @@ void onCommandPrintQuotes(ChatbotPlugin plugin)
     if (!plugin.chatbotSettings.quotes) return;
 
     writeln(plugin.quotes.toPrettyString);
+    flushIfCygwin();
 }
 
 
@@ -399,4 +390,5 @@ final class ChatbotPlugin : IRCPlugin
     JSONValue quotes;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

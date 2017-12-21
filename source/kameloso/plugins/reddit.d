@@ -5,6 +5,7 @@ version(Web):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
+import kameloso.messaging;
 
 import std.concurrency : Tid;
 
@@ -70,22 +71,20 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
     // Garbage-collect entries too old to use
     plugin.cache.prune();
 
-    const inCache = url in plugin.cache;
+    const cachedLookup = url in plugin.cache;
 
-    if (inCache) writeln("in cache");
-
-    if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
+    if (cachedLookup && ((Clock.currTime - SysTime.fromUnixTime(cachedLookup.when))
         < Timeout.titleCache.seconds))
     {
         logger.log("Found Reddit lookup in cache");
-        plugin.state.mainThread.reportReddit((*inCache).url, target);
+        plugin.state.mainThread.reportReddit((*cachedLookup).url, event);
         return;
     }
 
     // There were no cached entries for this URL
 
     shared IRCPluginState sState = cast(shared)plugin.state;
-    spawn(&worker, sState, plugin.cache, url, target);
+    spawn(&worker, sState, plugin.cache, url, event);
 }
 
 
@@ -97,7 +96,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
  +  Run in it own thread, so arguments have to be value types or shared.
  +/
 void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
-    const string url, const string target)
+    const string url, const IRCEvent event)
 {
     import kameloso.common;
     import std.datetime.systime : Clock;
@@ -112,7 +111,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     try
     {
         immutable redditURL = lookupReddit(url);
-        state.mainThread.reportReddit(redditURL, target);
+        state.mainThread.reportReddit(redditURL, event);
 
         RedditLookup lookup;
         lookup.url = redditURL;
@@ -168,7 +167,7 @@ string lookupReddit(const string url)
 /++
  +  Reports the result of a Reddit lookup to a channel or in a private message.
  +/
-void reportReddit(Tid tid, const string reddit, const string target)
+void reportReddit(Tid tid, const string reddit, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
@@ -176,13 +175,13 @@ void reportReddit(Tid tid, const string reddit, const string target)
 
     if (reddit.length)
     {
-        tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :Reddit post: %s".format(target, reddit));
+        tid.privmsg(event.channel, event.sender.nickname,
+            "Reddit post: " ~ reddit);
     }
     else
     {
-        tid.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :No corresponding Reddit post found.".format(target));
+        tid.privmsg(event.channel, event.sender.nickname,
+            "No corresponding Reddit post found.");
     }
 
 }

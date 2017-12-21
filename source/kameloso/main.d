@@ -150,9 +150,108 @@ Flag!"quit" checkMessages(ref Client client)
         return quitServer(ThreadMessage.Quit(), client.bot.quitReason);
     }
 
+    /// Saves current configuration to disk
     void save(ThreadMessage.Save)
     {
         client.writeConfigurationFile(client.settings.configFile);
+    }
+
+    /// Reverse-formats an event and sends it to the server
+    void eventToServer(IRCEvent event)
+    {
+        import std.format : format;
+
+        string line;
+
+        with (IRCEvent.Type)
+        with (event)
+        with (client)
+        switch (event.type)
+        {
+        case CHAN:
+            line = "PRIVMSG %s :%s".format(channel, content);
+            break;
+
+        case QUERY:
+            line = "PRIVMSG %s :%s".format(target.nickname, content);
+            break;
+
+        case EMOTE:
+            import kameloso.constants : IRCControlCharacter;
+            alias I = IRCControlCharacter;
+
+            immutable emoteTarget = target.nickname.length ?
+                target.nickname : channel;
+
+            line = "PRIVMSG %s :%s%s%s".format(emoteTarget,
+                cast(size_t)I.ctcp, content, cast(size_t)I.ctcp);
+            break;
+
+        case CHANMODE:
+            line = "MODE %s %s :%s".format(channel, aux, content);
+            break;
+
+        case USERMODE:
+            line = "MODE %s %s".format(aux, target.nickname);
+            break;
+
+        case TOPIC:
+            line = "TOPIC %s :%s".format(channel, content);
+            break;
+
+        case INVITE:
+            line = "INVITE %s :%s".format(channel, target.nickname);
+            break;
+
+        case JOIN:
+            line = "JOIN %s".format(channel);
+            break;
+
+        case KICK:
+            immutable reason = content.length ? " :" ~ content : string.init;
+            line = "KICK %s%s".format(channel, reason);
+            break;
+
+        case PART:
+            immutable reason = content.length ? " :" ~ content : string.init;
+            conn.sendline("PART %s%s".format(channel, reason));
+            break;
+
+        case QUIT:
+            immutable reason = content.length ? " :" ~ content : string.init;
+            line = "QUIT %s%s".format(channel, reason);
+            break;
+
+        case NICK:
+            line = "NICK %s".format(target.nickname);
+            break;
+
+        case PRIVMSG:
+            if (channel.length) goto case CHAN;
+            else goto case QUERY;
+
+        case MODE:
+            if (channel.length) goto case CHANMODE;
+            else goto case USERMODE;
+
+        case UNSET:
+            line = content;
+            break;
+
+        default:
+            logger.warning("No outgoing event case for type ", type);
+            line = content;
+            break;
+        }
+
+        if (event.target.special)
+        {
+            quietline(ThreadMessage.Quietline(), line);
+        }
+        else
+        {
+            sendline(ThreadMessage.Sendline(), line);
+        }
     }
 
     /// Did the concurrency receive catch something?
@@ -166,6 +265,7 @@ Flag!"quit" checkMessages(ref Client client)
             &quietline,
             &throttleline,
             &pong,
+            &eventToServer,
             &quitServer,
             &quitEmpty,
             &save,

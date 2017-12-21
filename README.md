@@ -143,11 +143,9 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * Travis LDC tests
 * ready for channel-awareness (+channel modes)
 * more command-line flags
-* formalise outgoing messages instead of just raw strings
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 * concurrency message-checking as Fiber?
-* hot-saving of configuration files (for `addfriend` and such)
 
 # Built With
 
