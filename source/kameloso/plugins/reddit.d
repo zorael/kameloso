@@ -71,15 +71,13 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
     // Garbage-collect entries too old to use
     plugin.cache.prune();
 
-    const inCache = url in plugin.cache;
+    const cachedLookup = url in plugin.cache;
 
-    if (inCache) writeln("in cache");
-
-    if (inCache && ((Clock.currTime - SysTime.fromUnixTime(inCache.when))
+    if (cachedLookup && ((Clock.currTime - SysTime.fromUnixTime(cachedLookup.when))
         < Timeout.titleCache.seconds))
     {
         logger.log("Found Reddit lookup in cache");
-        plugin.state.mainThread.reportReddit((*inCache).url, event);
+        plugin.state.mainThread.reportReddit((*cachedLookup).url, event);
         return;
     }
 
