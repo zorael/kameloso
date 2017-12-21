@@ -60,9 +60,6 @@ interface IRCPlugin
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
-
-    /// Returns the thread ID of the main thread
-    Tid toServer() @property;
 }
 
 
@@ -1172,16 +1169,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref IRCPluginState state() @property
     {
         return this.privateState;
-    }
-
-    // toServer
-    /++
-     +  FIXME
-     +/
-    pragma(inline)
-    Tid toServer() @property
-    {
-        return state.mainThread;
     }
 }
 
