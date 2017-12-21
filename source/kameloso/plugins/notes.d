@@ -364,13 +364,12 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
  +/
 void saveNotes(NotesPlugin plugin, const string filename)
 {
-    import std.ascii : newline;
     import std.file  : exists, isFile;
 
     auto file = File(filename, "w");
 
     file.write(plugin.notes.toPrettyString);
-    file.write(newline);
+    file.writeln();
 }
 
 
