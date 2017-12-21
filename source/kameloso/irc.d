@@ -541,7 +541,9 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_TOPICWHOTIME: // 333
+    case RPL_BANLIST: // 367
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
+        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         slice.nom(' ');  // bot nickname
         event.channel = slice.nom(' ');
         event.content = slice.nom(' ');
@@ -821,6 +823,15 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             event.aux = misc;
         }
 
+        break;
+
+    case RPL_CHANNELMODEIS: // 324
+    case RPL_CREATIONTIME: // 32
+        // :kornbluth.freenode.net 324 kameloso #flerrp +ns
+        // :kornbluth.freenode.net 329 kameloso #flerrp 1512995737
+        slice.nom(' ');
+        event.channel = slice.nom(' ');
+        event.aux = slice;
         break;
 
     case RPL_LIST: // 322
