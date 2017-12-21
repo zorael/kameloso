@@ -1380,19 +1380,18 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         import std.traits : EnumMembers;
 
         /++
-            +  This iterates through all IRCEvent.Types that begin with
-            +  "CTCP_" and generates switch cases for the string of each.
-            +  Inside it will assign event.type to the corresponding
-            +  IRCEvent.Type.
-            +
-            +  Like so, except automatically generated through compile-time
-            +  introspection:
-            +
-            +      case "CTCP_PING":
-            +          event.type = CTCP_PING;
-            +          event.aux = "PING";
-            +          break;
-            +/
+         +  This iterates through all IRCEvent.Types that begin with `CTCP_` and
+         +  generates switch cases for the string of each. Inside it will assign
+         +  `event.type` to the corresponding `IRCEvent.Type`.
+         +
+         +  Like so, except automatically generated through compile-time
+         +  introspection:
+         +
+         +      case "CTCP_PING":
+         +          event.type = CTCP_PING;
+         +          event.aux = "PING";
+         +          break;
+         +/
 
         with (IRCEvent.Type)
         top:
