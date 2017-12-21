@@ -238,7 +238,7 @@ void onPing(SeenPlugin plugin)
              +  of why we wanted to import that.
              +/
             // FIXME
-            raw("WHO " ~ channel);
+            raw!(Yes.quiet)("WHO " ~ channel);
         }
 
         import std.datetime.systime : Clock;
