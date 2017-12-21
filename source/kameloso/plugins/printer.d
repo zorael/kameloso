@@ -100,7 +100,7 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        plugin.formatMessage(stdout.lockingTextWriter, mutEvent);
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
         break;
     }
 }
@@ -230,7 +230,8 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +      sink = output range to format the IRCEvent into
  +      event = the reference event that is being formatted
  +/
-void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event)
+void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
+    bool monochrome)
 {
     import kameloso.bash : BashForeground;
     import kameloso.string : enumToString, beginsWith;
@@ -249,7 +250,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     with (plugin.state)
     with (event)
     with (event.sender)
-    if (settings.monochrome)
+    if (monochrome)
     {
         put(sink, '[', timestamp, "] ");
 
