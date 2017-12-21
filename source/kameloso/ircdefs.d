@@ -1083,9 +1083,8 @@ struct IRCUser
     bool isServer() @property const
     {
         import kameloso.string : has;
-        import std.algorithm.searching : endsWith;
 
-        return (!nickname.length && address.has('.') && !address.endsWith('.'));
+        return (!nickname.length && address.has('.'));
     }
 }
 
