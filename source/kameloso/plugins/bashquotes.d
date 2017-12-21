@@ -50,7 +50,6 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     import std.regex : ctRegex, matchFirst, replaceAll;
 
     IRCPluginState state = cast(IRCPluginState)sState;
-    Tid toServer = state.mainThread;
 
     kameloso.common.settings = state.settings;
     initLogger(state.settings.monochrome, state.settings.brightTerminal);
@@ -79,7 +78,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         if (!numBlock.length)
         {
-            toServer.privmsg(event.channel, event.sender.nickname,
+            state.mainThread.privmsg(event.channel, event.sender.nickname,
                 "No such bash.org quote: %s".format(event.content));
             return;
         }
@@ -98,12 +97,13 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
             .replaceAll(brEngine, string.init)
             .splitter("\n");
 
-        toServer.throttleline(event.channel, event.sender.nickname,
+        state.mainThread.throttleline(event.channel, event.sender.nickname,
             "[bash.org] #%s".format(num));
 
         foreach (line; range)
         {
-            toServer.throttleline(event.channel, event.sender.nickname, line);
+            state.mainThread.throttleline(event.channel,
+                event.sender.nickname, line);
         }
     }
     catch (const Exception e)
