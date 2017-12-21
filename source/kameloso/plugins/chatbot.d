@@ -303,9 +303,6 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
         plugin.addQuote(nickname, slice);
         plugin.saveQuotes(plugin.chatbotSettings.quotesFile);
 
-        immutable target = (event.channel.length) ?
-            event.channel : event.sender.nickname;
-
         plugin.privmsg(event.channel, event.sender.nickname,
             "Quote for %s saved (%d on record)"
             .format(nickname, plugin.quotes[nickname].array.length));

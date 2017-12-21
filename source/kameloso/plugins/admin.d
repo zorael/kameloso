@@ -106,7 +106,7 @@ void onCommandShowUsers(AdminPlugin plugin)
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
     // FIXME
-    //plugin.toServer.raw(event.content);
+    plugin.raw(event.content);
 }
 
 
@@ -128,12 +128,11 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.content.length)
         {
-            // FIXME
-            //plugin.toServer.quit(event.content);
+            plugin.quit(event.content);
         }
         else
         {
-            //plugin.toServer.quit();
+            plugin.quit();
         }
     }
 }
@@ -165,8 +164,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (!bot.homes.canFind(channel))
         {
-            // FIXME
-            //plugin.toServer.join(channel);
+            plugin.join(channel);
         }
 
         logger.info("Adding channel: ", channel);
@@ -210,8 +208,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
-        // FIXME
-        //plugin.toServer.part(channel);
+        plugin.part(channel);
     }
 }
 
@@ -438,12 +435,11 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 
     if (prefix == "JOIN")
     {
-        // FIXME
-        //plugin.toServer.join(channels);
+        plugin.join(channels);
     }
     else
     {
-        //plugin.toServer.part(channels);
+        plugin.part(channels);
     }
 }
 
@@ -471,4 +467,5 @@ final class AdminPlugin : IRCPlugin
     bool printAsserts;
 
     mixin IRCPluginImpl;
+    mixin MessagingProxy;
 }

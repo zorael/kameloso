@@ -81,9 +81,6 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
         {
             toServer.privmsg(event.channel, event.sender.nickname,
                 "No such bash.org quote: %s".format(event.content));
-            /*state.mainThread.send(ThreadMessage.Sendline(),
-                "PRIVMSG %s :No such bash.org quote: %s"
-                .format(target, event.content));*/
             return;
         }
 
@@ -103,14 +100,10 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         toServer.throttleline(event.channel, event.sender.nickname,
             "[bash.org] #%s".format(num));
-        /*state.mainThread.send(ThreadMessage.Sendline(),
-            "PRIVMSG %s :[bash.org] #%s".format(target, num));*/
 
         foreach (line; range)
         {
             toServer.throttleline(event.channel, event.sender.nickname, line);
-            /*state.mainThread.send(ThreadMessage.Throttleline(),
-                "PRIVMSG %s :%s".format(target, line));*/
         }
     }
     catch (const Exception e)
