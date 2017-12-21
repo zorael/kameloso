@@ -1551,7 +1551,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
     {
         if (!bot.server.network.length)
         {
-            import std.string : endsWith;
+            import std.algorithm.searching : endsWith;
 
             if (bot.server.address.endsWith(".twitch.tv"))
             {
