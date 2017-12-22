@@ -27,7 +27,7 @@
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
             "buildRequirements": [ "silenceDeprecations" ],
-            "versions": [ "Cygwin", "Colours" ]
+            "versions": [ "Cygwin_", "Colours" ]
         },
         {
             "name": "vanilla",
