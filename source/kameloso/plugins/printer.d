@@ -101,6 +101,7 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
 
     default:
         plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
+        version(Cygwin_) stdout.flush();
         break;
     }
 }

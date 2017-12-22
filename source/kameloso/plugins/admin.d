@@ -35,6 +35,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
+
+        version(Cygwin_) stdout.flush();
     }
 
     if (plugin.printAsserts)
@@ -49,6 +51,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
         writeln();
+        version(Cygwin_) stdout.flush();
     }
 }
 
@@ -91,6 +94,8 @@ void onCommandShowUsers(AdminPlugin plugin)
     {
         writefln("%-12s [%s]", entry.key, entry.value);
     }
+
+    version(Cygwin_) stdout.flush();
 }
 
 
@@ -309,6 +314,7 @@ void onCommandResetTerminal()
 {
     import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
+    version(Cygwin_) stdout.flush();
 }
 
 
@@ -363,6 +369,7 @@ void onCommandAsserts(AdminPlugin plugin)
     plugin.printAsserts = !plugin.printAsserts;
     logger.info("Printing asserts: ", plugin.printAsserts);
     formatBot(stdout.lockingTextWriter, plugin.state.bot);
+    version(Cygwin_) stdout.flush();
 }
 
 

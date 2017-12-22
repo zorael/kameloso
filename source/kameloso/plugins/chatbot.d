@@ -329,6 +329,7 @@ void onCommandPrintQuotes(ChatbotPlugin plugin)
     if (!plugin.chatbotSettings.quotes) return;
 
     writeln(plugin.quotes.toPrettyString);
+    version(Cygwin_) stdout.flush();
 }
 
 

@@ -251,6 +251,8 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
         formatObjectsImpl!(No.coloured, widthArg)
             (stdout.lockingTextWriter, things);
     }
+
+    version(Cygwin_) stdout.flush();
 }
 
 
@@ -1160,11 +1162,7 @@ final class KamelosoLogger : Logger
     override protected void finishLogMsg() @trusted
     {
         finishLogMsg(stdout.lockingTextWriter);
-
-        version(Cygwin)
-        {
-            stdout.flush();
-        }
+        version(Cygwin_) stdout.flush();
     }
 }
 
@@ -1565,6 +1563,8 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
         BashForeground.default_.colour);
+
+    version(Cygwin_) stdout.flush();
 }
 
 

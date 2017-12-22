@@ -310,6 +310,7 @@ void generateAsserts(ref Client client)
             //sink.formatEventAssertBlock(event);
             writeln();
             stdout.lockingTextWriter.formatEventAssertBlock(event);
+            version(Cygwin_) stdout.flush();
             //writeln(sink.data);
             //sink.clear();
         }

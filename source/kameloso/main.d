@@ -572,6 +572,7 @@ void main() {
     // Compiled with -b unittest, so run the tests and exit.
     // Logger is initialised in a module constructor, don't reinit here.
     logger.info("All tests passed successfully!");
+    // No need to Cygwin-flush; the logger did that already
 }
 else
 int main(string[] args)

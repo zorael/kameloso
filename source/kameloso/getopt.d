@@ -76,6 +76,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
     import std.format : format;
     import std.getopt;
 
+    version(Cygwin_)
+    scope(exit) stdout.flush();
+
     bool shouldWriteConfig;
     bool shouldShowVersion;
     bool shouldShowSettings;
