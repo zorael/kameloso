@@ -2,7 +2,7 @@ module kameloso.plugins.admin;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : flushIfCygwin, logger;
+import kameloso.common : logger;
 
 import std.concurrency : send;
 
@@ -35,8 +35,6 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
-
-        flushIfCygwin();
     }
 
     if (plugin.printAsserts)
@@ -51,7 +49,6 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
         writeln();
-        flushIfCygwin();
     }
 }
 
@@ -94,8 +91,6 @@ void onCommandShowUsers(AdminPlugin plugin)
     {
         writefln("%-12s [%s]", entry.key, entry.value);
     }
-
-    flushIfCygwin();
 }
 
 
@@ -314,7 +309,6 @@ void onCommandResetTerminal()
 {
     import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
-    flushIfCygwin();
 }
 
 
@@ -369,7 +363,6 @@ void onCommandAsserts(AdminPlugin plugin)
     plugin.printAsserts = !plugin.printAsserts;
     logger.info("Printing asserts: ", plugin.printAsserts);
     formatBot(stdout.lockingTextWriter, plugin.state.bot);
-    flushIfCygwin();
 }
 
 

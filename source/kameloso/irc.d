@@ -1060,7 +1060,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("--------------------------------------");
         writeln();
-        flushIfCygwin();
     }
     else if (event.target.nickname.beginsWith('#') &&
         (event.type != IRCEvent.Type.ERR_NOSUCHNICK) &&
@@ -1071,7 +1070,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("------------------------------------");
         writeln();
-        flushIfCygwin();
     }
     else if (event.channel.length && !event.channel.beginsWith('#') &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
@@ -1084,7 +1082,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         printObject(event);
         logger.warning("------------------------------------");
         writeln();
-        flushIfCygwin();
     }
 
     if (event.target.nickname == parser.bot.nickname)

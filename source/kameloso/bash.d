@@ -356,7 +356,6 @@ version(none)
 version(Colours)
 unittest
 {
-    import kameloso.common : flushIfCygwin;
     import std.conv : to;
     import std.stdio : write, writeln;
 
@@ -446,7 +445,6 @@ unittest
     }
 
     writeln();
-    flushIfCygwin();
 }
 
 

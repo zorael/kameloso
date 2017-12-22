@@ -72,7 +72,7 @@ public:
 Flag!"quit" handleGetopt(ref Client client, string[] args)
 {
     import kameloso.bash : BashForeground, colour;
-    import kameloso.common : flushIfCygwin, initLogger, printVersionInfo;
+    import kameloso.common : initLogger, printVersionInfo;
     import std.format : format;
     import std.getopt;
 
@@ -164,7 +164,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
             defaultGetoptPrinter(headline, results.options);
             writeln();
-            flushIfCygwin();
             return Yes.quit;
         }
 
@@ -197,8 +196,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
                 plugin.present();
             }
 
-            flushIfCygwin();
-
             client.writeConfigurationFile(settings.configFile);
             return Yes.quit;
         }
@@ -214,8 +211,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
             initPlugins();
             foreach (plugin; plugins) plugin.printSettings();
-
-            flushIfCygwin();
 
             return Yes.quit;
         }

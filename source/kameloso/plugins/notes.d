@@ -168,7 +168,6 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 void onCommandPrintNotes(NotesPlugin plugin)
 {
     writeln(plugin.notes.toPrettyString);
-    flushIfCygwin();
 }
 
 
