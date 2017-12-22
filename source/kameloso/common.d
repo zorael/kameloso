@@ -1642,22 +1642,3 @@ void writeConfigurationFile(ref Client client, const string filename)
         writeToDisk!(Yes.addBanner)(filename, justified);
     }
 }
-
-
-// flushIfCygwin
-/++
- +   The default Cygwin terminal doesn't update unless we flush stdout. This has
- +   to do with how it does (or doesn't) present itself as a real tty.
-+/
-pragma(inline)
-void flushIfCygwin() @trusted
-{
-    /++
-     +  Normal writeln-family of functions seem to be @trusted despite doing
-     +  I/O, so we'll just blindly trust this ourselves too.
-     +/
-    version(Cygwin)
-    {
-        stdout.flush();
-    }
-}
