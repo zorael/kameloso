@@ -2007,11 +2007,20 @@ struct IRCChannel
             return true;*/
         }
 
+        void toString(scope void delegate(const(char)[]) @safe sink) const
+        {
+            import std.format : formattedWrite;
+
+            sink.formattedWrite("+%c (%s)\n@ %s\n< %s\n", modechar, data, user,
+                exemptions);
+        }
+
         string toString()
         {
             import std.format : format;
-            return "+%c (%s)\n@ %s\n< %s\n"
-                .format(modechar, data, user, exemptions);
+
+            return "+%c (%s)\n@ %s\n< %s\n".format(modechar, data, user,
+                exemptions);
         }
     }
 
