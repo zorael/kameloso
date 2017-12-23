@@ -1999,18 +1999,14 @@ struct IRCChannel
 
         bool opEquals(Mode other)
         {
+            // Ignore exemptions when comparing Modes
             return (modechar == other.modechar) && (data == other.data) &&
                 (user == other.user);
-            /*if (modechar != other.modechar) return false;
-            if (data != other.data) return false;
-            if (user != other.user) return false;
-            return true;*/
         }
 
         void toString(scope void delegate(const(char)[]) @safe sink) const
         {
             import std.format : formattedWrite;
-
             sink.formattedWrite("+%c (%s)\n@ %s\n< %s\n", modechar, data, user,
                 exemptions);
         }
@@ -2018,7 +2014,6 @@ struct IRCChannel
         string toString()
         {
             import std.format : format;
-
             return "+%c (%s)\n@ %s\n< %s\n".format(modechar, data, user,
                 exemptions);
         }
@@ -2029,46 +2024,42 @@ struct IRCChannel
     Mode[] modes;
     string[] users;
 
-    void setMode(const string modeline) @system
+    void setMode(const string modestring, const string data) @system
     {
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.mutation : remove;
         import std.conv : to;
-        import std.exception : assumeUnique;
         import std.range : lockstep;
-        import std.string : indexOf;
 
-        if (!modeline.length) return;
+        immutable sign = modestring[0];
+        immutable modechars = modestring[1..$];
 
-        string slice = modeline;
-        immutable sign = slice[0];
-        slice = slice[1..$];
-
-        if (slice.has(' '))
+        if (data.length)
         {
+            auto datalines = data.splitter(" ");
+
             if (sign == '+')
             {
-                immutable modechars = slice.nom(' ');
-                auto dataline = slice.splitter(" ");
                 size_t i;
                 Mode[] newModes;
 
-                foreach (modechar, datastring; lockstep(modechars, dataline))
+                foreach (modechar, datastring; lockstep(modechars, datalines))
                 {
                     if (modechar == 'e')
                     {
+                        // Exemption
                         assert(i > 0);
                         newModes[i-1].exemptions ~= IRCUser(datastring);
                     }
                     else
                     {
+                        // Ban
                         Mode newMode;
                         newMode.modechar = modechar.to!char;
 
-                        if ((datastring.indexOf('!') != -1) &&
-                            (datastring.indexOf('@') != -1) ||
-                            (datastring.indexOf('.') != -1))
+                        if (datastring.has('!') &&
+                            datastring.has('@'))
                         {
                             // Looks like a user
                             newMode.user = IRCUser(datastring);
@@ -2078,9 +2069,25 @@ struct IRCChannel
                             newMode.data = datastring;
                         }
 
-                        foreach (mode; modes)
+                        if (modechar == 'b')
                         {
-                            if (mode == newMode) continue;
+                            // If an identical ban Mode exists, skip
+                            foreach (mode; modes)
+                            {
+                                if (mode == newMode) continue;
+                            }
+                        }
+                        else
+                        {
+                            // If any Mode with the same char exists, overwrite
+                            foreach (immutable n, mode; modes)
+                            {
+                                if (mode.modechar == modechar)
+                                {
+                                    modes[n] = newMode;
+                                    continue;
+                                }
+                            }
                         }
 
                         newModes ~= newMode;
@@ -2092,17 +2099,13 @@ struct IRCChannel
             }
             else if (sign == '-')
             {
-                immutable modechars = slice.nom(' ');
-                auto dataline = slice.splitter(" ");
-
-                foreach (modechar, datastring; lockstep(modechars, dataline))
+                foreach (modechar, datastring; lockstep(modechars, datalines))
                 {
                     Mode newMode;
                     newMode.modechar = modechar.to!char;
 
-                    if ((datastring.indexOf('!') != -1) &&
-                        (datastring.indexOf('@') != -1) ||
-                        (datastring.indexOf('.') != -1))
+                    if (datastring.has('!') &&
+                        datastring.has('@'))
                     {
                         // Looks like a user
                         newMode.user = IRCUser(datastring);
@@ -2135,19 +2138,25 @@ struct IRCChannel
         }
         else
         {
-            // Channel mode
+            // No data; channel mode
+
             if (sign == '+')
             {
-                if (channelModes.indexOf(slice) == -1)
+                foreach (immutable modechar; modechars)
                 {
-                    channelModes ~= slice;
+                    if (!channelModes.has(modechar))
+                    {
+                        channelModes ~= modechar;
+                    }
                 }
             }
             else if (sign == '-')
             {
-                foreach (immutable modechar; slice)
+                foreach (immutable modechar; modechars)
                 {
-                    import std.string : representation;
+                    import std.exception : assumeUnique;
+                    import std.string : indexOf, representation;
+
                     immutable modecharIndex = channelModes.indexOf(modechar);
                     if (modecharIndex == -1) continue;
 
@@ -2177,32 +2186,32 @@ unittest
 
         chan.topic = "Huerbla";
 
-        chan.setMode("+b kameloso!~NaN@aasdf.freenode.org");
+        chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 1);
         writeln("-------------------------------------");
 
-        chan.setMode("+bbe hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
+        chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 3);
         assert((chan.modes[2].exemptions.length == 1), chan.modes[2].exemptions.length.text);
         writeln("-------------------------------------");
 
-        chan.setMode("-b *!*@*");
+        chan.setMode("-b", "*!*@*");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 0);
         writeln("-------------------------------------");
 
-        chan.setMode("+i");
+        chan.setMode("+i", string.init);
         assert(chan.channelModes == "i", chan.channelModes);
 
-        chan.setMode("+v");
+        chan.setMode("+v", string.init);
         assert(chan.channelModes == "iv", chan.channelModes);
 
-        chan.setMode("-i");
+        chan.setMode("-i", string.init);
         assert(chan.channelModes == "v", chan.channelModes);
 
-        chan.setMode("+l 200");
+        chan.setMode("+l", "200");
         IRCChannel.Mode lMode;
         lMode.modechar = 'l';
         lMode.data = "200";
