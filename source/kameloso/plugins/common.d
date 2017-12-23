@@ -276,6 +276,9 @@ struct IRCPluginState
     /// Hashmap of IRC user details
     IRCUser[string] users;
 
+    /// Hashmap of IRC channels
+    IRCChannel[string] channels;
+
     /// Queued `WHOIS` requests and pertaining `IRCEvents` to replay
     WHOISRequest[string] whoisQueue;
 }
