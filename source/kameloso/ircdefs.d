@@ -2027,7 +2027,7 @@ struct IRCChannel
     string topic;
     string channelModes;
     Mode[] modes;
-    IRCUser[] users;
+    string[] users;
 
     void newMode(const string modeline) @system
     {
