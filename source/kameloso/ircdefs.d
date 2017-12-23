@@ -2029,7 +2029,7 @@ struct IRCChannel
     Mode[] modes;
     string[] users;
 
-    void newMode(const string modeline) @system
+    void setMode(const string modeline) @system
     {
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
@@ -2171,39 +2171,42 @@ unittest
 {
     {
         import std.stdio;
+        import std.conv : text;
 
         IRCChannel chan;
 
         chan.topic = "Huerbla";
-        chan.newMode("+b kameloso!~NaN@aasdf.freenode.org");
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+
+        chan.setMode("+b kameloso!~NaN@aasdf.freenode.org");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 1);
         writeln("-------------------------------------");
 
-        chan.newMode("+bbe hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        chan.setMode("+bbe hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 3);
+        assert((chan.modes[2].exemptions.length == 1), chan.modes[2].exemptions.length.text);
         writeln("-------------------------------------");
 
-        chan.newMode("-b *!*@*");
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        chan.setMode("-b *!*@*");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 0);
         writeln("-------------------------------------");
 
-        chan.newMode("+i");
+        chan.setMode("+i");
         assert(chan.channelModes == "i", chan.channelModes);
 
-        chan.newMode("+v");
+        chan.setMode("+v");
         assert(chan.channelModes == "iv", chan.channelModes);
 
-        chan.newMode("-i");
+        chan.setMode("-i");
         assert(chan.channelModes == "v", chan.channelModes);
 
-        chan.newMode("+l 200");
+        chan.setMode("+l 200");
         IRCChannel.Mode lMode;
         lMode.modechar = 'l';
         lMode.data = "200";
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert((chan.modes[0] == lMode), chan.modes[0].toString());
     }
 }
