@@ -471,7 +471,7 @@ struct IRCEvent
         ERR_SUMMONDISABLED, // = 445,   // ":SUMMON has been disabled"
         ERR_USERSDISABLED, // = 446,    // ":USERS has been disabled"
         ERR_NONICKCHANGE, // = 447,
-        ERR_FORBIDDENCHANEL, // = 448,
+        ERR_FORBIDDENCHANNEL, // = 448,
         ERR_NOTIMPLEMENTED, // = 449,
         ERR_NOTREGISTERED, // = 451,    // ":You have not registered"
         ERR_IDCOLLISION, // = 452,
@@ -1379,7 +1379,7 @@ struct Typenums
         445 : Type.ERR_SUMMONDISABLED,
         446 : Type.ERR_USERSDISABLED,
         447 : Type.ERR_NONICKCHANGE,
-        448 : Type.ERR_FORBIDDENCHANEL,
+        448 : Type.ERR_FORBIDDENCHANNEL,
         449 : Type.ERR_NOTIMPLEMENTED,
         451 : Type.ERR_NOTREGISTERED,
         452 : Type.ERR_IDCOLLISION,
