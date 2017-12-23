@@ -1569,3 +1569,152 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
     }
 }
+
+
+// ChannelAwareness
+/++
+ +  FIXME
+ +/
+mixin template ChannelAwareness(string module_ = __MODULE__)
+{
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.SELFJOIN)
+    void onSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+            channels[event.channel] = IRCChannel.init;
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.SELFPART)
+    void onSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+            channels.remove(event.channel);
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.JOIN)
+    void onJoinMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.PART)
+    void onPartMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.TOPIC)
+    @(IRCEvent.Type.RPL_TOPIC)
+    void onTopicMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+            channels[event.channel].topic = event.content;
+        }
+    }
+
+    @(Chainable)// FIXME
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.CHANMODE)
+    void onChanModeMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME REALLY REALLy
+            //channels[event.channel].setMode(event.aux, event.content);
+            channels[event.channel].setMode(event.aux ~ " " ~ event.content);
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.USERMODE)
+    void onUserModeMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        {
+            // FIXME
+            logger.warning("WHEN DOES THIS HAPPEN");
+            logger.trace(event.raw);
+        }
+    }
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.RPL_WHOREPLY)
+    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        with (event.target)
+        {
+            // FIXME
+            auto user = nickname in users;
+            if (user) return;
+
+            users[nickname] = IRCUser(nickname, ident, address);
+        }
+    }
+
+    /*@(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.RPL_NAMREPLY)
+    void onNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        {
+            // FIXME
+        }
+    }*/
+
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.RPL_BANLIST)
+    void onBanListMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin)
+        with (plugin.state)
+        with (event.target)
+        {
+            // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
+            // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+            // FIXME
+            auto user = nickname in users;
+            if (user) return;
+
+            users[nickname] = IRCUser(event.content);
+        }
+    }
+}
