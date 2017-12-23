@@ -28,7 +28,6 @@ There are a few Windows caveats.
 
 * Web URL title lookup, including the Bash and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours *disabled*, but they can be enabled by specifying a different *build configuration*.
-* Text output will *not* work well with the default **Cygwin** terminal, due to some nuances of how it does or doesn't present itself as a `tty`. There are some workarounds for most output, though they aren't exposed for now.
 
 # Getting Started
 
