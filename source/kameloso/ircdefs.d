@@ -1077,6 +1077,13 @@ struct IRCUser
         userstring.formattedRead("%s!%s@%s", nickname, ident, address);
     }
 
+    this(const string nickname, const string ident, const string address)
+    {
+        this.nickname = nickname;
+        this.ident = ident;
+        this.address = address;
+    }
+
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
