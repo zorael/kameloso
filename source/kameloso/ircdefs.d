@@ -4,8 +4,8 @@ import kameloso.common : Hidden, Separator, Unconfigurable;
 
 final:
 @safe:
-pure:
-nothrow:
+//pure:
+//nothrow:
 
 
 // IRCEvent
@@ -1071,6 +1071,12 @@ struct IRCUser
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
     size_t lastWhois;
 
+    this(string userstring)
+    {
+        import std.format : formattedRead;
+        userstring.formattedRead("%s!%s@%s", nickname, ident, address);
+    }
+
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
@@ -1085,6 +1091,20 @@ struct IRCUser
         import kameloso.string : has;
 
         return (!nickname.length && address.has('.'));
+    }
+
+    bool opEquals(IRCUser other) const
+    {
+        immutable matchNick = ((nickname == other.nickname) || (other.nickname == "*"));
+        if (!matchNick) return false;
+
+        immutable matchIdent = ((ident == other.ident) || (other.ident == "*"));
+        if (!matchIdent) return false;
+
+        immutable matchAddress = ((address == other.address) || (other.address == "*"));
+        if (!matchAddress) return false;
+
+        return true;
     }
 }
 
@@ -1958,4 +1978,216 @@ struct Typenums
         672 : Type.RPL_UNKNOWNMODES,
     ];
     */
+}
+
+
+struct IRCChannel
+{
+    struct Mode
+    {
+        char modechar;
+        string data;
+        IRCUser user;
+        IRCUser[] exemptions;
+
+        bool opEquals(Mode other)
+        {
+            return (modechar == other.modechar) && (data == other.data) &&
+                (user == other.user);
+            /*if (modechar != other.modechar) return false;
+            if (data != other.data) return false;
+            if (user != other.user) return false;
+            return true;*/
+        }
+
+        string toString()
+        {
+            import std.format : format;
+            return "+%c (%s)\n@ %s\n< %s\n"
+                .format(modechar, data, user, exemptions);
+        }
+    }
+
+    string topic;
+    string channelModes;
+    Mode[] modes;
+    IRCUser[] users;
+
+    void newMode(const string modeline) @system
+    {
+        import kameloso.string : has, nom;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.mutation : remove;
+        import std.conv : to;
+        import std.exception : assumeUnique;
+        import std.range : lockstep;
+        import std.string : indexOf;
+
+        if (!modeline.length) return;
+
+        string slice = modeline;
+        immutable sign = slice[0];
+        slice = slice[1..$];
+
+        if (slice.has(' '))
+        {
+            if (sign == '+')
+            {
+                immutable modechars = slice.nom(' ');
+                auto dataline = slice.splitter(" ");
+                size_t i;
+                Mode[] newModes;
+
+                foreach (modechar, datastring; lockstep(modechars, dataline))
+                {
+                    if (modechar == 'e')
+                    {
+                        assert(i > 0);
+                        newModes[i-1].exemptions ~= IRCUser(datastring);
+                    }
+                    else
+                    {
+                        Mode newMode;
+                        newMode.modechar = modechar.to!char;
+
+                        if ((datastring.indexOf('!') != -1) &&
+                            (datastring.indexOf('@') != -1) ||
+                            (datastring.indexOf('.') != -1))
+                        {
+                            // Looks like a user
+                            newMode.user = IRCUser(datastring);
+                        }
+                        else
+                        {
+                            newMode.data = datastring;
+                        }
+
+                        foreach (mode; modes)
+                        {
+                            if (mode == newMode) continue;
+                        }
+
+                        newModes ~= newMode;
+                        ++i;
+                    }
+                }
+
+                modes ~= newModes;
+            }
+            else if (sign == '-')
+            {
+                immutable modechars = slice.nom(' ');
+                auto dataline = slice.splitter(" ");
+
+                foreach (modechar, datastring; lockstep(modechars, dataline))
+                {
+                    Mode newMode;
+                    newMode.modechar = modechar.to!char;
+
+                    if ((datastring.indexOf('!') != -1) &&
+                        (datastring.indexOf('@') != -1) ||
+                        (datastring.indexOf('.') != -1))
+                    {
+                        // Looks like a user
+                        newMode.user = IRCUser(datastring);
+                    }
+                    else
+                    {
+                        newMode.data = datastring;
+                    }
+
+                    size_t[] toRemove;
+
+                    foreach (i, mode; modes)
+                    {
+                        if (mode == newMode)
+                        {
+                            toRemove ~= i;
+                        }
+                    }
+
+                    foreach_reverse(i; toRemove)
+                    {
+                        modes = modes.remove(i);
+                    }
+                }
+            }
+            else
+            {
+                assert(0);
+            }
+        }
+        else
+        {
+            // Channel mode
+            if (sign == '+')
+            {
+                if (channelModes.indexOf(slice) == -1)
+                {
+                    channelModes ~= slice;
+                }
+            }
+            else if (sign == '-')
+            {
+                foreach (immutable modechar; slice)
+                {
+                    import std.string : representation;
+                    immutable modecharIndex = channelModes.indexOf(modechar);
+                    if (modecharIndex == -1) continue;
+
+                    char[] mutModes = channelModes.dup;
+                    mutModes = cast(char[])mutModes
+                        .representation
+                        .remove(cast(ubyte)modecharIndex);
+                    channelModes = mutModes.assumeUnique;
+                }
+            }
+            else
+            {
+                assert(0);
+            }
+        }
+    }
+}
+
+@system
+unittest
+{
+    {
+        import std.stdio;
+
+        IRCChannel chan;
+
+        chan.topic = "Huerbla";
+        chan.newMode("+b kameloso!~NaN@aasdf.freenode.org");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        assert(chan.modes.length == 1);
+        writeln("-------------------------------------");
+
+        chan.newMode("+bbe hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        assert(chan.modes.length == 3);
+        writeln("-------------------------------------");
+
+        chan.newMode("-b *!*@*");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        assert(chan.modes.length == 0);
+        writeln("-------------------------------------");
+
+        chan.newMode("+i");
+        assert(chan.channelModes == "i", chan.channelModes);
+
+        chan.newMode("+v");
+        assert(chan.channelModes == "iv", chan.channelModes);
+
+        chan.newMode("-i");
+        assert(chan.channelModes == "v", chan.channelModes);
+
+        chan.newMode("+l 200");
+        IRCChannel.Mode lMode;
+        lMode.modechar = 'l';
+        lMode.data = "200";
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode.toString());
+        assert((chan.modes[0] == lMode), chan.modes[0].toString());
+    }
 }
