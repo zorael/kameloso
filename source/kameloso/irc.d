@@ -826,6 +826,22 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_CHANNELMODEIS: // 324
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        slice.nom(' '); // bot nickname
+        event.channel = slice.nom(' ');
+
+        if (slice.has(' '))
+        {
+            event.aux = slice.nom(' ');
+            //event.content = slice.nom(' ');
+            event.content = slice;
+        }
+        else
+        {
+            event.aux = slice;
+        }
+        break;
+
     case RPL_CREATIONTIME: // 32
         // :kornbluth.freenode.net 324 kameloso #flerrp +ns
         // :kornbluth.freenode.net 329 kameloso #flerrp 1512995737
