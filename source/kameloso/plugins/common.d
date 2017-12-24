@@ -1349,7 +1349,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
  +/
-mixin template BasicEventHandlers(string module_ = __MODULE__)
+alias BasicEventHandlers = UserAwareness;
+mixin template UserAwareness(string module_ = __MODULE__)
 {
     // onLeaveMixin
     /++
@@ -1358,12 +1359,45 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  This automatically deauthenticates them from the bot's service, as all
      +  track of them will have disappeared. A new WHOIS must be made then.
      +/
-    @(Chainable)
+    /+@(Chainable)
     @(IRCEvent.Type.PART)
-    @(IRCEvent.Type.QUIT)
-    void onLeaveMixin(IRCPlugin plugin, const IRCEvent event)
+    void onPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
+        with (plugin.state.channels[event.channel])
+        {
+            immutable userIndex = users.countUntil(event.sender.nickname);
+            if (userIndex == -1)
+            {
+                /*logger.warning("Tried to remove a parting user that wasn't there: ",
+                    event.sender.nickname);*/
+                writeln("Tried to remove a parting user that wasn't there: ",
+                    event.sender.nickname);
+                return;
+            }
+
+            users = users.remove(userIndex);
+        }
+    }+/
+
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.QUIT)
+    void onQuitMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
         plugin.state.users.remove(event.sender.nickname);
+
+        /*foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+            if (userIndex == -1) continue;
+            channel.users = channel.users.remove(userIndex);
+        }*/
     }
 
 
@@ -1373,19 +1407,20 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  `privateState.users` to point to the new nickname.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.NICK)
     void onNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        with (plugin.state)
         {
-            if (auto oldUser = event.sender.nickname in state.users)
+            if (auto oldUser = event.sender.nickname in users)
             {
-                state.users[event.target.nickname] = *oldUser;
-                state.users.remove(event.sender.nickname);
+                users[event.target.nickname] = *oldUser;
+                users.remove(event.sender.nickname);
             }
             else
             {
-                state.users[event.target.nickname] = event.sender;
+                users[event.target.nickname] = event.sender;
             }
         }
     }
@@ -1423,6 +1458,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  the user into the user array so we won't have to WHOIS them later.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
     void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1472,6 +1508,7 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
      +  It usually contains everything interesting except login.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1577,144 +1614,249 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
  +/
 mixin template ChannelAwareness(string module_ = __MODULE__)
 {
+    import std.stdio;
+
+    // onChannelAwarenessSelfjoinMixin
+    /++
+     +  FIXME. Joined channel, create a new one
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.SELFJOIN)
-    void onSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin)
         with (plugin.state)
         {
             // FIXME
+            writeln("NEW CHANNEL: ", event.channel);
             channels[event.channel] = IRCChannel.init;
         }
     }
 
+    // onChannelAwarenessSelfpartMixin
+    /++
+     +  FIXME. Left a channel, remove it
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.SELFPART)
-    void onSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin)
         with (plugin.state)
         {
             // FIXME
+            writeln("REMOVED CHANNEL: ", event.channel);
             channels.remove(event.channel);
         }
     }
 
+    // onChannelAwarenessChannelAwarenessJoinMixin
+    /++
+     +  FIXME. Add user to channel user list
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.JOIN)
-    void onJoinMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessChannelAwarensesJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME
-
-        }
+        writeln("SOMEONE JOINED CHANNEL: ", event.channel, ": ",
+            event.sender.nickname);
+        plugin.state.channels[event.channel].users ~= event.sender.nickname;
     }
 
+    // onChannelAwarenessPartMixin
+    /++
+     +  FIXME. Remove user from channel user list
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.PART)
-    void onPartMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
 
+        with (plugin.state.channels[event.channel])
+        {
+            immutable userIndex = users.countUntil(event.sender.nickname);
+            if (userIndex == -1)
+            {
+                /*logger.warning("Tried to remove a parting user that wasn't there: ",
+                    event.sender.nickname);*/
+                writeln("Tried to remove a parting user that wasn't there: ",
+                    event.sender.nickname);
+                return;
+            }
+
+            users = users.remove(userIndex);
         }
     }
 
+    // onChannelAwarenessNickMixin
+    /++
+     +  FIXME. Update all channels' user lists with the new nick
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.NICK)
+    void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.searching : countUntil;
+
+        foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+            if (userIndex == -1) continue;
+            channel.users[userIndex] = event.target.nickname;
+        }
+    }
+
+    // onChannelAwarenessQuitMixin
+    /++
+     +  FIXME. Remove user from all channels' user lists
+     +/
+    @(Chainable)
+    @(IRCEvent.Type.QUIT)
+    void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
+        foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+            if (userIndex == -1) continue;
+            channel.users = channel.users.remove(userIndex);
+        }
+    }
+
+    // onChannelAwarenessTopicMixin
+    /++
+     +  FIXME. Update topic for channel
+     +/
+    @(Chainable)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
-    void onTopicMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME
-            channels[event.channel].topic = event.content;
-        }
+        // FIXME
+        writeln("SOMEONE CHANGED TOPIC");
+        plugin.state.channels[event.channel].topic = event.content;
     }
 
-    @(Chainable)// FIXME
-    @(ChannelPolicy.homeOnly)
-    @(IRCEvent.Type.CHANMODE)
-    void onChanModeMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME REALLY REALLy
-            //channels[event.channel].setMode(event.aux, event.content);
-            channels[event.channel].setMode(event.aux ~ " " ~ event.content);
-        }
-    }
-
+    // onChannelAwarenessChanModeMixin
+    /++
+     +  FIXME. Set new mode (replaces or adds)
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.CHANMODE)
+    void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        // FIXME
+        writeln("SOMEONE CHANGED CHANNEL MODE");
+        plugin.state.channels[event.channel].setMode(event.aux, event.content);
+    }
+
+    // onChannelAwarenessUserModeMixin
+    /++
+     +  FIXME. User mode change. When does this happen?
+     +/
+    @(Chainable)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.USERMODE)
-    void onUserModeMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessUserModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin)
         with (plugin.state)
         {
             // FIXME
-            logger.warning("WHEN DOES THIS HAPPEN");
+            logger.warning("USERMODE, WHEN DOES THIS HAPPEN");
             logger.trace(event.raw);
         }
     }
 
+    // onChannelAwarensesWHOReplyMixin
+    /++
+     +  FIXME. User awareness bits add the IRCUser, we just want to update chan
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        with (event.target)
-        {
-            // FIXME
-            auto user = nickname in users;
-            if (user) return;
+        // User awareness bits add the IRCUser
+        import std.algorithm.searching : countUntil;
 
-            users[nickname] = IRCUser(nickname, ident, address);
+        foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.target.nickname);
+            if (userIndex == -1) continue;
+            channel.users ~= event.target.nickname;
         }
     }
 
-    /*@(Chainable)
-    @(ChannelPolicy.homeOnly)
-    @(IRCEvent.Type.RPL_NAMREPLY)
-    void onNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        with (plugin)
-        {
-            // FIXME
-        }
-    }*/
-
+    // onChannelAwarenessNamesReplyMixin
+    /++
+     +  FIXME. Adds nicknames to the channel's user list
+     +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
-    @(IRCEvent.Type.RPL_BANLIST)
-    void onBanListMixin(IRCPlugin plugin, const IRCEvent event)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_NAMREPLY)
+    void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        with (event.target)
-        {
-            // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
-            // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
-            // FIXME
-            auto user = nickname in users;
-            if (user) return;
+        import kameloso.irc : stripModeSign;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : countUntil;
 
-            users[nickname] = IRCUser(event.content);
+        with (plugin.state.channels[event.channel])
+        {
+            foreach (immutable signedName; event.content.splitter(" "))
+            {
+                immutable nickname = stripModeSign(signedName);
+                immutable userIndex = users.countUntil(nickname);
+                if (userIndex == -1) continue;
+                users ~= nickname;
+            }
         }
+    }
+
+    // onChannelAwarenessBanListMixin
+    /++
+     +  FIXME
+     +/
+    @(Chainable)
+    //@(ChannelPolicy.homeOnly)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_BANLIST)
+    void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
+        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+        plugin.state.channels[event.channel].setMode("+b", event.content);
+    }
+
+    // onChannelAwarenessChannelModeIs
+    /++
+     +  FIXME
+     +/
+    @(Chainable)
+    //@(Chainable.homeOnly)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_CHANNELMODEIS)
+    void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
+    {
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
 }

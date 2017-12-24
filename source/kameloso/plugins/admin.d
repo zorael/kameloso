@@ -98,6 +98,30 @@ void onCommandShowUsers(AdminPlugin plugin)
     version(Cygwin_) stdout.flush();
 }
 
+// onCommandShowChannels
+/++
+ +  Prints out the current `state.users` array in the local terminal.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.master)
+@Prefix(NickPolicy.required, "channels")
+void onCommandShowChannels(AdminPlugin plugin)
+{
+    import kameloso.common : printObject;
+
+    logger.trace("Printing Admin's channels");
+
+    printObject(plugin.state.bot);
+
+    foreach (entry; plugin.state.channels.byKeyValue)
+    {
+        writefln("%-12s [%s]", entry.key, entry.value);
+    }
+
+    version(Cygwin_) stdout.flush();
+}
+
 
 // onCommandSudo
 /++
@@ -451,6 +475,7 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 
 
 mixin BasicEventHandlers;
+mixin ChannelAwareness;
 
 public:
 

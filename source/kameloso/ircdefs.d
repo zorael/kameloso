@@ -2007,15 +2007,14 @@ struct IRCChannel
         void toString(scope void delegate(const(char)[]) @safe sink) const
         {
             import std.format : formattedWrite;
-            sink.formattedWrite("+%c (%s)\n@ %s\n< %s\n", modechar, data, user,
+            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user,
                 exemptions);
         }
 
         string toString()
         {
             import std.format : format;
-            return "+%c (%s)\n@ %s\n< %s\n".format(modechar, data, user,
-                exemptions);
+            return "+%c (%s@%s) <%s>".format(modechar, data, user, exemptions);
         }
     }
 
@@ -2024,88 +2023,103 @@ struct IRCChannel
     Mode[] modes;
     string[] users;
 
+    void toString(scope void delegate(const(char)[]) @safe sink) const
+    {
+        import std.format : formattedWrite;
+        sink.formattedWrite("TOPIC:%s nUSERS:%d MODES:%s",
+            topic, users.length, modes);
+    }
+
     void setMode(const string modestring, const string data) @system
     {
         import kameloso.string : has, nom;
+        import std.array : array;
         import std.algorithm.iteration : splitter;
         import std.algorithm.mutation : remove;
         import std.conv : to;
-        import std.range : lockstep;
+        import std.range : StoppingPolicy, lockstep, retro, zip;
 
         immutable sign = modestring[0];
         immutable modechars = modestring[1..$];
 
         if (data.length)
         {
-            auto datalines = data.splitter(" ");
+            auto datalines = data.splitter(" ").array.retro;
+            auto moderange = modechars.retro;
+            auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
 
             if (sign == '+')
             {
-                size_t i;
                 Mode[] newModes;
+                IRCUser[] carriedExemptions;
 
-                foreach (modechar, datastring; lockstep(modechars, datalines))
+                foreach (modechar, datastring; ziprange)
                 {
+                    Mode newMode;
+                    newMode.modechar = modechar.to!char;
+
                     if (modechar == 'e')
                     {
-                        // Exemption
-                        assert(i > 0);
-                        newModes[i-1].exemptions ~= IRCUser(datastring);
+                        // Exemption. Carry it and continue to the next (ban)
+                        assert(datastring.has('!') && datastring.has('@'));
+                        carriedExemptions ~= IRCUser(datastring);
+                        continue;
+                    }
+
+                    if (datastring.has('!') && datastring.has('@'))
+                    {
+                        // Looks like a user
+                        newMode.user = IRCUser(datastring);
                     }
                     else
                     {
-                        // Ban
-                        Mode newMode;
-                        newMode.modechar = modechar.to!char;
-
-                        if (datastring.has('!') &&
-                            datastring.has('@'))
-                        {
-                            // Looks like a user
-                            newMode.user = IRCUser(datastring);
-                        }
-                        else
-                        {
-                            newMode.data = datastring;
-                        }
-
-                        if (modechar == 'b')
-                        {
-                            // If an identical ban Mode exists, skip
-                            foreach (mode; modes)
-                            {
-                                if (mode == newMode) continue;
-                            }
-                        }
-                        else
-                        {
-                            // If any Mode with the same char exists, overwrite
-                            foreach (immutable n, mode; modes)
-                            {
-                                if (mode.modechar == modechar)
-                                {
-                                    modes[n] = newMode;
-                                    continue;
-                                }
-                            }
-                        }
-
-                        newModes ~= newMode;
-                        ++i;
+                        newMode.data = datastring;
                     }
+
+                    if (modechar == 'b')
+                    {
+                        // Ban
+                        // If an identical ban Mode exists, skip
+                        foreach (mode; modes)
+                        {
+                            if (mode == newMode)
+                            {
+                                mode.exemptions ~= carriedExemptions;
+                                carriedExemptions.length = 0;
+                                continue;
+                            }
+                        }
+
+                        newMode.exemptions = carriedExemptions;
+                        carriedExemptions.length = 0;
+                    }
+                    else
+                    {
+                        // Any non-ban, non-exemption mode
+                        // If any Mode with the same char exists, overwrite
+                        foreach (immutable i, mode; modes)
+                        {
+                            if (mode.modechar == modechar)
+                            {
+                                modes[i] = newMode;
+                                continue;
+                            }
+                        }
+                    }
+
+                    newModes ~= newMode;
                 }
 
                 modes ~= newModes;
             }
             else if (sign == '-')
             {
-                foreach (modechar, datastring; lockstep(modechars, datalines))
+                foreach (modechar, datastring; ziprange)
                 {
                     Mode newMode;
                     newMode.modechar = modechar.to!char;
 
-                    if (datastring.has('!') &&
-                        datastring.has('@'))
+                    if (datastring.has('!') && datastring.has('@'))
                     {
                         // Looks like a user
                         newMode.user = IRCUser(datastring);
@@ -2161,9 +2175,7 @@ struct IRCChannel
                     if (modecharIndex == -1) continue;
 
                     char[] mutModes = channelModes.dup;
-                    mutModes = cast(char[])mutModes
-                        .representation
-                        .remove(cast(ubyte)modecharIndex);
+                    mutModes = cast(char[])mutModes.representation.remove(modecharIndex);
                     channelModes = mutModes.assumeUnique;
                 }
             }
@@ -2178,29 +2190,28 @@ struct IRCChannel
 @system
 unittest
 {
-    {
-        import std.stdio;
-        import std.conv : text;
+    import std.stdio;
+    import std.conv : text;
 
+    {
         IRCChannel chan;
 
         chan.topic = "Huerbla";
 
         chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        assert(chan.modes.length == 1);
         writeln("-------------------------------------");
+        assert(chan.modes.length == 1);
 
         chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        assert(chan.modes.length == 3);
-        assert((chan.modes[2].exemptions.length == 1), chan.modes[2].exemptions.length.text);
         writeln("-------------------------------------");
+        assert(chan.modes.length == 3);
 
         chan.setMode("-b", "*!*@*");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        assert(chan.modes.length == 0);
         writeln("-------------------------------------");
+        assert(chan.modes.length == 0);
 
         chan.setMode("+i", string.init);
         assert(chan.channelModes == "i", chan.channelModes);
@@ -2216,6 +2227,24 @@ unittest
         lMode.modechar = 'l';
         lMode.data = "200";
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
+        writeln("-------------------------------------");
         assert((chan.modes[0] == lMode), chan.modes[0].toString());
+    }
+
+    {
+        IRCChannel chan;
+
+        chan.setMode("+CLPcnprtf", "##linux-overflow");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
+        writeln("-------------------------------------");
+        assert(chan.modes[0].data == "##linux-overflow");
+        assert(chan.modes.length == 9);
+
+        chan.setMode("+bee", "abc!def@ghi jkl!*@*");
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
+        writeln("-------------------------------------");
+        assert(chan.modes.length == 10);
+        assert(chan.modes[9].exemptions.length == 2);
+
     }
 }
