@@ -474,7 +474,7 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 mixin ChannelAwareness;
 
 public:

@@ -1350,58 +1350,24 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
  +  where applicable, annotated appropriately.
  +/
 alias BasicEventHandlers = UserAwareness;
-mixin template UserAwareness(string module_ = __MODULE__)
+mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    // onLeaveMixin
+    // onUserAwarenessQuitMixin
     /++
-     +  Remove a user from the user array.
-     +
-     +  This automatically deauthenticates them from the bot's service, as all
-     +  track of them will have disappeared. A new WHOIS must be made then.
+     +  FIXME
      +/
-    /+@(Chainable)
-    @(IRCEvent.Type.PART)
-    void onPartMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        import std.algorithm.mutation : remove;
-        import std.algorithm.searching : countUntil;
-
-        with (plugin.state.channels[event.channel])
-        {
-            immutable userIndex = users.countUntil(event.sender.nickname);
-            if (userIndex == -1)
-            {
-                /*logger.warning("Tried to remove a parting user that wasn't there: ",
-                    event.sender.nickname);*/
-                writeln("Tried to remove a parting user that wasn't there: ",
-                    event.sender.nickname);
-                return;
-            }
-
-            users = users.remove(userIndex);
-        }
-    }+/
-
     @(Chainable)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.QUIT)
-    void onQuitMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.mutation : remove;
-        import std.algorithm.searching : countUntil;
+        static if (debug_) writeln(__FUNCTION__);
 
         plugin.state.users.remove(event.sender.nickname);
-
-        /*foreach (ref channel; plugin.state.channels)
-        {
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-            if (userIndex == -1) continue;
-            channel.users = channel.users.remove(userIndex);
-        }*/
     }
 
 
-    // onNickMixin
+    // onUserAwarenessNickMixin
     /++
      +  Tracks a nick change, moving any old `IRCUser` entry in
      +  `privateState.users` to point to the new nickname.
@@ -1409,12 +1375,15 @@ mixin template UserAwareness(string module_ = __MODULE__)
     @(Chainable)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.NICK)
-    void onNickMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         with (plugin.state)
         {
             if (auto oldUser = event.sender.nickname in users)
             {
+                // Does this work?
                 users[event.target.nickname] = *oldUser;
                 users.remove(event.sender.nickname);
             }
@@ -1426,30 +1395,29 @@ mixin template UserAwareness(string module_ = __MODULE__)
     }
 
 
-    // onUserInfoMixin
+    // onUserAwarenessUserInfoMixin
     /++
      +  Catches a user's information and saves it in the `IRCUser` array, along
      +  with a timestamp of the last `WHOIS` call, which is this.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import std.datetime.systime : Clock;
 
-        with (plugin)
-        {
-            plugin.catchUser(event.target);
+        plugin.catchUser(event.target);
 
-            // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
-            auto user = event.target.nickname in state.users;
-            if (!user) return;  // probably the bot
-            (*user).lastWhois = Clock.currTime.toUnixTime;
-        }
+        // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
+        auto user = event.target.nickname in plugin.state.users;
+        if (!user) return;  // probably the bot
+        (*user).lastWhois = Clock.currTime.toUnixTime;
     }
 
 
-    // onJoinMixin
+    // onUserAwarenessLoginInfoSenderMixin
     /++
      +  Adds a user to the user array if the login is known.
      +
@@ -1461,22 +1429,20 @@ mixin template UserAwareness(string module_ = __MODULE__)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        {
-            plugin.catchUser(event.sender);
+        static if (debug_) writeln(__FUNCTION__);
 
-            if (event.sender.login == "*")
-            {
-                assert(event.sender.nickname in state.users);
-                state.users[event.sender.nickname].login = string.init;
-            }
+        plugin.catchUser(event.sender);
+
+        if (event.sender.login == "*")
+        {
+            plugin.state.users[event.sender.nickname].login = string.init;
         }
     }
 
 
-    // onLoginInfoTargetMixin
+    // onUserAwarenessLoginInfoTargetMixin
     /++
      +  Records a user's NickServ login by saving it to the user's `IRCBot` in
      +  the `privateState.users` associative array.
@@ -1484,24 +1450,24 @@ mixin template UserAwareness(string module_ = __MODULE__)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        static if (debug_) writeln(__FUNCTION__);
+
+        // No point catching the entire user
+
+        if (auto user = event.target.nickname in plugin.state.users)
         {
-            // No point catching the entire user
-            if (auto user = event.target.nickname in state.users)
-            {
-                (*user).login = event.target.login;
-            }
-            else
-            {
-                state.users[event.target.nickname] = event.target;
-            }
+            (*user).login = event.target.login;
+        }
+        else
+        {
+            plugin.state.users[event.target.nickname] = event.target;
         }
     }
 
 
-    // onWHOReplyMixin
+    // onUserAwarenessWHOReplyMixin
     /++
      +  Catches a user's information from a `WHO` reply event.
      +
@@ -1510,20 +1476,24 @@ mixin template UserAwareness(string module_ = __MODULE__)
     @(Chainable)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         plugin.catchUser(event.target);
     }
 
 
-    // onEndOfWHOIS
+    // onUserAwarenessEndOfWHOIS
     /++
      +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
@@ -1537,6 +1507,8 @@ mixin template UserAwareness(string module_ = __MODULE__)
     void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
         (IRCPlugin plugin, const IRCUser newUser)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import kameloso.common : meldInto;
 
         if (!newUser.nickname.length ||
@@ -1574,6 +1546,8 @@ mixin template UserAwareness(string module_ = __MODULE__)
     void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
         const IRCEvent event, const string nickname, F fn)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import kameloso.constants : Timeout;
         import core.time : seconds;
         import std.datetime.systime : Clock, SysTime;
@@ -1603,6 +1577,8 @@ mixin template UserAwareness(string module_ = __MODULE__)
     void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
         const string nickname, F fn)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
     }
 }
@@ -1612,7 +1588,7 @@ mixin template UserAwareness(string module_ = __MODULE__)
 /++
  +  FIXME
  +/
-mixin template ChannelAwareness(string module_ = __MODULE__)
+mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     import std.stdio;
 
@@ -1626,14 +1602,10 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.SELFJOIN)
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME
-            writeln("NEW CHANNEL: ", event.channel);
-            channels[event.channel] = IRCChannel.init;
-        }
+        static if (debug_) writeln(__FUNCTION__);
+        plugin.state.channels[event.channel] = IRCChannel.init;
     }
+
 
     // onChannelAwarenessSelfpartMixin
     /++
@@ -1645,14 +1617,35 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.SELFPART)
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        static if (debug_) writeln(__FUNCTION__);
+
         with (plugin.state)
         {
-            // FIXME
-            writeln("REMOVED CHANNEL: ", event.channel);
+            // Decrement user refcounts before destroying channel
+
+            foreach (immutable nickname; channels[event.channel].users)
+            {
+                // users array may not contain the user
+                auto user = nickname in users;
+                if (!user)
+                {
+                    users[nickname] = event.sender;
+                    user = nickname in users;
+                }
+
+                //writefln("onSelfpart %s: %d", nickname, (*user).refcount);
+                if (--(*user).refcount == 0)
+                {
+                    writeln(nickname, " refcount 0");
+                    users.remove(nickname);
+                }
+                else if ((*user).refcount < 0) writeln(nickname," REFOUNT < 0");
+            }
+
             channels.remove(event.channel);
         }
     }
+
 
     // onChannelAwarenessChannelAwarenessJoinMixin
     /++
@@ -1662,12 +1655,26 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     //@(ChannelPolicy.homeOnly)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.JOIN)
-    void onChannelAwarenessChannelAwarensesJoinMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        writeln("SOMEONE JOINED CHANNEL: ", event.channel, ": ",
-            event.sender.nickname);
-        plugin.state.channels[event.channel].users ~= event.sender.nickname;
+        static if (debug_) writeln(__FUNCTION__);
+
+        with (plugin.state)
+        {
+            channels[event.channel].users ~= event.sender.nickname;
+
+            auto user = event.sender.nickname in users;
+            if (!user)
+            {
+                users[event.sender.nickname] = event.sender;
+                user = event.sender.nickname in users;
+            }
+
+            ++(*user).refcount;
+            //writefln("onJoin %s: %d", event.sender.nickname, (*user).refcount);
+        }
     }
+
 
     // onChannelAwarenessPartMixin
     /++
@@ -1678,12 +1685,16 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.PART)
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import std.algorithm.mutation : remove;
         import std.algorithm.searching : countUntil;
 
-        with (plugin.state.channels[event.channel])
+        with (plugin.state)
         {
-            immutable userIndex = users.countUntil(event.sender.nickname);
+            immutable userIndex = channels[event.channel].users
+                .countUntil(event.sender.nickname);
+
             if (userIndex == -1)
             {
                 /*logger.warning("Tried to remove a parting user that wasn't there: ",
@@ -1693,9 +1704,27 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
                 return;
             }
 
-            users = users.remove(userIndex);
+            channels[event.channel].users = channels[event.channel].users
+                .remove(userIndex);
+
+            auto user = event.sender.nickname in users;
+            if (!user)
+            {
+                users[event.sender.nickname] = event.sender;
+                user = event.sender.nickname in users;
+            }
+
+            //writefln("onPart %s: %d", event.sender.nickname, (*user).refcount);
+            if (--(*user).refcount == 0)
+            {
+                writeln(event.sender.nickname, " refcount 0");
+                users.remove(event.sender.nickname);
+            }
+            else if ((*user).refcount < 0) writeln(event.sender.nickname,
+                " REFOUNT < 0");
         }
     }
+
 
     // onChannelAwarenessNickMixin
     /++
@@ -1705,7 +1734,11 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import std.algorithm.searching : countUntil;
+
+        // User awareness bits take care of the user AA
 
         foreach (ref channel; plugin.state.channels)
         {
@@ -1715,6 +1748,7 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
         }
     }
 
+
     // onChannelAwarenessQuitMixin
     /++
      +  FIXME. Remove user from all channels' user lists
@@ -1723,6 +1757,8 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import std.algorithm.mutation : remove;
         import std.algorithm.searching : countUntil;
 
@@ -1730,9 +1766,11 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
         {
             immutable userIndex = channel.users.countUntil(event.sender.nickname);
             if (userIndex == -1) continue;
+            //writefln("------ onQuit removing %s", event.sender.nickname);
             channel.users = channel.users.remove(userIndex);
         }
     }
+
 
     // onChannelAwarenessTopicMixin
     /++
@@ -1745,10 +1783,12 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_TOPIC)
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         // FIXME
-        writeln("SOMEONE CHANGED TOPIC");
         plugin.state.channels[event.channel].topic = event.content;
     }
+
 
     // onChannelAwarenessChanModeMixin
     /++
@@ -1760,8 +1800,8 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.CHANMODE)
     void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // FIXME
-        writeln("SOMEONE CHANGED CHANNEL MODE");
+        static if (debug_) writeln(__FUNCTION__);
+
         plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
 
@@ -1775,14 +1815,13 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.USERMODE)
     void onChannelAwarenessUserModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        with (plugin.state)
-        {
-            // FIXME
-            logger.warning("USERMODE, WHEN DOES THIS HAPPEN");
-            logger.trace(event.raw);
-        }
+        static if (debug_) writeln(__FUNCTION__);
+
+        // FIXME
+        logger.warning("USERMODE, WHEN DOES THIS HAPPEN");
+        logger.trace(event.raw);
     }
+
 
     // onChannelAwarensesWHOReplyMixin
     /++
@@ -1794,16 +1833,33 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // User awareness bits add the IRCUser
+        static if (debug_) writeln(__FUNCTION__);
+
         import std.algorithm.searching : countUntil;
 
-        foreach (ref channel; plugin.state.channels)
+        // User awareness bits add the IRCUser
+        with (plugin.state)
         {
-            immutable userIndex = channel.users.countUntil(event.target.nickname);
-            if (userIndex == -1) continue;
-            channel.users ~= event.target.nickname;
+            if (event.target.nickname == bot.nickname) return;
+
+            immutable userIndex = channels[event.channel].users
+                .countUntil(event.target.nickname);
+            if (userIndex != -1) return;
+
+            channels[event.channel].users ~= event.target.nickname;
+
+            auto user = event.target.nickname in users;
+            if (!user)
+            {
+                users[event.target.nickname] = event.target;
+                user = event.target.nickname in users;
+            }
+
+            ++(*user).refcount;
+            //writefln("onWHOReply %s: %d", event.target.nickname, (*user).refcount);
         }
     }
+
 
     // onChannelAwarenessNamesReplyMixin
     /++
@@ -1815,21 +1871,40 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_NAMREPLY)
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         import kameloso.irc : stripModeSign;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : countUntil;
 
-        with (plugin.state.channels[event.channel])
+        with (plugin.state)
         {
             foreach (immutable signedName; event.content.splitter(" "))
             {
                 immutable nickname = stripModeSign(signedName);
-                immutable userIndex = users.countUntil(nickname);
-                if (userIndex == -1) continue;
-                users ~= nickname;
+                if (nickname == bot.nickname) continue;
+
+                immutable userIndex = channels[event.channel].users
+                    .countUntil(nickname);
+                if (userIndex != -1) continue;
+
+                channels[event.channel].users ~= nickname;
+
+                // users array may not contain the user
+                auto user = nickname in users;
+                if (!user)
+                {
+                    users[nickname] = IRCUser.init;
+                    user = nickname in users;
+                    (*user).nickname = nickname;  // very incomplete
+                }
+
+                ++(*user).refcount;
+                //writefln("onNamesReply %s: %d", nickname, (*user).refcount);
             }
         }
     }
+
 
     // onChannelAwarenessBanListMixin
     /++
@@ -1841,22 +1916,100 @@ mixin template ChannelAwareness(string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_BANLIST)
     void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         plugin.state.channels[event.channel].setMode("+b", event.content);
     }
+
 
     // onChannelAwarenessChannelModeIs
     /++
      +  FIXME
      +/
     @(Chainable)
-    //@(Chainable.homeOnly)
+    //@(ChannelPolicy.homeOnly)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         plugin.state.channels[event.channel].setMode(event.aux, event.content);
+    }
+
+    // onChannelAwarenessPing
+    @(Chainable)
+    @(IRCEvent.Type.PING)
+    void onChannelAwarenessPing(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.concurrency : spawn;
+
+        enum secondsBetween = 10;
+
+        writeln(__FUNCTION__);
+
+        string[] querylist;
+
+        foreach (name, ref channel; plugin.state.channels)
+        {
+            if (channel.queried) continue;
+            channel.queried = true;
+            querylist ~= name;
+        }
+
+        static void fn(Tid tid, shared string[] channels)
+        {
+            import kameloso.messaging : raw;
+            import core.thread : Thread;
+            import core.time : seconds;
+            //import std.format : format;
+
+            foreach (channel; cast(string[])channels)
+            {
+                Thread.sleep(secondsBetween.seconds);
+                raw(tid, "MODE " ~ channel);
+                /*Thread.sleep(3.seconds);
+                raw(tid, "MODE %s +b".format(channel));*/
+                Thread.sleep(secondsBetween.seconds);
+                raw(tid, "WHO " ~ channel);
+            }
+        };
+
+        spawn(&fn, plugin.state.mainThread, cast(shared)querylist);
+
+        /+void fiberFn()
+        {
+            import kameloso.messaging : raw;
+            import core.thread : Fiber, Thread;
+            import core.time : seconds;
+            //import std.format : format;
+
+            bool loopedOnce;
+
+            foreach (channel; querylist)
+            {
+                if (loopedOnce) Fiber.yield();
+
+                raw(plugin.state.mainThread, "MODE " ~ channel);
+                Fiber.yield();
+                //raw(plugin.state.mainThread, "MODE %s +b".format(channel));
+                Thread.sleep(secondsBetween.seconds);
+                raw(plugin.state.mainThread, "WHO " ~ channel);
+                Thread.sleep(secondsBetween.seconds);
+
+                loopedOnce = true;
+            }
+        };
+
+        import core.thread : Fiber;
+
+        Fiber fiber = new Fiber(&fiberFn);
+
+        plugin.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHO] ~= fiber;
+        plugin.awaitingFibers[IRCEvent.Type.RPL_CHANNELMODEIS] ~= fiber;+/
+
     }
 }

@@ -1071,10 +1071,16 @@ struct IRCUser
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
     size_t lastWhois;
 
+    /// How many references to this user exists
+    int refcount;
+
     this(string userstring)
     {
         import std.format : formattedRead;
         userstring.formattedRead("%s!%s@%s", nickname, ident, address);
+        if (nickname == "*") nickname = string.init;
+        if (ident == "*") ident = string.init;
+        if (address == "*") address = string.init;
     }
 
     this(const string nickname, const string ident, const string address)
@@ -1088,9 +1094,9 @@ struct IRCUser
     {
         import std.format : formattedWrite;
 
-        sink.formattedWrite("n:%s L:%s a:%s i:%s a:%s%s w:%s",
+        sink.formattedWrite("n:%s L:%s a:%s i!%s A:%s%s w:%s   [%d]",
             nickname, login, alias_, ident, address,
-            special ? " (*)" : string.init, lastWhois);
+            special ? "*" : string.init, lastWhois, refcount);
     }
 
     bool isServer() @property const
@@ -1102,13 +1108,42 @@ struct IRCUser
 
     bool opEquals(IRCUser other) const
     {
-        immutable matchNick = ((nickname == other.nickname) || (other.nickname == "*"));
+        /*immutable matchNick = ((nickname == other.nickname) || (other.nickname == "*"));
         if (!matchNick) return false;
 
         immutable matchIdent = ((ident == other.ident) || (other.ident == "*"));
         if (!matchIdent) return false;
 
         immutable matchAddress = ((address == other.address) || (other.address == "*"));
+        if (!matchAddress) return false;*/
+
+        /*immutable matchNick = ((this.nickname == other.nickname) ||
+            (this.nickname.length && !other.nickname.length) ||
+            (!this.nickname.length && other.nickname.length));
+        if (!matchNick) return false;
+
+        immutable matchIdent = ((ident == other.ident) ||
+            (this.ident.length && !other.ident.length) ||
+            (!this.ident.length && other.ident.length));
+        if (!matchIdent) return false;
+
+        immutable matchAddress = ((address == other.address) ||
+            (this.address.length && !other.address.length) ||
+            (!this.address.length && other.address.length));
+        if (!matchAddress) return false;*/
+
+        // Match first
+        // If no match and either is empty, that means they're *
+        immutable matchNick = ((this.nickname == other.nickname) ||
+            (!this.nickname.length || !other.nickname.length));
+        if (!matchNick) return false;
+
+        immutable matchIdent = ((ident == other.ident) ||
+            (!this.ident.length || !other.ident.length));
+        if (!matchIdent) return false;
+
+        immutable matchAddress = ((address == other.address) ||
+            (!this.address.length || !other.address.length));
         if (!matchAddress) return false;
 
         return true;
@@ -2019,18 +2054,19 @@ struct IRCChannel
     }
 
     string topic;
-    string channelModes;
+    char[] modechars;
     Mode[] modes;
     string[] users;
+    bool queried;
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
-        sink.formattedWrite("TOPIC:%s nUSERS:%d MODES:%s",
-            topic, users.length, modes);
+        sink.formattedWrite("TOPIC:%s nUSERS:%d MODES(%s):%s",
+            topic, users.length, modechars, modes);
     }
 
-    void setMode(const string modestring, const string data) @system
+    void setMode(const string signedModestring, const string data) @system
     {
         import kameloso.string : has, nom;
         import std.array : array;
@@ -2039,13 +2075,13 @@ struct IRCChannel
         import std.conv : to;
         import std.range : StoppingPolicy, lockstep, retro, zip;
 
-        immutable sign = modestring[0];
-        immutable modechars = modestring[1..$];
+        immutable sign = signedModestring[0];
+        immutable modestring = signedModestring[1..$];
 
         if (data.length)
         {
             auto datalines = data.splitter(" ").array.retro;
-            auto moderange = modechars.retro;
+            auto moderange = modestring.retro;
             auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
 
             if (sign == '+')
@@ -2070,6 +2106,53 @@ struct IRCChannel
                     {
                         // Looks like a user
                         newMode.user = IRCUser(datastring);
+                    }
+                    else if (datastring.has('$'))
+                    {
+                        // Does not support a mix of normal and second form bans
+                        // e.g. *!*@*$#channel
+
+                        /+ extban format:
+                        "$a:dannylee$##arguments"
+                        "$a:shr000ms"
+                        "$a:deadfrogs"
+                        "$a:b4b"
+                        "$a:terabits$##arguments"
+                        // "$x:*0x71*"
+                        "$a:DikshitNijjer"
+                        "$a:NETGEAR_WNDR3300"+/
+
+                        string slice = datastring[1..$];
+                        if (slice[0] == 'a')
+                        {
+                            // Ban by account
+                            slice.nom(':');
+
+                            if (slice.has('$'))
+                            {
+                                // More than one field, first is account
+                                newMode.user.login = slice.nom('$');
+
+                                if (slice[0] == '#')
+                                {
+                                    newMode.data = slice;
+                                }
+                                else
+                                {
+                                    import std.stdio;
+                                    writeln("Don't know how to deal with ", slice);
+                                    newMode.data = slice;
+                                }
+                            }
+                            else
+                            {
+                                newMode.user.login = slice;
+                            }
+                        }
+                        else
+                        {
+                            newMode.data = datastring;
+                        }
                     }
                     else
                     {
@@ -2096,14 +2179,27 @@ struct IRCChannel
                     else
                     {
                         // Any non-ban, non-exemption mode
-                        // If any Mode with the same char exists, overwrite
-                        foreach (immutable i, mode; modes)
+
+                        if (datastring.length)
                         {
-                            if (mode.modechar == modechar)
+                            // Mode has data. Create a Mode for it
+                            foreach (immutable i, mode; modes)
                             {
-                                modes[i] = newMode;
-                                continue;
+                                if (mode.modechar == modechar)
+                                {
+                                    modes[i] = newMode;
+                                    continue;
+                                }
                             }
+                        }
+                        else
+                        {
+                            import std.string : indexOf;
+
+                            // Mode is a plain channel mode, append to string
+                            immutable charIndex = modechars.indexOf(modechar);
+                            if (charIndex == -1) modechars ~= modechar;
+                            continue;
                         }
                     }
 
@@ -2119,29 +2215,36 @@ struct IRCChannel
                     Mode newMode;
                     newMode.modechar = modechar.to!char;
 
-                    if (datastring.has('!') && datastring.has('@'))
+                    if (datastring.length)
                     {
-                        // Looks like a user
-                        newMode.user = IRCUser(datastring);
+                        if (datastring.has('!') && datastring.has('@'))
+                        {
+                            // Looks like a user
+                            newMode.user = IRCUser(datastring);
+                        }
+                        else
+                        {
+                            newMode.data = datastring;
+                        }
+
+                        size_t[] toRemove;
+
+                        foreach (i, mode; modes)
+                        {
+                            if (mode == newMode)
+                            {
+                                toRemove ~= i;
+                            }
+                        }
+
+                        foreach_reverse(i; toRemove)
+                        {
+                            modes = modes.remove(i);
+                        }
                     }
                     else
                     {
-                        newMode.data = datastring;
-                    }
-
-                    size_t[] toRemove;
-
-                    foreach (i, mode; modes)
-                    {
-                        if (mode == newMode)
-                        {
-                            toRemove ~= i;
-                        }
-                    }
-
-                    foreach_reverse(i; toRemove)
-                    {
-                        modes = modes.remove(i);
+                        setMode(modechar.to!string, string.init);
                     }
                 }
             }
@@ -2156,27 +2259,26 @@ struct IRCChannel
 
             if (sign == '+')
             {
-                foreach (immutable modechar; modechars)
+                foreach (immutable modechar; modestring)
                 {
-                    if (!channelModes.has(modechar))
+                    if (!modechars.has(modechar))
                     {
-                        channelModes ~= modechar;
+                        modechars ~= modechar;
                     }
                 }
             }
             else if (sign == '-')
             {
-                foreach (immutable modechar; modechars)
+                foreach (immutable modechar; modestring)
                 {
-                    import std.exception : assumeUnique;
                     import std.string : indexOf, representation;
 
-                    immutable modecharIndex = channelModes.indexOf(modechar);
+                    immutable modecharIndex = modechars.indexOf(modechar);
                     if (modecharIndex == -1) continue;
 
-                    char[] mutModes = channelModes.dup;
-                    mutModes = cast(char[])mutModes.representation.remove(modecharIndex);
-                    channelModes = mutModes.assumeUnique;
+                    modechars = cast(char[])modechars
+                        .representation
+                        .remove(modecharIndex);
                 }
             }
             else
@@ -2214,13 +2316,13 @@ unittest
         assert(chan.modes.length == 0);
 
         chan.setMode("+i", string.init);
-        assert(chan.channelModes == "i", chan.channelModes);
+        assert(chan.modechars == "i", chan.modechars);
 
         chan.setMode("+v", string.init);
-        assert(chan.channelModes == "iv", chan.channelModes);
+        assert(chan.modechars == "iv", chan.modechars);
 
         chan.setMode("-i", string.init);
-        assert(chan.channelModes == "v", chan.channelModes);
+        assert(chan.modechars == "v", chan.modechars);
 
         chan.setMode("+l", "200");
         IRCChannel.Mode lMode;
@@ -2238,13 +2340,27 @@ unittest
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         writeln("-------------------------------------");
         assert(chan.modes[0].data == "##linux-overflow");
-        assert(chan.modes.length == 9);
+        assert(chan.modes.length == 1);
+        assert(chan.modechars.length == 8);
 
         chan.setMode("+bee", "abc!def@ghi jkl!*@*");
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         writeln("-------------------------------------");
-        assert(chan.modes.length == 10);
-        assert(chan.modes[9].exemptions.length == 2);
+        assert(chan.modes.length == 2);
+        assert(chan.modes[1].exemptions.length == 2);
+    }
 
+    {
+        IRCChannel chan;
+
+        chan.setMode("+ns", string.init);
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
+        assert(chan.modes.length == 0);
+        assert(chan.modechars == "ns", chan.modechars);
+
+        chan.setMode("-sn", string.init);
+        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
+        assert(chan.modes.length == 0);
+        assert(chan.modechars.length == 0);
     }
 }

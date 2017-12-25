@@ -222,8 +222,6 @@ void onPing(SeenPlugin plugin)
 
         foreach (const channel; state.bot.homes)
         {
-            import std.concurrency : send;
-
             /++
              +  The bot uses concurrency messages to queue strings to be sent to
              +  the server. This has benefits such as that even a multi-threaded
@@ -238,7 +236,7 @@ void onPing(SeenPlugin plugin)
              +  of why we wanted to import that.
              +/
             // FIXME
-            raw!(Yes.quiet)("WHO " ~ channel);
+            //raw!(Yes.quiet)("WHO " ~ channel);
         }
 
         import std.datetime.systime : Clock;
