@@ -440,6 +440,39 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     {
                         plugin.onEvent(event);
 
+                        if (auto fibers = event.type in plugin.awaitingFibers)
+                        {
+                            size_t[] toRemove;
+
+                            foreach (immutable i, ref fiber; *fibers)
+                            {
+                                if (!fiber)
+                                {
+                                    writeln("null fiber SHOULD NEVER HAPPEN");
+                                    toRemove ~= i;
+                                }
+                                else if (fiber.state == Fiber.State.TERM)
+                                {
+                                    import core.memory : GC;
+                                    writeln("Found a dead fiber!");
+                                    GC.free(&fiber);
+                                    toRemove ~= i;
+                                }
+                                else
+                                {
+                                    writeln("Calling fiber ", i);
+                                    fiber.call();
+                                }
+                            }
+
+                            foreach (i; toRemove)
+                            {
+                                import std.algorithm.mutation : remove;
+                                plugin.awaitingFibers[event.type] =
+                                    plugin.awaitingFibers[event.type].remove(i);
+                            }
+                        }
+
                         // Fetch any queued `WHOIS` requests and handle
                         auto reqs = plugin.yieldWHOISRequests();
                         client.handleWHOISQueue(reqs, event, event.target.nickname);

@@ -17,6 +17,7 @@ import std.concurrency : Tid, send;
  +/
 interface IRCPlugin
 {
+    import core.thread : Fiber;
     import std.array : Appender;
 
     /// Executed on update to the internal `IRCBot` struct
@@ -60,8 +61,10 @@ interface IRCPlugin
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
-}
 
+    /// FIXME
+    ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
+}
 
 // WHOISRequest
 /++
@@ -447,6 +450,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import std.concurrency : Tid;
 
     IRCPluginState privateState;
+    Fiber[][IRCEvent.Type] privateAwaitingFibers;
 
     // onEvent
     /++
@@ -1172,6 +1176,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref IRCPluginState state() @property
     {
         return this.privateState;
+    }
+
+    // awaitingFibers
+    /++
+     +  FIXME
+     +/
+    pragma(inline)
+    ref Fiber[][IRCEvent.Type] awaitingFibers() @property
+    {
+        return this.privateAwaitingFibers;
     }
 }
 
@@ -1947,7 +1961,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     {
         import std.concurrency : spawn;
 
-        enum secondsBetween = 10;
+        enum secondsBetween = 3;
 
         writeln(__FUNCTION__);
 
@@ -1960,45 +1974,37 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
             querylist ~= name;
         }
 
-        static void fn(Tid tid, shared string[] channels)
-        {
-            import kameloso.messaging : raw;
-            import core.thread : Thread;
-            import core.time : seconds;
-            //import std.format : format;
+        if (!querylist.length) return;
 
-            foreach (channel; cast(string[])channels)
-            {
-                Thread.sleep(secondsBetween.seconds);
-                raw(tid, "MODE " ~ channel);
-                /*Thread.sleep(3.seconds);
-                raw(tid, "MODE %s +b".format(channel));*/
-                Thread.sleep(secondsBetween.seconds);
-                raw(tid, "WHO " ~ channel);
-            }
-        };
-
-        spawn(&fn, plugin.state.mainThread, cast(shared)querylist);
-
-        /+void fiberFn()
+        void fiberFn()
         {
             import kameloso.messaging : raw;
             import core.thread : Fiber, Thread;
             import core.time : seconds;
             //import std.format : format;
 
+            writeln("FiberFn here!");
+
             bool loopedOnce;
 
             foreach (channel; querylist)
             {
-                if (loopedOnce) Fiber.yield();
+                if (loopedOnce)
+                {
+                    writeln("Yielding 2");
+                    Fiber.yield();
+                    writeln("Sleeping ", secondsBetween);
+                    Thread.sleep(secondsBetween.seconds);
+
+                }
 
                 raw(plugin.state.mainThread, "MODE " ~ channel);
+                writeln("Yielding 1");
                 Fiber.yield();
                 //raw(plugin.state.mainThread, "MODE %s +b".format(channel));
+                writeln("Sleeping ", secondsBetween);
                 Thread.sleep(secondsBetween.seconds);
                 raw(plugin.state.mainThread, "WHO " ~ channel);
-                Thread.sleep(secondsBetween.seconds);
 
                 loopedOnce = true;
             }
@@ -2008,8 +2014,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
         Fiber fiber = new Fiber(&fiberFn);
 
+        plugin.awaitingFibers[IRCEvent.Type.RPL_CHANNELMODEIS] ~= fiber;
         plugin.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHO] ~= fiber;
-        plugin.awaitingFibers[IRCEvent.Type.RPL_CHANNELMODEIS] ~= fiber;+/
 
+        writeln("Calling Fiber first");
+        fiber.call();
     }
 }
