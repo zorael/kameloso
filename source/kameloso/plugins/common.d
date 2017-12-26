@@ -1656,12 +1656,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     user = nickname in users;
                 }
 
-                //writefln("onSelfpart %s: %d", nickname, (*user).refcount);
                 if (--(*user).refcount == 0)
                 {
                     users.remove(nickname);
                 }
-                //else if ((*user).refcount < 0) writeln(nickname," REFOUNT < 0");
             }
 
             channels.remove(event.channel);

@@ -58,7 +58,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
             loopedOnce = true;
         }
-    };
+    }
 
     import core.thread : Fiber;
 
