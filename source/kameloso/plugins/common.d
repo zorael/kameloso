@@ -544,18 +544,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     IRCEvent mutEvent = event;  // mutable
                     string contextPrefix;
 
-                    static if (hasUDA!(fun, Prefix))
+                    static if (hasUDA!(fun, BotCommand))
                     {
                         if (!event.content.length)
                         {
-                            // Event has a `Prefix` set up but `event.content`
-                            // is empty; cannot possibly be of interest
+                            // Event has a `BotCommand` set up but
+                            // `event.content` is empty; cannot possibly be of
+                            // interest.
                             return;
                         }
 
                         bool matches;
 
-                        foreach (prefixUDA; getUDAs!(fun, Prefix))
+                        foreach (prefixUDA; getUDAs!(fun, BotCommand))
                         {
                             import kameloso.string : beginsWith, has, nom,
                                 stripPrefix;

@@ -258,12 +258,14 @@ void onPing(SeenPlugin plugin)
  +  Whenever someone says "seen" in a `CHAN` or a `QUERY`, and if `CHAN` then
  +  only if in a *home*, process this function.
  +
- +  The `Prefix` annotation defines a piece of text that the incoming message
- +  must start with for this function to be called. `NickPolicy` deals with
- +  whether the message has to start with the name of the *bot* or not, and to
- +  what extent. It can be one of:
+ +  The `BotCommand` annotation defines a piece of text that the incoming
+ +  message must start with for this function to be called. `NickPolicy` deals
+ +  with whether the message has to start with the name of the *bot* or not, and
+ +  to what extent.
+ +
+ +  It can be one of:
  +  * `optional`, where the bot's nickname will be allowed and stripped away,
- +     but the function will still be invoked given the right prefix string.
+ +     but the function will still be invoked given the right command string.
  +  * `required`, where the message has to start with the name of the bot if in
  +     a `CHAN` message, but it needn't be there in a `QUERY`.
  +  * `hardRequired`, where the message *has* to start with the bot's nickname
@@ -280,8 +282,9 @@ void onPing(SeenPlugin plugin)
  +  --------------
  +
  +  The plugin system will have made certain we only get messages starting with
- +  "seen", since we annotated this function with such a `Prefix`. It will since
- +  have been sliced off, so we're left only with the "arguments" to "seen".
+ +  "`seen`", since we annotated this function with such a `BotCommand`. It will
+ +  since have been sliced off, so we're left only with the "arguments" to
+ +  "`seen`".
  +
  +  If this is a `CHAN` event, the original lines was probably
  +  "`kameloso: seen Joe`". If it was a `QUERY`, the `kameloso:` prefix may have
