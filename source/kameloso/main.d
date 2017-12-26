@@ -438,26 +438,21 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
 
                             foreach (immutable i, ref fiber; *fibers)
                             {
-                                if (!fiber)
+                                if (fiber.state == Fiber.State.TERM)
                                 {
-                                    writeln("null fiber SHOULD NEVER HAPPEN");
                                     toRemove ~= i;
                                 }
-                                else if (fiber.state == Fiber.State.TERM)
+                                else if (fiber.state == Fiber.State.HOLD)
                                 {
-                                    import core.memory : GC;
-                                    writeln("Found a dead fiber!");
-                                    GC.free(&fiber);
-                                    toRemove ~= i;
+                                    fiber.call();
                                 }
                                 else
                                 {
-                                    writeln("Calling fiber ", i);
-                                    fiber.call();
+                                    assert(0);
                                 }
                             }
 
-                            foreach (i; toRemove)
+                            foreach_reverse (i; toRemove)
                             {
                                 import std.algorithm.mutation : remove;
                                 plugin.awaitingFibers[event.type] =

@@ -95,6 +95,9 @@ void onCommandShowUsers(AdminPlugin plugin)
         writefln("%-12s [%s]", entry.key, entry.value);
     }
 
+    writefln("%d bytes from %d users",
+        (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length);
+
     version(Cygwin_) stdout.flush();
 }
 

@@ -2056,6 +2056,7 @@ struct IRCChannel
     char[] modechars;
     Mode[] modes;
     string[] users;
+    long created;
     bool queried;
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
