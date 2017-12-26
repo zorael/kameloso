@@ -911,8 +911,6 @@ unittest
 }
 
 
-mixin BasicEventHandlers;
-
 public:
 
 

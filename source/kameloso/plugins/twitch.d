@@ -361,8 +361,6 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 }
 
 
-mixin BasicEventHandlers;
-
 public:
 
 

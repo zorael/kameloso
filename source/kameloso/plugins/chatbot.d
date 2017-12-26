@@ -364,7 +364,7 @@ void onEndOfMotd(ChatbotPlugin plugin)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

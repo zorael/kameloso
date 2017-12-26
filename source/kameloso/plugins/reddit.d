@@ -234,7 +234,7 @@ void start(IRCPlugin basePlugin)
 
 public:
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 
 // RedditPlugin

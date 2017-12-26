@@ -410,7 +410,7 @@ void onEndOfMotd(NotesPlugin plugin)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

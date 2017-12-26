@@ -685,7 +685,7 @@ void start(IRCPlugin plugin)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

@@ -113,7 +113,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

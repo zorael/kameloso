@@ -461,7 +461,7 @@ void teardown(IRCPlugin basePlugin)
  +  It's boilerplate so you don't have to deal with some very basic things. It
  +  is not mandatory but highly recommended in nearly all cases.
  +/
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 
 /++
