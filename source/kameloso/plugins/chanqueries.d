@@ -15,11 +15,7 @@ private:
 @(IRCEvent.Type.PING)
 void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch)
-    {
-        // Can't do WHO on Twitch
-        return;
-    }
+    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
     string[] querylist;
 
@@ -79,6 +75,8 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 {
+    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+
     plugin.channels[event.channel] = false;
 }
 
@@ -91,6 +89,8 @@ void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFPART)
 void onSelfpart(ChanQueriesPlugin plugin, const IRCEvent event)
 {
+    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+
     plugin.channels.remove(event.channel);
 }
 
