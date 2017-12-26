@@ -117,28 +117,6 @@ void onSelfjoin(ConnectPlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfNames
-/++
- +  Query `WHO` on a channel after its list of names ends, to get the services
- +  login names of everyone in it.
- +
- +  Bugs: If it joins too many (home) channels at once, you will be kicked due
- +        to flooding and possibly tempbanned. Consider disabling if you have a
- +        lot of homes.
- +/
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-@(ChannelPolicy.homeOnly)
-void onEndOfNames(ConnectPlugin plugin, const IRCEvent event)
-{
-    with (plugin.state)
-    {
-        if (bot.server.daemon == IRCServer.Daemon.twitch) return;
-
-        mainThread.send(ThreadMessage.Throttleline(), "WHO " ~ event.channel);
-    }
-}
-
-
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the `IRCBot` object.
