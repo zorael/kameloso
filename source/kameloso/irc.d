@@ -30,18 +30,16 @@ private:
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
 {
-    import std.algorithm.searching : canFind;
-
     mixin(scopeguard(failure));
 
     string slice = event.raw;
     string typestring;
 
-    if ((cast(ubyte[])slice).canFind(':'))
+    if (slice.has(':'))
     {
         typestring = slice.nom(" :");
     }
-    else if ((cast(ubyte[])slice).canFind(' '))
+    else if (slice.has(' '))
     {
         typestring = slice.nom(' ');
     }
