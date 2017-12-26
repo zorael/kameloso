@@ -193,8 +193,7 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
         line = lookup.title;
     }
 
-    // FIXME
-    //tid.privmsg(event.channel, event.sender.nickname, line);
+    tid.privmsg(event.channel, event.sender.nickname, line);
 }
 
 

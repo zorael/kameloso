@@ -10,7 +10,10 @@ private:
 
 // onPing
 /++
- +  FIXME
+ +  Query channels for information about themselves and their users.
+ +
+ +  Check an internal list of channels once every `PING`, and if one we inhabit
+ +  hasn't been queried, query it.
  +/
 @(IRCEvent.Type.PING)
 void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
@@ -69,7 +72,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  FIXME
+ +  Add a channel we join to the internal list of channels.
  +/
 @(ChannelPolicy.any)
 @(IRCEvent.Type.SELFJOIN)
@@ -83,7 +86,7 @@ void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 
 // onSelfpart
 /++
- +  FIXME
+ +  Remove a channel we part from the internal list of channels.
  +/
 @(ChannelPolicy.any)
 @(IRCEvent.Type.SELFPART)
@@ -100,7 +103,8 @@ public:
 
 // ChanQueriesPlugin
 /++
- +  FIXME
+ +  The Channel Queries plugin queries channels for information about it, so
+ +  that other plugins that implement channel awareness can catch the results.
  +/
 final class ChanQueriesPlugin : IRCPlugin
 {

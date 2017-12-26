@@ -62,7 +62,7 @@ interface IRCPlugin
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
 
-    /// FIXME
+    /// Returns a reference to the list of awaiting `Fibers`, keyed by `Type`
     ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
 }
 
@@ -1181,7 +1181,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // awaitingFibers
     /++
-     +  FIXME
+     +  Returns a reference to a plugin's list of `Fiber`s awaiting events.
+     +
+     +  These are callback `Fiber`s, registered when a plugin wants an action
+     +  performed and then to react to the server's response to it.
      +/
     pragma(inline)
     ref Fiber[][IRCEvent.Type] awaitingFibers() @property
@@ -1207,7 +1210,13 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
 // MessagingProxy
 /++
- +  FIXME
+ +  Mixin to give shorthands to the functions in `kameloso.messaging`, for
+ +  easier use when in a `with (plugin) { /* ... */ }` scope.
+ +
+ +  This merely makes it possible to use commands like
+ +  `raw("PING :irc.freenode.net")` without having to import
+ +  `kameloso.messaging` and include the thread ID of the main thread in every
+ +  call of the functions.
  +/
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 {
@@ -1216,8 +1225,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // chan
     /++
-    +  FIXME
-    +/
+     +  Sends a channel message.
+     +/
     pragma(inline)
     void chan(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
@@ -1227,8 +1236,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // query
     /++
-    +  FIXME
-    +/
+     +  Sends a private query message to a user.
+     +/
     pragma(inline)
     void query(Flag!"quiet" quiet = No.quiet)(const string nickname,
         const string content)
@@ -1238,19 +1247,28 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // privmsg
     /++
-    +  FIXME
-    +/
+     +  Sends either a channel message or a private query message depending on
+     +  the arguments passed to it.
+     +
+     +  This reflects how channel messages and private messages are both the
+     +  underlying same type; `PRIVMSG`.
+     +/
     pragma(inline)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
+        return kameloso.messaging.privmsg!quiet(state.mainThread, channel,
+            nickname, content);
     }
 
     // throttleline
     /++
-    +  FIXME
-    +/
+     +  Sends either a channel message or a private query message depending on
+     +  the arguments passed to it.
+     +
+     +  It sends it in a throttled fashion, usable for long output when the bot
+     +  may otherwise get kicked for spamming.
+     +/
     pragma(inline)
     void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
@@ -1261,19 +1279,23 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // emote
     /++
-    +  FIXME
-    +/
+     +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
+     +/
     pragma(inline)
     void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
         const string content)
     {
-        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
+        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget,
+            content);
     }
 
     // chanmode
     /++
-    +  FIXME
-    +/
+     +  Sets a channel mode.
+     +
+     +  This includes modes that pertain to a user in the context of a channel,
+     +  like bans.
+     +/
     pragma(inline)
     void chanmode(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string modes, const string content = string.init)
@@ -1281,21 +1303,10 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.chanmode!quiet(state.mainThread, channel, modes, content);
     }
 
-    // usermode
-    /++
-    +  FIXME
-    +/
-    pragma(inline)
-    void usermode(Flag!"quiet" quiet = No.quiet)(const string nickname,
-        const string modes)
-    {
-        return kameloso.messaging.usermode!quiet(state.mainThread, nickname, modes);
-    }
-
     // topic
     /++
-    +  FIXME
-    +/
+     +  Sets the topic of a channel.
+     +/
     pragma(inline)
     void topic(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
@@ -1305,8 +1316,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // invite
     /++
-    +  FIXME
-    +/
+     +  Invites a user to a channel.
+     +/
     pragma(inline)
     void invite(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname)
@@ -1316,8 +1327,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // join
     /++
-    +  FIXME
-    +/
+     +  Joins a channel.
+     +/
     pragma(inline)
     void join(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
@@ -1326,8 +1337,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // kick
     /++
-    +  FIXME
-    +/
+     +  Kicks a user from a channel.
+     +/
     void kick(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string reason = string.init)
     {
@@ -1336,8 +1347,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // part
     /++
-    +  FIXME
-    +/
+     +  Leaves a channel.
+     +/
     pragma(inline)
     void part(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
@@ -1346,8 +1357,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // quit
     /++
-    +  FIXME
-    +/
+     +  Disconnects from the server, optionally with a quit reason.
+     +/
     pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
@@ -1356,8 +1367,11 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
     // raw
     /++
-    +  FIXME
-    +/
+     +  Sends text to the server, verbatim.
+     +
+     +  This is used to send messages of types for which there exist no helper
+     +  functions.
+     +/
     pragma(inline)
     void raw(Flag!"quiet" quiet = No.quiet)(const string line)
     {
@@ -1366,28 +1380,23 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 }
 
 
-// BasicEventHandlers
+// UserAwareness
 /++
- +  Rudimentary IRCEvent handlers.
+ +  Implements user awareness in a plugin module.
  +
- +  Almost any plugin will need handlers for `RPL_WHOISACCOUNT`,
- +  `RPL_ENDOFWHOIS`, `PART`, `QUIT`, and `SELFNICK`. This mixin provides those
- +  as well as some convenience functions to look up users and do `WHOIS` calls.
+ +  Plugins that deal with users in any form will need event handlers to handle
+ +  people joining and leaving channels, disconnecting from the server, and
+ +  other events related to user details (including services login names).
  +
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
- +/
-alias BasicEventHandlers = UserAwareness;
-
-// UserAwareness
-/++
- +  FIXME
  +/
 mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     // onUserAwarenessQuitMixin
     /++
-     +  FIXME
+     +  Removes a user's `IRCUser` entry from a plugin's user list upon them
+     +  disconnecting.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1400,8 +1409,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessNickMixin
     /++
-     +  Tracks a nick change, moving any old `IRCUser` entry in
-     +  `privateState.users` to point to the new nickname.
+     +  Tracks a nick change, moving any old `IRCUser` entry in `state.users` to
+     +  point to the new nickname.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1426,8 +1435,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessUserInfoMixin
     /++
-     +  Catches a user's information and saves it in the `IRCUser` array, along
-     +  with a timestamp of the last `WHOIS` call, which is this.
+     +  Catches a user's information and saves it in the plugin's `IRCUser`
+     +  array, along with a timestamp of the results of the last `WHOIS` call,
+     +  which is this.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
@@ -1446,11 +1456,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessLoginInfoSenderMixin
     /++
-     +  Adds a user to the user array if the login is known.
+     +  Adds a user to the `IRCUser` array if the login is known.
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  login name of whoever joins in the event string. If it's there, catch
-     +  the user into the user array so we won't have to WHOIS them later.
+     +  the user into the user array so we won't have to `WHOIS` them later.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1469,15 +1479,15 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessLoginInfoTargetMixin
     /++
-     +  Records a user's NickServ login by saving it to the user's `IRCBot` in
-     +  the `privateState.users` associative array.
+     +  Records a user's services login by saving it to the user's `IRCBot` in
+     +  the `state.users` associative array.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onUserAwarenessLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // No point catching the entire user
+        // No point catching the entire user when we only want the login
 
         if (auto user = event.target.nickname in plugin.state.users)
         {
@@ -1494,7 +1504,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Catches a user's information from a `WHO` reply event.
      +
-     +  It usually contains everything interesting except login.
+     +  It usually contains everything interesting except services login name.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1519,7 +1529,13 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessEndOfWhoNames
     /++
-     +  FIXME
+     +  Rehashes, or optimises, the `IRCUser` associative array upon the end
+     +  of a `WHO` reply.
+     +
+     +  These replies can list hundreds of users depending on the size of the
+     +  channel. Once an associative array has grown sufficiently it becomes
+     +  inefficient. Rehashing it makes it take its new size into account and
+     +  makes lookup faster.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1532,7 +1548,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // catchUser
     /++
-     +  Catch an `IRCUser`, saving it to the `privateState.users` array.
+     +  Catch an `IRCUser`, saving it to the `state.users` array.
      +
      +  If a user already exists, meld the new information into the old one.
      +/
@@ -1613,16 +1629,29 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 }
 
+deprecated("BasicEventHandlers has been replaced by UserAwareness. " ~
+    "This alias will eventually be removed.")
+alias BasicEventHandlers = UserAwareness;
+
 
 // ChannelAwareness
 /++
- +  FIXME
+ +  Implements channel awareness in a plugin module.
+ +
+ +  Plugins that need to track channels and the users in them need some event
+ +  handlers to handle the bookkeeping. Notably when the bot joins and leaves
+ +  channels, when someone else joins, leaves or disconnects, someone changes
+ +  their nickname, changes channel modes or topic, as well as some events that
+ +  list information about users and what channels they're in.
+ +
+ +  Channel awareness needs user awareness, or things won't work.
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     // onChannelAwarenessSelfjoinMixin
     /++
-     +  FIXME. Joined channel, create a new one
+     +  Create a new `IRCChannel` in the `state.channels` associative array list
+     +  when the bot joins a channel.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1635,7 +1664,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  FIXME. Left a channel, remove it
+     +  Remove an `IRCChannel` from the internal list when the bot leaves it.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1669,7 +1698,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessChannelAwarenessJoinMixin
     /++
-     +  FIXME. Add user to channel user list
+     +  Add a user as being part of a channel when they join one.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1694,7 +1723,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessPartMixin
     /++
-     +  FIXME. Remove user from channel user list
+     +  Remove a user from being part of a channel when they leave one.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1732,7 +1761,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessNickMixin
     /++
-     +  FIXME. Update all channels' user lists with the new nick
+     +  Updates and renames a user in the internal list of users in a channel if
+     +  they change their nickname.
      +/
     @(Chainable)
     @(IRCEvent.Type.NICK)
@@ -1753,7 +1783,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessQuitMixin
     /++
-     +  FIXME. Remove user from all channels' user lists
+     +  Removes a user from all tracked channels if they disconnect.
+     +
+     +  Does not touch the internal list of users; the user awareness bits are
+     +  expected to take care of that.
      +/
     @(Chainable)
     @(IRCEvent.Type.QUIT)
@@ -1773,7 +1806,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessTopicMixin
     /++
-     +  FIXME. Update topic for channel
+     +  Update the entry for an `IRCChannel` if someone changes the topic of it.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1785,14 +1818,14 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     }
 
 
-    // onChannelAwarenessTopicWhoTime
+    // onChannelAwarenessCreationTime
     /++
-     +  FIXME
+     +  Stores the timestamp of when a channel was created.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_CREATIONTIME)
-    void onChannelAwarenessTopicWhoTime(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
     {
         import std.conv : to;
         plugin.state.channels[event.channel].created = event.aux.to!long;
@@ -1801,7 +1834,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessChanModeMixin
     /++
-     +  FIXME. Set new mode (replaces or adds)
+     +  Sets a mode for a channel.
+     +
+     +  Most modes replace others of the same type, notable exceptions being
+     +  bans and mode exemptions.
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1814,7 +1850,11 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarensesWHOReplyMixin
     /++
-     +  FIXME. User awareness bits add the IRCUser, we just want to update chan
+     +  Add a user as being part of a channel upon receiving the reply from the
+     +  request for info on all the participants.
+     +
+     +  This events includes all normal fields like ident and address, but not
+     +  their channel modes (e.g. `@` for operator).
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1849,7 +1889,11 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessNamesReplyMixin
     /++
-     +  FIXME. Adds nicknames to the channel's user list
+     +  Add users as being part of a channel upon receiving the reply from the
+     +  request for a list of all the participants.
+     +
+     +  This does not include information about the users, only their nickname
+     +  and their channel mode (e.g. `@` for operator).
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1891,7 +1935,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessBanListMixin
     /++
-     +  FIXME
+     +  Adds the list of banned users to a tracked channel's list of modes.
+     +
+     +  Bans are just normal channel modes that are paired with a user and that
+     +  don't overwrite other bans (can be stacked).
      +/
     @(Chainable)
     @(ChannelPolicy.any)
@@ -1906,7 +1953,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessChannelModeIs
     /++
-     +  FIXME
+     +  Adds the modes of a channel to a tracked channel's mode list.
      +/
     @(Chainable)
     @(ChannelPolicy.any)

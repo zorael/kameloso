@@ -7,8 +7,8 @@ import std.concurrency : Tid, send;
 
 // chan
 /++
-+  FIXME
-+/
+ +  Sends a channel message.
+ +/
 void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string content)
 {
@@ -22,10 +22,11 @@ void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(event);
 }
 
+
 // query
 /++
-+  FIXME
-+/
+ +  Sends a private query message to a user.
+ +/
 void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
     const string content)
 {
@@ -38,10 +39,15 @@ void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
     tid.send(event);
 }
 
+
 // privmsg
 /++
-+  FIXME
-+/
+ +  Sends either a channel message or a private query message depending on
+ +  the arguments passed to it.
+ +
+ +  This reflects how channel messages and private messages are both the
+ +  underlying same type; `PRIVMSG`.
+ +/
 void privmsg(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string nickname, const string content)
 {
@@ -61,10 +67,15 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     }
 }
 
+
 // throttleline
 /++
-+  FIXME
-+/
+ +  Sends either a channel message or a private query message depending on
+ +  the arguments passed to it.
+ +
+ +  It sends it in a throttled fashion, usable for long output when the bot
+ +  may otherwise get kicked for spamming.
+ +/
 void throttleline(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string nickname, const string content)
 {
@@ -91,10 +102,11 @@ void throttleline(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(ThreadMessage.Throttleline(), line);
 }
 
+
 // emote
 /++
-+  FIXME
-+/
+ +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
+ +/
 void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget,
     const string content)
 {
@@ -117,10 +129,14 @@ void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget,
     tid.send(event);
 }
 
+
 // chanmode
 /++
-+  FIXME
-+/
+ +  Sets a channel mode.
+ +
+ +  This includes modes that pertain to a user in the context of a channel,
+ +  like bans.
+ +/
 void chanmode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string modes, const string content = string.init)
 {
@@ -136,28 +152,11 @@ void chanmode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(event);
 }
 
-// usermode
-/++
-+  FIXME
-+/
-void usermode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
-    const string modes)
-{
-    assert((nickname[0] != '#'), "usermode was passed channel as nickname: " ~ nickname);
-
-    IRCEvent event;
-    event.type = IRCEvent.Type.USERMODE;
-    event.target.special = quiet;
-    event.target.nickname = nickname;
-    event.aux = modes;
-
-    tid.send(event);
-}
 
 // topic
 /++
-+  FIXME
-+/
+ +  Sets the topic of a channel.
+ +/
 void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string content)
 {
@@ -172,10 +171,11 @@ void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(event);
 }
 
+
 // invite
 /++
-+  FIXME
-+/
+ +  Invites a user to a channel.
+ +/
 void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string nickname)
 {
@@ -189,10 +189,11 @@ void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(event);
 }
 
+
 // join
 /++
-+  FIXME
-+/
+ +  Joins a channel.
+ +/
 void join(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 {
     assert((channel[0] == '#'), "join was passed invalid channel: " ~ channel);
@@ -204,10 +205,11 @@ void join(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
     tid.send(event);
 }
 
+
 // kick
 /++
-+  FIXME
-+/
+ +  Kicks a user from a channel.
+ +/
 void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string nickname, const string reason = string.init)
 {
@@ -223,10 +225,11 @@ void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     tid.send(event);
 }
 
+
 // part
 /++
-+  FIXME
-+/
+ +  Leaves a channel.
+ +/
 void part(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 {
     assert((channel[0] == '#'), "part was passed invalid channel: " ~ channel);
@@ -238,10 +241,11 @@ void part(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
     tid.send(event);
 }
 
+
 // quit
 /++
-+  FIXME
-+/
+ +  Disconnects from the server, optionally with a quit reason.
+ +/
 void quit(Flag!"quiet" quiet = No.quiet)(Tid tid, const string reason = string.init)
 {
     IRCEvent event;
@@ -252,10 +256,14 @@ void quit(Flag!"quiet" quiet = No.quiet)(Tid tid, const string reason = string.i
     tid.send(event);
 }
 
+
 // raw
 /++
-+  FIXME
-+/
+ +  Sends text to the server, verbatim.
+ +
+ +  This is used to send messages of types for which there exist no helper
+ +  functions.
+ +/
 void raw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
 {
     IRCEvent event;

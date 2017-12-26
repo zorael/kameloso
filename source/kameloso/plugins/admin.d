@@ -136,7 +136,6 @@ void onCommandShowChannels(AdminPlugin plugin)
 @Prefix(NickPolicy.required, "sudo")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    // FIXME
     plugin.raw(event.content);
 }
 

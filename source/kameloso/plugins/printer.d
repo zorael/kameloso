@@ -424,7 +424,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     return fg[colourIndex];
                 }
 
-                // fixme
                 return bright ? DefaultBright.sender : DefaultDark.sender;
             }
 

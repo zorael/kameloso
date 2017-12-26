@@ -1349,8 +1349,6 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     import kameloso.constants : IRCControlCharacter;
     import kameloso.string : beginsWith;
 
-    // FIXME, change so that it assigns to the proper field
-
     immutable target = slice.nom(" :");
     event.content = slice;
 
