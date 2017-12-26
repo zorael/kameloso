@@ -5,6 +5,7 @@ import kameloso.ircdefs;
 import kameloso.common : logger;
 
 import std.concurrency : send;
+import std.typecons : Flag, No, Yes;
 
 import std.stdio;
 
