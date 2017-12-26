@@ -716,6 +716,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
+                        static assert (is(typeof(.doWhois)),
+                            module_ ~ " is missing UserAwareness mixin " ~
+                            "(needed for PrivilegeLevel checks).");
+
                         enum privilegeLevel = getUDAs!(fun,
                             PrivilegeLevel)[0];
 
@@ -1678,6 +1682,10 @@ alias BasicEventHandlers = UserAwareness;
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
+    import std.format : format;
+    static assert(is(typeof(.doWhois)), module_ ~ " is missing UserAwareness " ~
+        "mixin (needed for ChannelAwareness).");
+
     // onChannelAwarenessSelfjoinMixin
     /++
      +  Create a new `IRCChannel` in the `state.channels` associative array list
