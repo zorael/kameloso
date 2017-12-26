@@ -1217,6 +1217,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void chan(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
     {
@@ -1227,6 +1228,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void query(Flag!"quiet" quiet = No.quiet)(const string nickname,
         const string content)
     {
@@ -1237,6 +1239,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
@@ -1247,6 +1250,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
@@ -1258,6 +1262,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
         const string content)
     {
@@ -1268,6 +1273,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void chanmode(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string modes, const string content = string.init)
     {
@@ -1278,6 +1284,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void usermode(Flag!"quiet" quiet = No.quiet)(const string nickname,
         const string modes)
     {
@@ -1288,6 +1295,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void topic(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
     {
@@ -1298,6 +1306,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void invite(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname)
     {
@@ -1308,6 +1317,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void join(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
         return kameloso.messaging.join!quiet(state.mainThread, channel);
@@ -1327,6 +1337,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void part(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
         return kameloso.messaging.part!quiet(state.mainThread, channel);
@@ -1336,6 +1347,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
         return kameloso.messaging.quit!quiet(state.mainThread, reason);
@@ -1345,6 +1357,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
     +  FIXME
     +/
+    pragma(inline)
     void raw(Flag!"quiet" quiet = No.quiet)(const string line)
     {
         return kameloso.messaging.raw!quiet(state.mainThread, line);
