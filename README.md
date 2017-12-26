@@ -68,6 +68,7 @@ The available *build configurations* are:
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, compiles both `colours` and `web`
 * `windows`, default on Windows, equals `vanilla`
+* `cygwin`, equals `windows` but with extra code needed for running it under the default Cygwin terminal (*mintty*)
 
 You can specify which to build with the `-c` switch.
 
@@ -133,6 +134,8 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 
 `pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, when the username and nickname is still being negotiated, whereas `authPassword` is something that is sent to nickname services after registration is finished and you have successfully logged onto the server. (In the case of SASL, `authPassword` is used late during registration.)
 
+Mind that a full Twitch bot cannot be implemented as an IRC client.
+
 # TODO
 
 * "online" help; listing of verbs/commands
@@ -144,7 +147,7 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 * concurrency message-checking as Fiber?
-* backlog of `FIXME`s
+* update `seen.d` again
 
 # Built With
 
