@@ -411,12 +411,12 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                 foreach (plugin; plugins)
                 {
                     plugin.postprocess(mutEvent);
-                    auto yieldedBot = plugin.yieldBot();
+                    auto pluginBot = plugin.bot;
 
-                    if (yieldedBot.updated)
+                    if (pluginBot.updated)
                     {
                         // Postprocessing changed the bot; propagate
-                        bot = yieldedBot;
+                        bot = pluginBot;
                         bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
@@ -464,9 +464,9 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         auto reqs = plugin.yieldWHOISRequests();
                         client.handleWHOISQueue(reqs, event, event.target.nickname);
 
-                        auto yieldedBot = plugin.yieldBot();
+                        auto pluginBot = plugin.bot;
 
-                        if (yieldedBot.updated)
+                        if (pluginBot.updated)
                         {
                             /*  Plugin `onEvent` or `WHOIS` reaction updated the
                                 bot. There's no need to check for both
@@ -474,7 +474,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            bot = yieldedBot;
+                            bot = pluginBot;
                             bot.updated = false;
                             parser.bot = bot;
                             propagateBot(bot);

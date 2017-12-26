@@ -21,10 +21,10 @@ interface IRCPlugin
     import std.array : Appender;
 
     /// Executed on update to the internal `IRCBot` struct
-    void newBot(IRCBot);
+    void bot(IRCBot) @property;
 
     /// Executed after a plugin has run its `onEvent` course to pick up bot changes
-    IRCBot yieldBot();
+    IRCBot bot() @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
     ref WHOISRequest[string] yieldWHOISRequests();
@@ -431,8 +431,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
  +      .onEvent            (doesn't proxy anymore)
- +      .newBot             (assigns bot)
- +      .yieldBot           (returns bot)
+ +      .bot                (assigns bot)
+ +      .bot                (returns bot)
  +      .postprocess
  +      .yieldWHOISRequests (returns queue)
  +      .writeConfig
@@ -894,7 +894,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
-    // newBot
+    // bot
     /++
      +  Inherits a new `IRCBot`.
      +
@@ -903,12 +903,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      bot = the new bot to inherit
      +/
-    void newBot(IRCBot bot)
+    void bot(IRCBot bot) @property
     {
         privateState.bot = bot;
     }
 
-    // yieldBot
+    // bot
     /++
      +  Yields a copy of the current `IRCBot` to the caller.
      +
@@ -918,7 +918,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a copy of the current `IRCBot`.
      +/
-    IRCBot yieldBot()
+    IRCBot bot() @property
     {
         return privateState.bot;
     }
