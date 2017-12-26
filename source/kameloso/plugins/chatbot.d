@@ -140,9 +140,9 @@ JSONValue loadQuotes(const string filename)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix("say")
-@Prefix(NickPolicy.required, "say")
-@Prefix(NickPolicy.required, "säg")
+@BotCommand("say")
+@BotCommand(NickPolicy.required, "say")
+@BotCommand(NickPolicy.required, "säg")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.say) return;
@@ -173,8 +173,8 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix("8ball")
-@Prefix(NickPolicy.required, "8ball")
+@BotCommand("8ball")
+@BotCommand(NickPolicy.required, "8ball")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.eightball) return;
@@ -226,8 +226,8 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix("quote")
-@Prefix(NickPolicy.required, "quote")
+@BotCommand("quote")
+@BotCommand(NickPolicy.required, "quote")
 void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     import std.json : JSONException;
@@ -282,8 +282,8 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.friend)
-@Prefix("addquote")
-@Prefix(NickPolicy.required, "addquote")
+@BotCommand("addquote")
+@BotCommand(NickPolicy.required, "addquote")
 void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.quotes) return;
@@ -323,7 +323,7 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "printquotes")
+@BotCommand(NickPolicy.required, "printquotes")
 void onCommandPrintQuotes(ChatbotPlugin plugin)
 {
     if (!plugin.chatbotSettings.quotes) return;
@@ -343,7 +343,7 @@ void onCommandPrintQuotes(ChatbotPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "reloadquotes")
+@BotCommand(NickPolicy.required, "reloadquotes")
 void onCommandReloadQuotes(ChatbotPlugin plugin)
 {
     if (!plugin.chatbotSettings.quotes) return;

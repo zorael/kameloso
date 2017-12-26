@@ -125,9 +125,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
-@Prefix("note")
-@Prefix(NickPolicy.required, "addnote")
-@Prefix(NickPolicy.required, "note")
+@BotCommand("note")
+@BotCommand(NickPolicy.required, "addnote")
+@BotCommand(NickPolicy.required, "note")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     import std.format : format, formattedRead;
@@ -164,7 +164,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "printnotes")
+@BotCommand(NickPolicy.required, "printnotes")
 void onCommandPrintNotes(NotesPlugin plugin)
 {
     writeln(plugin.notes.toPrettyString);
@@ -181,7 +181,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "reloadnotes")
+@BotCommand(NickPolicy.required, "reloadnotes")
 void onCommandReloadQuotes(NotesPlugin plugin)
 {
     logger.log("Reloading notes");
@@ -197,7 +197,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
-@Prefix(NickPolicy.required, "fakejoin")
+@BotCommand(NickPolicy.required, "fakejoin")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has, nom;

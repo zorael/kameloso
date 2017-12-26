@@ -47,8 +47,8 @@ struct RedditLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@Prefix(NickPolicy.direct, "reddit")
-@Prefix(NickPolicy.required, "reddit")
+@BotCommand(NickPolicy.direct, "reddit")
+@BotCommand(NickPolicy.required, "reddit")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;

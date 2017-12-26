@@ -330,21 +330,17 @@ enum PrivilegeLevel
 }
 
 
-// Prefix
+// BotCommand
 /++
- +  Describes how an on-text function is triggered.
+ +  Defines an IRC bot command, for people to trigger with messages.
  +
- +  The prefix policy decides to what extent the actual prefix string_ is
- +  required. It isn't needed for functions that don't trigger on text messages;
- +  this is merely to gather everything needed to have trigger "verb" commands.
- +
- +  If no `NickPolicy` is specified then it will default to `NickPolicy.direrct`
+ +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
  +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
- +  the string. (Usually "!", making it "!command".)
+ +  the `string_`. (Usually "`!`", making it "`!command`".)
  +/
-struct Prefix
+struct BotCommand
 {
-    /// The policy to which extent the prefix string_ is required
+    /// The policy to which extent the command needs the bot's nickname
     NickPolicy policy;
 
     /// The prefix string, one word with no spaces
@@ -363,6 +359,8 @@ struct Prefix
     }
 }
 
+deprecated("Prefix has been replaced with Command. This alias will be removed in time.")
+alias Prefix = BotCommand;
 
 /++
  +  Flag denoting that an event-handling function let other functions in the
@@ -1685,6 +1683,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     import std.format : format;
     static assert(is(typeof(.doWhois)), module_ ~ " is missing UserAwareness " ~
         "mixin (needed for ChannelAwareness).");
+
 
     // onChannelAwarenessSelfjoinMixin
     /++
