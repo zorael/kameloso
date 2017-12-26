@@ -214,7 +214,8 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 
     enum string allCTCPTypes = ()
     {
-        import std.conv   : to;
+        import kameloso.string : beginsWith;
+        import std.conv : to;
         import std.string : stripRight;
         import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
 
@@ -226,7 +227,12 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
             {
                 foreach (type; getUDAs!(fun, IRCEvent.Type))
                 {
-                    allTypes = allTypes ~ type.to!string[5..$] ~ " ";
+                    enum typestring = type.to!string;
+
+                    static if (typestring.beginsWith("CTCP_"))
+                    {
+                        allTypes = allTypes ~ typestring[5..$] ~ " ";
+                    }
                 }
             }
         }
