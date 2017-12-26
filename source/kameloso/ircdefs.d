@@ -71,7 +71,6 @@ struct IRCEvent
         NICK,       /// Someone changed nickname
         MODE,       /// Someone changed the modes of a user
         CHANMODE,   /// Someone changed the modes of a channel
-        USERMODE,   /// Someone changed the modes of a user
         SELFQUIT,   /// You quit the server
         SELFJOIN,   /// You joined a channel
         SELFPART,   /// You left a channel

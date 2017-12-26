@@ -191,10 +191,6 @@ Flag!"quit" checkMessages(ref Client client)
             line = "MODE %s %s :%s".format(channel, aux, content);
             break;
 
-        case USERMODE:
-            line = "MODE %s %s".format(aux, target.nickname);
-            break;
-
         case TOPIC:
             line = "TOPIC %s :%s".format(channel, content);
             break;
@@ -229,10 +225,6 @@ Flag!"quit" checkMessages(ref Client client)
         case PRIVMSG:
             if (channel.length) goto case CHAN;
             else goto case QUERY;
-
-        case MODE:
-            if (channel.length) goto case CHANMODE;
-            else goto case USERMODE;
 
         case UNSET:
             line = content;
