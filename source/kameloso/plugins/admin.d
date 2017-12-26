@@ -85,7 +85,7 @@ void onCommandSave(AdminPlugin plugin)
 @BotCommand(NickPolicy.required, "users")
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    import kameloso.common : printObject;
+    import kameloso.common : deepSizeof, printObject;
 
     logger.trace("Printing Admin's users");
 
@@ -96,8 +96,9 @@ void onCommandShowUsers(AdminPlugin plugin)
         writefln("%-12s [%s]", entry.key, entry.value);
     }
 
-    writefln("%d bytes from %d users",
-        (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length);
+    writefln("%d bytes from %d users (deep size %d bytes)",
+        (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length,
+        plugin.state.users.deepSizeof);
 
     version(Cygwin_) stdout.flush();
 }
