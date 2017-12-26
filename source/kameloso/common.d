@@ -1642,3 +1642,61 @@ void writeConfigurationFile(ref Client client, const string filename)
         writeToDisk!(Yes.addBanner)(filename, justified);
     }
 }
+
+
+// deepSizeof
+/++
+ +  Naïvely sums up the size of something in memory.
+ +
+ +  It enumerates all fields in classes and structs and recursively sums up the
+ +  space everything takes. It's naïve in that it doesn't take into account
+ +  that some arrays and such may have been allocated in a larger chunk than the
+ +  length of the array itself.
+ +
+ +  ------------
+ +  struct Foo
+ +  {
+ +      string asdf = "qwertyuiopasdfghjklxcvbnm";
+ +      int i = 42;
+ +      float f = 3.14f;
+ +  }
+ +
+ +  Foo foo;
+ +  writeln(foo.deepSizeof);
+ +  ------------
+ +/
+size_t deepSizeof(T)(const T thing) @property pure @safe
+{
+    import std.traits : isArray, isAssociativeArray, isSomeString;
+
+    size_t total;
+
+    total += T.sizeof;
+
+    static if (is(T == struct) || is(T == class))
+    {
+        foreach (immutable i, value; thing.tupleof)
+        {
+            total += deepSizeof(thing.tupleof[i]);
+        }
+    }
+    else static if (isArray!T)
+    {
+        import std.range : ElementEncodingType;
+        alias E = ElementEncodingType!T;
+        total += (E.sizeof * thing.length);
+    }
+    else static if (isAssociativeArray!T)
+    {
+        foreach (immutable elem; thing)
+        {
+            total += deepSizeof(elem);
+        }
+    }
+    else
+    {
+        // T.sizeof is enough
+    }
+
+    return total;
+}
