@@ -91,7 +91,7 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | herp
          you | !8ball
     kameloso | It is decidedly so
-         you | !quote you This is a quote
+         you | !addquote you This is a quote
     kameloso | Quote saved. (1 on record)
          you | !quote you
     kameloso | you | This is a quote
@@ -140,11 +140,11 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
 * pipedream: DCC
 * pipedream two: `ncurses`
 * Travis LDC tests
-* ready for channel-awareness (+channel modes)
 * more command-line flags
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 * concurrency message-checking as Fiber?
+* backlog of `FIXME`s
 
 # Built With
 
