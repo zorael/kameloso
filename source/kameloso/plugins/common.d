@@ -424,7 +424,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 }
 
 
-// IRCPluginBasics
+// IRCPluginImpl
 /++
  +  Mixin that fully implements an `IRCPlugin`.
  +
@@ -453,6 +453,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     IRCPluginState privateState;
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
+
 
     // onEvent
     /++
@@ -873,6 +874,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // this(IRCPluginState)
     /++
      +  Basic constructor for a plugin.
@@ -894,6 +896,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // bot
     /++
      +  Inherits a new `IRCBot`.
@@ -907,6 +910,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         privateState.bot = bot;
     }
+
 
     // bot
     /++
@@ -923,6 +927,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return privateState.bot;
     }
 
+
     // postprocess
     /++
      +  Lets a plugin modify an `IRCEvent` while it's begin constructed, before
@@ -938,6 +943,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .postprocess(this, event);
         }
     }
+
 
     // yieldWHOISReuests
     /++
@@ -956,6 +962,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return privateState.whoisQueue;
     }
 
+
     // writeConfig
     /++
      +  Writes configuration to disk.
@@ -963,13 +970,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      configFile = the file to write to.
      +/
-     void writeConfig(const string configFile)
-     {
-         static if (__traits(compiles, .writeConfig(this, string.init)))
-         {
-             .writeConfig(this, configFile);
-         }
-     }
+    void writeConfig(const string configFile)
+    {
+        static if (__traits(compiles, .writeConfig(this, string.init)))
+        {
+            .writeConfig(this, configFile);
+        }
+    }
+
 
     // loadConfig
     /++
@@ -1031,6 +1039,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // present
     /++
      +  Print some information to the screen, usually settings.
@@ -1042,6 +1051,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .present(this);
         }
     }
+
 
     // printSettings
     /++
@@ -1085,6 +1095,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // addToConfig
     /++
      +  Gathers the configuration text the plugin wants to contribute to the
@@ -1121,6 +1132,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // start
     /++
      +  Activates the plugin, run when connection has been established.
@@ -1133,6 +1145,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // teardown
     /++
      +  Deinitialises the plugin.
@@ -1144,6 +1157,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .teardown(this);
         }
     }
+
 
     // name
     /++
@@ -1166,6 +1180,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return moduleName;
     }
 
+
     // state
     /++
      +  Accessor and mutator, returns a reference to the current private
@@ -1179,6 +1194,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         return this.privateState;
     }
+
 
     // awaitingFibers
     /++
@@ -1224,6 +1240,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     static import kameloso.messaging;
     import std.typecons : Flag, No, Yes;
 
+
     // chan
     /++
      +  Sends a channel message.
@@ -1235,6 +1252,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.chan!quiet(state.mainThread, channel, content);
     }
 
+
     // query
     /++
      +  Sends a private query message to a user.
@@ -1245,6 +1263,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     {
         return kameloso.messaging.query!quiet(state.mainThread, nickname, content);
     }
+
 
     // privmsg
     /++
@@ -1262,6 +1281,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
             nickname, content);
     }
 
+
     // throttleline
     /++
      +  Sends either a channel message or a private query message depending on
@@ -1278,6 +1298,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
             nickname, content);
     }
 
+
     // emote
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
@@ -1289,6 +1310,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget,
             content);
     }
+
 
     // chanmode
     /++
@@ -1304,6 +1326,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.chanmode!quiet(state.mainThread, channel, modes, content);
     }
 
+
     // topic
     /++
      +  Sets the topic of a channel.
@@ -1314,6 +1337,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     {
         return kameloso.messaging.topic!quiet(state.mainThread, channel, content);
     }
+
 
     // invite
     /++
@@ -1326,6 +1350,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.invite!quiet(state.mainThread, channel, nickname);
     }
 
+
     // join
     /++
      +  Joins a channel.
@@ -1335,6 +1360,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     {
         return kameloso.messaging.join!quiet(state.mainThread, channel);
     }
+
 
     // kick
     /++
@@ -1346,6 +1372,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.kick!quiet(state.mainThread, channel, nickname, reason);
     }
 
+
     // part
     /++
      +  Leaves a channel.
@@ -1356,6 +1383,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.part!quiet(state.mainThread, channel);
     }
 
+
     // quit
     /++
      +  Disconnects from the server, optionally with a quit reason.
@@ -1365,6 +1393,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     {
         return kameloso.messaging.quit!quiet(state.mainThread, reason);
     }
+
 
     // raw
     /++
