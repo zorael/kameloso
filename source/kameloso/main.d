@@ -191,10 +191,6 @@ Flag!"quit" checkMessages(ref Client client)
             line = "MODE %s %s :%s".format(channel, aux, content);
             break;
 
-        case USERMODE:
-            line = "MODE %s %s".format(aux, target.nickname);
-            break;
-
         case TOPIC:
             line = "TOPIC %s :%s".format(channel, content);
             break;
@@ -229,10 +225,6 @@ Flag!"quit" checkMessages(ref Client client)
         case PRIVMSG:
             if (channel.length) goto case CHAN;
             else goto case QUERY;
-
-        case MODE:
-            if (channel.length) goto case CHANMODE;
-            else goto case USERMODE;
 
         case UNSET:
             line = content;
@@ -419,12 +411,12 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                 foreach (plugin; plugins)
                 {
                     plugin.postprocess(mutEvent);
-                    auto yieldedBot = plugin.yieldBot();
+                    auto pluginBot = plugin.bot;
 
-                    if (yieldedBot.updated)
+                    if (pluginBot.updated)
                     {
                         // Postprocessing changed the bot; propagate
-                        bot = yieldedBot;
+                        bot = pluginBot;
                         bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
@@ -440,13 +432,41 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     {
                         plugin.onEvent(event);
 
+                        if (auto fibers = event.type in plugin.awaitingFibers)
+                        {
+                            size_t[] toRemove;
+
+                            foreach (immutable i, ref fiber; *fibers)
+                            {
+                                if (fiber.state == Fiber.State.TERM)
+                                {
+                                    toRemove ~= i;
+                                }
+                                else if (fiber.state == Fiber.State.HOLD)
+                                {
+                                    fiber.call();
+                                }
+                                else
+                                {
+                                    assert(0);
+                                }
+                            }
+
+                            foreach_reverse (i; toRemove)
+                            {
+                                import std.algorithm.mutation : remove;
+                                plugin.awaitingFibers[event.type] =
+                                    plugin.awaitingFibers[event.type].remove(i);
+                            }
+                        }
+
                         // Fetch any queued `WHOIS` requests and handle
                         auto reqs = plugin.yieldWHOISRequests();
                         client.handleWHOISQueue(reqs, event, event.target.nickname);
 
-                        auto yieldedBot = plugin.yieldBot();
+                        auto pluginBot = plugin.bot;
 
-                        if (yieldedBot.updated)
+                        if (pluginBot.updated)
                         {
                             /*  Plugin `onEvent` or `WHOIS` reaction updated the
                                 bot. There's no need to check for both
@@ -454,7 +474,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            bot = yieldedBot;
+                            bot = pluginBot;
                             bot.updated = false;
                             parser.bot = bot;
                             propagateBot(bot);

@@ -1515,13 +1515,26 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == USERMODE), type.to!string);
+            assert((type == CHANMODE), type.to!string);
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
             assert(!sender.special, sender.special.to!string);
             assert((channel == "#flerrp"), channel);
             assert((aux == "+i"), aux);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":niven.freenode.net MODE #sklabjoier +ns");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == CHANMODE), type.to!string);
+            assert((sender.address == "niven.freenode.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#sklabjoier"), channel);
+            assert((aux == "+ns"), aux);
         }
     }
 

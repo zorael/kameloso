@@ -208,7 +208,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

@@ -22,8 +22,8 @@ private:
 @(IRCEvent.Type.QUERY)
 @(ChannelPolicy.homeOnly)
 @(PrivilegeLevel.friend)
-@Prefix("bash")
-@Prefix(NickPolicy.required, "bash")
+@BotCommand("bash")
+@BotCommand(NickPolicy.required, "bash")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : spawn;
@@ -113,7 +113,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 }
 
 
-mixin BasicEventHandlers;
+mixin UserAwareness;
 
 public:
 

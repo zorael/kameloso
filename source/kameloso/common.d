@@ -1466,12 +1466,12 @@ struct Client
         foreach (plugin; plugins)
         {
             plugin.start();
-            auto yieldedBot = plugin.yieldBot();
+            auto pluginBot = plugin.bot;
 
-            if (yieldedBot != bot)
+            if (pluginBot != bot)
             {
                 // start changed the bot; propagate
-                bot = yieldedBot;
+                bot = pluginBot;
                 parser.bot = bot;
                 propagateBot(bot);
             }
@@ -1492,7 +1492,7 @@ struct Client
     {
         foreach (plugin; plugins)
         {
-            plugin.newBot(bot);
+            plugin.bot = bot;
         }
     }
 }

@@ -826,6 +826,22 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_CHANNELMODEIS: // 324
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        slice.nom(' '); // bot nickname
+        event.channel = slice.nom(' ');
+
+        if (slice.has(' '))
+        {
+            event.aux = slice.nom(' ');
+            //event.content = slice.nom(' ');
+            event.content = slice;
+        }
+        else
+        {
+            event.aux = slice;
+        }
+        break;
+
     case RPL_CREATIONTIME: // 32
         // :kornbluth.freenode.net 324 kameloso #flerrp +ns
         // :kornbluth.freenode.net 329 kameloso #flerrp 1512995737
@@ -1333,8 +1349,6 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     import kameloso.constants : IRCControlCharacter;
     import kameloso.string : beginsWith;
 
-    // FIXME, change so that it assigns to the proper field
-
     immutable target = slice.nom(" :");
     event.content = slice;
 
@@ -1456,20 +1470,21 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if (target.isValidChannel(parser.bot.server))
     {
+        event.type = IRCEvent.Type.CHANMODE;
         event.channel = target;
 
         if (slice.has(' '))
         {
             // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
-            // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
-            event.type = IRCEvent.Type.CHANMODE;
             event.aux = slice.nom(' ');
             // save target in content; there may be more than one
             event.content = slice;
         }
         else
         {
-            event.type = IRCEvent.Type.USERMODE;
+            // :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +i
+            // :niven.freenode.net MODE #sklabjoier +ns
+            //event.type = IRCEvent.Type.USERMODE;
             event.aux = slice;
         }
     }

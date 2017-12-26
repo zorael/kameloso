@@ -13,6 +13,7 @@ public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
 public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
+public import kameloso.plugins.chanqueries;
 
 version(Posix)
 {
@@ -32,6 +33,7 @@ version(Web)
 public alias EnabledPlugins = AliasSeq!(
     PrinterPlugin,
     ConnectPlugin,
+    ChanQueriesPlugin,
     AdminPlugin,
     ChatbotPlugin,
     NotesPlugin,

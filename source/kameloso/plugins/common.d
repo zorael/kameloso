@@ -17,13 +17,14 @@ import std.concurrency : Tid, send;
  +/
 interface IRCPlugin
 {
+    import core.thread : Fiber;
     import std.array : Appender;
 
     /// Executed on update to the internal `IRCBot` struct
-    void newBot(IRCBot);
+    void bot(IRCBot) @property;
 
     /// Executed after a plugin has run its `onEvent` course to pick up bot changes
-    IRCBot yieldBot();
+    IRCBot bot() @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
     ref WHOISRequest[string] yieldWHOISRequests();
@@ -60,6 +61,9 @@ interface IRCPlugin
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
+
+    /// Returns a reference to the list of awaiting `Fibers`, keyed by `Type`
+    ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
 }
 
 
@@ -276,6 +280,9 @@ struct IRCPluginState
     /// Hashmap of IRC user details
     IRCUser[string] users;
 
+    /// Hashmap of IRC channels
+    IRCChannel[string] channels;
+
     /// Queued `WHOIS` requests and pertaining `IRCEvents` to replay
     WHOISRequest[string] whoisQueue;
 }
@@ -323,21 +330,17 @@ enum PrivilegeLevel
 }
 
 
-// Prefix
+// BotCommand
 /++
- +  Describes how an on-text function is triggered.
+ +  Defines an IRC bot command, for people to trigger with messages.
  +
- +  The prefix policy decides to what extent the actual prefix string_ is
- +  required. It isn't needed for functions that don't trigger on text messages;
- +  this is merely to gather everything needed to have trigger "verb" commands.
- +
- +  If no `NickPolicy` is specified then it will default to `NickPolicy.direrct`
+ +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
  +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
- +  the string. (Usually "!", making it "!command".)
+ +  the `string_`. (Usually "`!`", making it "`!command`".)
  +/
-struct Prefix
+struct BotCommand
 {
-    /// The policy to which extent the prefix string_ is required
+    /// The policy to which extent the command needs the bot's nickname
     NickPolicy policy;
 
     /// The prefix string, one word with no spaces
@@ -356,6 +359,8 @@ struct Prefix
     }
 }
 
+deprecated("Prefix has been replaced with Command. This alias will be removed in time.")
+alias Prefix = BotCommand;
 
 /++
  +  Flag denoting that an event-handling function let other functions in the
@@ -417,15 +422,15 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 }
 
 
-// IRCPluginBasics
+// IRCPluginImpl
 /++
  +  Mixin that fully implements an `IRCPlugin`.
  +
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
  +      .onEvent            (doesn't proxy anymore)
- +      .newBot             (assigns bot)
- +      .yieldBot           (returns bot)
+ +      .bot                (assigns bot)
+ +      .bot                (returns bot)
  +      .postprocess
  +      .yieldWHOISRequests (returns queue)
  +      .writeConfig
@@ -441,9 +446,12 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
+    import core.thread : Fiber;
     import std.concurrency : Tid;
 
     IRCPluginState privateState;
+    Fiber[][IRCEvent.Type] privateAwaitingFibers;
+
 
     // onEvent
     /++
@@ -536,18 +544,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     IRCEvent mutEvent = event;  // mutable
                     string contextPrefix;
 
-                    static if (hasUDA!(fun, Prefix))
+                    static if (hasUDA!(fun, BotCommand))
                     {
                         if (!event.content.length)
                         {
-                            // Event has a `Prefix` set up but `event.content`
-                            // is empty; cannot possibly be of interest
+                            // Event has a `BotCommand` set up but
+                            // `event.content` is empty; cannot possibly be of
+                            // interest.
                             return;
                         }
 
                         bool matches;
 
-                        foreach (prefixUDA; getUDAs!(fun, Prefix))
+                        foreach (prefixUDA; getUDAs!(fun, BotCommand))
                         {
                             import kameloso.string : beginsWith, has, nom,
                                 stripPrefix;
@@ -706,6 +715,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
+                        static assert (is(typeof(.doWhois)),
+                            module_ ~ " is missing UserAwareness mixin " ~
+                            "(needed for PrivilegeLevel checks).");
+
                         enum privilegeLevel = getUDAs!(fun,
                             PrivilegeLevel)[0];
 
@@ -864,6 +877,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // this(IRCPluginState)
     /++
      +  Basic constructor for a plugin.
@@ -885,7 +899,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
-    // newBot
+
+    // bot
     /++
      +  Inherits a new `IRCBot`.
      +
@@ -894,12 +909,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      bot = the new bot to inherit
      +/
-    void newBot(IRCBot bot)
+    void bot(IRCBot bot) @property
     {
         privateState.bot = bot;
     }
 
-    // yieldBot
+
+    // bot
     /++
      +  Yields a copy of the current `IRCBot` to the caller.
      +
@@ -909,10 +925,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a copy of the current `IRCBot`.
      +/
-    IRCBot yieldBot()
+    IRCBot bot() @property
     {
         return privateState.bot;
     }
+
 
     // postprocess
     /++
@@ -929,6 +946,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .postprocess(this, event);
         }
     }
+
 
     // yieldWHOISReuests
     /++
@@ -947,6 +965,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return privateState.whoisQueue;
     }
 
+
     // writeConfig
     /++
      +  Writes configuration to disk.
@@ -954,13 +973,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      configFile = the file to write to.
      +/
-     void writeConfig(const string configFile)
-     {
-         static if (__traits(compiles, .writeConfig(this, string.init)))
-         {
-             .writeConfig(this, configFile);
-         }
-     }
+    void writeConfig(const string configFile)
+    {
+        static if (__traits(compiles, .writeConfig(this, string.init)))
+        {
+            .writeConfig(this, configFile);
+        }
+    }
+
 
     // loadConfig
     /++
@@ -1022,6 +1042,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // present
     /++
      +  Print some information to the screen, usually settings.
@@ -1033,6 +1054,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .present(this);
         }
     }
+
 
     // printSettings
     /++
@@ -1076,6 +1098,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // addToConfig
     /++
      +  Gathers the configuration text the plugin wants to contribute to the
@@ -1112,6 +1135,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // start
     /++
      +  Activates the plugin, run when connection has been established.
@@ -1124,6 +1148,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
     }
 
+
     // teardown
     /++
      +  Deinitialises the plugin.
@@ -1135,6 +1160,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             .teardown(this);
         }
     }
+
 
     // name
     /++
@@ -1157,6 +1183,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return moduleName;
     }
 
+
     // state
     /++
      +  Accessor and mutator, returns a reference to the current private
@@ -1169,6 +1196,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref IRCPluginState state() @property
     {
         return this.privateState;
+    }
+
+
+    // awaitingFibers
+    /++
+     +  Returns a reference to a plugin's list of `Fiber`s awaiting events.
+     +
+     +  These are callback `Fiber`s, registered when a plugin wants an action
+     +  performed and then to react to the server's response to it.
+     +/
+    pragma(inline)
+    ref Fiber[][IRCEvent.Type] awaitingFibers() @property
+    {
+        return this.privateAwaitingFibers;
     }
 }
 
@@ -1189,47 +1230,70 @@ mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
 
 // MessagingProxy
 /++
- +  FIXME
+ +  Mixin to give shorthands to the functions in `kameloso.messaging`, for
+ +  easier use when in a `with (plugin) { /* ... */ }` scope.
+ +
+ +  This merely makes it possible to use commands like
+ +  `raw("PING :irc.freenode.net")` without having to import
+ +  `kameloso.messaging` and include the thread ID of the main thread in every
+ +  call of the functions.
  +/
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 {
     static import kameloso.messaging;
     import std.typecons : Flag, No, Yes;
 
+
     // chan
     /++
-    +  FIXME
-    +/
+     +  Sends a channel message.
+     +/
+    pragma(inline)
     void chan(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
     {
         return kameloso.messaging.chan!quiet(state.mainThread, channel, content);
     }
 
+
     // query
     /++
-    +  FIXME
-    +/
+     +  Sends a private query message to a user.
+     +/
+    pragma(inline)
     void query(Flag!"quiet" quiet = No.quiet)(const string nickname,
         const string content)
     {
         return kameloso.messaging.query!quiet(state.mainThread, nickname, content);
     }
 
+
     // privmsg
     /++
-    +  FIXME
-    +/
+     +  Sends either a channel message or a private query message depending on
+     +  the arguments passed to it.
+     +
+     +  This reflects how channel messages and private messages are both the
+     +  underlying same type; `PRIVMSG`.
+     +/
+    pragma(inline)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
+        return kameloso.messaging.privmsg!quiet(state.mainThread, channel,
+            nickname, content);
     }
+
 
     // throttleline
     /++
-    +  FIXME
-    +/
+     +  Sends either a channel message or a private query message depending on
+     +  the arguments passed to it.
+     +
+     +  It sends it in a throttled fashion, usable for long output when the bot
+     +  may otherwise get kicked for spamming.
+     +/
+    pragma(inline)
     void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
@@ -1237,97 +1301,111 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
             nickname, content);
     }
 
+
     // emote
     /++
-    +  FIXME
-    +/
+     +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
+     +/
+    pragma(inline)
     void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
         const string content)
     {
-        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
+        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget,
+            content);
     }
+
 
     // chanmode
     /++
-    +  FIXME
-    +/
+     +  Sets a channel mode.
+     +
+     +  This includes modes that pertain to a user in the context of a channel,
+     +  like bans.
+     +/
+    pragma(inline)
     void chanmode(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string modes, const string content = string.init)
     {
         return kameloso.messaging.chanmode!quiet(state.mainThread, channel, modes, content);
     }
 
-    // usermode
-    /++
-    +  FIXME
-    +/
-    void usermode(Flag!"quiet" quiet = No.quiet)(const string nickname,
-        const string modes)
-    {
-        return kameloso.messaging.usermode!quiet(state.mainThread, nickname, modes);
-    }
 
     // topic
     /++
-    +  FIXME
-    +/
+     +  Sets the topic of a channel.
+     +/
+    pragma(inline)
     void topic(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string content)
     {
         return kameloso.messaging.topic!quiet(state.mainThread, channel, content);
     }
 
+
     // invite
     /++
-    +  FIXME
-    +/
+     +  Invites a user to a channel.
+     +/
+    pragma(inline)
     void invite(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname)
     {
         return kameloso.messaging.invite!quiet(state.mainThread, channel, nickname);
     }
 
+
     // join
     /++
-    +  FIXME
-    +/
+     +  Joins a channel.
+     +/
+    pragma(inline)
     void join(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
         return kameloso.messaging.join!quiet(state.mainThread, channel);
     }
 
+
     // kick
     /++
-    +  FIXME
-    +/
+     +  Kicks a user from a channel.
+     +/
     void kick(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string reason = string.init)
     {
         return kameloso.messaging.kick!quiet(state.mainThread, channel, nickname, reason);
     }
 
+
     // part
     /++
-    +  FIXME
-    +/
+     +  Leaves a channel.
+     +/
+    pragma(inline)
     void part(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
         return kameloso.messaging.part!quiet(state.mainThread, channel);
     }
 
+
     // quit
     /++
-    +  FIXME
-    +/
+     +  Disconnects from the server, optionally with a quit reason.
+     +/
+    pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
         return kameloso.messaging.quit!quiet(state.mainThread, reason);
     }
 
+
     // raw
     /++
-    +  FIXME
-    +/
+     +  Sends text to the server, verbatim.
+     +
+     +  This is used to send messages of types for which there exist no helper
+     +  functions.
+     +/
+    pragma(inline)
     void raw(Flag!"quiet" quiet = No.quiet)(const string line)
     {
         return kameloso.messaging.raw!quiet(state.mainThread, line);
@@ -1335,161 +1413,175 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 }
 
 
-// BasicEventHandlers
+// UserAwareness
 /++
- +  Rudimentary IRCEvent handlers.
+ +  Implements user awareness in a plugin module.
  +
- +  Almost any plugin will need handlers for `RPL_WHOISACCOUNT`,
- +  `RPL_ENDOFWHOIS`, `PART`, `QUIT`, and `SELFNICK`. This mixin provides those
- +  as well as some convenience functions to look up users and do `WHOIS` calls.
+ +  Plugins that deal with users in any form will need event handlers to handle
+ +  people joining and leaving channels, disconnecting from the server, and
+ +  other events related to user details (including services login names).
  +
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
  +/
-mixin template BasicEventHandlers(string module_ = __MODULE__)
+mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    // onLeaveMixin
+    // onUserAwarenessQuitMixin
     /++
-     +  Remove a user from the user array.
-     +
-     +  This automatically deauthenticates them from the bot's service, as all
-     +  track of them will have disappeared. A new WHOIS must be made then.
+     +  Removes a user's `IRCUser` entry from a plugin's user list upon them
+     +  disconnecting.
      +/
     @(Chainable)
-    @(IRCEvent.Type.PART)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.QUIT)
-    void onLeaveMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.users.remove(event.sender.nickname);
     }
 
 
-    // onNickMixin
+    // onUserAwarenessNickMixin
     /++
-     +  Tracks a nick change, moving any old `IRCUser` entry in
-     +  `privateState.users` to point to the new nickname.
+     +  Tracks a nick change, moving any old `IRCUser` entry in `state.users` to
+     +  point to the new nickname.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.NICK)
-    void onNickMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        with (plugin.state)
         {
-            if (auto oldUser = event.sender.nickname in state.users)
+            if (auto oldUser = event.sender.nickname in users)
             {
-                state.users[event.target.nickname] = *oldUser;
-                state.users.remove(event.sender.nickname);
+                // Does this work?
+                users[event.target.nickname] = *oldUser;
+                users.remove(event.sender.nickname);
             }
             else
             {
-                state.users[event.target.nickname] = event.sender;
+                users[event.target.nickname] = event.sender;
             }
         }
     }
 
 
-    // onUserInfoMixin
+    // onUserAwarenessUserInfoMixin
     /++
-     +  Catches a user's information and saves it in the `IRCUser` array, along
-     +  with a timestamp of the last `WHOIS` call, which is this.
+     +  Catches a user's information and saves it in the plugin's `IRCUser`
+     +  array, along with a timestamp of the results of the last `WHOIS` call,
+     +  which is this.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.datetime.systime : Clock;
 
-        with (plugin)
-        {
-            plugin.catchUser(event.target);
+        plugin.catchUser(event.target);
 
-            // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
-            auto user = event.target.nickname in state.users;
-            if (!user) return;  // probably the bot
-            (*user).lastWhois = Clock.currTime.toUnixTime;
-        }
+        // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
+        auto user = event.target.nickname in plugin.state.users;
+        if (!user) return;  // probably the bot
+        (*user).lastWhois = Clock.currTime.toUnixTime;
     }
 
 
-    // onJoinMixin
+    // onUserAwarenessLoginInfoSenderMixin
     /++
-     +  Adds a user to the user array if the login is known.
+     +  Adds a user to the `IRCUser` array if the login is known.
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  login name of whoever joins in the event string. If it's there, catch
-     +  the user into the user array so we won't have to WHOIS them later.
+     +  the user into the user array so we won't have to `WHOIS` them later.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        {
-            plugin.catchUser(event.sender);
+        plugin.catchUser(event.sender);
 
-            if (event.sender.login == "*")
-            {
-                assert(event.sender.nickname in state.users);
-                state.users[event.sender.nickname].login = string.init;
-            }
+        if (event.sender.login == "*")
+        {
+            plugin.state.users[event.sender.nickname].login = string.init;
         }
     }
 
 
-    // onLoginInfoTargetMixin
+    // onUserAwarenessLoginInfoTargetMixin
     /++
-     +  Records a user's NickServ login by saving it to the user's `IRCBot` in
-     +  the `privateState.users` associative array.
+     +  Records a user's services login by saving it to the user's `IRCBot` in
+     +  the `state.users` associative array.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        // No point catching the entire user when we only want the login
+
+        if (auto user = event.target.nickname in plugin.state.users)
         {
-            // No point catching the entire user
-            if (auto user = event.target.nickname in state.users)
-            {
-                (*user).login = event.target.login;
-            }
-            else
-            {
-                state.users[event.target.nickname] = event.target;
-            }
+            (*user).login = event.target.login;
+        }
+        else
+        {
+            plugin.state.users[event.target.nickname] = event.target;
         }
     }
 
 
-    // onWHOReplyMixin
+    // onUserAwarenessWHOReplyMixin
     /++
      +  Catches a user's information from a `WHO` reply event.
      +
-     +  It usually contains everything interesting except login.
+     +  It usually contains everything interesting except services login name.
      +/
     @(Chainable)
+    @(ChannelPolicy.any)
     @(IRCEvent.Type.RPL_WHOREPLY)
-    void onWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.catchUser(event.target);
     }
 
 
-    // onEndOfWHOIS
+    // onUserAwarenessEndOfWHOIS
     /++
      +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
+
+    // onUserAwarenessEndOfWhoNames
+    /++
+     +  Rehashes, or optimises, the `IRCUser` associative array upon the end
+     +  of a `WHO` reply.
+     +
+     +  These replies can list hundreds of users depending on the size of the
+     +  channel. Once an associative array has grown sufficiently it becomes
+     +  inefficient. Rehashing it makes it take its new size into account and
+     +  makes lookup faster.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_ENDOFWHO)
+    void onUserAwarenessEndOfWHOMixin(IRCPlugin plugin)
+    {
+        plugin.state.users.rehash();
+    }
+
+
     // catchUser
     /++
-     +  Catch an `IRCUser`, saving it to the `privateState.users` array.
+     +  Catch an `IRCUser`, saving it to the `state.users` array.
      +
      +  If a user already exists, meld the new information into the old one.
      +/
@@ -1559,10 +1651,354 @@ mixin template BasicEventHandlers(string module_ = __MODULE__)
         }
     }
 
+
     /// Ditto
     void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
         const string nickname, F fn)
     {
+        static if (debug_) writeln(__FUNCTION__);
+
         return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
+    }
+}
+
+deprecated("BasicEventHandlers has been replaced by UserAwareness. " ~
+    "This alias will eventually be removed.")
+alias BasicEventHandlers = UserAwareness;
+
+
+// ChannelAwareness
+/++
+ +  Implements channel awareness in a plugin module.
+ +
+ +  Plugins that need to track channels and the users in them need some event
+ +  handlers to handle the bookkeeping. Notably when the bot joins and leaves
+ +  channels, when someone else joins, leaves or disconnects, someone changes
+ +  their nickname, changes channel modes or topic, as well as some events that
+ +  list information about users and what channels they're in.
+ +
+ +  Channel awareness needs user awareness, or things won't work.
+ +/
+mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
+{
+    import std.format : format;
+    static assert(is(typeof(.doWhois)), module_ ~ " is missing UserAwareness " ~
+        "mixin (needed for ChannelAwareness).");
+
+
+    // onChannelAwarenessSelfjoinMixin
+    /++
+     +  Create a new `IRCChannel` in the `state.channels` associative array list
+     +  when the bot joins a channel.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.SELFJOIN)
+    void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        plugin.state.channels[event.channel] = IRCChannel.init;
+    }
+
+
+    // onChannelAwarenessSelfpartMixin
+    /++
+     +  Remove an `IRCChannel` from the internal list when the bot leaves it.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.SELFPART)
+    void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin.state)
+        {
+            // Decrement user refcounts before destroying channel
+
+            foreach (immutable nickname; channels[event.channel].users)
+            {
+                // users array may not contain the user
+                auto user = nickname in users;
+                if (!user)
+                {
+                    users[nickname] = event.sender;
+                    user = nickname in users;
+                }
+
+                if (--(*user).refcount == 0)
+                {
+                    users.remove(nickname);
+                }
+            }
+
+            channels.remove(event.channel);
+        }
+    }
+
+
+    // onChannelAwarenessChannelAwarenessJoinMixin
+    /++
+     +  Add a user as being part of a channel when they join one.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.JOIN)
+    void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin.state)
+        {
+            channels[event.channel].users ~= event.sender.nickname;
+
+            auto user = event.sender.nickname in users;
+            if (!user)
+            {
+                users[event.sender.nickname] = event.sender;
+                user = event.sender.nickname in users;
+            }
+
+            ++(*user).refcount;
+        }
+    }
+
+
+    // onChannelAwarenessPartMixin
+    /++
+     +  Remove a user from being part of a channel when they leave one.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.PART)
+    void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
+        with (plugin.state)
+        {
+            immutable userIndex = channels[event.channel].users
+                .countUntil(event.sender.nickname);
+
+            assert((userIndex != -1), "Tried to part a user that wasn't there: " ~
+                event.sender.nickname);
+
+            channels[event.channel].users = channels[event.channel].users
+                .remove(userIndex);
+
+            auto user = event.sender.nickname in users;
+            if (!user)
+            {
+                users[event.sender.nickname] = event.sender;
+                user = event.sender.nickname in users;
+            }
+
+            if (--(*user).refcount == 0)
+            {
+                users.remove(event.sender.nickname);
+            }
+        }
+    }
+
+
+    // onChannelAwarenessNickMixin
+    /++
+     +  Updates and renames a user in the internal list of users in a channel if
+     +  they change their nickname.
+     +/
+    @(Chainable)
+    @(IRCEvent.Type.NICK)
+    void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.searching : countUntil;
+
+        // User awareness bits take care of the user AA
+
+        foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+            if (userIndex == -1) continue;
+            channel.users[userIndex] = event.target.nickname;
+        }
+    }
+
+
+    // onChannelAwarenessQuitMixin
+    /++
+     +  Removes a user from all tracked channels if they disconnect.
+     +
+     +  Does not touch the internal list of users; the user awareness bits are
+     +  expected to take care of that.
+     +/
+    @(Chainable)
+    @(IRCEvent.Type.QUIT)
+    void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
+        foreach (ref channel; plugin.state.channels)
+        {
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+            if (userIndex == -1) continue;
+            channel.users = channel.users.remove(userIndex);
+        }
+    }
+
+
+    // onChannelAwarenessTopicMixin
+    /++
+     +  Update the entry for an `IRCChannel` if someone changes the topic of it.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.TOPIC)
+    @(IRCEvent.Type.RPL_TOPIC)
+    void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        plugin.state.channels[event.channel].topic = event.content;
+    }
+
+
+    // onChannelAwarenessCreationTime
+    /++
+     +  Stores the timestamp of when a channel was created.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_CREATIONTIME)
+    void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.conv : to;
+        plugin.state.channels[event.channel].created = event.aux.to!long;
+    }
+
+
+    // onChannelAwarenessChanModeMixin
+    /++
+     +  Sets a mode for a channel.
+     +
+     +  Most modes replace others of the same type, notable exceptions being
+     +  bans and mode exemptions.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.CHANMODE)
+    void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        plugin.state.channels[event.channel].setMode(event.aux, event.content);
+    }
+
+
+    // onChannelAwarensesWHOReplyMixin
+    /++
+     +  Add a user as being part of a channel upon receiving the reply from the
+     +  request for info on all the participants.
+     +
+     +  This events includes all normal fields like ident and address, but not
+     +  their channel modes (e.g. `@` for operator).
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_WHOREPLY)
+    void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import std.algorithm.searching : canFind;
+
+        // User awareness bits add the IRCUser
+        with (plugin.state)
+        {
+            if (event.target.nickname == bot.nickname) return;
+
+            if (channels[event.channel].users.canFind(event.target.nickname))
+            {
+                return;
+            }
+
+            channels[event.channel].users ~= event.target.nickname;
+
+            auto user = event.target.nickname in users;
+            if (!user)
+            {
+                users[event.target.nickname] = event.target;
+                user = event.target.nickname in users;
+            }
+
+            ++(*user).refcount;
+        }
+    }
+
+
+    // onChannelAwarenessNamesReplyMixin
+    /++
+     +  Add users as being part of a channel upon receiving the reply from the
+     +  request for a list of all the participants.
+     +
+     +  This does not include information about the users, only their nickname
+     +  and their channel mode (e.g. `@` for operator).
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_NAMREPLY)
+    void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import kameloso.irc : stripModeSign;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : canFind;
+
+        with (plugin.state)
+        {
+            foreach (immutable signedName; event.content.splitter(" "))
+            {
+                immutable nickname = stripModeSign(signedName);
+                if (nickname == bot.nickname) continue;
+
+                if (channels[event.channel].users.canFind(nickname))
+                {
+                    continue;
+                }
+
+                channels[event.channel].users ~= nickname;
+
+                // users array may not contain the user
+                auto user = nickname in users;
+                if (!user)
+                {
+                    users[nickname] = IRCUser.init;
+                    user = nickname in users;
+                    (*user).nickname = nickname;  // very incomplete
+                }
+
+                ++(*user).refcount;
+            }
+        }
+    }
+
+
+    // onChannelAwarenessBanListMixin
+    /++
+     +  Adds the list of banned users to a tracked channel's list of modes.
+     +
+     +  Bans are just normal channel modes that are paired with a user and that
+     +  don't overwrite other bans (can be stacked).
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_BANLIST)
+    void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
+        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+        plugin.state.channels[event.channel].setMode("+b", event.content);
+    }
+
+
+    // onChannelAwarenessChannelModeIs
+    /++
+     +  Adds the modes of a channel to a tracked channel's mode list.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.any)
+    @(IRCEvent.Type.RPL_CHANNELMODEIS)
+    void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
+    {
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
 }
