@@ -448,6 +448,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
+    import core.thread : Fiber;
     import std.concurrency : Tid;
 
     IRCPluginState privateState;
