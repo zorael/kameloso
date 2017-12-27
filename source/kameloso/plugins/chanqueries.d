@@ -94,7 +94,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 /++
  +  Add a channel we join to the internal list of channels.
  +/
-@(ChannelPolicy.any)
+@(ChannelPolicy.homeOnly)
 @(IRCEvent.Type.SELFJOIN)
 void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 {
@@ -108,7 +108,7 @@ void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 /++
  +  Remove a channel we part from the internal list of channels.
  +/
-@(ChannelPolicy.any)
+@(ChannelPolicy.homeOnly)
 @(IRCEvent.Type.SELFPART)
 void onSelfpart(ChanQueriesPlugin plugin, const IRCEvent event)
 {
