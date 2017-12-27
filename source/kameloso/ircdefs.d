@@ -2262,7 +2262,7 @@ struct IRCChannel
                     }
                     else
                     {
-                        setMode(modechar.to!string, string.init);
+                        return setMode(sign ~ modechar.to!string, string.init);
                     }
                 }
             }
