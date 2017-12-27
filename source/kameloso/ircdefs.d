@@ -2030,12 +2030,15 @@ struct IRCChannel
         string data;
         IRCUser user;
         IRCUser[] exemptions;
+        bool negated;
 
-        bool opEquals(Mode other)
+        bool opEquals(const Mode other) const
         {
             // Ignore exemptions when comparing Modes
-            return (modechar == other.modechar) && (data == other.data) &&
+            immutable match = (modechar == other.modechar) && (data == other.data) &&
                 (user == other.user);
+
+            return negated ? !match : match;
         }
 
         void toString(scope void delegate(const(char)[]) @safe sink) const
