@@ -549,7 +549,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_TOPICWHOTIME: // 333
     case RPL_BANLIST: // 367
     case RPL_INVITELIST: // 336,346
-        writeln(event.raw);
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
