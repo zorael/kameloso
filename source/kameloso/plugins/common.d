@@ -1974,7 +1974,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     }
 
 
-    // onChannelAwarenessBanListMixin
+    // onChannelAwarenessModeListsMixin
     /++
      +  Adds the list of banned users to a tracked channel's list of modes.
      +
@@ -1984,12 +1984,31 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(Chainable)
     @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_BANLIST)
-    void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
+    @(IRCEvent.Type.RPL_QUIETLIST)
+    @(IRCEvent.Type.RPL_INVITELIST)
+    void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
-        plugin.state.channels[event.channel].setMode("+b", event.content);
+        // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
+        // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
+
+        with (IRCEvent.Type)
+        with (plugin.state)
+        {
+            string mode;
+
+            if (event.type == RPL_BANLIST) mode = "+b";
+            else if (event.type == RPL_QUIETLIST) mode = "+q";
+            else if (event.type == RPL_INVITELIST) mode = "+I";
+            else
+            {
+                assert(0);
+            }
+
+            channels[event.channel].setMode(mode, event.content);
+        }
     }
 
 
