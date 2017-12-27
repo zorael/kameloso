@@ -175,15 +175,38 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        assert(0);
+        import kameloso.string : enumToString;
+        assert(0, "Missing CTCP_ case entry for " ~ enumToString(event.type));
     }
 
-    immutable target = event.sender.isServer ?
-        event.sender.address: event.sender.nickname;
-
-    with (IRCControlCharacter)
+    version(unittest)
     {
-        plugin.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+        return;
+    }
+    else
+    {
+        immutable target = event.sender.isServer ?
+            event.sender.address: event.sender.nickname;
+
+        with (IRCControlCharacter)
+        {
+            plugin.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+        }
+    }
+}
+
+unittest
+{
+    // Ensure onCTCPs implement cases for all its annotated `IRCEvent.Type`s.
+    import std.traits : getUDAs;
+
+    auto plugin = new CTCPPlugin(IRCPluginState.init);
+
+    foreach (type; getUDAs!(onCTCPs, IRCEvent.Type))
+    {
+        IRCEvent event;
+        event.type = type;
+        onCTCPs(plugin, event);
     }
 }
 

@@ -448,7 +448,7 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                                 }
                                 else
                                 {
-                                    assert(0);
+                                    assert(0, "Invalid Fiber state");
                                 }
                             }
 

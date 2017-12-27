@@ -2250,7 +2250,7 @@ struct IRCChannel
             }
             else
             {
-                assert(0);
+                assert(0, "Unknown mode sign: " ~ sign);
             }
         }
         else
@@ -2283,7 +2283,7 @@ struct IRCChannel
             }
             else
             {
-                assert(0);
+                assert(0, "Unknown mode sign: " ~ sign);
             }
         }
     }
