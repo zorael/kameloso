@@ -2105,9 +2105,6 @@ struct IRCChannel
     /// When the channel was created, expresed in UNIX time.
     long created;
 
-    /// Whether this channel has been queried for its modes and users.
-    bool queried;
-
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
