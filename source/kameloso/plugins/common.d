@@ -1494,8 +1494,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  login name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to `WHOIS` them later.
      +
-     +  `ACCOUNTS` events are not associated with any channel and so will ignore
-     +  any `ChannelPolicy`.
+     +  `ACCOUNTS` events will only be processed if a user's `IRCUser` entry
+     +  already exists, to counter the fact that `ACCOUNT` events don't imply a
+     +  specific channel and as such can't honour `ChannelPolicy.homeOnly`.
+     +  This way the user will only be updated with its login info if it was
+     +  already created elsewhere.
      +/
     @(Chainable)
     @(ChannelPolicy.homeOnly)
@@ -1503,6 +1506,12 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.ACCOUNT)
     void onUserAwarenessLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        if ((event.type == IRCEvent.Type.ACCOUNT) &&
+            (event.sender.nickname !in plugin.state.users))
+        {
+            return;
+        }
+
         plugin.catchUser(event.sender);
 
         if (event.sender.login == "*")
