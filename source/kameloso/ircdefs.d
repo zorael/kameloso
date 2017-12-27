@@ -2145,17 +2145,7 @@ struct IRCChannel
                                 {
                                     // More than one field, first is account
                                     newMode.user.login = slice.nom('$');
-
-                                    if (slice[0] == '#')
-                                    {
-                                        newMode.data = slice;
-                                    }
-                                    else
-                                    {
-                                        import std.stdio;
-                                        writeln("Don't know how to deal with ", slice);
-                                        newMode.data = slice;
-                                    }
+                                    newMode.data = slice;
                                 }
                                 else
                                 {
@@ -2164,13 +2154,21 @@ struct IRCChannel
                             }
                             else
                             {
-                                // "-q $~a"
+                                // "$~a"
                                 // FIXME: Figure out how to express this.
-                                newMode.data = slice;
+                                if (slice.length)
+                                {
+                                    newMode.data = slice;
+                                }
+                                else
+                                {
+                                    newMode.data = datastring;
+                                }
                             }
                         }
                         else
                         {
+                            // Unhandled extban mode
                             newMode.data = datastring;
                         }
                     }
