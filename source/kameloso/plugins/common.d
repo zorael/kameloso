@@ -1487,11 +1487,15 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessLoginInfoSenderMixin
     /++
-     +  Adds a user to the `IRCUser` array if the login is known.
+     +  Adds a user to the `IRCUser` array, potentially including their services
+     +  login name.
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  login name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to `WHOIS` them later.
+     +
+     +  `ACCOUNTS` events are not associated with any channel and so will ignore
+     +  any `ChannelPolicy`.
      +/
     @(Chainable)
     @(ChannelPolicy.homeOnly)
