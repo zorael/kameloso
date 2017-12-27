@@ -36,7 +36,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
         import kameloso.messaging : raw;
         import core.thread : Fiber, Thread;
         import core.time : seconds;
-        //import std.format : format;
+        import std.format : format;
 
         bool loopedOnce;
 
@@ -50,8 +50,19 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
             raw(plugin.state.mainThread, "MODE " ~ channel);
             Fiber.yield();
-            /*Thread.sleep(plugin.secondsBetween.seconds);
-            raw(plugin.state.mainThread, "MODE %s +b".format(channel));*/
+
+            Thread.sleep(plugin.secondsBetween.seconds);
+            raw(plugin.state.mainThread, "MODE %s +b".format(channel));
+            Fiber.yield();
+
+            Thread.sleep(plugin.secondsBetween.seconds);
+            raw(plugin.state.mainThread, "MODE %s +q".format(channel));
+            Fiber.yield();
+
+            Thread.sleep(plugin.secondsBetween.seconds);
+            raw(plugin.state.mainThread, "MODE %s +I".format(channel));
+            Fiber.yield();
+
             Thread.sleep(plugin.secondsBetween.seconds);
             raw(plugin.state.mainThread, "WHO " ~ channel);
 
@@ -63,8 +74,17 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
     Fiber fiber = new Fiber(&fiberFn);
 
-    plugin.awaitingFibers[IRCEvent.Type.RPL_CHANNELMODEIS] ~= fiber;
-    plugin.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHO] ~= fiber;
+    with (IRCEvent.Type)
+    with (plugin)
+    {
+        awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
+        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
+        awaitingFibers[RPL_ENDOFBANLIST] ~= fiber;
+        awaitingFibers[RPL_ENDOFQUIETLIST] ~= fiber;
+        awaitingFibers[RPL_ENDOFINVITELIST] ~= fiber;
+        awaitingFibers[ERR_CHANOPRIVSNEEDED] ~= fiber;
+        awaitingFibers[ERR_UNKNOWNMODE] ~= fiber;
+    }
 
     fiber.call();
 }
