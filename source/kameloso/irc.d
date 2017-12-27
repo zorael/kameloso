@@ -538,10 +538,21 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         parser.onMyInfo(event, slice);
         break;
 
+    case RPL_QUIETLIST: // 728
+        // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
+        slice.nom(' ');  // bot nickname
+        event.channel = slice.nom(" q ");
+        event.content = slice.nom(' ');
+        event.aux = slice;
+        break;
+
     case RPL_TOPICWHOTIME: // 333
     case RPL_BANLIST: // 367
+    case RPL_INVITELIST: // 336,346
+        writeln(event.raw);
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+        // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
         slice.nom(' ');  // bot nickname
         event.channel = slice.nom(' ');
         event.content = slice.nom(' ');
@@ -860,6 +871,13 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_LISTSTART: // 321
         // :cherryh.freenode.net 321 kameloso^ Channel :Users  Name
         // none of the fields are interesting...
+        break;
+
+    case RPL_ENDOFQUIETLIST: // 729
+        // :niven.freenode.net 729 kameloso^ #hirrsteff q :End of Channel Quiet List
+        slice.nom(' ');
+        event.channel = slice.nom(" q :");
+        event.content = slice;
         break;
 
     case RPL_WHOISMODES: // 379
