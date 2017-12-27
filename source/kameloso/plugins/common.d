@@ -1882,6 +1882,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.CHANMODE)
     void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.irc : setMode;
         plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
 
@@ -1983,6 +1984,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.RPL_BANLIST)
     void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.irc : setMode;
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         plugin.state.channels[event.channel].setMode("+b", event.content);
@@ -1998,6 +2000,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
+        import kameloso.irc : setMode;
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
