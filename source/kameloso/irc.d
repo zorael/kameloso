@@ -2536,10 +2536,11 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                         newMode.data = datastring;
                     }
 
-                    if (modechar == 'b')
+                    if ((modechar == 'b') || (modechar == 'q') ||
+                        (modechar == 'I'))
                     {
-                        // Ban
-                        // If an identical ban Mode exists, skip
+                        // Ban, quiet or invite exemption
+                        // If an identical Mode exists, skip
                         foreach (mode; modes)
                         {
                             if (mode == newMode)
