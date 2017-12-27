@@ -2123,33 +2123,50 @@ struct IRCChannel
                         "$a:terabits$##arguments"
                         // "$x:*0x71*"
                         "$a:DikshitNijjer"
-                        "$a:NETGEAR_WNDR3300"+/
+                        "$a:NETGEAR_WNDR3300"
+                        "$~a:eir"+/
 
                         string slice = datastring[1..$];
+
+                        if (slice[0] == '~')
+                        {
+                            newMode.negated = true;
+                            slice = slice[1..$];
+                        }
+
                         if (slice[0] == 'a')
                         {
-                            // Ban by account
-                            slice.nom(':');
-
-                            if (slice.has('$'))
+                            // Mode by account
+                            if (slice.has(':'))
                             {
-                                // More than one field, first is account
-                                newMode.user.login = slice.nom('$');
+                                slice.nom(':');
 
-                                if (slice[0] == '#')
+                                if (slice.has('$'))
                                 {
-                                    newMode.data = slice;
+                                    // More than one field, first is account
+                                    newMode.user.login = slice.nom('$');
+
+                                    if (slice[0] == '#')
+                                    {
+                                        newMode.data = slice;
+                                    }
+                                    else
+                                    {
+                                        import std.stdio;
+                                        writeln("Don't know how to deal with ", slice);
+                                        newMode.data = slice;
+                                    }
                                 }
                                 else
                                 {
-                                    import std.stdio;
-                                    writeln("Don't know how to deal with ", slice);
-                                    newMode.data = slice;
+                                    newMode.user.login = slice;
                                 }
                             }
                             else
                             {
-                                newMode.user.login = slice;
+                                // "-q $~a"
+                                // FIXME: Figure out how to express this.
+                                newMode.data = slice;
                             }
                         }
                         else
