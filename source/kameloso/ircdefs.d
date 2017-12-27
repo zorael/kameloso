@@ -2022,16 +2022,47 @@ struct Typenums
 }
 
 
+// IRCChannel
+/++
+ +  Aggregate personifying an IRC channel and its state.
+ +
+ +  An IRC channel may have a topic, a creation date, and one or more *modes*.
+ +  Modes define how the channel behaves and how it treats its users, including
+ +  which ones have operator and voice status, as well as which are banned.
+ +/
 struct IRCChannel
 {
+    /++
+     +  A channel mode.
+     +
+     +  Some modes overwrite themselves; a channel may be `+i` or `-i`, never
+     +  `i` twice. Others stack; a channel may have an arbitrary number of `b`
+     +  bans. We try our best to support both.
+     +/
     struct Mode
     {
+        /// The character that implies this `Mode` (`i`, `z`, `l` ...).
         char modechar;
+
+        /++
+         +  The data associated with the `Mode`, if applicable. This is often a
+         +  number, such as what `l` takes (join limit).
+         +/
         string data;
+
+        /// The user associated with the `Mode`, when it is not just `data`.
         IRCUser user;
+
+        /// Users that are explicitly exempt from the `Mode`.
         IRCUser[] exemptions;
+
+        /// Whether this `Mode` should be considered to be its own antithesis.
         bool negated;
 
+        /++
+         +  Compare two `Mode`s with eachother to see if they are both of the
+         +  same type, as well as having the same `data` and/or `user`.
+         +/
         bool opEquals(const Mode other) const
         {
             // Ignore exemptions when comparing Modes
@@ -2048,18 +2079,33 @@ struct IRCChannel
                 exemptions);
         }
 
-        string toString()
+        string toString() const
         {
             import std.format : format;
             return "+%c (%s@%s) <%s>".format(modechar, data, user, exemptions);
         }
     }
 
+    /// The current topic of the channel, as set by operators.
     string topic;
+
+    /// The current non-`data`-sporting `Mode`s of the channel.
     char[] modechars;
+
+    /// Array of all `Mode`s that are not simply represented in `modechars`.
     Mode[] modes;
+
+    /++
+     +  Array of all the nicknames inhabiting the channel. These are not
+     +  `IRCUser`s; those are kept in `IRCPluginState.users`. These are merely
+     +  keys to that associative array.
+     +/
     string[] users;
+
+    /// When the channel was created, expresed in UNIX time.
     long created;
+
+    /// Whether this channel has been queried for its modes and users.
     bool queried;
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
@@ -2069,6 +2115,29 @@ struct IRCChannel
             topic, users.length, modechars, modes);
     }
 
+    // setMode
+    /++
+     +  Sets a new or removes a `Mode`.
+     +
+     +  `Mode`s that are simply a character in `modechars` are simpy removed if
+     +   the *sign* of the mode change is negative, whereas a more elaborate
+     +  `Mode` in the `modes` array are only replaced or removed if they match a
+     +  comparison test.
+     +
+     +  Several modes can be specified at once, including modes that take a
+     +  `data` argument, assuming they are in the proper order (where the
+     +  `data`-taking modes are at the end of the string).
+     +
+     +  ------------
+     +  IRCChannel channel;
+     +  channel.setMode("+oo zorael!NaN@* kameloso!*@*")
+     +  assert(channel.modes.length == 2);
+     +  channel.setMode("-o kameloso!*@*");
+     +  assert(channel.modes.length == 1);
+     +  channel.setMode("-o *!*@*");
+     +  assert(!channel.modes.length);
+     +  ------------
+     +/
     void setMode(const string signedModestring, const string data) @system
     {
         import kameloso.string : has, nom;
@@ -2083,12 +2152,16 @@ struct IRCChannel
 
         if (data.length)
         {
+            // Mode has a data argument
+
             auto datalines = data.splitter(" ").array.retro;
             auto moderange = modestring.retro;
             auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
 
             if (sign == '+')
             {
+                // Additive data mode
+
                 Mode[] newModes;
                 IRCUser[] carriedExemptions;
 
@@ -2112,6 +2185,7 @@ struct IRCChannel
                     }
                     else if (datastring.has('$'))
                     {
+                        // extban; https://freenode.net/kb/answer/extbans
                         // Does not support a mix of normal and second form bans
                         // e.g. *!*@*$#channel
 
@@ -2130,6 +2204,7 @@ struct IRCChannel
 
                         if (slice[0] == '~')
                         {
+                            // Negated mode
                             newMode.negated = true;
                             slice = slice[1..$];
                         }
@@ -2149,6 +2224,7 @@ struct IRCChannel
                                 }
                                 else
                                 {
+                                    // Whole slice is an account
                                     newMode.user.login = slice;
                                 }
                             }
@@ -2174,6 +2250,7 @@ struct IRCChannel
                     }
                     else
                     {
+                        // Normal, non-extban mode
                         newMode.data = datastring;
                     }
 
@@ -2185,6 +2262,7 @@ struct IRCChannel
                         {
                             if (mode == newMode)
                             {
+                                // Duplicate mode exists; add new exemption
                                 mode.exemptions ~= carriedExemptions;
                                 carriedExemptions.length = 0;
                                 continue;
@@ -2228,6 +2306,8 @@ struct IRCChannel
             }
             else if (sign == '-')
             {
+                // Subtractive data mode
+
                 foreach (modechar, datastring; ziprange)
                 {
                     Mode newMode;
@@ -2251,6 +2331,7 @@ struct IRCChannel
                         {
                             if (mode == newMode)
                             {
+                                // Existing mode, queue it to be removed
                                 toRemove ~= i;
                             }
                         }
@@ -2262,6 +2343,7 @@ struct IRCChannel
                     }
                     else
                     {
+                        // No data for this mode, recurse with data string.init
                         return setMode(sign ~ modechar.to!string, string.init);
                     }
                 }
