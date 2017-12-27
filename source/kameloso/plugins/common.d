@@ -1432,7 +1432,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  disconnecting.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1446,7 +1445,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  point to the new nickname.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1496,7 +1494,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  the user into the user array so we won't have to `WHOIS` them later.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
     void onUserAwarenessLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1540,7 +1538,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  It usually contains everything interesting except services login name.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1571,7 +1569,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  makes lookup faster.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     void onUserAwarenessEndOfWHOMixin(IRCPlugin plugin)
     {
@@ -1692,7 +1690,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  when the bot joins a channel.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.SELFJOIN)
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1705,7 +1703,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Remove an `IRCChannel` from the internal list when the bot leaves it.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.SELFPART)
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1739,7 +1737,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Add a user as being part of a channel when they join one.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.JOIN)
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1764,7 +1762,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Remove a user from being part of a channel when they leave one.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.PART)
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1847,7 +1845,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Update the entry for an `IRCChannel` if someone changes the topic of it.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1861,7 +1859,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Stores the timestamp of when a channel was created.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1878,7 +1876,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  bans and mode exemptions.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.CHANMODE)
     void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1896,7 +1894,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  their channel modes (e.g. `@` for operator).
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_WHOREPLY)
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1935,7 +1933,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  and their channel mode (e.g. `@` for operator).
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_NAMREPLY)
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1980,7 +1978,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  don't overwrite other bans (can be stacked).
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_BANLIST)
     void onChannelAwarenessBanListMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1996,7 +1994,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
     @(Chainable)
-    @(ChannelPolicy.any)
+    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
