@@ -147,7 +147,7 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * more modules? uda.d/attribute.d?
 * more specific users in configuration arrays? nick/address/etc... needs rework of config.d
 * concurrency message-checking as Fiber?
-* update `seen.d` again
+* timed Fibers
 
 # Built With
 
