@@ -1063,6 +1063,9 @@ struct IRCUser
     string address;
     string account;
 
+    deprecated("Use IRCUser.account instead of IRCUser.login")
+    alias login = account;
+
     /// Flag that the user is "special", which is usually that it is a service
     /// like nickname services, or channel or memo or spam ...
     bool special;
