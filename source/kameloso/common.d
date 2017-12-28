@@ -1374,7 +1374,7 @@ struct Client
 
     /// When this is set by signal handlers, the program should exit. Other parts of
     /// the program will be monitoring it.
-    __gshared bool abort;
+    __gshared bool* abort;
 
     /// Never copy this.
     @disable this(this);

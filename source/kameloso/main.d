@@ -24,7 +24,7 @@ shared static this()
 
 private:
 
-Client client;
+__gshared bool abort;
 
 
 // signalHandler
@@ -39,7 +39,7 @@ void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.signal : signal, SIGINT, SIG_DFL;
     printf("...caught signal %d!\n", sig);
-    client.abort = true;
+    abort = true;
 
     // Restore signal handlers to the default
     signal(SIGINT, SIG_DFL);
@@ -80,7 +80,7 @@ Flag!"quit" checkMessages(ref Client client)
         import core.time : seconds, msecs;
         import std.datetime.systime : Clock, SysTime;
 
-        if (client.abort) return;
+        if (*(client.abort)) return;
 
         with (client.throttling)
         {
@@ -101,8 +101,8 @@ Flag!"quit" checkMessages(ref Client client)
             {
                 x = (Clock.currTime - t0).total!"msecs"/1000.0;
                 y = k*x + m;
-                interruptibleSleep(100.msecs, client.abort);
-                if (client.abort) return;
+                interruptibleSleep(100.msecs, *(client.abort));
+                if (*(client.abort)) return;
             }
 
             logger.trace("--> ", line);
@@ -638,6 +638,10 @@ int main(string[] args)
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
+    // Initialise the main Client. Set its abort pointer to the global abort.
+    Client client;
+    client.abort = &abort;
+
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
     initLogger(client.settings.monochrome, client.settings.brightTerminal);
@@ -747,13 +751,13 @@ int main(string[] args)
                 import core.time : seconds;
 
                 logger.log("Please wait a few seconds...");
-                interruptibleSleep(Timeout.retry.seconds, abort);
+                interruptibleSleep(Timeout.retry.seconds, *abort);
             }
 
             conn.reset();
 
             immutable resolved = conn.resolve(bot.server.address,
-                bot.server.port, abort);
+                bot.server.port, *abort);
 
             if (!resolved)
             {
@@ -834,7 +838,7 @@ int main(string[] args)
             parser = IRCParser(bot);
 
             initPlugins();
-            conn.connect(abort);
+            conn.connect(*abort);
 
             if (!conn.connected)
             {
@@ -852,12 +856,12 @@ int main(string[] args)
             startPlugins();
 
             // Initialise the Generator and start the main loop
-            auto generator = new Generator!string(() => listenFiber(conn, abort));
+            auto generator = new Generator!string(() => listenFiber(conn, *abort));
             quit = client.mainLoop(generator);
             firstConnect = false;
 
             // Save if we're exiting and configuration says we should.
-            if ((quit || abort) && settings.saveOnExit)
+            if ((quit || *abort) && settings.saveOnExit)
             {
                 client.writeConfigurationFile(settings.configFile);
             }
@@ -865,9 +869,9 @@ int main(string[] args)
             // Always teardown after connection ends
             teardownPlugins();
         }
-        while (!quit && !abort && settings.reconnectOnFailure);
+        while (!quit && !(*abort) && settings.reconnectOnFailure);
 
-        if (abort)
+        if (*abort)
         {
             // Ctrl+C
             logger.error("Aborting...");
