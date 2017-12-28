@@ -8,17 +8,18 @@
  +  paired with timestamps. Whenever we see a user do something, we will update
  +  his or her timestamp with the current time. We'll save this array to disk
  +  when closing the program and read it from file when starting it, as well as
- +  occasionally once every few hours.
+ +  occasionally once every few (configurable) hours.
  +
- +  To be more thorough we will also query the server for the users in our home
- +  channels, once per `PING`. Pings occur once every few minutes. This will
- +  give us a bit more precision, as it will catch users who otherwise haven't
- +  performed any action we were listening for. Otherwise, a completely silent
- +  participant will never get recorded as being seen.
+ +  We will rely on the `ChanQueriesPlugin` (in `chanqueries.d`) to query
+ +  channels for full lists of users upon joining new ones, including the ones
+ +  we join upon connecting. Elsewise, a completely silent user will never be
+ +  recorded as having been seen, as they would never be triggering any of the
+ +  functions we define.
  +
  +  kameloso does not use callbacks, but instead annotates functions with
  +  `UDA`s, or *User Defined Annotations*. In essence, we will tag our functions
- +  with the kind or kinds of IRC events that should invoke them.
+ +  with the kind or kinds of IRC events that should invoke them. Callback
+ +  Fibers *are* supported but are not in any large-scale use.
  +
  +  Annotations look like so:
  +
@@ -33,6 +34,11 @@
  +  Any* symbol can have an UDA, not just functions. We will annotate one
  +  "settings" variable later, to make its content be automatically saved to
  +  and read from the configuration file.
+ +
+ +  TODO with this plugin:
+ +  * replace runtime JSON use with a direct associative array, and only convert
+ +    it to JSON for saving.
+ +  * add a timer system and update the periodic saving to make use of that.
  +/
 
 /++
@@ -55,11 +61,8 @@ import kameloso.plugins.common;
 /// Likewise `kameloso.ircdefs`, for the definitions of an IRC event.
 import kameloso.ircdefs;
 
-/++
- +  `kameloso.common` is also a good idea; we will need it when we want to send
- +  text to the server.
- +/
-import kameloso.common;
+/// `kameloso.common` for the instance of the *logger*.
+import kameloso.common : logger;
 
 /// `std.json` for our `JSON` storage.
 import std.json;
@@ -174,11 +177,11 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 
 
 /++
- +  When requesting `NAMES` on a channel, the server will do a big list of every
- +  participant in it, in a big string of nicknames separated by spaces. This
- +  is done automatically when you join a channel. Nicknames are prefixed with
- +  mode signs if they are operators, voiced or similar, so we'll need to strip
- +  that away.
+ +  When requesting `NAMES` on a channel, the server will send a big list of
+ +  every participant in it, in a big string of nicknames separated by spaces.
+ +  This is done automatically when you join a channel. Nicknames are prefixed
+ +  with mode signs if they are operators, voiced or similar, so we'll need to
+ +  strip that away.
  +
  +  We want to catch the `NAMES` reply and record each person as having been
  +  seen.
@@ -188,6 +191,7 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 void onNameReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
+
     /++
      +  Use a `splitter` to iterate each name and call `updateUser` to update
      +  (or create) their entry in the seenUsers `JSON` storage.
@@ -206,39 +210,20 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 
 // onPing
 /++
- +  Whenever an `IRCEvent` of type `PING` occurs, query each home channel for a
- +  list of their users with `WHO`.
+ +  Save seen files to disk with a periodicity of `hoursBetweenSaves` hours.
  +
- +  If we ride the periodicity of `PING` we get a natural cadence that queries
- +  the channels occasionally enough.
+ +  If we ride the periodicity of `PING` (which is sent to us every few minutes)
+ +  we can just keep track of when we last saved, and save anew after the set
+ +  number of hours have passed.
+ +
+ +  A cheap trick to get around not (yet) having a good timer system. Further
+ +  work may render this roundabout hack unneccessary.
  +/
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
 {
     with (plugin)
     {
-        /// Twitch servers don't support `WHO` commands.
-        if (state.bot.server.daemon == IRCServer.Daemon.twitch) return;
-
-        foreach (const channel; state.bot.homes)
-        {
-            /++
-             +  The bot uses concurrency messages to queue strings to be sent to
-             +  the server. This has benefits such as that even a multi-threaded
-             +  program will have synchronous messages sent, and it's overall an
-             +  easy and convenient way for plugin to send messages up the
-             +  stack.
-             +
-             +  Future work may change this.
-             +
-             +  The `ThreadMessage.Sendline` is one of several concurrency
-             +  message "types" defined in `kameloso.common`, and this is part
-             +  of why we wanted to import that.
-             +/
-            // FIXME
-            //raw!(Yes.quiet)("WHO " ~ channel);
-        }
-
         import std.datetime.systime : Clock;
 
         const now = Clock.currTime;
@@ -270,10 +255,12 @@ void onPing(SeenPlugin plugin)
  +     a `CHAN` message, but it needn't be there in a `QUERY`.
  +  * `hardRequired`, where the message *has* to start with the bot's nickname
  +     at all times, or this function will not be called.
+ +  * `direct`, where the raw command is expected without any bot prefix at all.
  +
  +  The `IRCEvent` will probably look something like this:
  +
  +  --------------
+ +  event.type = IRCEvent.Type.CHAN;
  +  event.sender.nickname = "foo";
  +  event.sender.ident = "~bar";
  +  event.sender.address = "baz.foo.bar.org";
@@ -306,6 +293,36 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
     if (event.sender.nickname == event.content)
     {
+        /++
+         +  The bot uses concurrency messages to queue strings to be sent to the
+         +  server. This has benefits such as that even a multi-threaded program
+         +  will have synchronous messages sent, and it's overall an easy and
+         +  convenient way for plugin to send messages up the stack.
+         +
+         +  Future work may change this.
+         +
+         +  There are shorthand versions for sending these messages in
+         +  `kameloso.messaging`, and this module has *mixed in* a template to
+         +  create even shorter shorthand versions of them in the `SeenPlugin`.
+         +  As such, you can use them as if they were member functions of it.
+         +
+         +  ------------
+         +  with (plugin)
+         +  {
+         +      chan("#d", "Hello world!");
+         +      query("kameloso", "Hello you!");
+         +      privmsg(event.channel, event.sender.nickname, "Query or chan!");
+         +      join("#flerrp");
+         +      part("#flerrp");
+         +      topic("#flerrp", "This is a new topic");
+         +  }
+         +  ------------
+         +
+         +  privmsg will either send a channel message or a personal query
+         +  message depending on the arguments passed to it. If the first
+         +  `channel` argument is not empty, it will be a channel message, else
+         +  a query.
+         +/
         // The person is asking for seen information about him-/herself.
         plugin.privmsg(event.channel, event.sender.nickname, "That's you!");
         return;
@@ -457,12 +474,19 @@ void teardown(IRCPlugin basePlugin)
 
 
 /++
- +  BasicEventHandlers is a *mixin template*; a few functions defined in
- +  `kameloso.plugins.common` to deal with common housekeeping that every plugin
- +  wants done. Mixing it in copies and pastes it here.
+ +  `UserAwareness` is a *mixin template*; a few functions defined in
+ +  `kameloso.plugins.common` to deal with common bookkeeping that every plugin
+ +  that wants to keep track of users need. If you don't want to track which
+ +  users are in which channels, you don't need this.
  +
- +  It's boilerplate so you don't have to deal with some very basic things. It
- +  is not mandatory but highly recommended in nearly all cases.
+ +  Complementary to `UserAwareness` is `ChannelAwareness`, which will add in
+ +  bookkeeping about the channels the bot is in, their topics, modes and list
+ +  of participants. Channel awareness requires user awareness, but not the
+ +  other way around.
+ +
+ +  This `seen` plugin doesn't care about channels; after all, a seen user is a
+ +  seen user regardless of the channel he/she was seen in. So we mix in
+ +  `UserAwareness` only.
  +/
 mixin UserAwareness;
 
@@ -477,10 +501,14 @@ public:
 /++
  +  This is your plugin to the outside world, the only thing visible in the
  +  entire module. It only serves as a way of proxying calls to our top-level
- +  private functions.
+ +  private functions, as well as to house plugin-private variables that we want
+ +  to keep out of top-level scope for the sake of modularity. If the only state
+ +  is in the plugin, several plugins of the same kind can technically be run
+ +  alongide eachother, which would allow for several bots to be run in
+ +  parallel. This is not yet supported but there's nothing stopping it.
  +
- +  It also houses this plugin's *state*, notably its instance of `SeenSettings`
- +  and its `IRCPluginState`.
+ +  As such it houses this plugin's *state*, notably its instance of
+ +  `SeenSettings` and its `IRCPluginState`.
  +
  +  The `IRCPluginState` is a struct housing various variables that together
  +  make the plugin's *state*. This is where information is kept about the bot,
@@ -503,8 +531,9 @@ public:
  +  * `settings` contains a few program-wide settings, not specific to a plugin.
  +
  +  * `mainThread` is the *thread ID* of the thread running the main loop. We
- +     will use it to send messages to the server, via concurrency messages to
- +     it.
+ +     indirectly used it to send strings to the server by way of concurrency
+ +     messages, but it is usually not something you will have to deal with
+ +     directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
  +     that key is an `IRCUser` representing that user in terms of nickname,
@@ -525,12 +554,17 @@ final class SeenPlugin : IRCPlugin
      +  top; the members of it will be saved to and loaded from the
      +  configuration file, for use in our module. Merely annotating it
      +  `@Settings` will ensure it ends up there.
+     +
+     +  This settings variable can be at top-level scope, but it can be
+     +  considered good practice to keep it nested here. The entire
+     +  `SeenSettings` struct can be placed here too, for that matter.
      +/
     @Settings SeenSettings seenSettings;
 
     /++
      +  The next hour we should save to disk. We set it up to do it
-     +  occasionally, once every `seenSettings.hoursBetweenSaves`.
+     +  occasionally, once every `seenSettings.hoursBetweenSaves`. See the
+     +  definition of `SeenSettings`.
      +/
     uint nextHour;
 
@@ -550,8 +584,6 @@ final class SeenPlugin : IRCPlugin
     JSONValue seenUsers;
 
     /++
-     +  The final mixin and the final piece of the puzzle.
-     +
      +  This mixes in functions that fully implement an `IRCPlugin`. They don't
      +  do much by themselves other than call the module's functions.
      +
@@ -565,5 +597,21 @@ final class SeenPlugin : IRCPlugin
      +  the plugin to be really small.
      +/
     mixin IRCPluginImpl;
+
+    /++
+     +  Our final mixin. This adds in functions to proxy calls to
+     +  `kameloso.messaging` functions, *curried* with the main thread ID, so
+     +  they can easily be called with knowledge only of the plugin symbol.
+     +
+     +  ------------
+     +  plugin.chan("#d", "Hello world!");
+     +  plugin.query("kameloso", "Hello you!");
+     +  with (plugin)
+     +  {
+     +      chan("#d", "This is convenient");
+     +      query("kameloso", "No need to specify plugin.state.mainThread");
+     +  }
+     +  ------------
+     +/
     mixin MessagingProxy;
 }
