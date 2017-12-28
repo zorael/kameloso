@@ -270,18 +270,18 @@ void tryAuth(ConnectPlugin plugin)
             // Accepts auth login
             // GameSurge is AuthServ
 
-            string login = bot.authLogin;
+            string account = bot.authLogin;
 
             if (!bot.authLogin.length)
             {
-                logger.log("No auth login specified! Trying ", bot.origNickname);
-                login = bot.origNickname;
+                logger.log("No account specified! Trying ", bot.origNickname);
+                account = bot.origNickname;
             }
 
             plugin.query!(Yes.quiet)(service, "%s %s %s"
-                .format(verb, login, bot.authPassword));
+                .format(verb, account, bot.authPassword));
             logger.trace("--> PRIVMSG %s :%s %s hunter2"
-                .format(service, verb, login));
+                .format(service, verb, account));
             break;
 
         case twitch:
@@ -529,8 +529,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
 
  +     `base64(authLogin \0 authLogin \0 authPassword`)
 
- +  ...where `authLogin` is the services login name and `authPassword` is
- +  the services login password.
+ +  ...where `authLogin` is the services account name and `authPassword` is
+ +  the services account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectPlugin plugin)

@@ -336,7 +336,7 @@ struct IRCEvent
         RPL_CHANNEL_URL, // = 328       // "http://linux.chat"
         RPL_CREATIONTIME, // = 329,
         RPL_WHOWAS_TIME, // = 330,      // CONFLICT
-        RPL_WHOISACCOUNT, // = 330      // "<nickname> <login> :is logged in as"
+        RPL_WHOISACCOUNT, // = 330      // "<nickname> <account> :is logged in as"
         RPL_NOTOPIC, // = 331,          // "<channel> :No topic is set"
         RPL_TOPIC, // = 332,            // "<channel> :<topic>"
         RPL_TOPICWHOTIME, // = 333,     // "#channel user!~ident@address 1476294377"
@@ -856,7 +856,7 @@ struct IRCEvent
  +      string quitReason;
  +      string master;
  +
- +      string authLogin;      // services login name
+ +      string authLogin;      // services account name
  +      string authPassword;   // service password
  +      string pass;           // registration PASS password, not auth
  +
@@ -878,15 +878,15 @@ struct IRCBot
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
 
-    /// The nickname services login of the bot's *master*
+    /// The nickname services account of the bot's *master*
     string master;
 
-    /// Username to use for services login
+    /// Username to use for services account
     string authLogin;
 
     @Hidden
     {
-        /// Password for services login
+        /// Password for services account
         string authPassword;
 
         /// Login `PASS`, different from `SASL` and services.
@@ -1048,7 +1048,7 @@ struct IRCServer
  +      string alias_;
  +      string ident;
  +      string address;
- +      string login;
+ +      string account;
  +      bool special;
  +      size_t lastWhois;
  }
@@ -1061,7 +1061,7 @@ struct IRCUser
     string alias_;
     string ident;
     string address;
-    string login;
+    string account;
 
     /// Flag that the user is "special", which is usually that it is a service
     /// like nickname services, or channel or memo or spam ...
@@ -1094,7 +1094,7 @@ struct IRCUser
         import std.format : formattedWrite;
 
         sink.formattedWrite("n:%s L:%s a:%s i!%s A:%s%s w:%s   [%d]",
-            nickname, login, alias_, ident, address,
+            nickname, account, alias_, ident, address,
             special ? "*" : string.init, lastWhois, refcount);
     }
 

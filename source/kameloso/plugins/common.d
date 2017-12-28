@@ -404,14 +404,14 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 
     auto user = event.sender.nickname in state.users;
 
-    if (!user || !user.login.length &&
+    if (!user || !user.account.length &&
         ((SysTime.fromUnixTime(user.lastWhois) - Clock.currTime)
           < Timeout.whois.seconds))
     {
         return FilterResult.whois;
     }
-    else if ((user.login == state.bot.master) ||
-        state.bot.friends.canFind(user.login))
+    else if ((user.account == state.bot.master) ||
+        state.bot.friends.canFind(user.account))
     {
         return FilterResult.pass;
     }
@@ -741,7 +741,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                             case pass:
                                 if ((privilegeLevel == master) &&
-                                    (users[mutEvent.sender.nickname].login !=
+                                    (users[mutEvent.sender.nickname].account !=
                                         bot.master))
                                 {
                                     static if (verbose)
@@ -1514,9 +1514,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
         plugin.catchUser(event.sender);
 
-        if (event.sender.login == "*")
+        if (event.sender.account == "*")
         {
-            plugin.state.users[event.sender.nickname].login = string.init;
+            plugin.state.users[event.sender.nickname].account = string.init;
         }
     }
 
@@ -1535,7 +1535,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
         if (auto user = event.target.nickname in plugin.state.users)
         {
-            (*user).login = event.target.login;
+            (*user).account = event.target.account;
         }
         else
         {

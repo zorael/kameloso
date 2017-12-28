@@ -400,7 +400,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
             // :kameloso!~NaN@2001:41d0:2:80b4:: JOIN #hirrsteff2 kameloso : kameloso!
             event.channel = slice.nom(' ');
-            event.sender.login = slice.nom(" :");
+            event.sender.account = slice.nom(" :");
             //event.content = slice.strip();  // no need for full name...
         }
         else
@@ -647,8 +647,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :asimov.freenode.net 330 kameloso^ xurael zorael :is logged in as
         slice.nom(' ');  // bot nickname
         event.target.nickname = slice.nom(' ');
-        event.target.login = slice.nom(" :");
-        event.content = event.target.login;
+        event.target.account = slice.nom(" :");
+        event.content = event.target.account;
         break;
 
     case RPL_WHOISREGNICK: // 307
@@ -792,14 +792,14 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             slice.nom('!');  // user
             event.target.ident = slice.nom('@');
             event.target.address = slice.nom(' ');
-            event.target.login = slice.nom(" :");
+            event.target.account = slice.nom(" :");
         }
         event.content = slice;
         break;
 
     case ACCOUNT:
         //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
-        event.sender.login = slice;
+        event.sender.account = slice;
         event.content = slice;  // to make it visible?
         break;
 
@@ -2518,13 +2518,13 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                                 if (slice.has('$'))
                                 {
                                     // More than one field, first is account
-                                    newMode.user.login = slice.nom('$');
+                                    newMode.user.account = slice.nom('$');
                                     newMode.data = slice;
                                 }
                                 else
                                 {
                                     // Whole slice is an account
-                                    newMode.user.login = slice;
+                                    newMode.user.account = slice;
                                 }
                             }
                             else
