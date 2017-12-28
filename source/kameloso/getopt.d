@@ -96,11 +96,13 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
             "i|ident",       "IDENT string", &bot.ident,
             "pass",          "Registration password (not auth or nick services)",
                 &bot.pass,
-            "a|auth",        "Auth service login name, if applicable",
+            "a|auth",        "Services account login name, if applicable",
                 &bot.authLogin,
-            "p|authpassword","Auth service password", &bot.authPassword,
-            "m|master",      "Auth login of the bot's master, who gets " ~
-                            "access to administrative functions", &bot.master,
+            "account",       &bot.authLogin,
+            "p|authpassword","Services account password", &bot.authPassword,
+            "password",      &bot.authPassword,
+            "m|master",      "Services account of the bot's master, who gets " ~
+                             "access to administrative functions", &bot.master,
             "H|home",        "Home channels to operate in, comma-separated" ~
                             " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~

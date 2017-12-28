@@ -395,8 +395,8 @@ alias Configurable = Settings;
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
- +  If the user's NickServ login is in the list of friends (or equals the bot's
- +  master's), return pass. Else, return fail and deny use.
+ +  If the user's NickServ account is in the list of friends (or equals the
+ +  bot's master's), return pass. Else, return fail and deny use.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 {
@@ -1438,7 +1438,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
  +
  +  Plugins that deal with users in any form will need event handlers to handle
  +  people joining and leaving channels, disconnecting from the server, and
- +  other events related to user details (including services login names).
+ +  other events related to user details (including services account names).
  +
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
@@ -1504,26 +1504,26 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessLoginInfoSenderMixin
+    // onUserAwarenessAccountInfoSenderMixin
     /++
      +  Adds a user to the `IRCUser` array, potentially including their services
-     +  login name.
+     +  account name.
      +
      +  Servers with the (enabled) capability `extended-join` will include the
-     +  login name of whoever joins in the event string. If it's there, catch
+     +  account name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to `WHOIS` them later.
      +
      +  `ACCOUNTS` events will only be processed if a user's `IRCUser` entry
      +  already exists, to counter the fact that `ACCOUNT` events don't imply a
      +  specific channel and as such can't honour `ChannelPolicy.homeOnly`.
-     +  This way the user will only be updated with its login info if it was
+     +  This way the user will only be updated with its account info if it was
      +  already created elsewhere.
      +/
     @(Chainable)
     @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    void onUserAwarenessLoginInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessAccountInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
         if ((event.type == IRCEvent.Type.ACCOUNT) &&
             (event.sender.nickname !in plugin.state.users))
@@ -1540,17 +1540,17 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessLoginInfoTargetMixin
+    // onUserAwarenessAccountInfoTargetMixin
     /++
-     +  Records a user's services login by saving it to the user's `IRCBot` in
+     +  Records a user's services account by saving it to the user's `IRCBot` in
      +  the `state.users` associative array.
      +/
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onUserAwarenessLoginInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // No point catching the entire user when we only want the login
+        // No point catching the entire user when we only want the account
 
         if (auto user = event.target.nickname in plugin.state.users)
         {
@@ -1567,7 +1567,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Catches a user's information from a `WHO` reply event.
      +
-     +  It usually contains everything interesting except services login name.
+     +  It usually contains everything interesting except services account name.
      +/
     @(Chainable)
     @(ChannelPolicy.homeOnly)
@@ -1650,7 +1650,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  then replay the event.
      +
      +  Params:
-     +      event = the event to replay once we have `WHOIS` login information.
+     +      event = the event to replay once we have `WHOIS` account
+     +              information.
      +      fp = the function pointer to call when that happens.
      +/
     void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,

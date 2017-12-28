@@ -562,8 +562,8 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
         ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
         (event.type == IRCEvent.Type.RPL_WHOISREGNICK)))
     {
-        // If the event was one with login information, see if there is an event
-        // to replay, and trigger it if so
+        // If the event was one with account information, see if there is an
+        // event to replay, and trigger it if so
         auto req = nickname in reqs;
         if (!req) return;
         req.trigger();

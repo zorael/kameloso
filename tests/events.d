@@ -116,7 +116,7 @@ unittest
         assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), type.to!string);
         assert((target.nickname == "zurael"), target.nickname);
         assert((content == "zorael"), content);
-        assert((target.login == "zorael"), target.login);
+        assert((target.account == "zorael"), target.account);
         assert((num == 330), num.to!string);
     }
 
@@ -944,7 +944,7 @@ unittest
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((target.nickname == "xurael"), target.nickname);
-            assert((target.login == "zorael"), target.login);
+            assert((target.account == "zorael"), target.account);
             assert((content == "zorael"), content);
             assert((num == 330), num.to!string);
         }
@@ -1191,7 +1191,7 @@ unittest
             assert((target.nickname == "kameloso"), target.nickname);
             assert((target.ident == "NaN"), target.ident);
             assert((target.address == "194.117.188.126"), target.address);
-            assert((target.login == "kameloso"), target.login);
+            assert((target.account == "kameloso"), target.account);
             assert((content == "You are now logged in as kameloso."), content);
             assert((num == 900), num.to!string);
         }
@@ -1206,7 +1206,7 @@ unittest
             assert((sender.nickname == "ski7777"), sender.nickname);
             assert((sender.ident == "~quassel"), sender.ident);
             assert((sender.address == "ip5b435007.dynamic.kabel-deutschland.de"), sender.address);
-            assert((sender.login == "ski7777"), sender.login);
+            assert((sender.account == "ski7777"), sender.account);
             assert(!sender.special, sender.special.to!string);
             assert((content == "ski7777"), content);
         }
