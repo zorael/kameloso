@@ -1051,7 +1051,7 @@ struct IRCServer
  +      string account;
  +      bool special;
  +      size_t lastWhois;
- }
+ +  }
  +/
 struct IRCUser
 {
@@ -1061,13 +1061,17 @@ struct IRCUser
     string alias_;
     string ident;
     string address;
+
+    /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc)
     string account;
 
     deprecated("Use IRCUser.account instead of IRCUser.login")
     alias login = account;
 
-    /// Flag that the user is "special", which is usually that it is a service
-    /// like nickname services, or channel or memo or spam ...
+    /++
+     +  Flag that the user is "special", which is usually that it is a service
+     + like nickname services, or channel or memo or spam ...
+     +/
     bool special;
 
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
@@ -1079,6 +1083,7 @@ struct IRCUser
     this(string userstring)
     {
         import std.format : formattedRead;
+
         userstring.formattedRead("%s!%s@%s", nickname, ident, address);
         if (nickname == "*") nickname = string.init;
         if (ident == "*") ident = string.init;
@@ -1101,39 +1106,15 @@ struct IRCUser
             special ? "*" : string.init, lastWhois, refcount);
     }
 
+    /// Guesses that a sender is a server
     bool isServer() @property const
     {
         import kameloso.string : has;
-
         return (!nickname.length && address.has('.'));
     }
 
     bool opEquals(IRCUser other) const
     {
-        /*immutable matchNick = ((nickname == other.nickname) || (other.nickname == "*"));
-        if (!matchNick) return false;
-
-        immutable matchIdent = ((ident == other.ident) || (other.ident == "*"));
-        if (!matchIdent) return false;
-
-        immutable matchAddress = ((address == other.address) || (other.address == "*"));
-        if (!matchAddress) return false;*/
-
-        /*immutable matchNick = ((this.nickname == other.nickname) ||
-            (this.nickname.length && !other.nickname.length) ||
-            (!this.nickname.length && other.nickname.length));
-        if (!matchNick) return false;
-
-        immutable matchIdent = ((ident == other.ident) ||
-            (this.ident.length && !other.ident.length) ||
-            (!this.ident.length && other.ident.length));
-        if (!matchIdent) return false;
-
-        immutable matchAddress = ((address == other.address) ||
-            (this.address.length && !other.address.length) ||
-            (!this.address.length && other.address.length));
-        if (!matchAddress) return false;*/
-
         // Match first
         // If no match and either is empty, that means they're *
         immutable matchNick = ((this.nickname == other.nickname) ||

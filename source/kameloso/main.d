@@ -412,8 +412,8 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                 foreach (plugin; plugins)
                 {
                     plugin.postprocess(mutEvent);
-                    auto pluginBot = plugin.bot;
 
+                    auto pluginBot = plugin.bot;
                     if (pluginBot.updated)
                     {
                         // Postprocessing changed the bot; propagate
@@ -471,7 +471,6 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                         client.handleWHOISQueue(reqs, event, event.target.nickname);
 
                         auto pluginBot = plugin.bot;
-
                         if (pluginBot.updated)
                         {
                             /*  Plugin `onEvent` or `WHOIS` reaction updated the
@@ -553,7 +552,7 @@ void handleFibers(ref Fiber[] fibers)
 
 // handleWHOISQueue
 /++
- +  Take a queue of `WHOISRequest` objects and process them one by one,
+ +  Takes a queue of `WHOISRequest` objects and process them one by one,
  +  replaying function pointers on attached `IRCEvent`s.
  +
  +  This is more or less a Command pattern.
