@@ -1230,6 +1230,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         return this.privateTimedFibers;
     }
+
+
+    // delayFiber
+    /++
+     +  Queues a `Fiber` to be called at a point n seconds later, by appending
+     +  it to `timedFibers`.
+     +
+     +  It only supports a precision of one second, and in the worst case it
+     +  will take another second before it processes.
+     +/
+    void delayFiber(Fiber fiber, const long secs)
+    {
+        import std.datetime.systime : Clock;
+        privateTimedFibers[Clock.currTime.toUnixTime + secs] ~= fiber;
+    }
 }
 
 deprecated("Use IRCPluginImpl instead of IRCPluginBasics")
