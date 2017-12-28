@@ -574,30 +574,27 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
         // Walk through requests and call `WHOIS` on those that haven't been
         // `WHOIS`ed in the last `Timeout.whois` seconds
 
-        foreach (entry; reqs.byKeyValue)
+        foreach (key, value; reqs)
         {
-            if (!entry.key.length) continue;
+            if (!key.length) continue;
 
-            with (entry)
+            import kameloso.constants : Timeout;
+
+            import std.datetime.systime : Clock;
+            import core.time : seconds;
+
+            const then = key in client.whoisCalls;
+            const now = Clock.currTime;
+
+            if (!then || ((now - *then) > Timeout.whois.seconds))
             {
-                import kameloso.constants : Timeout;
-
-                import std.datetime.systime : Clock;
-                import core.time : seconds;
-
-                const then = key in client.whoisCalls;
-                const now = Clock.currTime;
-
-                if (!then || ((now - *then) > Timeout.whois.seconds))
-                {
-                    logger.trace("--> WHOIS :", key);
-                    client.conn.sendline("WHOIS :", key);
-                    client.whoisCalls[key] = Clock.currTime;
-                }
-                else
-                {
-                    //logger.log(key, " too soon...");
-                }
+                logger.trace("--> WHOIS :", key);
+                client.conn.sendline("WHOIS :", key);
+                client.whoisCalls[key] = Clock.currTime;
+            }
+            else
+            {
+                //logger.log(key, " too soon...");
             }
         }
     }

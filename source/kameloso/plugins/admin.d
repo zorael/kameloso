@@ -91,9 +91,9 @@ void onCommandShowUsers(AdminPlugin plugin)
 
     printObject(plugin.state.bot);
 
-    foreach (entry; plugin.state.users.byKeyValue)
+    foreach (key, value; plugin.state.users)
     {
-        writefln("%-12s [%s]", entry.key, entry.value);
+        writefln("%-12s [%s]", key, value);
     }
 
     writefln("%d bytes from %d users (deep size %d bytes)",
@@ -119,9 +119,9 @@ void onCommandShowChannels(AdminPlugin plugin)
 
     printObject(plugin.state.bot);
 
-    foreach (entry; plugin.state.channels.byKeyValue)
+    foreach (key, value; plugin.state.channels)
     {
-        writefln("%-12s [%s]", entry.key, entry.value);
+        writefln("%-12s [%s]", key, value);
     }
 
     version(Cygwin_) stdout.flush();
