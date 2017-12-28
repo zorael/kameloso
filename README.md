@@ -6,7 +6,7 @@ Features are added as plugins, written as [D](https://www.dlang.org) modules. A 
 
 It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png) and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) login names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
 Current functionality includes:
 
@@ -76,7 +76,7 @@ You can specify which to build with the `-c` switch.
 
 # How to use
 
-The bot needs the services login name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the services account name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
     $ ./kameloso --writeconfig
 
@@ -86,7 +86,7 @@ If you have an old configuration file and you notice missing options, such as pl
 
 The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [ANSI colours](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master login in the configuration file before it will listen to anything you do. Before allowing anyone to trigger any functionality it will look them up and compare them with its internal list.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master account in the configuration file before it will listen to anything you do. Before allowing anyone to trigger any functionality it will look them up and compare them with its internal list.
 
          you | !say herp
     kameloso | herp
@@ -145,9 +145,6 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * Travis LDC tests
 * more command-line flags
 * more modules? uda.d/attribute.d?
-* more specific users in configuration arrays? nick/address/etc... needs rework of config.d
-* concurrency message-checking as Fiber?
-* timed Fibers
 
 # Built With
 
