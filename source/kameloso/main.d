@@ -6,6 +6,7 @@ import kameloso.irc;
 import kameloso.ircdefs;
 import kameloso.plugins;
 
+import core.thread : Fiber;
 import std.concurrency : Generator, thisTid;
 import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
@@ -432,32 +433,37 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     {
                         plugin.onEvent(event);
 
+                        // Poor man's garbage collection
+                        IRCEvent.Type[] emptyTypes;
+                        long[] emptyTimes;
+
+                        // Go through Fibers awaiting IRCEvent.Types
                         if (auto fibers = event.type in plugin.awaitingFibers)
                         {
-                            size_t[] toRemove;
+                            handleFibers(*fibers);
+                            if (!(*fibers).length) emptyTypes ~= event.type;
+                        }
 
-                            foreach (immutable i, ref fiber; *fibers)
-                            {
-                                if (fiber.state == Fiber.State.TERM)
-                                {
-                                    toRemove ~= i;
-                                }
-                                else if (fiber.state == Fiber.State.HOLD)
-                                {
-                                    fiber.call();
-                                }
-                                else
-                                {
-                                    assert(0, "Invalid Fiber state");
-                                }
-                            }
+                        // Go through Fibers awaiting a point in time
+                        foreach (immutable time, ref fibers; plugin.timedFibers)
+                        {
+                            import std.datetime.systime : Clock;
 
-                            foreach_reverse (i; toRemove)
-                            {
-                                import std.algorithm.mutation : remove;
-                                plugin.awaitingFibers[event.type] =
-                                    plugin.awaitingFibers[event.type].remove(i);
-                            }
+                            if (time > Clock.currTime.toUnixTime) continue;
+
+                            handleFibers(fibers);
+                            if (!fibers.length) emptyTimes ~= time;
+                        }
+
+                        // Clean up expired Fibers
+                        foreach (type; emptyTypes)
+                        {
+                            plugin.awaitingFibers.remove(type);
+                        }
+
+                        foreach (time; emptyTimes)
+                        {
+                            plugin.timedFibers.remove(time);
                         }
 
                         // Fetch any queued `WHOIS` requests and handle
@@ -507,6 +513,41 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
     }
 
     return Yes.quit;
+}
+
+
+// handleFibers
+/++
+ +  Takes an array of `Fiber`s and processes them.
+ +
+ +  The finished ones are removed from the array.
+ +/
+void handleFibers(ref Fiber[] fibers)
+{
+    size_t[] emptyIndices;
+
+    foreach (immutable i, ref fiber; fibers)
+    {
+        if (fiber.state == Fiber.State.TERM)
+        {
+            emptyIndices ~= i;
+        }
+        else if (fiber.state == Fiber.State.HOLD)
+        {
+            fiber.call();
+        }
+        else
+        {
+            assert(0, "Invalid Fiber state");
+        }
+    }
+
+    // Remove completed Fibers
+    foreach_reverse (i; emptyIndices)
+    {
+        import std.algorithm.mutation : remove;
+        fibers = fibers.remove(i);
+    }
 }
 
 

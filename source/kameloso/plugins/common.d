@@ -62,8 +62,11 @@ interface IRCPlugin
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
 
-    /// Returns a reference to the list of awaiting `Fibers`, keyed by `Type`
+    /// Returns a reference to the list of awaiting `Fiber`s, keyed by `Type`
     ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
+
+    /// Returns a reference to the list of timed `Fiber`s, keyed by UNIX time
+    ref Fiber[][long] timedFibers() @property;
 }
 
 
@@ -451,6 +454,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     IRCPluginState privateState;
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
+    Fiber[][long] privateTimedFibers;
 
 
     // onEvent
@@ -1210,6 +1214,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref Fiber[][IRCEvent.Type] awaitingFibers() @property
     {
         return this.privateAwaitingFibers;
+    }
+
+
+    // timedFibers
+    /++
+     +  Returns a reference to a plugin's list of `Fiber`s awaiting execution by
+     +  time.
+     +
+     +  Like `awaitingFibers` these are callback `Fiber`s, registered when a
+     +  plugin wants an action performed at a certain point in time.
+     +/
+    pragma(inline)
+    ref Fiber[][long] timedFibers() @property
+    {
+        return this.privateTimedFibers;
     }
 }
 
