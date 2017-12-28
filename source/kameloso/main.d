@@ -339,7 +339,40 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
         with (client)
         foreach (immutable line; generator)
         {
-            // Empty line yielded means nothing received
+            // Go through Fibers awaiting a point in time, regardless of whether
+            // something was read or not.
+
+            foreach (plugin; plugins)
+            {
+                long[] timesToRemove;
+
+                foreach (immutable time, ref fibers; plugin.timedFibers)
+                {
+                    import std.datetime.systime : Clock;
+
+                    if (time > Clock.currTime.toUnixTime) continue;
+
+                    try
+                    {
+                        handleFibers(fibers);
+                        if (!fibers.length) timesToRemove ~= time;
+                    }
+                    catch (const Exception e)
+                    {
+                        logger.warningf("Exception %s.timedFibers: %s",
+                            plugin.name, e.msg);
+                        timesToRemove ~= time;
+                    }
+                }
+
+                // Clean up expired or invalid Fibers
+                foreach (time; timesToRemove)
+                {
+                    plugin.timedFibers.remove(time);
+                }
+            }
+
+            // Empty line yielded means nothing received; break and try again
             if (!line.length) break;
 
             IRCEvent mutEvent;
@@ -431,37 +464,28 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
                     {
                         plugin.onEvent(event);
 
-                        // Poor man's garbage collection
-                        IRCEvent.Type[] emptyTypes;
-                        long[] emptyTimes;
+                        IRCEvent.Type[] typesToRemove;
 
                         // Go through Fibers awaiting IRCEvent.Types
                         if (auto fibers = event.type in plugin.awaitingFibers)
                         {
-                            handleFibers(*fibers);
-                            if (!(*fibers).length) emptyTypes ~= event.type;
+                            try
+                            {
+                                handleFibers(*fibers);
+                                if (!(*fibers).length) typesToRemove ~= event.type;
+                            }
+                            catch (const Exception e)
+                            {
+                                logger.warningf("Exception %s.timedFibers: %s",
+                                    plugin.name, e.msg);
+                                typesToRemove ~= event.type;
+                            }
                         }
 
-                        // Go through Fibers awaiting a point in time
-                        foreach (immutable time, ref fibers; plugin.timedFibers)
-                        {
-                            import std.datetime.systime : Clock;
-
-                            if (time > Clock.currTime.toUnixTime) continue;
-
-                            handleFibers(fibers);
-                            if (!fibers.length) emptyTimes ~= time;
-                        }
-
-                        // Clean up expired Fibers
-                        foreach (type; emptyTypes)
+                        // Clean up expired or invalid Fibers
+                        foreach (type; typesToRemove)
                         {
                             plugin.awaitingFibers.remove(type);
-                        }
-
-                        foreach (time; emptyTimes)
-                        {
-                            plugin.timedFibers.remove(time);
                         }
 
                         // Fetch any queued `WHOIS` requests and handle
