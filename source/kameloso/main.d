@@ -4,11 +4,9 @@ import kameloso.common;
 import kameloso.connection;
 import kameloso.irc;
 import kameloso.ircdefs;
-import kameloso.plugins;
 
 import core.thread : Fiber;
-import std.concurrency : Generator, thisTid;
-import std.datetime.systime : SysTime;
+import std.concurrency : Generator;
 import std.typecons : Flag, No, Yes;
 
 import std.stdio;

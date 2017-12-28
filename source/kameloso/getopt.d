@@ -1,7 +1,7 @@
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Client, logger, printObjects;
-import kameloso.irc : IRCBot;
+import kameloso.common : CoreSettings, Client;
+import kameloso.ircdefs : IRCBot;
 import std.typecons : Flag, No, Yes;
 
 import std.stdio;
@@ -72,7 +72,7 @@ public:
 Flag!"quit" handleGetopt(ref Client client, string[] args)
 {
     import kameloso.bash : BashForeground, colour;
-    import kameloso.common : initLogger, printVersionInfo;
+    import kameloso.common : initLogger, printObjects, printVersionInfo;
     import std.format : format;
     import std.getopt;
 
@@ -179,7 +179,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
         if (shouldWriteConfig)
         {
-            import kameloso.common : writeConfigurationFile;
+            import kameloso.common : logger, writeConfigurationFile;
 
             // --writeconfig was passed; write configuration to file and quit
             printVersionInfo(BashForeground.white);

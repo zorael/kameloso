@@ -4,8 +4,8 @@ import kameloso.common : Hidden, Separator, Unconfigurable;
 
 final:
 @safe:
-//pure:
-//nothrow:
+pure:
+nothrow:
 
 
 // IRCEvent

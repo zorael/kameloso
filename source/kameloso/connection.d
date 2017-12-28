@@ -3,8 +3,6 @@ module kameloso.connection;
 import kameloso.common : logger, interruptibleSleep;
 import kameloso.constants;
 
-import core.time : seconds;
-
 import std.stdio;
 
 
@@ -18,6 +16,7 @@ import std.stdio;
 struct Connection
 {
 private:
+    import core.time : seconds;
     import std.socket : Socket, Address;
 
     /// Real IPv4 and IPv6 sockets to connect through.
@@ -262,6 +261,7 @@ public:
  +/
 void listenFiber(Connection conn, ref bool abort)
 {
+    import core.time : seconds;
     import std.algorithm.searching : countUntil;
     import std.concurrency : yield;
     import std.datetime.systime : Clock, SysTime;
