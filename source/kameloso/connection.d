@@ -271,6 +271,12 @@ void listenFiber(Connection conn, ref bool abort)
     SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
+    // The Generator we use this function with popFronts the first thing it does
+    // after being instantiated. To work around our main loop popping too we
+    // yield an initial empty value; else the first thing to happen will be a
+    // double pop, and the first line is missed.
+    yield(string.init);
+
     while (!abort)
     {
         const ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
