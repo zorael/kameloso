@@ -346,6 +346,8 @@ Flag!"quit" mainLoop(ref Client client)
 
             foreach (plugin; plugins)
             {
+                if (!plugin.timedFibers.length) continue;
+
                 long[] timesToRemove;
 
                 foreach (immutable time, ref fibers; plugin.timedFibers)
@@ -469,25 +471,28 @@ Flag!"quit" mainLoop(ref Client client)
                         IRCEvent.Type[] typesToRemove;
 
                         // Go through Fibers awaiting IRCEvent.Types
-                        if (auto fibers = event.type in plugin.awaitingFibers)
+                        if (plugin.awaitingFibers.length)
                         {
-                            try
+                            if (auto fibers = event.type in plugin.awaitingFibers)
                             {
-                                handleFibers(*fibers);
-                                if (!(*fibers).length) typesToRemove ~= event.type;
+                                try
+                                {
+                                    handleFibers(*fibers);
+                                    if (!(*fibers).length) typesToRemove ~= event.type;
+                                }
+                                catch (const Exception e)
+                                {
+                                    logger.warningf("Exception %s.timedFibers: %s",
+                                        plugin.name, e.msg);
+                                    typesToRemove ~= event.type;
+                                }
                             }
-                            catch (const Exception e)
-                            {
-                                logger.warningf("Exception %s.timedFibers: %s",
-                                    plugin.name, e.msg);
-                                typesToRemove ~= event.type;
-                            }
-                        }
 
-                        // Clean up expired or invalid Fibers
-                        foreach (type; typesToRemove)
-                        {
-                            plugin.awaitingFibers.remove(type);
+                            // Clean up expired or invalid Fibers
+                            foreach (type; typesToRemove)
+                            {
+                                plugin.awaitingFibers.remove(type);
+                            }
                         }
 
                         // Fetch any queued `WHOIS` requests and handle
