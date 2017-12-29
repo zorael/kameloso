@@ -1,7 +1,6 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.connection;
 import kameloso.irc;
 import kameloso.ircdefs;
 
@@ -296,6 +295,7 @@ void removeMeWhenPossible()
  +/
 Flag!"quit" mainLoop(ref Client client)
 {
+    import kameloso.connection : listenFiber;
     import core.thread : Fiber;
     import std.concurrency : Generator, yield;
     import std.datetime.systime : Clock;
@@ -676,7 +676,8 @@ void resetSignals() nothrow @nogc
 public:
 
 version(unittest)
-void main() {
+void main()
+{
     // Compiled with -b unittest, so run the tests and exit.
     // Logger is initialised in a module constructor, don't reinit here.
     logger.info("All tests passed successfully!");
@@ -708,7 +709,6 @@ int main(string[] args)
     try
     {
         import kameloso.getopt : handleGetopt;
-
         // Act on arguments getopt, quit if whatever was passed demands it
         if (client.handleGetopt(args) == Yes.quit) return 0;
     }
@@ -728,12 +728,11 @@ int main(string[] args)
         return 1;
     }
 
-
     with (client)
     {
         import kameloso.bash : BashForeground;
 
-        BashForeground tint;
+        BashForeground tint = BashForeground.default_;
 
         version(Colours)
         {
@@ -748,10 +747,6 @@ int main(string[] args)
                     tint = BashForeground.white;
                 }
             }
-        }
-        else
-        {
-            tint = BashForeground.default_;
         }
 
         printVersionInfo(tint);
@@ -804,7 +799,6 @@ int main(string[] args)
                 // plugins not initialised so no need to teardown
                 return 1;
             }
-
 
             version(Colours)
             {
@@ -895,7 +889,7 @@ int main(string[] args)
 
             startPlugins();
 
-            // Initialise the Generator and start the main loop
+            // Start the main loop
             quit = client.mainLoop();
             firstConnect = false;
 
