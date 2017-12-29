@@ -41,13 +41,7 @@ void signalHandler(int sig) nothrow @nogc @system
     abort = true;
 
     // Restore signal handlers to the default
-    signal(SIGINT, SIG_DFL);
-
-    version(Posix)
-    {
-        import core.sys.posix.signal : SIGHUP;
-        signal(SIGHUP, SIG_DFL);
-    }
+    resetSignals();
 }
 
 
@@ -647,7 +641,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
  +  Registers `SIGINT` (and optionally `SIGHUP` on Posix systems) to redirect to
  +  our own `signalHandler`. so we can catch Ctrl+C and gracefully shut down.
  +/
-void setupSignals()
+void setupSignals() nothrow @nogc
 {
     import core.stdc.signal : signal, SIGINT;
 
@@ -657,6 +651,24 @@ void setupSignals()
     {
         import core.sys.posix.signal : SIGHUP;
         signal(SIGHUP, &signalHandler);
+    }
+}
+
+
+// resetSignals
+/++
+ +  Resets `SIGINT` (and `SIGHUP` handlers) to the system default.
+ +/
+void resetSignals() nothrow @nogc
+{
+    import core.stdc.signal : signal, SIG_DFL, SIGINT;
+
+    signal(SIGINT, SIG_DFL);
+
+    version(Posix)
+    {
+        import core.sys.posix.signal : SIGHUP;
+        signal(SIGHUP, SIG_DFL);
     }
 }
 
@@ -686,19 +698,9 @@ int main(string[] args)
 
     scope(failure)
     {
-        import core.stdc.signal : signal, SIGINT, SIG_DFL;
-
         logger.error("We just crashed!");
         client.teardownPlugins();
-
-        // Restore signal handlers to the default
-        signal(SIGINT, SIG_DFL);
-
-        version(Posix)
-        {
-            import core.sys.posix.signal : SIGHUP;
-            signal(SIGHUP, SIG_DFL);
-        }
+        resetSignals();
     }
 
     setupSignals();
