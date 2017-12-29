@@ -344,6 +344,8 @@ Flag!"quit" mainLoop(ref Client client)
             // Go through Fibers awaiting a point in time, regardless of whether
             // something was read or not.
 
+            immutable nowInUnix = now.toUnixTime;
+
             foreach (plugin; plugins)
             {
                 if (!plugin.timedFibers.length) continue;
@@ -352,9 +354,7 @@ Flag!"quit" mainLoop(ref Client client)
 
                 foreach (immutable time, ref fibers; plugin.timedFibers)
                 {
-                    import std.datetime.systime : Clock;
-
-                    if (time > Clock.currTime.toUnixTime) continue;
+                    if (time > nowInUnix) continue;
 
                     try
                     {
