@@ -6,7 +6,6 @@ import kameloso.irc;
 import kameloso.ircdefs;
 
 import core.thread : Fiber;
-import std.concurrency : Generator;
 import std.typecons : Flag, No, Yes;
 
 import std.stdio;
@@ -292,20 +291,19 @@ void removeMeWhenPossible()
 
 // mainLoop
 /++
- +  This loops over the Generator fiber that's reading from the socket.
+ +  This loops creates a `Generator` `Fiber` to loop over the over `Socket`,
+ +  reading and yielding lines as it goes.
  +
  +  Full lines are yielded in the Generator to be caught here, consequently
  +  parsed into IRCEvents, and then dispatched to all the plugins.
  +
- +  Params:
- +      generator = a string-returning Generator that's reading from the socket.
- +
  +  Returns:
  +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
  +/
-Flag!"quit" mainLoop(ref Client client, Generator!string generator)
+Flag!"quit" mainLoop(ref Client client)
 {
     import core.thread : Fiber;
+    import std.concurrency : Generator, yield;
     import std.datetime.systime : Clock;
 
     /// Flag denoting whether we should quit or not.
@@ -314,6 +312,10 @@ Flag!"quit" mainLoop(ref Client client, Generator!string generator)
     /// Keep track of daemon and network so we know when to report detection
     IRCServer.Daemon detectedDaemon;
     string detectedNetwork;
+
+    // Instantiate a Generator to read from the socket and yield lines
+    auto generator = new Generator!string(() =>
+        listenFiber(client.conn, *(client.abort)));
 
     while (!quit)
     {
@@ -877,8 +879,7 @@ int main(string[] args)
             startPlugins();
 
             // Initialise the Generator and start the main loop
-            auto generator = new Generator!string(() => listenFiber(conn, *abort));
-            quit = client.mainLoop(generator);
+            quit = client.mainLoop();
             firstConnect = false;
 
             // Save if we're exiting and configuration says we should.
