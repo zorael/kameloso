@@ -16,6 +16,7 @@ Current functionality includes:
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
 * looking up titles of pasted web URLs
 * Reddit post lookup
+* [bash.org](http://bash.org) quoting
 * Twitch events; simple Twitch chatbot is now easy
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
@@ -26,7 +27,7 @@ Current functionality includes:
 
 There are a few Windows caveats.
 
-* Web URL title lookup, including the Bash and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
+* Web URL title lookup, including the Bash quotes and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours *disabled*, but they can be enabled by specifying a different *build configuration*.
 
 # Getting Started

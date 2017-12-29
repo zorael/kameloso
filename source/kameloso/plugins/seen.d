@@ -243,7 +243,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
  +  }
  +
  +  fiber = new Fiber(&foo);
- +  foo();  // trigger once immediately and let it queue itelf
+ +  fiber.call();  // trigger once immediately and let it queue itelf
  +  ------------
  +/
 @(IRCEvent.Type.PING)
