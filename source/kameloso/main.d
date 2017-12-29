@@ -358,8 +358,8 @@ Flag!"quit" mainLoop(ref Client client)
 
                     try
                     {
-                        handleFibers(fibers);
-                        if (!fibers.length) timesToRemove ~= time;
+                        handleFibers!(Yes.exhaustive)(fibers);
+                        timesToRemove ~= time;
                     }
                     catch (const Exception e)
                     {
@@ -369,7 +369,7 @@ Flag!"quit" mainLoop(ref Client client)
                     }
                 }
 
-                // Clean up expired or invalid Fibers
+                // Clean up processed Fibers
                 foreach (time; timesToRemove)
                 {
                     plugin.timedFibers.remove(time);
@@ -548,9 +548,11 @@ Flag!"quit" mainLoop(ref Client client)
 /++
  +  Takes an array of `Fiber`s and processes them.
  +
- +  The finished ones are removed from the array.
+ +  If passed `Yes.exhaustive` they are removed from the arrays after they are
+ +  called, so they won't be triggered again next pass. Otherwise only the
+ +  finished ones are removed.
  +/
-void handleFibers(ref Fiber[] fibers)
+void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibers)
 {
     size_t[] emptyIndices;
 
@@ -570,11 +572,19 @@ void handleFibers(ref Fiber[] fibers)
         }
     }
 
-    // Remove completed Fibers
-    foreach_reverse (i; emptyIndices)
+    static if (exhaustive)
     {
-        import std.algorithm.mutation : remove;
-        fibers = fibers.remove(i);
+        // Remove all called Fibers
+        fibers.length = 0;
+    }
+    else
+    {
+        // Remove completed Fibers
+        foreach_reverse (i; emptyIndices)
+        {
+            import std.algorithm.mutation : remove;
+            fibers = fibers.remove(i);
+        }
     }
 }
 
