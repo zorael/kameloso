@@ -16,10 +16,13 @@
  +  recorded as having been seen, as they would never be triggering any of the
  +  functions we define.
  +
- +  kameloso does not use callbacks, but instead annotates functions with
- +  `UDA`s, or *User Defined Annotations*. In essence, we will tag our functions
- +  with the kind or kinds of IRC events that should invoke them. Callback
- +  Fibers *are* supported but are not in any large-scale use.
+ +  kameloso does primarily not use callbacks, but instead annotates functions
+ +  with `UDA`s, or *User Defined Annotations*. In essence, we will tag our
+ +  functions with the kind or kinds of IRC events that should invoke them.
+ +
+ +  Callback `Fiber`s *are* supported but are not in any large-scale use. They
+ +  can be registered to process on incoming events, or timed with a precision
+ +  of roughly 1 second.
  +
  +  Annotations look like so:
  +
@@ -216,8 +219,32 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
  +  we can just keep track of when we last saved, and save anew after the set
  +  number of hours have passed.
  +
- +  A cheap trick to get around not (yet) having a good timer system. Further
- +  work may render this roundabout hack unneccessary.
+ +  A new alternative to this would be to set up a timer `Fiber`, to process
+ +  once every n seconds. It would have to be placed elsewhere though, not in a
+ +  UDA-annotated on-`IRCEvent` function. Someplace only run once, like `start`.
+ +
+ +  ------------
+ +  Fiber fiber;
+ +  enum secs = 3600 * seenSettings.hoursBetweenSaves;
+ +
+ +  void foo()
+ +  {
+ +      with (plugin)
+ +      while (true)
+ +      {
+ +          seenUser.saveSeen(seenSettings.seenFile);
+ +
+ +          // The Fiber callback must re-add its own Fiber
+ +          // Declare it so that it's visible from inside here
+ +          fiber.delayFiber(secs);
+ +
+ +          Fiber.yield();
+ +      }
+ +  }
+ +
+ +  fiber = new Fiber(&foo);
+ +  foo();  // trigger once immediately and let it queue itelf
+ +  ------------
  +/
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
