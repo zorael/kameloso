@@ -150,7 +150,6 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * merge thottling with timing
 * compilation time and memory use :c
 * optional formatting in IRC output?
-* strip incoming formatting when in monochrome mode
 * registration on [code.dlang.org](https://code.dlang.org)
 
 # Built With
