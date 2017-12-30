@@ -1012,7 +1012,7 @@ unittest
     IRCEvent event;
     event.content = line1;
     event.mapEffects();
-    assert((event.content == line2), line1);
+    assert((event.content == line2), event.content);
 }
 
 
