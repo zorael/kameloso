@@ -269,6 +269,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     with (event.sender)
     if (monochrome)
     {
+        event.stripEffects();
+
         put(sink, '[', timestamp, "] ");
 
         string typestring = plugin.printerSettings.typesInCaps ?
@@ -691,6 +693,45 @@ void mapEffects(ref IRCEvent event)
 }
 
 
+// stripEffects
+/++
+ +  Removes all form of IRC formatting (colours, bold, italics, underlined) from
+ +  an `IRCEvent`.
+ +/
+void stripEffects(ref IRCEvent event)
+{
+    import kameloso.constants : IRCControlCharacter;
+    import kameloso.string : has;
+    import std.regex;
+
+    alias I = IRCControlCharacter;
+
+    static ctBold = ctRegex!(""~I.bold);
+    static ctItalics = ctRegex!(""~I.italics);
+    static ctUnderlined = ctRegex!(""~I.underlined);
+
+    if (event.content.has(cast(ubyte)I.colour))
+    {
+        event.stripColours();
+    }
+
+    if (event.content.has(cast(ubyte)I.bold))
+    {
+        event.content = event.content.replaceAll(ctBold, string.init);
+    }
+
+    if (event.content.has(cast(ubyte)I.italics))
+    {
+        event.content = event.content.replaceAll(ctItalics, string.init);
+    }
+
+    if (event.content.has(cast(ubyte)I.underlined))
+    {
+        event.content = event.content.replaceAll(ctUnderlined, string.init);
+    }
+}
+
+
 // mapColours
 /++
  +  Map mIRC effect color tokens to Bash ones.
@@ -821,6 +862,64 @@ unittest
     e2.mapColours();
     assert((e2.content == "This time there's\033[35m no ending token, only magenta.\033[0m"),
         e2.content);
+}
+
+
+/++
+ +  Removes IRC colouring from an `IRCEvent`.
+ +/
+void stripColours(ref IRCEvent event)
+{
+    import kameloso.constants : IRCControlCharacter;
+    import std.regex : ctRegex, matchAll, regex, replaceAll;
+
+    enum colourPattern = IRCControlCharacter.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
+    static engine = ctRegex!colourPattern;
+
+    bool strippedSomething;
+
+    immutable originalContent = event.content;
+
+    foreach (hit; originalContent.matchAll(engine))
+    {
+        import std.array : Appender;
+        import std.conv : to;
+
+        if (!hit[1].length) continue;
+
+        event.content = event.content.replaceAll(hit[0].regex, string.init);
+        strippedSomething = true;
+    }
+
+    if (strippedSomething)
+    {
+        import kameloso.constants : IRCControlCharacter;
+
+        enum endPattern = ""~IRCControlCharacter.colour;// ~ "(?:[0-9])?";
+        static endEngine = ctRegex!endPattern;
+
+        event.content = event.content.replaceAll(endEngine, string.init);
+    }
+}
+
+unittest
+{
+    IRCEvent e1;
+    e1.content = "This is " ~ 3 ~ "4all red!" ~ 3 ~ " while this is not.";
+    e1.stripColours();
+    assert((e1.content == "This is all red! while this is not."), e1.content);
+
+    IRCEvent e2;
+    e2.content = "This time there's" ~ 3 ~ "6 no ending token, only magenta.";
+    e2.stripColours();
+    assert((e2.content == "This time there's no ending token, only magenta."),
+        e2.content);
+
+    IRCEvent e3;
+    e3.content = "This time there's" ~ 3 ~ "6 no ending " ~ 3 ~ "6token, only " ~ 3 ~ "magenta.";
+    e3.stripColours();
+    assert((e3.content == "This time there's no ending token, only magenta."),
+        e3.content);
 }
 
 
