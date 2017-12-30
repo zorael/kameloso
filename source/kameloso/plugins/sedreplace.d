@@ -4,9 +4,6 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.messaging;
 
-import std.concurrency : send;
-import std.regex : ctRegex;
-
 import std.stdio;
 
 private:
@@ -18,15 +15,6 @@ enum replaceTimeoutSeconds = 3600;
 enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
 enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
 enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
-
-/// ctRegex engines for the sed-replace pattern
-static sedRegex  = ctRegex!sedPattern;
-static sedRegex2 = ctRegex!sedPattern2;
-static sedRegex3 = ctRegex!sedPattern3;
-
-/// ctRegex engines to find and escape opening and closing brackets
-static openBracketRegex = ctRegex!`\[`;
-static closeBracketRegex = ctRegex!`\]`;
 
 
 // Line
@@ -68,15 +56,16 @@ struct Line
  +/
 string sedReplace(const string originalLine, const string expression) @safe
 {
-    import std.regex : matchAll;
+    import std.regex : matchAll, regex;
 
     static string doReplace(T)(T matches, const string originalLine) @safe
     {
-        import std.regex : regex, replaceAll, replaceFirst;
+        import std.regex : replaceAll, replaceFirst, regex;
         string result = originalLine;  // need mutable
 
-        result = result.replaceAll(openBracketRegex, `\\[`);
-        result = result.replaceAll(closeBracketRegex, `\\]`);
+        result = result
+            .replaceAll(`\[`.regex, `\\[`)
+            .replaceAll(`\]`.regex, `\\]`);
 
         foreach (const hit; matches)
         {
@@ -103,13 +92,13 @@ string sedReplace(const string originalLine, const string expression) @safe
     switch (expression[1])
     {
     case '/':
-        return doReplace(expression.matchAll(sedRegex), originalLine);
+        return doReplace(expression.matchAll(sedPattern.regex), originalLine);
 
     case '#':
-        return doReplace(expression.matchAll(sedRegex2), originalLine);
+        return doReplace(expression.matchAll(sedPattern2.regex), originalLine);
 
     case '|':
-        return doReplace(expression.matchAll(sedRegex3), originalLine);
+        return doReplace(expression.matchAll(sedPattern3.regex), originalLine);
 
     default:
         return string.init;

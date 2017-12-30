@@ -445,7 +445,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.string : stripSuffix;
     import std.format : formattedRead;
-    import std.regex  : ctRegex, matchFirst;
+    import std.regex : matchFirst, regex;
     import std.string : strip, stripLeft;
     import std.traits : Unqual, hasUDA, isType;
 
@@ -485,7 +485,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             }
 
             enum pattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-            static engine = ctRegex!pattern;
+            auto engine = pattern.regex;
             auto hits = line.matchFirst(engine);
 
             thingloop:
@@ -658,11 +658,11 @@ string justifiedConfigurationText(const string origLines)
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
     import std.ascii : newline;
-    import std.regex : ctRegex, matchFirst;
+    import std.regex : matchFirst, regex;
     import std.string : strip;
 
     enum entryValuePattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-    static entryValueEngine = ctRegex!entryValuePattern;
+    auto entryValueEngine = entryValuePattern.regex;
 
     Appender!(string[]) unjustified;
     size_t longestEntryLength;

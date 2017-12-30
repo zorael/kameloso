@@ -1840,7 +1840,7 @@ public:
  +/
 string decodeIRCv3String(const string line)
 {
-    import std.regex : ctRegex, replaceAll;
+    import std.regex : regex, replaceAll;
 
     /++
      +  http://ircv3.net/specs/core/message-tags-3.2.html
@@ -1852,9 +1852,9 @@ string decodeIRCv3String(const string line)
 
     if (!line.length) return string.init;
 
-    static spaces = ctRegex!`\\s`;
-    static colons = ctRegex!`\\:`;
-    static slashes = ctRegex!`\\\\`;
+    auto spaces = `\\s`.regex;
+    auto colons = `\\:`.regex;
+    auto slashes = `\\\\`.regex;
 
     immutable replaced = line
         .replaceAll(spaces, " ")
@@ -2119,7 +2119,7 @@ unittest
  +/
 bool isValidNickname(const string nickname, const IRCServer server)
 {
-    import std.regex : ctRegex, matchAll;
+    import std.regex : matchAll, regex;
 
     // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
 
@@ -2129,7 +2129,7 @@ bool isValidNickname(const string nickname, const IRCServer server)
     }
 
     enum validCharactersPattern = r"^([a-zA-Z0-9_\\\[\]{}\^`|-]+)$";
-    static engine = ctRegex!validCharactersPattern;
+    auto engine = validCharactersPattern.regex;
 
     return !nickname.matchAll(engine).empty;
 }

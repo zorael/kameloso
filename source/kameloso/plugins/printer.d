@@ -709,11 +709,11 @@ void stripEffects(ref IRCEvent event)
 {
     import kameloso.constants : I = IRCControlCharacter;
     import kameloso.string : has;
-    import std.regex;
+    import std.regex : regex, replaceAll;
 
-    static ctBold = ctRegex!(""~I.bold);
-    static ctItalics = ctRegex!(""~I.italics);
-    static ctUnderlined = ctRegex!(""~I.underlined);
+    auto rBold = (""~I.bold).regex;
+    auto rItalics = (""~I.italics).regex;
+    auto rUnderlined = (""~I.underlined).regex;
 
     if (event.content.has(cast(ubyte)I.colour))
     {
@@ -722,17 +722,17 @@ void stripEffects(ref IRCEvent event)
 
     if (event.content.has(cast(ubyte)I.bold))
     {
-        event.content = event.content.replaceAll(ctBold, string.init);
+        event.content = event.content.replaceAll(rBold, string.init);
     }
 
     if (event.content.has(cast(ubyte)I.italics))
     {
-        event.content = event.content.replaceAll(ctItalics, string.init);
+        event.content = event.content.replaceAll(rItalics, string.init);
     }
 
     if (event.content.has(cast(ubyte)I.underlined))
     {
-        event.content = event.content.replaceAll(ctUnderlined, string.init);
+        event.content = event.content.replaceAll(rUnderlined, string.init);
     }
 }
 
@@ -747,10 +747,10 @@ void mapColours(ref IRCEvent event)
     import kameloso.bash : BashBackground, BashForeground, BashReset,
         TerminalToken, colour;
     import kameloso.constants : I = IRCControlCharacter;
-    import std.regex : ctRegex, matchAll, regex, replaceAll;
+    import std.regex : matchAll, regex, replaceAll;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
-    static engine = ctRegex!colourPattern;
+    auto engine = colourPattern.regex;
 
     bool colouredSomething;
 
@@ -843,7 +843,7 @@ void mapColours(ref IRCEvent event)
     if (colouredSomething)
     {
         enum endPattern = I.colour ~ ""; // ~ "([0-9])?";
-        static endEngine = ctRegex!endPattern;
+        auto endEngine = endPattern.regex;
 
         event.content = event.content.replaceAll(endEngine,
             TerminalToken.bashFormat ~ "[0m"); //$1");
@@ -877,10 +877,10 @@ unittest
 void stripColours(ref IRCEvent event)
 {
     import kameloso.constants : I = IRCControlCharacter;
-    import std.regex : ctRegex, matchAll, regex, replaceAll;
+    import std.regex : matchAll, regex, replaceAll;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
-    static engine = ctRegex!colourPattern;
+    auto engine = colourPattern.regex;
 
     bool strippedSomething;
 
@@ -900,7 +900,7 @@ void stripColours(ref IRCEvent event)
     if (strippedSomething)
     {
         enum endPattern = I.colour ~ ""; // ~ "(?:[0-9])?";
-        static endEngine = ctRegex!endPattern;
+        auto endEngine = endPattern.regex;
 
         event.content = event.content.replaceAll(endEngine, string.init);
     }
@@ -957,13 +957,13 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     import kameloso.constants : I = IRCControlCharacter;
     import std.array : Appender;
     import std.conv  : to;
-    import std.regex : ctRegex, matchAll, replaceAll;
+    import std.regex : matchAll, regex, replaceAll;
 
     enum bashToken = TerminalToken.bashFormat ~ "[" ~
         (cast(ubyte)bashEffectCode).to!string ~ "m";
 
     enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
-    static engine = ctRegex!pattern;
+    auto engine = pattern.regex;
 
     Appender!string sink;
     sink.reserve(cast(size_t)(event.content.length * 1.1));
@@ -1001,7 +1001,7 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     }
 
     // We've gone through them pair-wise, now see if there are any singles left
-    static singleTokenEngine = ctRegex!([cast(char)mircToken]);
+    auto singleTokenEngine = (cast(char)mircToken~"").regex;
     sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
     // End tags and commit

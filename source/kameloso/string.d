@@ -407,7 +407,7 @@ unittest
  +/
 string stripPrefix(const string line, const string prefix)
 {
-    import std.regex : ctRegex, matchFirst;
+    import std.regex : matchFirst, regex;
     import std.string : munch, stripLeft;
 
     string slice = line.stripLeft();
@@ -416,7 +416,7 @@ string stripPrefix(const string line, const string prefix)
     slice.nom!(Yes.decode)(prefix);
 
     enum pattern = "[:?! ]*(.+)";
-    static engine = ctRegex!pattern;
+    auto engine = pattern.regex;
     auto hits = slice.matchFirst(engine);
     return hits[1];
 }

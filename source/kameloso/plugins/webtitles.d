@@ -22,9 +22,6 @@ static urlRegex = ctRegex!stephenhay;
 /// Regex pattern to match YouTube urls
 enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
-/// Regex engine to match YouTube urls for replacement
-static youtubeRegex = ctRegex!youtubePattern;
-
 
 // TitleLookup
 /++
@@ -279,12 +276,12 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
 void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 {
     import kameloso.string : has;
-    import std.regex : replaceFirst;
+    import std.regex : regex, replaceFirst;
 
     logger.log("Bland YouTube title ...");
 
-    immutable onRepeatURL = titleReq.url.replaceFirst(youtubeRegex,
-        "https://www.listenonrepeat.com/watch/");
+    immutable onRepeatURL = titleReq.url
+        .replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
 
     logger.log("ListenOnRepeat URL: ", onRepeatURL);
     titleReq.url = onRepeatURL;
@@ -314,13 +311,13 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 string parseTitle(const string title)
 {
     import arsd.dom : htmlEntitiesDecode;
-    import std.regex : ctRegex, replaceAll;
+    import std.regex : regex, replaceAll;
     import std.string : strip;
 
     enum rPattern = "\r";
     enum nPattern = "\n";
-    static rEngine = ctRegex!rPattern;
-    static nEngine = ctRegex!nPattern;
+    auto rEngine = rPattern.regex;
+    auto nEngine = nPattern.regex;
 
     // replaceAll takes about 4.48x as long as removechars does
     // but that's micro-optimising; we're still in the µsec range

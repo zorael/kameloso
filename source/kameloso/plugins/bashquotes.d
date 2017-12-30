@@ -47,7 +47,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     import requests : getContent;
     import std.algorithm.iteration : splitter;
     import std.format : format;
-    import std.regex : ctRegex, matchFirst, replaceAll;
+    import std.regex : matchFirst, regex, replaceAll;
 
     IRCPluginState state = cast(IRCPluginState)sState;
 
@@ -62,9 +62,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     immutable target = event.channel.length ?
         event.channel : event.sender.nickname;
 
-    static qtEngine = ctRegex!`<p class="qt">`;
-    static pEngine = ctRegex!`</p>`;
-    static brEngine = ctRegex!`<br />`;
+    auto qtEngine = `<p class="qt">`.regex;
+    auto pEngine = `</p>`.regex;
+    auto brEngine = `<br />`.regex;
 
     try
     {
