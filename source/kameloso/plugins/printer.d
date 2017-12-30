@@ -371,7 +371,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             sink.put('\n');
         }
-        else version(Cygwin)
+        else version(Cygwin_)
         {
             stdout.flush();
         }
@@ -632,7 +632,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 sink.put('\n');
             }
-            else version(Cygwin)
+            else version(Cygwin_)
             {
                 stdout.flush();
             }
