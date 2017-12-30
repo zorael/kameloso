@@ -146,6 +146,12 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * Travis LDC tests
 * more command-line flags
 * more modules? uda.d/attribute.d?
+* regex bot commands
+* merge thottling with timing
+* compilation time and memory use :c
+* optional formatting in IRC output?
+* strip incoming formatting when in monochrome mode
+* registration on [code.dlang.org](https://code.dlang.org)
 
 # Built With
 
