@@ -330,15 +330,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             if (sender.isServer || nickname.length)
             {
-                import std.algorithm.searching : canFind;
-
                 with (IRCEvent.Type)
                 switch (type)
                 {
                 case CHAN:
                 case QUERY:
-                    if ((cast(ubyte[])event.content)
-                        .canFind(cast(ubyte[])bot.nickname))
+                    import kameloso.string : has;
+
+                    if (event.content.has!(Yes.decode)(bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
                         if (plugin.printerSettings.bellOnMention)
@@ -571,15 +570,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 if (sender.isServer || nickname.length)
                 {
-                    import std.algorithm.searching : canFind;
-
                     with (IRCEvent.Type)
                     switch (type)
                     {
                     case CHAN:
                     case QUERY:
-                        if ((cast(ubyte[])event.content)
-                            .canFind(cast(ubyte[])bot.nickname))
+                        import kameloso.string : has;
+
+                        if (event.content.has!(Yes.decode)(bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
 
@@ -659,36 +657,33 @@ void mapEffects(ref IRCEvent event)
 {
     import kameloso.bash : BashEffect;
     import kameloso.constants : IRCControlCharacter;
-    import std.algorithm.searching : canFind;
-    import std.string : representation;
+    import kameloso.string : has;
 
     alias I = IRCControlCharacter;
     alias B = BashEffect;
 
-    immutable lineBytes = event.content.representation;
-
-    if (lineBytes.canFind(cast(ubyte)I.colour))
+    if (event.content.has(I.colour))
     {
         // Colour is mIRC 3
         event.mapColours();
     }
 
-    if (lineBytes.canFind(cast(ubyte)I.bold))
+    if (event.content.has(I.bold))
     {
         // Bold is bash 1, mIRC 2
-        event.mapAlternatingEffectImpl!(B.bold, I.bold)();
+        event.mapAlternatingEffectImpl!(I.bold, B.bold)();
     }
 
-    if (lineBytes.canFind(cast(ubyte)I.italics))
+    if (event.content.has(I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        event.mapAlternatingEffectImpl!(B.italics, I.italics)();
+        event.mapAlternatingEffectImpl!(I.italics, B.italics)();
     }
 
-    if (lineBytes.canFind(cast(ubyte)I.underlined))
+    if (event.content.has(I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        event.mapAlternatingEffectImpl!(B.underlined, I.underlined)();
+        event.mapAlternatingEffectImpl!(I.underlined, B.underlined)();
     }
 }
 
