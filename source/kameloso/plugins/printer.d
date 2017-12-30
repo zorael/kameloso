@@ -417,6 +417,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             immutable bright = settings.brightTerminal;
 
+            /++
+             +  Outputs a Bash ANSI colour token based on the hash of the passed
+             +  nickname.
+             +
+             +  It gives each user a random yet consistent colour to their name.
+             +/
             BashForeground colourByHash(const string nickname)
             {
                 if (plugin.printerSettings.randomNickColours)
@@ -444,6 +450,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 return bright ? DefaultBright.sender : DefaultDark.sender;
             }
 
+            /++
+             +  Outputs a Bash truecolour token based on the #RRGGBB value
+             +  stored in `event.colour`.
+             +
+             +  This is for Twitch servers that assign such values to users'
+             +  messages. By catching it we can honour the setting by tinting
+             +  users accordingly.
+             +/
             void colourSenderTruecolour(Sink)(auto ref Sink sink)
             {
                 if (!sender.isServer && event.colour.length &&
@@ -586,8 +600,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                                 content.invert!(No.elaborateBoundary)(bot.nickname);
 
                             if ((content != inverted) &&
-                                (plugin.printerSettings.bellOnMention))
+                                plugin.printerSettings.bellOnMention)
                             {
+                                // Nick was indeed mentioned, or so the regex says
                                 import kameloso.bash : TerminalToken;
                                 sink.put(TerminalToken.bell);
                             }
