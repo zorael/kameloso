@@ -17,6 +17,7 @@ import std.concurrency : Tid, send;
  +/
 interface IRCPlugin
 {
+    import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.array : Appender;
 
@@ -65,8 +66,8 @@ interface IRCPlugin
     /// Returns a reference to the list of awaiting `Fiber`s, keyed by `Type`
     ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
 
-    /// Returns a reference to the list of timed `Fiber`s, keyed by UNIX time
-    ref Fiber[][long] timedFibers() @property;
+    /// Returns a reference to the list of timed `Fiber`s, labeled by UNIX time
+    ref Labeled!(Fiber, long)[] timedFibers() @property;
 }
 
 
@@ -449,12 +450,13 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
+    import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
     IRCPluginState privateState;
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
-    Fiber[][long] privateTimedFibers;
+    Labeled!(Fiber, long)[] privateTimedFibers;
 
 
     // onEvent
@@ -1226,7 +1228,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  plugin wants an action performed at a certain point in time.
      +/
     pragma(inline)
-    ref Fiber[][long] timedFibers() @property
+    ref Labeled!(Fiber, long)[] timedFibers() @property
     {
         return this.privateTimedFibers;
     }
@@ -1242,8 +1244,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void delayFiber(Fiber fiber, const long secs)
     {
+        import kameloso.common : labeled;
         import std.datetime.systime : Clock;
-        privateTimedFibers[Clock.currTime.toUnixTime + secs] ~= fiber;
+
+        immutable time = Clock.currTime.toUnixTime + secs;
+        privateTimedFibers ~= labeled(fiber, time);
+
     }
 }
 
