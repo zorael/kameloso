@@ -827,13 +827,11 @@ void mapColours(ref IRCEvent event)
 
     if (colouredSomething)
     {
-        import kameloso.constants : IRCControlCharacter;
-
-        enum endPattern = IRCControlCharacter.colour ~ "([^0-9])?";
+        enum endPattern = I.colour ~ ""; // ~ "([0-9])?";
         static endEngine = ctRegex!endPattern;
 
         event.content = event.content.replaceAll(endEngine,
-            TerminalToken.bashFormat ~ "[0m$1");
+            TerminalToken.bashFormat ~ "[0m"); //$1");
         event.content ~= BashReset.all.colour;
     }
 }
