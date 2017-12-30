@@ -1024,6 +1024,9 @@ struct IRCServer
 
         /// Max channel name length as per IRC specs
         uint maxChannelLength = 200;
+
+        /// Modes available on this server (in A,B,C,D notation)
+        string chanmodes;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const

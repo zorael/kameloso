@@ -1554,6 +1554,20 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             // TODO: Logic here to register channel prefix signs
             break;
 
+        case "CHANMODES":
+            /++
+             +  This is a list of channel modes according to 4 types.
+             +
+             +  A = Mode that adds or removes a nick or address to a list.
+             +      Always has a parameter.
+             +  B = Mode that changes a setting and always has a parameter.
+             +  C = Mode that changes a setting and only has a parameter when
+             +      set.
+             +  D = Mode that changes a setting and never has a parameter.
+             +/
+             parser.bot.server.chanmodes = event.content;
+             break;
+
         case "NETWORK":
             bot.server.network = value;
             bot.updated = true;
