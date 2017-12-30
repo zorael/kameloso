@@ -792,12 +792,12 @@ void mapColours(ref IRCEvent event)
         import std.array : Appender;
         import std.conv : to;
 
+        if (!hit[1].length) continue;
+
         Appender!string sink;
         sink.reserve(8);
 
-        if (!hit[1].length) continue;
-
-        immutable fgIndex = hit[1].to!size_t;
+        immutable fgIndex = hit[1].to!ubyte;
 
         if (fgIndex > 15)
         {
@@ -807,11 +807,11 @@ void mapColours(ref IRCEvent event)
         }
 
         sink.put(TerminalToken.bashFormat ~ "[");
-        sink.put((cast(size_t)weechatForegroundMap[fgIndex]).to!string);
+        sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
 
         if (hit[2].length)
         {
-            immutable bgIndex = hit[2].to!size_t;
+            immutable bgIndex = hit[2].to!ubyte;
 
             if (bgIndex > 15)
             {
@@ -821,7 +821,7 @@ void mapColours(ref IRCEvent event)
             }
 
             sink.put(';');
-            sink.put((cast(size_t)weechatBackgroundMap[bgIndex]).to!string);
+            sink.put((cast(ubyte)weechatBackgroundMap[bgIndex]).to!string);
         }
 
         sink.put('m');
