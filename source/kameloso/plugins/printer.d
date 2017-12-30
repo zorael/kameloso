@@ -655,12 +655,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 version(Colours)
 void mapEffects(ref IRCEvent event)
 {
-    import kameloso.bash : BashEffect;
-    import kameloso.constants : IRCControlCharacter;
+    import kameloso.bash : B = BashEffect;
+    import kameloso.constants : I = IRCControlCharacter;
     import kameloso.string : has;
-
-    alias I = IRCControlCharacter;
-    alias B = BashEffect;
 
     if (event.content.has(I.colour))
     {
@@ -695,11 +692,9 @@ void mapEffects(ref IRCEvent event)
  +/
 void stripEffects(ref IRCEvent event)
 {
-    import kameloso.constants : IRCControlCharacter;
+    import kameloso.constants : I = IRCControlCharacter;
     import kameloso.string : has;
     import std.regex;
-
-    alias I = IRCControlCharacter;
 
     static ctBold = ctRegex!(""~I.bold);
     static ctItalics = ctRegex!(""~I.italics);
@@ -736,9 +731,10 @@ void mapColours(ref IRCEvent event)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset,
         TerminalToken, colour;
+    import kameloso.constants : I = IRCControlCharacter;
     import std.regex : ctRegex, matchAll, regex, replaceAll;
 
-    enum colourPattern = 3 ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
+    enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
 
     bool colouredSomething;
@@ -846,14 +842,16 @@ void mapColours(ref IRCEvent event)
 version(Colours)
 unittest
 {
+    import kameloso.constants : I = IRCControlCharacter;
+
     IRCEvent e1;
-    e1.content = "This is " ~ 3 ~ "4all red!" ~ 3 ~ " while this is not.";
+    e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
     e1.mapColours();
     assert((e1.content == "This is \033[91mall red!\033[0m while this is not.\033[0m"),
         e1.content);
 
     IRCEvent e2;
-    e2.content = "This time there's" ~ 3 ~ "6 no ending token, only magenta.";
+    e2.content = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
     e2.mapColours();
     assert((e2.content == "This time there's\033[35m no ending token, only magenta.\033[0m"),
         e2.content);
@@ -865,10 +863,10 @@ unittest
  +/
 void stripColours(ref IRCEvent event)
 {
-    import kameloso.constants : IRCControlCharacter;
+    import kameloso.constants : I = IRCControlCharacter;
     import std.regex : ctRegex, matchAll, regex, replaceAll;
 
-    enum colourPattern = IRCControlCharacter.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
+    enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     static engine = ctRegex!colourPattern;
 
     bool strippedSomething;
@@ -888,9 +886,7 @@ void stripColours(ref IRCEvent event)
 
     if (strippedSomething)
     {
-        import kameloso.constants : IRCControlCharacter;
-
-        enum endPattern = ""~IRCControlCharacter.colour;// ~ "(?:[0-9])?";
+        enum endPattern = I.colour ~ ""; // ~ "(?:[0-9])?";
         static endEngine = ctRegex!endPattern;
 
         event.content = event.content.replaceAll(endEngine, string.init);
@@ -899,19 +895,22 @@ void stripColours(ref IRCEvent event)
 
 unittest
 {
+    import kameloso.constants : I = IRCControlCharacter;
+
     IRCEvent e1;
-    e1.content = "This is " ~ 3 ~ "4all red!" ~ 3 ~ " while this is not.";
+    e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
     e1.stripColours();
     assert((e1.content == "This is all red! while this is not."), e1.content);
 
     IRCEvent e2;
-    e2.content = "This time there's" ~ 3 ~ "6 no ending token, only magenta.";
+    e2.content = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
     e2.stripColours();
     assert((e2.content == "This time there's no ending token, only magenta."),
         e2.content);
 
     IRCEvent e3;
-    e3.content = "This time there's" ~ 3 ~ "6 no ending " ~ 3 ~ "6token, only " ~ 3 ~ "magenta.";
+    e3.content = "This time there's" ~ I.colour ~ "6 no ending " ~ I.colour ~
+        "6token, only " ~ I.colour ~ "magenta.";
     e3.stripColours();
     assert((e3.content == "This time there's no ending token, only magenta."),
         e3.content);
@@ -941,7 +940,8 @@ version(Colours)
 void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     (ref IRCEvent event)
 {
-    import kameloso.bash : BashReset, TerminalToken, colour;
+    import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
+    import kameloso.constants : I = IRCControlCharacter;
     import std.array : Appender;
     import std.conv  : to;
     import std.regex : ctRegex, matchAll, replaceAll;
@@ -1000,12 +1000,9 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
 version(Colours)
 unittest
 {
-    import kameloso.bash : BashEffect, TerminalToken;
-    import kameloso.constants : IRCControlCharacter;
+    import kameloso.bash : B = BashEffect, TerminalToken;
+    import kameloso.constants : I = IRCControlCharacter;
     import std.conv : to;
-
-    alias I = IRCControlCharacter;
-    alias B = BashEffect;
 
     enum bBold = TerminalToken.bashFormat ~ "[" ~ (cast(ubyte)B.bold).to!string ~ "m";
     enum bReset = TerminalToken.bashFormat ~ "[22m";
