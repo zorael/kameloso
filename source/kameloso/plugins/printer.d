@@ -938,7 +938,7 @@ unittest
  +      ref event = the IRC event whose content body to work on
  +/
 version(Colours)
-void mapAlternatingEffectImpl(ubyte bashEffectCode, ubyte mircToken)
+void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     (ref IRCEvent event)
 {
     import kameloso.bash : BashReset, TerminalToken, colour;
