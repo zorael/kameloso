@@ -340,8 +340,26 @@ Flag!"quit" mainLoop(ref Client client)
 
             immutable nowInUnix = now.toUnixTime;
 
-            foreach (plugin; plugins)
+            /++
+             +  This is arguably the hottest path of the entire program.
+             +
+             +  Once per server read (or receive timeout), walk the array of
+             +  plugins and see if they have timed `Fiber`s to call.
+             +
+             +  After some effort it's lean but nothing gets called more except
+             +  the actual `Socket`-reading itself.
+             +
+             +  Using a manual for instead of a foreach is more than an order of
+             +  magnitude faster; brief testing over 1_000_000 iterations showed
+             +  a ratio of roughly 1:20 (0.05x)).
+             +
+             +  Raise the reading timeout (`kameloso.constants.Timeout.receive`)
+             +  to lower the impact.
+             +/
+            for (size_t n; n<plugins.length; ++n)
             {
+                auto plugin = plugins[n];
+
                 if (!plugin.timedFibers.length) continue;
 
                 size_t[] toRemove;
