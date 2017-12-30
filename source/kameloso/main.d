@@ -344,29 +344,35 @@ Flag!"quit" mainLoop(ref Client client)
             {
                 if (!plugin.timedFibers.length) continue;
 
-                long[] timesToRemove;
+                size_t[] toRemove;
 
-                foreach (immutable time, ref fibers; plugin.timedFibers)
+                foreach (immutable i, ref fiber; plugin.timedFibers)
                 {
-                    if (time > nowInUnix) continue;
+                    if (fiber.id > nowInUnix) continue;
 
                     try
                     {
-                        handleFibers!(Yes.exhaustive)(fibers);
-                        timesToRemove ~= time;
+                        if (fiber.state == Fiber.State.HOLD)
+                        {
+                            fiber.call();
+                        }
+
+                        // Always removed a timed Fiber after processing
+                        toRemove ~= i;
                     }
                     catch (const Exception e)
                     {
-                        logger.warningf("Exception %s.timedFibers: %s",
-                            plugin.name, e.msg);
-                        timesToRemove ~= time;
+                        logger.warningf("Exception %s.timedFibers[%d]: %s",
+                            plugin.name, i, e.msg);
+                        toRemove ~= i;
                     }
                 }
 
                 // Clean up processed Fibers
-                foreach (time; timesToRemove)
+                foreach_reverse (i; toRemove)
                 {
-                    plugin.timedFibers.remove(time);
+                    import std.algorithm.mutation : remove;
+                    plugin.timedFibers = plugin.timedFibers.remove(i);
                 }
             }
 
@@ -462,30 +468,44 @@ Flag!"quit" mainLoop(ref Client client)
                     {
                         plugin.onEvent(event);
 
-                        IRCEvent.Type[] typesToRemove;
-
                         // Go through Fibers awaiting IRCEvent.Types
-                        if (plugin.awaitingFibers.length)
+                        if (auto fibers = event.type in plugin.awaitingFibers)
                         {
-                            if (auto fibers = event.type in plugin.awaitingFibers)
+                            size_t[] toRemove;
+
+                            foreach (immutable i, ref fiber; *fibers)
                             {
                                 try
                                 {
-                                    handleFibers(*fibers);
-                                    if (!(*fibers).length) typesToRemove ~= event.type;
+                                    if (fiber.state == Fiber.State.HOLD)
+                                    {
+                                        fiber.call();
+                                    }
+
+                                    if (fiber.state == Fiber.State.TERM)
+                                    {
+                                        toRemove ~= i;
+                                    }
                                 }
                                 catch (const Exception e)
                                 {
-                                    logger.warningf("Exception %s.timedFibers: %s",
-                                        plugin.name, e.msg);
-                                    typesToRemove ~= event.type;
+                                    logger.warningf("Exception %s.awaitingFibers[%d]: %s",
+                                        plugin.name, i, e.msg);
+                                    toRemove ~= i;
                                 }
                             }
 
-                            // Clean up expired or invalid Fibers
-                            foreach (type; typesToRemove)
+                            // Clean up processed Fibers
+                            foreach_reverse (i; toRemove)
                             {
-                                plugin.awaitingFibers.remove(type);
+                                import std.algorithm.mutation : remove;
+                                *fibers = (*fibers).remove(i);
+                            }
+
+                            // If no more Fibers left, remove the Type entry in the AA
+                            if (!(*fibers).length)
+                            {
+                                plugin.awaitingFibers.remove(event.type);
                             }
                         }
 
