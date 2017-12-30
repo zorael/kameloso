@@ -1239,8 +1239,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Queues a `Fiber` to be called at a point n seconds later, by appending
      +  it to `timedFibers`.
      +
-     +  It only supports a precision of one second, and in the worst case it
-     +  will take another second before it processes.
+     +  It only supports a precision of `kameloso.constants.Timeout.receive` + 1
+     +  seconds.
      +/
     void delayFiber(Fiber fiber, const long secs)
     {
@@ -1249,7 +1249,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         immutable time = Clock.currTime.toUnixTime + secs;
         privateTimedFibers ~= labeled(fiber, time);
-
     }
 }
 

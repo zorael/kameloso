@@ -22,7 +22,7 @@
  +
  +  Callback `Fiber`s *are* supported but are not in any large-scale use. They
  +  can be registered to process on incoming events, or timed with a precision
- +  of roughly 1 second.
+ +  of roughly `kameloso.constants.Timeout.receive` + 1 seconds.
  +
  +  Annotations look like so:
  +
