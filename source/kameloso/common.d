@@ -1700,3 +1700,46 @@ size_t deepSizeof(T)(const T thing) @property pure @safe
 
     return total;
 }
+
+
+// Labeled
+/++
+ +  Labels an item by wrapping it in a struct with an `id` field.
+ +
+ +  Access to the `thing` is passed on by use of `std.typecons.Proxy`, so this
+ +  will transparently act like the original `thing` in many cases.
+ +/
+struct Labeled(Thing, Label)
+{
+    import std.typecons : Proxy;
+
+private:
+    /// The wrapped item
+    Thing thing;
+
+public:
+    /// The label applied to the wrapped item
+    Label id;
+
+    this(Thing thing, Label id)
+    {
+        this.thing = thing;
+        this.id = id;
+    }
+
+    //@disable this(this);
+
+    mixin Proxy!thing;
+}
+
+
+// labeled
+/++
+ +  Convenience function to create a `Labeled` struct while inferring the
+ +  template parameters from the runtime arguments.
+ +/
+auto labeled(Thing, Label)(Thing thing, Label label)
+{
+    import std.traits : Unqual;
+    return Labeled!(Unqual!Thing, Unqual!Label)(thing, label);
+}
