@@ -146,11 +146,27 @@ void onSELFNICK(PrinterPlugin plugin, const IRCEvent event)
  +/
 bool hasElaborateBoundary(const string nickname)
 {
-    import std.regex : ctRegex, matchAll;
+    if (!nickname.length) return false;
 
-    static boundaryEngine = ctRegex!r"^.*?[\W0-9_-]$";
+    switch (nickname[$-1])
+    {
+        case '0':
+        ..
+        case '9':
+        case '^':
+        case '`':
+        case '[':
+        case ']':
+        case '{':
+        case '}':
+        case '|':
+        case '-':
+        case '_':
+            return true;
 
-    return !nickname.matchAll(boundaryEngine).empty;
+        default:
+            return false;
+    }
 }
 
 ///
