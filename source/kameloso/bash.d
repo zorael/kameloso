@@ -580,12 +580,11 @@ string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
 
     static if (elaborate)
     {
-        auto engine = toInvert.escaped.format!`\b%s(\b|\W|$)`.regex;
+        auto engine = toInvert.escaped.format(`\b%s(\b|\W|$)`).regex;
     }
     else
     {
-        //auto engine = toInvert.escaped.format!`\b%s\b`.regex;
-        auto engine = toInvert.escaped.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
+        auto engine = toInvert.escaped.format(r"\b%s([^0-9_\[\]{}\^`|-]|$)").regex;
     }
 
     string replaced = line;
