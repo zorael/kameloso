@@ -91,7 +91,7 @@ void throttleline(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     }
     else if (nickname.length)
     {
-        assert((channel[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
+        assert((nickname[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
         line = "PRIVMSG %s :%s".format(nickname, content);
     }
     else
