@@ -2182,3 +2182,12 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
 {
     return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
 }
+
+
+// isStruct
+/++
+ +  Eponymous template that is true if the passed type is a struct.
+ +
+ +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
+ +/
+enum isStruct(T) = is(T == struct);
