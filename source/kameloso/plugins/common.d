@@ -475,8 +475,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             static if (isSomeFunction!fun)
             {
-                import std.stdio : writeln, writefln;
-
                 enum verbose = hasUDA!(fun, Verbose) || debug_;
 
                 static if (verbose)
@@ -548,7 +546,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
 
                     IRCEvent mutEvent = event;  // mutable
-                    string contextPrefix;
 
                     static if (hasUDA!(fun, BotCommand))
                     {
@@ -602,7 +599,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             case optional:
                                 if (content.beginsWith('@'))
                                 {
-                                    // Using @name to refer to someonen is not
+                                    // Using @name to refer to someone is not
                                     // uncommon; allow for it and strip it away
                                     mutEvent.content = content[1..$];
                                 }
@@ -713,8 +710,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             module_ ~ " is missing UserAwareness mixin " ~
                             "(needed for PrivilegeLevel checks).");
 
-                        enum privilegeLevel = getUDAs!(fun,
-                            PrivilegeLevel)[0];
+                        enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
 
                         static if (verbose)
                         {
@@ -1073,9 +1069,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             static if (is(typeof(symbol) == struct))
             {
-                import std.format : format;
-                import std.traits : Unqual;
-
                 // FIXME: Hardcoded value
                 printObject!width(symbol);
             }
@@ -1695,8 +1688,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
         const string nickname, F fn)
     {
-        static if (debug_) writeln(__FUNCTION__);
-
         return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
     }
 }
@@ -1720,7 +1711,6 @@ alias BasicEventHandlers = UserAwareness;
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    import std.format : format;
     static assert(is(typeof(.doWhois)), module_ ~ " is missing UserAwareness " ~
         "mixin (needed for ChannelAwareness).");
 
