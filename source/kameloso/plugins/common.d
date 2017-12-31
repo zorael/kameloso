@@ -1999,15 +1999,17 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 }
 
 
-// policyMatches
+// nickPolicyMatches
 /++
  +  Evaluates whether the message in an event satisfies the `NickPolicy`
  +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
  +
  +  If it doesn't match, the `onEvent` routine shall consider the UDA as not
  +  matching and continue with the next one.
+ +
+ +  TODO: Support for verbose.
  +/
-bool policyMatches(const IRCPluginState privateState,
+bool nickPolicyMatches(const IRCPluginState privateState,
     const NickPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.string : beginsWith, nom, stripPrefix;
