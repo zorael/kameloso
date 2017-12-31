@@ -5,7 +5,6 @@ version(Web):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
-import kameloso.messaging;
 
 import std.stdio;
 
@@ -43,6 +42,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
     import kameloso.common;
+    import kameloso.messaging : privmsg, throttleline;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;

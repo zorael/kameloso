@@ -5,7 +5,6 @@ version(Posix):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
-import kameloso.messaging;
 
 import std.concurrency;
 
@@ -27,6 +26,7 @@ private:
  +/
 void pipereader(shared IRCPluginState newState)
 {
+    import kameloso.messaging : raw, quit;
     import core.time : seconds;
     import std.file  : FileException, remove;
 

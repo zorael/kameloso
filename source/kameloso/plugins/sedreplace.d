@@ -2,7 +2,6 @@ module kameloso.plugins.sedreplace;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.messaging;
 
 import std.stdio;
 
@@ -143,6 +142,7 @@ unittest
 @(PrivilegeLevel.anyone)  // ?
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
+    import kameloso.messaging : chan;
     import kameloso.string : beginsWith;
     import core.time : seconds;
     import std.datetime.systime : Clock;

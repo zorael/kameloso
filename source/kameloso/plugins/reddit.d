@@ -5,7 +5,6 @@ version(Web):
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
-import kameloso.messaging;
 
 import std.concurrency : Tid;
 
@@ -170,6 +169,7 @@ string lookupReddit(const string url)
 void reportReddit(Tid tid, const string reddit, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
+    import kameloso.messaging : privmsg;
     import std.concurrency : send;
     import std.format : format;
 
