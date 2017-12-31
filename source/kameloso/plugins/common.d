@@ -622,117 +622,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (commandUDA; getUDAs!(fun, BotCommand))
                         {
-                            import kameloso.string : beginsWith, has, nom,
-                                stripPrefix;
-
                             static assert(commandUDA.string_.length,
                                 name ~ " had an empty BotCommand string");
 
                             // Reset between iterations
                             mutEvent = event;
 
-                            with (privateState)
-                            with (event)
-                            with (NickPolicy)
-                            final switch (commandUDA.policy)
+                            if (!privateState.policyMatches(commandUDA.policy,
+                                mutEvent))
                             {
-                            case ignored:
-                                break;
-
-                            case direct:
-                                if (settings.prefix.length &&
-                                    content.beginsWith(settings.prefix))
-                                {
-                                    static if (verbose)
-                                    {
-                                        writefln("starts with prefix (%s)",
-                                            settings.prefix);
-                                    }
-
-                                    mutEvent.content = content;
-                                    mutEvent.content.nom!(Yes.decode)
-                                        (settings.prefix);
-                                }
-                                else
-                                {
-                                    continue;
-                                }
-                                break;
-
-                            case optional:
-                                if (content.beginsWith('@'))
-                                {
-                                    // Using @name to refer to someone is not
-                                    // uncommon; allow for it and strip it away
-                                    mutEvent.content = content[1..$];
-                                }
-
-                                if (mutEvent.content.beginsWith(bot.nickname))
-                                {
-                                    mutEvent.content = mutEvent.content
-                                        .stripPrefix(bot.nickname);
-                                }
-                                break;
-
-                            case required:
-                                if (type == IRCEvent.Type.QUERY)
-                                {
-                                    static if (verbose)
-                                    {
-                                        writeln(name, "but it is a query, " ~
-                                            "consider optional");
-                                    }
-                                    goto case optional;
-                                }
-                                goto case hardRequired;
-
-                            case hardRequired:
-                                if (content.beginsWith('@'))
-                                {
-                                    mutEvent.content = content[1..$];
-                                }
-
-                                if (mutEvent.content.beginsWith(bot.nickname) &&
-                                   (mutEvent.content.length > bot.nickname.length))
-                                {
-                                    static if (verbose)
-                                    {
-                                        writefln("%s trailing character '%s'",
-                                            name, mutEvent.content[bot.nickname.length]);
-                                    }
-
-                                    switch (mutEvent.content[bot.nickname.length])
-                                    {
-                                    case ':':
-                                    case ' ':
-                                    case '!':
-                                    case '?':
-                                        // Content begins with bot nickname,
-                                        // followed by this non-nick character;
-                                        // indicative of a command
-                                        break;
-
-                                    default:
-                                        // Content begins with bot nickname,
-                                        // followed by something allowed in
-                                        // nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
-                                        // Hence we can't say it's aimed towards
-                                        // us, may be another nick
-                                        continue;
-                                    }
-                                }
-                                else
-                                {
-                                    // Message started with something unrelated
-                                    // (not bot nickname)
-                                    continue;
-                                }
-
-                                // Event.content *guaranteed* to begin with
-                                // privateState.bot.nickname here
-                                mutEvent.content = mutEvent.content
-                                    .stripPrefix(bot.nickname);
-                                break;
+                                continue;
                             }
 
                             import std.string : toLower;
@@ -2102,4 +2001,121 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         plugin.state.channels[event.channel].setMode(event.aux, event.content);
     }
+}
+
+
+// policyMatches
+/++
+ +  Evaluates whether the message in an event satisfies the `NickPolicy`
+ +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
+ +
+ +  If it doesn't match, the `onEvent` routine shall consider the UDA as not
+ +  matching and continue with the next one.
+ +/
+bool policyMatches(const IRCPluginState privateState,
+    const NickPolicy policy, ref IRCEvent mutEvent)
+{
+    import kameloso.string : beginsWith, nom, stripPrefix;
+    import std.typecons : Flag, No, Yes;
+
+    with (privateState)
+    with (mutEvent)
+    with (NickPolicy)
+    final switch (policy)
+    {
+    case ignored:
+        break;
+
+    case direct:
+        if (settings.prefix.length && content.beginsWith(settings.prefix))
+        {
+            /*static if (verbose)
+            {
+                writefln("starts with prefix (%s)",
+                    settings.prefix);
+            }*/
+
+            content.nom!(Yes.decode)(settings.prefix);
+        }
+        else
+        {
+            return false;
+        }
+        break;
+
+    case optional:
+        if (content.beginsWith('@'))
+        {
+            // Using @name to refer to someone is not
+            // uncommon; allow for it and strip it away
+            content = content[1..$];
+        }
+
+        if (content.beginsWith(bot.nickname))
+        {
+            content = content.stripPrefix(bot.nickname);
+        }
+        break;
+
+    case required:
+        if (type == IRCEvent.Type.QUERY)
+        {
+            /*static if (verbose)
+            {
+                writeln(name, "but it is a query, " ~
+                    "consider optional");
+            }*/
+            goto case optional;
+        }
+        goto case hardRequired;
+
+    case hardRequired:
+        if (content.beginsWith('@'))
+        {
+            content = content[1..$];
+        }
+
+        if (content.beginsWith(bot.nickname) &&
+            (content.length > bot.nickname.length))
+        {
+            /*static if (verbose)
+            {
+                writefln("%s trailing character '%s'",
+                    name, content[bot.nickname.length]);
+            }*/
+
+            switch (content[bot.nickname.length])
+            {
+            case ':':
+            case ' ':
+            case '!':
+            case '?':
+                // Content begins with bot nickname,
+                // followed by this non-nick character;
+                // indicative of a command
+                break;
+
+            default:
+                // Content begins with bot nickname,
+                // followed by something allowed in
+                // nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
+                // Hence we can't say it's aimed towards
+                // us, may be another nick
+                return false;
+            }
+        }
+        else
+        {
+            // Message started with something unrelated
+            // (not bot nickname)
+            return false;
+        }
+
+        // Event.content *guaranteed* to begin with
+        // privateState.bot.nickname here
+        content = content.stripPrefix(bot.nickname);
+        break;
+    }
+
+    return true;
 }
