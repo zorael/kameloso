@@ -520,6 +520,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
     Labeled!(Fiber, long)[] privateTimedFibers;
 
+    enum hasIRCPluginImpl = true;
 
     // onEvent
     /++
@@ -768,7 +769,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
-                        static assert (is(typeof(.doWhois)),
+                        static assert (is(typeof(.hasUserAwareness)),
                             module_ ~ " is missing UserAwareness mixin " ~
                             "(needed for PrivilegeLevel checks).");
 
@@ -1307,6 +1308,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     static import kameloso.messaging;
     import std.typecons : Flag, No, Yes;
 
+    enum hasMessagingProxy = true;
 
     // chan
     /++
@@ -1490,6 +1492,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
  +/
 mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
+    enum hasUserAwareness = true;
+
     // onUserAwarenessQuitMixin
     /++
      +  Removes a user's `IRCUser` entry from a plugin's user list upon them
@@ -1755,8 +1759,10 @@ alias BasicEventHandlers = UserAwareness;
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert(is(typeof(.doWhois)), module_ ~ " is missing UserAwareness " ~
-        "mixin (needed for ChannelAwareness).");
+    static assert(is(typeof(.hasUserAwareness)), module_ ~
+        " is missing UserAwareness mixin (needed for ChannelAwareness).");
+
+    enum hasChannelAwareness = true;
 
 
     // onChannelAwarenessSelfjoinMixin
