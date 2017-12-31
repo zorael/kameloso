@@ -533,11 +533,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.string : beginsWith, has, nom, stripPrefix;
+        import std.meta : Filter;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
         import std.typecons : No, Yes;
 
         funloop:
-        foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
+        foreach (fun; Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type)))
         {
             static if (isSomeFunction!fun)
             {
@@ -994,29 +995,27 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (ref symbol; getSymbolsByUDA!(thisModule, Settings))
+        foreach (ref symbol; Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings)))
         {
-            static if (is(typeof(symbol) == struct))
+            alias T = typeof(symbol);
+
+            if (symbol != T.init)
             {
-                alias T = typeof(symbol);
-
-                if (symbol != T.init)
-                {
-                    // This symbol was already configured earlier;
-                    // --> this is a reconnect
-                    continue;
-                }
-
-                import kameloso.common : meldInto;
-                import kameloso.config : readConfigInto;
-                import std.typecons : No, Yes;
-
-                T tempSymbol;
-                configFile.readConfigInto(tempSymbol);
-                tempSymbol.meldInto!(Yes.overwrite)(symbol);
+                // This symbol was already configured earlier;
+                // --> this is a reconnect
+                continue;
             }
+
+            import kameloso.common : meldInto;
+            import kameloso.config : readConfigInto;
+            import std.typecons : No, Yes;
+
+            T tempSymbol;
+            configFile.readConfigInto(tempSymbol);
+            tempSymbol.meldInto!(Yes.overwrite)(symbol);
         }
 
         foreach (immutable i, ref symbol; this.tupleof)
@@ -1070,19 +1069,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.common : printObject;
+        import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
         enum width = 18;
 
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
-        foreach (symbol; moduleLevelSymbols)
+        foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
         {
-            static if (is(typeof(symbol) == struct))
-            {
-                // FIXME: Hardcoded value
-                printObject!width(symbol);
-            }
+            // FIXME: Hardcoded value
+            printObject!width(symbol);
         }
 
         foreach (immutable i, symbol; this.tupleof)
@@ -1111,16 +1108,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.config : serialise;
+        import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
-        foreach (symbol; moduleLevelSymbols)
+        foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
         {
-            static if (is(typeof(symbol) == struct))
-            {
-                sink.serialise(symbol);
-            }
+            sink.serialise(symbol);
         }
 
         foreach (immutable i, symbol; this.tupleof)
