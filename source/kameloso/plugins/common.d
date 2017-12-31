@@ -363,6 +363,71 @@ struct BotCommand
 deprecated("Prefix has been replaced with Command. This alias will be removed in time.")
 alias Prefix = BotCommand;
 
+
+// BotRegex
+/++
+ +  Defines an IRC bot regular expression, for people to trigger with messages.
+ +
+ +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
+ +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
+ +  the `string_`. (Usually "`!`", making it "`!command`".)
+ +/
+struct BotRegex
+{
+    import std.regex : Regex, StaticRegex, regex;
+
+    /// The policy to which extent the command needs the bot's nickname
+    NickPolicy policy;
+
+    /++
+     +  Regex engine to match incoming messages with (from compile-time-known
+     +  expression)
+     +/
+    StaticRegex!char ctExpr;
+
+    /++
+     +  Regex engine to match incoming messages with (from runtime-known
+     +  expression)
+     +/
+    Regex!char rtExpr;
+
+    this(const NickPolicy policy, StaticRegex!char ctExpr)
+    {
+        this.policy = policy;
+        this.ctExpr = ctExpr;
+    }
+
+    this(const NickPolicy policy, Regex!char rtExpr)
+    {
+        this.policy = policy;
+        this.rtExpr = rtExpr;
+    }
+
+    this(const NickPolicy policy, const string rtExprString)
+    {
+        this.policy = policy;
+        this.rtExpr = rtExprString.regex;
+    }
+
+    this(StaticRegex!char ctExpr)
+    {
+        this.policy = NickPolicy.direct;
+        this.ctExpr = ctExpr;
+    }
+
+    this(Regex!char rtExpr)
+    {
+        this.policy = NickPolicy.direct;
+        this.rtExpr = rtExpr;
+    }
+
+    this(const string rtExprString)
+    {
+        this.policy = NickPolicy.direct;
+        this.rtExpr = rtExprString.regex;
+    }
+}
+
 /++
  +  Flag denoting that an event-handling function let other functions in the
  +  same module process after it.
