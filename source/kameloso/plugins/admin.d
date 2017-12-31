@@ -66,6 +66,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "save")
 @BotCommand(NickPolicy.required, "writeconfig")
+@Description("Saves current configuration to disk.")
 void onCommandSave(AdminPlugin plugin)
 {
     import kameloso.common : ThreadMessage;
@@ -77,12 +78,13 @@ void onCommandSave(AdminPlugin plugin)
 
 // onCommandShowUsers
 /++
- +  Prints out the current `state.users` array in the local terminal.
+ +  Prints out the current `state.users` array to the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "users")
+@Description("Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
     import kameloso.common : deepSizeof, printObject;
@@ -103,14 +105,16 @@ void onCommandShowUsers(AdminPlugin plugin)
     version(Cygwin_) stdout.flush();
 }
 
+
 // onCommandShowChannels
 /++
- +  Prints out the current `state.users` array in the local terminal.
+ +  Prints out the current `state.channels` array to the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "channels")
+@Description("Prints out the current channels array to the local terminal.")
 void onCommandShowChannels(AdminPlugin plugin)
 {
     import kameloso.common : printObject;
@@ -136,6 +140,7 @@ void onCommandShowChannels(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "sudo")
+@Description("Sends supplied text to the server, verbatim.")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
     plugin.raw(event.content);
@@ -154,6 +159,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "quit")
+@Description("Send a QUIT event to the server and exits the program.")
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
     with (plugin.state)
@@ -172,12 +178,13 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAddChan
 /++
- +  Add a channel to the list of currently active channels.
+ +  Add a channel to the list of currently active home channels.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "addhome")
+@Description("Adds a channel to the list of homes.")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
@@ -214,6 +221,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "delhome")
+@Description("Removes a channel from the list of homes.")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
@@ -255,6 +263,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "addfriend")
+@Description("Adds a nickname to the list of users who may trigger the bot.")
 void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has;
@@ -290,6 +299,7 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "delfriend")
+@Description("Removes a nickname from the list of users who may trigger the bot.")
 void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has;
@@ -338,6 +348,8 @@ void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "resetterm")
+@Description("Outputs the ASCII control character 15 to the terminal, " ~
+    "to recover from binary garbage mode")
 void onCommandResetTerminal()
 {
     import kameloso.bash : TerminalToken;
@@ -356,6 +368,7 @@ void onCommandResetTerminal()
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "printall")
+@Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandPrintAll(AdminPlugin plugin)
 {
     plugin.printAll = !plugin.printAll;
@@ -373,6 +386,7 @@ void onCommandPrintAll(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "printbytes")
+@Description("[debug] Toggles a flag to print all incoming events as bytes.")
 void onCommandPrintBytes(AdminPlugin plugin)
 {
     plugin.printBytes = !plugin.printBytes;
@@ -390,6 +404,7 @@ void onCommandPrintBytes(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "asserts")
+@Description("[debug] Toggles a flag to generate assert statements for incoming events")
 void onCommandAsserts(AdminPlugin plugin)
 {
     import kameloso.debugging : formatBot;
@@ -411,6 +426,7 @@ void onCommandAsserts(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "join")
+@Description("Joins a channel.")
 void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 {
     plugin.joinPartImpl("JOIN", event);
@@ -427,6 +443,7 @@ void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "part")
+@Description("Parts a channel.")
 void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 {
     plugin.joinPartImpl("PART", event);

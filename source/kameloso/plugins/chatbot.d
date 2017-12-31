@@ -143,6 +143,7 @@ JSONValue loadQuotes(const string filename)
 @BotCommand("say")
 @BotCommand(NickPolicy.required, "say")
 @BotCommand(NickPolicy.required, "säg")
+@Description("Repeats text to the channel the event was sent to.")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.say) return;
@@ -175,6 +176,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.friend)
 @BotCommand("8ball")
 @BotCommand(NickPolicy.required, "8ball")
+@Description("Implements 8ball. Randomises a vague yes/no response.")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.eightball) return;
@@ -228,6 +230,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.friend)
 @BotCommand("quote")
 @BotCommand(NickPolicy.required, "quote")
+@Description("Fetches and repeats a random quote of a supplied nickname.")
 void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     import std.json : JSONException;
@@ -284,6 +287,7 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.friend)
 @BotCommand("addquote")
 @BotCommand(NickPolicy.required, "addquote")
+@Description("Creates a new quote.")
 void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.quotes) return;
@@ -325,6 +329,7 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "printquotes")
+@Description("[debug] Prints all quotes to the local terminal.")
 void onCommandPrintQuotes(ChatbotPlugin plugin)
 {
     if (!plugin.chatbotSettings.quotes) return;
@@ -345,6 +350,7 @@ void onCommandPrintQuotes(ChatbotPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "reloadquotes")
+@Description("[debug] Reloads quotes from disk.")
 void onCommandReloadQuotes(ChatbotPlugin plugin)
 {
     if (!plugin.chatbotSettings.quotes) return;
@@ -389,6 +395,7 @@ void onEndOfMotd(ChatbotPlugin plugin)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "help")
 @BotCommand(NickPolicy.required, "hello")
+@Description("Shows the command list.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;

@@ -23,6 +23,7 @@ private:
 @(PrivilegeLevel.friend)
 @BotCommand("bash")
 @BotCommand(NickPolicy.required, "bash")
+@Description("Fetch a random or specified bash.org quote.")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : spawn;

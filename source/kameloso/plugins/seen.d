@@ -311,6 +311,7 @@ void onPing(SeenPlugin plugin)
 @(PrivilegeLevel.friend)
 @BotCommand("seen")
 @BotCommand(NickPolicy.required, "seen")
+@Description("Queries the bot when it last saw a specified nickname online.")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
@@ -394,6 +395,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.homeOnly)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "printseen")
+@Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)
 {
     writeln(plugin.seenUsers.toPrettyString);

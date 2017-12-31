@@ -48,6 +48,7 @@ struct RedditLookup
 @(IRCEvent.Type.QUERY)
 @BotCommand(NickPolicy.direct, "reddit")
 @BotCommand(NickPolicy.required, "reddit")
+@Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;

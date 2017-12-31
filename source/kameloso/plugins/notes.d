@@ -128,6 +128,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @BotCommand("note")
 @BotCommand(NickPolicy.required, "addnote")
 @BotCommand(NickPolicy.required, "note")
+@Description("Adds a note and saves it to disk.")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     import std.format : format, formattedRead;
@@ -165,6 +166,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "printnotes")
+@Description("[debug] Prints saved notes to the local terminal.")
 void onCommandPrintNotes(NotesPlugin plugin)
 {
     writeln(plugin.notes.toPrettyString);
@@ -182,6 +184,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "reloadnotes")
+@Description("[debug] Reloads quotes from disk.")
 void onCommandReloadQuotes(NotesPlugin plugin)
 {
     logger.log("Reloading notes");
@@ -198,6 +201,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "fakejoin")
+@Description("[debug] Fakes a user joining a channel.")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has, nom;
