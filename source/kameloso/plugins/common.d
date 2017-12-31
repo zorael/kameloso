@@ -458,6 +458,27 @@ deprecated("Use @Settings instead of @Configurable. " ~
            "This alias will eventually be removed.")
 alias Configurable = Settings;
 
+/++
+ +  Describes an `IRCEvent`-annotated handler function.
+ +
+ +  This is used to describe functions triggered by `BotCommands`, in the help
+ +  listing routine in `chatbot.d`.
+ +/
+struct Description
+{
+    string string_;
+
+    this(const string string_)
+    {
+        this.string_ = string_;
+    }
+
+    this(const string string_, bool b)
+    {
+        this.string_ = string_;
+    }
+}
+
 
 // filterUser
 /++
