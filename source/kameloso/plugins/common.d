@@ -61,8 +61,8 @@ interface IRCPlugin
     /// Returns the name of the plugin, sliced off the module name
     string name() @property const;
 
-    /// Returns a list of the bot commands a plugin offers
-    string[] commands() @property const;
+    /// Returns an array of the descriptions of the bot commands a plugin offers
+    string[string] commands() @property const;
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
@@ -1235,32 +1235,34 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // commands
     /++
      +  Collects all bot command strings that this plugin offers and returns
-     +  them as a `string[]`.
+     +  them alongside their `Description`s as an associative `string[string]`
+     +  array.
      +/
-    string[] commands() @property const
+    string[string] commands() @property const
     {
-        import std.algorithm.iteration : uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : Appender, array;
         import std.meta : Filter;
-        import std.traits : getUDAs, getSymbolsByUDA, isSomeFunction;
+        import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
 
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
         alias funs = Filter!(isSomeFunction, symbols);
 
-        Appender!(string[]) sink;
+        string[string] descriptions;
 
         foreach (fun; funs)
         {
             foreach (commandUDA; getUDAs!(fun, BotCommand))
             {
-                sink ~= commandUDA.string_;
+                static if (hasUDA!(fun, Description))
+                {
+                    enum descriptionUDA = getUDAs!(fun, Description)[0];
+                    descriptions[commandUDA.string_] = descriptionUDA.string_;
+                }
             }
         }
 
-        return sink.data.sort().uniq.array;
+        return descriptions;
     }
 
 
