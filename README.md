@@ -27,7 +27,7 @@ Current functionality includes:
 
 There are a few Windows caveats.
 
-* Web URL title lookup, including the Bash quotes and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
+* Web URL lookup, including the bash.org quotes and Reddit plugins, may not work out of the box with secure `HTTPS` connections, due to the default installation of `dlang-requests` not finding the correct `OpenSSL` libraries. Unsure of how to fix this.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours *disabled*, but they can be enabled by specifying a different *build configuration*.
 
 # Getting Started
@@ -55,7 +55,7 @@ GitHub offers downloads in ZIP format, but it's easier to use `git` and clone th
 
 This will compile it in the default `debug` build type, which adds some extra code and debugging symbols. You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Refer to the output of `dub build --help` for more build types.
 
-Unit tests are built into the language, but you need to compile in `unittest` mode for them to run.
+Unit tests are built into the language, but you need to compile the project in `unittest` mode for them to run.
 
     $ dub build -b unittest
 
@@ -150,6 +150,7 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * merge thottling with timing
 * compilation time and memory use :c
 * optional formatting in IRC output?
+* better `help`; `Description` UDA for bot commands and regexes?
 * registration on [code.dlang.org](https://code.dlang.org)
 
 # Built With
