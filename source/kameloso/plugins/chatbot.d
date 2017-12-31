@@ -365,6 +365,82 @@ void onEndOfMotd(ChatbotPlugin plugin)
 }
 
 
+// onCommandHelp
+/++
+ +  Starts the process of echoing all available bot commands to a user (in a
+ +  private query). A hack.
+ +
+ +  Plugins don't know about other plugin; the only thing they know of the
+ +  outside world is the thread ID of the main thread (`state.mainThread`).
+ +  As such, we can't easily query each plugin for their `BotCommand`-annotated
+ +  functions.
+ +
+ +  To work around this we save the initial requesting `IRCEvent`, then send a
+ +  concurrency message to the main thread asking for a const reference to the
+ +  main `IRCPlugin[]` array. We create a function in interface `IRCPlugin` that
+ +  passes said array on to the top-level `peekPlugins`, wherein we process the
+ +  list and collect the bot command strings.
+ +
+ +  Once we have the list we format it nicely and send it back to the requester,
+ +  which we remember since we saved the original `IRCEvent`.
+ +/
+@(IRCEvent.Type.QUERY)
+@(ChannelPolicy.homeOnly)
+@(PrivilegeLevel.master)
+@BotCommand(NickPolicy.required, "help")
+@BotCommand(NickPolicy.required, "hello")
+void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : ThreadMessage;
+
+    plugin.helpEvent = event;
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
+        cast(shared IRCPlugin)plugin);
+}
+
+
+// peekPlugins
+/++
+ +  Takes a const reference to the main `IRCPlugin[]` array and gathers and
+ +  formats each plugin's list of available bot commands.
+ +
+ +  This does not include bot regexes.
+ +/
+void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.format : format;
+
+    if (plugin.helpEvent == IRCEvent.init) return;
+
+    with (plugin)
+    {
+        enum banner = "kameloso IRC bot v%s, built %s"
+            .format(cast(string)KamelosoInfo.version_,
+            cast(string)KamelosoInfo.built);
+
+        throttleline(helpEvent.channel, helpEvent.sender.nickname, banner);
+        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+            "Available bot commands per plugin (beta):");
+
+        foreach (p; plugins)
+        {
+            if (!p.commands.length) continue;
+
+            enum width = 11;
+
+            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                "* %-*s %-([%s]%| %)".format(width, p.name, p.commands));
+        }
+
+        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+            "Additional unlisted regex commands may be available.");
+
+        helpEvent = IRCEvent.init;
+    }
+}
+
+
 mixin UserAwareness;
 
 public:
@@ -389,6 +465,8 @@ final class ChatbotPlugin : IRCPlugin
     +  nickname of a user.
     +/
     JSONValue quotes;
+
+    IRCEvent helpEvent;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
