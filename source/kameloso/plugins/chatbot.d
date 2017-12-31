@@ -409,34 +409,77 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
 {
     import kameloso.constants : KamelosoInfo;
+    import kameloso.string : has, nom;
+    import std.algorithm.sorting : sort;
     import std.format : format;
 
     if (plugin.helpEvent == IRCEvent.init) return;
+    scope(exit) plugin.helpEvent = IRCEvent.init;
 
     with (plugin)
     {
-        enum banner = "kameloso IRC bot v%s, built %s"
-            .format(cast(string)KamelosoInfo.version_,
-            cast(string)KamelosoInfo.built);
-
-        throttleline(helpEvent.channel, helpEvent.sender.nickname, banner);
-        throttleline(helpEvent.channel, helpEvent.sender.nickname,
-            "Available bot commands per plugin (beta):");
-
-        foreach (p; plugins)
+        if (helpEvent.content.length)
         {
-            if (!p.commands.length) continue;
+            if (!helpEvent.content.has(' '))
+            {
+                throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                    "Usage: help [plugin] [command]");
+                return;
+            }
 
-            enum width = 11;
+            string slice = helpEvent.content;
+            immutable specifiedPlugin = slice.nom(' ');
+            immutable specifiedCommand = slice;
+
+            foreach (p; plugins)
+            {
+                if (p.name != specifiedPlugin) continue;
+
+                if (auto description = specifiedCommand in p.commands)
+                {
+                    throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                        "[%s] %s: %s".format(p.name, specifiedCommand, *description));
+                    return;
+                }
+                else
+                {
+                    throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                        "No help available for command %s of plugin %s"
+                        .format(specifiedCommand, specifiedPlugin));
+                    return;
+                }
+            }
 
             throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                "* %-*s %-([%s]%| %)".format(width, p.name, p.commands));
+                "No such plugin: " ~ specifiedPlugin);
+            return;
         }
+        else
+        {
+            enum banner = "kameloso IRC bot v%s, built %s"
+                .format(cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.built);
 
-        throttleline(helpEvent.channel, helpEvent.sender.nickname,
-            "Additional unlisted regex commands may be available.");
+            throttleline(helpEvent.channel, helpEvent.sender.nickname, banner);
+            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                "Available bot commands per plugin (beta):");
 
-        helpEvent = IRCEvent.init;
+            foreach (p; plugins)
+            {
+                if (!p.commands.length) continue;
+
+                enum width = 11;
+
+                throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                    "* %-*s %-([%s]%| %)"
+                    .format(width, p.name, p.commands.keys.sort()));
+            }
+
+            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                "Use help [plugin] [command] for information about a command.");
+            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                "Additional unlisted regex commands may be available.");
+        }
     }
 }
 
