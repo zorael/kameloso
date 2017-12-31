@@ -666,6 +666,71 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         if (!mutEvent.aux.length) continue;
                     }
 
+                    // Iff no match from BotCommands, evaluate BotRegexes
+                    if (!mutEvent.aux.length)
+                    {
+                        static if (hasUDA!(fun, BotRegex))
+                        {
+                            if (!event.content.length)
+                            {
+                                // Event has a `BotRegex` set up but
+                                // `event.content` is empty; cannot possibly be
+                                // of interest.
+                                continue;
+                            }
+
+                            foreach (regexUDA; getUDAs!(fun, BotRegex))
+                            {
+                                static assert((regexUDA.ctExpr != StaticRegex!char.init) &&
+                                    (regexUDA.rtExpr != Regex!char.init),
+                                    name ~ " had uninitialised BotRegex engines");
+
+                                // Reset between iterations
+                                mutEvent = event;
+
+                                if (!privateState.policyMatches(regexUDA.policy,
+                                    mutEvent))
+                                {
+                                    continue;
+                                }
+
+                                string thisCommand;
+
+                                if (mutEvent.content.has!(Yes.decode)(' '))
+                                {
+                                    thisCommand = mutEvent.content
+                                        .nom!(Yes.decode)(' ');
+                                }
+                                else
+                                {
+                                    // single word, not a prefix
+                                    thisCommand = mutEvent.content;
+                                    mutEvent.content = string.init;
+                                }
+
+                                import std.regex : matchFirst;
+
+                                if (regexUDA.ctExpr != StaticRegex!char.init)
+                                {
+                                    if (!thisCommand.matchFirst(ctExpr).hits.empty)
+                                    {
+                                        mutEvent.aux = thisCommand;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    // Implicit rtExpr non-init
+                                    if (!thisCommand.matchFirst(rtExpr).hits.empty)
+                                    {
+                                        mutEvent.aux = thisCommand;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     static if (hasUDA!(fun, PrivilegeLevel))
                     {
                         static assert (is(typeof(.hasUserAwareness)),
