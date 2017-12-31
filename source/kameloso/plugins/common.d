@@ -3,6 +3,7 @@ module kameloso.plugins.common;
 import kameloso.ircdefs;
 
 import std.concurrency : Tid, send;
+import std.typecons : Flag, No, Yes;
 
 
 // IRCPlugin
@@ -531,7 +532,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import kameloso.string : beginsWith, has, nom, stripPrefix;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
+        import std.typecons : No, Yes;
 
         funloop:
         foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
@@ -640,8 +643,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             if (mutEvent.content.has!(Yes.decode)(' '))
                             {
-                                import std.typecons : Yes;
-
                                 thisCommand = mutEvent.content
                                     .nom!(Yes.decode)(' ');
                             }
@@ -778,6 +779,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                        __traits(identifier, fun), event.type);
                                 }
 
+                                import kameloso.plugins.common : doWhois;
                                 import std.meta   : AliasSeq, Filter, staticMap;
                                 import std.traits : Parameters, Unqual, arity;
 
