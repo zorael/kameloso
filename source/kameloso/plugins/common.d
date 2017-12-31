@@ -1620,88 +1620,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         plugin.state.users.rehash();
     }
-
-
-    // catchUser
-    /++
-     +  Catch an `IRCUser`, saving it to the `state.users` array.
-     +
-     +  If a user already exists, meld the new information into the old one.
-     +/
-    import std.typecons : Flag, Yes;
-    void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-        (IRCPlugin plugin, const IRCUser newUser)
-    {
-        import kameloso.common : meldInto;
-
-        if (!newUser.nickname.length ||
-            (newUser.nickname == plugin.state.bot.nickname))
-        {
-            return;
-        }
-
-        with (plugin)
-        {
-            auto user = newUser.nickname in state.users;
-
-            if (!user)
-            {
-                state.users[newUser.nickname] = IRCUser.init;
-                user = newUser.nickname in state.users;
-            }
-
-            newUser.meldInto!overwrite(*user);
-        }
-    }
-
-
-    // doWhois
-    /++
-     +  Construct and queue a `WHOIS` request in the local request queue.
-     +
-     +  The main loop will catch up on it and do the neccessary `WHOIS` calls,
-     +  then replay the event.
-     +
-     +  Params:
-     +      event = the event to replay once we have `WHOIS` account
-     +              information.
-     +      fp = the function pointer to call when that happens.
-     +/
-    void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
-        const IRCEvent event, const string nickname, F fn)
-    {
-        import kameloso.constants : Timeout;
-        import core.time : seconds;
-        import std.datetime.systime : Clock, SysTime;
-
-        const user = nickname in plugin.state.users;
-
-        if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
-            < Timeout.whois.seconds))
-        {
-            return;
-        }
-
-        with (plugin)
-        {
-            static if (!is(Payload == typeof(null)))
-            {
-                state.whoisQueue[nickname] = whoisRequest(payload, event, fn);
-            }
-            else
-            {
-                state.whoisQueue[nickname] = whoisRequest(state, event, fn);
-            }
-        }
-    }
-
-
-    /// Ditto
-    void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
-        const string nickname, F fn)
-    {
-        return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
-    }
 }
 
 deprecated("BasicEventHandlers has been replaced by UserAwareness. " ~
@@ -2183,4 +2101,82 @@ bool policyMatches(const IRCPluginState privateState,
     }
 
     return true;
+}
+
+
+// catchUser
+/++
+ +  Catch an `IRCUser`, saving it to the `state.users` array of an `IRCPlugin`.
+ +
+ +  If a user already exists, meld the new information into the old one.
+ +/
+void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
+    (IRCPlugin plugin, const IRCUser newUser)
+{
+    import kameloso.common : meldInto;
+
+    if (!newUser.nickname.length || (newUser.nickname == plugin.state.bot.nickname))
+    {
+        return;
+    }
+
+    with (plugin)
+    {
+        auto user = newUser.nickname in state.users;
+
+        if (!user)
+        {
+            state.users[newUser.nickname] = IRCUser.init;
+            user = newUser.nickname in state.users;
+        }
+
+        newUser.meldInto!overwrite(*user);
+    }
+}
+
+
+// doWhois
+/++
+ +  Construct and queue a `WHOIS` request in the local request queue.
+ +
+ +  The main loop will catch up on it and do the neccessary `WHOIS` calls, then
+ +  replay the event.
+ +
+ +  Params:
+ +      event = the event to replay once we have `WHOIS` account information.
+ +      fp = the function pointer to call when that happens.
+ +/
+void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
+    const IRCEvent event, const string nickname, F fn)
+{
+    import kameloso.constants : Timeout;
+    import core.time : seconds;
+    import std.datetime.systime : Clock, SysTime;
+
+    const user = nickname in plugin.state.users;
+
+    if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
+        < Timeout.whois.seconds))
+    {
+        return;
+    }
+
+    with (plugin)
+    {
+        static if (!is(Payload == typeof(null)))
+        {
+            state.whoisQueue[nickname] = whoisRequest(payload, event, fn);
+        }
+        else
+        {
+            state.whoisQueue[nickname] = whoisRequest(state, event, fn);
+        }
+    }
+}
+
+/// Ditto
+void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
+    const string nickname, F fn)
+{
+    return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
 }
