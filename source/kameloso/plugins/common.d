@@ -617,7 +617,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             // Event has a `BotCommand` set up but
                             // `event.content` is empty; cannot possibly be of
                             // interest.
-                            return;
+                            continue;
                         }
 
                         foreach (commandUDA; getUDAs!(fun, BotCommand))
