@@ -560,31 +560,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             return;
                         }
 
-                        bool matches;
-
-                        foreach (prefixUDA; getUDAs!(fun, BotCommand))
+                        foreach (commandUDA; getUDAs!(fun, BotCommand))
                         {
                             import kameloso.string : beginsWith, has, nom,
                                 stripPrefix;
 
-                            if (matches)
-                            {
-                                static if (verbose)
-                                {
-                                    writeln(name, " MATCH! breaking");
-                                }
-
-                                break;
-                            }
+                            static assert(commandUDA.string_.length,
+                                name ~ " had an empty BotCommand string");
 
                             // Reset between iterations
                             mutEvent = event;
-                            contextPrefix = string.init;
 
                             with (privateState)
                             with (event)
                             with (NickPolicy)
-                            final switch (prefixUDA.policy)
+                            final switch (commandUDA.policy)
                             {
                             case ignored:
                                 break;
@@ -685,38 +675,36 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 break;
                             }
 
-                            static assert(prefixUDA.string_.length,
-                                name ~ " had an empty Prefix string");
-
                             import std.string : toLower;
+
+                            string thisCommand;
 
                             if (mutEvent.content.has!(Yes.decode)(' '))
                             {
                                 import std.typecons : Yes;
 
-                                contextPrefix = mutEvent.content
-                                    .nom!(Yes.decode)(' ')
-                                    .toLower();
+                                thisCommand = mutEvent.content
+                                    .nom!(Yes.decode)(' ');
                             }
                             else
                             {
                                 // single word, not a prefix
-                                contextPrefix = mutEvent.content;
+                                thisCommand = mutEvent.content;
                                 mutEvent.content = string.init;
                             }
 
                             // case-sensitive check goes here
-                            enum lowercasePrefix = prefixUDA
-                                .string_
-                                .toLower();
+                            enum lowercaseUDAString = commandUDA.string_.toLower();
 
-                            matches = (contextPrefix == lowercasePrefix);
-                            continue;
+                            if (thisCommand.toLower() == lowercaseUDAString)
+                            {
+                                mutEvent.aux = thisCommand;
+                                break;
+                            }
                         }
 
-                        // We can't label the innermost foreach! So we have to
-                        // runtime-skip here...
-                        if (!matches) continue;
+                        // mutEvent.aux houses the matched command string
+                        if (!mutEvent.aux.length) continue;
                     }
 
                     static if (hasUDA!(fun, PrivilegeLevel))
