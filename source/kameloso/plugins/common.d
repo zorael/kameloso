@@ -21,11 +21,8 @@ interface IRCPlugin
     import core.thread : Fiber;
     import std.array : Appender;
 
-    /// Executed on update to the internal `IRCBot` struct
-    void bot(IRCBot) @property;
-
-    /// Executed after a plugin has run its `onEvent` course to pick up bot changes
-    IRCBot bot() @property;
+    /// Executed to return a reference to the current `IRCBot`
+    ref IRCBot bot() @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
     ref WHOISRequest[string] yieldWHOISRequests();
@@ -892,30 +889,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // bot
     /++
-     +  Inherits a new `IRCBot`.
+     +  Yields a reference of the current `IRCBot` to the caller.
      +
-     +  Invoked on all plugins when changes has been made to the bot.
-     +
-     +  Params:
-     +      bot = the new bot to inherit
+     +  This is used to let the main loop examine and update the otherwise
+     +  inaccessible `privateState.bot`.
      +/
-    void bot(IRCBot bot) @property
-    {
-        privateState.bot = bot;
-    }
-
-
-    // bot
-    /++
-     +  Yields a copy of the current `IRCBot` to the caller.
-     +
-     +  This is used to let the main loop examine it for updates to propagate
-     +  to other plugins.
-     +
-     +  Returns:
-     +      a copy of the current `IRCBot`.
-     +/
-    IRCBot bot() @property
+    ref IRCBot bot() @property
     {
         return privateState.bot;
     }
