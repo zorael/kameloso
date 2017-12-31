@@ -201,6 +201,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has, nom;
+    import std.typecons : Yes;
 
     logger.info("Faking an event");
 

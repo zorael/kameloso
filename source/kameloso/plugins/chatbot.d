@@ -292,6 +292,7 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
     import kameloso.string : nom;
     import std.format : format;
     import std.json : JSONException;
+    import std.typecons : Yes;
 
     string slice = event.content;  // need mutable
     immutable nickname = slice.nom!(Yes.decode)(' ').stripModeSign();
