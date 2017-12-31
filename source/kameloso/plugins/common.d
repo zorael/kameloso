@@ -362,7 +362,7 @@ struct BotCommand
 
     this(const string string_)
     {
-        policy = NickPolicy.direct;
+        this.policy = NickPolicy.direct;
         this.string_ = string_;
     }
 }
@@ -502,13 +502,12 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
  +      .onEvent            (doesn't proxy anymore)
- +      .bot                (assigns bot)
- +      .bot                (returns bot)
- +      .postprocess
+ +      .bot                (by ref; accessor and mutator)
+ +      .postprocess        (proxy for modifications to an event during parsing)
  +      .yieldWHOISRequests (returns queue)
  +      .writeConfig
  +      .loadConfig
- +      .present
+ +      .present            (unused, subject for removal)
  +      .peekPlugins        (takes a reference to the main `IRCPlugin[]` array)
  +      .printSettings      (prints settings)
  +      .addToConfig
