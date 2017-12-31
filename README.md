@@ -110,6 +110,8 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
          you | !reddit https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | Reddit post: https://www.reddit.com/r/languagelearning/comments/7dcxfa/norwegian_comedy_about_the_danish_language_4m15s/
 
+Send `help` to the bot in a private query message for a brief list of available bot commands. This listing is experimental and subject for improvement. Also, mind that commands defined as *regular expressions* will not be shown, due to technical reasons.
+
 The *prefix* character (here '`!`') is configurable; see your generated configuration file. Common alternatives are '`.`' and '`~`', making it `.note` and `~quote` respectively.
 
     [Core]
