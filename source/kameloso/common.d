@@ -1709,7 +1709,7 @@ size_t deepSizeof(T)(const T thing) @property pure @safe
  +  Access to the `thing` is passed on by use of `std.typecons.Proxy`, so this
  +  will transparently act like the original `thing` in many cases.
  +/
-struct Labeled(Thing, Label)
+struct Labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
 {
     import std.typecons : Proxy;
 
@@ -1727,7 +1727,10 @@ public:
         this.id = id;
     }
 
-    //@disable this(this);
+    static if (disableThis)
+    {
+        @disable this(this);
+    }
 
     mixin Proxy!thing;
 }
