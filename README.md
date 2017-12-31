@@ -139,7 +139,6 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 # TODO
 
-* "online" help; listing of verbs/commands
 * investigate inverse channel behaviour (blacklists)
 * pipedream: DCC
 * pipedream two: `ncurses`
