@@ -57,6 +57,7 @@ alias BaseSettings = CoreSettings;
  +      struct Quit {}
  +      struct Teardown {}
  +      struct Save {}
+ +      struct PeekPlugins {}
  +  }
  +  ------------
  +/
@@ -82,6 +83,9 @@ struct ThreadMessage
 
     /// Concurrency message type asking to have plugins' configuration saved.
     struct Save {}
+
+    /// Concurrency message asking for a reference to the `IRCPlugin[]` array.
+    struct PeekPlugins {}
 }
 
 

@@ -57,6 +57,7 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 Flag!"quit" checkMessages(ref Client client)
 {
+    import kameloso.plugins.common : IRCPlugin;
     import core.time : seconds;
     import std.concurrency : receiveTimeout;
     import std.variant : Variant;
@@ -145,6 +146,16 @@ Flag!"quit" checkMessages(ref Client client)
     void save(ThreadMessage.Save)
     {
         client.writeConfigurationFile(client.settings.configFile);
+    }
+
+    /++
+     +  Passes a reference to the main `IRCPlugin[]` array (housing all plugins)
+     +  to the supplied `IRCPlugin`.
+     +/
+    void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin)
+    {
+        auto plugin = cast(IRCPlugin)sPlugin;
+        plugin.peekPlugins(client.plugins);
     }
 
     /// Reverse-formats an event and sends it to the server
@@ -252,6 +263,7 @@ Flag!"quit" checkMessages(ref Client client)
             &quitServer,
             &quitEmpty,
             &save,
+            &peekPlugins,
             (Variant v)
             {
                 // Caught an unhandled message

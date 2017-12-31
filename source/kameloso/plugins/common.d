@@ -49,6 +49,9 @@ interface IRCPlugin
     /// Executed when we want a plugin to print its settings and such
     void present() const;
 
+    /// Executed when a plugin wants to examine all the other plugins
+    void peekPlugins(const IRCPlugin[]);
+
     /// Executed when we want a plugin to print its Settings struct
     void printSettings() const;
 
@@ -503,6 +506,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
  +      .writeConfig
  +      .loadConfig
  +      .present
+ +      .peekPlugins        (takes a reference to the main `IRCPlugin[]` array)
  +      .printSettings      (prints settings)
  +      .addToConfig
  +      .start
@@ -1067,6 +1071,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         static if (__traits(compiles, .present(this)))
         {
             .present(this);
+        }
+    }
+
+
+    // peekPlugins
+    /++
+     +  Lends a const reference to the `IRCPlugin[]` array to the plugin.
+     +/
+    void peekPlugins(const IRCPlugin[] plugins)
+    {
+        static if (__traits(compiles, .peekPlugins(this, plugins)))
+        {
+            .peekPlugins(this, plugins);
         }
     }
 
