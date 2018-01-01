@@ -1596,8 +1596,17 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
              +  C = Mode that changes a setting and only has a parameter when
              +      set.
              +  D = Mode that changes a setting and never has a parameter.
+             +
+             +  Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
              +/
-             parser.bot.server.chanmodes = event.content;
+             with (bot.server)
+             {
+                string modeslice = event.content;
+                aModes = modeslice.nom(',');
+                bModes = modeslice.nom(',');
+                cModes = modeslice.nom(',');
+                dModes = modeslice;
+             }
              break;
 
         case "NETWORK":

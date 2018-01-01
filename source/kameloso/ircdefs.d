@@ -1025,7 +1025,22 @@ struct IRCServer
         uint maxChannelLength = 200;
 
         /// Modes available on this server (in A,B,C,D notation)
-        string chanmodes;
+        //string chanmodes;
+
+        /+
+         +  A = Mode that adds or removes a nick or address to a list.
+         +      Always has a parameter.
+         +/
+        string aModes;
+
+        /// B = Mode that changes a setting and always has a parameter.
+        string bModes;
+
+        /// C = Mode that changes a setting and only has a parameter when set.
+        string cModes;
+
+        /// D = Mode that changes a setting and never has a parameter.
+        string dModes;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
