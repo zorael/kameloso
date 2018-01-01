@@ -1,4 +1,4 @@
-# kameloso [![Build status](https://img.shields.io/circleci/project/zorael/kameloso/master.svg?maxAge=10800)](https://circleci.com/gh/zorael/kameloso) [![GitHub tag](https://img.shields.io/github/tag/zorael/kameloso.svg?maxAge=10800)](#)
+# kameloso [![Build status](https://img.shields.io/circleci/project/zorael/kameloso/master.svg?maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![GitHub tag](https://img.shields.io/github/tag/zorael/kameloso.svg?maxAge=3600)](#)
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
