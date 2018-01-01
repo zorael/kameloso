@@ -454,6 +454,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 ///
 @system unittest
 {
+    import kameloso.string : has;
     import std.array : Appender;
 
     // Monochrome
