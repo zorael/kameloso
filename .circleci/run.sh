@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -uexo pipefail
+
 install_deps() {
     sudo wget http://master.dl.sourceforge.net/project/d-apt/files/d-apt.list \
         -O /etc/apt/sources.list.d/d-apt.list
