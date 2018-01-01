@@ -18,6 +18,8 @@ private:
 @(IRCEvent.Type.PING)
 void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 {
+    import core.thread : Fiber;
+
     if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
     string[] querylist;
@@ -30,6 +32,8 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     }
 
     if (!querylist.length) return;
+
+    Fiber fiber;
 
     void fiberFn()
     {
@@ -48,19 +52,25 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
                 Thread.sleep(plugin.secondsBetween.seconds);
             }
 
+            // Remove timer and restore IRCEvent.Type awaits once we have better
+            // chanmodes handling
+
             raw(plugin.state.mainThread, "MODE " ~ channel);
             Fiber.yield();
 
             Thread.sleep(plugin.secondsBetween.seconds);
             raw(plugin.state.mainThread, "MODE %s +b".format(channel));
+            plugin.delayFiber(fiber, plugin.secondsBetween);
             Fiber.yield();
 
             Thread.sleep(plugin.secondsBetween.seconds);
             raw(plugin.state.mainThread, "MODE %s +q".format(channel));
+            plugin.delayFiber(fiber, plugin.secondsBetween);
             Fiber.yield();
 
             Thread.sleep(plugin.secondsBetween.seconds);
             raw(plugin.state.mainThread, "MODE %s +I".format(channel));
+            plugin.delayFiber(fiber, plugin.secondsBetween);
             Fiber.yield();
 
             Thread.sleep(plugin.secondsBetween.seconds);
@@ -70,20 +80,18 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
         }
     }
 
-    import core.thread : Fiber;
-
-    Fiber fiber = new Fiber(&fiberFn);
+    fiber = new Fiber(&fiberFn);
 
     with (IRCEvent.Type)
     with (plugin)
     {
         awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
         awaitingFibers[RPL_ENDOFWHO] ~= fiber;
-        awaitingFibers[RPL_ENDOFBANLIST] ~= fiber;
-        awaitingFibers[RPL_ENDOFQUIETLIST] ~= fiber;
-        awaitingFibers[RPL_ENDOFINVITELIST] ~= fiber;
-        awaitingFibers[ERR_CHANOPRIVSNEEDED] ~= fiber;
-        awaitingFibers[ERR_UNKNOWNMODE] ~= fiber;
+        //awaitingFibers[RPL_ENDOFBANLIST] ~= fiber;
+        //awaitingFibers[RPL_ENDOFQUIETLIST] ~= fiber;
+        //awaitingFibers[RPL_ENDOFINVITELIST] ~= fiber;
+        //awaitingFibers[ERR_CHANOPRIVSNEEDED] ~= fiber;
+        //awaitingFibers[ERR_UNKNOWNMODE] ~= fiber;
     }
 
     fiber.call();
