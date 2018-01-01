@@ -7,8 +7,8 @@ jobs:
       - checkout
       - run:
           name: Install compilers
-          command: ./circleci/run.sh install-deps
+          command: ./.circleci/run.sh install-deps
       - run:
           name: Build (dub)
-          command: ./circleci/run.sh build
+          command: ./.circleci/run.sh build
 
