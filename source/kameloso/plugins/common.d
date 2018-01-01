@@ -2034,8 +2034,12 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Add users as being part of a channel upon receiving the reply from the
      +  request for a list of all the participants.
      +
-     +  This does not include information about the users, only their nickname
-     +  and their channel mode (e.g. `@` for operator).
+     +  On some servers this does not include information about the users, only
+     +  their nickname and their channel mode (e.g. `@` for operator), but other
+     +  servers express the users in the full `user!ident@address` form. It's
+     +  not the job of `ChannelAwareness` to create `IRCUsers` out of them, but
+     +  we need a skeletal `IRCUser.init` at least, to increment the refcount
+     +  of.
      +/
     @(Chainable)
     @(ChannelPolicy.homeOnly)
@@ -2043,33 +2047,73 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModeSign;
+        import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
 
+        auto names = event.content.splitter(" ");
+        if (names.empty) return;
+
         with (plugin.state)
         {
-            foreach (immutable signedName; event.content.splitter(" "))
+            if (names.front.has('!') && names.front.has('@'))
             {
-                immutable nickname = stripModeSign(signedName);
-                if (nickname == bot.nickname) continue;
-
-                if (channels[event.channel].users.canFind(nickname))
+                // SpotChat-like, names are in full nick!ident@address form
+                foreach (immutable userstring; names)
                 {
-                    continue;
+                    string slice = userstring;
+
+                    immutable nickname = slice.nom('!').stripModeSign();
+                    if (nickname == bot.nickname) continue;
+
+                    if (channels[event.channel].users.canFind(nickname))
+                    {
+                        continue;
+                    }
+
+                    channels[event.channel].users ~= nickname;
+
+                    auto user = nickname in users;
+                    if (!user)
+                    {
+                        /++
+                         +  Creating the IRCUser is not in scope for
+                         +  ChannelAwareness, but we need one in place to
+                         +  increment the refcount. Add an IRCUser.init and let
+                         +  UserAwareness flesh it out.
+                         +/
+                        users[nickname] = IRCUser.init;
+                        user = nickname in users;
+                    }
+
+                    ++(*user).refcount;
                 }
-
-                channels[event.channel].users ~= nickname;
-
-                // users array may not contain the user
-                auto user = nickname in users;
-                if (!user)
+            }
+            else
+            {
+                // Freenode-like, names are just nicknames
+                foreach (immutable signedName; names)
                 {
-                    users[nickname] = IRCUser.init;
-                    user = nickname in users;
-                    (*user).nickname = nickname;  // very incomplete
-                }
+                    immutable nickname = stripModeSign(signedName);
+                    if (nickname == bot.nickname) continue;
 
-                ++(*user).refcount;
+                    if (channels[event.channel].users.canFind(nickname))
+                    {
+                        continue;
+                    }
+
+                    channels[event.channel].users ~= nickname;
+
+                    auto user = nickname in users;
+                    if (!user)
+                    {
+                        // See above
+                        users[nickname] = IRCUser.init;
+                        user = nickname in users;
+                    }
+
+                    ++(*user).refcount;
+                }
             }
         }
     }
