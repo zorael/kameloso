@@ -1,10 +1,10 @@
-# kameloso  [![Build Status](https://travis-ci.org/zorael/kameloso.svg?branch=master)](https://travis-ci.org/zorael/kameloso)
+# kameloso [![Build status](https://img.shields.io/circleci/project/zorael/kameloso/master.svg?maxAge=10800)](https://circleci.com/gh/zorael/kameloso) [![GitHub tag](https://img.shields.io/github/tag/zorael/kameloso.svg?maxAge=10800)](#)
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
 Features are added as plugins, written as [D](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. Ideas welcome.
 
-It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png) and some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  Where it doesn't immediately work it's often a case of specialcasing something for that particular IRC network or server daemon.
+It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often merely a case of specialcasing it for that particular IRC network or server daemon.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
@@ -144,13 +144,11 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * investigate inverse channel behaviour (blacklists)
 * pipedream: DCC
 * pipedream two: `ncurses`
-* Travis LDC tests
 * more command-line flags
 * more modules? uda.d/attribute.d?
 * merge thottling with timing
 * compilation time and memory use :c
 * optional formatting in IRC output?
-* better `help`; `Description` UDA for bot commands and regexes?
 * registration on [code.dlang.org](https://code.dlang.org)
 
 # Built With
