@@ -14,13 +14,13 @@ install_deps() {
 }
 
 build() {
-    dub test --compiler="$1"
-    dub test --compiler="$1" -c vanilla
-    dub test --compiler="$1" -c colours+web
+    dub test --compiler="$1" --build-mode=singleFile
+    dub test --compiler="$1" --build-mode=singleFile -c vanilla
+    dub test --compiler="$1" --build-mode=singleFile -c colours+web
 
-    #dub build --compiler="$1" -b plain
-    dub build --compiler="$1" -b plain -c vanilla
-    dub build --compiler="$1" -b plain -c colours+web
+    #dub build --compiler="$1" --build-mode=singleFile -b plain
+    dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla
+    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web
 }
 
 # execution start
@@ -31,7 +31,7 @@ case "$1" in
         ;;
     build)
         build dmd;
-        build ldc;
+        #build ldc2;  # doesn't support single build mode
         ;;
     *)
         echo "Unknown command: $1";
