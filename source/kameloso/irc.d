@@ -299,8 +299,8 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
             event.num = number;
             event.type = parser.typenums[number];
 
-            with (IRCEvent.Type)
-            event.type = (event.type == UNSET) ? NUMERIC : event.type;
+            alias T = IRCEvent.Type;
+            event.type = (event.type == T.UNSET) ? T.NUMERIC : event.type;
         }
         catch (const ConvException e)
         {
@@ -1534,8 +1534,9 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
     else
     {
         // :kameloso^ MODE kameloso^ :+i
+        // :<something> MODE kameloso :ix
+        // Does not always have the plus sign
         event.type = IRCEvent.Type.SELFMODE;
-        //event.target.nickname = target;
         event.aux = slice[1..$];
     }
 }

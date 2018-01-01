@@ -338,7 +338,6 @@ void onEndOfMotd(ConnectPlugin plugin)
         foreach (immutable line; plugin.connectSettings.sendAfterConnect)
         {
             import std.string : strip;
-
             plugin.raw(line.strip());
         }
     }
