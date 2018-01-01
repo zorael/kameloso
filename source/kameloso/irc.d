@@ -278,7 +278,18 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     import kameloso.string : toEnum;
     import std.conv : ConvException, to;
 
-    immutable typestring = slice.nom(' ');
+    string typestring;
+
+    if (slice.has(' '))
+    {
+        typestring = slice.nom(' ');
+    }
+    else
+    {
+        typestring = slice;
+        // Simulate advancing slice to the end
+        slice = string.init;
+    }
 
     if ((typestring[0] >= '0') && (typestring[0] <= '9'))
     {
@@ -474,6 +485,20 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.target.nickname = slice.nom(' ');
         event.channel = slice;
         event.channel = slice.beginsWith(':') ? slice[1..$] : slice;
+        break;
+
+    case AWAY:
+        // :Halcy0n!~Halcy0n@SpotChat-rauo6p.dyn.suddenlink.net AWAY :I'm busy
+        if (slice.length)
+        {
+            // :I'm busy
+            slice = slice[1..$];
+            event.content = slice;
+        }
+        else
+        {
+            event.type = BACK;
+        }
         break;
 
     case ERR_NOSUCHCHANNEL: // 403
