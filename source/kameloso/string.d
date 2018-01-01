@@ -1067,7 +1067,8 @@ unittest
  +  ------------
  +/
 bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) @trusted
-if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
+    is(C : ElementEncodingType!T)))
 {
     static if (is(C : T)) if (haystack == needle) return true;
 
