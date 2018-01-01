@@ -567,7 +567,7 @@ Flag!"quit" mainLoop(ref Client client)
             {
                 logger.warningf("IRCParseException at %s:%d: %s",
                     e.file, e.line, e.msg);
-                printObject(mutEvent);
+                printObject(e.event);
                 continue;
             }
             catch (const Exception e)
