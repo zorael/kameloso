@@ -1677,6 +1677,62 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
+    // onUserAwarenessNamesReplyMixin
+    /++
+     +  Catch users in a reply for the request for a `NAMES` list of all the
+     +  participants in a channel, if they are expressed in the full
+     +  `user!ident@address` form.
+     +
+     +  Freenode only sends a list of the nicknames but SpotChat sends the full
+     +  information.
+     +/
+    @(Chainable)
+    @(ChannelPolicy.homeOnly)
+    @(IRCEvent.Type.RPL_NAMREPLY)
+    void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        import kameloso.common : meldInto;
+        import kameloso.irc : stripModeSign;
+        import kameloso.string : has, nom;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : canFind;
+        import std.typecons : No, Yes;
+
+        auto names = event.content.splitter(" ");
+
+        if (names.empty || !names.front.has('!') || !names.front.has('@'))
+        {
+            return;
+        }
+
+        with (plugin.state)
+        {
+            // SpotChat-like, names are in full nick!ident@address form
+            foreach (immutable userstring; names)
+            {
+                string slice = userstring;
+
+                immutable nickname = slice.nom('!').stripModeSign();
+                if (nickname == bot.nickname) continue;
+
+                immutable ident = slice.nom('@');
+                immutable address = slice;
+
+                const newUser = IRCUser(nickname, ident, address);
+
+                auto user = nickname in users;
+                if (!user)
+                {
+                    users[nickname] = IRCUser.init;
+                    user = nickname in users;
+                }
+
+                newUser.meldInto!(Yes.overwrite)(*user);
+            }
+        }
+    }
+
+
     // onUserAwarenessEndOfWHOIS
     /++
      +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
