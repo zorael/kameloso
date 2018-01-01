@@ -1986,7 +1986,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
-        plugin.state.channels[event.channel].setMode(event.aux, event.content);
+        plugin.state.channels[event.channel]
+            .setMode(event.aux, event.content, plugin.state.bot.server);
     }
 
 
@@ -2152,7 +2153,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 assert(0);
             }
 
-            channels[event.channel].setMode(mode, event.content);
+            channels[event.channel]
+                .setMode(mode, event.content, plugin.state.bot.server);
         }
     }
 
@@ -2168,7 +2170,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     {
         import kameloso.irc : setMode;
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-        plugin.state.channels[event.channel].setMode(event.aux, event.content);
+        plugin.state.channels[event.channel]
+            .setMode(event.aux, event.content, plugin.state.bot.server);
     }
 }
 

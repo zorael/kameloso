@@ -2487,7 +2487,7 @@ struct IRCParser
  +  ------------
  +/
 void setMode(ref IRCChannel channel, const string signedModestring,
-    const string data) @safe
+    const string data, IRCServer server) @safe
 {
     import kameloso.string : has, nom;
     import std.array : array;
@@ -2501,229 +2501,219 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 
     with (channel)
     {
-        if (data.length)
+        auto datalines = data.splitter(" ").array.retro;
+        auto moderange = modestring.retro;
+        auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
+
+        Mode[] newModes;
+        IRCUser[] carriedExemptions;
+
+        foreach (modechar, datastring; ziprange)
         {
-            // Mode has a data argument
+            Mode newMode;
+            newMode.modechar = modechar.to!char;
 
-            auto datalines = data.splitter(" ").array.retro;
-            auto moderange = modestring.retro;
-            auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
-
-            if (sign == '+')
+            if (modechar == 'e')
             {
-                // Additive data mode
+                // Exemption, carry it to the next aMode
+                carriedExemptions ~= IRCUser(datastring);
+                continue;
+            }
 
-                Mode[] newModes;
-                IRCUser[] carriedExemptions;
+            if (!datastring.has('$') && datastring.has('!') && datastring.has('@'))
+            {
+                // Looks like a user
+                newMode.user = IRCUser(datastring);
+            }
+            else if (datastring.has('$'))
+            {
+                // extban; https://freenode.net/kb/answer/extbans
+                // Does not support a mix of normal and second form bans
+                // e.g. *!*@*$#channel
 
-                foreach (modechar, datastring; ziprange)
+                /+ extban format:
+                "$a:dannylee$##arguments"
+                "$a:shr000ms"
+                "$a:deadfrogs"
+                "$a:b4b"
+                "$a:terabits$##arguments"
+                // "$x:*0x71*"
+                "$a:DikshitNijjer"
+                "$a:NETGEAR_WNDR3300"
+                "$~a:eir"+/
+                string slice = datastring[1..$];
+
+                if (slice[0] == '~')
                 {
-                    Mode newMode;
-                    newMode.modechar = modechar.to!char;
-
-                    if (modechar == 'e')
-                    {
-                        // Exemption. Carry it and continue to the next (ban)
-                        assert(datastring.has('!') && datastring.has('@'));
-                        carriedExemptions ~= IRCUser(datastring);
-                        continue;
-                    }
-
-                    if (datastring.has('!') && datastring.has('@'))
-                    {
-                        // Looks like a user
-                        newMode.user = IRCUser(datastring);
-                    }
-                    else if (datastring.has('$'))
-                    {
-                        // extban; https://freenode.net/kb/answer/extbans
-                        // Does not support a mix of normal and second form bans
-                        // e.g. *!*@*$#channel
-
-                        /+ extban format:
-                        "$a:dannylee$##arguments"
-                        "$a:shr000ms"
-                        "$a:deadfrogs"
-                        "$a:b4b"
-                        "$a:terabits$##arguments"
-                        // "$x:*0x71*"
-                        "$a:DikshitNijjer"
-                        "$a:NETGEAR_WNDR3300"
-                        "$~a:eir"+/
-
-                        string slice = datastring[1..$];
-
-                        if (slice[0] == '~')
-                        {
-                            // Negated mode
-                            newMode.negated = true;
-                            slice = slice[1..$];
-                        }
-
-                        if (slice[0] == 'a')
-                        {
-                            // Mode by account
-                            if (slice.has(':'))
-                            {
-                                slice.nom(':');
-
-                                if (slice.has('$'))
-                                {
-                                    // More than one field, first is account
-                                    newMode.user.account = slice.nom('$');
-                                    newMode.data = slice;
-                                }
-                                else
-                                {
-                                    // Whole slice is an account
-                                    newMode.user.account = slice;
-                                }
-                            }
-                            else
-                            {
-                                // "$~a"
-                                // FIXME: Figure out how to express this.
-                                if (slice.length)
-                                {
-                                    newMode.data = slice;
-                                }
-                                else
-                                {
-                                    newMode.data = datastring;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Unhandled extban mode
-                            newMode.data = datastring;
-                        }
-                    }
-                    else
-                    {
-                        // Normal, non-extban mode
-                        newMode.data = datastring;
-                    }
-
-                    if ((modechar == 'b') || (modechar == 'q') ||
-                        (modechar == 'I'))
-                    {
-                        // Ban, quiet or invite exemption
-                        // If an identical Mode exists, skip
-                        foreach (mode; modes)
-                        {
-                            if (mode == newMode)
-                            {
-                                // Duplicate mode exists; add new exemption
-                                mode.exemptions ~= carriedExemptions;
-                                carriedExemptions.length = 0;
-                                continue;
-                            }
-                        }
-
-                        newMode.exemptions = carriedExemptions;
-                        carriedExemptions.length = 0;
-                    }
-                    else
-                    {
-                        // Any non-ban, non-exemption mode
-
-                        if (datastring.length)
-                        {
-                            // Mode has data. Create a Mode for it
-                            foreach (immutable i, mode; modes)
-                            {
-                                if (mode.modechar == modechar)
-                                {
-                                    modes[i] = newMode;
-                                    continue;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            import std.string : indexOf;
-
-                            // Mode is a plain channel mode, append to string
-                            immutable charIndex = modechars.indexOf(modechar);
-                            if (charIndex == -1) modechars ~= modechar;
-                            continue;
-                        }
-                    }
-
-                    newModes ~= newMode;
+                    // Negated extban
+                    newMode.negated = true;
+                    slice = slice[1..$];
                 }
 
-                modes ~= newModes;
-            }
-            else if (sign == '-')
-            {
-                // Subtractive data mode
-
-                foreach (modechar, datastring; ziprange)
+                if (slice[0] == 'a')
                 {
-                    Mode newMode;
-                    newMode.modechar = modechar.to!char;
-
-                    if (datastring.length)
+                    // Account extban
+                    if (slice.has(':'))
                     {
-                        if (datastring.has('!') && datastring.has('@'))
+                        // More than one field
+                        slice.nom(':');
+
+                        if (slice.has('$'))
                         {
-                            // Looks like a user
-                            newMode.user = IRCUser(datastring);
+                            // More than one field, first is account
+                            newMode.user.account = slice.nom('$');
+                            newMode.data = slice;
+                        }
+                        else
+                        {
+                            // Whole slice is an account
+                            newMode.user.account = slice;
+                        }
+                    }
+                    else
+                    {
+                        // "$~a"
+                        // FIXME: Figure out how to express this.
+                        if (slice.length)
+                        {
+                            newMode.data = slice;
                         }
                         else
                         {
                             newMode.data = datastring;
                         }
-
-                        size_t[] toRemove;
-
-                        foreach (i, mode; modes)
-                        {
-                            if (mode == newMode)
-                            {
-                                // Existing mode, queue it to be removed
-                                toRemove ~= i;
-                            }
-                        }
-
-                        foreach_reverse(i; toRemove)
-                        {
-                            modes = modes.remove(i);
-                        }
                     }
-                    else
-                    {
-                        // No data for this mode, recurse with data string.init
-                        return setMode(channel, sign ~ modechar.to!string,
-                            string.init);
-                    }
+                }
+                else
+                {
+                    // Unhandled extban mode
+                    newMode.data = datastring;
                 }
             }
             else
             {
-                assert(0, "Unknown mode sign: " ~ sign);
+                // Normal, non-user non-extban mode
+                newMode.data = datastring;
             }
-        }
-        else
-        {
-            // No data; simple modechar mode
 
             if (sign == '+')
             {
-                foreach (immutable modechar; modestring)
+                if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
                 {
-                    if (!modechars.has(modechar))
+                    // FIXME: op, half-op or voice
+                    continue;
+                }
+
+                if (server.aModes.has(modechar))
+                {
+                    /++
+                     +  A = Mode that adds or removes a nick or address to a
+                     +  list. Always has a parameter.
+                     +/
+
+                    // STACKS.
+                    // If an identical Mode exists, add exemptions and skip
+                    foreach (mode; modes)
                     {
-                        modechars ~= modechar;
+                        if (mode == newMode)
+                        {
+                            mode.exemptions ~= carriedExemptions;
+                            carriedExemptions.length = 0;
+                            continue;
+                        }
+                    }
+
+                    newMode.exemptions ~= carriedExemptions;
+                    carriedExemptions.length = 0;
+                }
+                else if (server.bModes.has(modechar) ||
+                    server.cModes.has(modechar))
+                {
+                    /++
+                     +  B = Mode that changes a setting and always has a
+                     +  parameter.
+                     +
+                     +  C = Mode that changes a setting and only has a
+                     +  parameter when set.
+                     +/
+
+                    // DOES NOT STACK.
+                    // If an identical Mode exists, overwrite
+                    foreach (immutable i, mode; modes)
+                    {
+                        if (mode.modechar == modechar)
+                        {
+                            modes[i] = newMode;
+                            continue;
+                        }
                     }
                 }
+                else /*if (server.dModes.has(modechar))*/
+                {
+                    // Some clients assumes that any mode not listed is of
+                    // type D.
+                    if (!modechars.has(modechar)) modechars ~= modechar;
+                    continue;
+                }
+
+                newModes ~= newMode;
             }
             else if (sign == '-')
             {
-                foreach (immutable modechar; modestring)
+                if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
                 {
+                    // FIXME: op, half-op or voice
+                    continue;
+                }
+
+                if (server.aModes.has(modechar))
+                {
+                    /++
+                     +  A = Mode that adds or removes a nick or address to a
+                     +  a list. Always has a parameter.
+                     +/
+
+                    // If a comparison matches, remove
+                    size_t[] toRemove;
+
+                    foreach (immutable i, mode; modes)
+                    {
+                        if (mode == newMode)
+                        {
+                            toRemove ~= i;
+                        }
+                    }
+
+                    foreach_reverse (i; toRemove)
+                    {
+                        modes = modes.remove(i);
+                    }
+                }
+                else if (server.bModes.has(modechar) ||
+                    server.cModes.has(modechar))
+                {
+                    /++
+                     +  B = Mode that changes a setting and always has a
+                     +  parameter.
+                     +
+                     +  C = Mode that changes a setting and only has a
+                     +  parameter when set.
+                     +/
+
+                    // If the modechar matches, remove
+                    foreach (immutable i, mode; modes)
+                    {
+                        if (mode.modechar == newMode.modechar)
+                        {
+                            modes = modes.remove(i);
+                            break;
+                        }
+                    }
+                }
+                else /*if (server.dModes.has(modechar))*/
+                {
+                    // Some clients assumes that any mode not listed is of
+                    // type D.
                     import std.string : indexOf, representation;
 
                     immutable modecharIndex = modechars.indexOf(modechar);
@@ -2736,8 +2726,14 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             }
             else
             {
-                assert(0, "Unknown mode sign: " ~ sign);
+                assert(0, "Invalid mode sign: " ~ sign);
             }
+
+        }
+
+        if (sign == '+')
+        {
+            modes ~= newModes;
         }
     }
 }
@@ -2748,36 +2744,43 @@ unittest
     import std.stdio;
     import std.conv : text;
 
+    IRCServer server;
+    // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
+    server.aModes = "eIbq";
+    server.bModes = "k";
+    server.cModes = "flj";
+    server.dModes = "CFLMPQScgimnprstz";
+
     {
         IRCChannel chan;
 
         chan.topic = "Huerbla";
 
-        chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org");
+        chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes.length == 1);
 
-        chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS");
+        chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes.length == 3);
 
-        chan.setMode("-b", "*!*@*");
+        chan.setMode("-b", "*!*@*", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes.length == 0);
 
-        chan.setMode("+i", string.init);
+        chan.setMode("+i", string.init, server);
         assert(chan.modechars == "i", chan.modechars);
 
-        chan.setMode("+v", string.init);
-        assert(chan.modechars == "iv", chan.modechars);
+        chan.setMode("+v", string.init, server);
+        assert(chan.modechars == "i", chan.modechars);
 
-        chan.setMode("-i", string.init);
-        assert(chan.modechars == "v", chan.modechars);
+        chan.setMode("-i", string.init, server);
+        assert(!chan.modechars.length, chan.modechars);
 
-        chan.setMode("+l", "200");
+        chan.setMode("+l", "200", server);
         IRCChannel.Mode lMode;
         lMode.modechar = 'l';
         lMode.data = "200";
@@ -2789,14 +2792,14 @@ unittest
     {
         IRCChannel chan;
 
-        chan.setMode("+CLPcnprtf", "##linux-overflow");
+        chan.setMode("+CLPcnprtf", "##linux-overflow", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes[0].data == "##linux-overflow");
         assert(chan.modes.length == 1);
         assert(chan.modechars.length == 8);
 
-        chan.setMode("+bee", "abc!def@ghi jkl!*@*");
+        chan.setMode("+bee", "mynick!myident@myaddress abc!def@ghi jkl!*@*", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes.length == 2);
@@ -2806,12 +2809,12 @@ unittest
     {
         IRCChannel chan;
 
-        chan.setMode("+ns", string.init);
+        chan.setMode("+ns", string.init, server);
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 0);
-        assert(chan.modechars == "ns", chan.modechars);
+        assert(chan.modechars == "sn", chan.modechars);
 
-        chan.setMode("-sn", string.init);
+        chan.setMode("-sn", string.init, server);
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 0);
         assert(chan.modechars.length == 0);
