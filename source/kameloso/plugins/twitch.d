@@ -100,15 +100,12 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // badge (each in the format <badge>/<version>, such as admin/1).
             // Valid badge values: admin, bits, broadcaster, global_mod,
             // moderator, subscriber, staff, turbo.
-            import std.string : indexOf;
-
             if (!value.length) break;
 
             // Assume the first badge is the most prominent one.
             // Seems to be the case
-            immutable slash = value.indexOf('/');
-            assert((slash != -1), "Slash-less badgestring");
-            event.sender.badge = value[0..slash];
+            string slice = value;
+            event.sender.badge = slice.nom('/');
             break;
 
         case "mod":
