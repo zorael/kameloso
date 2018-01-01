@@ -324,6 +324,7 @@ void onEndOfMotd(ConnectPlugin plugin)
         }
 
         if ((bot.authentication == Status.finished) ||
+            !bot.authPassword.length ||
             (bot.server.daemon == IRCServer.Daemon.twitch))
         {
             // tryAuth finished early with an unsuccessful login, else
