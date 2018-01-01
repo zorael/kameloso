@@ -494,8 +494,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
 
     // Colour
-    import std.string : indexOf;
-
     struct StructName2
     {
         int int_ = 12_345;
@@ -513,21 +511,21 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
     assert((sink.data.length > 12), "Empty sink after coloured fill");
 
-    assert(sink.data.indexOf("-- StructName") != -1);
-    assert(sink.data.indexOf("int_") != -1);
-    assert(sink.data.indexOf("12345") != -1);
+    assert(sink.data.has("-- StructName"));
+    assert(sink.data.has("int_"));
+    assert(sink.data.has("12345"));
 
-    assert(sink.data.indexOf("string_") != -1);
-    assert(sink.data.indexOf(`"foo"`) != -1);
+    assert(sink.data.has("string_"));
+    assert(sink.data.has(`"foo"`));
 
-    assert(sink.data.indexOf("bool_") != -1);
-    assert(sink.data.indexOf("true") != -1);
+    assert(sink.data.has("bool_"));
+    assert(sink.data.has("true"));
 
-    assert(sink.data.indexOf("float_") != -1);
-    assert(sink.data.indexOf("3.14") != -1);
+    assert(sink.data.has("float_"));
+    assert(sink.data.has("3.14"));
 
-    assert(sink.data.indexOf("double_") != -1);
-    assert(sink.data.indexOf("99.9") != -1);
+    assert(sink.data.has("double_"));
+    assert(sink.data.has("99.9"));
 
     // Adding Settings does nothing
     alias StructName2Settings = StructName2;
