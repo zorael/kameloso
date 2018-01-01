@@ -47,7 +47,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if (event.sender.isServer)
     {
-        event.badge = "server";
+        event.sender.badge = "server";
 
         if (event.type == IRCEvent.Type.CLEARCHAT)
         {
@@ -108,7 +108,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // Seems to be the case
             immutable slash = value.indexOf('/');
             assert((slash != -1), "Slash-less badgestring");
-            event.badge = value[0..slash];
+            event.sender.badge = value[0..slash];
             break;
 
         case "mod":
@@ -117,7 +117,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
             if (value == "0") break;
 
-            if (!event.badge.length)
+            if (!event.sender.badge.length)
             {
                 logger.errorf("PANIC! %s yet no previous badge!", key);
             }
@@ -134,7 +134,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // The broadcaster can have any of these.
             if (!value.length) break;
-            if (!event.badge.length)
+            if (!event.sender.badge.length)
             {
                 logger.errorf("PANIC! %s yet no previous badge!", value);
             }

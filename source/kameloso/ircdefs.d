@@ -24,7 +24,6 @@ nothrow:
  +      IRCUser sender;
  +      IRCUser target;
  +      string raw;
- +      string badge;
  +      string channel;
  +      string content;
  +      string tags;
@@ -807,9 +806,6 @@ struct IRCEvent
     /// The event type, signifying what *kind* of event this is.
     Type type;
 
-    /// The highest priority badge the sender has, in this context.
-    string badge;  // FIXME: move to IRCUser
-
     /// The raw IRC string, untouched.
     string raw;
 
@@ -1052,6 +1048,7 @@ struct IRCServer
  +      string ident;
  +      string address;
  +      string account;
+ +      string badge;
  +      bool special;
  +      size_t lastWhois;
  +  }
@@ -1070,6 +1067,9 @@ struct IRCUser
 
     deprecated("Use IRCUser.account instead of IRCUser.login")
     alias login = account;
+
+    /// The highest priority "badge" the sender has, in this context.
+    string badge;
 
     /++
      +  Flag that the user is "special", which is usually that it is a service
