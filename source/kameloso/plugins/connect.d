@@ -156,6 +156,9 @@ void joinChannels(ConnectPlugin plugin)
 /++
  +  Responds to `ERR_BADPING` events by sending the text (supplied as content in
  +  the `IRCEvent`) to the server.
+ +
+ +  "Also known as ERR_NEEDPONG (Unreal/Ultimate) for use during registration,
+ +  however it's not used in Unreal (and might not be used in Ultimate either)."
  +/
 @(IRCEvent.Type.ERR_BADPING)
 void onToConnectType(ConnectPlugin plugin, const IRCEvent event)

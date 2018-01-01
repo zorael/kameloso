@@ -675,7 +675,13 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case ERR_BADPING: // 513
+        /++
+         +  "Also known as ERR_NEEDPONG (Unreal/Ultimate) for use during
+         +  registration, however it's not used in Unreal (and might not be used
+         +  in Ultimate either)."
+         +/
         // :irc.uworld.se 513 kameloso :To connect type /QUOTE PONG 3705964477
+
         if (slice.has(" :To connect"))
         {
             event.target.nickname = slice.nom(" :To connect");
