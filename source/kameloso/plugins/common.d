@@ -2415,6 +2415,38 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
 }
 
 
+// addChannelUserMode
+/++
+ +  Adds a channel mode to a channel, to elevate a participating user to a
+ +  prefixed mode, like operator, halfop and voiced.
+ +
+ +  This is done by populating the `mods` associative array, keyed by the
+ +  *modechar* of the mode (o for +o and @, v for +v and +, etc) with values of
+ +  `string[]` arrays of nicknames with that mode ("prefix").
+ +/
+void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
+    const char modechar, const string nickname, const IRCServer)
+{
+    import std.algorithm.searching : canFind;
+
+    with (plugin.state)
+    {
+        // Create the prefix mod array if it doesn't exist
+        auto modslist = modechar in channel.mods;
+        if (!modslist)
+        {
+            channel.mods[modechar] = [];
+            modslist = modechar in channel.mods;
+        }
+
+        if (!(*modslist).canFind(nickname))
+        {
+            (*modslist) ~= nickname;
+        }
+    }
+}
+
+
 // isStruct
 /++
  +  Eponymous template that is true if the passed type is a struct.
