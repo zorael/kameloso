@@ -150,6 +150,7 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * compilation time and memory use :c
 * optional formatting in IRC output?
 * registration on [code.dlang.org](https://code.dlang.org)
+* support for custom user channel modes (alongside op and voice), then we can *finally* register
 
 # Built With
 
