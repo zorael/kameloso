@@ -43,6 +43,9 @@ interface IRCPlugin
     /// Executed when gathering things to put in the configuration file
     void addToConfig(ref Appender!string);
 
+    /// Executed during start if we want to change a setting by its string name
+    void setSettingByName(const string, const string);
+
     /// Executed when connection has been established
     void start();
 
@@ -1080,6 +1083,33 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 T tempSymbol;
                 configFile.readConfigInto(tempSymbol);
                 tempSymbol.meldInto!(Yes.overwrite)(symbol);
+            }
+        }
+    }
+
+
+    // setSettingByName
+    void setSettingByName(const string setting, const string value)
+    {
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import kameloso.config : setMemberByName;
+        import std.meta : Filter;
+        import std.traits : getSymbolsByUDA, hasUDA;
+
+        alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
+
+        foreach (ref symbol; symbols)
+        {
+            symbol.setMemberByName(setting, value);
+        }
+
+        foreach (immutable i, ref symbol; this.tupleof)
+        {
+            static if (hasUDA!(this.tupleof[i], Settings) &&
+                (is(typeof(this.tupleof[i]) == struct)))
+            {
+                symbol.setMemberByName(setting, value);
             }
         }
     }
