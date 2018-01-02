@@ -2826,7 +2826,7 @@ unittest
         chan.setMode("+i", string.init, server);
         assert(chan.modechars == "i", chan.modechars);
 
-        chan.setMode("+v", string.init, server);
+        chan.setMode("+v", "harbl", server);
         assert(chan.modechars == "i", chan.modechars);
 
         chan.setMode("-i", string.init, server);
@@ -2870,6 +2870,16 @@ unittest
         foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         assert(chan.modes.length == 0);
         assert(chan.modechars.length == 0);
+    }
+
+    {
+        IRCChannel chan;
+        chan.setMode("+oo", "kameloso zorael", server);
+        assert(chan.mods['o'].length == 2);
+        chan.setMode("-o", "kameloso", server);
+        assert(chan.mods['o'].length == 1);
+        chan.setMode("-o", "zorael", server);
+        assert(!chan.mods['o'].length);
     }
 }
 
