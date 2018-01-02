@@ -299,7 +299,8 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
 {
     import kameloso.string : unquoted;
     import std.conv : ConvException, to;
-    import std.traits : Unqual, getUDAs, hasUDA, isArray, isSomeString, isType;
+    import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
+        isSomeString, isType;
 
     top:
     switch (memberToSet)
@@ -353,9 +354,13 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                             }
                         }
                     }
-                    else static if (isSomeString!T)
+                    else static if (is(T : string))
                     {
                         thing.tupleof[i] = valueToSet.unquoted;
+                    }
+                    else static if (isAssociativeArray!T)
+                    {
+                        // Silently ignore AAs for now
                     }
                     else
                     {
