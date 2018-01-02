@@ -1592,6 +1592,22 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
         with (parser)
         switch (key)
         {
+        case "PREFIX":
+            // PREFIX=(Yqaohv)!~&@%+
+            import std.format : formattedRead;
+
+            string modes;
+            string prefixes;
+            value.formattedRead("(%s)%s", modes, prefixes);
+
+            for (size_t i = 0; i<modes.length; ++i)
+            {
+                bot.server.prefixchars[prefixes[i]] = modes[i];
+                bot.server.prefixes ~= modes[i];
+            }
+
+            break;
+
         case "CHANTYPES":
             // TODO: Logic here to register channel prefix signs
             break;
@@ -2813,6 +2829,18 @@ unittest
     server.bModes = "k";
     server.cModes = "flj";
     server.dModes = "CFLMPQScgimnprstz";
+
+    // SpotChat: PREFIX=(Yqaohv)!~&@%+
+    server.prefixes = "Yqaohv";
+    server.prefixchars =
+    [
+        '!' : 'Y',
+        '~' : 'q',
+        '&' : 'a',
+        '@' : 'o',
+        '%' : 'h',
+        '+' : 'v',
+    ];
 
     {
         IRCChannel chan;

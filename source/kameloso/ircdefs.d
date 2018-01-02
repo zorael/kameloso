@@ -1042,6 +1042,12 @@ struct IRCServer
 
         /// D = Mode that changes a setting and never has a parameter.
         string dModes;
+
+        /// Prefix characters by mode character; o by @, v by +, etc.
+        char[char] prefixchars;
+
+        /// Characer channel mode prefixes (o,v,h,...)
+        string prefixes;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
