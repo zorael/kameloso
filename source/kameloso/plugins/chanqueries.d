@@ -38,9 +38,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     void fiberFn()
     {
         import kameloso.messaging : raw;
-        import core.thread : Fiber, Thread;
-        import core.time : seconds;
-        import std.format : format;
+        import core.thread : Fiber;
 
         bool loopedOnce;
 
@@ -48,32 +46,31 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
         {
             if (loopedOnce)
             {
+                Fiber.yield();  // awaiting RPL_ENDOFWHO
+
+                plugin.delayFiber(fiber, plugin.secondsBetween);
                 Fiber.yield();
-                Thread.sleep(plugin.secondsBetween.seconds);
             }
 
-            // Remove timer and restore IRCEvent.Type awaits once we have better
-            // chanmodes handling
-
             raw(plugin.state.mainThread, "MODE " ~ channel);
-            Fiber.yield();
+            Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
-            Thread.sleep(plugin.secondsBetween.seconds);
-            raw(plugin.state.mainThread, "MODE %s +b".format(channel));
             plugin.delayFiber(fiber, plugin.secondsBetween);
             Fiber.yield();
 
-            Thread.sleep(plugin.secondsBetween.seconds);
-            raw(plugin.state.mainThread, "MODE %s +q".format(channel));
+            foreach (immutable modechar; plugin.state.bot.server.aModes)
+            {
+                import std.format : format;
+
+                raw(plugin.state.mainThread,
+                    "MODE %s +%c".format(channel, modechar));
+                plugin.delayFiber(fiber, plugin.secondsBetween);
+                Fiber.yield();
+            }
+
             plugin.delayFiber(fiber, plugin.secondsBetween);
             Fiber.yield();
 
-            Thread.sleep(plugin.secondsBetween.seconds);
-            raw(plugin.state.mainThread, "MODE %s +I".format(channel));
-            plugin.delayFiber(fiber, plugin.secondsBetween);
-            Fiber.yield();
-
-            Thread.sleep(plugin.secondsBetween.seconds);
             raw(plugin.state.mainThread, "WHO " ~ channel);
 
             loopedOnce = true;
@@ -87,11 +84,6 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     {
         awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
         awaitingFibers[RPL_ENDOFWHO] ~= fiber;
-        //awaitingFibers[RPL_ENDOFBANLIST] ~= fiber;
-        //awaitingFibers[RPL_ENDOFQUIETLIST] ~= fiber;
-        //awaitingFibers[RPL_ENDOFINVITELIST] ~= fiber;
-        //awaitingFibers[ERR_CHANOPRIVSNEEDED] ~= fiber;
-        //awaitingFibers[ERR_UNKNOWNMODE] ~= fiber;
     }
 
     fiber.call();
