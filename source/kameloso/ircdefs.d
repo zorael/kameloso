@@ -2107,6 +2107,15 @@ struct IRCChannel
      +/
     string[] users;
 
+    /// Array of channel operators.
+    string[] ops;
+
+    /// Array of channel half-ops.
+    string[] halfops;
+
+    /// Array of voiced users.
+    string[] voiced;
+
     /// When the channel was created, expresed in UNIX time.
     long created;
 

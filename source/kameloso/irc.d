@@ -2610,7 +2610,37 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             {
                 if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
                 {
-                    // FIXME: op, half-op or voice
+                    import std.algorithm.searching : canFind;
+
+                    // Register operators, half-ops and voiced
+                    with (channel)
+                    switch (modechar)
+                    {
+                    case 'o':
+                        if (!ops.canFind(newMode.data))
+                        {
+                            ops ~= newMode.data;
+                        }
+                        break;
+
+                    case 'h':
+                        if (!halfops.canFind(newMode.data))
+                        {
+                            halfops ~= newMode.data;
+                        }
+                        break;
+
+                    case 'v':
+                        if (!voiced.canFind(newMode.data))
+                        {
+                            voiced ~= newMode.data;
+                        }
+                        break;
+
+                    default:
+                        break;
+                    }
+
                     continue;
                 }
 
@@ -2672,7 +2702,32 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             {
                 if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
                 {
-                    // FIXME: op, half-op or voice
+                    import std.algorithm.mutation : remove;
+                    import std.algorithm.searching : countUntil;
+
+                    // Register operators, half-ops and voiced
+                    with (channel)
+                    switch (modechar)
+                    {
+                    case 'o':
+                        immutable index = ops.countUntil(newMode.data);
+                        if (index != -1) ops = ops.remove(index);
+                        break;
+
+                    case 'h':
+                        immutable index = halfops.countUntil(newMode.data);
+                        if (index != -1) halfops = halfops.remove(index);
+                        break;
+
+                    case 'v':
+                        immutable index = voiced.countUntil(newMode.data);
+                        if (index != -1) voiced = voiced.remove(index);
+                        break;
+
+                    default:
+                        break;
+                    }
+
                     continue;
                 }
 
