@@ -144,13 +144,11 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * investigate inverse channel behaviour (blacklists)
 * pipedream: DCC
 * pipedream two: `ncurses`
-* more command-line flags
 * more modules? uda.d/attribute.d?
 * merge thottling with timing
 * compilation time and memory use :c
 * optional formatting in IRC output?
 * registration on [code.dlang.org](https://code.dlang.org)
-* support for custom user channel modes (alongside op and voice), then we can *finally* register
 
 # Built With
 
