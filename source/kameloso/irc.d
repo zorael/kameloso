@@ -1822,6 +1822,8 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
     import std.datetime.systime : Clock;
 
+    if (!raw.length) throw new IRCParseException("Tried to parse empty string");
+
     IRCEvent event;
 
     event.time = Clock.currTime.toUnixTime;
