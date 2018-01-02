@@ -2444,3 +2444,55 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
  +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
  +/
 enum isStruct(T) = is(T == struct);
+
+
+// applyCustomSettings
+/++
+ +  Changes a setting of a plugin, given both their name and the setting in
+ +  string form.
+ +
+ +  This merely iterates the passed `plugins` and calls their `setSettingByName`
+ +  methods.
+ +/
+void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
+{
+    import kameloso.common : logger;
+    import kameloso.string : has, nom;
+
+    top:
+    foreach (immutable line; customSettings)
+    {
+        string slice = line;
+        string pluginstring;
+        string setting;
+        string value;
+
+        if (!slice.has!(Yes.decode)("."))
+        {
+            logger.warning("Bad plugin.setting=value format");
+            continue;
+        }
+
+        pluginstring = slice.nom!(Yes.decode)(".");
+
+        if (slice.has!(Yes.decode)("="))
+        {
+            setting = slice.nom!(Yes.decode)("=");
+            value = slice;
+        }
+        else
+        {
+            setting = slice;
+            value = "true";
+        }
+
+        foreach (plugin; plugins)
+        {
+            if (plugin.name != pluginstring) continue;
+            plugin.setSettingByName(setting, value);
+            continue top;
+        }
+
+        logger.warning("Invalid plugin: ", pluginstring);
+    }
+}
