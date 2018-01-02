@@ -192,7 +192,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             writeln();
 
             // If we don't initialise the plugins there'll be no plugins array
-            initPlugins();
+            initPlugins(customSettings);
 
             printObjects(bot, bot.server, settings);
 
@@ -217,7 +217,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             enum width = 18;
             printObjects!width(bot, bot.server, settings);
 
-            initPlugins();
+            initPlugins(customSettings);
+
             foreach (plugin; plugins) plugin.printSettings();
 
             return Yes.quit;

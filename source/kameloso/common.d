@@ -1389,7 +1389,7 @@ struct Client
      +  It only initialises them to the point where they're aware of their settings,
      +  and not far enough to have loaded any resources.
      +/
-    void initPlugins()
+    void initPlugins(string[] customSettings)
     {
         import kameloso.plugins;
         import kameloso.plugins.common : IRCPluginState;
@@ -1429,6 +1429,8 @@ struct Client
         {
             plugin.loadConfig(state.settings.configFile);
         }
+
+        plugins.applyCustomSettings(customSettings);
     }
 
 

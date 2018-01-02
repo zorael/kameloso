@@ -921,7 +921,8 @@ int main(string[] args)
 
             parser = IRCParser(bot);
 
-            initPlugins();
+            initPlugins(customSettings);
+
             conn.connect(*abort);
 
             if (!conn.connected)
