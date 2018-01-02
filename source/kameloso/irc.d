@@ -1611,11 +1611,12 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
              +/
              with (bot.server)
              {
-                string modeslice = event.content;
+                string modeslice = value;
                 aModes = modeslice.nom(',');
                 bModes = modeslice.nom(',');
                 cModes = modeslice.nom(',');
                 dModes = modeslice;
+                assert(!dModes.has(','), "Bad chanmodes; dModes has comma");
              }
              break;
 
