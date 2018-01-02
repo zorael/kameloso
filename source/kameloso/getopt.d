@@ -69,7 +69,7 @@ public:
  +  // ...
  +  ------------
  +/
-Flag!"quit" handleGetopt(ref Client client, string[] args)
+Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.common : initLogger, printObjects, printVersionInfo;
@@ -120,6 +120,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
             "gen",           &shouldGenerateAsserts,
             "bright",        "Bright terminal colour setting (BETA)",
                              &settings.brightTerminal,
+            "set",           "Manually change a setting (--set plugin.option=setting)",
+                             &customSettings,
         );
 
         meldSettingsFromFile(bot, settings);

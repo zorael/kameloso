@@ -741,6 +741,8 @@ int main(string[] args)
     Client client;
     client.abort = &abort;
 
+    string[] customSettings;
+
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
     initLogger(client.settings.monochrome, client.settings.brightTerminal);
@@ -758,7 +760,7 @@ int main(string[] args)
     {
         import kameloso.getopt : handleGetopt;
         // Act on arguments getopt, quit if whatever was passed demands it
-        if (client.handleGetopt(args) == Yes.quit) return 0;
+        if (client.handleGetopt(args, customSettings) == Yes.quit) return 0;
     }
     catch (const GetOptException e)
     {
