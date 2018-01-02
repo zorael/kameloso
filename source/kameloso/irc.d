@@ -537,7 +537,17 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.target.address = slice.nom(' ');
         slice.nom(' ');  // server
         event.target.nickname = slice.nom(' ');
-        slice.nom(' ');  // H|G
+
+        immutable hg = slice.nom(' ');  // H|G
+        if (hg.length == 2)
+        {
+            import std.conv : to;
+            // H
+            // H@
+            // H+
+            event.aux = hg[1].to!string;
+        }
+
         slice.nom(' ');  // hopcount
         event.content = slice.stripLeft();
         break;
