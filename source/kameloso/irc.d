@@ -1663,13 +1663,8 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
             if (bot.server.address.endsWith(".twitch.tv"))
             {
                 bot.server.network = "Twitch";
+                bot.updated = true;
             }
-            else
-            {
-                bot.server.network = "unknown";
-            }
-
-            bot.updated = true;
         }
     }
 }
