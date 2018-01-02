@@ -303,9 +303,11 @@ void generateAsserts(ref Client client)
         while ((input = readln()) !is null)
         {
             import std.regex : matchFirst, regex;
-            if (abort) return;
+            if (*abort) return;
 
             auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
+            if (!hits[1].length) break;
+
             immutable event = parser.toIRCEvent(hits[1]);
             //sink.formatEventAssertBlock(event);
             writeln();

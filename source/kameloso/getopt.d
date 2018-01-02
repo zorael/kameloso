@@ -223,10 +223,18 @@ Flag!"quit" handleGetopt(ref Client client, string[] args)
 
         if (shouldGenerateAsserts)
         {
+            import kameloso.common : logger, printObject;
             import kameloso.debugging : generateAsserts;
+            import kameloso.irc : IRCParseException;
 
             // --gen|--generate was passed, enter assert generation
-            client.generateAsserts();
+            try client.generateAsserts();
+            catch (const IRCParseException e)
+            {
+                logger.error(e.msg);
+                printObject(e.event);
+            }
+
             return Yes.quit;
         }
 
