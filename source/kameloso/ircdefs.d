@@ -2122,7 +2122,7 @@ struct IRCChannel
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
-        sink.formattedWrite("TOPIC:%s nUSERS:%d MODES(%s):%s",
-            topic, users.length, modechars, modes);
+        sink.formattedWrite("TOPIC:%s\nnUSERS:%d\nMODES(%s):%s\nOPS:%s\nHALFOPS:%s\nVOICED:%s",
+            topic, users.length, modechars, modes, ops, halfops, voiced);
     }
 }
