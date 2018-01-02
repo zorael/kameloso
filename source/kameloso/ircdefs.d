@@ -2115,14 +2115,34 @@ struct IRCChannel
      +/
     string[] users;
 
+    /++
+     +  Associative array of nicknames with a prefixing channel mode (operator,
+     +  halfops, voiced, ...) keyed by modechar.
+     +/
+    string[][char] mods;
+
+    /// Template to deduplicate code for mods shorthands.
+    ref string[] modsShorthand(char prefix)()
+    {
+        auto modsOp = prefix in mods;
+
+        if (!modsOp)
+        {
+            mods[prefix] = [];
+            modsOp = prefix in mods;
+        }
+
+        return *modsOp;
+    }
+
     /// Array of channel operators.
-    string[] ops;
+    alias ops = modsShorthand!'o';
 
-    /// Array of channel half-ops.
-    string[] halfops;
+    /// Array of channel halfops.
+    alias halfops = modsShorthand!'h';
 
-    /// Array of voiced users.
-    string[] voiced;
+    /// Array of voiced channel users.
+    alias voiced = modsShorthand!'v';
 
     /// When the channel was created, expresed in UNIX time.
     long created;
@@ -2130,7 +2150,13 @@ struct IRCChannel
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
-        sink.formattedWrite("TOPIC:%s\nnUSERS:%d\nMODES(%s):%s\nOPS:%s\nHALFOPS:%s\nVOICED:%s",
-            topic, users.length, modechars, modes, ops, halfops, voiced);
+
+        sink.formattedWrite("TOPIC:%s\nnUSERS:%d\nMODES(%s):%s",
+            topic, users.length, modechars, modes);
+
+        foreach (immutable prefix, list; mods)
+        {
+            sink.formattedWrite("\n+%s: %s", prefix, list);
+        }
     }
 }
