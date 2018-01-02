@@ -1633,4 +1633,20 @@ unittest
             assert((num == 367), num.to!string);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":lamia.ca.SpotChat.org 940 kameloso #garderoben :End of channel spamfilter list");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == ENDOFSPAMFILTERLIST), type.to!string);
+            assert((sender.address == "lamia.ca.SpotChat.org"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#garderoben"), channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert(!target.special, target.special.to!string);
+            assert((content == "End of channel spamfilter list"), content);
+            assert((num == 940), num.to!string);
+        }
+    }
 }

@@ -743,6 +743,7 @@ struct IRCEvent
         RPL_SASLMECHS, // = 908,
         BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
         ERR_WORDFILTERED, // = 936,
+        ENDOFSPAMFILTERLIST, // = 940,  // <nickname> <channel> :End of channel spamfilter list
         NICKUNLOCKED, // = 945,
         NICKNOTLOCKED, // = 946,
         ERR_CANTUNLOADMODULE, // = 972, // CONFLICT
@@ -1628,6 +1629,7 @@ struct Typenums
         908 : Type.RPL_SASLMECHS,
         931 : Type.BOTSNOTWELCOME,
         936 : Type.ERR_WORDFILTERED,
+        940 : Type.ENDOFSPAMFILTERLIST,
         945 : Type.NICKUNLOCKED,
         946 : Type.NICKNOTLOCKED,
         972 : Type.ERR_CANNOTDOCOMMAND,
