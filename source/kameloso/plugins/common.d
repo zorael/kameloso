@@ -2009,6 +2009,36 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         // User awareness bits add the IRCUser
         with (plugin.state)
         {
+            // Register operators, half-ops and voiced
+            with (event.target)
+            with (channels[event.channel])
+            switch (event.aux)
+            {
+            case "@":
+                if (!ops.canFind(nickname))
+                {
+                    ops ~= nickname;
+                }
+                break;
+
+            case "%":
+                if (!halfops.canFind(nickname))
+                {
+                    halfops ~= nickname;
+                }
+                break;
+
+            case "+":
+                if (!voiced.canFind(nickname))
+                {
+                    voiced ~= nickname;
+                }
+                break;
+
+            default:
+                break;
+            }
+
             if (event.target.nickname == bot.nickname) return;
 
             if (channels[event.channel].users.canFind(event.target.nickname))
@@ -2057,64 +2087,76 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
         with (plugin.state)
         {
-            if (names.front.has('!') && names.front.has('@'))
+            foreach (immutable userstring; names)
             {
-                // SpotChat-like, names are in full nick!ident@address form
-                foreach (immutable userstring; names)
+                string slice = userstring;
+                string nickname;
+
+                if (names.front.has('!') && names.front.has('@'))
                 {
-                    string slice = userstring;
-
-                    immutable nickname = slice.nom('!').stripModeSign();
-                    if (nickname == bot.nickname) continue;
-
-                    if (channels[event.channel].users.canFind(nickname))
-                    {
-                        continue;
-                    }
-
-                    channels[event.channel].users ~= nickname;
-
-                    auto user = nickname in users;
-                    if (!user)
-                    {
-                        /++
-                         +  Creating the IRCUser is not in scope for
-                         +  ChannelAwareness, but we need one in place to
-                         +  increment the refcount. Add an IRCUser.init and let
-                         +  UserAwareness flesh it out.
-                         +/
-                        users[nickname] = IRCUser.init;
-                        user = nickname in users;
-                    }
-
-                    ++(*user).refcount;
+                    // SpotChat-like, names are in full nick!ident@address form
+                    nickname = slice.nom('!');
                 }
-            }
-            else
-            {
-                // Freenode-like, names are just nicknames
-                foreach (immutable signedName; names)
+                else
                 {
-                    immutable nickname = stripModeSign(signedName);
-                    if (nickname == bot.nickname) continue;
-
-                    if (channels[event.channel].users.canFind(nickname))
-                    {
-                        continue;
-                    }
-
-                    channels[event.channel].users ~= nickname;
-
-                    auto user = nickname in users;
-                    if (!user)
-                    {
-                        // See above
-                        users[nickname] = IRCUser.init;
-                        user = nickname in users;
-                    }
-
-                    ++(*user).refcount;
+                    // Freenode-like, only a nickname with possible @%+ prefix
+                    nickname = userstring;
                 }
+
+                nickname = stripModeSign(nickname);
+
+                // Register operators, half-ops and voiced
+                with (channels[event.channel])
+                switch (userstring[0])
+                {
+                case '@':
+                    if (!ops.canFind(nickname))
+                    {
+                        ops ~= nickname;
+                    }
+                    break;
+
+                case '%':
+                    if (!halfops.canFind(nickname))
+                    {
+                        halfops ~= nickname;
+                    }
+                    break;
+
+                case '+':
+                    if (!voiced.canFind(nickname))
+                    {
+                        voiced ~= nickname;
+                    }
+                    break;
+
+                default:
+                    break;
+                }
+
+                if (nickname == bot.nickname) continue;
+
+                if (channels[event.channel].users.canFind(nickname))
+                {
+                    continue;
+                }
+
+                channels[event.channel].users ~= nickname;
+
+                auto user = nickname in users;
+                if (!user)
+                {
+                    /++
+                        +  Creating the IRCUser is not in scope for
+                        +  ChannelAwareness, but we need one in place to
+                        +  increment the refcount. Add an IRCUser.init and let
+                        +  UserAwareness flesh it out.
+                        +/
+                    users[nickname] = IRCUser.init;
+                    user = nickname in users;
+                }
+
+                ++(*user).refcount;
             }
         }
     }
