@@ -2622,39 +2622,18 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 
             if (sign == '+')
             {
-                if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
+                if (server.prefixes.has(modechar))
                 {
                     import std.algorithm.searching : canFind;
 
-                    // Register operators, half-ops and voiced
-                    with (channel)
-                    switch (modechar)
+                    // Register users with prefix modes (op, halfop, voice, ...)
+                    auto prefixedUsers = newMode.modechar in channel.mods;
+                    if (prefixedUsers && (*prefixedUsers).canFind(newMode.data))
                     {
-                    case 'o':
-                        if (!ops.canFind(newMode.data))
-                        {
-                            ops ~= newMode.data;
-                        }
-                        break;
-
-                    case 'h':
-                        if (!halfops.canFind(newMode.data))
-                        {
-                            halfops ~= newMode.data;
-                        }
-                        break;
-
-                    case 'v':
-                        if (!voiced.canFind(newMode.data))
-                        {
-                            voiced ~= newMode.data;
-                        }
-                        break;
-
-                    default:
-                        break;
+                        continue;
                     }
 
+                    channel.mods[newMode.modechar] ~= newMode.data;
                     continue;
                 }
 
@@ -2714,35 +2693,17 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             }
             else if (sign == '-')
             {
-                if ((modechar == 'o') || (modechar == 'h') || (modechar == 'v'))
+                if (server.prefixes.has(modechar))
                 {
                     import std.algorithm.mutation : remove;
                     import std.algorithm.searching : countUntil;
 
-                    // Register operators, half-ops and voiced
-                    with (channel)
-                    switch (modechar)
-                    {
-                    case 'o':
-                        immutable index = ops.countUntil(newMode.data);
-                        if (index != -1) ops = ops.remove(index);
-                        break;
+                    // Remove users with prefix modes (op, halfop, voice, ...)
+                    auto prefixedUsers = newMode.modechar in channel.mods;
+                    if (!prefixedUsers) continue;
 
-                    case 'h':
-                        immutable index = halfops.countUntil(newMode.data);
-                        if (index != -1) halfops = halfops.remove(index);
-                        break;
-
-                    case 'v':
-                        immutable index = voiced.countUntil(newMode.data);
-                        if (index != -1) voiced = voiced.remove(index);
-                        break;
-
-                    default:
-                        break;
-                    }
-
-                    continue;
+                    immutable index = (*prefixedUsers).countUntil(newMode.data);
+                    if (index != -1) (*prefixedUsers) = (*prefixedUsers).remove(index);
                 }
 
                 if (server.aModes.has(modechar))
