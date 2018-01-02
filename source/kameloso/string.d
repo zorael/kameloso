@@ -246,7 +246,8 @@ unittest
  +  assert((unquoted == "This is a quote"), unquoted);
  +  ------------
  +/
-string unquoted(Flag!"recurse" recurse = Yes.recurse)(const string line) @property
+T unquoted(Flag!"recurse" recurse = Yes.recurse, T)(const T line) @property
+if (isSomeString!T)
 {
     if (line.length < 2)
     {
