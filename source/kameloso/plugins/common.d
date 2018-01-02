@@ -2009,34 +2009,15 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         // User awareness bits add the IRCUser
         with (plugin.state)
         {
-            // Register operators, half-ops and voiced
-            with (event.target)
-            with (channels[event.channel])
-            switch (event.aux)
+            if (event.aux.length)
             {
-            case "@":
-                if (!ops.canFind(nickname))
+                // Register operators, half-ops, voiced etc
+                // Server-sent string, can assume ASCII (@,%,+...) and slice [0]
+                if (auto modechar = event.aux[0] in bot.server.prefixchars)
                 {
-                    ops ~= nickname;
+                    plugin.addChannelUserMode(channels[event.channel],
+                        *modechar, event.target.nickname, bot.server);
                 }
-                break;
-
-            case "%":
-                if (!halfops.canFind(nickname))
-                {
-                    halfops ~= nickname;
-                }
-                break;
-
-            case "+":
-                if (!voiced.canFind(nickname))
-                {
-                    voiced ~= nickname;
-                }
-                break;
-
-            default:
-                break;
             }
 
             if (event.target.nickname == bot.nickname) return;
@@ -2105,33 +2086,12 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
                 nickname = stripModeSign(nickname);
 
-                // Register operators, half-ops and voiced
-                with (channels[event.channel])
-                switch (userstring[0])
+                // Register operators, half-ops, voiced etc
+                // Server-sent string, can assume ASCII (@,%,+...) and slice [0]
+                if (auto modechar = userstring[0] in bot.server.prefixchars)
                 {
-                case '@':
-                    if (!ops.canFind(nickname))
-                    {
-                        ops ~= nickname;
-                    }
-                    break;
-
-                case '%':
-                    if (!halfops.canFind(nickname))
-                    {
-                        halfops ~= nickname;
-                    }
-                    break;
-
-                case '+':
-                    if (!voiced.canFind(nickname))
-                    {
-                        voiced ~= nickname;
-                    }
-                    break;
-
-                default:
-                    break;
+                    plugin.addChannelUserMode(channels[event.channel],
+                        *modechar, nickname, bot.server);
                 }
 
                 if (nickname == bot.nickname) continue;
