@@ -399,6 +399,13 @@ Flag!"quit" mainLoop(ref Client client)
                             // Always removed a timed Fiber after processing
                             toRemove ~= i;
                         }
+                        catch (const IRCParseException e)
+                        {
+                            logger.warningf("IRCParseException %s.timedFibers[%d]: %s",
+                                plugin.name, i, e.msg);
+                            printObject(e.event);
+                            toRemove ~= i;
+                        }
                         catch (const Exception e)
                         {
                             logger.warningf("Exception %s.timedFibers[%d]: %s",
@@ -525,6 +532,14 @@ Flag!"quit" mainLoop(ref Client client)
                                     {
                                         toRemove ~= i;
                                     }
+                                }
+                                catch (const IRCParseException e)
+                                {
+                                    logger.warningf("IRCParseException %s." ~
+                                        "awaitingFibers[%d]: %s",
+                                        plugin.name, i, e.msg);
+                                    printObject(e.event);
+                                    toRemove ~= i;
                                 }
                                 catch (const Exception e)
                                 {
