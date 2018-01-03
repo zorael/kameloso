@@ -31,6 +31,11 @@ void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
         alias T = Unqual!(typeof(value));
         enum memberstring = __traits(identifier, thing.tupleof[i]);
 
+        // IRCEvent.target.special is at present never true
+        if ((prefix == "target") && (memberstring == "special")) continue;
+
+        // IRCEvent.raw is always visible in the parser.toIRCEvent command
+        // and the time timestamp is not something we take into consideration
         static if ((memberstring == "raw") || (memberstring == "time"))
         {
             continue;
