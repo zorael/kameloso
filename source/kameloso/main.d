@@ -323,6 +323,10 @@ Flag!"quit" mainLoop(ref Client client)
     auto generator = new Generator!string(() =>
         listenFiber(client.conn, *(client.abort)));
 
+    enum checkTimedFibersEveryN = 3;
+
+    int timedFiberCheckCounter = checkTimedFibersEveryN;
+
     while (!quit)
     {
         if (generator.state == Fiber.State.TERM)
@@ -353,56 +357,62 @@ Flag!"quit" mainLoop(ref Client client)
             immutable nowInUnix = now.toUnixTime;
 
             /++
-             +  This is arguably the hottest path of the entire program.
+             +  This is inarguably the hottest path of the entire program.
              +
              +  Once per server read (or receive timeout), walk the array of
              +  plugins and see if they have timed `Fiber`s to call.
              +
-             +  After some effort it's lean but nothing gets called more except
-             +  the actual `Socket`-reading itself.
-             +
-             +  Using a manual for instead of a foreach is more than an order of
-             +  magnitude faster; brief testing over 1_000_000 iterations showed
-             +  a ratio of roughly 1:20 (0.05x)).
-             +
-             +  Raise the reading timeout (`kameloso.constants.Timeout.receive`)
-             +  to lower the impact.
+             +  After some effort it's leaner but nothing gets called more
+             +  except the actual `Socket`-reading itself.
              +/
-            for (size_t n; n<plugins.length; ++n)
+            if (--timedFiberCheckCounter <= 0)
             {
-                auto plugin = plugins[n];
+                timedFiberCheckCounter = checkTimedFibersEveryN;
 
-                if (!plugin.timedFibers.length) continue;
-
-                size_t[] toRemove;
-
-                foreach (immutable i, ref fiber; plugin.timedFibers)
+                foreach (plugin; plugins)
                 {
-                    if (fiber.id > nowInUnix) continue;
+                    if (!plugin.timedFibers.length) continue;
 
-                    try
+                    size_t[] toRemove;
+
+                    foreach (immutable i, ref fiber; plugin.timedFibers)
                     {
-                        if (fiber.state == Fiber.State.HOLD)
+                        if (fiber.id > nowInUnix)
                         {
-                            fiber.call();
+                            import kameloso.constants : Timeout;
+                            import std.algorithm.comparison : min;
+
+                            immutable next = cast(int)(fiber.id - nowInUnix) /
+                                Timeout.receive;
+                            timedFiberCheckCounter = min(timedFiberCheckCounter,
+                                next);
+                            continue;
                         }
 
-                        // Always removed a timed Fiber after processing
-                        toRemove ~= i;
-                    }
-                    catch (const Exception e)
-                    {
-                        logger.warningf("Exception %s.timedFibers[%d]: %s",
-                            plugin.name, i, e.msg);
-                        toRemove ~= i;
-                    }
-                }
+                        try
+                        {
+                            if (fiber.state == Fiber.State.HOLD)
+                            {
+                                fiber.call();
+                            }
 
-                // Clean up processed Fibers
-                foreach_reverse (i; toRemove)
-                {
-                    import std.algorithm.mutation : remove;
-                    plugin.timedFibers = plugin.timedFibers.remove(i);
+                            // Always removed a timed Fiber after processing
+                            toRemove ~= i;
+                        }
+                        catch (const Exception e)
+                        {
+                            logger.warningf("Exception %s.timedFibers[%d]: %s",
+                                plugin.name, i, e.msg);
+                            toRemove ~= i;
+                        }
+                    }
+
+                    // Clean up processed Fibers
+                    foreach_reverse (i; toRemove)
+                    {
+                        import std.algorithm.mutation : remove;
+                        plugin.timedFibers = plugin.timedFibers.remove(i);
+                    }
                 }
             }
 

@@ -35,7 +35,7 @@ enum Timeout
 {
     retry = 10,
     send = 5,
-    receive = 2,
+    receive = 1,
     keepalive = 300,
     resolve = 10,
     ping = 200,
