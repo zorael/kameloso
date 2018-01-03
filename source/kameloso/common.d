@@ -413,7 +413,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                         enum arrayPattern = "%9s %-*s%s(%d)\n";
 
                         sink.formattedWrite(arrayPattern,
-                            T.stringof,
+                            UnqualArray!T.stringof,
                             thisWidth, memberstring,
                             member,
                             member.length);
