@@ -1644,9 +1644,48 @@ unittest
             assert(sender.special, sender.special.to!string);
             assert((channel == "#garderoben"), channel);
             assert((target.nickname == "kameloso"), target.nickname);
-            assert(!target.special, target.special.to!string);
             assert((content == "End of channel spamfilter list"), content);
             assert((num == 940), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":lamia.ca.SpotChat.org 221 kameloso :+ix");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_UMODEIS), type.to!string);
+            assert((sender.address == "lamia.ca.SpotChat.org"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((aux == "+ix"), aux);
+            assert((num == 221), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":Halcy0n!~Halcy0n@SpotChat-rauo6p.dyn.suddenlink.net AWAY :I'm busy");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_AWAY), type.to!string);
+            assert((sender.nickname == "Halcy0n"), sender.nickname);
+            assert((sender.ident == "~Halcy0n"), sender.ident);
+            assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
+            assert(!sender.special, sender.special.to!string);
+            assert((content == "I'm busy"), content);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":Halcy0n!~Halcy0n@SpotChat-rauo6p.dyn.suddenlink.net AWAY");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_UNAWAY), type.to!string);
+            assert((sender.nickname == "Halcy0n"), sender.nickname);
+            assert((sender.ident == "~Halcy0n"), sender.ident);
+            assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
+            assert(!sender.special, sender.special.to!string);
         }
     }
 }
