@@ -5,9 +5,7 @@ import std.conv : to;
 
 unittest
 {
-
     IRCParser parser;
-
     parser.bot.nickname = "kameloso";
 
     /+

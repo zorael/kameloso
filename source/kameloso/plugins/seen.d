@@ -21,8 +21,9 @@
  +  functions with the kind or kinds of IRC events that should invoke them.
  +
  +  Callback `Fiber`s *are* supported but are not in any large-scale use. They
- +  can be registered to process on incoming events, or timed with a precision
- +  of roughly `kameloso.constants.Timeout.receive` + 1 seconds.
+ +  can be registered to process on incoming events, or timed with a worst-case
+ +  precision of roughly `kameloso.constants.Timeout.receive` *
+ +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds.
  +
  +  Annotations look like so:
  +

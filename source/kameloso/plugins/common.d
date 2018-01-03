@@ -1043,7 +1043,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
-        foreach (ref symbol; Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings)))
+        alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
+
+        foreach (ref symbol; symbols)
         {
             alias T = typeof(symbol);
 
@@ -1596,6 +1598,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        // This will passively catch people outside of home channels, but
+        // UserAwareness shouldn't care.
+
         with (plugin.state)
         {
             if (auto oldUser = event.sender.nickname in users)
@@ -2021,7 +2026,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     }
 
 
-    // onChannelAwarensesWHOReplyMixin
+    // onChannelAwarenessWHOReplyMixin
     /++
      +  Add a user as being part of a channel upon receiving the reply from the
      +  request for info on all the participants.

@@ -323,8 +323,10 @@ Flag!"quit" mainLoop(ref Client client)
     auto generator = new Generator!string(() =>
         listenFiber(client.conn, *(client.abort)));
 
+    /// How often to check for timed Fibers, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
 
+    /// How many more receive passes until it should next check for timed Fibers
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
     while (!quit)
@@ -357,16 +359,16 @@ Flag!"quit" mainLoop(ref Client client)
             immutable nowInUnix = now.toUnixTime;
 
             /++
-             +  This is inarguably the hottest path of the entire program.
+             +  At a cadence of once every `checkFiberFibersEveryN`, walk the
+             +  array of plugins and see if they have timed `Fiber`s to call.
              +
-             +  Once per server read (or receive timeout), walk the array of
-             +  plugins and see if they have timed `Fiber`s to call.
-             +
-             +  After some effort it's leaner but nothing gets called more
-             +  except the actual `Socket`-reading itself.
+             +  This is inarguably the hottest path of the entire program. After
+             +  some effort it's leaner but nothing gets called more except the
+             +  actual `Socket`-reading itself.
              +/
             if (--timedFiberCheckCounter <= 0)
             {
+                // Reset counter
                 timedFiberCheckCounter = checkTimedFibersEveryN;
 
                 foreach (plugin; plugins)
@@ -381,6 +383,11 @@ Flag!"quit" mainLoop(ref Client client)
                         {
                             import kameloso.constants : Timeout;
                             import std.algorithm.comparison : min;
+
+                            // This Fiber shouldn't yet be triggered.
+                            // Lower timedFiberCheckCounter to fire earlier, in
+                            // case the time-to-fire is lower than the current
+                            // counter value. This gives it more precision.
 
                             immutable next = cast(int)(fiber.id - nowInUnix) /
                                 Timeout.receive;

@@ -2699,8 +2699,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 }
                 else /*if (server.dModes.has(modechar))*/
                 {
-                    // Some clients assumes that any mode not listed is of
-                    // type D.
+                    // Some clients assume that any mode not listed is of type D
                     if (!modechars.has(modechar)) modechars ~= modechar;
                     continue;
                 }
@@ -2768,8 +2767,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 }
                 else /*if (server.dModes.has(modechar))*/
                 {
-                    // Some clients assumes that any mode not listed is of
-                    // type D.
+                    // Some clients assume that any mode not listed is of type D
                     import std.string : indexOf, representation;
 
                     immutable modecharIndex = modechars.indexOf(modechar);
