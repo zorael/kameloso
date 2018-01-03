@@ -2345,15 +2345,14 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
 
     with (plugin)
     {
-        auto user = newUser.nickname in state.users;
-
-        if (!user)
+        if (auto user = newUser.nickname in state.users)
         {
-            state.users[newUser.nickname] = IRCUser.init;
-            user = newUser.nickname in state.users;
+            newUser.meldInto!overwrite(*user);
         }
-
-        newUser.meldInto!overwrite(*user);
+        else
+        {
+            state.users[newUser.nickname] = newUser;
+        }
     }
 }
 
