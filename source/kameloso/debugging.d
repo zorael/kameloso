@@ -302,6 +302,8 @@ void generateAsserts(ref Client client)
     with (client)
     {
         printObject(parser.bot);
+        writeln("Paste raw event strings and hit enter to generate an assert block.");
+        writeln();
 
         string input;
 
