@@ -871,6 +871,14 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         break;
 
+    case RPL_UMODEIS:
+        // :lamia.ca.SpotChat.org 221 kameloso :+ix
+        // The general heuristics is good enough for this but places modes in
+        // content rather than aux, which is inconsistent with other mode events
+        slice.nom(" :"); // bot nickname
+        event.aux = slice;
+        break;
+
     case RPL_CHANNELMODEIS: // 324
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         slice.nom(' '); // bot nickname
