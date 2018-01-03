@@ -491,13 +491,14 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :Halcy0n!~Halcy0n@SpotChat-rauo6p.dyn.suddenlink.net AWAY :I'm busy
         if (slice.length)
         {
+            event.type = RPL_AWAY;
             // :I'm busy
             slice = slice[1..$];
             event.content = slice;
         }
         else
         {
-            event.type = BACK;
+            event.type = RPL_UNAWAY;
         }
         break;
 
