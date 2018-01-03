@@ -108,7 +108,6 @@ unittest
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
         assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
-        assert(!target.special, target.special.to!string);
         assert((content == "kameloso: 8ball"), content);
 `, '\n' ~ sink.data);
 }
@@ -271,7 +270,6 @@ unittest
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
         assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
-        assert(!target.special, target.special.to!string);
         assert((content == "kameloso: 8ball"), content);
     }
 }`, '\n' ~ sink.data);
