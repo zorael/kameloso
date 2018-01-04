@@ -1727,7 +1727,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.common : meldInto;
-        import kameloso.irc : stripModeSign;
+        import kameloso.irc : stripModesign;
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
@@ -1746,8 +1746,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
             foreach (immutable userstring; names)
             {
                 string slice = userstring;
+                string nickname = slice.nom('!');
 
-                immutable nickname = slice.nom('!').stripModeSign();
+                // UserAwareness doesn't care about the modes
+                bot.server.stripModesign(nickname);
+
                 if (nickname == bot.nickname) continue;
 
                 immutable ident = slice.nom('@');
@@ -2047,11 +2050,21 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
             if (event.aux.length)
             {
                 // Register operators, half-ops, voiced etc
-                // Server-sent string, can assume ASCII (@,%,+...) and slice [0]
-                if (auto modechar = event.aux[0] in bot.server.prefixchars)
+                // Can be more than one if multi-prefix capability is enabled
+                // Server-sent string, can assume ASCII (@,%,+...) and go char
+                // by char
+                foreach (immutable modesign; event.aux)
                 {
-                    plugin.addChannelUserMode(channels[event.channel],
-                        *modechar, event.target.nickname, bot.server);
+                    if (auto modechar = modesign in bot.server.prefixchars)
+                    {
+                        plugin.addChannelUserMode(channels[event.channel],
+                            *modechar, event.target.nickname, bot.server);
+                    }
+                    else
+                    {
+                        logger.warning("Invalid modesign in RPL_WHOREPLY: ",
+                            modesign);
+                    }
                 }
             }
 
@@ -2093,7 +2106,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.RPL_NAMREPLY)
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : stripModeSign;
+        import kameloso.irc : stripModesign;
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
@@ -2119,14 +2132,24 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     nickname = userstring;
                 }
 
-                nickname = stripModeSign(nickname);
+                immutable modesigns = bot.server.stripModesign(nickname);
 
                 // Register operators, half-ops, voiced etc
-                // Server-sent string, can assume ASCII (@,%,+...) and slice [0]
-                if (auto modechar = userstring[0] in bot.server.prefixchars)
+                // Can be more than one if multi-prefix capability is enabled
+                // Server-sent string, can assume ASCII (@,%,+...) and go char
+                // by char
+                foreach (immutable modesign; modesigns)
                 {
-                    plugin.addChannelUserMode(channels[event.channel],
-                        *modechar, nickname, bot.server);
+                    if (auto modechar = modesign in bot.server.prefixchars)
+                    {
+                        plugin.addChannelUserMode(channels[event.channel],
+                            *modechar, nickname, bot.server);
+                    }
+                    else
+                    {
+                        logger.warning("Invalid modesign in RPL_NAMREPLY: ",
+                            modesign);
+                    }
                 }
 
                 if (nickname == bot.nickname) continue;
