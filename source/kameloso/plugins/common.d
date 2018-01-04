@@ -1760,14 +1760,14 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
                 const newUser = IRCUser(nickname, ident, address);
 
-                auto user = nickname in users;
-                if (!user)
+                if (auto user = nickname in users)
                 {
-                    users[nickname] = IRCUser.init;
-                    user = nickname in users;
+                    newUser.meldInto!(Yes.overwrite)(*user);
                 }
-
-                newUser.meldInto!(Yes.overwrite)(*user);
+                else
+                {
+                    users[nickname] = newUser;
+                }
             }
         }
     }
