@@ -173,7 +173,6 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     with (event.sender)
     {
-
         if (prefix.has('!'))
         {
             // user!~ident@address
@@ -504,10 +503,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case ERR_NOSUCHCHANNEL: // 403
         // :moon.freenode.net 403 kameloso archlinux :No such channel
-        // :asimov.freenode.net 332 kameloso^ #garderoben :Are you employed, sir?
-        // :asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.
-        // :services. 328 kameloso^ #ubuntu :http://www.ubuntu.com
-        // :cherryh.freenode.net 477 kameloso^ #archlinux :Cannot join channel (+r) - you need to be identified with services
         slice.nom(' ');  // bot nickname
         event.channel = slice.nom(" :");
         event.content = slice;

@@ -1737,6 +1737,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
         if (names.empty || !names.front.has('!') || !names.front.has('@'))
         {
+            // Empty or Freenode-like, where the list is just of nicknames with
+            // possible mode prefix
             return;
         }
 
@@ -2166,11 +2168,11 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 if (!user)
                 {
                     /++
-                        +  Creating the IRCUser is not in scope for
-                        +  ChannelAwareness, but we need one in place to
-                        +  increment the refcount. Add an IRCUser.init and let
-                        +  UserAwareness flesh it out.
-                        +/
+                     +  Creating the IRCUser is not in scope for
+                     +  ChannelAwareness, but we need one in place to
+                     +  increment the refcount. Add an IRCUser.init and let
+                     +  UserAwareness flesh it out.
+                     +/
                     users[nickname] = IRCUser.init;
                     user = nickname in users;
                 }
