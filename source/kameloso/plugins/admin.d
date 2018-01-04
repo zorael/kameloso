@@ -416,61 +416,21 @@ void onCommandAsserts(AdminPlugin plugin)
 }
 
 
-// onCommandJoin
+// joinPartImpl
 /++
- +  Joins a supplied channel.
- +
- +  Simply defers to `joinPartImpl` with the prefix `JOIN`.
+ +  Joins or parts a supplied channel.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "join")
-@Description("Joins a channel.")
-void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
-{
-    plugin.joinPartImpl("JOIN", event);
-}
-
-
-// onCommandPart
-/++
- +  Parts from a supplied channel.
- +
- +  Simply defers to `joinPartImpl` with the prefix `PART`.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "part")
-@Description("Parts a channel.")
-void onCommandPart(AdminPlugin plugin, const IRCEvent event)
-{
-    plugin.joinPartImpl("PART", event);
-}
-
-
-// joinPartImpl
-/++
- +  Joins or parts a supplied channel.
- +
- +  Technically sends the action passed in the prefix variable with the list of
- +  channels as its list of arguments.
- +
- +  Params:
- +      prefix = the action string to send (`JOIN` or `PART`).
- +      event = the triggering `IRCEvent`.
- +/
-void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
+@Description("Joins/parts a channel.")
+void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : joiner, splitter;
     import std.array : array;
     import std.conv : to;
-    import std.format : format;
-
-    // The prefix could be in lowercase. Do we care?
-    assert(((prefix == "JOIN") || (prefix == "PART")),
-           "Invalid prefix passed to joinPartlImpl: " ~ prefix);
 
     if (!event.content.length)
     {
@@ -478,13 +438,13 @@ void joinPartImpl(AdminPlugin plugin, const string prefix, const IRCEvent event)
         return;
     }
 
-    immutable string channels = event.content
+    immutable channels = event.content
         .splitter(' ')
         .joiner(",")
         .array
         .to!string;
 
-    if (prefix == "JOIN")
+    if (event.type == IRCEvent.Type.JOIN)
     {
         plugin.join(channels);
     }
