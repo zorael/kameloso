@@ -92,7 +92,7 @@ void onJoin(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.RPL_NAMREPLY)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
-    import kameloso.irc : stripModeSign;
+    import kameloso.irc : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock;
@@ -101,7 +101,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     foreach (immutable prefixedNickname; event.content.splitter)
     {
-        immutable nickname = prefixedNickname.stripModeSign();
+        string nickname = prefixedNickname;
+        plugin.state.bot.server.stripModesign(nickname);
         if (nickname == plugin.state.bot.nickname) continue;
 
         IRCEvent fakeEvent;
@@ -109,7 +110,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
         with (fakeEvent)
         {
             type = IRCEvent.Type.JOIN;
-            sender.nickname = nickname.stripModeSign();
+            sender.nickname = nickname;
             channel = event.channel;
             time = Clock.currTime.toUnixTime;
         }

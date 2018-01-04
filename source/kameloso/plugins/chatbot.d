@@ -237,12 +237,13 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 
     if (!plugin.chatbotSettings.quotes) return;
 
-    import kameloso.irc : isValidNickname, stripModeSign;
+    import kameloso.irc : isValidNickname, stripModesign;
     import std.format : format;
     import std.string : strip;
 
-    // stripModeSign to allow for quotes from @nickname and +dudebro
-    immutable nickname = event.content.strip.stripModeSign();
+    // stripModesign to allow for quotes from @nickname and +dudebro
+    string nickname = event.content.strip;
+    plugin.state.bot.server.stripModesign(nickname);
 
     if (!nickname.isValidNickname(plugin.state.bot.server))
     {
@@ -292,14 +293,15 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.quotes) return;
 
-    import kameloso.irc : stripModeSign;
+    import kameloso.irc : stripModesign;
     import kameloso.string : nom;
     import std.format : format;
     import std.json : JSONException;
     import std.typecons : Yes;
 
     string slice = event.content;  // need mutable
-    immutable nickname = slice.nom!(Yes.decode)(' ').stripModeSign();
+    string nickname = slice.nom!(Yes.decode)(' ');
+    plugin.state.bot.server.stripModesign(nickname);
 
     if (!nickname.length || !slice.length) return;
 

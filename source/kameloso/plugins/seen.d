@@ -202,9 +202,10 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
      +/
     foreach (const signed; event.content.splitter(" "))
     {
-        import kameloso.irc : stripModeSign;
+        import kameloso.irc : stripModesign;
 
-        immutable nickname = signed.stripModeSign();
+        string nickname = signed;
+        plugin.state.bot.server.stripModesign(nickname);
         if (nickname == plugin.state.bot.nickname) continue;
 
         plugin.updateUser(nickname);
@@ -412,13 +413,15 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +  This is not annotated with an IRC event type and will merely be invoked from
  +  elsewhere, like any normal function.
  +/
-void updateUser(SeenPlugin plugin, const string nickname)
+void updateUser(SeenPlugin plugin, const string signedNickname)
 {
-    import kameloso.irc : stripModeSign;
+    import kameloso.irc : stripModesign;
     import std.datetime.systime : Clock;
 
     /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    plugin.seenUsers[nickname.stripModeSign()] = Clock.currTime.toUnixTime;
+    string nickname = signedNickname;
+    plugin.state.bot.server.stripModesign(nickname);
+    plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
 }
 
 
