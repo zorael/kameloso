@@ -46,18 +46,24 @@ It's *possible* to build it without `dub` but it is non-trivial if you want web-
 
 GitHub offers downloads in ZIP format, but it's easier to use `git` and clone the repository that way.
 
+```bash
     $ git clone https://github.com/zorael/kameloso.git
     $ cd kameloso
+```
 
 ## Compiling
 
+```bash
     $ dub build
+```
 
 This will compile it in the default `debug` build type, which adds some extra code and debugging symbols. You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Refer to the output of `dub build --help` for more build types.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode for them to run.
 
+```bash
     $ dub build -b unittest
+```
 
 The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run the program in one go.
 
@@ -73,13 +79,17 @@ The available *build configurations* are:
 
 You can specify which to build with the `-c` switch.
 
+```bash
     $ dub build -b release -c vanilla
+```
 
 # How to use
 
 The bot needs the services account name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
+```bash
     $ ./kameloso --writeconfig
+```
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
@@ -89,6 +99,7 @@ The colours may be hard to see and the text difficult to read if you have a brig
 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master account in the configuration file before it will listen to anything you do. Before allowing anyone to trigger any functionality it will look them up and compare them with its internal list.
 
+```
          you | !say herp
     kameloso | herp
          you | !8ball
@@ -109,13 +120,16 @@ Once the bot has joined a channel it's ready. Mind that you need to authorise yo
     kameloso | [youtube.com] Danish language
          you | !reddit https://www.youtube.com/watch?v=s-mOy8VUEBk
     kameloso | Reddit post: https://www.reddit.com/r/languagelearning/comments/7dcxfa/norwegian_comedy_about_the_danish_language_4m15s/
+```
 
 Send `help` to the bot in a private query message for a brief list of available bot commands. This listing is experimental and subject for improvement. Also, mind that commands defined as *regular expressions* will not be shown, due to technical reasons.
 
 The *prefix* character (here '`!`') is configurable; see your generated configuration file. Common alternatives are '`.`' and '`~`', making it `.note` and `~quote` respectively.
 
+```ini
     [Core]
     prefix              !
+```
 
 It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix token, like `"please "`.
 
@@ -125,6 +139,7 @@ To connect to Twitch servers you must supply an [OAuth token](https://en.wikiped
 
 Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
+```ini
     [IRCBot]
     nickname            twitchaccount
     pass                oauth:the50letteroauthstringgoeshere
@@ -134,6 +149,7 @@ Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.c
     [IRCServer]
     address             irc.chat.twitch.tv
     port                6667
+```
 
 `pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, when the username and nickname is still being negotiated, whereas `authPassword` is something that is sent to nickname services after registration is finished and you have successfully logged onto the server. (In the case of SASL, `authPassword` is used late during registration.)
 
