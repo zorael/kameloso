@@ -2262,12 +2262,10 @@ unittest
 }
 
 
-// stripModeSign
+// stripModesign
 /++
  +  Takes a nickname and strips it of any prepended mode signs, like the `@` in
  +  `@nickname`.
- +
- +  The list of signs should be added to when more are discovered.
  +
  +  Params:
  +      nickname = The signed nickname.
@@ -2276,37 +2274,66 @@ unittest
  +      The nickname with the sign sliced off.
  +
  +  ------------
- +  string withSign = "@kameloso";
- +  string withoutSign = withSign.stripModeSign();
- +  assert(withoutSign == "kameloso");
+ +  IRCServer server;
+ +  string nickname = "@+kameloso";
+ +  immutable signs = server.stripModeSign(nickname);
+ +  assert((nickname == "kameloso"), nickname);
+ +  assert((signs == "@+"), signs);
  +  ------------
  +/
-string stripModeSign(const string nickname)
+string stripModesign(const IRCServer server, ref string nickname)
 {
     if (!nickname.length) return string.init;
 
-    switch (nickname[0])
-    {
-        case '@':
-        case '+':
-        case '~':
-        case '%':
-        // case '&': // channel prefix?
-            // recurse, since the server may have the multi-prefix capability
-            return stripModeSign(nickname[1..$]);
+    size_t i;
 
-        default:
-            // no sign
-            return nickname;
+    for (i = 0; i<nickname.length; ++i)
+    {
+        if (nickname[i] in server.prefixchars)
+        {
+            continue;
+        }
+        else
+        {
+            break;
+        }
     }
+
+    scope(exit) nickname = nickname[i..$];
+
+    return nickname[0..i];
 }
 
-///
 unittest
 {
-    assert("@nickname".stripModeSign == "nickname");
-    assert("+kameloso".stripModeSign == "kameloso");
-    assert(!"".stripModeSign.length);
+    IRCServer server;
+    server.prefixchars =
+    [
+        '@' : 'o',
+        '+' : 'v',
+        '%' : 'h',
+    ];
+
+    {
+        string nickname = "@kameloso";
+        immutable signs = server.stripModesign(nickname);
+        assert(nickname == "kameloso");
+        assert((signs == "@"), signs);
+    }
+
+    {
+        string nickname = "kameloso";
+        immutable signs = server.stripModesign(nickname);
+        assert(nickname == "kameloso");
+        assert((signs == string.init), signs);
+    }
+
+    {
+        string nickname = "@+kameloso";
+        immutable signs = server.stripModesign(nickname);
+        assert(nickname == "kameloso");
+        assert((signs == "@+"), signs);
+    }
 }
 
 
