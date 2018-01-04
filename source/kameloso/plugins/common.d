@@ -2453,8 +2453,8 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
         auto modslist = modechar in channel.mods;
         if (!modslist)
         {
-            channel.mods[modechar] = [];
-            modslist = modechar in channel.mods;
+            channel.mods[modechar] = [ nickname ];
+            return;
         }
 
         if (!(*modslist).canFind(nickname))
