@@ -2111,8 +2111,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
 
+        if (!event.content.length) return;
+
         auto names = event.content.splitter(" ");
-        if (names.empty) return;
 
         with (plugin.state)
         {
