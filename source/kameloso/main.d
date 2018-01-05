@@ -126,21 +126,15 @@ Flag!"quit" checkMessages(ref Client client)
         client.conn.sendline("PONG :", target);
     }
 
-    /// Quit the server with the supplied reason.
-    void quitServer(ThreadMessage.Quit, string reason)
+    /// Quit the server with the supplied reason, or the default.
+    void quitServer(ThreadMessage.Quit, string givenReason)
     {
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
-        logger.trace("--> QUIT :", reason);
-        client.conn.sendline("QUIT :", reason);
-
+        immutable reason = givenReason.length ? givenReason : client.bot.quitReason;
+        logger.tracef(`--> QUIT :"%s"`, reason);
+        client.conn.sendline("QUIT :\"", reason, "\"");
         quit = Yes.quit;
-    }
-
-    /// Quit the server with the default reason
-    void quitEmpty(ThreadMessage.Quit)
-    {
-        return quitServer(ThreadMessage.Quit(), client.bot.quitReason);
     }
 
     /// Saves current configuration to disk
@@ -217,9 +211,7 @@ Flag!"quit" checkMessages(ref Client client)
             break;
 
         case QUIT:
-            immutable reason = content.length ? " :" ~ content : string.init;
-            line = "QUIT %s%s".format(channel, reason);
-            break;
+            return quitServer(ThreadMessage.Quit(), content);
 
         case NICK:
             line = "NICK %s".format(target.nickname);
@@ -262,7 +254,6 @@ Flag!"quit" checkMessages(ref Client client)
             &pong,
             &eventToServer,
             &quitServer,
-            &quitEmpty,
             &save,
             &peekPlugins,
             (Variant v)
