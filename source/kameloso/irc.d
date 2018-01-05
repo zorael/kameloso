@@ -1128,10 +1128,14 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +      const ref parser = A reference to the current `IRCParser`
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +/
-void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
+void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
     import kameloso.string : beginsWith;
     import std.stdio : writeln;
+
+    // Unsure if it's wrong to mark as trusted, but we're only using
+    // stdout.flush, which surely *must* be trusted if writeln to stdout is?
+    version(Cygwin_) import std.stdio : stdout;
 
     if (event.target.nickname.has(' ') ||
         event.channel.has(' '))
