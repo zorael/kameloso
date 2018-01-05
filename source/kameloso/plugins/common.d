@@ -732,15 +732,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 (regexUDA.rtExpr != Regex!char.init),
                                 name ~ " has uninitialised BotRegex engines");
 
-                            // Reset between iterations
-                            mutEvent = event;
-
                             if (!privateState.nickPolicyMatches(regexUDA.policy,
-                                mutEvent))
+                                event))
                             {
-                                continue;
+                                continue funloop;  // next function
                             }
 
+                            // Reset between iterations
+                            mutEvent = event;
                             string thisCommand;
 
                             if (mutEvent.content.has!(Yes.decode)(' '))
@@ -837,7 +836,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                         "check but isn't master; continue",
                                         name, mutEvent.sender.nickname);
                                 }
-                                continue;
+                                continue funloop;
                             }
                             break;
 
@@ -899,7 +898,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     "check; continue", name,
                                     mutEvent.sender.nickname);
                             }
-                            continue;
+                            continue funloop;
                         }
                         break;
 
