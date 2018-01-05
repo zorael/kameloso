@@ -89,11 +89,20 @@ abstract class WHOISRequest
     /// Stored `IRCEvent` to replay
     IRCEvent event;
 
-    /// When the user this concerns was last `WHOIS`ed
-    size_t lastWhois;
+    /// `PrivilegeLevel` of the function to replay
+    PrivilegeLevel privilegeLevel;
+
+    /// When this request was issued
+    size_t when;
 
     /// Replay the event
     void trigger();
+
+    this()
+    {
+        import std.datetime.systime : Clock;
+        when = Clock.currTime.toUnixTime;
+    }
 }
 
 
@@ -114,18 +123,24 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         /// Command payload aside from the `IRCEvent`
         Payload payload;
 
-        this(Payload payload, IRCEvent event, F fn)
+        this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
+            super();
+
             this.payload = payload;
             this.event = event;
+            this.privilegeLevel = privilegeLevel;
             this.fn = fn;
         }
     }
     else
     {
-        this(IRCEvent event, F fn)
+        this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
+            super();
+
             this.event = event;
+            this.privilegeLevel = privilegeLevel;
             this.fn = fn;
         }
     }
@@ -184,6 +199,7 @@ unittest
     event.target.nickname = "kameloso";
     event.content = "hirrpp";
     event.sender.nickname = "zorael";
+    PrivilegeLevel pl = PrivilegeLevel.master;
 
     // delegate()
 
@@ -194,7 +210,7 @@ unittest
         ++i;
     }
 
-    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, &dg);
+    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, pl, &dg);
     queue ~= reqdg;
 
     with (reqdg.event)
@@ -212,7 +228,7 @@ unittest
 
     static void fn() { }
 
-    auto reqfn = whoisRequest(event, &fn);
+    auto reqfn = whoisRequest(event, pl, &fn);
     queue ~= reqfn;
 
     // delegate(ref IRCEvent)
@@ -222,7 +238,7 @@ unittest
         thisEvent.content = "blah";
     }
 
-    auto reqdg2 = whoisRequest(event, &dg2);
+    auto reqdg2 = whoisRequest(event, pl, &dg2);
     queue ~= reqdg2;
 
     assert((reqdg2.event.content == "hirrpp"), event.content);
@@ -233,7 +249,7 @@ unittest
 
     static void fn2(IRCEvent thisEvent) { }
 
-    auto reqfn2 = whoisRequest(event, &fn2);
+    auto reqfn2 = whoisRequest(event, pl, &fn2);
     queue ~= reqfn2;
 }
 
@@ -243,9 +259,10 @@ unittest
  +  Convenience function that returns a `WHOISRequestImpl` of the right type,
  +  *with* a payload attached.
  +/
-WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event, F fn)
+WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
+    PrivilegeLevel privilegeLevel, F fn)
 {
-    return new WHOISRequestImpl!(F, Payload)(payload, event, fn);
+    return new WHOISRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
 }
 
 
@@ -254,9 +271,9 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event, F fn)
  +  Convenience function that returns a `WHOISRequestImpl` of the right type,
  +  *without* a payload attached.
  +/
-WHOISRequest whoisRequest(F)(IRCEvent event, F fn)
+WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
 {
-    return new WHOISRequestImpl!F(event, fn);
+    return new WHOISRequestImpl!F(event, privilegeLevel, fn);
 }
 
 
@@ -848,13 +865,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 (arity!fun == 0))
                             {
                                 return this.doWhois(mutEvent,
-                                    mutEvent.sender.nickname, &fun);
+                                    mutEvent.sender.nickname, privilegeLevel, &fun);
                             }
                             else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
                                 is(Params : AliasSeq!This))
                             {
                                 return this.doWhois(this, mutEvent,
-                                    mutEvent.sender.nickname, &fun);
+                                    mutEvent.sender.nickname, privilegeLevel, &fun);
                             }
                             else static if (Filter!(isIRCPluginParam, Params).length)
                             {
@@ -2400,7 +2417,8 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
  +      fp = the function pointer to call when that happens.
  +/
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
-    const IRCEvent event, const string nickname, F fn)
+    const IRCEvent event, const string nickname, PrivilegeLevel privilegeLevel,
+    F fn)
 {
     import kameloso.constants : Timeout;
     import core.time : seconds;
@@ -2418,20 +2436,23 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     {
         static if (!is(Payload == typeof(null)))
         {
-            state.whoisQueue[nickname] = whoisRequest(payload, event, fn);
+            state.whoisQueue[nickname] = whoisRequest(payload, event,
+                privilegeLevel, fn);
         }
         else
         {
-            state.whoisQueue[nickname] = whoisRequest(state, event, fn);
+            state.whoisQueue[nickname] = whoisRequest(state, event,
+                privilegeLevel, fn);
         }
     }
 }
 
 /// Ditto
 void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
-    const string nickname, F fn)
+    const string nickname, PrivilegeLevel privilegeLevel, F fn)
 {
-    return doWhois!(F, typeof(null))(plugin, null, event, nickname, fn);
+    return doWhois!(F, typeof(null))(plugin, null, event, nickname,
+        privilegeLevel, fn);
 }
 
 
