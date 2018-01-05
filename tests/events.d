@@ -1395,20 +1395,6 @@ unittest
     }
 
     {
-        immutable event = parser.toIRCEvent(":asimov.freenode.net 366 kameloso^ #flerrp :End of /NAMES list.");
-        with (IRCEvent.Type)
-        with (event)
-        {
-            assert((type == RPL_ENDOFNAMES), type.to!string);
-            assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((channel == "#flerrp"), channel);
-            assert((content == "End of /NAMES list."), content);
-            assert((num == 366), num.to!string);
-        }
-    }
-
-    {
         immutable event = parser.toIRCEvent(":port80b.se.quakenet.org 221 kameloso +i");
         with (IRCEvent.Type)
         with (event)
