@@ -564,7 +564,7 @@ Flag!"quit" mainLoop(ref Client client)
 
                         // Fetch any queued `WHOIS` requests and handle
                         auto reqs = plugin.yieldWHOISRequests();
-                        client.handleWHOISQueue(reqs, event, event.target.nickname);
+                        client.handleWHOISQueue(reqs);
 
                         if (plugin.bot.updated)
                         {
@@ -657,52 +657,34 @@ void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibe
 
 // handleWHOISQueue
 /++
- +  Takes a queue of `WHOISRequest` objects and process them one by one,
- +  replaying function pointers on attached `IRCEvent`s.
- +
- +  This is more or less a Command pattern.
+ +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each
+ +  one.
  +/
-void handleWHOISQueue(W)(ref Client client, ref W[string] reqs,
-    const IRCEvent event, const string nickname)
+void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 {
-    if (nickname.length &&
-        ((event.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
-        (event.type == IRCEvent.Type.RPL_WHOISREGNICK)))
-    {
-        // If the event was one with account information, see if there is an
-        // event to replay, and trigger it if so
-        auto req = nickname in reqs;
-        if (!req) return;
-        req.trigger();
-        reqs.remove(nickname);
-    }
-    else
-    {
-        // Walk through requests and call `WHOIS` on those that haven't been
-        // `WHOIS`ed in the last `Timeout.whois` seconds
+    // Walk through requests and call `WHOIS` on those that haven't been
+    // `WHOIS`ed in the last `Timeout.whois` seconds
 
-        foreach (key, value; reqs)
+    foreach (key, value; reqs)
+    {
+        if (!key.length) continue;
+
+        import kameloso.constants : Timeout;
+        import std.datetime.systime : Clock;
+        import core.time : seconds;
+
+        const then = key in client.whoisCalls;
+        const now = Clock.currTime.toUnixTime;
+
+        if (!then || ((now - *then) > Timeout.whois))
         {
-            if (!key.length) continue;
-
-            import kameloso.constants : Timeout;
-
-            import std.datetime.systime : Clock;
-            import core.time : seconds;
-
-            const then = key in client.whoisCalls;
-            const now = Clock.currTime;
-
-            if (!then || ((now - *then) > Timeout.whois.seconds))
-            {
-                logger.trace("--> WHOIS :", key);
-                client.conn.sendline("WHOIS :", key);
-                client.whoisCalls[key] = Clock.currTime;
-            }
-            else
-            {
-                //logger.log(key, " too soon...");
-            }
+            logger.trace("--> WHOIS :", key);
+            client.conn.sendline("WHOIS :", key);
+            client.whoisCalls[key] = Clock.currTime.toUnixTime;
+        }
+        else
+        {
+            //logger.log(key, " too soon...");
         }
     }
 }
