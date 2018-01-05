@@ -57,6 +57,52 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandShowOneUser
+/++
+ +  Prints the details of a specific, supplied user.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@BotCommand(NickPolicy.required, "user")
+@Description("[debug] Prints the details of a specific user.")
+void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : printObject;
+
+    if (event.content in plugin.state.users)
+    {
+        printObject(plugin.state.users[event.sender.nickname]);
+    }
+    else
+    {
+        logger.warning("No such user ", event.content, " in storage");
+    }
+}
+
+
+// onCommandForgetUserAccounts
+/++
+ +  Forgets all users' accounts, prompting new `WHOIS` calls.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@BotCommand(NickPolicy.required, "forgetaccounts")
+@Description("[debug] Forget user accounts.")
+void onCommandForgetAccounts(AdminPlugin plugin)
+{
+    import kameloso.common : printObject;
+
+    foreach (ref user; plugin.state.users)
+    {
+        writeln("Clearing ", user.nickname);
+        user.account = string.init;
+        user.lastWhois = 0L;
+    }
+}
+
+
 // onCommandSave
 /++
  +  Saves current configuration to disk.
@@ -84,7 +130,7 @@ void onCommandSave(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @BotCommand(NickPolicy.required, "users")
-@Description("Prints out the current users array to the local terminal.")
+@Description("[debug] Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
     import kameloso.common : deepSizeof, printObject;
