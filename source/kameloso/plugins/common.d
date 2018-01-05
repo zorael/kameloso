@@ -1701,15 +1701,77 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // No point catching the entire user when we only want the account
+        import kameloso.common : logger, printObject;
 
-        if (auto user = event.target.nickname in plugin.state.users)
+        with (plugin.state)
         {
-            (*user).account = event.target.account;
-        }
-        else
-        {
-            plugin.state.users[event.target.nickname] = event.target;
+            if (auto user = event.target.nickname in users)
+            {
+                (*user).account = event.target.account;
+            }
+            else
+            {
+                users[event.target.nickname] = event.target;
+            }
+
+            // See if there are any queued WHOIS requests to trigger
+            if (auto request = event.target.nickname in whoisQueue)
+            {
+                import std.datetime.systime : Clock;
+                import kameloso.constants : Timeout;
+
+                logger.log(plugin.name, " found WHOISRequest for ", event.target.nickname);
+                printObject(request.event);
+
+                const now = Clock.currTime.toUnixTime;
+                const then = (*request).when;
+
+                if ((now - then) > Timeout.whois)
+                {
+                    // Entry is too old, request timed out. Remove it.
+                    whoisQueue.remove(event.target.nickname);
+                    return;
+                }
+
+                with (PrivilegeLevel)
+                final switch (request.privilegeLevel)
+                {
+                case master:
+                    if (event.target.nickname == bot.master)
+                    {
+                        logger.log(plugin.name, " thinks master:master; Triggering!");
+                        request.trigger();
+                        whoisQueue.remove(event.target.nickname);
+                    }
+                    else
+                    {
+                        logger.warning("Needed privilege master but wasn't");
+                    }
+                    break;
+
+                case friend:
+                    import std.algorithm.searching : canFind;
+
+                    if (event.target.nickname == bot.master ||
+                        bot.friends.canFind(event.target.nickname))
+                    {
+                        logger.log(plugin.name, " thinks friend:friend; Triggering!");
+                        request.trigger();
+                        whoisQueue.remove(event.target.nickname);
+                    }
+                    else
+                    {
+                        logger.warning("Needed privilege friend but wasn't");
+                    }
+                    break;
+
+                case anyone:
+                    logger.log(plugin.name, " thinks anyone; Triggering!");
+                    request.trigger();
+                    whoisQueue.remove(event.target.nickname);
+                    break;
+                }
+            }
         }
     }
 
