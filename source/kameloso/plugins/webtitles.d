@@ -48,7 +48,7 @@ struct TitleLookup
     string domain;
 
     /// The UNIX timestamp of when the title was looked up
-    size_t when;
+    long when;
 }
 
 
@@ -114,8 +114,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         const cachedLookup = url in plugin.cache;
 
-        if (cachedLookup && ((Clock.currTime - SysTime.fromUnixTime(cachedLookup.when))
-            < Timeout.titleCache.seconds))
+        if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when)
+            < Timeout.titleCache))
         {
             logger.log("Found title lookup in cache");
             plugin.state.mainThread.reportURL(*cachedLookup, event);
@@ -365,9 +365,9 @@ void prune(shared TitleLookup[string] cache)
         import std.datetime.systime : Clock;
         import core.time : minutes;
 
-        const now = Clock.currTime;
+        const now = Clock.currTime.toUnixTime;
 
-        if ((now.toUnixTime - entry.when) > expireSeconds)
+        if ((now - entry.when) > expireSeconds)
         {
             garbage ~= key;
         }

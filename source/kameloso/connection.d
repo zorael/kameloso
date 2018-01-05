@@ -268,7 +268,7 @@ void listenFiber(Connection conn, ref bool abort)
     import std.socket : Socket, lastSocketError;
 
     ubyte[BufferSize.socketReceive*2] buffer;
-    SysTime timeLastReceived = Clock.currTime;
+    long timeLastReceived = Clock.currTime.toUnixTime;
     size_t start;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -299,9 +299,9 @@ void listenFiber(Connection conn, ref bool abort)
         }
         else if (bytesReceived == Socket.ERROR)
         {
-            auto elapsed = (Clock.currTime - timeLastReceived);
+            auto elapsed = (Clock.currTime.toUnixTime - timeLastReceived);
 
-            if (elapsed > Timeout.keepalive.seconds)
+            if (elapsed > Timeout.keepalive)
             {
                 // Too much time has passed; we can reasonably assume the socket is disconnected
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
@@ -338,7 +338,7 @@ void listenFiber(Connection conn, ref bool abort)
             continue;
         }
 
-        timeLastReceived = Clock.currTime;
+        timeLastReceived = Clock.currTime.toUnixTime;
 
         const ptrdiff_t end = (start + bytesReceived);
         auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');

@@ -77,14 +77,15 @@ Flag!"quit" checkMessages(ref Client client)
 
         with (client.throttling)
         {
-            if (t0 == SysTime.init) t0 = Clock.currTime;
+            const now = Clock.currTime;
+            if (t0 == SysTime.init) t0 = now;
 
-            double x = (Clock.currTime - t0).total!"msecs"/1000.0;
+            double x = (now - t0).total!"msecs"/1000.0;
             auto y = k * x + m;
 
             if (y < 0)
             {
-                t0 = Clock.currTime;
+                t0 = now;
                 m = 0;
                 x = 0;
                 y = 0;
@@ -92,7 +93,7 @@ Flag!"quit" checkMessages(ref Client client)
 
             while (y >= burst)
             {
-                x = (Clock.currTime - t0).total!"msecs"/1000.0;
+                x = (now - t0).total!"msecs"/1000.0;
                 y = k*x + m;
                 interruptibleSleep(100.msecs, *(client.abort));
                 if (*(client.abort)) return;
@@ -102,7 +103,7 @@ Flag!"quit" checkMessages(ref Client client)
             client.conn.sendline(line);
 
             m = y + increment;
-            t0 = Clock.currTime;
+            t0 = now;
         }
     }
 

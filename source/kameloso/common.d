@@ -1330,7 +1330,7 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
  +      CoreSettings settings;
  +      Connection conn;
  +      IRCPlugin[] plugins;
- +      SysTime[string] whoisCalls;
+ +      long[string] whoisCalls;
  +      IRCParser parser;
  +      ubyte today;
  +      ThrottleValues throttling;
@@ -1364,7 +1364,7 @@ struct Client
     IRCPlugin[] plugins;
 
     /// When a nickname was called `WHOIS` on, for hysteresis.
-    SysTime[string] whoisCalls;
+    long[string] whoisCalls;
 
     /// Parser instance.
     IRCParser parser;

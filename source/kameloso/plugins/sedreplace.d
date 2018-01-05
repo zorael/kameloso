@@ -24,7 +24,7 @@ enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
  +  struct Line
  +  {
  +      string content;
- +      SysTime timestamp;
+ +      long timestamp;
  +  }
  +  ------------
  +/
@@ -35,8 +35,8 @@ struct Line
     /// Contents of last line uttered
     string content;
 
-    /// When the last line was spoken
-    SysTime timestamp;
+    /// When the last line was spoken, in UNIX time
+    long timestamp;
 }
 
 
@@ -160,8 +160,8 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case '#':
             if (const line = event.sender.nickname in plugin.prevlines)
             {
-                if ((Clock.currTime - line.timestamp) >
-                    replaceTimeoutSeconds.seconds)
+                if ((Clock.currTime.toUnixTime - line.timestamp) >
+                    replaceTimeoutSeconds)
                 {
                     // Entry is too old, remove it
                     plugin.prevlines.remove(event.sender.nickname);
@@ -192,7 +192,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
     Line line;
     line.content = stripped;
-    line.timestamp = Clock.currTime;
+    line.timestamp = Clock.currTime.toUnixTime;
     plugin.prevlines[event.sender.nickname] = line;
 }
 

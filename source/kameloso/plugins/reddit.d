@@ -73,8 +73,8 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 
     const cachedLookup = url in plugin.cache;
 
-    if (cachedLookup && ((Clock.currTime - SysTime.fromUnixTime(cachedLookup.when))
-        < Timeout.titleCache.seconds))
+    if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when)
+        < Timeout.titleCache))
     {
         logger.log("Found Reddit lookup in cache");
         plugin.state.mainThread.reportReddit((*cachedLookup).url, event);
@@ -203,9 +203,9 @@ void prune(shared RedditLookup[string] cache)
         import std.datetime : Clock;
         import core.time : minutes;
 
-        const now = Clock.currTime;
+        const now = Clock.currTime.toUnixTime;
 
-        if ((now.toUnixTime - entry.when) > expireSeconds)
+        if ((now - entry.when) > expireSeconds)
         {
             garbage ~= key;
         }

@@ -500,10 +500,10 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
 
     auto user = event.sender.nickname in state.users;
+    const now = Clock.currTime.toUnixTime;
 
     if (!user || !user.account.length &&
-        ((SysTime.fromUnixTime(user.lastWhois) - Clock.currTime)
-          < Timeout.whois.seconds))
+        ((now - (*user).lastWhois) < Timeout.whois))
     {
         return FilterResult.whois;
     }
@@ -2407,9 +2407,9 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     import std.datetime.systime : Clock, SysTime;
 
     const user = nickname in plugin.state.users;
+    const now = Clock.currTime.toUnixTime;
 
-    if (user && ((Clock.currTime - SysTime.fromUnixTime(user.lastWhois))
-        < Timeout.whois.seconds))
+    if (user && ((now - (*user).lastWhois) < Timeout.whois))
     {
         return;
     }
