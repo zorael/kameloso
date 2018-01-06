@@ -544,7 +544,7 @@ deprecated("Don't use truecolour when version isn't Colours")
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
     (const string word, uint r, uint g, uint b)
 {
-    retun word;
+    return word;
 }
 
 ///
