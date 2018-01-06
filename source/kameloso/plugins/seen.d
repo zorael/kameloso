@@ -474,6 +474,11 @@ long[string] loadAA(const string filename)
 
     long[string] aa;
 
+    scope(exit)
+    {
+        logger.logf("Seen users loaded, currently %s users seen.", aa.length);
+    }
+
     if (!filename.exists || !filename.isFile)
     {
         logger.info(filename, " does not exist or is not a file");
@@ -482,6 +487,7 @@ long[string] loadAA(const string filename)
 
     const asJSON = parseJSON(filename.readText).object;
 
+    // Manually insert each entry from the JSON file into the long[string] AA.
     foreach (user, time; asJSON)
     {
         aa[user] = time.integer;
