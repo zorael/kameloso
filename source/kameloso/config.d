@@ -4,6 +4,7 @@ import kameloso.common;
 
 import std.typecons : Flag, No, Yes;
 
+@safe:
 
 // writeToDisk
 /++
@@ -106,7 +107,7 @@ void readConfigInto(T...)(const string configFile, ref T things)
  +  assert(!sink.data.empty);
  +  ------------
  +/
-void serialise(Sink, Things...)(ref Sink sink, Things things)
+void serialise(Sink, Things...)(ref Sink sink, Things things) pure
 if (Things.length > 1)
 {
     foreach (const thing; things)
@@ -135,7 +136,7 @@ if (Things.length > 1)
  +  assert(!sink.data.empty);
  +  ------------
  +/
-void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
+void serialise(Sink, QualThing)(ref Sink sink, QualThing thing) pure
 {
     import kameloso.string : stripSuffix;
     import std.algorithm : joiner;

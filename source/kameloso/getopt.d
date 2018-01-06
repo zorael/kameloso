@@ -4,6 +4,8 @@ import kameloso.common : CoreSettings, Client;
 import kameloso.ircdefs : IRCBot;
 import std.typecons : Flag, No, Yes;
 
+@safe:
+
 private:
 
 
@@ -67,7 +69,7 @@ public:
  +  // ...
  +  ------------
  +/
-Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings)
+Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.common : initLogger, printObjects, printVersionInfo;

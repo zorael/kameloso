@@ -23,10 +23,10 @@ interface IRCPlugin
     import std.array : Appender;
 
     /// Executed to return a reference to the current `IRCBot`
-    ref IRCBot bot() @property;
+    ref IRCBot bot() pure nothrow @safe @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
-    ref WHOISRequest[string] yieldWHOISRequests();
+    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @safe;
 
     /// Executed to let plugins modify an event mid-parse
     void postprocess(ref IRCEvent);
@@ -44,7 +44,7 @@ interface IRCPlugin
     void addToConfig(ref Appender!string);
 
     /// Executed during start if we want to change a setting by its string name
-    void setSettingByName(const string, const string);
+    void setSettingByName(const string, const string) @safe;
 
     /// Executed when connection has been established
     void start();
@@ -62,19 +62,19 @@ interface IRCPlugin
     void teardown();
 
     /// Returns the name of the plugin, sliced off the module name
-    string name() @property const;
+    string name() @safe @property const;
 
     /// Returns an array of the descriptions of the bot commands a plugin offers
-    string[string] commands() @property const;
+    string[string] commands() pure nothrow @safe @property const;
 
     /// Returns a reference to the current `IRCPluginState`
     ref IRCPluginState state() @property;
 
     /// Returns a reference to the list of awaiting `Fiber`s, keyed by `Type`
-    ref Fiber[][IRCEvent.Type] awaitingFibers() @property;
+    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @safe @property;
 
     /// Returns a reference to the list of timed `Fiber`s, labeled by UNIX time
-    ref Labeled!(Fiber, long)[] timedFibers() @property;
+    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @safe @property;
 }
 
 
@@ -1063,7 +1063,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  This is used to let the main loop examine and update the otherwise
      +  inaccessible `privateState.bot`.
      +/
-    ref IRCBot bot() @property
+    ref IRCBot bot() pure nothrow @safe @property
     {
         return privateState.bot;
     }
@@ -1098,7 +1098,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a reference to the local `WHOIS` request queue.
      +/
-    ref WHOISRequest[string] yieldWHOISRequests()
+    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @safe
     {
         return privateState.whoisQueue;
     }
@@ -1182,7 +1182,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
 
     // setSettingByName
-    void setSettingByName(const string setting, const string value)
+    void setSettingByName(const string setting, const string value) @safe
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -1340,7 +1340,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
      +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
      +/
-    string name() @property const
+    string name() @safe @property const
     {
         import kameloso.string : has, nom;
 
@@ -1361,7 +1361,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  them alongside their `Description`s as an associative `string[string]`
      +  array.
      +/
-    string[string] commands() @property const
+    string[string] commands() pure nothrow @safe @property const
     {
         import std.meta : Filter;
         import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
@@ -1398,7 +1398,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  `main.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
-    ref IRCPluginState state() @property
+    ref IRCPluginState state() pure nothrow @safe @property
     {
         return this.privateState;
     }
@@ -1427,7 +1427,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  plugin wants an action performed at a certain point in time.
      +/
     pragma(inline)
-    ref Labeled!(Fiber, long)[] timedFibers() @property
+    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @safe @property
     {
         return this.privateTimedFibers;
     }
@@ -1441,7 +1441,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  It only supports a precision of `kameloso.constants.Timeout.receive` + 1
      +  seconds.
      +/
-    void delayFiber(Fiber fiber, const long secs)
+    void delayFiber(Fiber fiber, const long secs) @safe
     {
         import kameloso.common : labeled;
         import std.datetime.systime : Clock;

@@ -4,6 +4,8 @@ import std.range : isOutputRange;
 import std.traits : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
+@safe:
+
 /// Special terminal control characters
 enum TerminalToken
 {
@@ -131,7 +133,7 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +  ------------
  +/
 version(Colours)
-string colour(Codes...)(Codes codes)
+string colour(Codes...)(Codes codes) pure nothrow
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
@@ -144,7 +146,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 }
 else
 /// Dummy colour for when version != Colours
-string colour(Codes...)(Codes codes)
+string colour(Codes...)(Codes codes) pure nothrow @nogc
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     return string.init;
@@ -207,7 +209,7 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
  +  ------------
  +/
 version(Colours)
-string colour(Codes...)(const string text, const Codes codes)
+string colour(Codes...)(const string text, const Codes codes) pure nothrow
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
@@ -222,7 +224,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 }
 else
 deprecated("Don't use colour when version isn't Colours")
-string colour(Codes...)(const string text, const Codes codes)
+string colour(Codes...)(const string text, const Codes codes) pure nothrow @nogc
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     // noop
@@ -241,7 +243,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +      ref b = blue
  +/
 version(Colours)
-void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
+void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureWhiteReplacement = 120;
     enum pureWhiteRange = 200;
@@ -302,7 +304,7 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b)
  +      ref b = blue
  +/
 version(Colours)
-void normaliseColours(ref uint r, ref uint g, ref uint b)
+void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureBlackReplacement = 150;
 
@@ -504,7 +506,7 @@ if (isOutputRange!(Sink,string))
 else
 deprecated("Don't use truecolour when version isn't Colours")
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b)
+    (auto ref Sink sink, uint r, uint g, uint b) pure nothrow @nogc
 {
     // noop
 }
@@ -542,7 +544,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 else
 deprecated("Don't use truecolour when version isn't Colours")
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, uint r, uint g, uint b)
+    (const string word, uint r, uint g, uint b) pure nothrow @nogc
 {
     return word;
 }

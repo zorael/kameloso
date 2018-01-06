@@ -1137,7 +1137,7 @@ struct IRCUser
         return (!nickname.length && address.has('.'));
     }
 
-    bool opEquals(IRCUser other) const
+    bool opEquals(IRCUser other) pure nothrow @nogc @safe const
     {
         // Match first
         // If no match and either is empty, that means they're *
@@ -2072,7 +2072,7 @@ struct IRCChannel
          +  Compare two `Mode`s with eachother to see if they are both of the
          +  same type, as well as having the same `data` and/or `user`.
          +/
-        bool opEquals(const Mode other) const
+        bool opEquals(const Mode other) pure nothrow @nogc @safe const
         {
             // Ignore exemptions when comparing Modes
             immutable match = (modechar == other.modechar) && (data == other.data) &&

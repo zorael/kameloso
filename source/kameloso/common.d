@@ -318,7 +318,7 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +/
 void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, Things things) @system
+    (auto ref Sink sink, Things things)
 {
     import kameloso.bash : colour;
     import kameloso.string : stripSuffix;
@@ -670,7 +670,7 @@ unittest
  +      intoThis = struct to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
-    (Thing meldThis, ref Thing intoThis)
+    (Thing meldThis, ref Thing intoThis) pure nothrow @nogc
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
@@ -893,7 +893,7 @@ unittest
  +      intoThis = array to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
-    (Array1 meldThis, ref Array2 intoThis)
+    (Array1 meldThis, ref Array2 intoThis) pure nothrow @nogc
 if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     && !is(Array2 == immutable))
 {
@@ -1039,6 +1039,8 @@ enum : ubyte
  +/
 final class KamelosoLogger : Logger
 {
+    @safe:
+
     import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
     import std.concurrency : Tid;
     import std.format : formattedWrite;
@@ -1078,13 +1080,13 @@ final class KamelosoLogger : Logger
     }
 
     /// This override is needed or it won't compile
-    override void writeLogMsg(ref LogEntry payload) const {}
+    override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
 
     /// Outputs the head of a logger message
     protected void beginLogMsg(Sink)(auto ref Sink sink,
         string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) @safe
+        Tid threadId, SysTime timestamp, Logger logger) const
     {
         import std.datetime : DateTime;
 
@@ -1115,20 +1117,20 @@ final class KamelosoLogger : Logger
     /// ditto
     override protected void beginLogMsg(string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) @trusted
+        Tid threadId, SysTime timestamp, Logger logger) @trusted const
     {
         return beginLogMsg(stdout.lockingTextWriter, file, line, funcName,
             prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
     }
 
     /// Outputs the message part of a logger message; the content
-    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) @safe
+    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
     {
         sink.put(msg);
     }
 
     /// ditto
-    override protected void logMsgPart(const(char)[] msg) @trusted
+    override protected void logMsgPart(const(char)[] msg) @trusted const
     {
         if (!msg.length) return;
 
@@ -1136,7 +1138,7 @@ final class KamelosoLogger : Logger
     }
 
     /// Outputs the tail of a logger message
-    protected void finishLogMsg(Sink)(auto ref Sink sink) @safe
+    protected void finishLogMsg(Sink)(auto ref Sink sink) const
     {
         version(Colours)
         {
@@ -1159,7 +1161,7 @@ final class KamelosoLogger : Logger
     }
 
     /// ditto
-    override protected void finishLogMsg() @trusted
+    override protected void finishLogMsg() @trusted const
     {
         finishLogMsg(stdout.lockingTextWriter);
         version(Cygwin_) stdout.flush();
@@ -1661,7 +1663,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  writeln(foo.deepSizeof);
  +  ------------
  +/
-uint deepSizeof(T)(const T thing) @property pure @safe
+uint deepSizeof(T)(const T thing) @property pure
 {
     import std.traits : isArray, isAssociativeArray, isSomeString;
 
@@ -1717,7 +1719,7 @@ public:
     /// The label applied to the wrapped item
     Label id;
 
-    this(Thing thing, Label id)
+    this(Thing thing, Label id) pure nothrow @nogc @safe
     {
         this.thing = thing;
         this.id = id;
@@ -1737,7 +1739,7 @@ public:
  +  Convenience function to create a `Labeled` struct while inferring the
  +  template parameters from the runtime arguments.
  +/
-auto labeled(Thing, Label)(Thing thing, Label label)
+auto labeled(Thing, Label)(Thing thing, Label label) pure nothrow @nogc @safe
 {
     import std.traits : Unqual;
     return Labeled!(Unqual!Thing, Unqual!Label)(thing, label);

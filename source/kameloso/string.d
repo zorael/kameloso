@@ -214,7 +214,7 @@ unittest
  +  ------------
  +/
 pragma(inline)
-T plurality(T)(const int num, const T singular, const T plural)
+T plurality(T)(const int num, const T singular, const T plural) pure nothrow @nogc
 if (isSomeString!T)
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
@@ -246,7 +246,7 @@ unittest
  +  assert((unquoted == "This is a quote"), unquoted);
  +  ------------
  +/
-T unquoted(Flag!"recurse" recurse = Yes.recurse, T)(const T line) @property
+T unquoted(Flag!"recurse" recurse = Yes.recurse, T)(const T line) pure nothrow @property
 if (isSomeString!T)
 {
     if (line.length < 2)
@@ -307,7 +307,7 @@ unittest
  +  ------------
  +/
 pragma(inline)
-bool beginsWith(T)(const T haystack, const T needle) pure
+bool beginsWith(T)(const T haystack, const T needle) pure nothrow @nogc
 if (isSomeString!T)
 {
     if ((needle.length > haystack.length) || !haystack.length)
@@ -331,7 +331,7 @@ unittest
 
 /// Ditto
 pragma(inline)
-bool beginsWith(T)(const T line, const ubyte charcode) pure
+bool beginsWith(T)(const T line, const ubyte charcode) pure nothrow @nogc
 if (isSomeString!T)
 {
     if (!line.length) return false;
@@ -364,7 +364,7 @@ unittest
  +  assert(things == [ "one", "two", "three", "four" ]);
  +  ------------
  +/
-T[] arrayify(string separator = ",", T)(const T line)
+T[] arrayify(string separator = ",", T)(const T line) pure nothrow @nogc
 {
     import std.algorithm.iteration : map, splitter;
     import std.array : array;
@@ -465,7 +465,7 @@ unittest
  +  immutable inEnglish = sink.timeSince(duration);
  +  ------------
  +/
-void timeSince(Sink)(auto ref Sink sink, const Duration duration)
+void timeSince(Sink)(auto ref Sink sink, const Duration duration) pure
 {
     import std.format : formattedWrite;
 
@@ -642,7 +642,7 @@ unittest
  +  ------------
  +/
 pragma(inline)
-string enumToString(Enum)(Enum value) pure
+string enumToString(Enum)(Enum value) pure nothrow
 if (is(Enum == enum))
 {
     switch (value)
@@ -717,7 +717,7 @@ unittest
  +  ------------
  +/
 uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
-    (const string hex)
+    (const string hex) pure
 {
     int val = -1;
     int total;
@@ -777,7 +777,7 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
  +      ref b = ref int for the blue part of the hex string
  +/
 void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
-    (const string hexString, out int r, out int g, out int b)
+    (const string hexString, out int r, out int g, out int b) pure
 {
     if (!hexString.length) return;
 
@@ -841,7 +841,7 @@ unittest
  +  ------------
  +/
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
-    (const string line, const string suffix) pure
+    (const string line, const string suffix) pure nothrow @nogc
 {
     static if (fullStrip)
     {
@@ -879,7 +879,7 @@ unittest
  +  assert(numDomains == 2);  // freenode.net
  +  ------------
  +/
-uint sharedDomains(const string rawOne, const string rawOther)
+uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
 {
     uint dots;
     bool doubleDots;
@@ -962,7 +962,7 @@ unittest
  +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
  +  ------------
  +/
-string tabs(uint spaces = 4)(int num) pure
+string tabs(uint spaces = 4)(int num) pure nothrow
 {
     enum tab = ()
     {
@@ -1019,7 +1019,7 @@ unittest
  +  assert((easier == "This is \(very\) difficult to regex\[\^!\]"), escaped);
  +  ------------
  +/
-string escaped(const string line) @safe
+string escaped(const string line)
 {
     import std.regex : regex, replaceAll;
 
@@ -1068,7 +1068,7 @@ unittest
  +  assert("Lorem ipsum".has!(Yes.decode)(" "));
  +  ------------
  +/
-bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) @trusted
+bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure @trusted
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     is(C : ElementEncodingType!T)))
 {

@@ -3,6 +3,7 @@ module kameloso.debugging;
 import kameloso.common : Client;
 import kameloso.ircdefs : IRCBot, IRCEvent;
 
+@safe:
 
 // formatAssertStatementLines
 /++
@@ -125,7 +126,6 @@ unittest
  +/
 void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
 {
-
     sink.put("IRCParser parser;\n");
     sink.put("with (parser.bot)\n");
     sink.put("{\n");
@@ -286,7 +286,7 @@ unittest
  +  client.generateAsserts();
  +  ------------
  +/
-void generateAsserts(ref Client client)
+void generateAsserts(ref Client client) @system
 {
     import kameloso.common : printObject;
     import kameloso.debugging : formatEventAssertBlock;
