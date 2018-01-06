@@ -5,6 +5,7 @@ import kameloso.ircdefs;
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
 
+
 // chan
 /++
  +  Sends a channel message.

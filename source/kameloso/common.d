@@ -493,7 +493,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
-
     // Colour
     struct StructName2
     {
@@ -1022,6 +1021,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
 
     return app.data;
 }
+
 
 /// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
 enum : ubyte

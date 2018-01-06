@@ -190,7 +190,6 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     }
 }
 
-
 unittest
 {
     WHOISRequest[] queue;
@@ -455,11 +454,13 @@ struct BotRegex
     }
 }
 
+
 /++
  +  Flag denoting that an event-handling function let other functions in the
  +  same module process after it.
  +/
 struct Chainable;
+
 
 /++
  +  Flag denoting that we want verbose debug output of the plumbing when
@@ -467,10 +468,12 @@ struct Chainable;
  +/
 struct Verbose;
 
+
 /++
  +  Flag denoting that a function is part of an awareness mixin.
  +/
 struct AwarenessMixin;
+
 
 /++
  +  Flag denoting that a variable is to be considered settings and should be
