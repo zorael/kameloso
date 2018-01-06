@@ -474,9 +474,11 @@ void onCommandAsserts(AdminPlugin plugin)
 @Description("Joins/parts a channel.")
 void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
+    import std.algorithm.comparison : equal;
     import std.algorithm.iteration : joiner, splitter;
     import std.array : array;
     import std.conv : to;
+    import std.uni : asLowerCase;
 
     if (!event.content.length)
     {
@@ -485,12 +487,12 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
     }
 
     immutable channels = event.content
-        .splitter(' ')
+        .splitter(" ")
         .joiner(",")
         .array
         .to!string;
 
-    if (event.type == IRCEvent.Type.JOIN)
+    if (event.aux.asLowerCase.equal("join"))
     {
         plugin.join(channels);
     }
