@@ -215,13 +215,21 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 
     /++
      +  Use a `splitter` to iterate each name and call `updateUser` to update
-     +  (or create) their entry in the seenUsers `JSON` storage.
+     +  (or create) their entry in the seenAA associative array.
      +/
     foreach (const signed; event.content.splitter(" "))
     {
         import kameloso.irc : stripModesign;
+        import kameloso.string : has, nom;
 
         string nickname = signed;
+
+        if (nickname.has('!'))
+        {
+            // SpotChat-like, signed is in full nick!ident@address form
+            nickname = nickname.nom('!');
+        }
+
         plugin.state.bot.server.stripModesign(nickname);
         if (nickname == plugin.state.bot.nickname) continue;
 
