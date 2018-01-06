@@ -139,6 +139,7 @@ struct SeenSettings
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
+@(IRCEvent.Type.QUIT)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.homeOnly)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
