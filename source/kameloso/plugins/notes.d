@@ -126,6 +126,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.friend)
+@BotCommand("addnote")
 @BotCommand("note")
 @BotCommand(NickPolicy.required, "addnote")
 @BotCommand(NickPolicy.required, "note")
