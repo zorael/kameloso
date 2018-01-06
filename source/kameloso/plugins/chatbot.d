@@ -429,39 +429,49 @@ void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
     {
         if (helpEvent.content.length)
         {
-            if (!helpEvent.content.has(' '))
+            if (helpEvent.content.has!(Yes.decode)(" "))
             {
+                string slice = helpEvent.content;
+                immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
+                immutable specifiedCommand = slice;
+
+                foreach (p; plugins)
+                {
+                    if (p.name != specifiedPlugin) continue;
+
+                    if (auto description = specifiedCommand in p.commands)
+                    {
+                        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                            "[%s] %s: %s".format(p.name, specifiedCommand, *description));
+                        return;
+                    }
+                    else
+                    {
+                        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                            "No help available for command %s of plugin %s"
+                            .format(specifiedCommand, specifiedPlugin));
+                        return;
+                    }
+                }
+
                 throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                    "Usage: help [plugin] [command]");
+                    "No such plugin: " ~ specifiedPlugin);
                 return;
             }
-
-            string slice = helpEvent.content;
-            immutable specifiedPlugin = slice.nom(' ');
-            immutable specifiedCommand = slice;
-
-            foreach (p; plugins)
+            else
             {
-                if (p.name != specifiedPlugin) continue;
+                foreach (p; plugins)
+                {
+                    if (p.name != helpEvent.content) continue;
 
-                if (auto description = specifiedCommand in p.commands)
-                {
+                    enum width = 11;
+
                     throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                        "[%s] %s: %s".format(p.name, specifiedCommand, *description));
-                    return;
-                }
-                else
-                {
-                    throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                        "No help available for command %s of plugin %s"
-                        .format(specifiedCommand, specifiedPlugin));
+                        "* %-*s %-([%s]%| %)"
+                        .format(width, p.name, p.commands.keys.sort()));
                     return;
                 }
             }
-
-            throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                "No such plugin: " ~ specifiedPlugin);
-            return;
         }
         else
         {
