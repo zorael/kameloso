@@ -106,6 +106,7 @@ abstract class WHOISRequest
 }
 
 
+// WHOISRequestImpl
 /++
  +  Implementation of a queued `WHOIS` request call.
  +
@@ -478,6 +479,7 @@ struct AwarenessMixin;
 struct Settings;
 
 
+// Description
 /++
  +  Describes an `IRCEvent`-annotated handler function.
  +

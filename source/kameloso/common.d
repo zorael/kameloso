@@ -95,8 +95,10 @@ struct Separator
     string token = ",";
 }
 
-/// UDA conveying that this member contains sensitive information and should not
-/// be printed in clear text; e.g. passwords
+/++
+ +  UDA conveying that this member contains sensitive information and should not
+ + be printed in clear text; e.g. passwords
+ +/
 struct Hidden {}
 
 
@@ -1310,7 +1312,7 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
 @system:
 
 
-// Kameloso
+// Client
 /++
  +  State needed for the `kameloso` bot, aggregated in a struct for easier
  +  passing by ref.
