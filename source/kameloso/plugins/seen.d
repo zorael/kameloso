@@ -262,7 +262,7 @@ void onPing(SeenPlugin plugin)
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-            seenUsers.saveSeen(seenSettings.seenFile);
+            seenAA.saveAA(seenSettings.seenFile);
         }
     }
 }
@@ -359,18 +359,18 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         return;
     }
 
-    const userTimestamp = event.content in plugin.seenUsers;
+    const userTimestamp = event.content in plugin.seenAA;
 
     if (!userTimestamp)
     {
-        // No matches for nickname `event.content` in `plugin.seenUsers`.
+        // No matches for nickname `event.content` in `plugin.seenAA`.
 
         plugin.privmsg(event.channel, event.sender.nickname,
             "I have never seen %s.".format(event.content));
         return;
     }
 
-    const timestamp = SysTime.fromUnixTime((*userTimestamp).integer);
+    const timestamp = SysTime.fromUnixTime(*userTimestamp);
     immutable elapsed = timeSince(Clock.currTime - timestamp);
 
     plugin.privmsg(event.channel, event.sender.nickname,
@@ -380,7 +380,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
 // onCommandPrintSeen
 /++
- +  As a tool to help debug, print the current `seenUsers` JSON storage to the
+ +  As a tool to help debug, print the current `seenAA` JSON storage to the
  +  local terminal.
  +
  +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
@@ -401,7 +401,9 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)
 {
-    writeln(plugin.seenUsers.toPrettyString);
+    import std.json : JSONValue;
+
+    writeln(JSONValue(plugin.seenAA).toPrettyString);
     version(Cygwin_) stdout.flush();
 }
 
@@ -422,43 +424,49 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
     /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     string nickname = signedNickname;
     plugin.state.bot.server.stripModesign(nickname);
-    plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
+    plugin.seenAA[nickname] = Clock.currTime.toUnixTime;
 }
 
 
-// loadSeenFile
+// loadAA
 /++
- +  Given a filename, read the contents and load it into a `JSON` storage
- +  variable, and return it. If there was no file there to read, return an empty
- +  but initialised `JSONValue` object.
+ +  Given a filename, read the contents and load it into a `long[string]`
+ +  associative array, and return it. If there was no file there to read, return
+ +  an empty array.
  +/
-JSONValue loadSeenFile(const string filename)
+long[string] loadAA(const string filename)
 {
     import std.file   : exists, isFile, readText;
     import std.json   : parseJSON;
 
+    long[string] aa;
+
     if (!filename.exists || !filename.isFile)
     {
         logger.info(filename, " does not exist or is not a file");
-        JSONValue newJSON;
-        newJSON.object = null;  // this is the weirdest thing but it works
-        return newJSON;
+        return aa;
     }
 
-    immutable wholeFile = filename.readText;
-    return parseJSON(wholeFile);
+    const asJSON = parseJSON(filename.readText).object;
+
+    foreach (user, time; asJSON)
+    {
+        aa[user] = time.integer;
+    }
+
+    return aa;
 }
 
 
-// saveSeen
+// saveAA
 /++
- +  Saves the passed `JSONValue` storage to disk.
+ +  Saves the passed seen users associative array to disk, in `JSON` format.
  +/
-void saveSeen(const JSONValue jsonStorage, const string filename)
+void saveAA(const long[string] seenAA, const string filename)
 {
     auto file = File(filename, "w");
 
-    file.write(jsonStorage.toPrettyString);
+    file.write(JSONValue(seenAA).toPrettyString);
     file.writeln();
 }
 
@@ -475,7 +483,7 @@ void onEndOfMotd(SeenPlugin plugin)
 
     with (plugin)
     {
-        seenUsers = loadSeenFile(seenSettings.seenFile);
+        seenAA = loadAA(seenSettings.seenFile);
 
         if ((seenSettings.hoursBetweenSaves > 24) ||
             (seenSettings.hoursBetweenSaves < 0))
@@ -503,7 +511,7 @@ void onEndOfMotd(SeenPlugin plugin)
 void teardown(IRCPlugin basePlugin)
 {
     SeenPlugin plugin = cast(SeenPlugin)basePlugin;
-    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
+    plugin.seenAA.saveAA(plugin.seenSettings.seenFile);
 }
 
 
@@ -603,19 +611,17 @@ final class SeenPlugin : IRCPlugin
     uint nextHour;
 
     /++
-     +  Our JSON storage of seen users; an array keyed with users' nicknames and
-     +  with values that are UNIX timetamps, denoting when that user was last
-     +  seen. It is in essence an associative array or dictionary of type
-     +  `long[string]`, where the `string` key is the nickname and the `long`
-     +  the timestamp.
+     +  Our associative array (AA) of seen users; a dictionary keyed with users'
+     +  nicknames and with values that are UNIX timetamps, denoting when that
+     +  user was last seen.
      +
      +  --------------
-     +  seenUsers["joe"] = Clock.currTime.toUnixTime;
+     +  seenAA["joe"] = Clock.currTime.toUnixTime;
      +  auto now = Clock.currTime.toUnixTime;
-     +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"].integer));
+     +  writeln("Seconds since we last saw joe: ", (now - seenAA["joe"]));
      +  --------------
      +/
-    JSONValue seenUsers;
+    long[string] seenAA;
 
     /++
      +  This mixes in functions that fully implement an `IRCPlugin`. They don't
