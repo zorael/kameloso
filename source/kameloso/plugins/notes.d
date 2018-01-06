@@ -20,6 +20,7 @@ private:
  +  {
  +      string notesFile = "notes.json";
  +      bool replayOnJoin = true;
+ +      bool replayOnSelfjoin = false;
  +  }
  +  ------------
  +/
@@ -27,6 +28,7 @@ struct NotesSettings
 {
     string notesFile = "notes.json";
     bool replayOnJoin = true;
+    bool replayOnSelfjoin = false;
 }
 
 
@@ -108,6 +110,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock;
+
+    if (!plugin.notesSettings.replayOnSelfjoin) return;
 
     if (!plugin.state.bot.homes.canFind(event.channel)) return;
 
