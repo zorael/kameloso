@@ -539,7 +539,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 }
 
 
-
 // longestMemberName
 /++
  +  Gets the name of the longest member in one or more struct/class objects.

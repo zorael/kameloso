@@ -520,7 +520,6 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
     import core.time : seconds;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
-    import std.stdio;
 
     auto user = event.sender.nickname in state.users;
     const now = Clock.currTime.toUnixTime;
@@ -530,12 +529,6 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
     immutable timediff = (now - user.lastWhois);
     immutable isMaster = (user.account == state.bot.master);
     immutable isFriend = state.bot.friends.canFind(user.account);
-
-    writeln("account:", user.account);
-    //writeln(now);
-    //writeln(user.lastWhois);
-    writeln(timediff);
-    writeln(cast(int)Timeout.whois);
 
     if (user.account.length && isMaster || isFriend)
     {
