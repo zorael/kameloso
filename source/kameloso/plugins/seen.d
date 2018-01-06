@@ -163,6 +163,21 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 }
 
 
+// onNick
+/++
+ +  When someone changes nickname, move the old seen timestamp to a new entry
+ +  for the new nickname, and remove the old one.
+ +/
+@(Chainable)
+@(IRCEvent.Type.NICK)
+@(PrivilegeLevel.anyone)
+void onNick(SeenPlugin plugin, const IRCEvent event)
+{
+    plugin.seenAA[event.target.nickname] = plugin.seenAA[event.sender.nickname];
+    plugin.seenAA.remove(event.sender.nickname);
+}
+
+
 // onWHOReply
 /++
  +  Whenever a channel has its members enumerated, such as when requesting
