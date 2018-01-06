@@ -183,7 +183,7 @@ Flag!"quit" checkMessages(ref Client client)
                 cast(int)I.ctcp, content, cast(int)I.ctcp);
             break;
 
-        case CHANMODE:
+        case MODE:
             line = "MODE %s %s :%s".format(channel, aux, content);
             break;
 

@@ -1178,7 +1178,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         switch (event.type)
         {
         case MODE:
-        case CHANMODE:
         case QUERY:
         case JOIN:
         case SELFNICK:
@@ -1538,7 +1537,6 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if (target.isValidChannel(parser.bot.server))
     {
-        event.type = IRCEvent.Type.CHANMODE;
         event.channel = target;
 
         if (slice.has(' '))

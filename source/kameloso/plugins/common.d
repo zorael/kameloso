@@ -1532,7 +1532,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // chanmode
+    // mode
     /++
      +  Sets a channel mode.
      +
@@ -1540,10 +1540,10 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  like bans.
      +/
     pragma(inline)
-    void chanmode(Flag!"quiet" quiet = No.quiet)(const string channel,
+    void mode(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string modes, const string content = string.init)
     {
-        return kameloso.messaging.chanmode!quiet(state.mainThread, channel, modes, content);
+        return kameloso.messaging.mode!quiet(state.mainThread, channel, modes, content);
     }
 
 
@@ -2158,7 +2158,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     }
 
 
-    // onChannelAwarenessChanModeMixin
+    // onChannelAwarenessModeMixin
     /++
      +  Sets a mode for a channel.
      +
@@ -2167,9 +2167,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +/
     @(AwarenessMixin)
     @(Chainable)
-    @(IRCEvent.Type.CHANMODE)
+    @(IRCEvent.Type.MODE)
     @(ChannelPolicy.homeOnly)
-    void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
         plugin.state.channels[event.channel]

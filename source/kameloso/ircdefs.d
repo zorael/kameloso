@@ -69,8 +69,7 @@ struct IRCEvent
         PING,       /// The server periodically `PING`ed you
         PONG,       /// The server actually `PONG`ed you
         NICK,       /// Someone changed nickname
-        MODE,       /// Someone changed the modes of a user
-        CHANMODE,   /// Someone changed the modes of a channel
+        MODE,       /// Someone changed the modes of a channel
         SELFQUIT,   /// You quit the server
         SELFJOIN,   /// You joined a channel
         SELFPART,   /// You left a channel

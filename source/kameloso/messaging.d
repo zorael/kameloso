@@ -131,20 +131,20 @@ void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget,
 }
 
 
-// chanmode
+// mode
 /++
  +  Sets a channel mode.
  +
  +  This includes modes that pertain to a user in the context of a channel,
  +  like bans.
  +/
-void chanmode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+void mode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     const string modes, const string content = string.init)
 {
-    assert((channel[0] == '#'), "chanmode was passed invalid channel: " ~ channel);
+    assert((channel[0] == '#'), "mode was passed invalid channel: " ~ channel);
 
     IRCEvent event;
-    event.type = IRCEvent.Type.CHANMODE;
+    event.type = IRCEvent.Type.MODE;
     event.target.special = quiet;
     event.channel = channel;
     event.aux = modes;
