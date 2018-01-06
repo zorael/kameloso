@@ -1292,6 +1292,7 @@ unittest
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
     import core.thread : Thread, msecs, seconds;
+    import std.algorithm.comparison : min;
 
     const step = 250.msecs;
 
@@ -1301,16 +1302,12 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
     {
         if (abort) return;
 
-        if ((left - step) < 0.seconds)
-        {
-            Thread.sleep(left);
-            break;
-        }
-        else
-        {
-            Thread.sleep(step);
-            left -= step;
-        }
+        const nextStep = min((left-step), step);
+
+        if (nextStep <= 0.seconds) break;
+
+        Thread.sleep(nextStep);
+        left -= step;
     }
 }
 
