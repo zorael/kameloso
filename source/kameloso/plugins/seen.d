@@ -173,8 +173,13 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.anyone)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
-    plugin.seenAA[event.target.nickname] = plugin.seenAA[event.sender.nickname];
-    plugin.seenAA.remove(event.sender.nickname);
+    // There may not be an old one if the user was not indexed upon us joinng
+    // the channel, which is the case with homeOnly and non-home channels.
+    if (auto user = event.sender.nickname in plugin.seenAA)
+    {
+        plugin.seenAA[event.target.nickname] = *user;
+        plugin.seenAA.remove(event.sender.nickname);
+    }
 }
 
 
