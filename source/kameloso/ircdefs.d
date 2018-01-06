@@ -1089,9 +1089,6 @@ struct IRCUser
     /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc)
     string account;
 
-    deprecated("Use IRCUser.account instead of IRCUser.login")
-    alias login = account;
-
     /// The highest priority "badge" the sender has, in this context.
     string badge;
 

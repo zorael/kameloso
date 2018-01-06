@@ -331,7 +331,6 @@ enum NickPolicy
     required,     /// Message must begin with bot name, except in `QUERY` events.
     hardRequired, /// Message must begin with bot name, regardless of type.
 }
-deprecated alias NickPrefixPolicy = NickPolicy;
 
 
 /// If an annotated function should work in all channels or just in homes
@@ -385,9 +384,6 @@ struct BotCommand
         this.string_ = string_;
     }
 }
-
-deprecated("Prefix has been replaced with Command. This alias will be removed in time.")
-alias Prefix = BotCommand;
 
 
 // BotRegex
@@ -481,10 +477,6 @@ struct AwarenessMixin;
  +/
 struct Settings;
 
-/// Alias to allow the old annotation to still work
-deprecated("Use @Settings instead of @Configurable. " ~
-           "This alias will eventually be removed.")
-alias Configurable = Settings;
 
 /++
  +  Describes an `IRCEvent`-annotated handler function.
@@ -1414,20 +1406,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 }
 
-deprecated("Use IRCPluginImpl instead of IRCPluginBasics")
-alias IRCPluginBasics = IRCPluginImpl;
-
-
-// OnEventImpl
-/++
- +  Not needed anymore, the functionality was moved into `IRCPlugin`.
- +/
-mixin template OnEventImpl(bool debug_ = false, string module_ = __MODULE__)
-{
-    pragma(msg, "OnEventImpl is deprecated and is no longer needed. " ~
-        "The on-event functionality has been moved into class IRCPlugin.");
-}
-
 
 // MessagingProxy
 /++
@@ -1929,10 +1907,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         plugin.state.users.rehash();
     }
 }
-
-deprecated("BasicEventHandlers has been replaced by UserAwareness. " ~
-    "This alias will eventually be removed.")
-alias BasicEventHandlers = UserAwareness;
 
 
 // ChannelAwareness

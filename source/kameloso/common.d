@@ -34,10 +34,6 @@ Logger logger;
 /// A local copy of the CoreSettings struct, housing certain runtime settings
 CoreSettings settings;
 
-deprecated("Use CoreSettings instead of BaseSettings. " ~
-    "This alias will eventually be removed.")
-alias BaseSettings = CoreSettings;
-
 
 // ThreadMessage
 /++
@@ -1497,9 +1493,6 @@ struct Client
         }
     }
 }
-
-deprecated("struct Kameloso is superseded by Client, use that instead.")
-alias Kameloso = Client;
 
 
 // ThrottleValues
