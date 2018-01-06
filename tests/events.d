@@ -143,14 +143,14 @@ unittest
     }
 
     /+
-    [CHANMODE] zorael (kameloso^) [#flerrp] <+v>
+    [MODE] zorael (kameloso^) [#flerrp] <+v>
     :zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^
      +/
      immutable e11 = parser.toIRCEvent(":zorael!~NaN@ns3363704.ip-94-23-253.eu MODE #flerrp +v kameloso^");
      with (e11)
      {
         assert((sender.nickname == "zorael"), sender.nickname);
-        assert((type == IRCEvent.Type.CHANMODE), type.to!string);
+        assert((type == IRCEvent.Type.MODE), type.to!string);
         assert((content == "kameloso^"), content);
         assert((channel == "#flerrp"), channel);
         assert((aux == "+v"), aux);
@@ -1480,7 +1480,7 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == CHANMODE), type.to!string);
+            assert((type == MODE), type.to!string);
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
@@ -1497,7 +1497,7 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == CHANMODE), type.to!string);
+            assert((type == MODE), type.to!string);
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
@@ -1512,7 +1512,7 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == CHANMODE), type.to!string);
+            assert((type == MODE), type.to!string);
             assert((sender.address == "niven.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((channel == "#sklabjoier"), channel);
