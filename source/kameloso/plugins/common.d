@@ -622,12 +622,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.string : beginsWith, has, nom, stripPrefix;
-        import std.meta : Filter;
+        import std.meta : AliasSeq, Filter, templateNot;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
         import std.typecons : No, Yes;
 
+        alias isAwarenessMixin(alias T) = hasUDA!(T, AwarenessMixin);
+        alias isNotAwarenessMixin = templateNot!isAwarenessMixin;
+
+        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
+        alias awarenessFuns = Filter!(isAwarenessMixin, funs);
+        alias notAwarenessFuns = Filter!(templateNot!isAwarenessMixin, funs);
+        alias funsInOrder = AliasSeq!(awarenessFuns, notAwarenessFuns);
+
         funloop:
-        foreach (fun; Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type)))
+        foreach (fun; funsInOrder)
         {
             enum verbose = hasUDA!(fun, Verbose) || debug_;
 
