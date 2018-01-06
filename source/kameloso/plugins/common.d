@@ -809,6 +809,31 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     if (!mutEvent.aux.length) continue funloop; // next fun
                 }
 
+                with (IRCEvent.Type)
+                {
+                    alias U = eventTypeUDA;
+
+                    static if (!hasUDA!(fun, PrivilegeLevel) &&
+                        !hasUDA!(fun, AwarenessMixin))
+                    {
+                        import kameloso.string : enumToString;
+
+                        enum message = module_ ~ '.' ~ __traits(identifier, fun) ~
+                            " is annotated with user-facing IRCEvent.Type." ~
+                            U.enumToString ~ " but is missing a PrivilegeLevel.";
+
+                        static assert(!((U == CHAN) ||
+                            (U == QUERY) ||
+                            (U == EMOTE) ||
+                            (U == JOIN) ||
+                            (U == PART) ||
+                            //(U == QUIT) ||
+                            (U == NICK) ||
+                            (U == AWAY)),
+                            message);
+                    }
+                }
+
                 import std.meta   : AliasSeq, staticMap;
                 import std.traits : Parameters, Unqual, arity;
 
