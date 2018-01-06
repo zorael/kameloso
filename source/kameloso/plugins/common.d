@@ -1682,9 +1682,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  already created elsewhere.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
+    @(ChannelPolicy.homeOnly)
     void onUserAwarenessAccountInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
         if ((event.type == IRCEvent.Type.ACCOUNT) &&
@@ -1795,8 +1795,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  It usually contains everything interesting except services account name.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_WHOREPLY)
+    @(ChannelPolicy.homeOnly)
     void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.catchUser(event.target);
@@ -1813,8 +1813,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  information.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_NAMREPLY)
+    @(ChannelPolicy.homeOnly)
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.common : meldInto;
@@ -1887,8 +1887,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  makes lookup faster.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_ENDOFWHO)
+    @(ChannelPolicy.homeOnly)
     void onUserAwarenessEndOfWHOMixin(IRCPlugin plugin)
     {
         plugin.state.users.rehash();
@@ -1926,8 +1926,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  when the bot joins a channel.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.SELFJOIN)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.channels[event.channel] = IRCChannel.init;
@@ -1939,8 +1939,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Remove an `IRCChannel` from the internal list when the bot leaves it.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.SELFPART)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin.state)
@@ -1973,8 +1973,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Add a user as being part of a channel when they join one.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.JOIN)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin.state)
@@ -1998,8 +1998,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Remove a user from being part of a channel when they leave one.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.PART)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.algorithm.mutation : remove;
@@ -2081,9 +2081,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Update the entry for an `IRCChannel` if someone changes the topic of it.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.channels[event.channel].topic = event.content;
@@ -2095,8 +2095,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Stores the timestamp of when a channel was created.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_CREATIONTIME)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
     {
         import std.conv : to;
@@ -2112,8 +2112,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  bans and mode exemptions.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.CHANMODE)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessChanModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
@@ -2131,8 +2131,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  their channel modes (e.g. `@` for operator).
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_WHOREPLY)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.algorithm.searching : canFind;
@@ -2195,8 +2195,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  of.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_NAMREPLY)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModesign;
@@ -2282,10 +2282,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  don't overwrite other bans (can be stacked).
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
     @(IRCEvent.Type.RPL_INVITELIST)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
@@ -2318,8 +2318,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
     @(Chainable)
-    @(ChannelPolicy.homeOnly)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
+    @(ChannelPolicy.homeOnly)
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;

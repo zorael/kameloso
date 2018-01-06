@@ -98,8 +98,8 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 /++
  +  Add a channel we join to the internal list of channels.
  +/
-@(ChannelPolicy.homeOnly)
 @(IRCEvent.Type.SELFJOIN)
+@(ChannelPolicy.homeOnly)
 void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 {
     if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
@@ -112,8 +112,8 @@ void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
 /++
  +  Remove a channel we part from the internal list of channels.
  +/
-@(ChannelPolicy.homeOnly)
 @(IRCEvent.Type.SELFPART)
+@(ChannelPolicy.homeOnly)
 void onSelfpart(ChanQueriesPlugin plugin, const IRCEvent event)
 {
     if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;

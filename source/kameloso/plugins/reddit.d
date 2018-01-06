@@ -46,6 +46,8 @@ struct RedditLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.friend)
+@(ChannelPolicy.homeOnly)
 @BotCommand(NickPolicy.direct, "reddit")
 @BotCommand(NickPolicy.required, "reddit")
 @Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.")
