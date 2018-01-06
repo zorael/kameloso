@@ -53,7 +53,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
             }
 
             raw(plugin.state.mainThread, "TOPIC " ~ channel);
-            Fiber.yield();  // awaiting RPL_TOPIC
+            Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
             raw(plugin.state.mainThread, "MODE " ~ channel);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
@@ -86,6 +86,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     with (plugin)
     {
         awaitingFibers[RPL_TOPIC] ~= fiber;
+        awaitingFibers[RPL_NOTOPIC] ~= fiber;
         awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
         awaitingFibers[RPL_ENDOFWHO] ~= fiber;
     }
