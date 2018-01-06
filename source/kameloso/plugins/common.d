@@ -542,6 +542,41 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
     }
 }
 
+///
+unittest
+{
+    import std.conv : text;
+    import std.datetime.systime : Clock;
+
+    IRCPluginState state;
+    IRCEvent event;
+
+    event.type = IRCEvent.Type.CHAN;
+    event.sender.nickname = "zorael";
+
+    immutable res1 = state.filterUser(event);
+    assert((res1 == FilterResult.whois), res1.text);
+
+    state.users["zorael"] = IRCUser.init;
+    state.users["zorael"].account = "zorael";
+    state.bot.master = "zorael";
+
+    immutable res2 = state.filterUser(event);
+    assert((res2 == FilterResult.pass), res2.text);
+
+    state.bot.master = "harbl";
+    state.bot.friends ~= "zorael";
+
+    immutable res3 = state.filterUser(event);
+    assert((res3 == FilterResult.pass), res3.text);
+
+    state.bot.friends = [];
+    state.users["zorael"].lastWhois = Clock.currTime.toUnixTime;
+
+    immutable res4 = state.filterUser(event);
+    assert((res4 == FilterResult.fail), res4.text);
+}
+
 
 // IRCPluginImpl
 /++
