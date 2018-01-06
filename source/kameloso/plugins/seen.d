@@ -175,10 +175,10 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     // There may not be an old one if the user was not indexed upon us joinng
     // the channel, which is the case with homeOnly and non-home channels.
-    if (auto user = event.sender.nickname in plugin.seenAA)
+    if (auto user = event.sender.nickname in plugin.seenUsers)
     {
-        plugin.seenAA[event.target.nickname] = *user;
-        plugin.seenAA.remove(event.sender.nickname);
+        plugin.seenUsers[event.target.nickname] = *user;
+        plugin.seenUsers.remove(event.sender.nickname);
     }
     else
     {
@@ -224,7 +224,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 
     /++
      +  Use a `splitter` to iterate each name and call `updateUser` to update
-     +  (or create) their entry in the seenAA associative array.
+     +  (or create) their entry in the seenUsers associative array.
      +/
     foreach (const signed; event.content.splitter(" "))
     {
@@ -260,7 +260,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.homeOnly)
 void onEndOfList(SeenPlugin plugin)
 {
-    plugin.seenAA.rehash();
+    plugin.seenUsers.rehash();
 }
 
 
@@ -312,7 +312,7 @@ void onPing(SeenPlugin plugin)
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-            seenAA.saveAA(seenSettings.seenFile);
+            seenUsers.saveSeen(seenSettings.seenFile);
         }
     }
 }
@@ -409,11 +409,11 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         return;
     }
 
-    const userTimestamp = event.content in plugin.seenAA;
+    const userTimestamp = event.content in plugin.seenUsers;
 
     if (!userTimestamp)
     {
-        // No matches for nickname `event.content` in `plugin.seenAA`.
+        // No matches for nickname `event.content` in `plugin.seenUsers`.
 
         plugin.privmsg(event.channel, event.sender.nickname,
             "I have never seen %s.".format(event.content));
@@ -430,7 +430,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
 // onCommandPrintSeen
 /++
- +  As a tool to help debug, print the current `seenAA` JSON storage to the
+ +  As a tool to help debug, print the current `seenUsers` JSON storage to the
  +  local terminal.
  +
  +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
@@ -453,7 +453,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
 
-    writeln(JSONValue(plugin.seenAA).toPrettyString);
+    writeln(JSONValue(plugin.seenUsers).toPrettyString);
     version(Cygwin_) stdout.flush();
 }
 
@@ -486,7 +486,7 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
 
             if (channels[homechan].users.canFind(nickname))
             {
-                plugin.seenAA[nickname] = Clock.currTime.toUnixTime;
+                plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
                 return;
             }
         }
@@ -494,13 +494,13 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
 }
 
 
-// loadAA
+// loadSeen
 /++
  +  Given a filename, read the contents and load it into a `long[string]`
  +  associative array, and return it. If there was no file there to read, return
  +  an empty array.
  +/
-long[string] loadAA(const string filename)
+long[string] loadSeen(const string filename)
 {
     import std.file   : exists, isFile, readText;
     import std.json   : parseJSON;
@@ -530,15 +530,17 @@ long[string] loadAA(const string filename)
 }
 
 
-// saveAA
+// saveSeen
 /++
  +  Saves the passed seen users associative array to disk, in `JSON` format.
  +/
-void saveAA(const long[string] seenAA, const string filename)
+void saveSeen(const long[string] seenUsers, const string filename)
 {
+    writeln("saving");
     auto file = File(filename, "w");
 
-    file.write(JSONValue(seenAA).toPrettyString);
+    file.write(JSONValue(seenUsers).toPrettyString);
+    writeln(JSONValue(seenUsers).toPrettyString);
     file.writeln();
 }
 
@@ -555,7 +557,7 @@ void onEndOfMotd(SeenPlugin plugin)
 
     with (plugin)
     {
-        seenAA = loadAA(seenSettings.seenFile);
+        seenUsers = loadSeen(seenSettings.seenFile);
 
         if ((seenSettings.hoursBetweenSaves > 24) ||
             (seenSettings.hoursBetweenSaves < 0))
@@ -583,7 +585,7 @@ void onEndOfMotd(SeenPlugin plugin)
 void teardown(IRCPlugin basePlugin)
 {
     SeenPlugin plugin = cast(SeenPlugin)basePlugin;
-    plugin.seenAA.saveAA(plugin.seenSettings.seenFile);
+    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 
 
@@ -691,12 +693,12 @@ final class SeenPlugin : IRCPlugin
      +  user was last seen.
      +
      +  --------------
-     +  seenAA["joe"] = Clock.currTime.toUnixTime;
+     +  seenUsers["joe"] = Clock.currTime.toUnixTime;
      +  auto now = Clock.currTime.toUnixTime;
-     +  writeln("Seconds since we last saw joe: ", (now - seenAA["joe"]));
+     +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
      +  --------------
      +/
-    long[string] seenAA;
+    long[string] seenUsers;
 
     /++
      +  This mixes in functions that fully implement an `IRCPlugin`. They don't
