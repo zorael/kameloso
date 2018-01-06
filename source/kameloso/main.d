@@ -174,7 +174,6 @@ Flag!"quit" checkMessages(ref Client client)
             break;
 
         case EMOTE:
-            import kameloso.constants : IRCControlCharacter;
             alias I = IRCControlCharacter;
 
             immutable emoteTarget = target.nickname.length ?

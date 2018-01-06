@@ -671,7 +671,7 @@ version(Colours)
 void mapEffects(ref IRCEvent event)
 {
     import kameloso.bash : B = BashEffect;
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : has;
 
     if (event.content.has(I.colour))
@@ -707,7 +707,7 @@ void mapEffects(ref IRCEvent event)
  +/
 void stripEffects(ref IRCEvent event)
 {
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : has;
     import std.regex : regex, replaceAll;
 
@@ -746,7 +746,7 @@ void mapColours(ref IRCEvent event)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset,
         TerminalToken, colour;
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import std.regex : matchAll, regex, replaceAll;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -855,7 +855,7 @@ void mapColours(ref IRCEvent event)
 version(Colours)
 unittest
 {
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
 
     IRCEvent e1;
     e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
@@ -876,7 +876,7 @@ unittest
  +/
 void stripColours(ref IRCEvent event)
 {
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import std.regex : matchAll, regex, replaceAll;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -908,7 +908,7 @@ void stripColours(ref IRCEvent event)
 
 unittest
 {
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
 
     IRCEvent e1;
     e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
@@ -954,7 +954,7 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     (ref IRCEvent event)
 {
     import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import std.array : Appender;
     import std.conv  : to;
     import std.regex : matchAll, regex, replaceAll;
@@ -1014,7 +1014,7 @@ version(Colours)
 unittest
 {
     import kameloso.bash : B = BashEffect, TerminalToken;
-    import kameloso.constants : I = IRCControlCharacter;
+    import kameloso.irc : I = IRCControlCharacter;
     import std.conv : to;
 
     enum bBold = TerminalToken.bashFormat ~ "[" ~ (cast(ubyte)B.bold).to!string ~ "m";

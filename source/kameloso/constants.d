@@ -9,17 +9,6 @@ enum KamelosoInfo
 }
 
 
-/// Certain characters that signal specific meaning in an IRC context.
-enum IRCControlCharacter
-{
-    ctcp = 1,
-    bold = 2,
-    colour = 3,
-    italics = 29,
-    underlined = 31,
-}
-
-
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
 

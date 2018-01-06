@@ -1415,7 +1415,6 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
-    import kameloso.constants : IRCControlCharacter;
     import kameloso.string : beginsWith;
 
     immutable target = slice.nom(" :");
@@ -2973,4 +2972,15 @@ unittest
     {
         throw new IRCParseException("adf", event, "somefile.d", 9999U);
     }());
+}
+
+
+/// Certain characters that signal specific meaning in an IRC context.
+enum IRCControlCharacter
+{
+    ctcp = 1,
+    bold = 2,
+    colour = 3,
+    italics = 29,
+    underlined = 31,
 }

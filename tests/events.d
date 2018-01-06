@@ -1,6 +1,4 @@
 import kameloso.irc;
-import kameloso.constants : IRCControlCharacter;
-
 import std.conv : to;
 
 unittest

@@ -2,7 +2,7 @@ module kameloso.plugins.ctcp;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.constants : IRCControlCharacter;
+import kameloso.irc : IRCControlCharacter;
 
 import std.stdio;
 
