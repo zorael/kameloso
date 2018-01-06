@@ -1649,7 +1649,7 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == RPL_AWAY), type.to!string);
+            assert((type == AWAY), type.to!string);
             assert((sender.nickname == "Halcy0n"), sender.nickname);
             assert((sender.ident == "~Halcy0n"), sender.ident);
             assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
@@ -1663,7 +1663,7 @@ unittest
         with (IRCEvent.Type)
         with (event)
         {
-            assert((type == RPL_UNAWAY), type.to!string);
+            assert((type == BACK), type.to!string);
             assert((sender.nickname == "Halcy0n"), sender.nickname);
             assert((sender.ident == "~Halcy0n"), sender.ident);
             assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
