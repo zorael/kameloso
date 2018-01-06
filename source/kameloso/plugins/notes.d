@@ -19,28 +19,40 @@ private:
  +  struct NotesSettings
  +  {
  +      string notesFile = "notes.json";
+ +      bool replayOnJoin = true;
  +  }
  +  ------------
  +/
 struct NotesSettings
 {
     string notesFile = "notes.json";
+    bool replayOnJoin = true;
 }
 
 
-// onJoin
+// onReplayEvent
 /++
- +  Sends notes to a channel upon someone joining.
+ +  Sends notes queued for a user to a channel when they speak up, or when they
+ +  join iff the `replayOnJoin` setting is set.
  +
  +  Nothing is sent if no notes are stored.
  +/
 @(IRCEvent.Type.JOIN)
-void onJoin(NotesPlugin plugin, const IRCEvent event)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.EMOTE)
+@(ChannelPolicy.homeOnly)
+void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
+
+    if ((event.type == IRCEvent.Type.JOIN) && !plugin.notesSettings.replayOnJoin)
+    {
+        // It's a JOIN and we shouldn't replay on those
+        return;
+    }
 
     try
     {
@@ -109,13 +121,13 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
         with (fakeEvent)
         {
-            type = IRCEvent.Type.JOIN;
+            type = IRCEvent.Type.CHAN;
             sender.nickname = nickname;
             channel = event.channel;
             time = Clock.currTime.toUnixTime;
         }
 
-        plugin.onJoin(fakeEvent);
+        plugin.onReplayEvent(fakeEvent);
     }
 }
 
@@ -202,8 +214,9 @@ void onCommandReloadQuotes(NotesPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.master)
+@BotCommand(NickPolicy.required, "fakechan")
 @BotCommand(NickPolicy.required, "fakejoin")
-@Description("[debug] Fakes a user joining a channel.")
+@Description("[debug] Fakes a user being active in a channel.")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has, nom;
@@ -212,7 +225,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     logger.info("Faking an event");
 
     IRCEvent newEvent = event;
-    newEvent.type = IRCEvent.Type.JOIN;
+    newEvent.type = IRCEvent.Type.CHAN;
     string nickname = event.content;
 
     if (nickname.has!(Yes.decode)(' '))
@@ -225,7 +238,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
         newEvent.sender.nickname = event.content;
     }
 
-    return plugin.onJoin(newEvent);  // or onEvent?
+    return plugin.onReplayEvent(newEvent);  // or onEvent?
 }
 
 
