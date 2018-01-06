@@ -1758,8 +1758,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.common : logger, printObject;
-
         with (plugin.state)
         {
             if (auto user = event.target.nickname in users)
@@ -1777,10 +1775,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 import std.datetime.systime : Clock;
                 import kameloso.constants : Timeout;
 
-                logger.logf(`%s found WHOISRequest for %s: "%s"`,
-                    plugin.name, event.target.nickname, request.event.content);
-                //printObject(request.event);
-
                 const now = Clock.currTime.toUnixTime;
                 const then = (*request).when;
 
@@ -1797,13 +1791,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 case master:
                     if (event.target.nickname == bot.master)
                     {
-                        logger.log(plugin.name, " thinks master:master; Triggering!");
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
-                    }
-                    else
-                    {
-                        logger.warning("Needed privilege master but wasn't");
                     }
                     break;
 
@@ -1813,18 +1802,12 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                     if (event.target.nickname == bot.master ||
                         bot.friends.canFind(event.target.nickname))
                     {
-                        logger.log(plugin.name, " thinks friend:friend; Triggering!");
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
-                    }
-                    else
-                    {
-                        logger.warning("Needed privilege friend but wasn't");
                     }
                     break;
 
                 case anyone:
-                    logger.log(plugin.name, " thinks anyone; Triggering!");
                     request.trigger();
                     whoisQueue.remove(event.target.nickname);
                     break;
