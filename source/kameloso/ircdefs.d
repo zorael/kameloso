@@ -1074,7 +1074,7 @@ struct IRCServer
  +      string account;
  +      string badge;
  +      bool special;
- +      size_t lastWhois;
+ +      long lastWhois;
  +  }
  +/
 struct IRCUser
@@ -1102,7 +1102,7 @@ struct IRCUser
     bool special;
 
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
-    size_t lastWhois;
+    long lastWhois;
 
     /// How many references to this user exists
     int refcount;

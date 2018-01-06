@@ -23,7 +23,7 @@ private:
  +  struct RedditLookup
  +  {
  +      string url;
- +      size_t when;
+ +      long when;
  +  }
  +  ------------
  +/
@@ -34,7 +34,7 @@ struct RedditLookup
     string url;
 
     /// The UNIX timestamp of when the URL was looked up
-    size_t when;
+    long when;
 }
 
 

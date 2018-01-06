@@ -36,7 +36,7 @@ enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
  +  {
  +      string title;
  +      string domain;
- +      size_t when;
+ +      long when;
  +  }
  +  ------------
  +/
