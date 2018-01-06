@@ -180,6 +180,10 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
         plugin.seenAA[event.target.nickname] = *user;
         plugin.seenAA.remove(event.sender.nickname);
     }
+    else
+    {
+        plugin.updateUser(event.target.nickname);
+    }
 }
 
 
