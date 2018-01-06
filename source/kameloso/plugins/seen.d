@@ -214,6 +214,23 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 }
 
 
+// onEndOfList
+/++
+ +  At the end of a long listing f users in a channel, when we're reasonably
+ +  sure we've added users to our associative array of seen users, rehash it.
+ +
+ +  Rehashing optimises lookup and makes sense after you've added a big amount
+ +  of entries.
+ +/
+@(IRCEvent.Type.RPL_ENDOFNAMES)
+@(IRCEvent.Type.RPL_ENDOFWHO)
+@(ChannelPolicy.homeOnly)
+void onEndOfList(SeenPlugin plugin)
+{
+    plugin.seenAA.rehash();
+}
+
+
 // onPing
 /++
  +  Save seen files to disk with a periodicity of `hoursBetweenSaves` hours.
