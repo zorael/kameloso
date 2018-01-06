@@ -291,7 +291,7 @@ void generateAsserts(ref Client client)
     import kameloso.common : printObject;
     import kameloso.debugging : formatEventAssertBlock;
     //import std.array : Appender;
-    import std.stdio : stdio, writeln;
+    import std.stdio : stdout, readln, writeln;
 
     //Appender!(char[]) sink;
     //sink.reserve(768);

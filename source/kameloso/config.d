@@ -21,7 +21,7 @@ import std.typecons : Flag, No, Yes;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
-    import std.stdio : writefln, writeln;
+    import std.stdio : File, writefln, writeln;
 
     auto file = File(filename, "w");
 
