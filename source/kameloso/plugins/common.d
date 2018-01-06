@@ -468,6 +468,11 @@ struct Chainable;
 struct Verbose;
 
 /++
+ +  Flag denoting that a function is part of an awareness mixin.
+ +/
+struct AwarenessMixin;
+
+/++
  +  Flag denoting that a variable is to be considered settings and should be
  +  saved in the configuration file.
  +/
@@ -1634,6 +1639,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Removes a user's `IRCUser` entry from a plugin's user list upon them
      +  disconnecting.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1647,6 +1653,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Tracks a nick change, moving any old `IRCUser` entry in `state.users` to
      +  point to the new nickname.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1676,6 +1683,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  array, along with a timestamp of the results of the last `WHOIS` call,
      +  which is this.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1706,6 +1714,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  This way the user will only be updated with its account info if it was
      +  already created elsewhere.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
@@ -1732,6 +1741,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Records a user's services account by saving it to the user's `IRCBot` in
      +  the `state.users` associative array.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
@@ -1819,6 +1829,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +
      +  It usually contains everything interesting except services account name.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.homeOnly)
@@ -1837,6 +1848,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Freenode only sends a list of the nicknames but SpotChat sends the full
      +  information.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.homeOnly)
@@ -1893,6 +1905,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1911,6 +1924,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  inefficient. Rehashing it makes it take its new size into account and
      +  makes lookup faster.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     @(ChannelPolicy.homeOnly)
@@ -1950,6 +1964,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Create a new `IRCChannel` in the `state.channels` associative array list
      +  when the bot joins a channel.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.SELFJOIN)
     @(ChannelPolicy.homeOnly)
@@ -1963,6 +1978,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Remove an `IRCChannel` from the internal list when the bot leaves it.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.SELFPART)
     @(ChannelPolicy.homeOnly)
@@ -1997,6 +2013,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Add a user as being part of a channel when they join one.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(ChannelPolicy.homeOnly)
@@ -2022,6 +2039,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Remove a user from being part of a channel when they leave one.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.PART)
     @(ChannelPolicy.homeOnly)
@@ -2061,6 +2079,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Updates and renames a user in the internal list of users in a channel if
      +  they change their nickname.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2085,6 +2104,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Does not touch the internal list of users; the user awareness bits are
      +  expected to take care of that.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2105,6 +2125,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Update the entry for an `IRCChannel` if someone changes the topic of it.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
@@ -2119,6 +2140,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Stores the timestamp of when a channel was created.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     @(ChannelPolicy.homeOnly)
@@ -2136,6 +2158,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Most modes replace others of the same type, notable exceptions being
      +  bans and mode exemptions.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.CHANMODE)
     @(ChannelPolicy.homeOnly)
@@ -2155,6 +2178,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  This events includes all normal fields like ident and address, but not
      +  their channel modes (e.g. `@` for operator).
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.homeOnly)
@@ -2219,6 +2243,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  we need a skeletal `IRCUser.init` at least, to increment the refcount
      +  of.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.homeOnly)
@@ -2306,6 +2331,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Bans are just normal channel modes that are paired with a user and that
      +  don't overwrite other bans (can be stacked).
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
@@ -2342,6 +2368,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
+    @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     @(ChannelPolicy.homeOnly)
