@@ -3,8 +3,6 @@ module kameloso.debugging;
 import kameloso.common : Client;
 import kameloso.ircdefs : IRCBot, IRCEvent;
 
-import std.stdio;
-
 
 // formatAssertStatementLines
 /++
@@ -293,6 +291,7 @@ void generateAsserts(ref Client client)
     import kameloso.common : printObject;
     import kameloso.debugging : formatEventAssertBlock;
     //import std.array : Appender;
+    import std.stdio : stdio, writeln;
 
     //Appender!(char[]) sink;
     //sink.reserve(768);

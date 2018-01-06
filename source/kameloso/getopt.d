@@ -4,8 +4,6 @@ import kameloso.common : CoreSettings, Client;
 import kameloso.ircdefs : IRCBot;
 import std.typecons : Flag, No, Yes;
 
-import std.stdio;
-
 private:
 
 
@@ -75,6 +73,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     import kameloso.common : initLogger, printObjects, printVersionInfo;
     import std.format : format;
     import std.getopt;
+    import std.stdio : stdout, writeln;
 
     version(Cygwin_)
     scope(exit) stdout.flush();

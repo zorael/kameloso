@@ -4,8 +4,6 @@ import kameloso.common;
 
 import std.typecons : Flag, No, Yes;
 
-import std.stdio;
-
 
 // writeToDisk
 /++
@@ -23,6 +21,8 @@ import std.stdio;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
+    import std.stdio : writefln, writeln;
+
     auto file = File(filename, "w");
 
     static if (banner)
