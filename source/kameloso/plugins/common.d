@@ -522,21 +522,24 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
 
     if (!user) return FilterResult.whois;
 
-    writeln("account:", user.account);
-    writeln(now);
-    writeln(user.lastWhois);
-    writeln(now-user.lastWhois);
-    writeln(Timeout.whois);
+    immutable timediff = (now - user.lastWhois);
+    immutable isMaster = (user.account == state.bot.master);
+    immutable isFriend = state.bot.friends.canFind(user.account);
 
-    if (!user.account.length && ((now - user.lastWhois) > Timeout.whois))
-    {
-        return FilterResult.whois;
-    }
-    else if (user.account.length &&
-        ((user.account == state.bot.master) ||
-        (state.bot.friends.canFind(user.account))))
+    writeln("account:", user.account);
+    //writeln(now);
+    //writeln(user.lastWhois);
+    writeln(timediff);
+    writeln(cast(int)Timeout.whois);
+
+    if (user.account.length && isMaster || isFriend)
     {
         return FilterResult.pass;
+    }
+    else if ((!user.account.length && (timediff > Timeout.whois)) ||
+        (!isFriend && (timediff > 6 * Timeout.whois)))
+    {
+        return FilterResult.whois;
     }
     else
     {
@@ -1728,8 +1731,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 import std.datetime.systime : Clock;
                 import kameloso.constants : Timeout;
 
-                logger.log(plugin.name, " found WHOISRequest for ", event.target.nickname);
-                printObject(request.event);
+                logger.logf(`%s found WHOISRequest for %s: "%s"`,
+                    plugin.name, event.target.nickname, request.event.content);
+                //printObject(request.event);
 
                 const now = Clock.currTime.toUnixTime;
                 const then = (*request).when;
