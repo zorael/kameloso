@@ -469,12 +469,28 @@ void onCommandPrintSeen(SeenPlugin plugin)
 void updateUser(SeenPlugin plugin, const string signedNickname)
 {
     import kameloso.irc : stripModesign;
+    import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock;
 
-    /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
-    string nickname = signedNickname;
-    plugin.state.bot.server.stripModesign(nickname);
-    plugin.seenAA[nickname] = Clock.currTime.toUnixTime;
+    with (plugin.state)
+    {
+        /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
+        string nickname = signedNickname;
+        bot.server.stripModesign(nickname);
+
+        // Only update the user if he/she is in a home channel.
+        foreach (homechan; bot.homes)
+        {
+            assert((homechan in channels), "Home channel " ~ homechan ~
+                " was not in channels!");
+
+            if (channels[homechan].users.canFind(nickname))
+            {
+                plugin.seenAA[nickname] = Clock.currTime.toUnixTime;
+                return;
+            }
+        }
+    }
 }
 
 
@@ -576,17 +592,20 @@ void teardown(IRCPlugin basePlugin)
  +  `kameloso.plugins.common` to deal with common bookkeeping that every plugin
  +  that wants to keep track of users need. If you don't want to track which
  +  users are in which channels, you don't need this.
- +
+ +/
+mixin UserAwareness;
+
+
+/++
  +  Complementary to `UserAwareness` is `ChannelAwareness`, which will add in
  +  bookkeeping about the channels the bot is in, their topics, modes and list
  +  of participants. Channel awareness requires user awareness, but not the
  +  other way around.
  +
- +  This `seen` plugin doesn't care about channels; after all, a seen user is a
- +  seen user regardless of the channel he/she was seen in. So we mix in
- +  `UserAwareness` only.
+ +  We will want it to limit the amount of tracked users to people in our home
+ +  channels.
  +/
-mixin UserAwareness;
+mixin ChannelAwareness;
 
 
 /++
