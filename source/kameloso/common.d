@@ -1216,8 +1216,8 @@ unittest
  +      num = the number to reach
  +      n = the value to find a multiplier for
  +/
-size_t getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
-    (Number num, ptrdiff_t n)
+uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
+    (Number num, int n)
 {
     assert((n > 0), "Cannot get multiple of 0 or negatives");
     assert((num >= 0), "Cannot get multiples for a negative number");
@@ -1667,11 +1667,11 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  writeln(foo.deepSizeof);
  +  ------------
  +/
-size_t deepSizeof(T)(const T thing) @property pure @safe
+uint deepSizeof(T)(const T thing) @property pure @safe
 {
     import std.traits : isArray, isAssociativeArray, isSomeString;
 
-    size_t total;
+    uint total;
 
     total += T.sizeof;
 

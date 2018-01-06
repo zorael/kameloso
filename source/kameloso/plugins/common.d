@@ -93,7 +93,7 @@ abstract class WHOISRequest
     PrivilegeLevel privilegeLevel;
 
     /// When this request was issued
-    size_t when;
+    long when;
 
     /// Replay the event
     void trigger();

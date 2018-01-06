@@ -181,7 +181,7 @@ Flag!"quit" checkMessages(ref Client client)
                 target.nickname : channel;
 
             line = "PRIVMSG %s :%s%s%s".format(emoteTarget,
-                cast(size_t)I.ctcp, content, cast(size_t)I.ctcp);
+                cast(int)I.ctcp, content, cast(int)I.ctcp);
             break;
 
         case CHANMODE:
