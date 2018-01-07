@@ -434,18 +434,18 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
  +  local terminal.
  +
  +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
- +  function. It has three modes; `anyone`, `whitelist` and `master`.
+ +  function. It has three modes; `anyone`, `whitelist` and `admin`.
  +
  +  * `anyone` will let precisely anyone trigger it, without looking them up.
  +  * `whitelist will look whoever up and compare their *services login* with
  +     the names in the `whitelist` array in the configuration file.
- +  * `master` will allow only you. It will still look you up, but compare your
- +     services login name with the one in the `master` field in the
+ +  * `admin` will allow only you. It will still look you up, but compare your
+ +     services login name with the one in the `admin` field in the
  +     configuration file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.master)
+@(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printseen")
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")

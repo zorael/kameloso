@@ -85,7 +85,7 @@ $ dub build -b release -c vanilla
 
 # How to use
 
-The bot needs the services account name of the administrator/master of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the services account name of the administrator of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
 
 ```bash
 $ ./kameloso --writeconfig
@@ -97,7 +97,7 @@ If you have an old configuration file and you notice missing options, such as pl
 
 The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and whitelist your master account in the configuration file before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelist.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and enter your administrator's account name in the configuration file before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelist.
 
 ```
      you | !say herp

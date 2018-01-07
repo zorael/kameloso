@@ -202,7 +202,7 @@ unittest
     event.target.nickname = "kameloso";
     event.content = "hirrpp";
     event.sender.nickname = "zorael";
-    PrivilegeLevel pl = PrivilegeLevel.master;
+    PrivilegeLevel pl = PrivilegeLevel.admin;
 
     // delegate()
 
@@ -354,7 +354,7 @@ enum PrivilegeLevel
 {
     anyone, /// Anyone may trigger this event.
     whitelist, /// Only those in the `whitelist` array may trigger this event.
-    master, /// Only you (the `master`) may trigger this event.
+    admin, /// Only you (the `admin`) may trigger this event.
 }
 
 
@@ -510,7 +510,7 @@ struct Description
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
  +  If the user's NickServ account is in the whitelist (or equals the bot's
- +  master's), return pass. Else, return fail and deny use.
+ +  admin's), return pass. Else, return fail and deny use.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
@@ -525,10 +525,10 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     if (!user) return FilterResult.whois;
 
     immutable timediff = (now - user.lastWhois);
-    immutable isMaster = (user.account == state.bot.master);
+    immutable isAdmin = (user.account == state.bot.admin);
     immutable isWhitelisted = state.bot.whitelist.canFind(user.account);
 
-    if (user.account.length && isMaster || isWhitelisted)
+    if (user.account.length && isAdmin || isWhitelisted)
     {
         return FilterResult.pass;
     }
@@ -560,12 +560,12 @@ unittest
 
     state.users["zorael"] = IRCUser.init;
     state.users["zorael"].account = "zorael";
-    state.bot.master = "zorael";
+    state.bot.admin = "zorael";
 
     immutable res2 = state.filterUser(event);
     assert((res2 == FilterResult.pass), res2.text);
 
-    state.bot.master = "harbl";
+    state.bot.admin = "harbl";
     state.bot.whitelist ~= "zorael";
 
     immutable res3 = state.filterUser(event);
@@ -896,7 +896,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     final switch (privilegeLevel)
                     {
                     case whitelist:
-                    case master:
+                    case admin:
                         immutable result = privateState.filterUser(mutEvent);
 
                         with (privateState)
@@ -904,14 +904,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         final switch (result)
                         {
                         case pass:
-                            if ((privilegeLevel == master) &&
+                            if ((privilegeLevel == admin) &&
                                 (users[mutEvent.sender.nickname].account !=
-                                    bot.master))
+                                    bot.admin))
                             {
                                 static if (verbose)
                                 {
                                     writefln("%s: %s passed privilege " ~
-                                        "check but isn't master; continue",
+                                        "check but isn't admin; continue",
                                         name, mutEvent.sender.nickname);
                                 }
                                 continue funloop;
@@ -1799,8 +1799,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 with (PrivilegeLevel)
                 final switch (request.privilegeLevel)
                 {
-                case master:
-                    if (event.target.nickname == bot.master)
+                case admin:
+                    if (event.target.nickname == bot.admin)
                     {
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
@@ -1810,7 +1810,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 case whitelist:
                     import std.algorithm.searching : canFind;
 
-                    if (event.target.nickname == bot.master ||
+                    if (event.target.nickname == bot.admin ||
                         bot.whitelist.canFind(event.target.nickname))
                     {
                         request.trigger();

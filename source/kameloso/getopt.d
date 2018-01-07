@@ -102,8 +102,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "account",       &bot.authLogin,
             "p|authpassword","Services account password", &bot.authPassword,
             "password",      &bot.authPassword,
-            "m|master",      "Services account of the bot's master, who gets " ~
-                             "access to administrative functions", &bot.master,
+            "m|admin",      "Services account of the bot's master, who gets " ~
+                             "access to administrative functions", &bot.admin,
             "H|home",        "Home channels to operate in, comma-separated" ~
                             " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~

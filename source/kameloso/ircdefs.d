@@ -853,7 +853,7 @@ struct IRCEvent
  +      string user;
  +      string ident;
  +      string quitReason;
- +      string master;
+ +      string admin;
  +
  +      string authLogin;      // services account name
  +      string authPassword;   // service password
@@ -877,8 +877,8 @@ struct IRCBot
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
 
-    /// The nickname services account of the bot's *master*
-    string master;
+    /// The nickname services account of the bot's *admin*
+    string admin;
 
     /// Username to use for services account
     string authLogin;
