@@ -22,17 +22,19 @@ interface IRCPlugin
     import core.thread : Fiber;
     import std.array : Appender;
 
+    @safe:
+
     /// Executed to return a reference to the current `IRCBot`
-    ref IRCBot bot() pure nothrow @safe @property;
+    ref IRCBot bot() pure nothrow @nogc @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
-    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @safe;
+    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc;
 
     /// Executed to let plugins modify an event mid-parse
-    void postprocess(ref IRCEvent);
+    void postprocess(ref IRCEvent) @system;
 
     /// Executed upon new IRC event parsed from the server
-    void onEvent(const IRCEvent);
+    void onEvent(const IRCEvent) @system;
 
     /// Executed when the plugin is requested to write its settings to disk
     void writeConfig(const string);
@@ -41,40 +43,40 @@ interface IRCPlugin
     void loadConfig(const string);
 
     /// Executed when gathering things to put in the configuration file
-    void addToConfig(ref Appender!string);
+    void addToConfig(ref Appender!string) const;
 
     /// Executed during start if we want to change a setting by its string name
-    void setSettingByName(const string, const string) @safe;
+    void setSettingByName(const string, const string);
 
     /// Executed when connection has been established
-    void start();
+    void start() @system;
 
     /// Executed when we want a plugin to print its settings and such
     void present() const;
 
     /// Executed when a plugin wants to examine all the other plugins
-    void peekPlugins(const IRCPlugin[]);
+    void peekPlugins(const IRCPlugin[]) @system;
 
     /// Executed when we want a plugin to print its Settings struct
-    void printSettings() const;
+    void printSettings() @system const;
 
     /// Executed during shutdown or plugin restart
-    void teardown();
+    void teardown() @system;
 
     /// Returns the name of the plugin, sliced off the module name
-    string name() @safe @property const;
+    string name() @property const;
 
     /// Returns an array of the descriptions of the bot commands a plugin offers
-    string[string] commands() pure nothrow @safe @property const;
+    string[string] commands() pure nothrow @property const;
 
     /// Returns a reference to the current `IRCPluginState`
-    ref IRCPluginState state() @property;
+    ref IRCPluginState state() pure nothrow @nogc @property;
 
     /// Returns a reference to the list of awaiting `Fiber`s, keyed by `Type`
-    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @safe @property;
+    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property;
 
     /// Returns a reference to the list of timed `Fiber`s, labeled by UNIX time
-    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @safe @property;
+    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property;
 }
 
 
@@ -98,7 +100,7 @@ abstract class WHOISRequest
     /// Replay the event
     void trigger();
 
-    this()
+    this() @safe
     {
         import std.datetime.systime : Clock;
         when = Clock.currTime.toUnixTime;
@@ -116,6 +118,8 @@ abstract class WHOISRequest
  +/
 final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {
+    @safe:
+
     /// Stored function pointer/delegate
     F fn;
 
@@ -150,7 +154,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
      +  Call the passed function/delegate pointer, optionally with the stored
      +  `IRCEvent` and/or `Payload`.
      +/
-    override void trigger()
+    override void trigger() @system
     {
         import std.meta : AliasSeq, staticMap;
         import std.traits : Parameters, Unqual, arity;
@@ -260,7 +264,7 @@ unittest
  +  *with* a payload attached.
  +/
 WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
-    PrivilegeLevel privilegeLevel, F fn)
+    PrivilegeLevel privilegeLevel, F fn) @safe
 {
     return new WHOISRequestImpl!(F, Payload)(payload, event, privilegeLevel, fn);
 }
@@ -271,7 +275,7 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
  +  Convenience function that returns a `WHOISRequestImpl` of the right type,
  +  *without* a payload attached.
  +/
-WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
+WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
 {
     return new WHOISRequestImpl!F(event, privilegeLevel, fn);
 }
@@ -511,7 +515,7 @@ struct Description
  +  If the user's NickServ account is in the list of friends (or equals the
  +  bot's master's), return pass. Else, return fail and deny use.
  +/
-FilterResult filterUser(const IRCPluginState state, const IRCEvent event)
+FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
     import kameloso.constants : Timeout;
     import core.time : seconds;
@@ -606,6 +610,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import core.thread : Fiber;
     import std.concurrency : Tid;
 
+    @safe:
+
     IRCPluginState privateState;
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
     Labeled!(Fiber, long)[] privateTimedFibers;
@@ -617,7 +623,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Pass on the supplied `IRCEvent` to functions annotated with the right
      +  `IRCEvent.Types`.
      +/
-    void onEvent(const IRCEvent event)
+    void onEvent(const IRCEvent event) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -1045,7 +1051,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      state = the aggregate of all plugin state variables, making
      +              this the "original state" of the plugin.
      +/
-    this(IRCPluginState state)
+    this(IRCPluginState state) @system
     {
         this.privateState = state;
 
@@ -1063,7 +1069,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  This is used to let the main loop examine and update the otherwise
      +  inaccessible `privateState.bot`.
      +/
-    ref IRCBot bot() pure nothrow @safe @property
+    ref IRCBot bot() pure nothrow @nogc @property
     {
         return privateState.bot;
     }
@@ -1077,7 +1083,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      ref event = an `IRCEvent` undergoing parsing.
      +/
-    void postprocess(ref IRCEvent event)
+    void postprocess(ref IRCEvent event) @system
     {
         static if (__traits(compiles, .postprocess(this, event)))
         {
@@ -1098,7 +1104,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      a reference to the local `WHOIS` request queue.
      +/
-    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @safe
+    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc
     {
         return privateState.whoisQueue;
     }
@@ -1182,7 +1188,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
 
     // setSettingByName
-    void setSettingByName(const string setting, const string value) @safe
+    void setSettingByName(const string setting, const string value)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -1212,7 +1218,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Print some information to the screen, usually settings.
      +/
-    void present() const
+    void present() @system const
     {
         static if (__traits(compiles, .present(this)))
         {
@@ -1225,7 +1231,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Lends a const reference to the `IRCPlugin[]` array to the plugin.
      +/
-    void peekPlugins(const IRCPlugin[] plugins)
+    void peekPlugins(const IRCPlugin[] plugins) @system
     {
         static if (__traits(compiles, .peekPlugins(this, plugins)))
         {
@@ -1311,7 +1317,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Activates the plugin, run when connection has been established.
      +/
-    void start()
+    void start() @system
     {
         static if (__traits(compiles, .start(this)))
         {
@@ -1324,7 +1330,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Deinitialises the plugin.
      +/
-    void teardown()
+    void teardown() @system
     {
         static if (__traits(compiles, .teardown(this)))
         {
@@ -1340,7 +1346,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
      +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
      +/
-    string name() @safe @property const
+    string name() @property const
     {
         import kameloso.string : has, nom;
 
@@ -1361,7 +1367,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  them alongside their `Description`s as an associative `string[string]`
      +  array.
      +/
-    string[string] commands() pure nothrow @safe @property const
+    string[string] commands() pure nothrow @property const
     {
         import std.meta : Filter;
         import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
@@ -1398,7 +1404,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  `main.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
-    ref IRCPluginState state() pure nothrow @safe @property
+    ref IRCPluginState state() pure nothrow @nogc @property
     {
         return this.privateState;
     }
@@ -1412,7 +1418,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  performed and then to react to the server's response to it.
      +/
     pragma(inline)
-    ref Fiber[][IRCEvent.Type] awaitingFibers() @property
+    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property
     {
         return this.privateAwaitingFibers;
     }
@@ -1427,7 +1433,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  plugin wants an action performed at a certain point in time.
      +/
     pragma(inline)
-    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @safe @property
+    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property
     {
         return this.privateTimedFibers;
     }
@@ -1441,7 +1447,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  It only supports a precision of `kameloso.constants.Timeout.receive` + 1
      +  seconds.
      +/
-    void delayFiber(Fiber fiber, const long secs) @safe
+    void delayFiber(Fiber fiber, const long secs)
     {
         import kameloso.common : labeled;
         import std.datetime.systime : Clock;
@@ -2411,7 +2417,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
  +  TODO: Support for verbose.
  +/
 bool nickPolicyMatches(const IRCPluginState privateState,
-    const NickPolicy policy, ref IRCEvent mutEvent)
+    const NickPolicy policy, ref IRCEvent mutEvent) @safe
 {
     import kameloso.string : beginsWith, nom, stripPrefix;
     import std.typecons : Flag, No, Yes;
@@ -2526,7 +2532,7 @@ bool nickPolicyMatches(const IRCPluginState privateState,
  +  If a user already exists, meld the new information into the old one.
  +/
 void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-    (IRCPlugin plugin, const IRCUser newUser)
+    (IRCPlugin plugin, const IRCUser newUser) pure nothrow @safe
 {
     import kameloso.common : meldInto;
 
@@ -2610,7 +2616,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
  +  `string[]` arrays of nicknames with that mode ("prefix").
  +/
 void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
-    const char modechar, const string nickname, const IRCServer)
+    const char modechar, const string nickname, const IRCServer) pure nothrow @safe
 {
     import std.algorithm.searching : canFind;
 
@@ -2649,7 +2655,7 @@ enum isStruct(T) = is(T == struct);
  +  This merely iterates the passed `plugins` and calls their `setSettingByName`
  +  methods.
  +/
-void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings)
+void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
 {
     import kameloso.common : logger;
     import kameloso.string : has, nom;

@@ -1192,7 +1192,7 @@ struct Client
     +  Params:
     +      bot = IRCBot to propagate.
     +/
-    void propagateBot(IRCBot bot)
+    void propagateBot(IRCBot bot) pure nothrow @nogc @safe
     {
         foreach (plugin; plugins)
         {
@@ -1290,7 +1290,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  writeln(foo.deepSizeof);
  +  ------------
  +/
-uint deepSizeof(T)(const T thing) @property pure
+uint deepSizeof(T)(const T thing) pure @nogc @safe @property
 {
     import std.traits : isArray, isAssociativeArray, isSomeString;
 
