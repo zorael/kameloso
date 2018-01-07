@@ -1,8 +1,8 @@
 {
     "name": "kameloso",
-    "description": "IRC Bot",
+    "description": "An IRC bot",
     "authors": [ "JR" ],
-    "copyright": "Copyright © 2017, JR",
+    "copyright": "Copyright © 2018, JR",
     "license": "MIT",
     "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
