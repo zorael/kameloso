@@ -364,7 +364,7 @@ unittest
  +  assert(things == [ "one", "two", "three", "four" ]);
  +  ------------
  +/
-T[] arrayify(string separator = ",", T)(const T line) pure nothrow @nogc
+T[] arrayify(string separator = ",", T)(const T line) pure
 {
     import std.algorithm.iteration : map, splitter;
     import std.array : array;

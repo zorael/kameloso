@@ -107,7 +107,7 @@ void readConfigInto(T...)(const string configFile, ref T things)
  +  assert(!sink.data.empty);
  +  ------------
  +/
-void serialise(Sink, Things...)(ref Sink sink, Things things) pure
+void serialise(Sink, Things...)(ref Sink sink, Things things)
 if (Things.length > 1)
 {
     foreach (const thing; things)
@@ -136,7 +136,7 @@ if (Things.length > 1)
  +  assert(!sink.data.empty);
  +  ------------
  +/
-void serialise(Sink, QualThing)(ref Sink sink, QualThing thing) pure
+void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
     import std.algorithm : joiner;
