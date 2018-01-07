@@ -94,7 +94,7 @@ void onSelfpart(ConnectPlugin plugin, const IRCEvent event)
  +  Record a channel in the `bot.channels` array upon successfully joining it.
  +
  +  Separate this from the `WHO` calls in `onEndOfNames` so that this can be
- +  kept `ChannelPolicy.any` and that `ChannelPolicy.homeOnly`.
+ +  kept `ChannelPolicy.any` and that `ChannelPolicy.home`.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)

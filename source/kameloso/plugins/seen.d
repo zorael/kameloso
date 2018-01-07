@@ -121,9 +121,9 @@ struct SeenSettings
  +
  +  The `ChannelPolicy` annotation decides whether this function should be
  +  called based on the `channel` the event took place in, if applicable.
- +  The two policies are `homeOnly`, in which only events in channels in the
- +  `homes` array will be allowed to trigger this; or `any`, in which case
- +  anywhere goes.
+ +  The two policies are `home`, in which only events in channels in the `homes`
+ +  array will be allowed to trigger this; or `any`, in which case anywhere
+ +  goes.
  +/
 @(Chainable)
 @(IRCEvent.Type.EMOTE)
@@ -133,7 +133,7 @@ struct SeenSettings
 @(IRCEvent.Type.PART)
 @(IRCEvent.Type.QUIT)
 @(PrivilegeLevel.anyone)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     /++
@@ -166,7 +166,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     // There may not be an old one if the user was not indexed upon us joinng
-    // the channel, which is the case with homeOnly and non-home channels.
+    // the channel, which is the case with `ChannelPolicy.home` and non-home
+    // channels.
     if (auto user = event.sender.nickname in plugin.seenUsers)
     {
         plugin.seenUsers[event.target.nickname] = *user;
@@ -190,7 +191,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
  +  creating them if they don't exist.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
     /// Update the user's entry in the JSON storage.
@@ -209,7 +210,7 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
  +  seen.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onNameReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
@@ -249,7 +250,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(IRCEvent.Type.RPL_ENDOFWHO)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onEndOfList(SeenPlugin plugin)
 {
     plugin.seenUsers.rehash();
@@ -353,7 +354,7 @@ void onPing(SeenPlugin plugin)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 @BotCommand("seen")
 @BotCommand(NickPolicy.required, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.")
@@ -445,7 +446,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printseen")
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)

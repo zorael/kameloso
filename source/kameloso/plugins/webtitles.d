@@ -80,7 +80,7 @@ struct TitleRequest
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.whitelist)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;

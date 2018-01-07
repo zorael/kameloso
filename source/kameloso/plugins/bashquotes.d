@@ -18,7 +18,7 @@ private:
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 @BotCommand("bash")
 @BotCommand(NickPolicy.required, "bash")
 @Description("Fetch a random or specified bash.org quote.")

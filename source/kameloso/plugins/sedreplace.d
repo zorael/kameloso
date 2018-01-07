@@ -138,7 +138,7 @@ unittest
  +/
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.anyone)  // ?
-@(ChannelPolicy.homeOnly)
+@(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.messaging : chan;
