@@ -360,6 +360,7 @@ void onPing(SeenPlugin plugin)
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : timeSince;
+    import std.algorithm : canFind;
     import std.concurrency : send;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
@@ -399,6 +400,12 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         // The person is asking for seen information about him-/herself.
         plugin.privmsg(event.channel, event.sender.nickname, "That's you!");
         return;
+    }
+    else if (event.channel.length && plugin.state.channels[event.channel].users
+        .canFind(event.content))
+    {
+        // Channel message and the user is in the channel
+        plugin.chan(event.channel, event.content ~ "is here right now!");
     }
 
     const userTimestamp = event.content in plugin.seenUsers;
@@ -467,7 +474,8 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
 
     with (plugin.state)
     {
-        /// Make sure to strip the modesign, so `@foo` is the same person as `foo`.
+        /// Make sure to strip the modesign, so `@foo` is the same person as
+        // `foo`.
         string nickname = signedNickname;
         bot.server.stripModesign(nickname);
 
@@ -475,7 +483,7 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
         foreach (homechan; bot.homes)
         {
             assert((homechan in channels), "Home channel " ~ homechan ~
-                " was not in channels!");
+                " was not in channels! Channel awareness should have added it.");
 
             if (channels[homechan].users.canFind(nickname))
             {

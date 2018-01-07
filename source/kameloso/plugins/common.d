@@ -2373,9 +2373,29 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
+
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         plugin.state.channels[event.channel]
             .setMode(event.aux, event.content, plugin.state.bot.server);
+    }
+
+
+    // onChannelAwarenessEndOfMotd
+    /++
+     +  After successfully connecting, create entries for all home channels in
+     +  each channel-aware plugin's `state.channels`.
+     +
+     +  Without this we may try to index it when it's not yet available.
+     +/
+    @(AwarenessMixin)
+    @(Chainable)
+    @(IRCEvent.Type.RPL_ENDOFMOTD)
+    void onChannelAwarenessEndOfMotd(IRCPlugin plugin)
+    {
+        foreach (homechan; plugin.state.bot.homes)
+        {
+            plugin.state.channels[homechan] = IRCChannel.init;
+        }
     }
 }
 
