@@ -1367,8 +1367,9 @@ public:
  +  Convenience function to create a `Labeled` struct while inferring the
  +  template parameters from the runtime arguments.
  +/
-auto labeled(Thing, Label)(Thing thing, Label label) pure nothrow @nogc @safe
+auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
+    (Thing thing, Label label) pure nothrow @nogc @safe
 {
     import std.traits : Unqual;
-    return Labeled!(Unqual!Thing, Unqual!Label)(thing, label);
+    return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
 }
