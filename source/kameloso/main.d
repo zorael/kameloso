@@ -246,7 +246,9 @@ Flag!"quit" checkMessages(ref Client client)
 
     do
     {
-        receivedSomething = receiveTimeout(0.seconds,
+        static immutable instant = 0.seconds;
+
+        receivedSomething = receiveTimeout(instant,
             &sendline,
             &quietline,
             &throttleline,

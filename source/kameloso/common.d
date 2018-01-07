@@ -1297,13 +1297,15 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
 
     D left = dur;
 
-    while (left > 0.seconds)
+    static immutable nothing = 0.seconds;
+
+    while (left > nothing)
     {
         if (abort) return;
 
         const nextStep = min((left-step), step);
 
-        if (nextStep <= 0.seconds) break;
+        if (nextStep <= nothing) break;
 
         Thread.sleep(nextStep);
         left -= step;

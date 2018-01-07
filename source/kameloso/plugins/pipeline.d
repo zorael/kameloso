@@ -91,7 +91,9 @@ void pipereader(shared IRCPluginState newState)
             }
         }
 
-        receiveTimeout(0.seconds,
+        static immutable instant = 0.seconds;
+
+        receiveTimeout(instant,
             (ThreadMessage.Teardown)
             {
                 halt = true;
