@@ -59,7 +59,6 @@ if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncod
     if (index == -1)
     {
         import kameloso.common : logger;
-
         logger.warningf("-- TRIED TO NOM TOO MUCH:'%s' with '%s'", line, separator);
         return T.init;
     }

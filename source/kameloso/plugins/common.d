@@ -190,7 +190,6 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : format;
-
         sink("[%s] @ %s".format(event.type, event.sender.nickname));
     }
 }
@@ -319,7 +318,6 @@ struct IRCPluginState
     WHOISRequest[string] whoisQueue;
 }
 
-
 /// The results trie from comparing a username with the whitelist
 enum FilterResult { fail, pass, whois }
 
@@ -336,7 +334,6 @@ enum NickPolicy
     required,     /// Message must begin with bot name, except in `QUERY` events.
     hardRequired, /// Message must begin with bot name, regardless of type.
 }
-
 
 /// If an annotated function should work in all channels or just in homes
 enum ChannelPolicy

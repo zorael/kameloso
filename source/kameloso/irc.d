@@ -1308,7 +1308,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
 {
     import kameloso.string : beginsWith, sharedDomains;
     import std.string : toLower;
-    // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflohomeOnlyw] Make sure your nick is registered, then please try again to join ##linux.
+    // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
     // :tolkien.freenode.net NOTICE * :*** Checking Ident
 

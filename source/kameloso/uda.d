@@ -12,6 +12,6 @@ struct Separator
 
 /++
  +  UDA conveying that this member contains sensitive information and should not
- + be printed in clear text; e.g. passwords
+ +  be printed in clear text; e.g. passwords.
  +/
 struct Hidden {}
