@@ -1011,6 +1011,44 @@ struct Client
     import kameloso.irc : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
+    // ThrottleValues
+    /++
+     +  Aggregate of values and state needed to throttle messages without
+     +  polluting namespace too much.
+     +
+     +  ------------
+     +  struct ThrottleValues
+     +  {
+     +      enum k;
+     +      SysTime t0;
+     +      double m;
+     +      double increment;
+     +      double burst;
+     +  }
+     +  ------------
+     +/
+    struct ThrottleValues
+    {
+        /// Graph constant modifier (inclination, MUST be negative)
+        enum k = -1.2;
+
+        /// Origo of x-axis (last sent message)
+        SysTime t0;
+
+        /// y at t0 (ergo y at x = 0, weight at last sent message)
+        double m = 0.0;
+
+        /// Increment to y on sent message
+        double increment = 1.0;
+
+        /// Burst limit; how many messages*increment can be sent initially before
+        /// throttling kicks in
+        double burst = 3.0;
+
+        /// Don't copy this, just keep one instance
+        @disable this(this);
+    }
+
     /// Nickname and other IRC variables for the bot.
     IRCBot bot;
 
@@ -1161,45 +1199,6 @@ struct Client
             plugin.bot = bot;
         }
     }
-}
-
-
-// ThrottleValues
-/++
- +  Aggregate of values and state needed to throttle messages without polluting
- +  namespace too much.
- +
- +  ------------
- +  struct ThrottleValues
- +  {
- +      enum k;
- +      SysTime t0;
- +      double m;
- +      double increment;
- +      double burst;
- +  }
- +  ------------
- +/
-struct ThrottleValues
-{
-    /// Graph constant modifier (inclination, MUST be negative)
-    enum k = -1.2;
-
-    /// Origo of x-axis (last sent message)
-    SysTime t0;
-
-    /// y at t0 (ergo y at x = 0, weight at last sent message)
-    double m = 0.0;
-
-    /// Increment to y on sent message
-    double increment = 1.0;
-
-    /// Burst limit; how many messages*increment can be sent initially before
-    /// throttling kicks in
-    double burst = 3.0;
-
-    /// Don't copy this, just keep one instance
-    @disable this(this);
 }
 
 
