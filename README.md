@@ -155,19 +155,16 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 # TODO
 
-* investigate inverse channel behaviour (blacklists)
+(But not neccessarily for `1.0.0`)
+
 * pipedream: DCC
 * pipedream two: `ncurses`
-* more modules? `uda.d`/`attribute.d`?
+* blacklists; by mask, by account?
 * merge thottling with timing
-* compilation time and memory use :c
-* optional formatting in IRC output?
-* channel-split notes
+* optional formatting in IRC output? (later)
+* channel-split notes (later)
 * update wiki
-* multiple masters?
-* rename friends whitelist?
-* add blacklist to apply to anyone? by mask?
-* split up `common.d`, to better decouple
+* multiple admins?
 
 # Built With
 
