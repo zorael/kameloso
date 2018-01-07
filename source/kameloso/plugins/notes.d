@@ -142,7 +142,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
  +  Adds a note to the in-memory storage, and saves it to disk.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand("addnote")
 @BotCommand("note")

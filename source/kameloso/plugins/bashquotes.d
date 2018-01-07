@@ -17,7 +17,7 @@ private:
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand("bash")
 @BotCommand(NickPolicy.required, "bash")

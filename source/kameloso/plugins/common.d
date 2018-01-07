@@ -320,7 +320,7 @@ struct IRCPluginState
 }
 
 
-/// The results trie from comparing a username with the known list of friends
+/// The results trie from comparing a username with the whitelist
 enum FilterResult { fail, pass, whois }
 
 
@@ -356,7 +356,7 @@ enum ChannelPolicy
 enum PrivilegeLevel
 {
     anyone, /// Anyone may trigger this event.
-    friend, /// Only those in the `friends` array may trigger this event.
+    whitelist, /// Only those in the `whitelist` array may trigger this event.
     master, /// Only you (the `master`) may trigger this event.
 }
 
@@ -512,8 +512,8 @@ struct Description
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
- +  If the user's NickServ account is in the list of friends (or equals the
- +  bot's master's), return pass. Else, return fail and deny use.
+ +  If the user's NickServ account is in the whitelist (or equals the bot's
+ +  master's), return pass. Else, return fail and deny use.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
@@ -529,14 +529,14 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 
     immutable timediff = (now - user.lastWhois);
     immutable isMaster = (user.account == state.bot.master);
-    immutable isFriend = state.bot.friends.canFind(user.account);
+    immutable isWhitelisted = state.bot.whitelist.canFind(user.account);
 
-    if (user.account.length && isMaster || isFriend)
+    if (user.account.length && isMaster || isWhitelisted)
     {
         return FilterResult.pass;
     }
     else if ((!user.account.length && (timediff > Timeout.whois)) ||
-        (!isFriend && (timediff > 6 * Timeout.whois)))
+        (!isWhitelisted && (timediff > 6 * Timeout.whois)))
     {
         return FilterResult.whois;
     }
@@ -569,12 +569,12 @@ unittest
     assert((res2 == FilterResult.pass), res2.text);
 
     state.bot.master = "harbl";
-    state.bot.friends ~= "zorael";
+    state.bot.whitelist ~= "zorael";
 
     immutable res3 = state.filterUser(event);
     assert((res3 == FilterResult.pass), res3.text);
 
-    state.bot.friends = [];
+    state.bot.whitelist = [];
     state.users["zorael"].lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = state.filterUser(event);
@@ -898,7 +898,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     with (PrivilegeLevel)
                     final switch (privilegeLevel)
                     {
-                    case friend:
+                    case whitelist:
                     case master:
                         immutable result = privateState.filterUser(mutEvent);
 
@@ -1810,11 +1810,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                     }
                     break;
 
-                case friend:
+                case whitelist:
                     import std.algorithm.searching : canFind;
 
                     if (event.target.nickname == bot.master ||
-                        bot.friends.canFind(event.target.nickname))
+                        bot.whitelist.canFind(event.target.nickname))
                     {
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);

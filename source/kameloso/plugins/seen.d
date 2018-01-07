@@ -352,7 +352,7 @@ void onPing(SeenPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand("seen")
 @BotCommand(NickPolicy.required, "seen")
@@ -433,11 +433,11 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
  +  local terminal.
  +
  +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
- +  function. It has three modes; `anyone`, `friend` and `master`.
+ +  function. It has three modes; `anyone`, `whitelist` and `master`.
  +
  +  * `anyone` will let precisely anyone trigger it, without looking them up.
- +  * `friend will look whoever up and compare their *services login* with the
- +  *  whitelist in the `friends` array in the configuration file.
+ +  * `whitelist will look whoever up and compare their *services login* with
+ +     the names in the `whitelist` array in the configuration file.
  +  * `master` will allow only you. It will still look you up, but compare your
  +     services login name with the one in the `master` field in the
  +     configuration file.

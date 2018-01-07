@@ -895,7 +895,7 @@ struct IRCBot
     @Separator(",")
     {
         string[] homes;
-        string[] friends;
+        string[] whitelist;
         string[] channels;
     }
 
@@ -929,8 +929,8 @@ struct IRCBot
     {
         import std.format : format;
 
-        sink("%s:%s!~%s | homes:%s | chans:%s | friends:%s | server:%s"
-             .format(nickname, authLogin, ident, homes, channels, friends, server));
+        sink("%s:%s!~%s | homes:%s | chans:%s | whitelist:%s | server:%s"
+             .format(nickname, authLogin, ident, homes, channels, whitelist, server));
     }
 }
 

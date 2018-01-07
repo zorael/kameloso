@@ -814,7 +814,7 @@ int main(string[] args)
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 
-        if (!bot.homes.length && !bot.master.length && !bot.friends.length)
+        if (!bot.homes.length && !bot.master.length && !bot.whitelist.length)
         {
             import std.path : baseName;
 

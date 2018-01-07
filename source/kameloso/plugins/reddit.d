@@ -44,7 +44,7 @@ struct RedditLookup
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand(NickPolicy.direct, "reddit")
 @BotCommand(NickPolicy.required, "reddit")

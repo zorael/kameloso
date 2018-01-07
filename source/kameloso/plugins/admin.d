@@ -63,7 +63,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand(NickPolicy.required, "user")
 @Description("[debug] Prints the details of a specific user.")
@@ -88,7 +88,7 @@ void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 @BotCommand(NickPolicy.required, "forgetaccounts")
 @Description("[debug] Forget user accounts.")
@@ -308,19 +308,19 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAddFriend
+// onCommandWhitelist
 /++
  +  Add a nickname to the list of users who may trigger the bot.
  +
- +  This is at a `friends` level, as opposed to `anyone` and `master`.
+ +  This is at a `whitelist` level, as opposed to `anyone` and `master`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(ChannelPolicy.homeOnly)
-@BotCommand(NickPolicy.required, "addfriend")
-@Description("Adds a nickname to the list of users who may trigger the bot.")
-void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
+@BotCommand(NickPolicy.required, "whitelist")
+@Description("Adds a nickname to the whitelist of users who may trigger the bot.")
+void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has;
     import std.string : strip;
@@ -340,14 +340,14 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 
     with (plugin.state)
     {
-        bot.friends ~= nickname;
+        bot.whitelist ~= nickname;
         bot.updated = true;
-        logger.infof("%s added to friends", nickname);
+        logger.infof("%s added to whitelist", nickname);
     }
 }
 
 
-// onCommandDelFriend
+// onCommandUnwhitelist
 /++
  +  Remove a nickname from the list of users who may trigger the bot.
  +/
@@ -355,9 +355,9 @@ void onCommandAddFriend(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.master)
 @(ChannelPolicy.homeOnly)
-@BotCommand(NickPolicy.required, "delfriend")
-@Description("Removes a nickname from the list of users who may trigger the bot.")
-void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
+@BotCommand(NickPolicy.required, "unwhitelist")
+@Description("Removes a nickname from the whitelist of users who may trigger the bot.")
+void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has;
     import std.algorithm : countUntil, remove;
@@ -376,19 +376,19 @@ void onCommandDelFriend(AdminPlugin plugin, const IRCEvent event)
         return;
     }
 
-    immutable friendIndex = plugin.state.bot.friends.countUntil(nickname);
+    immutable whitelistIndex = plugin.state.bot.whitelist.countUntil(nickname);
 
-    if (friendIndex == -1)
+    if (whitelistIndex == -1)
     {
-        logger.error("No such friend");
+        logger.error("No such user in whitelist");
         return;
     }
 
     with (plugin.state)
     {
-        bot.friends = bot.friends.remove(friendIndex);
+        bot.whitelist = bot.whitelist.remove(whitelistIndex);
         bot.updated = true;
-        logger.infof("%s removed from friends", nickname);
+        logger.infof("%s removed from whitelist", nickname);
     }
 }
 

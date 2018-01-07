@@ -79,7 +79,7 @@ struct TitleRequest
  +  It uses a simple regex and exhaustively tries to match every URI it detects.
  +/
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.friend)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.homeOnly)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
