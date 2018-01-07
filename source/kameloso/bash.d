@@ -19,7 +19,6 @@ enum TerminalToken
     reset = 15,
 }
 
-
 /// Effect codes that work like Bash colouring does, except for effects
 enum BashEffect
 {
@@ -32,7 +31,6 @@ enum BashEffect
     hidden  = 8,
 }
 
-
 /// Format codes for Bash colouring
 enum BashFormat
 {
@@ -43,7 +41,6 @@ enum BashFormat
     invert      = 6,
     hidden      = 8,
 }
-
 
 /// Foreground colour codes for Bash colouring
 enum BashForeground
@@ -67,7 +64,6 @@ enum BashForeground
     white        = 97,
 }
 
-
 /// Background colour codes for Bash colouring
 enum BashBackground
 {
@@ -90,7 +86,6 @@ enum BashBackground
     white        = 107,
 }
 
-
 /// Bash colour/effect reset codes
 enum BashReset
 {
@@ -102,7 +97,6 @@ enum BashReset
     invert      = 27,
     hidden      = 28,
 }
-
 
 /// Bool of whether a type is a colour code enum
 enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||

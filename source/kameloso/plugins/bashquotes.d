@@ -6,8 +6,6 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
 
-import std.stdio;
-
 private:
 
 

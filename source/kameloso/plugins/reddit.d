@@ -8,8 +8,6 @@ import kameloso.common : logger;
 
 import std.concurrency : Tid;
 
-import std.stdio;
-
 private:
 
 

@@ -8,10 +8,8 @@ enum KamelosoInfo
     source = "https://github.com/zorael/kameloso",
 }
 
-
 /// When a nickname is taken, append this to get a new name.
 enum altNickSign = '^';
-
 
 /// Buffer sizes in bytes.
 enum BufferSize
@@ -21,7 +19,6 @@ enum BufferSize
     socketReceive = 2048,
     titleLookup = 8192,
 }
-
 
 /// Various timeouts in seconds.
 enum Timeout

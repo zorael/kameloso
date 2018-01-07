@@ -2971,7 +2971,6 @@ unittest
     }());
 }
 
-
 /// Certain characters that signal specific meaning in an IRC context.
 enum IRCControlCharacter
 {

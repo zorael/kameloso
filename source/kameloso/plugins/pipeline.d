@@ -2,13 +2,12 @@ module kameloso.plugins.pipeline;
 
 version(Posix):
 
+import kameloso.common : ThreadMessage, logger;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common;
 
 import std.concurrency;
-
-import std.stdio;
+import std.stdio : File;
 
 private:
 
@@ -26,12 +25,14 @@ private:
  +/
 void pipereader(shared IRCPluginState newState)
 {
+    import kameloso.common : initLogger;
     import kameloso.messaging : raw, quit;
     import core.time : seconds;
     import std.file  : FileException, remove;
 
     auto state = cast(IRCPluginState)newState;
 
+    static import kameloso.common;
     kameloso.common.settings = state.settings;  // FIXME
     initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
@@ -162,6 +163,7 @@ File createFIFO(const IRCPluginState state)
     {
         if (!state.settings.monochrome)
         {
+            import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
             Appender!string sink;

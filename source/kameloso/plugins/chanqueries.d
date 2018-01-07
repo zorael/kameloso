@@ -3,8 +3,6 @@ module kameloso.plugins.chanqueries;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
-import std.stdio;
-
 private:
 
 

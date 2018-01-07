@@ -1,9 +1,7 @@
 module kameloso.connection;
 
-import kameloso.common : logger, interruptibleSleep;
+import kameloso.common : interruptibleSleep, logger;
 import kameloso.constants;
-
-import std.stdio;
 
 
 // Connection

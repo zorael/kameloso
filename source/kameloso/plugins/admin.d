@@ -1,8 +1,8 @@
 module kameloso.plugins.admin;
 
+import kameloso.common : logger;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
 
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;

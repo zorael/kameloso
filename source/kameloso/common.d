@@ -1,6 +1,7 @@
 module kameloso.common;
 
 import kameloso.bash : BashForeground;
+import kameloso.uda;
 
 import std.datetime.systime : SysTime;
 import std.experimental.logger;
@@ -9,13 +10,13 @@ import std.range : isOutputRange;
 import std.traits : Unqual, isType, isArray;
 import std.typecons : Flag, No, Yes;
 
-import std.stdio;
-
 @safe:
 
 version(unittest)
 shared static this()
 {
+    import kameloso.logger : KamelosoLogger;
+
     // This is technically before settings have been read...
     logger = new KamelosoLogger;
 }
@@ -30,6 +31,21 @@ shared static this()
  +  if threading.
  +/
 Logger logger;
+
+
+// initLogger
+/++
+ +  Initialises the `KamelosoLogger` logger for use in this thread of the whole
+ +  program.
+ +/
+void initLogger(bool monochrome = settings.monochrome,
+    bool brightTerminal = settings.brightTerminal)
+{
+    import kameloso.logger : KamelosoLogger;
+    import std.experimental.logger : LogLevel;
+
+    logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
+}
 
 /// A local copy of the CoreSettings struct, housing certain runtime settings
 CoreSettings settings;
@@ -83,23 +99,6 @@ struct ThreadMessage
     /// Concurrency message asking for a reference to the `IRCPlugin[]` array.
     struct PeekPlugins {}
 }
-
-
-/// UDA conveying that a field is not to be saved in configuration files
-struct Unconfigurable {}
-
-/// UDA conveying that a string is an array with this token as separator
-struct Separator
-{
-    /// Separator, can be more than one character
-    string token = ",";
-}
-
-/++
- +  UDA conveying that this member contains sensitive information and should not
- + be printed in clear text; e.g. passwords
- +/
-struct Hidden {}
 
 
 // CoreSettings
@@ -156,57 +155,6 @@ struct CoreSettings
 }
 
 
-// isConfigurableVariable
-/++
- +  Eponymous template bool of whether a variable can be configured via the
- +  functions in `kameloso.config` or not.
- +
- +  Currently it does not support static arrays.
- +
- +  Params:
- +      var = alias of variable to examine.
- +/
-template isConfigurableVariable(alias var)
-{
-    static if (!isType!var)
-    {
-        import std.traits : isSomeFunction;
-
-        alias T = typeof(var);
-
-        enum isConfigurableVariable =
-            !isSomeFunction!T &&
-            !__traits(isTemplate, T) &&
-            !__traits(isAssociativeArray, T) &&
-            !__traits(isStaticArray, T);
-    }
-    else
-    {
-        enum isConfigurableVariable = false;
-    }
-}
-
-///
-unittest
-{
-    int i;
-    char[] c;
-    char[8] c2;
-    struct S {}
-    class C {}
-    enum E { foo }
-    E e;
-
-    static assert(isConfigurableVariable!i);
-    static assert(isConfigurableVariable!c);
-    static assert(!isConfigurableVariable!c2); // should static arrays pass?
-    static assert(!isConfigurableVariable!S);
-    static assert(!isConfigurableVariable!C);
-    static assert(!isConfigurableVariable!E);
-    static assert(isConfigurableVariable!e);
-}
-
-
 // printObjects
 /++
  +  Prints out struct objects, with all their printable members with all their
@@ -233,6 +181,8 @@ unittest
  +/
 void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 {
+    import std.stdio : stdout;
+
     // writeln trusts `lockingTextWriter` so we will too.
 
     version(Colours)
@@ -322,6 +272,7 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 {
     import kameloso.bash : colour;
     import kameloso.string : stripSuffix;
+    import kameloso.traits : isConfigurableVariable, longestMemberName, UnqualArray;
     import std.format : formattedWrite;
     import std.traits : hasUDA;
 
@@ -536,123 +487,6 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 }
 
 
-// longestMemberName
-/++
- +  Gets the name of the longest member in one or more struct/class objects.
- +
- +  This is used for formatting configuration files, so that columns line up.
- +
- +  Params:
- +      Things = the types to examine and count name lengths
- +/
-template longestMemberName(Things...)
-if (Things.length > 0)
-{
-    enum longestMemberName = ()
-    {
-        import std.traits : hasUDA;
-
-        string longest;
-
-        foreach (T; Things)
-        {
-            foreach (name; __traits(allMembers, T))
-            {
-                static if (!isType!(__traits(getMember, T, name)) &&
-                    isConfigurableVariable!(__traits(getMember, T, name)) &&
-                    !hasUDA!(__traits(getMember, T, name), Hidden) &&
-                    !hasUDA!(__traits(getMember, T, name), Unconfigurable))
-                {
-                    if (name.length > longest.length)
-                    {
-                        longest = name;
-                    }
-                }
-            }
-        }
-
-        return longest;
-    }();
-}
-
-///
-unittest
-{
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsInvalid;
-        @Hidden float likewiseWayLongerButInvalid;
-    }
-
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-
-        @Unconfigurable
-        @Hidden
-        long looooooooooooooooooooooong;
-    }
-
-    static assert(longestMemberName!Foo == "veryLongName");
-    static assert(longestMemberName!Bar == "evenLongerName");
-    static assert(longestMemberName!(Foo, Bar) == "evenLongerName");
-}
-
-
-// isOfAssignableType
-/++
- +  Eponymous template bool of whether a variable is "assignable"; if it is
- +  an lvalue that isn't protected from being written to.
- +/
-template isOfAssignableType(T)
-if (isType!T)
-{
-    import std.traits : isSomeFunction;
-
-    enum isOfAssignableType = isType!T &&
-        !isSomeFunction!T &&
-        !is(T == const) &&
-        !is(T == immutable);
-}
-
-
-/// Ditto
-enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
-
-///
-unittest
-{
-    struct Foo
-    {
-        string bar, baz;
-    }
-
-    class Bar
-    {
-        int i;
-    }
-
-    void boo(int i) {}
-
-    enum Baz { abc, def, ghi }
-    Baz baz;
-
-    assert(isOfAssignableType!int);
-    assert(!isOfAssignableType!(const int));
-    assert(!isOfAssignableType!(immutable int));
-    assert(isOfAssignableType!(string[]));
-    assert(isOfAssignableType!Foo);
-    assert(isOfAssignableType!Bar);
-    assert(!isOfAssignableType!boo);  // room for improvement: @property
-    assert(isOfAssignableType!Baz);
-    assert(!isOfAssignableType!baz);
-    assert(isOfAssignableType!string);
-}
-
-
 // meldInto
 /++
  +  Takes two structs and melds them together, making the members a union of
@@ -674,6 +508,8 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
+    import kameloso.traits : isOfAssignableType;
+
     if (meldThis == Thing.init)
     {
         // We're merging an .init with something
@@ -1020,7 +856,6 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
     return app.data;
 }
 
-
 /// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
 enum : ubyte
 {
@@ -1028,178 +863,6 @@ enum : ubyte
     exit    = 1 << 1,  /// On exit of function
     success = 1 << 2,  /// On successful exit of function
     failure = 1 << 3,  /// On thrown exception or error in function
-}
-
-
-// KamelosoLogger
-/++
- +  Modified `Logger` to print timestamped and coloured logging messages.
- +
- +  It is thread-local so instantiate more if you're threading.
- +/
-final class KamelosoLogger : Logger
-{
-    @safe:
-
-    import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
-    import std.concurrency : Tid;
-    import std.format : formattedWrite;
-    import std.array : Appender;
-
-    /// Logger colours to use with a dark terminal
-    static immutable BashForeground[193] logcoloursDark  =
-    [
-        LogLevel.all     : BashForeground.white,
-        LogLevel.trace   : BashForeground.default_,
-        LogLevel.info    : BashForeground.lightgreen,
-        LogLevel.warning : BashForeground.lightred,
-        LogLevel.error   : BashForeground.red,
-        LogLevel.fatal   : BashForeground.red,
-    ];
-
-    /// Logger colours to use with a bright terminal
-    static immutable BashForeground[193] logcoloursBright  =
-    [
-        LogLevel.all     : BashForeground.black,
-        LogLevel.trace   : BashForeground.default_,
-        LogLevel.info    : BashForeground.green,
-        LogLevel.warning : BashForeground.red,
-        LogLevel.error   : BashForeground.red,
-        LogLevel.fatal   : BashForeground.red,
-    ];
-
-    bool monochrome;  /// Whether to use colours or not in logger output
-    bool brightTerminal;   /// Whether to use colours for a bright background
-
-    this(LogLevel lv = LogLevel.all, bool monochrome = false,
-        bool brightTerminal = false)
-    {
-        this.monochrome = monochrome;
-        this.brightTerminal = brightTerminal;
-        super(lv);
-    }
-
-    /// This override is needed or it won't compile
-    override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
-
-    /// Outputs the head of a logger message
-    protected void beginLogMsg(Sink)(auto ref Sink sink,
-        string file, int line, string funcName,
-        string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) const
-    {
-        import std.datetime : DateTime;
-
-        sink.put(brightTerminal);
-
-        version(Colours)
-        {
-            if (!monochrome)
-            {
-                sink.colour(brightTerminal ? BashForeground.black :
-                    BashForeground.white);
-            }
-        }
-
-        sink.put('[');
-        sink.put((cast(DateTime)timestamp).timeOfDay.toString());
-        sink.put("] ");
-
-        if (monochrome) return;
-
-        version(Colours)
-        {
-            sink.colour(brightTerminal ? logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
-        }
-    }
-
-    /// ditto
-    override protected void beginLogMsg(string file, int line, string funcName,
-        string prettyFuncName, string moduleName, LogLevel logLevel,
-        Tid threadId, SysTime timestamp, Logger logger) @trusted const
-    {
-        return beginLogMsg(stdout.lockingTextWriter, file, line, funcName,
-            prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
-    }
-
-    /// Outputs the message part of a logger message; the content
-    protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
-    {
-        sink.put(msg);
-    }
-
-    /// ditto
-    override protected void logMsgPart(const(char)[] msg) @trusted const
-    {
-        if (!msg.length) return;
-
-        return logMsgPart(stdout.lockingTextWriter, msg);
-    }
-
-    /// Outputs the tail of a logger message
-    protected void finishLogMsg(Sink)(auto ref Sink sink) const
-    {
-        version(Colours)
-        {
-            if (!monochrome)
-            {
-                // Reset.blink in case a fatal message was thrown
-                sink.colour(BashForeground.default_, BashReset.blink);
-            }
-        }
-
-        static if (__traits(hasMember, Sink, "data"))
-        {
-            writeln(sink.data);
-            sink.clear();
-        }
-        else
-        {
-            sink.put('\n');
-        }
-    }
-
-    /// ditto
-    override protected void finishLogMsg() @trusted const
-    {
-        finishLogMsg(stdout.lockingTextWriter);
-        version(Cygwin_) stdout.flush();
-    }
-}
-
-///
-unittest
-{
-    Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
-
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");  // crashes the program
-    log_.trace("log: trace");
-
-    version (Colours)
-    {
-        log_ = new KamelosoLogger(LogLevel.all, false, true);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
-
-        log_ = new KamelosoLogger(LogLevel.all, false, false);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
-    }
 }
 
 
@@ -1556,6 +1219,7 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
     import kameloso.bash : colour;
     import kameloso.constants : KamelosoInfo;
+    import std.stdio : writefln, stdout;
 
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         colourCode.colour,
@@ -1565,44 +1229,6 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
         BashForeground.default_.colour);
 
     version(Cygwin_) stdout.flush();
-}
-
-
-// initLogger
-/++
- +  Initialises the `KamelosoLogger` logger for use in this thread of the whole
- +  program.
- +/
-void initLogger(bool monochrome = settings.monochrome,
-    bool brightTerminal = settings.brightTerminal)
-{
-    import std.experimental.logger : LogLevel;
-
-    logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
-}
-
-
-// UnqualArray
-/++
- +  Given an array of qualified elements, aliases itself to one such of
- +  unqualified elements.
- +/
-alias UnqualArray(QualArray : QualType[], QualType) = Unqual!QualType[];
-
-///
-unittest
-{
-    alias ConstStrings = const(string)[];
-    alias UnqualStrings = UnqualArray!ConstStrings;
-    static assert(is(UnqualStrings == string[]));
-
-    alias ImmChars = string;
-    alias UnqualChars = UnqualArray!ImmChars;
-    static assert(is(UnqualChars == char[]));
-
-    alias InoutBools = inout(bool)[];
-    alias UnqualBools = UnqualArray!InoutBools;
-    static assert(is(UnqualBools == bool[]));
 }
 
 

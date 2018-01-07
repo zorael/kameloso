@@ -5,6 +5,7 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
 
 @safe:
 
+
 // formatAssertStatementLines
 /++
  +  Constructs assert statement lines for each changed field of a type.

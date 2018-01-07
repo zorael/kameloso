@@ -5,7 +5,6 @@ import kameloso.ircdefs;
 import kameloso.common;
 
 import std.typecons : No, Yes;
-import std.stdio;
 
 private:
 
@@ -100,6 +99,8 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
+        import std.stdio : stdout;
+
         plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
         version(Cygwin_) stdout.flush();
         break;

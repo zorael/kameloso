@@ -9,8 +9,6 @@ import kameloso.common : logger;
 import std.concurrency : Tid;
 import std.regex : ctRegex;
 
-import std.stdio;
-
 private:
 
 /// Regex pattern to match a URI, to see if one was pasted

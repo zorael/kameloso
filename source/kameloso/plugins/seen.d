@@ -68,13 +68,6 @@ import kameloso.ircdefs;
 /// `kameloso.common` for the instance of the *logger*.
 import kameloso.common : logger;
 
-/// `std.json` for our `JSON` storage.
-import std.json;
-
-/// `std.stdio` may come in handy if we want to printf-debug something.
-import std.stdio;
-
-
 /++
  +  Most of the module can (and ideally should) be kept private. Even if
  +  something is private it will be visible to eveything in the same module, so
@@ -84,7 +77,6 @@ import std.stdio;
  +  in the end.
  +/
 private:
-
 
 /++
  +  We want our plugin to be *configurable* with a section for itself in the
@@ -452,6 +444,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 void onCommandPrintSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
+    import std.stdio : stdout, writeln;
 
     writeln(JSONValue(plugin.seenUsers).toPrettyString);
     version(Cygwin_) stdout.flush();
@@ -536,11 +529,12 @@ long[string] loadSeen(const string filename)
  +/
 void saveSeen(const long[string] seenUsers, const string filename)
 {
-    writeln("saving");
+    import std.json : JSONValue;
+    import std.stdio : File, write, writeln;
+
     auto file = File(filename, "w");
 
     file.write(JSONValue(seenUsers).toPrettyString);
-    writeln(JSONValue(seenUsers).toPrettyString);
     file.writeln();
 }
 

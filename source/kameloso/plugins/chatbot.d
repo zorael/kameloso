@@ -8,8 +8,6 @@ import kameloso.messaging;
 import std.concurrency : send;
 import std.json : JSONValue;
 
-import std.stdio;
-
 private:
 
 
@@ -97,8 +95,9 @@ void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
  +/
 void saveQuotes(ChatbotPlugin plugin, const string filename)
 {
-    auto file = File(filename, "w");
+    import std.stdio : File, write, writeln;
 
+    auto file = File(filename, "w");
     file.write(plugin.quotes.toPrettyString);
     file.writeln();
 }
@@ -340,6 +339,8 @@ void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints all quotes to the local terminal.")
 void onCommandPrintQuotes(ChatbotPlugin plugin)
 {
+    import std.stdio : writeln, stdout;
+
     if (!plugin.chatbotSettings.quotes) return;
 
     writeln(plugin.quotes.toPrettyString);

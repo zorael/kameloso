@@ -4,8 +4,6 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.irc : IRCControlCharacter;
 
-import std.stdio;
-
 private:
 
 

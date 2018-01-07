@@ -1,10 +1,12 @@
 module kameloso.config;
 
-import kameloso.common;
+import kameloso.common : logger;
+import kameloso.uda;
 
 import std.typecons : Flag, No, Yes;
 
 @safe:
+
 
 // writeToDisk
 /++
@@ -139,6 +141,7 @@ if (Things.length > 1)
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
+    import kameloso.traits : isConfigurableVariable;
     import std.algorithm : joiner;
     import std.ascii : newline;
     import std.conv : to;
@@ -299,6 +302,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
     import kameloso.string : unquoted;
+    import kameloso.traits : isConfigurableVariable;
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
         isSomeString, isType;
@@ -709,6 +713,7 @@ string justifiedConfigurationText(const string origLines)
         }
     }
 
+    import kameloso.common : getMultipleOf;
     import std.algorithm.iteration : joiner;
     import std.algorithm.comparison : max;
 

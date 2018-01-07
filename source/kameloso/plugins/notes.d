@@ -8,10 +8,10 @@ import kameloso.messaging;
 import std.concurrency : send;
 import std.json : JSONValue;
 
-import std.stdio;
-
 private:
 
+
+// NotesSettings
 /++
  +  Notes plugin settings.
  +
@@ -190,6 +190,8 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints saved notes to the local terminal.")
 void onCommandPrintNotes(NotesPlugin plugin)
 {
+    import std.stdio : stdout, writeln;
+
     writeln(plugin.notes.toPrettyString);
     version(Cygwin_) stdout.flush();
 }
@@ -394,7 +396,8 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
  +/
 void saveNotes(NotesPlugin plugin, const string filename)
 {
-    import std.file  : exists, isFile;
+    import std.file : exists, isFile;
+    import std.stdio : File, write, writeln;
 
     auto file = File(filename, "w");
 

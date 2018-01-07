@@ -148,6 +148,8 @@ final class KamelosoLogger : Logger
 ///
 unittest
 {
+    import std.experimental.logger : LogLevel;
+
     Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
 
     log_.log("log: log");

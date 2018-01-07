@@ -7,8 +7,6 @@ import kameloso.ircdefs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
-import std.stdio;
-
 version(Windows)
 shared static this()
 {
@@ -36,6 +34,8 @@ extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
     import core.stdc.signal : signal, SIGINT, SIG_DFL;
+    import core.stdc.stdio : printf;
+
     printf("...caught signal %d!\n", sig);
     abort = true;
 
@@ -58,6 +58,7 @@ void signalHandler(int sig) nothrow @nogc @system
 Flag!"quit" checkMessages(ref Client client)
 {
     import kameloso.plugins.common : IRCPlugin;
+    import kameloso.common : initLogger;
     import core.time : seconds;
     import std.concurrency : receiveTimeout;
     import std.variant : Variant;
@@ -743,6 +744,7 @@ int main(string[] args)
 {
     import std.conv : ConvException;
     import std.getopt : GetOptException;
+    import std.stdio : writeln;
 
     // Initialise the main Client. Set its abort pointer to the global abort.
     Client client;
@@ -860,6 +862,7 @@ int main(string[] args)
             version(Colours)
             {
                 import kameloso.bash : BashReset, colour;
+                import kameloso.logger : KamelosoLogger;
                 import std.array : Appender;
                 import std.conv : to;
                 import std.experimental.logger : LogLevel;

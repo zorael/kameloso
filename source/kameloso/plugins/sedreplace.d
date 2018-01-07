@@ -3,8 +3,6 @@ module kameloso.plugins.sedreplace;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
-import std.stdio;
-
 private:
 
 /// Lifetime of a `Line` in `prevlines`, in seconds

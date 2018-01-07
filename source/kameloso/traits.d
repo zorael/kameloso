@@ -4,6 +4,7 @@ import kameloso.uda;
 
 import std.traits : Unqual, isType;
 
+
 // isConfigurableVariable
 /++
  +  Eponymous template bool of whether a variable can be configured via the

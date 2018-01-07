@@ -1,9 +1,7 @@
 module kameloso.uda;
 
-
 /// UDA conveying that a field is not to be saved in configuration files
 struct Unconfigurable {}
-
 
 /// UDA conveying that a string is an array with this token as separator
 struct Separator
