@@ -39,6 +39,7 @@ struct NotesSettings
  +
  +  Nothing is sent if no notes are stored.
  +/
+@(Chainable)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.EMOTE)
