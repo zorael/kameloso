@@ -968,6 +968,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.aux = slice.strip();
         break;
 
+    case CHGHOST:
+        // :Miyabro!~Miyabro@DA8192E8:4D54930F:650EE60D:IP CHGHOST ~Miyabro Miyako.is.mai.waifu
+        event.sender.ident = slice.nom(' ');
+        event.sender.address = slice;
+        break;
+
     default:
         if ((event.type == NUMERIC) || (event.type == UNSET))
         {

@@ -107,6 +107,7 @@ struct IRCEvent
         SASL_AUTHENTICATE,/// SASL authentication negotiation
         AUTH_CHALLENGE,/// Authentication challenge
         AUTH_FAILURE,/// Authentication failure
+        CHGHOST,    /// User "changes host", which is a thing on some networks
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
