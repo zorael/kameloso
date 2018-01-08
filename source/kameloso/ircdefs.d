@@ -701,7 +701,7 @@ struct IRCEvent
         RPL_TESTLINE, // = 725,
         RPL_NOTESTLINE, // = 726,
         RPL_TESTMASKGECOS, // = 727,
-        RPL_QUIETLIST, // = 728,
+        RPL_QUIETLIST, // = 728,        // also 344 on oftc
         RPL_ENDOFQUIETLIST, // = 729,
         RPL_MONONLINE, // = 730,
         RPL_MONOFFLINE, // = 731,
@@ -1808,6 +1808,8 @@ struct Typenums
         335 : Type.RPL_WHOISTEXT,
         336 : Type.RPL_INVITELIST,
         337 : Type.RPL_ENDOFINVITELIST, // CONFLICT: Type.RPL_WHOISTEXT
+        344 : Type.RPL_QUIETLIST,       // oftc
+        345 : Type.RPL_ENDOFQUIETLIST,  // CONFLICT: Type.RPL_INVITED, oftc
         386 : Type.RPL_RSACHALLENGE,
         396 : Type.RPL_VISIBLEHOST,
         408 : Type.ERR_NOCTRLSONCHAN,

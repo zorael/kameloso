@@ -565,10 +565,20 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         parser.onMyInfo(event, slice);
         break;
 
-    case RPL_QUIETLIST: // 728
+    case RPL_QUIETLIST: // 728, oftc/hybrid 344
         // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
+        // :irc.oftc.net 344 kameloso #garderoben harbl!snarbl@* kameloso!~NaN@194.117.188.126 1515418362
         slice.nom(' ');  // bot nickname
-        event.channel = slice.nom(" q ");
+
+        if (slice.has(" q "))
+        {
+            event.channel = slice.nom(" q ");
+        }
+        else
+        {
+            event.channel = slice.nom(' ');
+        }
+
         event.content = slice.nom(' ');
         event.aux = slice;
         break;
@@ -920,10 +930,20 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // none of the fields are interesting...
         break;
 
-    case RPL_ENDOFQUIETLIST: // 729
+    case RPL_ENDOFQUIETLIST: // 729, oftc/hybrid 345
         // :niven.freenode.net 729 kameloso^ #hirrsteff q :End of Channel Quiet List
+        // :irc.oftc.net 345 kameloso #garderoben :End of Channel Quiet List
         slice.nom(' ');
-        event.channel = slice.nom(" q :");
+
+        if (slice.has(" q :"))
+        {
+            event.channel = slice.nom(" q :");
+        }
+        else
+        {
+            event.channel = slice.nom(" :");
+        }
+
         event.content = slice;
         break;
 
