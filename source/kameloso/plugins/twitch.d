@@ -283,7 +283,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // R9K mode. If enabled, messages with more than 9 characters must
             // be unique. Valid values: 0 (disabled) or 1 (enabled).
         case "emotes":
-            /*  Information to replace text in the message with emote images.
+            /++ Information to replace text in the message with emote images.
                 This can be empty. Syntax:
 
                 <emote ID>:<first index>-<last index>,
@@ -297,7 +297,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
                   not count. Indexing starts from the first character that is
                   part of the user’s actual message. See the example (normal
                   message) below.
-            */
+            +/
         case "emote-sets":
             // A comma-separated list of emotes, belonging to one or more emote
             // sets. This always contains at least 0. Get Chat Emoticons by Set
@@ -339,7 +339,6 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 
                 spotted in the wild as = 0
              +/
-
         case "msg-param-recipient-id":
             // sub gifts
 
