@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
  +  ------------
  +/
 pragma(inline)
-T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator) @trusted
+T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator) pure
 if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
     static if (decode || is(T : dstring) || is(T : wstring))
@@ -45,14 +45,15 @@ if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncod
     {
         // Only do this if we know it's not user text
         import std.algorithm.searching : countUntil;
+        import std.string : representation;
 
         static if (isSomeString!C)
         {
-            immutable index = (cast(ubyte[])line).countUntil(cast(ubyte[])separator);
+            immutable index = line.representation.countUntil(separator.representation);
         }
         else
         {
-            immutable index = (cast(ubyte[])line).countUntil(cast(ubyte)separator);
+            immutable index = line.representation.countUntil(cast(ubyte)separator);
         }
     }
 
