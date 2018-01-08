@@ -644,6 +644,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
+                import kameloso.string : enumToString;
                 import std.stdio : writeln, writefln;
             }
 
@@ -651,8 +652,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 import std.format : format;
 
-                enum name = "%s : %s (%s)".format(module_,
-                    __traits(identifier, fun), eventTypeUDA);
+                enum name = ()
+                {
+                    import kameloso.string : enumToString, nom;
+
+                    string pluginName = module_;
+                    // pop two dots
+                    pluginName.nom('.');
+                    pluginName.nom('.');
+
+                    return "[%s] %s (%s)".format(pluginName,
+                        __traits(identifier, fun), eventTypeUDA.enumToString);
+                }();
 
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
                 {
@@ -668,6 +679,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     }
                 }
 
+                static if (verbose)
+                {
+                    writeln("-- ", name);
+                }
+
                 static if (hasUDA!(fun, ChannelPolicy))
                 {
                     enum policy = getUDAs!(fun, ChannelPolicy)[0];
@@ -680,8 +696,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writefln("%s.%s: %s", module_,
-                        __traits(identifier, fun), policy);
+                    writeln("...ChannelPolicy.", policy.enumToString);
                 }
 
                 with (ChannelPolicy)
@@ -698,7 +713,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         static if (verbose)
                         {
-                            writeln(name, " ignore invalid channel ",
+                            writeln("...ignore invalid channel ",
                                     event.channel);
                         }
 
@@ -730,12 +745,22 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static assert(commandUDA.string_.length,
                             name ~ " had an empty BotCommand string");
 
+                        static if (verbose)
+                        {
+                            writefln(`...BotCommand "%s"`, commandUDA.string_);
+                        }
+
                         // Reset between iterations
                         mutEvent = event;
 
                         if (!privateState.nickPolicyMatches(commandUDA.policy,
                             mutEvent))
                         {
+                            static if (verbose)
+                            {
+                                writeln("...doesn't match; continue next BotCommand");
+                            }
+
                             continue;  // next BotCommand UDA
                         }
 
@@ -760,6 +785,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         if (thisCommand.toLower() == lowercaseUDAString)
                         {
+                            static if (verbose)
+                            {
+                                writeln("...command matches!");
+                            }
+
                             mutEvent.aux = thisCommand;
                             break;  // finish this BotCommand
                         }
@@ -847,6 +877,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (hasUDA!(fun, BotCommand) || hasUDA!(fun, BotRegex))
                 {
                     // Bot{Command,Regex} exists but neither matched; skip
+                    static if (verbose)
+                    {
+                        writeln("...neither BotCommand nor BotRegex matched; " ~
+                            "continue funloop");
+                    }
+
                     if (!mutEvent.aux.length) continue funloop; // next fun
                 }
 
@@ -888,8 +924,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (verbose)
                     {
-                        writefln("%s.%s", module_, __traits(identifier, fun));
-                        writeln("PrivilegeLevel.:", privilegeLevel);
+                        writeln("...PrivilegeLevel.", privilegeLevel.enumToString);
                     }
 
                     with (PrivilegeLevel)
@@ -904,27 +939,23 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         final switch (result)
                         {
                         case pass:
+                            import std.algorithm.searching : canFind;
+
                             if ((privilegeLevel == admin) &&
-                                (users[mutEvent.sender.nickname].account !=
-                                    bot.admin))
+                                !bot.admins.canFind(users[mutEvent.sender.nickname].account))
                             {
                                 static if (verbose)
                                 {
-                                    writefln("%s: %s passed privilege " ~
-                                        "check but isn't admin; continue",
-                                        name, mutEvent.sender.nickname);
+                                    writefln("...%s passed privilege " ~
+                                        "check but isn't admin when admin is " ~
+                                        "what we want; continue",
+                                        mutEvent.sender.nickname);
                                 }
                                 continue funloop;
                             }
                             break;
 
                         case whois:
-                            static if (verbose)
-                            {
-                                writefln("%s:%s (%s)", module_,
-                                    __traits(identifier, fun), event.type);
-                            }
-
                             import kameloso.plugins.common : doWhois;
 
                             alias This = typeof(this);
@@ -933,9 +964,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             static if (verbose)
                             {
-                                writefln("%s.%s WHOIS for %s",
-                                    typeof(this).stringof,
-                                    __traits(identifier, fun), event.type);
+                                writefln("...%s WHOIS", typeof(this).stringof);
                             }
 
                             static if (is(Params : AliasSeq!IRCEvent) ||
@@ -952,29 +981,26 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             }
                             else static if (Filter!(isIRCPluginParam, Params).length)
                             {
-                                pragma(msg, module_ ~ "." ~
-                                    __traits(identifier, fun));
+                                pragma(msg, name);
                                 pragma(msg, typeof(fun).stringof);
                                 pragma(msg, Params);
                                 static assert(0, "Function signature takes " ~
-                                    "IRCPlugin instead of subclass plugin.");
+                                    "IRCPlugin instead of subclass plugin");
                             }
                             else
                             {
-                                pragma(msg, module_ ~ "." ~
-                                    __traits(identifier, fun));
+                                pragma(msg, name);
                                 pragma(msg, typeof(fun).stringof);
                                 pragma(msg, Params);
-                                static assert(0, "Unknown function signature.");
+                                static assert(0, "Unknown event handler function signature");
                             }
 
                         case fail:
                             static if (verbose)
                             {
                                 import kameloso.common : logger;
-                                logger.warningf("%s: %s failed privilege " ~
-                                    "check; continue", name,
-                                    mutEvent.sender.nickname);
+                                logger.warningf("...%s failed privilege " ~
+                                    "check; continue", mutEvent.sender.nickname);
                             }
                             continue funloop;
                         }
@@ -989,8 +1015,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writefln("%s.%s on %s", typeof(this).stringof,
-                        __traits(identifier, fun), event.type);
+                    writeln("...calling!");
                 }
 
                 static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
@@ -1013,11 +1038,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 else
                 {
-                    pragma(msg, module_ ~ "." ~ __traits(identifier, fun));
+                    pragma(msg, name);
                     pragma(msg, typeof(fun).stringof);
                     pragma(msg, Params);
-                    static assert(0, "Unknown function signature: " ~
-                        typeof(fun).stringof);
+                    static assert(0, "Unknown event handler function signature");
                 }
 
                 static if (hasUDA!(fun, Chainable))
