@@ -899,6 +899,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case RPL_CHANNELMODEIS: // 324
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        // :kornbluth.freenode.net 324 kameloso #flerrp +ns
         slice.nom(' '); // bot nickname
         event.channel = slice.nom(' ');
 
@@ -914,8 +915,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
-    case RPL_CREATIONTIME: // 32
-        // :kornbluth.freenode.net 324 kameloso #flerrp +ns
+    case RPL_CREATIONTIME: // 329
         // :kornbluth.freenode.net 329 kameloso #flerrp 1512995737
         slice.nom(' ');
         event.channel = slice.nom(' ');
