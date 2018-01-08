@@ -2574,7 +2574,7 @@ bool nickPolicyMatches(const IRCPluginState privateState,
  +  If a user already exists, meld the new information into the old one.
  +/
 void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-    (IRCPlugin plugin, const IRCUser newUser) pure nothrow @safe
+    (IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 {
     import kameloso.common : meldInto;
 
@@ -2585,6 +2585,13 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
 
     with (plugin)
     {
+        // Twitch nicknames are always the same as the user accounts; the
+        // displayed name/alias is sent separately as a "display-name" IRCv3 tag
+        if (state.bot.server.daemon == IRCServer.Daemon.twitch)
+        {
+            newUser.account = newUser.nickname;
+        }
+
         if (auto user = newUser.nickname in state.users)
         {
             newUser.meldInto!overwrite(*user);
