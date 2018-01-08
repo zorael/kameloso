@@ -546,6 +546,7 @@ Flag!"quit" mainLoop(ref Client client)
                                 {
                                     logger.warningf("Exception %s.awaitingFibers[%d]: %s",
                                         plugin.name, i, e.msg);
+                                    printObject(event);
                                     toRemove ~= i;
                                 }
                             }
@@ -586,6 +587,7 @@ Flag!"quit" mainLoop(ref Client client)
                     {
                         logger.warningf("Exception %s.onEvent: %s",
                             plugin.name, e.msg);
+                        printObject(event);
                     }
                 }
             }
@@ -600,6 +602,7 @@ Flag!"quit" mainLoop(ref Client client)
             {
                 logger.warningf("Unhandled exception at %s:%d: %s",
                     e.file, e.line, e.msg);
+                printObject(mutEvent);
                 continue;
             }
         }
