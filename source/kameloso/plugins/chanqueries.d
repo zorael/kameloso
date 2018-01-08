@@ -33,35 +33,30 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
     Fiber fiber;
 
-    // DALnet doesn't seem to support WHO nor NAMES, so don't query that there
-    immutable shouldWHO = plugin.state.bot.server.network != "DALnet";
-
     void fiberFn()
     {
         import kameloso.messaging : raw;
         import core.thread : Fiber;
 
-        bool loopedOnce;
-
         foreach (channel; querylist)
         {
-            if (loopedOnce && shouldWHO)
-            {
-                plugin.delayFiber(fiber, plugin.secondsBetween);
-                Fiber.yield();  // extra delay to space out events
-            }
+            raw(plugin.state.mainThread, "WHO " ~ channel);
+            Fiber.yield();  // awaiting RPL_ENDOFWHO
+
+            plugin.delayFiber(fiber, plugin.secondsBetween);
+            Fiber.yield();  // delay
 
             raw(plugin.state.mainThread, "TOPIC " ~ channel);
             Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
             plugin.delayFiber(fiber, plugin.secondsBetween);
-            Fiber.yield();  // extra delay to space out events
+            Fiber.yield();  // delay
 
             raw(plugin.state.mainThread, "MODE " ~ channel);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             plugin.delayFiber(fiber, plugin.secondsBetween);
-            Fiber.yield();  // extra delay to space ut events
+            Fiber.yield();  // delay
 
             foreach (immutable modechar; plugin.state.bot.server.aModes)
             {
@@ -72,14 +67,6 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
                 plugin.delayFiber(fiber, plugin.secondsBetween);
                 Fiber.yield();
             }
-
-            if (shouldWHO)
-            {
-                raw(plugin.state.mainThread, "WHO " ~ channel);
-                Fiber.yield();  // awaiting RPL_ENDOFWHO
-            }
-
-            loopedOnce = true;
         }
     }
 
@@ -88,14 +75,10 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     with (IRCEvent.Type)
     with (plugin)
     {
+        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
         awaitingFibers[RPL_TOPIC] ~= fiber;
         awaitingFibers[RPL_NOTOPIC] ~= fiber;
         awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
-
-        if (shouldWHO)
-        {
-            awaitingFibers[RPL_ENDOFWHO] ~= fiber;
-        }
     }
 
     fiber.call();
