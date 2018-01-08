@@ -160,11 +160,9 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * pipedream: DCC
 * pipedream two: `ncurses`
 * blacklists; by mask, by account?
-* merge thottling with timing
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
 * update wiki
-* multiple admins?
 
 # Built With
 
@@ -183,5 +181,5 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 * [README.md template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests) making the web-related plugins possible
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd), extending web functionality
-* [#d on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
+* [`#d` on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
 * [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on Freenode](irc://irc.freenode.org:6667/#ircdocs) for their excellent resource pages
