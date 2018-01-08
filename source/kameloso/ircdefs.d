@@ -102,6 +102,7 @@ struct IRCEvent
         TEMPBAN,    /// Twitch temporary ban (seconds in `aux`)
         PERMBAN,    /// Twitch permanent ban
         SUBGIFT,    /// Twitch subscription gift event
+        BITS,       /// Twitch "bits" donation
         ACCOUNT,    /// Someone logged in on nickname services
         SASL_AUTHENTICATE,/// SASL authentication negotiation
         AUTH_CHALLENGE,/// Authentication challenge
@@ -833,7 +834,11 @@ struct IRCEvent
     /// IRCv3 message tags attached to this event.
     string tags;
 
-    /// With a numeric event, the number of the event type.
+    /++
+     +  With a numeric event, the number of the event type, alternatively some
+     +  other kind of numeral associated with the event (such a Twitch resub
+     +  number of months).
+     +/
     uint num;
 
     /// A timestamp of when the event occured.

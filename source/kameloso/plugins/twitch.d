@@ -226,7 +226,8 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
         case "msg-param-months":
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
-            event.aux = event.aux.length ? (value ~ 'x' ~ event.aux) : value;
+            import std.conv : to;
+            event.num = value.to!uint;
             break;
 
         case "msg-param-sub-plan":
@@ -235,8 +236,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // 1000, 2000, and 3000 refer to the first, second, and third
             // levels of paid subscriptions, respectively (currently $4.99,
             // $9.99, and $24.99).
-            // EVALUATE ME
-            event.aux = event.aux.length ? (event.aux ~ 'x' ~ value) : value;
+            event.aux = value;
             break;
 
         case "color":
@@ -247,9 +247,6 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             }
             break;
 
-        case "msg-param-sub-plan-name":
-            // The display name of the subscription plan. This may be a default
-            // name or one created by the channel owner.
         case "bits":
             /*  (Optional) The amount of cheer/bits employed by the user.
                 All instances of these regular expressions:
@@ -268,6 +265,13 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
                   1000-4999, purple for 100-999, gray for 1-99
                 * size – A digit between 1 and 4
             */
+            event.type = Type.BITS;
+            event.aux = value;
+            break;
+
+        case "msg-param-sub-plan-name":
+            // The display name of the subscription plan. This may be a default
+            // name or one created by the channel owner.
         case "broadcaster-lang":
             // The chat language when broadcaster language mode is enabled;
             // otherwise, empty. Examples: en (English), fi (Finnish), es-MX
