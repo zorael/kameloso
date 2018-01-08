@@ -885,6 +885,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     if (!mutEvent.aux.length) continue funloop; // next fun
                 }
+                else static if (!hasUDA!(fun, Chainable) &&
+                    ((eventTypeUDA == IRCEvent.Type.CHAN) ||
+                    (eventTypeUDA == IRCEvent.Type.QUERY)))
+                {
+                    import kameloso.string : enumToString;
+                    enum typestring = eventTypeUDA.enumToString;
+                    pragma(msg, "Note: %s is a wildcard %s event but is not Chainable"
+                        .format(name, typestring));
+                }
 
                 with (IRCEvent.Type)
                 {
