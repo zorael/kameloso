@@ -1068,7 +1068,7 @@ unittest
  +  assert("Lorem ipsum".has!(Yes.decode)(" "));
  +  ------------
  +/
-bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure @trusted
+bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     is(C : ElementEncodingType!T)))
 {
@@ -1084,14 +1084,15 @@ if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     {
         // Only do this if we know it's not user text
         import std.algorithm.searching : canFind;
+        import std.string : representation;
 
         static if (isSomeString!C)
         {
-            return (cast(ubyte[])haystack).canFind(cast(ubyte[])needle);
+            return haystack.representation.canFind(needle.representation);
         }
         else
         {
-            return (cast(ubyte[])haystack).canFind(cast(ubyte)needle);
+            return haystack.representation.canFind(cast(ubyte)needle);
         }
     }
 }
