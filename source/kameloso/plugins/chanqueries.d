@@ -33,6 +33,9 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
     Fiber fiber;
 
+    // DALnet doesn't seem to support WHO nor NAMES, so don't query that there
+    immutable shouldWHO = plugin.state.bot.server.network != "DALnet";
+
     void fiberFn()
     {
         import kameloso.messaging : raw;
@@ -42,22 +45,23 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
         foreach (channel; querylist)
         {
-            if (loopedOnce)
+            if (loopedOnce && shouldWHO)
             {
-                Fiber.yield();  // awaiting RPL_ENDOFWHO
-
                 plugin.delayFiber(fiber, plugin.secondsBetween);
-                Fiber.yield();
+                Fiber.yield();  // extra delay to space out events
             }
 
             raw(plugin.state.mainThread, "TOPIC " ~ channel);
             Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
+            plugin.delayFiber(fiber, plugin.secondsBetween);
+            Fiber.yield();  // extra delay to space out events
+
             raw(plugin.state.mainThread, "MODE " ~ channel);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             plugin.delayFiber(fiber, plugin.secondsBetween);
-            Fiber.yield();
+            Fiber.yield();  // extra delay to space ut events
 
             foreach (immutable modechar; plugin.state.bot.server.aModes)
             {
@@ -69,10 +73,11 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
                 Fiber.yield();
             }
 
-            plugin.delayFiber(fiber, plugin.secondsBetween);
-            Fiber.yield();
-
-            raw(plugin.state.mainThread, "WHO " ~ channel);
+            if (shouldWHO)
+            {
+                raw(plugin.state.mainThread, "WHO " ~ channel);
+                Fiber.yield();  // awaiting RPL_ENDOFWHO
+            }
 
             loopedOnce = true;
         }
@@ -86,7 +91,11 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
         awaitingFibers[RPL_TOPIC] ~= fiber;
         awaitingFibers[RPL_NOTOPIC] ~= fiber;
         awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
-        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
+
+        if (shouldWHO)
+        {
+            awaitingFibers[RPL_ENDOFWHO] ~= fiber;
+        }
     }
 
     fiber.call();

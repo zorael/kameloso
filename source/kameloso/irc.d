@@ -1370,6 +1370,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 rizon = "Password accepted - you are now recognized.",
                 quakenet = "You are now logged in as",
                 gamesurge = "I recognize you.",
+                dalnet = "Password accepted for",
             }
 
             with (event)
@@ -1377,6 +1378,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             {
                 if ((content.beginsWith(freenode)) ||
                     (content.beginsWith(quakenet)) || // also Freenode SASL
+                    (content.beginsWith(dalnet)) ||
                     (content == rizon) ||
                     (content == gamesurge))
                 {
