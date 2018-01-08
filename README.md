@@ -21,7 +21,7 @@ Current functionality includes:
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * piping text from the terminal to the server
 * **mIRC** colour coding and text effects (bold, underlined, ...), translated into **Bash** formatting
-* [`SASL`](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* [**SASL**](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 
 ## Windows
 
@@ -97,7 +97,7 @@ If you have an old configuration file and you notice missing options, such as pl
 
 The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and enter your administrator's account name in the configuration file before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelist.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and enter your administrators' account names in the configuration file before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
 
 ```
      you | !say herp
@@ -149,7 +149,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of `SASL` authentication, `authPassword` is used during late registration.)
+`pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that a full Twitch bot cannot be implemented as an IRC client.
 
@@ -163,6 +163,7 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
 * update wiki
+* revisit nom exceptions
 
 # Built With
 
@@ -178,7 +179,7 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 ## Acknowledgments
 
 * [kameloso](https://www.youtube.com/watch?v=s-mOy8VUEBk) for obvious reasons
-* [README.md template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
+* [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests) making the web-related plugins possible
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd), extending web functionality
 * [`#d` on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
