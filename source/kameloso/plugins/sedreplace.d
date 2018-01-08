@@ -136,6 +136,7 @@ unittest
  +  Parses a channel message and looks for any sed-replace expressions therein,
  +  to apply on the previous message.
  +/
+@(Terminating)
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.anyone)  // ?
 @(ChannelPolicy.home)

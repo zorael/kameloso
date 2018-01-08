@@ -461,6 +461,17 @@ struct Chainable;
 
 
 /++
+ +  Flag denoting that an event-handling function is the end of a chain, letting
+ +  no other functions in the same module be triggered after it has been.
+ +
+ +  This is not strictly neccessary since anything non-`Chainable` is implicitly
+ +  `Terminating`, but we add it to silence warnings and in hopes of the code
+ +  becoming more self-documenting.
+ +/
+struct Terminating;
+
+
+/++
  +  Flag denoting that we want verbose debug output of the plumbing when
  +  handling events, iterating through the module
  +/
@@ -886,12 +897,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     if (!mutEvent.aux.length) continue funloop; // next fun
                 }
                 else static if (!hasUDA!(fun, Chainable) &&
+                    !hasUDA!(fun, Terminating) &&
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
                     import kameloso.string : enumToString;
                     enum typestring = eventTypeUDA.enumToString;
-                    pragma(msg, "Note: %s is a wildcard %s event but is not Chainable"
+                    pragma(msg, ("Note: %s is a wildcard %s event but is not " ~
+                        "Chainable nor Terminating")
                         .format(name, typestring));
                 }
 
@@ -1059,7 +1072,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     // it's Chainable and there may be more, so keep looking
                     continue funloop;
                 }
-                else
+                else /*static if (hasUDA!(fun, Terminating))*/
                 {
                     // The triggered function is not Chainable so return and
                     // let the main loop continue with the next plugin.

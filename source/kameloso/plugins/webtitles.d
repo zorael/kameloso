@@ -78,6 +78,7 @@ struct TitleRequest
  +
  +  It uses a simple regex and exhaustively tries to match every URI it detects.
  +/
+@(Terminating)
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
