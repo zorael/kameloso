@@ -24,10 +24,8 @@ private:
  +      ref parser = A reference to the current `IRCParser`
  +      ref event = A reference to the `IRCEvent` to start working on.
  +/
-void parseBasic(ref IRCParser parser, ref IRCEvent event) @trusted
+void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 {
-    mixin(scopeguard(failure));
-
     string slice = event.raw;
     string typestring;
 
@@ -167,7 +165,7 @@ unittest
  +      ref event = A reference to the `IRCEvent` to start working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     auto prefix = slice.nom(' ');
 
@@ -272,7 +270,7 @@ unittest
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : toEnum;
     import std.conv : ConvException, to;
@@ -380,7 +378,7 @@ unittest
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string;
     import std.string : strip, stripLeft, stripRight;
@@ -1019,8 +1017,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                             }
                             else
                             {
-                                logger.warning("Non-channel second target. Report this.");
-                                logger.trace(event.raw);
+                                /*logger.warning("Non-channel second target. Report this.");
+                                logger.trace(event.raw);*/
                                 event.target.nickname = targets;
                             }
                         }
@@ -1226,7 +1224,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
  +      const ref parser = A reference to the current `IRCParser`
  +      event =  The `IRCEvent` to continue working on.
  +/
-bool isSpecial(const ref IRCParser parser, const IRCEvent event)
+bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
     import kameloso.string : sharedDomains;
     import std.string : toLower;
@@ -1331,7 +1329,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event)
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : beginsWith, sharedDomains;
     import std.string : toLower;
@@ -1438,7 +1436,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
+void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : beginsWith;
 
@@ -1557,7 +1555,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
+void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     immutable target = slice.nom(' ');
 
@@ -1604,7 +1602,7 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : toEnum;
     import std.algorithm.iteration : splitter;
@@ -1737,7 +1735,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice)
  +      ref event = A reference to the `IRCEvent` to continue working on.
  +      ref slice = A reference to the slice of the raw IRC string.
  +/
-void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice)
+void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.bash : BashForeground, colour;
     import std.string : toLower;
@@ -2006,7 +2004,7 @@ unittest
  +  }
  +  ------------
  +/
-bool isFromAuthService(const ref IRCParser parser, const IRCEvent event)
+bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
     import kameloso.string : sharedDomains;
     import std.algorithm.searching : endsWith;
@@ -2155,7 +2153,7 @@ unittest
  +  assert(!"#ch#annel".isValidChannel(server));
  +  ------------
  +/
-bool isValidChannel(const string line, const IRCServer server = IRCServer.init)
+bool isValidChannel(const string line, const IRCServer server = IRCServer.init) pure @nogc
 {
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
@@ -2307,7 +2305,7 @@ unittest
  +  assert((signs == "@+"), signs);
  +  ------------
  +/
-string stripModesign(const IRCServer server, ref string nickname)
+string stripModesign(const IRCServer server, ref string nickname) pure nothrow @nogc
 {
     if (!nickname.length) return string.init;
 
@@ -2379,6 +2377,8 @@ unittest
  +/
 struct IRCParser
 {
+    @safe:
+
     alias Type = IRCEvent.Type;
     alias Daemon = IRCServer.Daemon;
 
@@ -2400,7 +2400,7 @@ struct IRCParser
         return .toIRCEvent(this, raw);
     }
 
-    this(IRCBot bot)
+    this(IRCBot bot) pure
     {
         this.bot = bot;
     }
@@ -2417,7 +2417,7 @@ struct IRCParser
      +  parser.setDaemon(IRCServer.Daemon.unreal, daemonstring);
      +  ------------
      +/
-    void setDaemon(const Daemon daemon, const string daemonstring)
+    void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
@@ -2581,7 +2581,7 @@ struct IRCParser
  +  ------------
  +/
 void setMode(ref IRCChannel channel, const string signedModestring,
-    const string data, IRCServer server) @safe
+    const string data, IRCServer server) pure
 {
     import kameloso.string : has, nom;
     import std.array : array;
@@ -2964,13 +2964,13 @@ final class IRCParseException : Exception
     IRCEvent event;
 
     this(const string message, const string file = __FILE__,
-        const size_t line = __LINE__)
+        const size_t line = __LINE__) pure
     {
         super(message, file, line);
     }
 
     this(const string message, const IRCEvent event,
-        const string file = __FILE__, const size_t line = __LINE__)
+        const string file = __FILE__, const size_t line = __LINE__) pure
     {
         this.event = event;
         super(message, file, line);

@@ -1084,6 +1084,8 @@ struct IRCServer
  +/
 struct IRCUser
 {
+    @safe:
+
     string nickname;
 
     /// The alternate "display name" of the user, such as those on Twitch
@@ -1109,7 +1111,7 @@ struct IRCUser
     /// How many references to this user exists
     int refcount;
 
-    this(string userstring)
+    this(string userstring) pure
     {
         import std.format : formattedRead;
 
@@ -1119,7 +1121,7 @@ struct IRCUser
         if (address == "*") address = string.init;
     }
 
-    this(const string nickname, const string ident, const string address)
+    this(const string nickname, const string ident, const string address) pure
     {
         this.nickname = nickname;
         this.ident = ident;
@@ -1136,13 +1138,13 @@ struct IRCUser
     }
 
     /// Guesses that a sender is a server
-    bool isServer() @property const
+    bool isServer() pure @property const
     {
         import kameloso.string : has;
         return (!nickname.length && address.has('.'));
     }
 
-    bool opEquals(IRCUser other) pure nothrow @nogc @safe const
+    bool opEquals(IRCUser other) pure nothrow @nogc const
     {
         // Match first
         // If no match and either is empty, that means they're *
