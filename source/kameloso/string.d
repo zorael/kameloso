@@ -581,8 +581,8 @@ if (is(Enum == enum))
             enumSwitch ~= "return " ~ memberstring ~ ";\n";
         }
 
-        enumSwitch ~= `default: throw new ConvException("No such enum member: "
-            ~ enumstring);}`;
+        enumSwitch ~= `default: throw new ConvException("No such " ~
+            Enum.stringof ~ ": " ~ enumstring);}`;
 
         return enumSwitch;
     }();

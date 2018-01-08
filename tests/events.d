@@ -1670,4 +1670,127 @@ unittest
             assert(!sender.special, sender.special.to!string);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":irc.oftc.net 345 kameloso #garderoben :End of Channel Quiet List");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_INVITED), type.to!string);
+            assert((sender.address == "irc.oftc.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#garderoben"), channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((content == "End of Channel Quiet List"), content);
+            assert((num == 345), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_CHANNELMODEIS), type.to!string);
+            assert((sender.address == "niven.freenode.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "##linux"), channel);
+            assert((content == "##linux-overflow"), content);
+            assert((aux == "+CLPcnprtf"), aux);
+            assert((num == 324), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":caliburn.pa.us.irchighway.net 042 kameloso 132AAMJT5 :your unique ID");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_YOURID), type.to!string);
+            assert((sender.address == "caliburn.pa.us.irchighway.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((content == "your unique ID"), content);
+            assert((aux == "132AAMJT5"), aux);
+            assert((num == 42), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":kinetic.oftc.net 338 kameloso wh00nix 255.255.255.255 :actually using host");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_WHOISACTUALLY), type.to!string);
+            assert((sender.address == "kinetic.oftc.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((target.nickname == "wh00nix"), target.nickname);
+            assert((target.address == "255.255.255.255"), target.address);
+            assert((content == "actually using host"), content);
+            assert((num == 338), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_INVITELIST), type.to!string);
+            assert((sender.address == "niven.freenode.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#flerrp"), channel);
+            assert((content == "asdf!fdas@asdf.net"), content);
+            assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405089"), aux);
+            assert((num == 346), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_QUIETLIST), type.to!string);
+            assert((sender.address == "niven.freenode.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#flerrp"), channel);
+            assert((content == "qqqq!*@asdf.net"), content);
+            assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405101"), aux);
+            assert((num == 728), num.to!string);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":Miyabro!~Miyabro@DA8192E8:4D54930F:650EE60D:IP CHGHOST ~Miyabro Miyako.is.mai.waifu");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == CHGHOST), type.to!string);
+            assert((sender.nickname == "Miyabro"), sender.nickname);
+            assert((sender.ident == "~Miyabro"), sender.ident);
+            assert((sender.address == "Miyako.is.mai.waifu"), sender.address);
+            assert(!sender.special, sender.special.to!string);
+        }
+    }
+}
+
+unittest
+{
+    IRCParser parser;
+    parser.setDaemon(IRCServer.Daemon.hybrid, "hybrid-oftc");
+
+    {
+        immutable event = parser.toIRCEvent(":irc.oftc.net 344 kameloso #garderoben harbl!snarbl@* kameloso!~NaN@194.117.188.126 1515418362");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == RPL_QUIETLIST), type.to!string);
+            assert((sender.address == "irc.oftc.net"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#garderoben"), channel);
+            assert((content == "harbl!snarbl@*"), content);
+            assert((aux == "kameloso!~NaN@194.117.188.126 1515418362"), aux);
+            assert((num == 344), num.to!string);
+        }
+    }
 }
