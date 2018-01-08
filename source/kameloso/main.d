@@ -207,7 +207,7 @@ Flag!"quit" checkMessages(ref Client client)
 
         case PART:
             immutable reason = content.length ? " :" ~ content : string.init;
-            conn.sendline("PART %s%s".format(channel, reason));
+            line = "PART %s%s".format(channel, reason);
             break;
 
         case QUIT:
