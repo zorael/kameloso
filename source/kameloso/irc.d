@@ -1138,7 +1138,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     }
 
     event.content = event.content.stripRight();
-    parser.postparseSanityCheck(event);
 }
 
 
@@ -1918,6 +1917,10 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // Third pass: specialcases. This splits up the remaining bits into
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
+
+    // Final pass: sanity check. This verifies some fields and gives meaningful
+    // error messages if something doesn't look right.
+    parser.postparseSanityCheck(event);
 
     return event;
 }
