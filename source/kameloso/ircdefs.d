@@ -877,9 +877,6 @@ struct IRCBot
     string ident      = "NaN";
     string quitReason = "beep boop I am a bot";
 
-    /// The nickname services account of the bot's *admin*
-    string admin;
-
     /// Username to use for services account
     string authLogin;
 
@@ -894,6 +891,9 @@ struct IRCBot
 
     @Separator(",")
     {
+        /// The nickname services accounts of the bot's *administrators*
+        string[] admins;
+
         string[] homes;
         string[] whitelist;
         string[] channels;

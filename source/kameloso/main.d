@@ -814,11 +814,11 @@ int main(string[] args)
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 
-        if (!bot.homes.length && !bot.admin.length && !bot.whitelist.length)
+        if (!bot.homes.length && !bot.admins.length && !bot.whitelist.length)
         {
             import std.path : baseName;
 
-            logger.error("No administrator nor channels configured!");
+            logger.error("No administrators nor channels configured!");
             logger.logf("Use %s --writeconfig to generate a configuration file.",
                 args[0].baseName);
             return 1;

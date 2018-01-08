@@ -354,7 +354,7 @@ enum PrivilegeLevel
 {
     anyone, /// Anyone may trigger this event.
     whitelist, /// Only those in the `whitelist` array may trigger this event.
-    admin, /// Only you (the `admin`) may trigger this event.
+    admin, /// Only the administrators may trigger this event.
 }
 
 
@@ -509,8 +509,8 @@ struct Description
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return whois.
- +  If the user's NickServ account is in the whitelist (or equals the bot's
- +  admin's), return pass. Else, return fail and deny use.
+ +  If the user's NickServ account is in the whitelist (or equals one of the
+ +  bot's admins'), return pass. Else, return fail and deny use.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
@@ -525,7 +525,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     if (!user) return FilterResult.whois;
 
     immutable timediff = (now - user.lastWhois);
-    immutable isAdmin = (user.account == state.bot.admin);
+    immutable isAdmin = state.bot.admins.canFind(user.account);
     immutable isWhitelisted = state.bot.whitelist.canFind(user.account);
 
     if (user.account.length && isAdmin || isWhitelisted)
@@ -560,12 +560,12 @@ unittest
 
     state.users["zorael"] = IRCUser.init;
     state.users["zorael"].account = "zorael";
-    state.bot.admin = "zorael";
+    state.bot.admins = [ "zorael" ];
 
     immutable res2 = state.filterUser(event);
     assert((res2 == FilterResult.pass), res2.text);
 
-    state.bot.admin = "harbl";
+    state.bot.admins = [ "harbl" ];
     state.bot.whitelist ~= "zorael";
 
     immutable res3 = state.filterUser(event);
@@ -1783,8 +1783,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
             // See if there are any queued WHOIS requests to trigger
             if (auto request = event.target.nickname in whoisQueue)
             {
-                import std.datetime.systime : Clock;
                 import kameloso.constants : Timeout;
+                import std.algorithm.searching : canFind;
+                import std.datetime.systime : Clock;
 
                 const now = Clock.currTime.toUnixTime;
                 const then = (*request).when;
@@ -1800,7 +1801,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 final switch (request.privilegeLevel)
                 {
                 case admin:
-                    if (event.target.nickname == bot.admin)
+                    if (bot.admins.canFind(event.target.nickname))
                     {
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
@@ -1808,9 +1809,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                     break;
 
                 case whitelist:
-                    import std.algorithm.searching : canFind;
-
-                    if (event.target.nickname == bot.admin ||
+                    if (bot.admins.canFind(event.target.nickname) ||
                         bot.whitelist.canFind(event.target.nickname))
                     {
                         request.trigger();
