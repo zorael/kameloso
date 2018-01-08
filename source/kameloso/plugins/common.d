@@ -1982,6 +1982,23 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         plugin.state.users.rehash();
     }
+
+
+    // onUserAwarenessChangeHost
+    /++
+     +  Catches a user when he/she changes host.
+     +
+     +  This is a thing on some servers that allow for custom user host
+     +  addresses.
+     +/
+    @(AwarenessMixin)
+    @(Chainable)
+    @(IRCEvent.Type.CHGHOST)
+    void onUserAwarenessChangeHost(IRCPlugin plugin, const IRCEvent event)
+    {
+        // User changed host; catch it
+        plugin.catchUser(event.sender);
+    }
 }
 
 
