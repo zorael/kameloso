@@ -15,6 +15,7 @@ private:
  +  instead of having five different functions each dealing with one.
  +  Either design works; both end up with a switch.
  +/
+//@(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
 @(IRCEvent.Type.CTCP_VERSION)
 @(IRCEvent.Type.CTCP_FINGER)
 @(IRCEvent.Type.CTCP_SOURCE)
