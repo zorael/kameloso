@@ -178,12 +178,8 @@ public:
             catch (const SocketException e)
             {
                 logger.error("Failed! ", e.msg);
-            }
-            finally
-            {
-                // Take care! length is unsigned
 
-                if (i && (i < ips.length))
+                if (i < ips.length)
                 {
                     logger.infof("Trying next ip in %d seconds", Timeout.retry);
                     interruptibleSleep(Timeout.retry.seconds, abort);
