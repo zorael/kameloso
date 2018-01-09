@@ -108,6 +108,7 @@ struct IRCEvent
         AUTH_CHALLENGE,/// Authentication challenge
         AUTH_FAILURE,/// Authentication failure
         CHGHOST,    /// User "changes host", which is a thing on some networks
+        ENDOFEXEMPTOPSLIST,// = 953 ///End of exempt channel ops list
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
@@ -1963,6 +1964,7 @@ struct Typenums
         501 : Type.ERR_UNKNOWNSNOMASK,
         702 : Type.RPL_COMMANDS,
         703 : Type.RPL_COMMANDSEND,
+        953 : Type.ENDOFEXEMPTOPSLIST,
         972 : Type.ERR_CANTUNLOADMODULE,
         974 : Type.ERR_CANTLOADMODULE,
         975 : Type.RPL_LOADEDMODULE

@@ -101,6 +101,24 @@ struct ThreadMessage
 }
 
 
+// SupportColours
+/++
+ +  Set version SupportsColors depending on the build configuration.
+ +
+ +  We can't do "version(blah) || version(bluh)" because of design decisions,
+ +  so we do it this way to accomodate for Cygwin_ implying both Windows and
+ +  Colours.
+ +/
+version(Colours)
+{
+    version = SupportsColours;
+}
+else version (Cygwin_)
+{
+    version = SupportsColours;
+}
+
+
 // CoreSettings
 /++
  +  Aggregate struct containing runtime bot setting variables.
@@ -122,17 +140,13 @@ struct ThreadMessage
  +/
 struct CoreSettings
 {
-    version(Windows)
+    version(SupportsColours)
     {
-        bool monochrome = true;  /// Logger monochrome setting
-    }
-    else version(Colours)
-    {
-        bool monochrome = false;  /// Ditto
+        bool monochrome = false;  /// Logger monochrome setting
     }
     else
     {
-        bool monochrome = true;  /// Ditto
+        bool monochrome = true;  /// Mainly version Windows
     }
 
     /// Flag denoting whether the program should reconnect after disconnect
