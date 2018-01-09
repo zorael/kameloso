@@ -756,14 +756,7 @@ string justifiedConfigurationText(const string origLines)
         }
     }
 
-    string completedList = justified.data;
-
-    while ((completedList[$-1] == '\n') || (completedList[$-1] == '\r'))
-    {
-        completedList = completedList[0..$-1];
-    }
-
-    return completedList;
+    return justified.data.strip();
 }
 
 unittest
