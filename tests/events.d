@@ -1794,3 +1794,23 @@ unittest
         }
     }
 }
+
+unittest
+{
+    IRCParser parser;
+    parser.setDaemon(IRCServer.Daemon.inspircd, "inspircd");
+
+    {
+        immutable event = parser.toIRCEvent(":cadance.canternet.org 953 kameloso^ #flerrp :End of channel exemptchanops list");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert((type == ENDOFEXEMPTOPSLIST), type.to!string);
+            assert((sender.address == "cadence.canternet.org"), sender.address);
+            assert(sender.special, sender.special.to!string);
+            assert((channel == "#flerrp"), channel);
+            assert((content == "End of channel exemptchanops list"), content);
+             assert((num == 953), num.to!string);
+        }
+    }
+}
