@@ -464,7 +464,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
     foreach (rawline; range)
     {
         string line = rawline.strip();
-        if (!rawline.length) continue;
+        if (!line.length) continue;
 
         switch (line[0])
         {
@@ -679,13 +679,13 @@ string justifiedConfigurationText(const string origLines)
 
     foreach (immutable rawline; origLines.splitter(newline))
     {
-        if (!rawline.length)
+        string line = rawline.strip();
+
+        if (!line.length)
         {
             unjustified.put("");
             continue;
         }
-
-        string line = rawline.strip();
 
         switch (line[0])
         {
