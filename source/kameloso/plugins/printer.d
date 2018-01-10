@@ -303,7 +303,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 sink.put(nickname);
             }
 
-            if (special)
+            if (special && nickname.length)
             {
                 sink.put('*');
             }
