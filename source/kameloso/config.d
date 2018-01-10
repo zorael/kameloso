@@ -88,11 +88,10 @@ string configReader(const string configFile)
 void readConfigInto(T...)(const string configFile, ref T things)
 {
     import std.algorithm.iteration : splitter;
-    import std.ascii  : newline;
 
     configFile
         .configReader
-        .splitter(newline)
+        .splitter("\n")
         .applyConfiguration(things);
 }
 
@@ -143,7 +142,6 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
     import kameloso.string : stripSuffix;
     import kameloso.traits : isConfigurableVariable;
     import std.algorithm : joiner;
-    import std.ascii : newline;
     import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
@@ -152,12 +150,12 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
     static if (__traits(hasMember, Sink, "data"))
     {
         // Sink is not empty, place a newline between current content and new
-        if (sink.data.length) sink.put(newline);
+        if (sink.data.length) sink.put("\n");
     }
 
     alias Thing = Unqual!QualThing;
 
-    sink.formattedWrite("[%s]%s", Thing.stringof.stripSuffix("Settings"), newline);
+    sink.formattedWrite("[%s]\n", Thing.stringof.stripSuffix("Settings"));
 
     foreach (immutable i, member; thing.tupleof)
     {
@@ -213,13 +211,13 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             if (comment)
             {
                 // .init or otherwise disabled
-                sink.formattedWrite("#%s%s",
-                    __traits(identifier, thing.tupleof[i]), newline);
+                sink.formattedWrite("#%s\n",
+                    __traits(identifier, thing.tupleof[i]));
             }
             else
             {
-                sink.formattedWrite("%s %s%s",
-                    __traits(identifier, thing.tupleof[i]), value, newline);
+                sink.formattedWrite("%s %s\n",
+                    __traits(identifier, thing.tupleof[i]), value);
             }
         }
     }
@@ -229,7 +227,6 @@ unittest
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import std.ascii : newline;
 
     struct FooSettings
     {
@@ -259,7 +256,7 @@ pi 3.14159
     fooSink.reserve(64);
 
     fooSink.serialise(FooSettings.init);
-    assert(fooSink.data == fooSerialised);
+    assert((fooSink.data == fooSerialised), '\n' ~ fooSink.data);
 
     enum barSerialised =
 `[Bar]
@@ -279,7 +276,7 @@ pipyon 3
     Appender!string bothSink;
     bothSink.reserve(128);
     bothSink.serialise(FooSettings.init, BarSettings.init);
-    assert(bothSink.data == fooSink.data ~ newline ~ barSink.data);
+    assert(bothSink.data == fooSink.data ~ '\n' ~ barSink.data);
 }
 
 
@@ -543,7 +540,6 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 unittest
 {
     import std.algorithm : splitter;
-    import std.ascii : newline;
     import std.conv : text;
 
     struct Foo
@@ -596,7 +592,7 @@ naN     !"#¤%&/`;
 
     Foo foo;
     configurationFileContents
-        .splitter(newline)
+        .splitter("\n")
         .applyConfiguration(foo);
 
     with (foo)
@@ -630,7 +626,7 @@ naN     !"#¤%&/`;
 
     DifferentSection diff;
     configurationFileContents
-        .splitter(newline)
+        .splitter("\n")
         .applyConfiguration(diff);
 
     with (diff)
@@ -667,7 +663,6 @@ string justifiedConfigurationText(const string origLines)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import std.ascii : newline;
     import std.regex : matchFirst, regex;
     import std.string : strip;
 
@@ -677,7 +672,7 @@ string justifiedConfigurationText(const string origLines)
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
 
-    foreach (immutable rawline; origLines.splitter(newline))
+    foreach (immutable rawline; origLines.splitter("\n"))
     {
         string line = rawline.strip();
 
@@ -732,7 +727,7 @@ string justifiedConfigurationText(const string origLines)
         if (!line.length)
         {
             // Don't add a linebreak at the top of the file
-            if (justified.data.length) justified.put(newline);
+            if (justified.data.length) justified.put("\n");
             continue;
         }
 
@@ -742,7 +737,7 @@ string justifiedConfigurationText(const string origLines)
         case ';':
         case '[':
             justified.put(line);
-            justified.put(newline);
+            justified.put("\n");
             continue;
 
         default:
@@ -750,8 +745,8 @@ string justifiedConfigurationText(const string origLines)
 
             auto hits = line.matchFirst(entryValueEngine);
 
-            justified.formattedWrite("%-*s %s%s", width, hits["entry"],
-                hits["value"], newline);
+            justified.formattedWrite("%-*s %s\n", width, hits["entry"],
+                hits["value"]);
             break;
         }
     }
@@ -846,7 +841,7 @@ nil             5
 naN             !"#¤%&/`;
 
     sink.serialise(foo, diff);
-    assert((sink.data == unjustified), sink.data);
+    assert((sink.data == unjustified), '\n' ~ sink.data);
     immutable configText = justifiedConfigurationText(sink.data);
 
     assert((configText == justified), configText);
