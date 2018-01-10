@@ -1806,7 +1806,7 @@ unittest
         with (event)
         {
             assert((type == ENDOFEXEMPTOPSLIST), type.to!string);
-            assert((sender.address == "cadence.canternet.org"), sender.address);
+            assert((sender.address == "cadance.canternet.org"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "End of channel exemptchanops list"), content);
