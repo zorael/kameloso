@@ -168,9 +168,12 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             version (Colours)
             {
-                immutable headlineTint = settings.brightTerminal ?
-                    BashForeground.green : BashForeground.lightgreen;
-                headline = headline.colour(headlineTint);
+                if (!settings.monochrome)
+                {
+                    immutable headlineTint = settings.brightTerminal ?
+                        BashForeground.green : BashForeground.lightgreen;
+                    headline = headline.colour(headlineTint);
+                }
             }
 
             defaultGetoptPrinter(headline, results.options);
