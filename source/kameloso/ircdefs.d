@@ -831,9 +831,6 @@ struct IRCEvent
     /// The auxiliary storage, containing type-specific extra bits of information.
     string aux;
 
-    /// The colour (RRGGBB) to tint the user's nickname with
-    string colour;
-
     /// IRCv3 message tags attached to this event.
     string tags;
 
@@ -1101,6 +1098,9 @@ struct IRCUser
 
     /// The highest priority "badge" the sender has, in this context.
     string badge;
+
+    /// The colour (RRGGBB) to tint the user's nickname with.
+    string colour;
 
     /++
      +  Flag that the user is "special", which is usually that it is a service

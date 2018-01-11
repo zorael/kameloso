@@ -243,7 +243,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
             // Hexadecimal RGB color code. This is empty if it is never set.
             if (plugin.twitchSettings.twitchColours && value.length)
             {
-                event.colour = value[1..$];
+                event.sender.colour = value[1..$];
             }
             break;
 

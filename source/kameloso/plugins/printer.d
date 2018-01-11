@@ -461,14 +461,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
              +/
             void colourSenderTruecolour(Sink)(auto ref Sink sink)
             {
-                if (!sender.isServer && event.colour.length &&
+                if (!sender.isServer && event.sender.colour.length &&
                     plugin.printerSettings.truecolour)
                 {
                     import kameloso.bash : truecolour;
                     import kameloso.string : numFromHex;
 
                     int r, g, b;
-                    event.colour.numFromHex(r, g, b);
+                    event.sender.colour.numFromHex(r, g, b);
 
                     if (plugin.printerSettings.normaliseTruecolour)
                     {
