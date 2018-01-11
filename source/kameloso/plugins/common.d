@@ -421,6 +421,7 @@ struct BotRegex
         this.ctExpr = ctExpr;
     }
 
+    version(none)
     this(const NickPolicy policy, Regex!char rtExpr)
     {
         this.policy = policy;
@@ -439,6 +440,7 @@ struct BotRegex
         this.ctExpr = ctExpr;
     }
 
+    version(none)
     this(Regex!char rtExpr)
     {
         this.policy = NickPolicy.direct;
