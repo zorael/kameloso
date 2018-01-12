@@ -398,59 +398,40 @@ struct BotCommand
  +/
 struct BotRegex
 {
-    import std.regex : Regex, StaticRegex, regex;
+    import std.regex : Regex, regex;
 
     /// The policy to which extent the command needs the bot's nickname
     NickPolicy policy;
 
     /++
-     +  Regex engine to match incoming messages with (from compile-time-known
-     +  expression)
+     +  Regex engine to match incoming messages with.
+     +
+     +  May be compile-time `ctRegex` or normal `Regex`.
      +/
-    StaticRegex!char ctExpr;
+    Regex!char engine;
 
-    /++
-     +  Regex engine to match incoming messages with (from runtime-known
-     +  expression)
-     +/
-    Regex!char rtExpr;
-
-    this(const NickPolicy policy, StaticRegex!char ctExpr)
+    this(const NickPolicy policy, Regex!char engine) pure
     {
         this.policy = policy;
-        this.ctExpr = ctExpr;
+        this.engine = engine;
     }
 
-    version(none)
-    this(const NickPolicy policy, Regex!char rtExpr)
+    this(const NickPolicy policy, const string expression)
     {
         this.policy = policy;
-        this.rtExpr = rtExpr;
+        this.engine = expression.regex;
     }
 
-    this(const NickPolicy policy, const string rtExprString)
-    {
-        this.policy = policy;
-        this.rtExpr = rtExprString.regex;
-    }
-
-    this(StaticRegex!char ctExpr)
+    this(Regex!char engine) pure
     {
         this.policy = NickPolicy.direct;
-        this.ctExpr = ctExpr;
+        this.engine = engine;
     }
 
-    version(none)
-    this(Regex!char rtExpr)
+    this(const string expression)
     {
         this.policy = NickPolicy.direct;
-        this.rtExpr = rtExpr;
-    }
-
-    this(const string rtExprString)
-    {
-        this.policy = NickPolicy.direct;
-        this.rtExpr = rtExprString.regex;
+        this.engine = expression.regex;
     }
 }
 
@@ -824,14 +805,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         foreach (regexUDA; getUDAs!(fun, BotRegex))
                         {
-                            static assert((regexUDA.ctExpr != StaticRegex!char.init) ||
-                                (regexUDA.rtExpr != Regex!char.init),
-                                name ~ " has uninitialised BotRegex engines");
+                            static assert((regexUDA.ending == Regex!char.init),
+                                name ~ " has an incomplete BotRegex");
 
                             if (!privateState.nickPolicyMatches(regexUDA.policy,
                                 event))
                             {
-                                continue funloop;  // next function
+                                static if (verbose)
+                                {
+                                    writeln("...policy doesn't match; continue next BotRegex");
+                                }
+
+                                continue;  // next BotRegex UDA
                             }
 
                             // Reset between iterations
@@ -854,26 +839,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             try
                             {
-                                if (regexUDA.ctExpr != StaticRegex!char.init)
+                                const hits = thisCommand.matchFirst(regexUDA.engine);
+
+                                if (!hits.empty)
                                 {
-                                    if (!thisCommand.matchFirst(regexUDA.ctExpr).empty)
-                                    {
-                                        mutEvent.aux = thisCommand;
-                                    }
-                                }
-                                else if (regexUDA.rtExpr != Regex!char.init)
-                                {
-                                    // Implicit rtExpr non-init
-                                    if (!thisCommand.matchFirst(regexUDA.rtExpr).empty)
-                                    {
-                                        mutEvent.aux = thisCommand;
-                                    }
-                                }
-                                else
-                                {
-                                    logger.warningf("Uninitialised BotRegex " ~
-                                        "(%s)", name);
-                                    continue;
+                                    mutEvent.aux = hits[0];
                                 }
                             }
                             catch (const Exception e)
