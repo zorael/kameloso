@@ -305,7 +305,7 @@ void onPing(SeenPlugin plugin)
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-            seenUsers.saveSeen(seenSettings.seenFile);
+            seenUsers.rehash().saveSeen(seenSettings.seenFile);
         }
     }
 }
@@ -528,7 +528,8 @@ long[string] loadSeen(const string filename)
         aa[user] = time.integer;
     }
 
-    return aa;
+    // Rehash the AA, since we potentially added a *lot* of users.
+    return aa.rehash();
 }
 
 
