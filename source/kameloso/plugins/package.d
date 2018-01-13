@@ -14,6 +14,7 @@ public import kameloso.plugins.sedreplace;
 public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
 public import kameloso.plugins.chanqueries;
+public import kameloso.plugins.persistence;
 
 version(Posix)
 {
@@ -31,6 +32,7 @@ version(Web)
 
 /// Add plugins to this list to enable them
 public alias EnabledPlugins = AliasSeq!(
+    PersistencePlugin,
     PrinterPlugin,
     ConnectPlugin,
     ChanQueriesPlugin,
