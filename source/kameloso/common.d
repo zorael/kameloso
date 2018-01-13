@@ -1166,7 +1166,7 @@ struct Client
         state.settings = settings;
         state.mainThread = thisTid;
         const now = Clock.currTime;
-        today = now.hour;
+        today = now.day;
 
         plugins.reserve(EnabledPlugins.length + 4);
 
