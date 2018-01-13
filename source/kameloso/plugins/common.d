@@ -1688,7 +1688,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
-    enum hoursBetweenRehashes = 12;
+
 
     // onUserAwarenessQuitMixin
     /++
@@ -2011,6 +2011,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         import std.stdio : writeln;
 
         const hour = Clock.currTime.hour;
+
+        enum hoursBetweenRehashes = 12;
 
         with (plugin)
         {

@@ -105,6 +105,8 @@ void onPing(PersistencePlugin plugin)
 
     const hour = Clock.currTime.hour;
 
+    enum hoursBetweenRehashes = 12;  // also see UserAwareness
+
     with (plugin)
     {
         /// Once every few hours, rehash the `users` array.
@@ -136,6 +138,5 @@ public:
  +/
 final class PersistencePlugin : IRCPlugin
 {
-    enum hoursBetweenRehashes = 12;  // also see UserAwareness
     mixin IRCPluginImpl;
 }
