@@ -1959,9 +1959,10 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +/
     @(AwarenessMixin)
     @(Chainable)
+    @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     @(ChannelPolicy.home)
-    void onUserAwarenessEndOfWHOMixin(IRCPlugin plugin)
+    void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
     {
         plugin.state.users.rehash();
     }
