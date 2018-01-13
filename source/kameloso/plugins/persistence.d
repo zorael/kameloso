@@ -16,6 +16,7 @@ void postprocess(PersistencePlugin plugin, ref IRCEvent event)
 {
     import kameloso.common : meldInto;
     import std.range : only;
+    import std.typecons : Flag, No, Yes;
 
     if (event.type == IRCEvent.Type.QUIT) return;
 
