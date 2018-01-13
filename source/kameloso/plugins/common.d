@@ -756,7 +756,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         {
                             static if (verbose)
                             {
-                                writeln("...doesn't match; continue next BotCommand");
+                                writeln("...policy doesn't match; continue next BotCommand");
                             }
 
                             continue;  // next BotCommand UDA
@@ -1706,8 +1706,10 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessNickMixin
     /++
-     +  Tracks a nick change, moving any old `IRCUser` entry in `state.users` to
-     +  point to the new nickname.
+     +  Upon someone changing nickname, update their entry in the `users` array
+     +  to point to the new nickname.
+     +
+     +  Removes the old entry.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2160,8 +2162,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessNickMixin
     /++
-     +  Updates and renames a user in the internal list of users in a channel if
-     +  they change their nickname.
+     +  Upon someone changing nickname, update their entry in the `users` array
+     +  to point to the new nickname.
+     +
+     +  Removes the old entry.
      +/
     @(AwarenessMixin)
     @(Chainable)

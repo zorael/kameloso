@@ -33,7 +33,6 @@ __gshared bool abort;
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
-    import core.stdc.signal : signal, SIGINT, SIG_DFL;
     import core.stdc.stdio : printf;
 
     printf("...caught signal %d!\n", sig);

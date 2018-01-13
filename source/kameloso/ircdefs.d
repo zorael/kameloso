@@ -958,6 +958,12 @@ struct IRCBot
  +      string resolvedAddress;
  +      uint maxNickLength;
  +      uint maxChannelLength;
+ +      string aModes;
+ +      string bModes;
+ +      string cModes;
+ +      string dModes;
+ +      char[char] prefixchars;
+ +      string prefixes;
  +  }
  +  ------------
  +/
