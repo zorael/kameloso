@@ -903,7 +903,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             (U == JOIN) ||
                             (U == PART) ||
                             //(U == QUIT) ||
-                            (U == NICK) ||
+                            //(U == NICK) ||
                             (U == AWAY)),
                             message);
                     }
