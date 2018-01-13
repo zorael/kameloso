@@ -405,6 +405,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             // :kameloso!~NaN@2001:41d0:2:80b4:: JOIN #hirrsteff2 kameloso : kameloso!
             event.channel = slice.nom(' ');
             event.sender.account = slice.nom(" :");
+            if (event.sender.account == "*") event.sender.account = string.init;
             //event.content = slice.strip();  // no need for full name...
         }
         else
