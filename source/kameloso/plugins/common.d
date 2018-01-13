@@ -1978,10 +1978,13 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.CHGHOST)
-    void onUserAwarenessChangeHost(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessChangeHostMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // User changed host; catch it
-        plugin.catchUser(event.sender);
+        if (event.sender.nickname in plugin.state.users)
+        {
+            // Existing user changed host; catch it
+            plugin.catchUser(event.sender);
+        }
     }
 
 
