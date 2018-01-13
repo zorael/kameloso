@@ -1688,6 +1688,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
+    enum hoursBetweenRehashes = 12;
 
     // onUserAwarenessQuitMixin
     /++
@@ -1985,6 +1986,39 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         // User changed host; catch it
         plugin.catchUser(event.sender);
+    }
+
+
+    // onUserAwarenessPing
+    /++
+     +  Rehash the internal `state.users` associative array of `IRCUser`s, once
+     +  every `hoursBetweenRehashes` hours.
+     +
+     +  We ride the periodicity of `PING` to get a natural cadence without
+     +  having to resort to timed `Fiber`s.
+     +
+     +  The number of hours is so far hardcoded but can be made configurable if
+     +  there's a use-case for it.
+     +/
+    @(AwarenessMixin)
+    @(Chainable)
+    @(IRCEvent.Type.PING)
+    void onUserAwarenessPing(IRCPlugin plugin)
+    {
+        import std.datetime.systime : Clock;
+        import std.stdio : writeln;
+
+        const hour = Clock.currTime.hour;
+
+        with (plugin)
+        {
+            /// Once every few hours, rehash the `users` array.
+            if ((hoursBetweenRehashes > 0) && (hour == rehashCounter))
+            {
+                rehashCounter = (rehashCounter + hoursBetweenRehashes) % 24;
+                state.users.rehash();
+            }
+        }
     }
 }
 
