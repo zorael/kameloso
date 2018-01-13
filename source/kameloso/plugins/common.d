@@ -1709,16 +1709,18 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Upon someone changing nickname, update their entry in the `users` array
      +  to point to the new nickname.
      +
-     +  Removes the old entry.
+     +  Does *not* add a new entry if one doesn't exits, to counter the fact
+     +  that `NICK` events don't belong to a channel, and as such can't be
+     +  regulated with `ChannelPolicy` annotations. This way the user will only
+     +  be moved if it was already added elsewhere. Else we'll leak users.
+     +
+     +  Removes the old entry after assigning it to the new key.
      +/
     @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // This will passively catch people outside of home channels, but
-        // UserAwareness shouldn't care.
-
         with (plugin.state)
         {
             if (auto oldUser = event.sender.nickname in users)
@@ -1726,10 +1728,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 // Does this work?
                 users[event.target.nickname] = *oldUser;
                 users.remove(event.sender.nickname);
-            }
-            else
-            {
-                users[event.target.nickname] = event.sender;
             }
         }
     }
