@@ -1784,11 +1784,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         }
 
         plugin.catchUser(event.sender);
-
-        if (event.sender.account == "*")
-        {
-            plugin.state.users[event.sender.nickname].account = string.init;
-        }
     }
 
 
