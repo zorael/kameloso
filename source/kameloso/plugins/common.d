@@ -77,6 +77,9 @@ interface IRCPlugin
 
     /// Returns a reference to the list of timed `Fiber`s, labeled by UNIX time
     ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property;
+
+    /// Returns a counter for which hour the plugin should rehash its user array
+    ref int rehashCounter() pure nothrow @nogc @property;
 }
 
 
@@ -606,6 +609,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     IRCPluginState privateState;
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
     Labeled!(Fiber, long)[] privateTimedFibers;
+    int privateRehashCounter;
 
     enum hasIRCPluginImpl = true;
 
@@ -1469,6 +1473,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         immutable time = Clock.currTime.toUnixTime + secs;
         privateTimedFibers ~= labeled(fiber, time);
+    }
+
+
+    // counter
+    /++
+     +  Returns the private `counter` number, used by plugins to schedule
+     +  rehashes of their internal `IRCUser` arrays.
+     +/
+    ref int rehashCounter() pure nothrow @nogc @property
+    {
+        return privateRehashCounter;
     }
 }
 

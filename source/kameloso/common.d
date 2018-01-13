@@ -1115,7 +1115,8 @@ struct Client
         state.bot = bot;
         state.settings = settings;
         state.mainThread = thisTid;
-        today = Clock.currTime.day;
+        const now = Clock.currTime;
+        today = now.hour;
 
         plugins.reserve(EnabledPlugins.length + 4);
 
@@ -1141,6 +1142,11 @@ struct Client
         foreach (plugin; plugins)
         {
             plugin.loadConfig(state.settings.configFile);
+        }
+
+        foreach (plugin; plugins)
+        {
+            plugin.rehashCounter = now.hour + 1;  // rehash next hour
         }
 
         plugins.applyCustomSettings(customSettings);
