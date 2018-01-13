@@ -7,7 +7,7 @@ import std.datetime.systime : SysTime;
 import std.experimental.logger;
 import std.meta : allSatisfy;
 import std.range : isOutputRange;
-import std.traits : Unqual, isType, isArray;
+import std.traits : Unqual, isType, isArray, isAssociativeArray;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -783,6 +783,56 @@ unittest
     auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
     yarr1.meldInto!(Yes.overwrite)(yarr2);
     assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
+}
+
+
+// meldInto
+/++
+ +  Takes two associative arrays and melds them together, making a union of the
+ +  two.
+ +
+ +  FIXME
+ +/
+void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, AA)
+    (AA meldThis, ref AA intoThis) pure
+if (isAssociativeArray!AA)
+{
+    foreach (key, val; meldThis)
+    {
+        static if (overwrite)
+        {
+            intoThis[key] = val;
+        }
+        else
+        {
+            if ((val != typeof(val).init) && (intoThis[key] == typeof(intoThis[i]).init))
+            {
+                intoThis[i] = val;
+            }
+        }
+    }
+}
+
+///
+unittest
+{
+    bool[string] aa1;
+    bool[string] aa2;
+
+    aa1["a"] = true;
+    aa1["b"] = false;
+    aa2["c"] = true;
+    aa2["d"] = false;
+
+    assert("a" in aa1);
+    assert("b" in aa1);
+    assert("c" in aa2);
+    assert("d" in aa2);
+
+    aa1.meldInto(aa2);
+
+    assert("a" in aa2);
+    assert("b" in aa2);
 }
 
 
