@@ -1934,7 +1934,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessEndOfWHOIS
+    // onUserAwarenessEndOfWHOISMixin
     /++
      +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
@@ -1950,7 +1950,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     // onUserAwarenessEndOfWhoNames
     /++
      +  Rehashes, or optimises, the `IRCUser` associative array upon the end
-     +  of a `WHO` reply.
+     +  of a `WHO` or a `NAMES` reply.
      +
      +  These replies can list hundreds of users depending on the size of the
      +  channel. Once an associative array has grown sufficiently it becomes
@@ -1968,7 +1968,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessChangeHost
+    // onUserAwarenessChangeHostMixin
     /++
      +  Catches a user when he/she changes host.
      +
@@ -1988,7 +1988,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessPing
+    // onUserAwarenessPingMixin
     /++
      +  Rehash the internal `state.users` associative array of `IRCUser`s, once
      +  every `hoursBetweenRehashes` hours.
@@ -2002,7 +2002,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(AwarenessMixin)
     @(Chainable)
     @(IRCEvent.Type.PING)
-    void onUserAwarenessPing(IRCPlugin plugin)
+    void onUserAwarenessPingMixin(IRCPlugin plugin)
     {
         import std.datetime.systime : Clock;
         import std.stdio : writeln;
