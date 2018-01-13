@@ -377,13 +377,13 @@ struct BotCommand
     /// The prefix string, one word with no spaces
     string string_;
 
-    this(const NickPolicy policy, const string string_)
+    this(const NickPolicy policy, const string string_) pure
     {
         this.policy = policy;
         this.string_ = string_;
     }
 
-    this(const string string_)
+    this(const string string_) pure
     {
         this.policy = NickPolicy.direct;
         this.string_ = string_;

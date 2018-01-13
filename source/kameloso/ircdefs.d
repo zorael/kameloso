@@ -1124,7 +1124,7 @@ struct IRCUser
         if (address == "*") address = string.init;
     }
 
-    this(const string nickname, const string ident, const string address) pure
+    this(const string nickname, const string ident, const string address) pure nothrow @nogc
     {
         this.nickname = nickname;
         this.ident = ident;
@@ -1147,7 +1147,7 @@ struct IRCUser
         return (!nickname.length && address.has('.'));
     }
 
-    bool matchesByMask(const string userstring) pure nothrow @nogc const
+    bool matchesByMask(const string userstring) pure const
     {
         return matchesByMask(IRCUser(userstring));
     }
