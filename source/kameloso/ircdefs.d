@@ -1147,7 +1147,12 @@ struct IRCUser
         return (!nickname.length && address.has('.'));
     }
 
-    bool opEquals(IRCUser other) pure nothrow @nogc const
+    bool matchesByMask(const string userstring) pure nothrow @nogc const
+    {
+        return matchesByMask(IRCUser(userstring));
+    }
+
+    bool matchesByMask(IRCUser other) pure nothrow @nogc const
     {
         // Match first
         // If no match and either is empty, that means they're *
@@ -2088,9 +2093,11 @@ struct IRCChannel
         bool opEquals(const Mode other) pure nothrow @nogc @safe const
         {
             // Ignore exemptions when comparing Modes
-            immutable match = (modechar == other.modechar) && (data == other.data) &&
-                (user == other.user);
+            immutable charMatch = (modechar == other.modechar);
+            immutable dataMatch = (data == other.data);
+            immutable userMatch = user.matchesByMask(other.user);
 
+            immutable match = (charMatch && dataMatch && userMatch);
             return negated ? !match : match;
         }
 
