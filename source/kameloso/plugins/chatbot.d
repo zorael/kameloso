@@ -426,6 +426,7 @@ void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
 {
     import kameloso.constants : KamelosoInfo;
     import kameloso.string : has, nom;
+    import std.algorithm.searching : endsWith;
     import std.algorithm.sorting : sort;
     import std.format : format;
 
@@ -492,7 +493,7 @@ void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
 
             foreach (p; plugins)
             {
-                if (!p.commands.length) continue;
+                if (!p.commands.length || p.name.endsWith("Service")) continue;
 
                 enum width = 11;
 
