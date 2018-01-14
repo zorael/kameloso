@@ -568,132 +568,272 @@ unittest
  +  ------------
  +/
 version(Colours)
-string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
-    (const string line, const string toInvert)
+string invert(const string line, const string toInvert)
 {
+    import std.array : Appender;
     import std.format : format;
-    import std.regex : escaper, matchAll, regex, replaceFirst;
+    import std.string : indexOf;
 
     immutable inverted = "%c[%dm%s%c[%dm"
         .format(TerminalToken.bashFormat, BashEffect.reverse,
             toInvert, TerminalToken.bashFormat, BashReset.invert);
 
-    static if (elaborate)
-    {
-        auto engine = toInvert.escaper.format!`\b%s(\b|\W|$)`.regex;
-    }
-    else
-    {
-        auto engine = toInvert.escaper.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
-    }
+    Appender!string sink;
+    sink.reserve(512);  // Maximum IRC message length by spec
+    string slice = line;
 
-    string replaced = line;
+    ptrdiff_t startpos = slice.indexOf(toInvert);
+    assert((startpos != -1), "Tried to invert nonexistent text");
 
-    foreach (hit; line.matchAll(engine))
+    uint i;
+
+    do
     {
-        if (hit.empty)
+        immutable endpos = startpos + toInvert.length;
+
+        if ((startpos == 0) && (i > 0))
         {
-            replaced = replaced.replaceFirst(engine, inverted);
+            // Not the first run and begins with the nick --> run-on nicks
+            sink.put(slice[0..endpos]);
+        }
+        else if (endpos == slice.length)
+        {
+            // Line ends with the string; break
+            sink.put(slice[0..startpos]);
+            sink.put(inverted);
+            //break;
+        }
+        else if ((startpos > 1) && slice[startpos-1].isValidNicknameCharacter)
+        {
+            // string is in the middle of a string, like abcTHISdef; skip
+            sink.put(slice[0..endpos]);
+        }
+        else if (slice[endpos].isValidNicknameCharacter)
+        {
+            // string ends with a nick character --> different nick; skip
+            sink.put(slice[0..endpos]);
         }
         else
         {
-            replaced = replaced.replaceFirst(engine, inverted ~ hit[1]);
+            // Begins at string start, or trailed by non-nicknick character
+            sink.put(slice[0..startpos]);
+            sink.put(inverted);
         }
-    }
 
-    return replaced;
+        ++i;
+        slice = slice[endpos..$];
+        startpos = slice.indexOf(toInvert);
+    }
+    while (startpos != -1);
+
+    // Add the remainder, from the last match to the end
+    sink.put(slice);
+
+    return sink.data;
 }
 
 ///
 version(Colours)
 unittest
 {
+    import std.format : format;
+
+    immutable pre = "%c[%dm".format(TerminalToken.bashFormat, BashEffect.reverse);
+    immutable post = "%c[%dm".format(TerminalToken.bashFormat, BashReset.invert);
+
     {
-        immutable inverted = "foo kameloso bar".invert("kameloso");
-        assert((inverted == "foo \033[7mkameloso\033[27m bar"), inverted);
+        immutable line = "abc".invert("abc");
+        immutable expected = pre ~ "abc" ~ post;
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "fookameloso bar".invert("kameloso");
-        assert((inverted == "fookameloso bar"), inverted);
+        immutable line = "abc abc".invert("abc");
+        immutable inverted = pre ~ "abc" ~ post;
+        immutable expected = inverted ~ ' ' ~ inverted;
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "foo kamelosobar".invert("kameloso");
-        assert((inverted == "foo kamelosobar"), inverted);
+        immutable line = "abca abc".invert("abc");
+        immutable inverted = pre ~ "abc" ~ post;
+        immutable expected = "abca " ~ inverted;
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "foo(kameloso)bar".invert("kameloso");
-        assert((inverted == "foo(\033[7mkameloso\033[27m)bar"), inverted);
+        immutable line = "abcabc".invert("abc");
+        immutable expected = "abcabc";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso: 8ball".invert("kameloso");
-        assert((inverted == "\033[7mkameloso\033[27m: 8ball"), inverted);
+        immutable line = "kameloso^^".invert("kameloso");
+        immutable expected = "kameloso^^";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "Welcome to the freenode Internet Relay Chat Network kameloso^"
+        immutable line = "foo kameloso bar".invert("kameloso");
+        immutable expected = "foo " ~ pre ~ "kameloso" ~ post ~ " bar";
+        assert((line == expected), line);
+    }
+
+    {
+        immutable line = "fookameloso bar".invert("kameloso");
+        immutable expected = "fookameloso bar";
+        assert((line == expected), line);
+    }
+
+    {
+        immutable line = "foo kamelosobar".invert("kameloso");
+        immutable expected = "foo kamelosobar";
+        assert((line == expected), line);
+    }
+
+    {
+        immutable line = "foo(kameloso)bar".invert("kameloso");
+        immutable expected = "foo(" ~ pre ~ "kameloso" ~ post ~ ")bar";
+        assert((line == expected), line);
+    }
+
+    {
+        immutable line = "kameloso: 8ball".invert("kameloso");
+        immutable expected = pre ~ "kameloso" ~ post ~ ": 8ball";
+        assert((line == expected), line);
+    }
+
+    {
+        immutable line = "Welcome to the freenode Internet Relay Chat Network kameloso^"
             .invert("kameloso^");
-        assert((inverted == "Welcome to the freenode Internet Relay Chat Network \033[7mkameloso^\033[27m"),
-            inverted);
+        immutable expected = "Welcome to the freenode Internet Relay Chat Network " ~
+            pre ~ "kameloso^" ~ post;
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso^: wfwef".invert("kameloso^");
-        assert((inverted == "\033[7mkameloso^\033[27m: wfwef"), inverted);
+        immutable line = "kameloso^: wfwef".invert("kameloso^");
+        immutable expected = pre ~ "kameloso^" ~ post ~ ": wfwef";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "[kameloso^]".invert("kameloso^");
-        assert((inverted == "[\033[7mkameloso^\033[27m]"), inverted);
+        immutable line = "[kameloso^]".invert("kameloso^");
+        immutable expected = "[kameloso^]";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = `"kameloso^"`.invert("kameloso^");
-        assert((inverted == "\"\033[7mkameloso^\033[27m\""), inverted);
+        immutable line = `"kameloso^"`.invert("kameloso^");
+        immutable expected = "\"" ~ pre ~ "kameloso^" ~ post ~ "\"";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso^".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "kameloso^"), inverted);
+        immutable line = "kameloso^".invert("kameloso");
+        immutable expected = "kameloso^";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "That guy kameloso? is a bot".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "That guy \033[7mkameloso\033[27m? is a bot"), inverted);
+        immutable line = "That guy kameloso? is a bot".invert("kameloso");
+        immutable expected = "That guy " ~ pre ~ "kameloso" ~ post  ~ "? is a bot";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso`".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "kameloso`"), inverted);
+        immutable line = "kameloso`".invert("kameloso");
+        immutable expected = "kameloso`";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso9".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "kameloso9"), inverted);
+        immutable line = "kameloso9".invert("kameloso");
+        immutable expected = "kameloso9";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso-".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "kameloso-"), inverted);
+        immutable line = "kameloso-".invert("kameloso");
+        immutable expected = "kameloso-";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso_".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "kameloso_"), inverted);
+        immutable line = "kameloso_".invert("kameloso");
+        immutable expected = "kameloso_";
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso_".invert!(Yes.elaborateBoundary)("kameloso_");
-        assert((inverted == "\033[7mkameloso_\033[27m"), inverted);
+        immutable line = "kameloso_".invert("kameloso_");
+        immutable expected = pre ~ "kameloso_" ~ post;
+        assert((line == expected), line);
     }
 
     {
-        immutable inverted = "kameloso kameloso kameloso kameloso kameloso".invert!(No.elaborateBoundary)("kameloso");
-        assert((inverted == "\033[7mkameloso\033[27m \033[7mkameloso\033[27m " ~
-            "\033[7mkameloso\033[27m \033[7mkameloso\033[27m \033[7mkameloso\033[27m"),
-            "'" ~ inverted ~ "'");
+        immutable line = "kameloso kameloso kameloso kameloso kameloso".invert("kameloso");
+        immutable expected = "%1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s"
+            .format(pre, post);
+        assert((line == expected), line);
     }
+}
+
+
+// isValidNicknameCharacter
+/++
+ +  Determines whether a passed `char` can be part of a nickname.
+ +
+ +  The IRC standard describes nicknames as being a string of the following
+ +  characters:
+ +
+ +      [a-z] [A-Z] [0-9] _-\[]{}^`|
+ +
+ +  ------------
+ +  assert('a'.isValidNicknameCharacter);
+ +  assert('9'.isValidNicknameCharacter);
+ +  assert('`'.isValidNicknameCharacter);
+ +  assert(!(' '.isValidNicknameCharacter));
+ +  ------------
+ +/
+bool isValidNicknameCharacter(const char c)
+{
+    switch (c)
+    {
+    case 'a':
+    ..
+    case 'z':
+    case 'A':
+    ..
+    case 'Z':
+    case '0':
+    ..
+    case '9':
+    case '_':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+    case '^':
+    case '`':
+    case '|':
+    case '-':
+        return true;
+    default:
+        return false;
+    }
+}
+
+///
+unittest
+{
+    {
+        immutable line = "abcDEFghi0{}29304_[]``^|---";
+        foreach (char c; line)
+        {
+            assert(c.isValidNicknameCharacter, c ~ "");
+        }
+    }
+
+    assert(!(' '.isValidNicknameCharacter));
 }

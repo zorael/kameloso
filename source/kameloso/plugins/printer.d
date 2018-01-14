@@ -595,10 +595,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         if (event.content.has!(Yes.decode)(bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
-
-                            immutable inverted = plugin.nicknameHasElaborateBoundary ?
-                                content.invert!(Yes.elaborateBoundary)(bot.nickname) :
-                                content.invert!(No.elaborateBoundary)(bot.nickname);
+                            immutable inverted = content.invert(bot.nickname);
 
                             if ((content != inverted) &&
                                 plugin.printerSettings.bellOnMention)
