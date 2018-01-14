@@ -14,18 +14,18 @@ private:
  +  hasn't been queried, query it.
  +/
 @(IRCEvent.Type.PING)
-void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
+void onPing(ChanQueriesService service, const IRCEvent event)
 {
     import core.thread : Fiber;
 
-    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
     string[] querylist;
 
-    foreach (channel, queried; plugin.channels)
+    foreach (channel, queried; service.channels)
     {
         if (queried) continue;
-        plugin.channels[channel] = true;
+        service.channels[channel] = true;
         querylist ~= channel;
     }
 
@@ -40,31 +40,31 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
 
         foreach (channel; querylist)
         {
-            raw(plugin.state.mainThread, "WHO " ~ channel);
+            raw(service.state.mainThread, "WHO " ~ channel);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
-            plugin.delayFiber(fiber, plugin.secondsBetween);
+            service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw(plugin.state.mainThread, "TOPIC " ~ channel);
+            raw(service.state.mainThread, "TOPIC " ~ channel);
             Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
-            plugin.delayFiber(fiber, plugin.secondsBetween);
+            service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw(plugin.state.mainThread, "MODE " ~ channel);
+            raw(service.state.mainThread, "MODE " ~ channel);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
-            plugin.delayFiber(fiber, plugin.secondsBetween);
+            service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            foreach (immutable modechar; plugin.state.bot.server.aModes)
+            foreach (immutable modechar; service.state.bot.server.aModes)
             {
                 import std.format : format;
 
-                raw(plugin.state.mainThread,
+                raw(service.state.mainThread,
                     "MODE %s +%c".format(channel, modechar));
-                plugin.delayFiber(fiber, plugin.secondsBetween);
+                service.delayFiber(fiber, service.secondsBetween);
                 Fiber.yield();
             }
         }
@@ -73,7 +73,7 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
     fiber = new Fiber(&fiberFn);
 
     with (IRCEvent.Type)
-    with (plugin)
+    with (service)
     {
         awaitingFibers[RPL_ENDOFWHO] ~= fiber;
         awaitingFibers[RPL_TOPIC] ~= fiber;
@@ -90,12 +90,12 @@ void onPing(ChanQueriesPlugin plugin, const IRCEvent event)
  +  Add a channel we join to the internal list of channels.
  +/
 @(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.home)
-void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
+@(ChannelPolicy.any)
+void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
-    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    plugin.channels[event.channel] = false;
+    service.channels[event.channel] = false;
 }
 
 
@@ -104,24 +104,24 @@ void onSelfjoin(ChanQueriesPlugin plugin, const IRCEvent event)
  +  Remove a channel we part from the internal list of channels.
  +/
 @(IRCEvent.Type.SELFPART)
-@(ChannelPolicy.home)
-void onSelfpart(ChanQueriesPlugin plugin, const IRCEvent event)
+@(ChannelPolicy.any)
+void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
-    if (plugin.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    plugin.channels.remove(event.channel);
+    service.channels.remove(event.channel);
 }
 
 
 public:
 
 
-// ChanQueriesPlugin
+// ChanQueriesService
 /++
- +  The Channel Queries plugin queries channels for information about it, so
+ +  The Channel Queries service queries channels for information about it, so
  +  that other plugins that implement channel awareness can catch the results.
  +/
-final class ChanQueriesPlugin : IRCPlugin
+final class ChanQueriesService : IRCPlugin
 {
     /// Extra seconds delay between channel mode/user queries.
     enum secondsBetween = 2;
