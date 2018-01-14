@@ -57,12 +57,12 @@ alias Status = IRCBot.Status;
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @(ChannelPolicy.any)
-void onSelfpart(ConnectPlugin plugin, const IRCEvent event)
+void onSelfpart(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.mutation : remove;
     import std.algorithm.searching : countUntil;
 
-    with (plugin.state)
+    with (service.state)
     {
         immutable index = bot.channels.countUntil(event.channel);
 
@@ -98,11 +98,11 @@ void onSelfpart(ConnectPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
-void onSelfjoin(ConnectPlugin plugin, const IRCEvent event)
+void onSelfjoin(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
-    with (plugin.state)
+    with (service.state)
     {
         if (!bot.channels.canFind(event.channel) &&
             !bot.homes.canFind(event.channel))
@@ -119,9 +119,9 @@ void onSelfjoin(ConnectPlugin plugin, const IRCEvent event)
 /++
  +  Joins all channels listed as homes *and* channels in the `IRCBot` object.
  +/
-void joinChannels(ConnectPlugin plugin)
+void joinChannels(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         if (!bot.homes.length && !bot.channels.length)
         {
@@ -145,7 +145,7 @@ void joinChannels(ConnectPlugin plugin)
             .array
             .to!string;
 
-        plugin.join(chanlist);
+        service.join(chanlist);
     }
 }
 
@@ -159,11 +159,11 @@ void joinChannels(ConnectPlugin plugin)
  +  however it's not used in Unreal (and might not be used in Ultimate either)."
  +/
 @(IRCEvent.Type.ERR_BADPING)
-void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
+void onToConnectType(ConnectService service, const IRCEvent event)
 {
-    if (plugin.serverPinged) return;
+    if (service.serverPinged) return;
 
-    plugin.raw(event.content);
+    service.raw(event.content);
 }
 
 
@@ -176,13 +176,13 @@ void onToConnectType(ConnectPlugin plugin, const IRCEvent event)
  +  generally wants you to ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
-void onPing(ConnectPlugin plugin, const IRCEvent event)
+void onPing(ConnectService service, const IRCEvent event)
 {
-    plugin.serverPinged = true;
+    service.serverPinged = true;
     immutable target = (event.content.length) ?
         event.content : event.sender.address;
 
-    with (plugin.state)
+    with (service.state)
     {
         mainThread.prioritySend(ThreadMessage.Pong(), target);
 
@@ -191,7 +191,7 @@ void onPing(ConnectPlugin plugin, const IRCEvent event)
             logger.log("Auth timed out. Joining channels ...");
             bot.authentication = Status.finished;
             bot.updated = true;
-            plugin.joinChannels();
+            service.joinChannels();
         }
     }
 }
@@ -204,22 +204,22 @@ void onPing(ConnectPlugin plugin, const IRCEvent event)
  +  The command to send vary greatly between server daemons (and networks), so
  +  use some heuristics and try the best guess.
  +/
-void tryAuth(ConnectPlugin plugin)
+void tryAuth(ConnectService service)
 {
-    string service = "NickServ";
+    string serviceNick = "NickServ";
     string verb = "IDENTIFY";
 
-    with (plugin.state)
+    with (service.state)
     {
         // Specialcase networks
         switch (bot.server.network)
         {
         case "DALnet":
-            service = "NickServ@services.dal.net";
+            serviceNick = "NickServ@services.dal.net";
             break;
 
         case "GameSurge":
-            service = "AuthServ@Services.GameSurge.net";
+            serviceNick = "AuthServ@Services.GameSurge.net";
             break;
 
         case "EFNet":
@@ -229,7 +229,7 @@ void tryAuth(ConnectPlugin plugin)
             return;
 
         case "QuakeNet":
-            service = "Q@CServe.quakenet.org";
+            serviceNick = "Q@CServe.quakenet.org";
             verb = "AUTH";
             break;
 
@@ -255,14 +255,14 @@ void tryAuth(ConnectPlugin plugin)
 
                 bot.authentication = Status.finished;
                 bot.updated = true;
-                plugin.joinChannels();
+                service.joinChannels();
                 return;
             }
 
-            plugin.query!(Yes.quiet)(service, "%s %s"
+            service.query!(Yes.quiet)(serviceNick, "%s %s"
                 .format(verb, bot.authPassword));
             logger.trace("--> PRIVMSG %s :%s hunter2"
-                .format(service, verb));
+                .format(serviceNick, verb));
             break;
 
         case quakenet:
@@ -279,10 +279,10 @@ void tryAuth(ConnectPlugin plugin)
                 account = bot.origNickname;
             }
 
-            plugin.query!(Yes.quiet)(service, "%s %s %s"
+            service.query!(Yes.quiet)(serviceNick, "%s %s %s"
                 .format(verb, account, bot.authPassword));
             logger.trace("--> PRIVMSG %s :%s %s hunter2"
-                .format(service, verb, account));
+                .format(serviceNick, verb, account));
             break;
 
         case twitch:
@@ -312,13 +312,13 @@ void tryAuth(ConnectPlugin plugin)
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(ConnectPlugin plugin)
+void onEndOfMotd(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         if (bot.authPassword.length && (bot.authentication == Status.notStarted))
         {
-            plugin.tryAuth();
+            service.tryAuth();
         }
 
         if ((bot.authentication == Status.finished) ||
@@ -329,14 +329,14 @@ void onEndOfMotd(ConnectPlugin plugin)
             // `bot.authentication` would be set much later.
             // Twitch servers can't auth so join immediately
             logger.log("Joining channels ...");
-            plugin.joinChannels();
+            service.joinChannels();
         }
 
         // Run commands defined in the settings
-        foreach (immutable line; plugin.connectSettings.sendAfterConnect)
+        foreach (immutable line; service.connectSettings.sendAfterConnect)
         {
             import std.string : strip;
-            plugin.raw(line.strip());
+            service.raw(line.strip());
         }
     }
 }
@@ -351,9 +351,9 @@ void onEndOfMotd(ConnectPlugin plugin)
  +/
 @(IRCEvent.Type.RPL_LOGGEDIN)
 @(IRCEvent.Type.AUTH_FAILURE)
-void onAuthEnd(ConnectPlugin plugin)
+void onAuthEnd(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         bot.authentication = Status.finished;
         bot.updated = true;
@@ -363,7 +363,7 @@ void onAuthEnd(ConnectPlugin plugin)
         if (bot.registration == Status.started) return;
 
         logger.log("Joining channels ...");
-        plugin.joinChannels();
+        service.joinChannels();
     }
 }
 
@@ -374,15 +374,15 @@ void onAuthEnd(ConnectPlugin plugin)
  +  bot as updated, so as to propagate the change to all other plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
-void onNickInUse(ConnectPlugin plugin)
+void onNickInUse(ConnectService service)
 {
     import kameloso.constants : altNickSign;
 
-    with (plugin.state)
+    with (service.state)
     {
         bot.nickname ~= altNickSign;
         bot.updated = true;
-        plugin.raw("NICK " ~ bot.nickname);
+        service.raw("NICK " ~ bot.nickname);
     }
 }
 
@@ -393,13 +393,13 @@ void onNickInUse(ConnectPlugin plugin)
  +  invalid characters.
  +/
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
-void onBadNick(ConnectPlugin plugin)
+void onBadNick(ConnectService service)
 {
-    if (plugin.state.bot.registration == IRCBot.Status.started)
+    if (service.state.bot.registration == IRCBot.Status.started)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters");
-        plugin.state.mainThread.prioritySend(ThreadMessage.Quit(),
+        service.state.mainThread.prioritySend(ThreadMessage.Quit(),
             "Invalid nickname");
     }
 }
@@ -411,15 +411,15 @@ void onBadNick(ConnectPlugin plugin)
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
-void onInvite(ConnectPlugin plugin, const IRCEvent event)
+void onInvite(ConnectService service, const IRCEvent event)
 {
-    if (!plugin.connectSettings.joinOnInvite)
+    if (!service.connectSettings.joinOnInvite)
     {
         logger.log("Invited, but joinOnInvite is false so not joining");
         return;
     }
 
-    plugin.join(event.channel);
+    service.join(event.channel);
 }
 
 
@@ -432,12 +432,12 @@ void onInvite(ConnectPlugin plugin, const IRCEvent event)
  +  (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
-void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
+void onRegistrationEvent(ConnectService service, const IRCEvent event)
 {
     /// http://ircv3.net/irc
     /// https://blog.irccloud.com/ircv3
 
-    with (plugin.state)
+    with (service.state)
     switch (event.aux)
     {
     case "LS":
@@ -450,8 +450,8 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!plugin.connectSettings.sasl || !bot.authPassword.length) continue;
-                plugin.raw!(Yes.quiet)("CAP REQ :sasl");
+                if (!service.connectSettings.sasl || !bot.authPassword.length) continue;
+                service.raw!(Yes.quiet)("CAP REQ :sasl");
                 tryingSASL = true;
                 break;
 
@@ -484,7 +484,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                plugin.raw!(Yes.quiet)("CAP REQ :" ~ cap);
+                service.raw!(Yes.quiet)("CAP REQ :" ~ cap);
                 break;
 
             default:
@@ -497,7 +497,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            plugin.raw!(Yes.quiet)("CAP END");
+            service.raw!(Yes.quiet)("CAP END");
         }
         break;
 
@@ -505,7 +505,7 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
         switch (event.content)
         {
         case "sasl":
-            plugin.raw("AUTHENTICATE PLAIN");
+            service.raw("AUTHENTICATE PLAIN");
             break;
 
         default:
@@ -534,9 +534,9 @@ void onRegistrationEvent(ConnectPlugin plugin, const IRCEvent event)
  +  the services account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
-void onSASLAuthenticate(ConnectPlugin plugin)
+void onSASLAuthenticate(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         import std.base64 : Base64;
 
@@ -549,7 +549,7 @@ void onSASLAuthenticate(ConnectPlugin plugin)
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
-        plugin.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
+        service.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
         logger.trace("--> AUTHENTICATE hunter2");
     }
 }
@@ -564,9 +564,9 @@ void onSASLAuthenticate(ConnectPlugin plugin)
  +  loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
-void onSASLSuccess(ConnectPlugin plugin)
+void onSASLSuccess(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         bot.authentication = Status.finished;
         bot.updated = true;
@@ -583,7 +583,7 @@ void onSASLSuccess(ConnectPlugin plugin)
         +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
         +/
 
-        plugin.raw!(Yes.quiet)("CAP END");
+        service.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -593,17 +593,17 @@ void onSASLSuccess(ConnectPlugin plugin)
  +  On SASL authentication failure, call a `CAP END` to finish the `CAP`
  +  negotiations and finish registration.
  +
- +  Flag the bot as haing finished registering, allowing the main loop to
+ +  Flag the bot as having finished registering, allowing the main loop to
  +  pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
-void onSASLFailure(ConnectPlugin plugin)
+void onSASLFailure(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
-        if (plugin.connectSettings.exitOnSASLFailure)
+        if (service.connectSettings.exitOnSASLFailure)
         {
-            plugin.quit("SASL Negotiation Failure");
+            service.quit("SASL Negotiation Failure");
             return;
         }
 
@@ -613,7 +613,7 @@ void onSASLFailure(ConnectPlugin plugin)
         bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
-        plugin.raw!(Yes.quiet)("CAP END");
+        service.raw!(Yes.quiet)("CAP END");
     }
 }
 
@@ -623,9 +623,9 @@ void onSASLFailure(ConnectPlugin plugin)
  +  On RPL_WELCOME (001) the registration will be completed, so mark it as such.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(ConnectPlugin plugin)
+void onWelcome(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         bot.registration = IRCBot.Status.finished;
         bot.updated = true;
@@ -637,18 +637,18 @@ void onWelcome(ConnectPlugin plugin)
 /++
  +  Register with/log onto an IRC server.
  +/
-void register(ConnectPlugin plugin)
+void register(ConnectService service)
 {
-    with (plugin.state)
+    with (service.state)
     {
         bot.registration = Status.started;
         bot.updated = true;
 
-        plugin.raw!(Yes.quiet)("CAP LS 302");
+        service.raw!(Yes.quiet)("CAP LS 302");
 
         if (bot.pass.length)
         {
-            plugin.raw!(Yes.quiet)("PASS " ~ bot.pass);
+            service.raw!(Yes.quiet)("PASS " ~ bot.pass);
 
             // fake it
             logger.trace("--> PASS hunter2");
@@ -658,13 +658,13 @@ void register(ConnectPlugin plugin)
             if (bot.server.daemon == IRCServer.Daemon.twitch)
             {
                 logger.error("You *need* a password to join this server");
-                plugin.quit();
+                service.quit();
                 return;
             }
         }
 
-        plugin.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
-        plugin.raw("NICK " ~ bot.nickname);
+        service.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
+        service.raw("NICK " ~ bot.nickname);
     }
 }
 
@@ -680,9 +680,9 @@ void register(ConnectPlugin plugin)
  +
  +  It seems to work.
  +/
-void start(IRCPlugin plugin)
+void start(IRCPlugin service)
 {
-    register(cast(ConnectPlugin)plugin);
+    register(cast(ConnectService)service);
 }
 
 
@@ -691,16 +691,16 @@ mixin UserAwareness;
 public:
 
 
-// ConnectPlugin
+// ConnectService
 /++
  +  A collection of functions and state needed to connect to an IRC server.
  +
  +  This is mostly a matter of sending `USER` and `NICK` during registration,
  +  but also incorporates logic to authenticate with services.
  +/
-final class ConnectPlugin : IRCPlugin
+final class ConnectService : IRCPlugin
 {
-    /// All Connect plugin settings gathered
+    /// All Connect service settings gathered
     @Settings ConnectSettings connectSettings;
 
     /// Flag whether the server has sent at least one `PING`
