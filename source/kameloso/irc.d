@@ -2234,19 +2234,17 @@ unittest
  +/
 bool isValidNickname(const string nickname, const IRCServer server)
 {
-    import std.regex : matchAll, regex;
-
-    // allowed in nicks: [a-z] [A-Z] [0-9] _-\[]{}^`|
-
     if (!nickname.length || (nickname.length > server.maxNickLength))
     {
         return false;
     }
 
-    enum validCharactersPattern = r"^([a-zA-Z0-9_\\\[\]{}\^`|-]+)$";
-    auto engine = validCharactersPattern.regex;
+    foreach (immutable c; nickname)
+    {
+        if (!c.isValidNicknameCharacter) return false;
+    }
 
-    return !nickname.matchAll(engine).empty;
+    return true;
 }
 
 ///
