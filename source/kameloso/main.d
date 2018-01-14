@@ -601,7 +601,12 @@ Flag!"quit" mainLoop(ref Client client)
             {
                 logger.warningf("Unhandled exception at %s:%d: %s",
                     e.file, e.line, e.msg);
-                printObject(mutEvent);
+
+                if (mutEvent != IRCEvent.init)
+                {
+                    printObject(mutEvent);
+                }
+
                 continue;
             }
         }
