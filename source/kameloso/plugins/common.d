@@ -1213,6 +1213,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.config : setMemberByName;
+        import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
@@ -1273,6 +1274,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.common : printObject;
+        import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
@@ -1312,6 +1314,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.config : serialise;
+        import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
