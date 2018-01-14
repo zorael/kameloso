@@ -163,7 +163,10 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
 * update wiki
-* revisit nom exceptions
+* notes to always trigger on joins if not present when note placed, only on activity if present?
+* update `seen.d`, strip and restrict to dlangers
+* documentation run; examples, params
+* try github.io ddoc hosting? guide in forums
 
 # Built With
 
