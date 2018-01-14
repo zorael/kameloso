@@ -680,9 +680,9 @@ void register(ConnectService service)
  +
  +  It seems to work.
  +/
-void start(IRCPlugin service)
+void start(ConnectService service)
 {
-    register(cast(ConnectService)service);
+    register(service);
 }
 
 

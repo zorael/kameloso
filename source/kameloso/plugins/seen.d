@@ -732,9 +732,8 @@ void onEndOfMotd(SeenPlugin plugin)
  +  When closing the program or when crashing with grace, save the seen users
  +  array to disk for later reloading.
  +/
-void teardown(IRCPlugin basePlugin)
+void teardown(SeenPlugin plugin)
 {
-    SeenPlugin plugin = cast(SeenPlugin)basePlugin;
     plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
 }
 

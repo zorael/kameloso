@@ -213,11 +213,9 @@ void onWelcome(PipelinePlugin plugin, const IRCEvent event)
 /++
  +  Deinitialises the Pipeline plugin. Shuts down the pipereader thread.
  +/
-void teardown(IRCPlugin basePlugin)
+void teardown(PipelinePlugin plugin)
 {
     import std.file  : exists, isDir;
-
-    auto plugin = cast(PipelinePlugin)basePlugin;
 
     with (plugin)
     with (plugin.state)

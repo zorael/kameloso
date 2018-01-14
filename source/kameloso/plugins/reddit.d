@@ -224,10 +224,8 @@ void prune(shared RedditLookup[string] cache)
  +
  +  Just assign it an entry and remove it.
  +/
-void start(IRCPlugin basePlugin)
+void start(RedditPlugin plugin)
 {
-    auto plugin = cast(RedditPlugin)basePlugin;
-
     plugin.cache[string.init] = RedditLookup.init;
     plugin.cache.remove(string.init);
 }

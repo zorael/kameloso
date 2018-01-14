@@ -390,10 +390,8 @@ void prune(shared TitleLookup[string] cache)
  +
  +  Just assign it an entry and remove it.
  +/
-void start(IRCPlugin basePlugin)
+void start(WebtitlesPlugin plugin)
 {
-    auto plugin = cast(WebtitlesPlugin)basePlugin;
-
     plugin.cache[string.init] = TitleLookup.init;
     plugin.cache.remove(string.init);
 }
