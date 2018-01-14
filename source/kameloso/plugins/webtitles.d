@@ -85,11 +85,12 @@ struct TitleRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
-    import kameloso.string : beginsWith;
+    import kameloso.string : beginsWith, has;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
+    import std.typecons : No, Yes;
 
     immutable prefix = plugin.state.settings.prefix;
     if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
@@ -98,6 +99,9 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         // Message started with a prefix followed by a space --> ignore
         return;
     }
+
+    // Early abort so we don't use the regex as much
+    if (!event.content.has!(Yes.decode)("http")) return;
 
     auto matches = event.content.matchAll(urlRegex);
 
