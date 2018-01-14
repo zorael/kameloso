@@ -570,6 +570,7 @@ unittest
 version(Colours)
 string invert(const string line, const string toInvert)
 {
+    import kameloso.irc : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
     import std.string : indexOf;
@@ -777,63 +778,4 @@ unittest
             .format(pre, post);
         assert((line == expected), line);
     }
-}
-
-
-// isValidNicknameCharacter
-/++
- +  Determines whether a passed `char` can be part of a nickname.
- +
- +  The IRC standard describes nicknames as being a string of the following
- +  characters:
- +
- +      [a-z] [A-Z] [0-9] _-\[]{}^`|
- +
- +  ------------
- +  assert('a'.isValidNicknameCharacter);
- +  assert('9'.isValidNicknameCharacter);
- +  assert('`'.isValidNicknameCharacter);
- +  assert(!(' '.isValidNicknameCharacter));
- +  ------------
- +/
-bool isValidNicknameCharacter(const char c)
-{
-    switch (c)
-    {
-    case 'a':
-    ..
-    case 'z':
-    case 'A':
-    ..
-    case 'Z':
-    case '0':
-    ..
-    case '9':
-    case '_':
-    case '[':
-    case ']':
-    case '{':
-    case '}':
-    case '^':
-    case '`':
-    case '|':
-    case '-':
-        return true;
-    default:
-        return false;
-    }
-}
-
-///
-unittest
-{
-    {
-        immutable line = "abcDEFghi0{}29304_[]``^|---";
-        foreach (char c; line)
-        {
-            assert(c.isValidNicknameCharacter, c ~ "");
-        }
-    }
-
-    assert(!(' '.isValidNicknameCharacter));
 }
