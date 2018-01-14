@@ -571,9 +571,8 @@ version(Colours)
 string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
     (const string line, const string toInvert)
 {
-    import kameloso.string : escaped;
     import std.format : format;
-    import std.regex : matchAll, regex, replaceFirst;
+    import std.regex : escaper, matchAll, regex, replaceFirst;
 
     immutable inverted = "%c[%dm%s%c[%dm"
         .format(TerminalToken.bashFormat, BashEffect.reverse,
@@ -581,11 +580,11 @@ string invert(Flag!"elaborateBoundary" elaborate = Yes.elaborateBoundary)
 
     static if (elaborate)
     {
-        auto engine = toInvert.escaped.format!`\b%s(\b|\W|$)`.regex;
+        auto engine = toInvert.escaper.format!`\b%s(\b|\W|$)`.regex;
     }
     else
     {
-        auto engine = toInvert.escaped.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
+        auto engine = toInvert.escaper.format!r"\b%s([^0-9_\[\]{}\^`|-]|$)".regex;
     }
 
     string replaced = line;

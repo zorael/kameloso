@@ -1009,52 +1009,6 @@ unittest
 }
 
 
-// escaped
-/++
- +  Escapes some common character so as to work better in regex expressions.
- +
- +  ------------
- +  string unescaped = "This is (very) difficult to regex[^!]";
- +  string easier = unescaped.escaped;
- +  assert((easier == "This is \(very\) difficult to regex\[\^!\]"), escaped);
- +  ------------
- +/
-string escaped(const string line)
-{
-    import std.regex : regex, replaceAll;
-
-    const string[] toEscape =
-    [
-        r"\(",
-        r"\)",
-        r"\^",
-        r"\[",
-        r"\]",
-    ];
-
-    string replaced = line;
-
-    foreach (character; toEscape)
-    {
-        replaced = replaced.replaceAll(character.regex, character);
-    }
-
-    return replaced;
-}
-
-///
-unittest
-{
-    assert("(".escaped == r"\(");
-    assert(")".escaped == r"\)");
-    assert("^".escaped == r"\^");
-    assert("[".escaped == r"\[");
-    assert("]".escaped == r"\]");
-    assert(string.init.escaped == string.init);
-    assert("Lorem ipsum (sit amet)".escaped == r"Lorem ipsum \(sit amet\)");
-}
-
-
 // has
 /++
  +  Checks a string to see if it contains a given substring or character.
