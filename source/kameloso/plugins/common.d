@@ -1156,6 +1156,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
@@ -2726,15 +2727,6 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
         }
     }
 }
-
-
-// isStruct
-/++
- +  Eponymous template that is true if the passed type is a struct.
- +
- +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
- +/
-enum isStruct(T) = is(T == struct);
 
 
 // applyCustomSettings

@@ -195,3 +195,12 @@ unittest
     alias UnqualBools = UnqualArray!InoutBools;
     static assert(is(UnqualBools == bool[]));
 }
+
+
+// isStruct
+/++
+ +  Eponymous template that is true if the passed type is a struct.
+ +
+ +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
+ +/
+enum isStruct(T) = is(T == struct);
