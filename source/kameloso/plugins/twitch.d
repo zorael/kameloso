@@ -35,13 +35,13 @@ struct TwitchSettings
  +  Params:
  +      event = the `IRCEvent` to modify.
  +/
-void postprocess(TwitchPlugin plugin, ref IRCEvent event)
+void postprocess(TwitchService service, ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
-    if (!plugin.state.bot.server.address.endsWith(".twitch.tv")) return;
+    if (!service.state.bot.server.address.endsWith(".twitch.tv")) return;
 
-    plugin.parseTwitchTags(event);
+    service.parseTwitchTags(event);
 
     if (event.sender.isServer)
     {
@@ -65,7 +65,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +  Params:
  +      ref event = A reference to the IRCEvent whose tags should be parsed.
  +/
-void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
+void parseTwitchTags(TwitchService service, ref IRCEvent event)
 {
     import kameloso.common : logger;
     import kameloso.irc : decodeIRCv3String;
@@ -241,7 +241,7 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 
         case "color":
             // Hexadecimal RGB color code. This is empty if it is never set.
-            if (plugin.twitchSettings.twitchColours && value.length)
+            if (service.twitchSettings.twitchColours && value.length)
             {
                 event.sender.colour = value[1..$];
             }
@@ -361,20 +361,20 @@ void parseTwitchTags(TwitchPlugin plugin, ref IRCEvent event)
 public:
 
 
-// TwitchPlugin
+// TwitchService
 /++
- +  Twitch-specific plugin.
+ +  Twitch-specific service.
  +
  +  Twitch events are initially very basic with only skeletal functionality,
  +  until you enable capabilites that unlock their `IRCv3` tags, at which point
  +  events become a flood of information.
  +
- +  This plugin only postprocesses events and doesn't yet act on them in any
+ +  This service only postprocesses events and doesn't yet act on them in any
  +  way.
  +/
-final class TwitchPlugin : IRCPlugin
+final class TwitchService : IRCPlugin
 {
-    /// All Twitch plugin options gathered
+    /// All Twitch service options gathered
     @Settings TwitchSettings twitchSettings;
 
     mixin IRCPluginImpl;
