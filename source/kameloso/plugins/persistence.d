@@ -12,7 +12,7 @@ private:
  +  and/or `event.target` fields, so that things like account names that are
  +  only sent sometimes carry over.
  +/
-void postprocess(PersistencePlugin plugin, ref IRCEvent event)
+void postprocess(PersistenceService service, ref IRCEvent event)
 {
     import kameloso.common : meldInto;
     import std.range : only;
@@ -24,7 +24,7 @@ void postprocess(PersistencePlugin plugin, ref IRCEvent event)
     {
         if (!user.nickname.length) continue;
 
-        if (auto stored = user.nickname in plugin.state.users)
+        if (auto stored = user.nickname in service.state.users)
         {
             // Record WHOIS if we have new account information, except if it's
             // the bot's (which we doesn't care about)
@@ -42,7 +42,7 @@ void postprocess(PersistencePlugin plugin, ref IRCEvent event)
         else
         {
             // New entry
-            plugin.state.users[event.sender.nickname] = *user;
+            service.state.users[event.sender.nickname] = *user;
         }
     }
 }
@@ -54,9 +54,9 @@ void postprocess(PersistencePlugin plugin, ref IRCEvent event)
  +  disconnecting.
  +/
 @(IRCEvent.Type.QUIT)
-void onQuit(PersistencePlugin plugin, const IRCEvent event)
+void onQuit(PersistenceService service, const IRCEvent event)
 {
-    plugin.state.users.remove(event.sender.nickname);
+    service.state.users.remove(event.sender.nickname);
 }
 
 
@@ -68,9 +68,9 @@ void onQuit(PersistencePlugin plugin, const IRCEvent event)
  +  Removes the old entry.
  +/
 @(IRCEvent.Type.NICK)
-void onNick(PersistencePlugin plugin, const IRCEvent event)
+void onNick(PersistenceService service, const IRCEvent event)
 {
-    with (plugin.state)
+    with (service.state)
     {
         if (auto stored = event.sender.nickname in users)
         {
@@ -99,7 +99,7 @@ void onNick(PersistencePlugin plugin, const IRCEvent event)
  +  there's a use-case for it.
  +/
 @(IRCEvent.Type.PING)
-void onPing(PersistencePlugin plugin)
+void onPing(PersistenceService service)
 {
     import std.datetime.systime : Clock;
 
@@ -107,7 +107,7 @@ void onPing(PersistencePlugin plugin)
 
     enum hoursBetweenRehashes = 12;  // also see UserAwareness
 
-    with (plugin)
+    with (service)
     {
         /// Once every few hours, rehash the `users` array.
         if ((hoursBetweenRehashes > 0) && (hour == rehashCounter))
@@ -122,21 +122,21 @@ void onPing(PersistencePlugin plugin)
 public:
 
 
-// PersistencePlugin
+// PersistenceService
 /++
- +  The Persistence plugin melds new `IRCUser`s (from postprocessing new
+ +  The Persistence service melds new `IRCUser`s (from postprocessing new
  +  `IRCEvent`s) with old records of themselves,
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in
  +  an `IRCEvent` may be his/her nickname, even though the event before detailed
- +  everything, even including their account name. With this plugin we aim to
+ +  everything, even including their account name. With this service we aim to
  +  complete such `IRCUser` entries with the union of everything we know from
  +  previous events.
  +
  +  It only needs part of `UserAwareness` for minimal bookkeeping, not the full
  +  package, so we only copy/paste the relevant bits to stay slim.
  +/
-final class PersistencePlugin : IRCPlugin
+final class PersistenceService : IRCPlugin
 {
     mixin IRCPluginImpl;
 }
