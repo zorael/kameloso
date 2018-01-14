@@ -22,7 +22,7 @@ private:
 @(IRCEvent.Type.CTCP_PING)
 @(IRCEvent.Type.CTCP_TIME)
 @(IRCEvent.Type.CTCP_USERINFO)
-void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
+void onCTCPs(CTCPService service, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
     import std.concurrency : send;
@@ -32,7 +32,7 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 
     string line;
 
-    with (plugin.state)
+    with (service.state)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -189,7 +189,7 @@ void onCTCPs(CTCPPlugin plugin, const IRCEvent event)
 
         with (IRCControlCharacter)
         {
-            plugin.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
+            service.raw(("NOTICE %s :" ~ ctcp ~ line ~ ctcp).format(target));
         }
     }
 }
@@ -199,13 +199,13 @@ unittest
     // Ensure onCTCPs implement cases for all its annotated `IRCEvent.Type`s.
     import std.traits : getUDAs;
 
-    auto plugin = new CTCPPlugin(IRCPluginState.init);
+    auto service = new CTCPService(IRCPluginState.init);
 
     foreach (type; getUDAs!(onCTCPs, IRCEvent.Type))
     {
         IRCEvent event;
         event.type = type;
-        onCTCPs(plugin, event);
+        onCTCPs(service, event);
     }
 }
 
@@ -219,7 +219,7 @@ unittest
  +  such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
-void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
+void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 {
     import std.concurrency : send;
     import std.format : format;
@@ -266,7 +266,7 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 
     with (IRCControlCharacter)
     {
-        plugin.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
+        service.raw(("NOTICE %s :" ~ ctcp ~ "CLIENTINFO ACTION %s" ~ ctcp)
             .format(event.sender.nickname, allCTCPTypes));
     }
 }
@@ -275,9 +275,9 @@ void onCTCPClientinfo(CTCPPlugin plugin, const IRCEvent event)
 public:
 
 
-// CTCP
+// CTCPService
 /++
- +  The `CTCP` plugin (client-to-client protocol) answers to special queries
+ +  The `CTCP` service (client-to-client protocol) answers to special queries
  +  sometime made over the IRC protocol. These are generally of metadata about
  +  the client itself and its capbilities.
  +
@@ -285,7 +285,7 @@ public:
  +      https://modern.ircdocs.horse/ctcp.html
  +      http://www.irchelp.org/protocol/ctcpspec.html
  +/
-final class CTCPPlugin : IRCPlugin
+final class CTCPService : IRCPlugin
 {
     mixin IRCPluginImpl;
     mixin MessagingProxy;
