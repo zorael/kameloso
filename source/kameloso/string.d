@@ -192,6 +192,12 @@ unittest
         assert((lorem == "Lorem"w), lorem.to!string);
         assert((wline == "ipsum :sit amet"w), wline.to!string);
     }
+
+    {
+        string user = "foo!bar@asdf.adsf.com";
+        user = user.nom('!');
+        assert((user == "foo"), user);
+    }
 }
 
 
