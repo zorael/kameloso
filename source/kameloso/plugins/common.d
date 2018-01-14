@@ -1751,7 +1751,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
         auto user = event.target.nickname in plugin.state.users;
         if (!user) return;  // probably the bot
-        (*user).lastWhois = Clock.currTime.toUnixTime;
+        user.lastWhois = Clock.currTime.toUnixTime;
     }
 
 
@@ -1802,7 +1802,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         {
             if (auto user = event.target.nickname in users)
             {
-                (*user).account = event.target.account;
+                user.account = event.target.account;
             }
             else
             {
@@ -1817,7 +1817,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 import std.datetime.systime : Clock;
 
                 const now = Clock.currTime.toUnixTime;
-                const then = (*request).when;
+                const then = request.when;
 
                 if ((now - then) > Timeout.whois)
                 {
@@ -2667,7 +2667,7 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     const user = nickname in plugin.state.users;
     const now = Clock.currTime.toUnixTime;
 
-    if (user && ((now - (*user).lastWhois) < Timeout.whois))
+    if (user && ((now - user.lastWhois) < Timeout.whois))
     {
         return;
     }

@@ -51,7 +51,7 @@ string getQuote(ChatbotPlugin plugin, const string nickname)
     {
         import std.random : uniform;
 
-        return arr.array[uniform(0, (*arr).array.length)].str;
+        return arr.array[uniform(0, arr.array.length)].str;
     }
     else
     {

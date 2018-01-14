@@ -77,7 +77,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
         < Timeout.titleCache))
     {
         logger.log("Found Reddit lookup in cache");
-        plugin.state.mainThread.reportReddit((*cachedLookup).url, event);
+        plugin.state.mainThread.reportReddit(cachedLookup.url, event);
         return;
     }
 

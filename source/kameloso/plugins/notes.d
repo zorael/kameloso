@@ -377,7 +377,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 
     auto nicknote = nickname in plugin.notes;
 
-    if (nicknote && ((*nicknote).type == JSON_TYPE.ARRAY))
+    if (nicknote && (nicknote.type == JSON_TYPE.ARRAY))
     {
         plugin.notes[nickname].array ~= asJSON;
     }
