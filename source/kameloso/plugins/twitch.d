@@ -343,6 +343,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-recipient-id":
             // sub gifts
 
+        case "target-msg-id":
+            // banphrase
+
             // Ignore these events
             break;
 
