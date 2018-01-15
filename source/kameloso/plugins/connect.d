@@ -1,3 +1,13 @@
+/++
+ +  The Connect service handles logging onto IRC servers after having connected,
+ +  as well as managing authentication to services.
+ +
+ +  It has no commands; everything in it is reactionary, with no special
+ +  awareness mixed in.
+ +
+ +  It is fairly mandatory as *something* needs to register us on the server and
+ +  log in. Without it, you will simply time out.
+ +/
 module kameloso.plugins.connect;
 
 import kameloso.plugins.common;

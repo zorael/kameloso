@@ -1,3 +1,13 @@
+/++
+ +  The CTCP service handles responding to CTCP (client-to-client protocol)
+ +  requests behind the scenes.
+ +
+ +  It has no commands and is not aware in the normal sense; it only blindly
+ +  responds to requests.
+ +
+ +  It is optional though some servers may not like it if you do not respond to
+ +  some of the queries. You may be kicked.
+ +/
 module kameloso.plugins.ctcp;
 
 import kameloso.plugins.common;

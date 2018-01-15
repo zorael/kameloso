@@ -1,3 +1,18 @@
+/++
+ +  The Persistence service keeps track of all seen users, gathering as much
+ +  information about them as possible, then injects them into `IRCEvent`s where
+ +  such information was not present.
+ +
+ +  This means that even if a service only refers to a user by nickname, things
+ +  like his ident and address will be available to plugins as well, assuming
+ +  the Persistence service had seen that previously.
+ +
+ +  It has no commands. It only does postprocessing and doesn't handle
+ +  `IRCEvents` in the normal sense at all.
+ +
+ +  It is technically optional but it's very enriching for plugins, so it stays
+ +  recommended.
+ +/
 module kameloso.plugins.persistence;
 
 import kameloso.plugins.common;

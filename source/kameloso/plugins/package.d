@@ -1,3 +1,8 @@
+/++
+ +  The `package` file contains the list of `EnabledPlugins`, to which you
+ +  append your plugin to have it be instantiated and included in the bot's
+ +  normal routines.
+ +/
 module kameloso.plugins;
 
 import std.meta : AliasSeq;

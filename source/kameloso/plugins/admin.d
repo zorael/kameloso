@@ -1,3 +1,35 @@
+/++
+ +  The Admin plugin features bot commands which help with debugging the current
+ +  state of the running bot, like printing the current list of users, the
+ +  current channels, the raw incoming strings from the server, and some other
+ +  things along the same line.
+ +
+ +  It also offers some less debugg-y more administrative functions, like adding
+ +  and removing homes on-the-fly, whitelisting or un-whitelisting account
+ +  names, joining or leavin channels, as well as plain quitting.
+ +
+ +  It has a few commands:
+ +      `addhome`
+ +      `delhome`
+ +      `join`
+ +      `part`
+ +      `channels`
+ +      `users`
+ +      `user`
+ +      `printall`
+ +      `printbytes`
+ +      `resetterm`
+ +      `sudo`
+ +      `asserts`
+ +      `forgetaccounts`
+ +      `whitelist`
+ +      `unwhitelist`
+ +      `writeconfig` | `save`
+ +      `quit`
+ +
+ +  It is optional if you don't intend to be controlling the bot from another
+ +  client.
+ +/
 module kameloso.plugins.admin;
 
 import kameloso.common : logger;

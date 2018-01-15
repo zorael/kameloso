@@ -1,3 +1,13 @@
+/++
+ +  The Bash Quotes plugin fetches quotes from `www.bash.org` and displays them
+ +  in a channel (or to a private query). It can fetch a random one or one
+ +  by quote ID.
+ +
+ +  It has one command:
+'+      `bash`
+ +
+ +  It requires version `Web`.
+ +/
 module kameloso.plugins.bashquotes;
 
 version(Web):

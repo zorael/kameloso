@@ -1,3 +1,14 @@
+/++
+ +  The Reddit plugin allows you to query Reddit with a web URL, and if that
+ +  URL has been posted there it will print the post link to the channel.
+ +
+ +  It has one command:
+ +      `reddit`
+ +
+ +  It requires version `Web` as HTTP requests will have to be made.
+ +
+ +  It is very optional.
+ +/
 module kameloso.plugins.reddit;
 
 version(Web):

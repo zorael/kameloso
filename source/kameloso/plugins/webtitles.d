@@ -1,3 +1,14 @@
+/++
+ +  The Webtiltes plugin catches URLs pasted in a channel, follows them and
+ +  reports beck the title of the web page that was linked to.
+ +
+ +  It has no bot commands; eveything is done by automatically scanning channel
+ +  and pivate query messages fo things that look like links.
+ +
+ +  It reqiures version `Web` for obvious reasons.
+ +
+ +  It is also optinal.
+ +/
 module kameloso.plugins.webtitles;
 
 version(Web):

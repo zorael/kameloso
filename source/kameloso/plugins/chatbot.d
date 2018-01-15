@@ -1,3 +1,22 @@
+/++
+ +  The Chatbot plugin is a collection of small, harmless functions like 8ball
+ +  and repeating text, along with the ability to save user quotes.
+ +
+ +  A user quote can be added by triggering the "`addquote`" bot command, by use
+ +  of "`botname: addquote`" or "`!addquote`". A random one can then be replayed
+ +  by use o the "`quote [nickname]`" command.
+ +
+ +  It has a few commands:
+ +      `8ball`
+ +      `quote`
+ +      `addquote`
+ +      `help` | `hello`
+ +      `say` | `säg`
+ +      `reloadquotes`
+ +      `printquotes`
+ +
+ +  It is very optional.
+ +/
 module kameloso.plugins.chatbot;
 
 import kameloso.plugins.common;

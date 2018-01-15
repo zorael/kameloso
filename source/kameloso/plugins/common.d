@@ -1,3 +1,10 @@
+/++
+ +  The `common` file is not a plugin by itself but contains code common to all
+ +  plugins, without which they will not function.
+ +
+ +  It is mandatory if you plan to use any form of plugin. Indeed, the very
+ +  definition of an `IRCPlugin` is in here.
+ +/
 module kameloso.plugins.common;
 
 import kameloso.ircdefs;

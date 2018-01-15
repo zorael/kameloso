@@ -1,3 +1,15 @@
+/++
+ +  The Pipeline plugin opens a Posix named pipe in the current directory, to
+ +  which you can pipe text and have it be sent verbatim to the server.
+ +
+ +  It has no commands; indeed, it doesn't listen to `IRCEvent`s at all, only to
+ +  what is sent to it via the named fifo pipe.
+ +
+ +  This requires version `Posix`, which is true for UNIX-like systems (like
+ +  Linux and OSX).
+ +
+ +  It is very optional.
+ +/
 module kameloso.plugins.pipeline;
 
 version(Posix):

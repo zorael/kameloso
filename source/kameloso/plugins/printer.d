@@ -1,3 +1,15 @@
+/++
+ +  The Printer plugin takes incoming `IRCEvent`s, formats them into being
+ +  easily readable and prints them to the screen, optionally with colours.
+ +
+ +  It has no commands; all `IRCEvents` will be parsed and pinted, excluding
+ +  certain types that were deemed too spammy. Print them as well by disabling
+ +  `PrinteSettings.filterVerbose`.
+ +
+ +  It is not technically neccessary, but it is the main form of feedback you
+ +  get from the plugin, so you will only want to disable it if you want a
+ +  really "headless" environment.
+ +/
 module kameloso.plugins.printer;
 
 import kameloso.plugins.common;

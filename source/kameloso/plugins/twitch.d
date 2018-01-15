@@ -1,3 +1,17 @@
+/++
+ +  The Twitch service postprocesses `IRCEvent`s after they are parsed but
+ +  before they are sent to the plugins for handling, and deals with Twitch-
+ +  specifics. Those include extracting the colour someone's name should be
+ +  printed in, their alias/"display namee" (generally their nickname
+ +  capitalised), converting the event to some event types unique to Twitch,
+ +  etc.
+ +
+ +  It has no bot commands and no event handlers; it only postpocesses events.
+ +
+ +  It is useless on other servers but crucial on Twitch itself. Even enabled
+ +  it won't slow the bot down though, as the vey fist thing it does is to
+ +  verify that it is on a Twitch server, abort if not.
+ +/
 module kameloso.plugins.twitch;
 
 import kameloso.plugins.common;
