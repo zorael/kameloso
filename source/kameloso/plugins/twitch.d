@@ -37,9 +37,7 @@ struct TwitchSettings
  +/
 void postprocess(TwitchService service, ref IRCEvent event)
 {
-    import std.algorithm.searching : endsWith;
-
-    if (!service.state.bot.server.address.endsWith(".twitch.tv")) return;
+    if (!service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
     service.parseTwitchTags(event);
 
