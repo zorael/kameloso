@@ -32,12 +32,12 @@ version(Web)
 
 /// Add plugins to this list to enable them
 public alias EnabledPlugins = AliasSeq!(
+    TwitchService,
     PersistenceService,
     PrinterPlugin,
     ConnectService,
     ChanQueriesService,
     CTCPService,
-    TwitchService,
     AdminPlugin,
     ChatbotPlugin,
     NotesPlugin,
