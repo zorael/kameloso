@@ -24,7 +24,6 @@ import kameloso.ircdefs;
 import kameloso.common : logger;
 import kameloso.messaging;
 
-import std.concurrency : send;
 import std.json : JSONValue;
 
 private:
@@ -427,6 +426,7 @@ void onEndOfMotd(ChatbotPlugin plugin)
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
+    import std.concurrency : send;
 
     plugin.helpEvent = event;
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),

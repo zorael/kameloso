@@ -18,7 +18,6 @@ import kameloso.ircdefs;
 import kameloso.common;
 import kameloso.messaging;
 
-import std.concurrency : send;
 import std.json : JSONValue;
 
 private:
