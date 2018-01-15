@@ -9,6 +9,12 @@
     "sourcePaths": [ "source", "tests" ],
     "importPaths": [ "source", "tests" ],
     "libs-posix-dmd": [ "phobos2" ],
+    "-ddoxFilterArgs":
+    [
+        "--unittest-examples",
+        "--min-protection=Protected"
+    ],
+    "-ddoxTool" : "scod",
     "configurations":
     [
         {
