@@ -166,7 +166,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .toString();
 
     string typestring = plugin.printerSettings.typesInCaps ?
-        enumToString(type) : enumToString(type).toLower;
+        enumToString(event.type) : enumToString(event.type).toLower;
 
     with (BashForeground)
     with (plugin.state)
