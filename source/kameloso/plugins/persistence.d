@@ -42,7 +42,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         else
         {
             // New entry
-            service.state.users[event.sender.nickname] = *user;
+            service.state.users[user.nickname] = *user;
         }
     }
 }
