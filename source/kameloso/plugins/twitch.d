@@ -196,6 +196,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
             case "sub":
                 event.type = Type.SUB;
+                event.num = 1;  // "one-month resub"
                 break;
 
             case "resub":
