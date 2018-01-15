@@ -124,6 +124,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "gen",           &shouldGenerateAsserts,
             "bright",        "Bright terminal colour setting (BETA)",
                              &settings.brightTerminal,
+            "monochrome",    "Use monochrome output", &settings.monochrome,
             "set",           "Manually change a setting (--set plugin.option=setting)",
                              &customSettings,
         );
