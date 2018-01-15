@@ -165,6 +165,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .timeOfDay
         .toString();
 
+    string typestring = plugin.printerSettings.typesInCaps ?
+        enumToString(type) : enumToString(type).toLower;
+
     with (BashForeground)
     with (plugin.state)
     with (event)
@@ -175,9 +178,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         put(sink, '[', timestamp, "] ");
 
-        string typestring = plugin.printerSettings.typesInCaps ?
-            enumToString(type) : enumToString(type).toLower;
-
         if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_") ||
             typestring.beginsWith("ERR_") || typestring.beginsWith("err_"))
         {
@@ -186,47 +186,65 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         put(sink, '[', typestring, "] ");
 
-        bool aliasPrinted;
-
         if (sender.isServer)
         {
             sink.put(address);
         }
         else
         {
-            if (alias_.length && alias_.asLowerCase.equal(nickname))
+            if (alias_.length)
             {
                 sink.put(alias_);
-                aliasPrinted = true;
+
+                if (special && nickname.length) sink.put('*');
+
+                if (!alias_.asLowerCase.equal(nickname))
+                {
+                    put(sink, " <", nickname, '>');
+                }
             }
             else
             {
                 sink.put(nickname);
+
+                if (special && nickname.length) sink.put('*');
             }
 
-            if (special && nickname.length)
+            if (badge.length)
             {
-                sink.put('*');
+                import std.string : toUpper;
+
+                immutable badgestring = plugin.printerSettings.badgesInCaps ?
+                    badge.toUpper : badge;
+
+                put(sink, " [", badgestring, ']');
             }
         }
 
-        if (badge.length)
+        if (target.nickname.length)
         {
-            import std.string : toUpper;
+            sink.put(" (");
 
-            immutable badgestring = plugin.printerSettings.badgesInCaps ?
-                badge.toUpper : badge;
+            if (target.alias_.length)
+            {
+                put(sink, target.alias_, ')');
 
-            put(sink, " [", badgestring, ']');
+                if (special) sink.put('*');
+
+                if (!target.alias_.asLowerCase.equal(target.nickname))
+                {
+                    put(sink, " <", target.nickname, '>');
+                }
+            }
+            else
+            {
+                put(sink, target.nickname, ')');
+
+                if (special) sink.put('*');
+            }
         }
 
-        if (!sender.isServer && alias_.length && !aliasPrinted)
-        {
-            put(sink, " (", alias_, ')');
-        }
-
-        if (target.nickname.length) put(sink, " (", target.nickname, ')');
-        if (channel.length)         put(sink, " [", channel, ']');
+        if (channel.length) put(sink, " [", channel, ']');
 
         if (content.length)
         {
@@ -360,16 +378,16 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
              +  messages. By catching it we can honour the setting by tinting
              +  users accordingly.
              +/
-            void colourSenderTruecolour(Sink)(auto ref Sink sink)
+            void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
             {
-                if (!sender.isServer && event.sender.colour.length &&
+                if (!user.isServer && user.colour.length &&
                     plugin.printerSettings.truecolour)
                 {
                     import kameloso.bash : truecolour;
                     import kameloso.string : numFromHex;
 
                     int r, g, b;
-                    event.sender.colour.numFromHex(r, g, b);
+                    user.colour.numFromHex(r, g, b);
 
                     if (plugin.printerSettings.normaliseTruecolour)
                     {
@@ -384,7 +402,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 }
                 else
                 {
-                    sink.colour(colourByHash(sender.isServer ? address : nickname));
+                    sink.colour(colourByHash(user.isServer ?
+                        user.address : user.nickname));
                 }
             }
 
@@ -404,9 +423,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
-            string typestring = plugin.printerSettings.typesInCaps ?
-                enumToString(type) : enumToString(type).toLower;
-
             if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_"))
             {
                 typestring = typestring[4..$];
@@ -424,9 +440,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             put(sink, '[', typestring, "] ");
 
-            bool aliasPrinted;
-
-            colourSenderTruecolour(sink);
+            colourUserTruecolour(sink, event.sender);
 
             if (sender.isServer)
             {
@@ -434,44 +448,103 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             }
             else
             {
-                if (alias_.length && alias_.asLowerCase.equal(nickname))
+                if (alias_.length)
                 {
                     sink.put(alias_);
-                    aliasPrinted = true;
+
+                    if (special)
+                    {
+                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                        sink.put('*');
+                    }
+
+                    if (!alias_.asLowerCase.equal(nickname))
+                    {
+                        sink.colour(default_);
+                        sink.put(" <");
+                        colourUserTruecolour(sink, event.sender);
+                        sink.put(nickname);
+                        sink.colour(default_);
+                        sink.put('>');
+                    }
                 }
                 else
                 {
                     sink.put(nickname);
+
+                    if (special && nickname.length)  // !isServer != nickname.length
+                    {
+                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                        sink.put('*');
+                    }
                 }
 
-                if (special && nickname.length)
+                if (badge.length)
                 {
-                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
-                    sink.put('*');
+                    import std.string : toUpper;
+
+                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+
+                    immutable badgestring = plugin.printerSettings.badgesInCaps ?
+                        badge.toUpper : badge;
+
+                    put(sink, " [", badgestring, ']');
                 }
-            }
-
-            if (badge.length)
-            {
-                import std.string : toUpper;
-
-                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-
-                immutable badgestring = plugin.printerSettings.badgesInCaps ?
-                    badge.toUpper : badge;
-
-                put(sink, " [", badgestring, ']');
-            }
-
-            if (!sender.isServer && alias_.length && !aliasPrinted)
-            {
-                put(sink, " (", alias_, ')');
             }
 
             if (target.nickname.length)
             {
-                sink.colour(colourByHash(target.nickname));
-                put(sink, " (", target.nickname, ')');
+                // No need to check isServer; target is never server
+
+                sink.colour(default_);
+                sink.put(" (");
+                colourUserTruecolour(sink, event.target);
+
+                if (target.alias_.length)
+                {
+                    //put(sink, target.alias_, ')');
+                    sink.put(target.alias_);
+                    sink.colour(default_);
+                    sink.put(')');
+
+                    if (target.special)
+                    {
+                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                        sink.put('*');
+                    }
+
+                    if (!target.alias_.asLowerCase.equal(target.nickname))
+                    {
+                        //sink.colour(default_);
+                        sink.put(" <");
+                        colourUserTruecolour(sink, event.target);
+                        sink.put(target.nickname);
+                        sink.colour(default_);
+                        sink.put('>');
+                    }
+                }
+                else
+                {
+                    put(sink, target.nickname, ')');
+
+                    if (target.special)
+                    {
+                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                        sink.put('*');
+                    }
+                }
+
+                if (target.badge.length)
+                {
+                    import std.string : toUpper;
+
+                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+
+                    immutable badgestring = plugin.printerSettings.badgesInCaps ?
+                        target.badge.toUpper : target.badge;
+
+                    put(sink, " [", badgestring, ']');
+                }
             }
 
             if (channel.length)
