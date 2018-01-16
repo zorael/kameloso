@@ -138,13 +138,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.colour(codes);
     return sink.data;
 }
-else
-/// Dummy colour for when version != Colours
-string colour(Codes...)(Codes codes) pure nothrow @nogc
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    return string.init;
-}
 
 
 // colour
@@ -215,14 +208,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.put(text);
     sink.colour(BashReset.all);
     return sink.data;
-}
-else
-deprecated("Don't use colour when version isn't Colours")
-string colour(Codes...)(const string text, const Codes codes) pure nothrow @nogc
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    // noop
-    return text;
 }
 
 
@@ -497,13 +482,6 @@ if (isOutputRange!(Sink,string))
     sink.formattedWrite("%c[38;2;%d;%d;%dm",
         cast(char)TerminalToken.bashFormat, r, g, b);
 }
-else
-deprecated("Don't use truecolour when version isn't Colours")
-void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b) pure nothrow @nogc
-{
-    // noop
-}
 
 
 // truecolour
@@ -534,13 +512,6 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
     sink.put(word);
     sink.colour(BashReset.all);
     return sink.data;
-}
-else
-deprecated("Don't use truecolour when version isn't Colours")
-string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, uint r, uint g, uint b) pure nothrow @nogc
-{
-    return word;
 }
 
 ///

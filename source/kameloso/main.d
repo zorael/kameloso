@@ -467,7 +467,6 @@ Flag!"quit" mainLoop(ref Client client)
 
                     if (!detectedNetwork.length && bot.server.network != detectedNetwork)
                     {
-                        import kameloso.bash : BashForeground, colour;
                         import std.string : capitalize;
                         import std.uni : isLower;
 
@@ -481,6 +480,8 @@ Flag!"quit" mainLoop(ref Client client)
                         {
                             if (!settings.monochrome)
                             {
+                                import kameloso.bash : BashForeground, colour;
+
                                 immutable tint = settings.brightTerminal ?
                                     BashForeground.black : BashForeground.white;
                                 networkName = networkName.colour(tint);

@@ -284,11 +284,15 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things)
 {
-    import kameloso.bash : colour;
     import kameloso.string : stripSuffix;
     import kameloso.traits : isConfigurableVariable, longestMemberName, UnqualArray;
     import std.format : formattedWrite;
     import std.traits : hasUDA;
+
+    static if (coloured)
+    {
+        import kameloso.bash : colour;
+    }
 
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
@@ -466,38 +470,41 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
         double double_ = 99.9;
     }
 
-    StructName2 s2;
+    version(Colours)
+    {
+        StructName2 s2;
 
-    sink.clear();
-    sink.reserve(256);  // ~239
-    sink.formatObjectsImpl!(Yes.coloured)(s2);
+        sink.clear();
+        sink.reserve(256);  // ~239
+        sink.formatObjectsImpl!(Yes.coloured)(s2);
 
-    assert((sink.data.length > 12), "Empty sink after coloured fill");
+        assert((sink.data.length > 12), "Empty sink after coloured fill");
 
-    assert(sink.data.has("-- StructName"));
-    assert(sink.data.has("int_"));
-    assert(sink.data.has("12345"));
+        assert(sink.data.has("-- StructName"));
+        assert(sink.data.has("int_"));
+        assert(sink.data.has("12345"));
 
-    assert(sink.data.has("string_"));
-    assert(sink.data.has(`"foo"`));
+        assert(sink.data.has("string_"));
+        assert(sink.data.has(`"foo"`));
 
-    assert(sink.data.has("bool_"));
-    assert(sink.data.has("true"));
+        assert(sink.data.has("bool_"));
+        assert(sink.data.has("true"));
 
-    assert(sink.data.has("float_"));
-    assert(sink.data.has("3.14"));
+        assert(sink.data.has("float_"));
+        assert(sink.data.has("3.14"));
 
-    assert(sink.data.has("double_"));
-    assert(sink.data.has("99.9"));
+        assert(sink.data.has("double_"));
+        assert(sink.data.has("99.9"));
 
-    // Adding Settings does nothing
-    alias StructName2Settings = StructName2;
-    immutable sinkCopy = sink.data.idup;
-    StructName2Settings s2o;
+        // Adding Settings does nothing
+        alias StructName2Settings = StructName2;
+        immutable sinkCopy = sink.data.idup;
+        StructName2Settings s2o;
 
-    sink.clear();
-    sink.formatObjectsImpl!(Yes.coloured)(s2o);
-    assert((sink.data == sinkCopy), sink.data);
+        sink.clear();
+        sink.formatObjectsImpl!(Yes.coloured)(s2o);
+        assert((sink.data == sinkCopy), sink.data);
+    }
 }
 
 
@@ -1277,25 +1284,38 @@ struct Client
  +  Prints out the bot banner with the version number and github URL, with the
  +  passed colouring.
  +
- +  Params:
- +      colourCode = the Bash foreground colour to display the text in.
- +
+ +  Example:
  +  ------------
  +  printVersionInfo(BashForeground.white);
  +  ------------
+ +
+ +  Params:
+ +      colourCode = Bash foreground colour to display the text in.
  +/
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
-    import kameloso.bash : colour;
     import kameloso.constants : KamelosoInfo;
     import std.stdio : writefln, stdout;
 
-    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-        colourCode.colour,
-        cast(string)KamelosoInfo.version_,
-        cast(string)KamelosoInfo.built,
-        cast(string)KamelosoInfo.source,
-        BashForeground.default_.colour);
+    version(Colours)
+    {
+        import kameloso.bash : colour;
+
+        writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
+            colourCode.colour,
+            cast(string)KamelosoInfo.version_,
+            cast(string)KamelosoInfo.built,
+            cast(string)KamelosoInfo.source,
+            BashForeground.default_.colour);
+    }
+    else
+    {
+        writefln("kameloso IRC bot v%s, built %s\n$ git clone %s.git",
+            cast(string)KamelosoInfo.version_,
+            cast(string)KamelosoInfo.built,
+            cast(string)KamelosoInfo.source);
+    }
+
 
     version(Cygwin_) stdout.flush();
 }

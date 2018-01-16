@@ -1746,7 +1746,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +/
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.bash : BashForeground, colour;
     import std.string : toLower;
 
     /*

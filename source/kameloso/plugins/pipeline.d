@@ -146,7 +146,6 @@ void pipereader(shared IRCPluginState newState)
  +/
 File createFIFO(const IRCPluginState state)
 {
-    import kameloso.bash : BashForeground, BashReset, colour;
     import std.array : Appender;
     import std.file : FileException, exists, isDir;
     import std.format : format;
@@ -175,6 +174,7 @@ File createFIFO(const IRCPluginState state)
     {
         if (!state.settings.monochrome)
         {
+            import kameloso.bash : BashForeground, BashReset, colour;
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 

@@ -16,7 +16,7 @@ final class KamelosoLogger : Logger
 {
     @safe:
 
-    import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
+    import kameloso.bash : BashForeground, BashFormat, BashReset;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
@@ -121,6 +121,7 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
+                import kameloso.bash : colour;
                 // Reset.blink in case a fatal message was thrown
                 sink.colour(BashForeground.default_, BashReset.blink);
             }

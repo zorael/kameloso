@@ -71,7 +71,7 @@ public:
  +/
 Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.bash : BashForeground, colour;
+    import kameloso.bash : BashForeground;
     import kameloso.common : initLogger, printObjects, printVersionInfo;
     import std.format : format;
     import std.getopt;
@@ -161,6 +161,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             version (Colours)
             {
+                import kameloso.bash : colour;
+
                 if (!settings.monochrome)
                 {
                     immutable headlineTint = settings.brightTerminal ?
