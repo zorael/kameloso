@@ -41,17 +41,36 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         if (auto stored = user.nickname in service.state.users)
         {
-            // Record WHOIS if we have new account information, except if it's
-            // the bot's (which we doesn't care about)
-            if ((user.account.length && !stored.account.length) ||
-                (event.type == IRCEvent.Type.RPL_WHOISACCOUNT))
+            with (user)
+            with (IRCEvent.Type)
+            switch (event.type)
             {
+            case JOIN:
+                if (account.length) goto case ACCOUNT;
+                break;
+
+            case RPL_WHOISACCOUNT:
+            case ACCOUNT:
+                // Record WHOIS if we have new account information
                 import std.datetime.systime : Clock;
-                user.lastWhois = Clock.currTime.toUnixTime;
+                lastWhois = Clock.currTime.toUnixTime;
+                break;
+
+            default:
+                if (account.length && (account != "*") && !stored.account.length)
+                {
+                    goto case ACCOUNT;
+                }
+                break;
             }
 
             // Meld into the stored user, and store the union in the event
             (*user).meldInto!(Yes.overwrite)(*stored);
+
+            // An account of "*" means the user logged out of services
+            if (user.account == "*") stored.account = string.init;
+
+            // Inject the modified user into the event
             *user = *stored;
         }
         else
