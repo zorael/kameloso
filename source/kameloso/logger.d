@@ -23,6 +23,11 @@ final class KamelosoLogger : Logger
     import std.format : formattedWrite;
     import std.stdio : stdout;
 
+    version(Colours)
+    {
+        import kameloso.bash : colour;
+    }
+
     /// Logger colours to use with a dark terminal
     static immutable BashForeground[193] logcoloursDark  =
     [
@@ -121,7 +126,6 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                import kameloso.bash : colour;
                 // Reset.blink in case a fatal message was thrown
                 sink.colour(BashForeground.default_, BashReset.blink);
             }
