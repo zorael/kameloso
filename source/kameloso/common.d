@@ -1199,10 +1199,6 @@ struct Client
         foreach (plugin; plugins)
         {
             plugin.loadConfig(state.settings.configFile);
-        }
-
-        foreach (plugin; plugins)
-        {
             plugin.rehashCounter = now.hour + 1;  // rehash next hour
         }
 
