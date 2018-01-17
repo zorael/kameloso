@@ -12,7 +12,7 @@
     "-ddoxFilterArgs":
     [
         "--unittest-examples",
-        "--min-protection=Protected"
+        "--ex", "arsd."
     ],
     "-ddoxTool" : "scod",
     "configurations":
