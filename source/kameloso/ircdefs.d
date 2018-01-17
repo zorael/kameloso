@@ -1153,10 +1153,6 @@ struct IRCUser
         return (!nickname.length && address.has('.'));
     }
 
-    bool matchesByMask(const string userstring) pure const
-    {
-        return matchesByMask(IRCUser(userstring));
-    }
 
     bool matchesByMask(IRCUser other) pure nothrow @nogc const
     {
@@ -1175,6 +1171,12 @@ struct IRCUser
         if (!matchAddress) return false;
 
         return true;
+    }
+
+    /// Ditto
+    bool matchesByMask(const string userstring) pure const
+    {
+        return matchesByMask(IRCUser(userstring));
     }
 }
 
