@@ -721,9 +721,8 @@ string justifiedConfigurationText(const string origLines)
     assert(longestEntryLength);
     assert(unjustified.data.length);
 
-    // subtract 1 from the width to allow for the pattern to have a space in it
     immutable width = max(12, longestEntryLength
-        .getMultipleOf!(Yes.alwaysOneUp)(4)) - 1;
+        .getMultipleOf!(Yes.alwaysOneUp)(4));
 
     foreach (line; unjustified.data)
     {
@@ -748,7 +747,7 @@ string justifiedConfigurationText(const string origLines)
 
             auto hits = line.matchFirst(entryValueEngine);
 
-            justified.formattedWrite("%-*s %s\n", width, hits["entry"],
+            justified.formattedWrite("%-*s%s\n", width, hits["entry"],
                 hits["value"]);
             break;
         }
