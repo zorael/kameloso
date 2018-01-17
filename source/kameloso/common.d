@@ -1419,14 +1419,13 @@ uint deepSizeof(T)(const T thing) pure @nogc @safe @property
  +/
 struct Labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
 {
+public:
     import std.typecons : Proxy;
 
-private:
-    /// The wrapped item
+    /// The wrapped item.
     Thing thing;
 
-public:
-    /// The label applied to the wrapped item
+    /// The label applied to the wrapped item.
     Label id;
 
     this(Thing thing, Label id) pure nothrow @nogc @safe
