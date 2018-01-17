@@ -113,19 +113,24 @@ unittest
 }
 
 
-// formatBot
+// formatBotAssignment
 /++
  +  Constructs statement lines for each changed field of an `IRCBot`, including
  +  instantiating a fresh one.
  +
+ +  Example:
  +  ------------
  +  IRCCBot bot;
  +  Appender!string sink;
  +
- +  sink.formatBot(bot);
+ +  sink.formatBotAssignment(bot);
  +  ------------
+ +
+ +  Params:
+ +      sink = Output buffer to write to.
+ +      bot = `IRCBot` to simulate the assignment of.
  +/
-void formatBot(Sink)(auto ref Sink sink, const IRCBot bot)
+void formatBotAssignment(Sink)(auto ref Sink sink, const IRCBot bot)
 {
     sink.put("IRCParser parser;\n");
     sink.put("with (parser.bot)\n");
@@ -186,7 +191,7 @@ unittest
         user = "UUUUUSER";
     }
 
-    sink.formatBot(bot);
+    sink.formatBotAssignment(bot);
 
     assert(sink.data ==
 `IRCParser parser;

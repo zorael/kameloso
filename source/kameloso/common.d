@@ -1293,25 +1293,22 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
     import kameloso.constants : KamelosoInfo;
     import std.stdio : writefln, stdout;
 
+    string pre;
+    string post;
+
     version(Colours)
     {
         import kameloso.bash : colour;
-
-        writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-            colourCode.colour,
-            cast(string)KamelosoInfo.version_,
-            cast(string)KamelosoInfo.built,
-            cast(string)KamelosoInfo.source,
-            BashForeground.default_.colour);
-    }
-    else
-    {
-        writefln("kameloso IRC bot v%s, built %s\n$ git clone %s.git",
-            cast(string)KamelosoInfo.version_,
-            cast(string)KamelosoInfo.built,
-            cast(string)KamelosoInfo.source);
+        pre = colourCode.colour;
+        post = BashForeground.default_.colour;
     }
 
+    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
+        pre,
+        cast(string)KamelosoInfo.version_,
+        cast(string)KamelosoInfo.built,
+        cast(string)KamelosoInfo.source,
+        post);
 
     version(Cygwin_) stdout.flush();
 }

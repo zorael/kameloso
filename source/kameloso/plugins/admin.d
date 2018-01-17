@@ -500,11 +500,11 @@ void onCommandPrintBytes(AdminPlugin plugin)
 @Description("[debug] Toggles a flag to generate assert statements for incoming events")
 void onCommandAsserts(AdminPlugin plugin)
 {
-    import kameloso.debugging : formatBot;
+    import kameloso.debugging : formatBotAssignment;
 
     plugin.printAsserts = !plugin.printAsserts;
     logger.info("Printing asserts: ", plugin.printAsserts);
-    formatBot(stdout.lockingTextWriter, plugin.state.bot);
+    formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
     version(Cygwin_) stdout.flush();
 }
 
