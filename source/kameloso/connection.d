@@ -94,7 +94,9 @@ public:
         import core.thread : Thread;
         import std.socket : getAddress, SocketException;
 
-        foreach (immutable i; 0..20)
+        enum resolveAttempts = 20;
+
+        foreach (immutable i; 0..resolveAttempts)
         {
             if (abort) return false;
 
