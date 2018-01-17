@@ -1,3 +1,6 @@
+/++
+ +  Functions needed to parse raw IRC event strings into `IRCEvent`s.
+ +/
 module kameloso.irc;
 
 public import kameloso.ircdefs;
@@ -21,8 +24,8 @@ private:
  +  The `IRCEvent` is finished at the end of this function.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to start working on.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to start working on.
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 {
@@ -161,9 +164,9 @@ unittest
  +  The `IRCEvent` is not finished at the end of this function.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to start working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to start working on.
+ +      slice = Reference to the *slice* of the raw IRC string.
  +/
 void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -259,16 +262,16 @@ unittest
  +  Takes a slice of a raw IRC string and continues parsing it into an
  +  `IRCEvent` struct.
  +
- +  This function only focuses on the typestring; the part that tells what kind
- +  of event happened, like `PRIVMSG` or `MODE` or `NICK` or `KICK`, etc; in
- +  string format.
+ +  This function only focuses on the *typestring*; the part that tells what
+ +  kind of event happened, like `PRIVMSG` or `MODE` or `NICK` or `KICK`, etc;
+ +  in string format.
  +
  +  The `IRCEvent` is not finished at the end of this function.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -369,14 +372,14 @@ unittest
  +  into fields like `target`, `channel`, `content`, etc.
  +
  +  IRC events are *riddled* with inconsistencies, so this function is very very
- +  long but by neccessity.
+ +  long, but by neccessity.
  +
  +  The `IRCEvent` is finished at the end of this function.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1155,8 +1158,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +  have a proper library.
  +
  +  Params:
- +      const ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
@@ -1225,10 +1228,16 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
 // isSpecial
 /++
+ +  Judges whether the sender of an event is *special*.
+ +
+ +  Special senders include services and staff, administrators and the like. The
+ +  use of this is contested and the notion may be removed at a later date. For
+ +  now, the only thing it does is add an asterisk to the sender's nickname, in
+ +  the `Printer` output.
  +
  +  Params:
- +      const ref parser = A reference to the current `IRCParser`
- +      event =  The `IRCEvent` to continue working on.
+ +      parser = Reference to the current `IRCParser`.
+ +      event =  `IRCEvent` to examine.
  +/
 bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
@@ -1325,15 +1334,15 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 
 // onNotice
 /++
- +  Handle NOTICE events.
+ +  Handle `NOTICE` events.
  +
  +  These are all(?) sent by the server and/or services. As such they often
  +  convey important `special` things, so parse those.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1440,9 +1449,9 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +  the type to `CTCP_`-types if applicable.
  +
  +  Params:
- +      const ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1559,9 +1568,9 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +  This only changes the `type` of the event, no other actions are taken.
  +
  +  Params:
- +      const ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1603,12 +1612,12 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pu
  +
  +  `ISUPPORT` contains a bunch of interesting information that changes how we
  +  look at the `IRCServer`. Notably which *network* the server is of and its
- +  max channel and nick lenghts. Then much more that we're currently ignoring.
+ +  max channel and nick lengths. Then much more that we're currently ignoring.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1739,9 +1748,9 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +  We want that to be able to meld together a good `typenums` array.
  +
  +  Params:
- +      ref parser = A reference to the current `IRCParser`
- +      ref event = A reference to the `IRCEvent` to continue working on.
- +      ref slice = A reference to the slice of the raw IRC string.
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `IRCEvent` to continue working on.
+ +      slice = Reference to the slice of the raw IRC string.
  +/
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1868,11 +1877,11 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +  this is the function that calls them, in order.
  +
  +  Params:
- +      parser = A reference to the current `IRCParser`.
+ +      parser = Reference to the current `IRCParser`.
  +      raw = The raw IRC string to parse.
  +
  +  Returns:
- +      A finished IRCEvent.
+ +      A finished `IRCEvent`.
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
@@ -1885,6 +1894,7 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     event.time = Clock.currTime.toUnixTime;
 
     // We don't need to .idup here; it has already been done in the Generator
+    // when yielding
     event.raw = raw;
 
     if (raw[0] != ':')
@@ -1942,14 +1952,18 @@ public:
  +  `\s`. Likewise; since tags are separated by semicolons, semicolons in tag
  +  string are encoded into `\:`, and literal backslashes `\\`.
  +
- +  Params:
- +      line = original line to decode
- +
+ +  Example:
  +  ------------
- +  string encoded = "This\sline\sis\sencoded\:\swith\s\\s";
+ +  string encoded = `This\sline\sis\sencoded\:\swith\s\\s`;
  +  string decoded = decodeIRCv3String(encoded);
  +  assert(decoded == "This line is encoded; with \\s");
  +  ------------
+ +
+ +  Params:
+ +      line = Original line to decode.
+ +
+ +  Returns:
+ +      A decoded string without `\s` in it.
  +/
 string decodeIRCv3String(const string line)
 {
@@ -2003,6 +2017,7 @@ unittest
 /++
  +  Looks at an event and decides whether it is from nickname services.
  +
+ +  Example:
  +  ------------
  +  IRCEvent event;
  +  if (parser.isFromAuthService(event))
@@ -2010,6 +2025,14 @@ unittest
  +      // ...
  +  }
  +  ------------
+ +
+ +  Params:
+ +      parser = Reference to the current `IRCParser`.
+ +      event = `IRCEvent` to examine.
+ +
+ +  Returns:
+ +      `true` if the sender is judged to be from nicknam services, `false` if
+ +      not.
  +/
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
@@ -2152,6 +2175,7 @@ unittest
  +  It needs to be passed an `IRCServer` to know the max channel name length.
  +  An alternative would be to change the `IRCServer` parameter to be an uint.
  +
+ +  Example:
  +  ------------
  +  IRCServer server;
  +  assert("#channel".isValidChannel(server));
@@ -2159,6 +2183,13 @@ unittest
  +  assert(!"!channel".isValidChannel(server));
  +  assert(!"#ch#annel".isValidChannel(server));
  +  ------------
+ +
+ +  Params:
+ +      line = String of a potential channel name.
+ +      server = The current `IRCServer` with all its settings.
+ +
+ +  Returns:
+ +      `true` if the string content is judged to be a channel, `false` if not.
  +/
 bool isValidChannel(const string line, const IRCServer server = IRCServer.init) pure @nogc
 {
@@ -2222,6 +2253,7 @@ unittest
  +
  +  It only looks for invalid characters in the name as well as it length.
  +
+ +  Example:
  +  ------------
  +  assert("kameloso".isValidNickname);
  +  assert("kameloso^".isValidNickname);
@@ -2229,6 +2261,14 @@ unittest
  +  assert(!"#kameloso".isValidNickname);
  +  assert(!"k&&me##so".isValidNickname);
  +  ------------
+ +
+ +  Params:
+ +      nickname = String nickname.
+ +      server = The current `IRCServer` with all its settings.
+ +
+ +  Returns:
+ +      `true` if the nickname string is judged to be a nickname, `false` if
+ +      not.
  +/
 bool isValidNickname(const string nickname, const IRCServer server)
 {
@@ -2300,12 +2340,21 @@ unittest
  +
  +      [a-z] [A-Z] [0-9] _-\[]{}^`|
  +
+ +  Example:
  +  ------------
  +  assert('a'.isValidNicknameCharacter);
  +  assert('9'.isValidNicknameCharacter);
  +  assert('`'.isValidNicknameCharacter);
  +  assert(!(' '.isValidNicknameCharacter));
  +  ------------
+ +
+ +  Params:
+ +      c = Character to compare with the list of accepted characters in a
+ +          nickname.
+ +
+ +  Returns:
+ +      `true` if the character is in the list of valid characters for
+ +      nicknames, `false` if not.
  +/
 bool isValidNicknameCharacter(const char c)
 {
@@ -2356,12 +2405,7 @@ unittest
  +  Takes a nickname and strips it of any prepended mode signs, like the `@` in
  +  `@nickname`.
  +
- +  Params:
- +      nickname = The signed nickname.
- +
- +  Returns:
- +      The nickname with the sign sliced off.
- +
+ +  Example:
  +  ------------
  +  IRCServer server;
  +  string nickname = "@+kameloso";
@@ -2369,6 +2413,13 @@ unittest
  +  assert((nickname == "kameloso"), nickname);
  +  assert((signs == "@+"), signs);
  +  ------------
+ +
+ +  Params:
+ +      server = `IRCServer`, with all its settings.
+ +      nickname = String with a signed nickname.
+ +
+ +  Returns:
+ +      The nickname with the sign sliced off.
  +/
 string stripModesign(const IRCServer server, ref string nickname) pure nothrow @nogc
 {
@@ -2429,16 +2480,6 @@ unittest
 // IRCParser
 /++
  +  State needed to parse IRC events.
- +
- +  ------------
- +  struct IRCParser
- +  {
- +      IRCBot bot;
- +      Type[1024] typenums;
- +      IRCEvent toIRCEvent(const string);
- +      void setDaemon(const Daemon, const string)
- +  }
- +  ------------
  +/
 struct IRCParser
 {
@@ -2635,6 +2676,7 @@ struct IRCParser
  +  `data` argument, assuming they are in the proper order (where the
  +  `data`-taking modes are at the end of the string).
  +
+ +  Example:
  +  ------------
  +  IRCChannel channel;
  +  channel.setMode("+oo zorael!NaN@* kameloso!*@*")
@@ -2644,6 +2686,14 @@ struct IRCParser
  +  channel.setMode("-o *!*@*");
  +  assert(!channel.modes.length);
  +  ------------
+ +
+ +  Params:
+ +      channel = `IRCChannel` whose modes are being set.
+ +      signedModestring = String of the raw mode command, including the
+ +          prefixing sign (+ or -).
+ +      data = Appendix to the signed modestring; arguments to the modes that
+ +          are being set.
+ +      server = The current `IRCServer` with all its settings.
  +/
 void setMode(ref IRCChannel channel, const string signedModestring,
     const string data, IRCServer server) pure

@@ -1,3 +1,7 @@
+/++
+ +  Various debugging functions, used to generate assertion statements for use
+ +  in the source code `unittest` blocks.
+ +/
 module kameloso.debugging;
 
 import kameloso.common : Client;
@@ -12,6 +16,7 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
  +
  +  This should not be used directly, instead use `formatEventAssertBlock`.
  +
+ +  Example:
  +  ------------
  +  IRCEvent event;
  +  Appender!string sink;
@@ -20,9 +25,18 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
  +  IRCBot bot;
  +  sink.formatAssertStatementLines(bot, "bot", 1);  // indented once
  +  ------------
+ +
+ +  Params:
+ +      sink = Output buffer to write the assert statements into.
+ +      thing = Struct object to write the asserts for.
+ +      prefix = String to preface the `thing`'s members' names with, to make
+ +          them appear as fields of it; a prefix of "foo" for a member "name"
+ +          makes the assert statements assert over "foo.name".
+ +      indents = Order of indents to indent the text with. Used when
+ +          `formatAssertStatementLines` recurses on structs.
  +/
-void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink, Thing thing,
-    const string prefix = string.init, uint indents = 0)
+private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
+    Thing thing, const string prefix = string.init, uint indents = 0)
 {
     foreach (immutable i, value; thing.tupleof)
     {
@@ -207,13 +221,18 @@ with (parser.bot)
 /++
  +  Constructs assert statement blocks for each changed field of an `IRCEvent`.
  +
+ +  Example:
  +  ------------
  +  IRCEvent event;
  +  Appender!string sink;
  +  sink.formatEventAssertBlock(event);
  +  ------------
+ +
+ +  Params:
+ +      sink = Output buffer to write to.
+ +      event = `IRCEvent` to construct assert statements for.
  +/
-public void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
+void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
     import kameloso.string : tabs;
     import std.format : format, formattedWrite;
@@ -285,12 +304,16 @@ unittest
  +  Reads raw server strings from `stdin`, parses them to `IRCEvent`s and
  +  constructs assert blocks of their contents.
  +
- +  We can't use an Appender or dmd will hit a stack overflow, error -11.
+ +  We can't use an `Appender` or dmd will hit a stack overflow, error -11.
  +
+ +  Example:
  +  ------------
  +  Client client;
  +  client.generateAsserts();
  +  ------------
+ +
+ +  Params:
+ +      client = ref current Client, with all its settings.
  +/
 void generateAsserts(ref Client client) @system
 {

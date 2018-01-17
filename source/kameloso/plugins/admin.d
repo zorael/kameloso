@@ -4,7 +4,7 @@
  +  current channels, the raw incoming strings from the server, and some other
  +  things along the same line.
  +
- +  It also offers some less debugg-y more administrative functions, like adding
+ +  It also offers some less debug-y, more administrative functions, like adding
  +  and removing homes on-the-fly, whitelisting or un-whitelisting account
  +  names, joining or leavin channels, as well as plain quitting.
  +
@@ -49,9 +49,6 @@ private:
  +  Prints all incoming events raw if the flag to do so has been set with
  +  `onCommandPrintAll`, by way of the `printall` verb. Also prints the content
  +  of any incomings events, cast to bytes.
- +
- +  Params:
- +      event = the event whose raw IRC string to print.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)

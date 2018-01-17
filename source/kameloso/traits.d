@@ -1,3 +1,6 @@
+/++
+ +  Various compile-time traits used throughout the program.
+ +/
 module kameloso.traits;
 
 import kameloso.uda;
@@ -13,7 +16,7 @@ import std.traits : Unqual, isType;
  +  Currently it does not support static arrays.
  +
  +  Params:
- +      var = alias of variable to examine.
+ +      var = Alias of variable to examine.
  +/
 template isConfigurableVariable(alias var)
 {
@@ -63,7 +66,7 @@ unittest
  +  This is used for formatting configuration files, so that columns line up.
  +
  +  Params:
- +      Things = the types to examine and count name lengths
+ +      Things = Types to examine and count name lengths.
  +/
 template longestMemberName(Things...)
 if (Things.length > 0)

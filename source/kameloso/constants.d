@@ -1,6 +1,9 @@
+/++
+ +  A collection of constants used throughout the program.
+ +/
 module kameloso.constants;
 
-/// Meta information about the program.
+/// Meta-information about the program.
 enum KamelosoInfo
 {
     version_ = "1.0.0-beta.3",

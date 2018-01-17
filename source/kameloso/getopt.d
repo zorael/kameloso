@@ -1,3 +1,6 @@
+/++
+ +  Basic command-line argument-handling.
+ +/
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, Client;
@@ -11,20 +14,21 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read core settings, and IRCBot from file into temporaries, then meld them
- +  into the real ones into which the command-line arguments wil have been
+ +  Read `CoreSettings` and `IRCBot` from file into temporaries, then meld them
+ +  into the real ones, into which the command-line arguments will have been
  +  applied.
  +
- +  Params:
- +      ref bot = the IRCBot bot apply all changes to.
- +      ref setttings = the core settings to apply changes to.
- +
+ +  Example:
  +  ------------
  +  IRCBot bot;
  +  CoreSettings settings;
  +
  +  meldSettingsFromFile(bot, settings);
  +  ------------
+ +
+ +  Params:
+ +      bot = Reference `IRCBot` to apply changes to.
+ +      setttings = Reference `CoreSettings` to apply changes to.
  +/
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
@@ -54,13 +58,7 @@ public:
  +  The priority of options then becomes getopt over config file over hardcoded
  +  defaults.
  +
- +  Params:
- +      The string[] args the program was called with.
- +
- +  Returns:
- +      Yes.quit or no depending on whether the arguments chosen mean the
- +      program should proceed or not.
- +
+ +  Example:
  +  ------------
  +  Client client;
  +  Flag!"quit" quit = client.handleGetopt(args);
@@ -68,6 +66,16 @@ public:
  +  if (quit) return 0;
  +  // ...
  +  ------------
+ +
+ +  Params:
+ +      client = Reference to the current Client.
+ +      args = The `string[]` args the program was called with.
+ +      customSettings = Refernce array of custom settings to apply on top of
+ +          the settings read from the configuration file.
+ +
+ +  Returns:
+ +      Yes.quit or No.quit depending on whether the arguments chosen mean the
+ +      program should proceed or not.
  +/
 Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {

@@ -1,3 +1,6 @@
+/++
+ +  Functions used to send messages to the server.
+ +/
 module kameloso.messaging;
 
 import kameloso.ircdefs;

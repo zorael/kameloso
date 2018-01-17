@@ -1,3 +1,6 @@
+/++
+ +  Various functions related to serialising structs into .ini file-like files.
+ +/
 module kameloso.config;
 
 import kameloso.common : logger;
@@ -14,12 +17,19 @@ import std.typecons : Flag, No, Yes;
  +
  +  Optionally add the `kameloso` version banner at the head of it.
  +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +  sink.serialise(bot, bot.server, settings);
  +  immutable configText = sink.data.justifiedConfigurationText;
  +  writeToDisk!(Yes.addBanner)("kameloso.conf", configText);
  +  ------------
+ +
+ +  Params:
+ +      banner = Whether to add the "*kameloso bot*" banner at the head of the
+ +          file.
+ +      filename = Filename of file to write to.
+ +      configurationText = Content to write to file.
  +/
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
@@ -48,9 +58,16 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 /++
  +  Read configuration file into a string.
  +
+ +  Example:
  +  ------------
  +  string configText = configReader("kameloso.conf");
  +  ------------
+ +
+ +  Params:
+ +      configFile = Filename of file to read from.
+ +
+ +  Returns:
+ +      The contents of the supplied file.
  +/
 string configReader(const string configFile)
 {
@@ -78,12 +95,18 @@ string configReader(const string configFile)
  +  More than one can be supplied, and invalid ones for which there are no
  +  settings will be silently ignored with no errors.
  +
+ +  Example:
  +  ------------
  +  IRCBot bot;
  +  IRCServer server;
  +
  +  "kameloso.conf".readConfigInto(bot, server);
  +  ------------
+ +
+ +  Params:
+ +      configFile = Filename of file to read from.
+ +      things = Reference variadic tuple of things to set values of, according
+ +          to the text in the configuration file.
  +/
 void readConfigInto(T...)(const string configFile, ref T things)
 {
@@ -100,6 +123,7 @@ void readConfigInto(T...)(const string configFile, ref T things)
 /++
  +  Convenience method to call serialise on several objects.
  +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +  IRCBot bot;
@@ -107,6 +131,11 @@ void readConfigInto(T...)(const string configFile, ref T things)
  +  sink.serialise(bot, server);
  +  assert(!sink.data.empty);
  +  ------------
+ +
+ +  Params:
+ +      sink = Reference output range to write the serialised objects to (in
+ +          their .ini file-like format).
+ +      things = Variadic list of objects to serialise.
  +/
 void serialise(Sink, Things...)(ref Sink sink, Things things)
 if (Things.length > 1)
@@ -125,10 +154,7 @@ if (Things.length > 1)
  +  It only serialises fields not annotated with `Unconfigurable`, and it
  +  doesn't recurse into other structs or classes.
  +
- +  Params:
- +      ref sink = output range to save into, usually an `Appender!string`
- +      thing = object to serialise
- +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +  IRCBot bot;
@@ -136,6 +162,10 @@ if (Things.length > 1)
  +  sink.serialise(bot);
  +  assert(!sink.data.empty);
  +  ------------
+ +
+ +  Params:
+ +      sink = Reference output range to write to, usually an `Appender!string`.
+ +      thing = Object to serialise.
  +/
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
@@ -282,18 +312,29 @@ pipyon 3
 
 // setMemberByName
 /++
- +  Given a struct/class object, sets one of its members by string name to a
+ +  Given a struct/class object, sets one of its members by its string name to a
  +  specified value.
  +
  +  It does not currently recurse into other struct/class members.
  +
+ +  Example:
  +  ------------
  +  IRCBot bot;
  +
  +  bot.setMemberByName("nickname", "kameloso");
  +  bot.setMemberByName("address", "blarbh.hlrehg.org");
  +  bot.setMemberByName("special", "false");
+ +
+ +  assert(bot.nickname == "kameloso");
+ +  assert(bot.address == "blarbh.hlrehg.org");
+ +  assert(!bot.special);
  +  ------------
+ +
+ +  Params:
+ +      thing = Reference object whose members to set.
+ +      memberToSet = String name of the thing's member to set.
+ +      valueToSet = String contents of the value to set the member to; string
+ +          even if the member is of a different type.
  +/
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
@@ -434,10 +475,7 @@ unittest
  +  Takes an input range containing configuration text and applies the contents
  +  therein to one or more passed struct/class objects.
  +
- +  Params:
- +      range = input range from which to read the configuration text
- +      things = one or more objects to apply the configuration to
- +
+ +  Example:
  +  ------------
  +  IRCBot bot;
  +  IRCServer server;
@@ -447,6 +485,11 @@ unittest
  +      .splitter("\n")
  +      .applyConfiguration(bot, server);
  +  ------------
+ +
+ +  Params:
+ +      range = Input range from which to read the configuration text.
+ +      things = Reference variadic list of one or more objects to apply the
+ +          configuration to.
  +/
 void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
@@ -650,9 +693,7 @@ naN     !"#¤%&/`;
  +  It does one pass through it all first to determine the maximum width of the
  +  entry names, then another to format it and eventually return a flat string.
  +
- +  Params:
- +      origLines = unjustified raw configuration text
- +
+ +  Example:
  +  ------------
  +  IRCBot bot;
  +  IRCServer server;
@@ -661,6 +702,12 @@ naN     !"#¤%&/`;
  +  sink.serialise(bot, server);
  +  immutable justified = sink.data.justifiedConfigurationText;
  +  ------------
+ +
+ +  Params:
+ +      origLines = Unjustified raw configuration text.
+ +
+ +  Returns:
+ +      .ini file-like configuration text, justified into two columns.
  +/
 string justifiedConfigurationText(const string origLines)
 {

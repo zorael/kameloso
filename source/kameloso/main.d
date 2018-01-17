@@ -1,3 +1,6 @@
+/++
+ +  The main module, housing startup logic and the main event loop.
+ +/
 module kameloso.main;
 
 import kameloso.common;
@@ -29,6 +32,9 @@ __gshared bool abort;
  +
  +  Sets the `abort` variable to `true` so other parts of the program knows to
  +  gracefully shut down.
+ +
+ +  Params:
+ +      sig = Integer of the signal raised.
  +/
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
@@ -50,6 +56,9 @@ void signalHandler(int sig) nothrow @nogc @system
  +
  +  The return value tells the caller whether the received action means the bot
  +  should exit or not.
+ +
+ +  Params:
+ +      client = Reference to the current `Client`.
  +
  +  Returns:
  +      Yes.quit or No.quit, depending.
@@ -294,6 +303,9 @@ void removeMeWhenPossible()
  +
  +  Full lines are yielded in the Generator to be caught here, consequently
  +  parsed into IRCEvents, and then dispatched to all the plugins.
+ +
+ +  Params:
+ +      client = Reference to the current `Client`.
  +
  +  Returns:
  +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
@@ -627,6 +639,10 @@ Flag!"quit" mainLoop(ref Client client)
  +  If passed `Yes.exhaustive` they are removed from the arrays after they are
  +  called, so they won't be triggered again next pass. Otherwise only the
  +  finished ones are removed.
+ +
+ +  Params:
+ +      exhaustive = Whether to always remove `Fiber`s after processing.
+ +      fibers = Reference to an array of `Fiber`s to process.
  +/
 void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibers)
 {
@@ -669,6 +685,10 @@ void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibe
 /++
  +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each
  +  one.
+ +
+ +  Params:
+ +      client = Reference to the current `Client`.
+ +      reqs = Refernce to an associative array of `WHOISRequest`s.
  +/
 void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 {
@@ -740,6 +760,9 @@ void resetSignals() nothrow @nogc
 public:
 
 version(unittest)
+/++
+ +  Unittesting main; does nothing.
+ +/
 void main()
 {
     // Compiled with -b unittest, so run the tests and exit.
@@ -748,6 +771,9 @@ void main()
     // No need to Cygwin-flush; the logger did that already
 }
 else
+/++
+ +  Entry point of the program.
+ +/
 int main(string[] args)
 {
     import std.conv : ConvException;
@@ -829,6 +855,7 @@ int main(string[] args)
             logger.error("No administrators nor channels configured!");
             logger.logf("Use %s --writeconfig to generate a configuration file.",
                 args[0].baseName);
+
             return 1;
         }
 

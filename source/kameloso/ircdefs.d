@@ -1,3 +1,7 @@
+/++
+ +  Definitions of struct aggregates used throughout the program, representing
+ +  `IRCEvent`s and thereto related objects like `IRCServer` and `IRCUser`.
+ +/
 module kameloso.ircdefs;
 
 import kameloso.common : Hidden, Separator, Unconfigurable;
@@ -15,24 +19,6 @@ nothrow:
  +  The `IRCEvent` struct is a construct with fields extracted from raw server
  +  strings. Since structs are not polymorphic the `Type` enum dictates what
  +  kind of event it is.
- +
- +  ------------
- +  struct IRCEvent
- +  {
- +      enum Type { ... }
- +      Type type;
- +      IRCUser sender;
- +      IRCUser target;
- +      string raw;
- +      string channel;
- +      string content;
- +      string tags;
- +      string aux;
- +      string colour;
- +      uint num;
- +      long time;
- +  }
- +  ------------
  +/
 struct IRCEvent
 {
@@ -850,30 +836,6 @@ struct IRCEvent
  +  Aggregate collecting all the relevant settings, options and state needed for
  +  an IRC bot. Many fields are transient and unfit to be saved to disk, and
  +  some are simply too sensitive for it.
- +
- +  ------------
- +  struct IRCBot
- +  {
- +      string nickname;
- +      string user;
- +      string ident;
- +      string quitReason;
- +      string admin;
- +
- +      string authLogin;      // services account name
- +      string authPassword;   // service password
- +      string pass;           // registration PASS password, not auth
- +
- +      string[] homes;
- +      string[] fiends;
- +      string[] channels;
- +
- +      IRCServer server;
- +      string origNickname;
- +      Status authentication;
- +      Status registration;
- +  }
- +  ------------
  +/
 struct IRCBot
 {
@@ -944,28 +906,6 @@ struct IRCBot
  +  Aggregate of all information and state pertaining to the connected IRC
  +  server. Some fields are transient on a per-connection basis and should not
  +  be saved to the configuration file.
- +
- +  ------------
- +  struct IRCServer
- +  {
- +      enum Daemon { ... }
- +      string address;
- +      ushort port;
- +      string network;
- +
- +      Daemon daemon;
- +      string daemonstring;
- +      string resolvedAddress;
- +      uint maxNickLength;
- +      uint maxChannelLength;
- +      string aModes;
- +      string bModes;
- +      string cModes;
- +      string dModes;
- +      char[char] prefixchars;
- +      string prefixes;
- +  }
- +  ------------
  +/
 struct IRCServer
 {
@@ -1074,19 +1014,6 @@ struct IRCServer
  +  An aggregate of fields representing a single user on IRC. Instances of this
  +  should not survive a disconnect and reconnect; they are on a per-connection
  +  basis.
- +
- +  ------------
- +  struct IRCUser
- +  {
- +      string nickname;
- +      string alias_;
- +      string ident;
- +      string address;
- +      string account;
- +      string badge;
- +      bool special;
- +      long lastWhois;
- +  }
  +/
 struct IRCUser
 {
@@ -1154,6 +1081,38 @@ struct IRCUser
     }
 
 
+    // matchesByMask
+    /++
+     +  Compares this `IRCUser` with a second one, treating fields with
+     +  asterisks as glob wildcards, mimicking `*!*@*` mask matching.
+     +
+     +  Example:
+     +  ------------
+     +  IRCUser u1;
+     +  with (u1)
+     +  {
+     +      nickname = "foo";
+     +      ident = "NaN";
+     +      address = "asdf.asdf.com";
+     +  }
+     +
+     +  IRCUser u2;
+     +  with (u2)
+     +  {
+     +      nickname = "*";
+     +      ident = "NaN";
+     +      address = "*";
+     +  }
+     +
+     +  assert(u1.matchesByMask(u2));
+     +  ------------
+     +
+     +  Params:
+     +      other = `IRCUser` to compare this one with.
+     +
+     +  Returns:
+     +      `true` if the `IRCUser`s are deemed to match, `false` if not.
+     +/
     bool matchesByMask(IRCUser other) pure nothrow @nogc const
     {
         // Match first
@@ -1183,7 +1142,7 @@ struct IRCUser
 
 // Typenums
 /++
- +  Reverse mappings of numerics to `IRCEvent.Type`s.
+ +  Reverse mappings of *numerics* to `IRCEvent.Type`s.
  +
  +  One `base` table that covers most cases, and then specialised arrays for
  +  different server daemons, to meld into `base` for a union of the two

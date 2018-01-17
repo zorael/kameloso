@@ -1,3 +1,7 @@
+/++
+ +  Contains the custom `KamelosoLogger` class, used to print timestamped and
+ +  (optionally) coloured logging messages.
+ +/
 module kameloso.logger;
 
 import kameloso.common : settings;
@@ -11,6 +15,8 @@ import std.experimental.logger : Logger;
  +  Modified `Logger` to print timestamped and coloured logging messages.
  +
  +  It is thread-local so instantiate more if you're threading.
+ +
+ +  See the documentation for `std.experimental.logger.Logger`.
  +/
 final class KamelosoLogger : Logger
 {

@@ -1,3 +1,6 @@
+/++
+ +  Functions related to connecting to an IRC server, and reading from it.
+ +/
 module kameloso.connection;
 
 import kameloso.common : interruptibleSleep, logger;
@@ -28,13 +31,14 @@ public:
     Address[] ips;
 
     /++
-     +  Implicitly proxy calls to the current Socket.
-     +  This successfully proxies to Socket.receive.
+     +  Implicitly proxy calls to the current Socket. This successfully proxies
+     +  to Socket.receive.
      +/
     alias socket this;
 
     /// Is the connection known to be active?
     bool connected;
+
 
     // reset
     /++
@@ -52,13 +56,14 @@ public:
         setOptions(socket6);
     }
 
+
     // setOptions
     /++
      +  Set up sockets with the SocketOptions needed. These include timeouts
      +  and buffer sizes.
      +
      +  Params:
-     +      socketToSetup = the (reference to the) socket to modify.
+     +      socketToSetup = ref `socket` to modify.
      +/
     void setOptions(Socket socketToSetup)
     {
@@ -76,18 +81,25 @@ public:
         }
     }
 
+
     // resolve
     /++
-     +  Given an address and a port, build an array of Addresses into ips.
+     +  Given an address and a port, build an array of `Address`es into IPs.
      +
-     +  Params:
-     +      address = The string address to look up.
-     +      port = The remote port build into the Address.
-     +
+     +  Example:
      +  ------------
      +  Connection conn;
      +  conn.resolve("irc.freenode.net", 6667, abort);
      +  ------------
+     +
+     +  Params:
+     +      address = The string address to look up.
+     +      port = The remote port build into the `Address`.
+     +      abort = Reference bool which, if set, should make us abort and
+     +          return.
+     +
+     +  Returns:
+     +      bool of whether the resolve attempt was a success or not.
      +/
     bool resolve(const string address, const ushort port, ref bool abort)
     {
@@ -131,14 +143,16 @@ public:
         return false;
     }
 
+
     // connect
     /++
-     +  Walks through the list of Addresses in ips and attempts to connect to
-     +  each until one succeeds.
+     +  Walks through the list of `Address`es in `ips` and attempts to connect
+     +  to each until one succeeds.
      +
      +  Success is determined by whether or not an exception was thrown during
      +  the attempt, and is kept track of with the connected boolean.
      +
+     +  Example:
      +  ------------
      +  Connection conn;
      +
@@ -151,6 +165,10 @@ public:
      +      return 1;
      +  }
      +  ------------
+     +
+     +  Params:
+     +      abort = Reference bool which, if set, should make us abort and
+     +          return.
      +/
     void connect(ref bool abort)
     {
@@ -195,6 +213,7 @@ public:
         }
     }
 
+
     // sendline
     /++
      +  Sends a line to the server.
@@ -204,22 +223,23 @@ public:
      +  allowed to write to the same socket in parallel, this would be a race
      +  condition.
      +
-     +  Params:
-     +      line = The string to send.
-     +
+     +  Example:
      +  ------------
      +  conn.sendline("NICK kameloso");
      +  conn.sendline("PRIVMSG #channel :text");
      +  ------------
+     +
+     +  Params:
+     +      strings = Variadic list of strings to send.
      +/
     pragma(inline, true)
-    void sendline(Strings...)(const Strings lines)
+    void sendline(Strings...)(const Strings strings)
     {
-        foreach (const line; lines)
+        foreach (const string_; strings)
         {
             import std.algorithm.comparison : min;
 
-            socket.send(line[0..min(line.length, 511)]);
+            socket.send(string_[0..min(string_.length, 511)]);
         }
 
         socket.send("\n");
@@ -229,20 +249,15 @@ public:
 
 // listenFiber
 /++
- +  A Generator fiber.
+ +  A `Socket`-reading `Generator` `Fiber`.
  +
  +  It maintains its own buffer into which it receives from the server, though
  +  not neccessarily full lines. It thus keeps filling the buffer until it
  +  finds a newline character, yields it back to the caller of the fiber,
- +  checks for more lines to yield, and if none yields string.init to wait for
+ +  checks for more lines to yield, and if none yields `string.init` to wait for
  +  its turn to read from the sever again. The buffer logic is complex.
  +
- +  Params:
- +      conn = A Connection struct via whose Socket it reads from the server.
- +
- +  Yields:
- +      full IRC event strings.
- +
+ +  Example:
  +  ------------
  +  import std.concurrency : Generator;
  +
@@ -252,8 +267,16 @@ public:
  +  foreach (immutable line; generator)
  +  {
  +      /* ... */
+ +      yield(someString)
  +  }
  +  ------------
+ +
+ +  Params:
+ +      conn = `Connection` whose `Socket` it reads from the server with.
+ +      abort = Reference flag which, if set, means we should abort and return.
+ +
+ +  Yields:
+ +      Full IRC event strings.
  +/
 void listenFiber(Connection conn, ref bool abort)
 {

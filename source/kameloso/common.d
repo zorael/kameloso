@@ -1,3 +1,7 @@
+/++
+ +  Common functions used throughout the program, generic enough to be used in
+ +  several places, not fitting into any specific one.
+ +/
 module kameloso.common;
 
 import kameloso.bash : BashForeground;
@@ -27,8 +31,12 @@ shared static this()
  +  Instance of a `KamelosoLogger`, providing timestamped and coloured logging.
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
- +  and `fatal`. It is not thread-safe, so instantiate a thread-local Logger
- +  if threading.
+ +  and `fatal`. It is not global, so instantiate a thread-local `Logger` if
+ +  threading.
+ +
+ +  Having this here is unfortunate; ideally plugins should not use variables
+ +  from other modules, but unsure of any way to fix this other than to have
+ +  each plugin keep their own `Logger`.
  +/
 Logger logger;
 
@@ -37,17 +45,32 @@ Logger logger;
 /++
  +  Initialises the `KamelosoLogger` logger for use in this thread of the whole
  +  program.
+ +
+ +  Example:
+ +  ------------
+ +  initLogger(settings.monochrome, settings.brightTerminal);
+ +  ------------
+ +
+ +  Params:
+ +      monochrome = Whether the terminal is set to monochrome or not.
+ +      bright = Whether the terminal has a bright background or not.
  +/
 void initLogger(bool monochrome = settings.monochrome,
-    bool brightTerminal = settings.brightTerminal)
+    bool bright = settings.brightTerminal)
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
 
-    logger = new KamelosoLogger(LogLevel.all, monochrome, brightTerminal);
+    logger = new KamelosoLogger(LogLevel.all, monochrome, bright);
 }
 
-/// A local copy of the CoreSettings struct, housing certain runtime settings
+/++
+ +  A local copy of the `CoreSettings` struct, housing certain runtime settings.
+ +
+ +  This will be accessed from other parts of the program, via
+ +  `kameloso.common.settings`, so they know to use monochrome output or not. It
+ +  is a problem that needs solving.
+ +/
 CoreSettings settings;
 
 
@@ -58,20 +81,7 @@ CoreSettings settings;
  +  This is a way to make concurrency message passing easier. You could use
  +  string literals to differentiate between messages and then have big
  +  switches inside the catching function, but with these you can actually
- +  have separate functions for each.
- +
- +  ------------
- +  struct ThreadMessage
- +  {
- +      struct Pong {}
- +      struct Sendline {}
- +      struct Quietline {}
- +      struct Quit {}
- +      struct Teardown {}
- +      struct Save {}
- +      struct PeekPlugins {}
- +  }
- +  ------------
+ +  have separate concurrency-receiving delegates for each.
  +/
 struct ThreadMessage
 {
@@ -103,11 +113,11 @@ struct ThreadMessage
 
 // SupportColours
 /++
- +  Set version SupportsColors depending on the build configuration.
+ +  Set version `SupportsColors` depending on the build configuration.
  +
  +  We can't do "version(blah) || version(bluh)" because of design decisions,
- +  so we do it this way to accomodate for Cygwin_ implying both Windows and
- +  Colours.
+ +  so we do it this way to accomodate for version `Cygwin_` implying both
+ +  `Windows` and `Colours`.
  +/
 version(Colours)
 {
@@ -125,46 +135,34 @@ else version (Cygwin_)
  +
  +  Kept inside one struct, they're nicely gathered and easy to pass around.
  +  Some defaults are hardcoded here.
- +
- +  ------------
- +  struct CoreSettings
- +  {
- +      bool monochrome = true;
- +      bool reconnectOnFailure = true;
- +      bool brightTerminal = false;
- +      string prefix = "!";
- +
- +      string configFile = "kameloso.conf";
- +  }
- +  ------------
  +/
 struct CoreSettings
 {
     version(SupportsColours)
     {
-        bool monochrome = false;  /// Logger monochrome setting
+        bool monochrome = false;  /// Logger monochrome setting.
     }
     else
     {
-        bool monochrome = true;  /// Mainly version Windows
+        bool monochrome = true;  /// Mainly version Windows.
     }
 
-    /// Flag denoting whether the program should reconnect after disconnect
+    /// Flag denoting whether the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
-    /// Flag denoting that the terminal has a bright background
+    /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
-    /// Flag denoting that we should save to file on exit
+    /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
-    /// Character(s) that prefix a bot chat command
+    /// Character(s) that prefix a bot chat command.
     string prefix = "!";
 
     @Unconfigurable
     {
         @Hidden
-        string configFile = "kameloso.conf";  /// Main configuration file
+        string configFile = "kameloso.conf";  /// Main configuration file.
     }
 }
 
@@ -177,9 +175,7 @@ struct CoreSettings
  +  This is not only convenient for debugging but also usable to print out
  +  current settings and state, where such is kept in structs.
  +
- +  Params:
- +      things = The struct objects to enumerate.
- +
+ +  Example:
  +  ------------
  +  struct Foo
  +  {
@@ -192,6 +188,10 @@ struct CoreSettings
  +  Foo foo, bar;
  +  printObjects(foo, bar);
  +  ------------
+ +
+ +  Params:
+ +      widthArg = The width with which to pad output columns.
+ +      things = Variadic list of struct objects to enumerate.
  +/
 void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 {
@@ -228,10 +228,7 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
  +
  +  An alias for when there is only one object to print.
  +
- +  Params:
- +      widthArgs = manually specified with of first column in the output
- +      thing = the struct object to enumerate.
- +
+ +  Example:
  +  ------------
  +  struct Foo
  +  {
@@ -244,6 +241,10 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
  +  Foo foo;
  +  printObject(foo);
  +  ------------
+ +
+ +  Params:
+ +      widthArg = The width with which to pad output columns.
+ +      thing = Struct object to enumerate.
  +/
 void printObject(uint widthArg = 0, Thing)(Thing thing)
 {
@@ -257,20 +258,16 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +  printable values.
  +
  +  This is an implementation template and should not be called directly;
- +  instead use `printObjects(Things...)`.
+ +  instead use `printObject` and `printObjects`.
  +
- +  Params:
- +      coloured = whether to display in colours or not
- +      sink = output range to write to
- +      things = one or more structs to enumerate and format.
- +
+ +  Example:
  +  ------------
  +  struct Foo
  +  {
- +      int foo;
- +      string bar;
- +      float f;
- +      double d;
+ +      int foo = 42;
+ +      string bar = "arr matey";
+ +      float f = 3.14f;
+ +      double d = 9.99;
  +  }
  +
  +  Foo foo, bar;
@@ -278,9 +275,16 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +
  +  sink.formatObjectsImpl!(Yes.coloured)(foo);
  +  sink.formatObjectsImpl!(No.coloured)(bar);
+ +  writeln(sink.data);
  +  ------------
+ +
+ +  Params:
+ +      coloured = Whether to display in colours or not.
+ +      widthArg = The width with which to pad output columns.
+ +      sink = Output range to write to.
+ +      things = Variadic list of structs to enumerate and format.
  +/
-void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
+private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things)
 {
@@ -518,11 +522,28 @@ void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
  +  template parameter `Yes.overwrite` to make it overwrite if the melding
  +  struct's member is not `typeof(member).init`.
  +
+ +  Example:
+ +  ------------
+ +  struct Foo
+ +  {
+ +      string abc;
+ +      int def;
+ +  }
+ +
+ +  Foo foo, bar;
+ +  foo.abc = "from foo"
+ +  bar.def = 42;
+ +  foo.meldInto(bar);
+ +
+ +  assert(bar.abc == "from foo");
+ +  assert(bar.def == 42);
+ +  ------------
+ +
  +  Params:
- +      overwrite = flag denoting whether the second object should overwrite
- +                  set values in the receiving object.
- +      meldThis = struct to meld (origin).
- +      intoThis = struct to meld (target).
+ +      overwrite = Whether the source object should overwrite set (non-`init`)
+ +          values in the receiving object.
+ +      meldThis = Struct to meld (source).
+ +      intoThis = Reference to struct to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
     (Thing meldThis, ref Thing intoThis) pure nothrow @nogc
@@ -743,11 +764,20 @@ unittest
  +  template parameter `Yes.overwrite` to make it overwrite if the melding
  +  array's field is not `T.init`.
  +
+ +  Example:
+ +  ------------
+ +  int[] arr1 = [ 1, 2, 3, 0, 0, 0 ];
+ +  int[] arr2 = [ 0, 0, 0, 4, 5, 6 ];
+ +  arr1.meldInto!(No.overwrite)(arr2);
+ +
+ +  assert(arr2 == [ 1, 2, 3, 4, 5, 6 ]);
+ +  ------------
+ +
  +  Params:
- +      overwrite = flag denoting whether the second array should overwrite
- +                  set values in the receiving array.
- +      meldThis = array to meld (origin).
- +      intoThis = array to meld (target).
+ +      overwrite = Whether the source array should overwrite set (non-`init`)
+ +          values in the receiving array.
+ +      meldThis = Array to meld (source).
+ +      intoThis = Reference to the array to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
     (Array1 meldThis, ref Array2 intoThis) pure nothrow @nogc
@@ -798,7 +828,27 @@ unittest
  +  Takes two associative arrays and melds them together, making a union of the
  +  two.
  +
- +  FIXME
+ +  This is largely the same as the array-version `meldInto` but doesn't need
+ +  the extensive template constraints it employs, so it might as well be kept
+ +  separate.
+ +
+ +  Example:
+ +  ------------
+ +  int[string] aa1 = [ "abc" : 42, "def" : -1 ];
+ +  int[string] aa2 = [ "ghi" : 10, "jkl" : 7 ];
+ +  arr1.meldInto(arr2);
+ +
+ +  assert("abc" in aa2);
+ +  assert("def" in aa2);
+ +  assert("ghi" in aa2);
+ +  assert("jkl" in aa2);
+ +  ------------
+ +
+ +  Params:
+ +      overwrite = Whether the source associative array should overwrite set
+ +          (non-`init`) values in the receiving object.
+ +      meldThis = Associative array to meld (source).
+ +      intoThis = Reference to the associative array to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, AA)
     (AA meldThis, ref AA intoThis) pure
@@ -845,17 +895,21 @@ unittest
 
 // scopeguard
 /++
- +  Generates a string mixin of scopeguards.
+ +  Generates a string mixin of *scopeguards*.
  +
  +  This is a convenience function to automate basic
- +  `scope(exit|success|failure)` messages, as well as an optional entry
- +  message. Which scope to guard is passed by ORing the states.
+ +  `scope(exit|success|failure)` messages, as well as a custom "entry" message.
+ +  Which scope to guard is passed by ORing the states.
+ +
+ +  Example:
+ +  ------------
+ +  mixin(scopeguard(entry|exit));
+ +  ------------
  +
  +  Params:
- +      states = Bitmask of which states to guard, see the enum in
- +               `kameloso.constants`.
- +      scopeName = Optional scope name to print. Otherwise the current function
- +                  name will be used.
+ +      states = Bitmask of which states to guard.
+ +      scopeName = Optional scope name to print. If none is supplied, the
+ +          current function name will be used.
  +
  +  Returns:
  +      One or more scopeguards in string form. Mix them in to use.
@@ -927,7 +981,10 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
     return app.data;
 }
 
-/// Bitflags used in combination with the scopeguard function, to generate scopeguard mixins.
+/++
+ +  Bitflags used in combination with the `scopeguard` function, to generate
+ +  *scopeguard* mixins.
+ +/
 enum : ubyte
 {
     entry   = 1 << 0,  /// On entry of function
@@ -939,15 +996,27 @@ enum : ubyte
 
 // getMultipleOf
 /++
- +  Given a number, calculates the largest multiple of `n` needed to reach that
+ +  Given a number, calculate the largest multiple of `n` needed to reach that
  +  number.
  +
  +  It rounds up, and if supplied `Yes.alwaysOneUp` it will always overshoot.
  +  This is good for when calculating format pattern widths.
  +
+ +  Example:
+ +  ------------
+ +  immutable width = 16.getMultipleOf(4);
+ +  assert(width == 16);
+ +  immutable width2 = 16.getMultipleOf!(Yes.oneUp)(4);
+ +  assert(width2 == 20);
+ +  ------------
+ +
  +  Params:
- +      num = the number to reach
- +      n = the value to find a multiplier for
+ +      oneUp = Whether to always overshoot.
+ +      num = The number to reach.
+ +      n = The value to find a multiplier for.
+ +
+ +  Returns:
+ +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
 uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
     (Number num, int n)
@@ -1014,13 +1083,15 @@ unittest
  +  it won't break sleeps. This way it does, assuming the `abort` bool is the
  +  signal handler one.
  +
- +  Params:
- +      dur = duration to sleep for
- +      abort = bool flag if we should interrupt and return early
- +
+ +  Example:
  +  ------------
  +  interruptibleSleep(1.seconds, abort);
  +  ------------
+ +
+ +  Params:
+ +      dur = Duration to sleep for.
+ +      abort = Reference to the bool flag which, if set, means we should
+ +          interrupt and return early.
  +/
 void interruptibleSleep(D)(const D dur, ref bool abort) @system
 {
@@ -1052,28 +1123,8 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
 
 // Client
 /++
- +  State needed for the `kameloso` bot, aggregated in a struct for easier
- +  passing by ref.
- +
- +  ------------
- +  struct Client
- +  {
- +      IRCBot bot;
- +      CoreSettings settings;
- +      Connection conn;
- +      IRCPlugin[] plugins;
- +      long[string] whoisCalls;
- +      IRCParser parser;
- +      ubyte today;
- +      ThrottleValues throttling;
- +      __gshared bool abort;
- +
- +      void initPlugins();
- +      void teardownPlugins();
- +      void startPlugins();
- +      void propagateBot(IRCBot);
- +  }
- +  ------------
+ +  State needed for the kameloso bot, aggregated in a struct for easier passing
+ +  by reference.
  +/
 struct Client
 {
@@ -1086,37 +1137,28 @@ struct Client
     /++
      +  Aggregate of values and state needed to throttle messages without
      +  polluting namespace too much.
-     +
-     +  ------------
-     +  struct ThrottleValues
-     +  {
-     +      enum k;
-     +      SysTime t0;
-     +      double m;
-     +      double increment;
-     +      double burst;
-     +  }
-     +  ------------
      +/
     struct ThrottleValues
     {
-        /// Graph constant modifier (inclination, MUST be negative)
+        /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
 
-        /// Origo of x-axis (last sent message)
+        /// Origo of x-axis (last sent message).
         SysTime t0;
 
-        /// y at t0 (ergo y at x = 0, weight at last sent message)
+        /// y at t0 (ergo y at x = 0, weight at last sent message).
         double m = 0.0;
 
-        /// Increment to y on sent message
+        /// Increment to y on sent message.
         double increment = 1.0;
 
-        /// Burst limit; how many messages*increment can be sent initially before
-        /// throttling kicks in
+        /++
+         +  Burst limit; how many messages*increment can be sent initially
+         +  before throttling kicks in.
+         +/
         double burst = 3.0;
 
-        /// Don't copy this, just keep one instance
+        /// Don't copy this, just keep one instance.
         @disable this(this);
     }
 
@@ -1129,7 +1171,10 @@ struct Client
     /// The socket we use to connect to the server.
     Connection conn;
 
-    /// A runtime array of all plugins. We iterate this when we have an `IRCEvent`
+    /++
+     +  A runtime array of all plugins. We iterate these when we have finished
+     +  parsing an `IRCEvent`, and call the relevant event handlers of each.
+     +/
     /// to react to.
     IRCPlugin[] plugins;
 
@@ -1139,25 +1184,32 @@ struct Client
     /// Parser instance.
     IRCParser parser;
 
-    /// Curent day of the month, so we can track changes in day
+    /// Curent day of the month, so we can track changes in day.
     ubyte today;
 
     /// Values and state needed to throttle sending messages.
     ThrottleValues throttling;
 
-    /// When this is set by signal handlers, the program should exit. Other parts of
-    /// the program will be monitoring it.
+    /++
+     +  When this is set by signal handlers, the program should exit. Other
+     +  parts of the program will be monitoring it.
+     +/
     __gshared bool* abort;
 
     /// Never copy this.
     @disable this(this);
 
+
     // initPlugins
     /++
      +  Resets and *minimally* initialises all plugins.
      +
-     +  It only initialises them to the point where they're aware of their settings,
-     +  and not far enough to have loaded any resources.
+     +  It only initialises them to the point where they're aware of their
+     +  settings, and not far enough to have loaded any resources.
+     +
+     +  Params:
+     +      customSettings = String array of custom settings to apply to plugins
+     +          in addition to those read from the configuration file.
      +/
     void initPlugins(string[] customSettings)
     {
@@ -1231,12 +1283,13 @@ struct Client
         plugins.length = 0;
     }
 
+
     // startPlugins
     /++
     +  *start* all plugins, loading any resources they may want.
     +
-    +  This has to happen after `initPlugins` or there will not be any plugins in
-    +  the `plugin` array to start.
+    +  This has to happen after `initPlugins` or there will not be any plugins
+    +  in the `plugins` array to start.
     +/
     void startPlugins()
     {
@@ -1255,6 +1308,7 @@ struct Client
         }
     }
 
+
     // propagateBot
     /++
     +  Takes a bot and passes it out to all plugins.
@@ -1263,7 +1317,7 @@ struct Client
     +  all plugins to have an updated copy of it.
     +
     +  Params:
-    +      bot = IRCBot to propagate.
+    +      bot = `IRCBot` to propagate to all plugins.
     +/
     void propagateBot(IRCBot bot) pure nothrow @nogc @safe
     {
@@ -1321,13 +1375,15 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  It gathers configuration text from all plugins before formatting it into
  +  nice columns, then writes it all in one go.
  +
- +  Params:
- +      filename = the string filename of the file to write to.
- +
+ +  Example:
  +  ------------
  +  Client client;
  +  client.writeConfigurationFile(client.settings.configFile);
  +  ------------
+ +
+ +  Params:
+ +      client = Refrence to the current `Client`, with all its settings.
+ +      filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(ref Client client, const string filename)
 {
@@ -1361,6 +1417,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  that some arrays and such may have been allocated in a larger chunk than the
  +  length of the array itself.
  +
+ +  Example:
  +  ------------
  +  struct Foo
  +  {
@@ -1372,6 +1429,13 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  Foo foo;
  +  writeln(foo.deepSizeof);
  +  ------------
+ +
+ +  Params:
+ +      thing = Object to enumerate and add up the members of.
+ +
+ +  Returns:
+ +      The calculated *minimum* number of bytes allocated for the passed
+ +      object.
  +/
 uint deepSizeof(T)(const T thing) pure @nogc @safe @property
 {
@@ -1436,9 +1500,11 @@ public:
 
     static if (disableThis)
     {
+        /// Never copy this.
         @disable this(this);
     }
 
+    /// Tranparently proxy all `Thing`-related calls to `thing`.
     mixin Proxy!thing;
 }
 
@@ -1447,10 +1513,25 @@ public:
 /++
  +  Convenience function to create a `Labeled` struct while inferring the
  +  template parameters from the runtime arguments.
+ +
+ +  Example:
+ +  ------------
+ +  Foo foo;
+ +  auto namedFoo = labeled(foo, "hello world");
+ +
+ +  Foo bar;
+ +  auto numbereBar = labeled(bar, 42);
+ +  ------------
+ +
+ +  Params:
+ +      thing = Object to wrap.
+ +      label = Label ID to apply to the wrapped item.
+ +
+ +  Returns:
+ +      The passed object, wrapped and labeled with the supplied ID.
  +/
 auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
     (Thing thing, Label label) pure nothrow @nogc @safe
 {
-    import std.traits : Unqual;
     return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
 }

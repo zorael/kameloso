@@ -1,3 +1,8 @@
+/++
+ +  String manipulation functions, used throughout the program complementing the
+ +  standard library, as well as providing dumbed-down and optimised versions
+ +  of existing functions therein.
+ +/
 module kameloso.string;
 
 import core.time : Duration;
@@ -13,14 +18,7 @@ import std.typecons : Flag, No, Yes;
  +  Finds the supplied separator token, returns the string up to that point,
  +  and advances the passed ref string to after the token.
  +
- +  Params:
- +      arr = The array to walk and advance.
- +      separator = The token that delimenates what should be returned and to
- +                  where to advance.
- +
- +  Returns:
- +      the string arr from the start up to the separator.
- +
+ +  Example:
  +  ------------
  +  string foobar = "foo bar";
  +  string foo = foobar.nom(" ");
@@ -30,6 +28,16 @@ import std.typecons : Flag, No, Yes;
  +  assert((bar == "bar"), bar);
  +  assert(!foobar.length);
  +  ------------
+ +
+ +  Params:
+ +      decode = Whether to use auto-decoding functions, or try to keep to non-
+ +          decoding ones (when possible).
+ +      line = The string to walk and advance.
+ +      separator = The token that deliminates what should be returned and to
+ +          where to advance.
+ +
+ +  Returns:
+ +      The string `line` from the start up to the separator.
  +/
 pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator) pure
@@ -89,70 +97,60 @@ unittest
         assert(lorem == "Lorem ipsum", lorem);
         assert(line == "sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)(" :");
         assert(lorem == "Lorem ipsum", lorem);
         assert(line == "sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)(':');
         assert(lorem == "Lorem ipsum ", lorem);
         assert(line == "sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom(' ');
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)(' ');
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)("");
         assert(!lorem.length, lorem);
         assert(line == "Lorem ipsum :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable lorem = line.nom!(Yes.decode)("Lorem ipsum");
         assert(!lorem.length, lorem);
         assert(line == " :sit amet", line);
     }
-
     {
         string line = "Lorem ipsum :sit amet";
         immutable dchar dspace = ' ';
@@ -160,7 +158,6 @@ unittest
         assert(lorem == "Lorem", lorem);
         assert(line == "ipsum :sit amet", line);
     }
-
     {
         dstring dline = "Lorem ipsum :sit amet"d;
         immutable dspace = " "d;
@@ -168,7 +165,6 @@ unittest
         assert((lorem == "Lorem"d), lorem.to!string);
         assert((dline == "ipsum :sit amet"d), dline.to!string);
     }
-
     {
         dstring dline = "Lorem ipsum :sit amet"d;
         immutable wchar wspace = ' ';
@@ -176,7 +172,6 @@ unittest
         assert((lorem == "Lorem"d), lorem.to!string);
         assert((dline == "ipsum :sit amet"d), dline.to!string);
     }
-
     {
         wstring wline = "Lorem ipsum :sit amet"w;
         immutable wchar wspace = ' ';
@@ -184,7 +179,6 @@ unittest
         assert((lorem == "Lorem"w), lorem.to!string);
         assert((wline == "ipsum :sit amet"w), wline.to!string);
     }
-
     {
         wstring wline = "Lorem ipsum :sit amet"w;
         immutable wspace = " "w;
@@ -192,7 +186,6 @@ unittest
         assert((lorem == "Lorem"w), lorem.to!string);
         assert((wline == "ipsum :sit amet"w), wline.to!string);
     }
-
     {
         string user = "foo!bar@asdf.adsf.com";
         user = user.nom('!');
@@ -206,6 +199,12 @@ unittest
  +  Get the correct singular or plural form of a word depending on the
  +  numerical count of it.
  +
+ +  Example:
+ +  ------------
+ +  string one = 1.plurality("one", "two");
+ +  string two = 2.plurality("one", "two");
+ +  ------------
+ +
  +  Params:
  +      num = The numerical count of the noun.
  +      singular = The noun in singular form.
@@ -213,11 +212,6 @@ unittest
  +
  +  Returns:
  +      The singular string if num is 1 or -1, otherwise the plural string.
- +
- +  ------------
- +  string one = 1.plurality("one", "two");
- +  string two = 2.plurality("one", "two");
- +  ------------
  +/
 pragma(inline)
 T plurality(T)(const int num, const T singular, const T plural) pure nothrow @nogc
@@ -240,17 +234,18 @@ unittest
 /++
  +  Removes one preceding and one trailing quote, unquoting a word.
  +
- +  Params:
- +      line = the (potentially) quoted string.
- +
- +  Returns:
- +      A slice of the line argument that excludes the quotes.
- +
+ +  Example:
  +  ------------
  +  string quoted= `"This is a quote"`;
  +  string unquotes = quoted.unquoted;
  +  assert((unquoted == "This is a quote"), unquoted);
  +  ------------
+ +
+ +  Params:
+ +      line = The (potentially) quoted string.
+ +
+ +  Returns:
+ +      A slice of the line argument that excludes the quotes.
  +/
 T unquoted(Flag!"recurse" recurse = Yes.recurse, T)(const T line) pure nothrow @property
 if (isSomeString!T)
@@ -300,17 +295,18 @@ unittest
  +  A cheaper variant of std.algorithm.searching.startsWith, since it is
  +  such a hotspot.
  +
- +  Params:
- +      haystack = The original line to examine.
- +      needle = The snippet of text to check if haystack begins with.
- +
- +  Returns:
- +      `true` if haystack starts with needle, otherwise `false`.
- +
+ +  Example:
  +  ------------
  +  assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
  +  assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
  +  ------------
+ +
+ +  Params:
+ +      haystack = Original line to examine.
+ +      needle = Snippet of text to check if `haystack` begins with.
+ +
+ +  Returns:
+ +      `true` if `haystack` starts with `needle`, `false` if not.
  +/
 pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure nothrow @nogc
@@ -358,17 +354,18 @@ unittest
  +  Takes a string and, with a separator token, splits it into discrete token
  +  and makes it into a dynamic array.
  +
- +  Params:
- +      separator = The string to use when delimenating fields.
- +      line = The line to split.
- +
- +  Returns:
- +      An array with fields split out of the line argument.
- +
+ +  Example:
  +  ------------
  +  string[] things = "one,two,three,four".arrayify;
  +  assert(things == [ "one", "two", "three", "four" ]);
  +  ------------
+ +
+ +  Params:
+ +      separator = String to use for delimenating fields.
+ +      line = Line to split.
+ +
+ +  Returns:
+ +      An array with fields split, out of the `line` argument.
  +/
 T[] arrayify(string separator = ",", T)(const T line) pure
 {
@@ -399,18 +396,19 @@ unittest
  +  This is to make a helper for stripping away bot prefixes, where such may be
  +  "kameloso:".
  +
- +  Params:
- +      line = the prefixed string line.
- +      prefix = the prefix to strip.
- +
- +  Returns:
- +      The passed line with the prefix sliced away.
- +
+ +  Example:
  +  ------------
  +  string prefixed = "kameloso: sudo MODE +o #channel :user";
  +  string command = prefixed.stripPrefix("kameloso");
  +  assert((command == "sudo MODE +o #channel :user"), command);
  +  ------------
+ +
+ +  Params:
+ +      line = String line prefixed with `prefix`.
+ +      prefix = Prefix to strip.
+ +
+ +  Returns:
+ +      The passed line with the `prefix` sliced away.
  +/
 string stripPrefix(const string line, const string prefix)
 {
@@ -450,16 +448,12 @@ unittest
 
 // timeSince
 /++
- +  Express how long time has passed in a Duration, in natural language.
+ +  Express how long time has passed in a `Duration`, in natural (English)
+ +  language.
  +
- +  Write the result to a passed output range sink.
+ +  Write the result to a passed output range `sink`.
  +
- +  Params:
- +      duration = a period of time
- +
- +  Returns:
- +      A humanly-readable string of how long the passed duration is.
- +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +
@@ -470,6 +464,9 @@ unittest
  +  const duration = (now - then);
  +  immutable inEnglish = sink.timeSince(duration);
  +  ------------
+ +
+ +  Params:
+ +      duration = A period of time.
  +/
 void timeSince(Sink)(auto ref Sink sink, const Duration duration) pure
 {
@@ -503,7 +500,7 @@ void timeSince(Sink)(auto ref Sink sink, const Duration duration) pure
     }
 }
 
-/// ditto
+/// Ditto
 string timeSince(const Duration duration)
 {
     import std.array : Appender;
@@ -557,20 +554,21 @@ unittest
  +  Takes the member of an enum by string and returns that member.
  +
  +  It lowers to a big switch of the enum member strings. It is faster than
- +  std.conv.to and generates less template bloat.
+ +  `std.conv.to` and generates less template bloat.
  +
- +  Params:
- +      enumstring = the string name of an enum member.
- +
- +  Returns:
- +      The enum member whose name matches the enumstring string.
- +
+ +  Example:
  +  ------------
  +  enum SomeEnum { one, two, three };
  +
  +  SomeEnum foo = "one".toEnum!someEnum;
  +  SomeEnum bar = "three".toEnum!someEnum;
  +  ------------
+ +
+ +  Params:
+ +      enumstring = the string name of an enum member.
+ +
+ +  Returns:
+ +      The enum member whose name matches the enumstring string.
  +/
 pragma(inline)
 Enum toEnum(Enum)(const string enumstring) pure
@@ -626,26 +624,27 @@ unittest
 
 // enumToString
 /++
- +  The inverse of toEnum, this function takes an enum member value and returns
- +  its string identifier.
+ +  The inverse of `toEnum`, this function takes an enum member value and
+ +  returns its string identifier.
  +
- +  It lowers to a big switch of the enum members. It is faster than std.conv.to
- +  and generates less template bloat.
+ +  It lowers to a big switch of the enum members. It is faster than
+ +  `std.conv.to` and generates less template bloat.
  +
  +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
  +
- +  Params:
- +      value = an enum member whose string we want
- +
- +  Returns:
- +      The string name of the passed enum value.
- +
+ +  Example:
  +  ------------
  +  enum SomeEnum { one, two, three };
  +
  +  string foo = SomeEnum.one.enumToString;
  +  assert((foo == "one"), foo);
  +  ------------
+ +
+ +  Params:
+ +      value = Enum member whose string name we want.
+ +
+ +  Returns:
+ +      The string name of the passed enum member.
  +/
 pragma(inline)
 string enumToString(Enum)(Enum value) pure nothrow
@@ -711,16 +710,17 @@ unittest
 /++
  +  Returns the decimal value of a hex number in string form.
  +
- +  Params:
- +      hex = a string with a hexadecimal number.
- +
- +  Returns:
- +      An integer equalling the value of the passed hexadecimal string.
- +
+ +  Example:
  +  ------------
  +  int fifteen = numFromHex("F");
  +  int twofiftyfive = numFromHex("FF");
  +  ------------
+ +
+ +  Params:
+ +      hex = Hexadecimal number in string form.
+ +
+ +  Returns:
+ +      An integer equalling the value of the passed hexadecimal string.
  +/
 uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hex) pure
@@ -777,10 +777,10 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
  +  red/green/blue equivalents.
  +
  +  Params:
- +      hexString = a string with a hexadecimal number (colour)
- +      ref r = ref int for the red part of the hex string
- +      ref g = ref int for the green part of the hex string
- +      ref b = ref int for the blue part of the hex string
+ +      hexString = Hexadecimal number (colour) in string form.
+ +      r = Reference integer for the red part of the hex string.
+ +      g = Reference integer for the green part of the hex string.
+ +      b = Reference integer for the blue part of the hex string.
  +/
 void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hexString, out int r, out int g, out int b) pure
@@ -806,7 +806,6 @@ unittest
         assert((g == 1), g.text);
         assert((b == 2), b.text);
     }
-
     {
         int r, g, b;
         numFromHex("FFFFFF", r, g, b);
@@ -815,7 +814,6 @@ unittest
         assert((g == 255), g.text);
         assert((b == 255), b.text);
     }
-
     {
         int r, g, b;
         numFromHex("3C507D", r, g, b);
@@ -824,7 +822,6 @@ unittest
         assert((g == 80), g.text);
         assert((b == 125), b.text);
     }
-
     {
         int r, g, b;
         numFromHex!(Yes.acceptLowercase)("9a4B7c", r, g, b);
@@ -840,11 +837,21 @@ unittest
 /++
  +  Strips the supplied string from the end of a string.
  +
+ +  Example:
  +  ------------
  +  string suffixed = "Kameloso";
  +  string stripped = suffixed.stripSuffix("oso");
  +  assert((stripped == "Kamel"), stripped);
  +  ------------
+ +
+ +  Params:
+ +      fullStrip = Whether to allow for the stripping to clear the entire
+ +          string.
+ +      line = Original line to strip the suffix from.
+ +      suffix = Suffix string to strip.
+ +
+ +  Returns:
+ +      `line` with `suffix` sliced off.
  +/
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure nothrow @nogc
@@ -880,10 +887,18 @@ unittest
  +
  +  This is useful to see to what extent two addresses are similar.
  +
+ +  Example:
  +  ------------
  +  int numDomains = sharedDomains("irc.freenode.net", "leguin.freenode.net");
  +  assert(numDomains == 2);  // freenode.net
  +  ------------
+ +
+ +  Params:
+ +      rawOne = First domain string.
+ +      rawOther = Second domain string.
+ +
+ +  Returns:
+ +      The number of domains the two strings share.
  +/
 uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
 {
@@ -963,10 +978,18 @@ unittest
 /++
  +  Returns spaces equal to that of num tabs (\t).
  +
+ +  Example:
  +  ------------
  +  string indentation = 2.tabs;
  +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
  +  ------------
+ +
+ +  Params:
+ +      spaces = How many spaces make up a tab.
+ +      num = How many tabs we want.
+ +
+ +  Returns:
+ +      Whitespace equalling (`num` ' `spaces`) spaces.
  +/
 string tabs(uint spaces = 4)(int num) pure nothrow
 {
@@ -1022,11 +1045,18 @@ unittest
  +  This is not UTF-8 safe. It is naive in how it thinks a string always
  +  correspond to one set of codepoints and one set only.
  +
+ +  Example:
  +  ------------
  +  assert("Lorem ipsum".has("Lorem"));
  +  assert(!"Lorem ipsum".has('l'));
  +  assert("Lorem ipsum".has!(Yes.decode)(" "));
  +  ------------
+ +
+ +  Params:
+ +      decode = Whether to use auto-decoding functions, or try to keep to non-
+ +          decoding ones (when possible).
+ +      haystack = String to search for `needle`.
+ +      needle = Substring to search `haystack` for.
  +/
 bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||

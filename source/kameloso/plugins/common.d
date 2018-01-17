@@ -1107,7 +1107,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  it's finalised and passed on to be handled.
      +
      +  Params:
-     +      ref event = an `IRCEvent` undergoing parsing.
+     +      event = `IRCEvent` undergoing parsing.
      +/
     void postprocess(ref IRCEvent event) @system
     {
@@ -2664,8 +2664,8 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
  +  replay the event.
  +
  +  Params:
- +      event = the event to replay once we have `WHOIS` account information.
- +      fp = the function pointer to call when that happens.
+ +      event = `IRCEvent` to replay once we have `WHOIS` account information.
+ +      fn = Function pointer to call when that happens.
  +/
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     const IRCEvent event, const string nickname, PrivilegeLevel privilegeLevel,

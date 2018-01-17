@@ -1,3 +1,9 @@
+/++
+ +  A collection of enums and functions that relate to a Bash shell.
+ +
+ +  Much of this module has to do with terminal text colouring and is therefore
+ +  version `Colours`.
+ +/
 module kameloso.bash;
 
 import std.range : isOutputRange;
@@ -6,7 +12,7 @@ import std.typecons : Flag, No, Yes;
 
 @safe:
 
-/// Special terminal control characters
+/// Special terminal control characters.
 enum TerminalToken
 {
     /// Character that preludes a Bash colouring code.
@@ -19,7 +25,10 @@ enum TerminalToken
     reset = 15,
 }
 
-/// Effect codes that work like Bash colouring does, except for effects
+/++
+ +  Effect codes that work like Bash colouring does, except for formatting
+ +  effects like bold, dim, italics, etc.
+ +/
 enum BashEffect
 {
     bold = 1,
@@ -31,7 +40,7 @@ enum BashEffect
     hidden  = 8,
 }
 
-/// Format codes for Bash colouring
+/// Format codes for Bash colouring.
 enum BashFormat
 {
     bright      = 1,
@@ -42,7 +51,7 @@ enum BashFormat
     hidden      = 8,
 }
 
-/// Foreground colour codes for Bash colouring
+/// Foreground colour codes for Bash colouring.
 enum BashForeground
 {
     default_     = 39,
@@ -64,7 +73,7 @@ enum BashForeground
     white        = 97,
 }
 
-/// Background colour codes for Bash colouring
+/// Background colour codes for Bash colouring.
 enum BashBackground
 {
     default_     = 49,
@@ -86,7 +95,7 @@ enum BashBackground
     white        = 107,
 }
 
-/// Bash colour/effect reset codes
+/// Bash colour/effect reset codes.
 enum BashReset
 {
     all         = 0,
@@ -98,7 +107,7 @@ enum BashReset
     hidden      = 28,
 }
 
-/// Bool of whether a type is a colour code enum
+/// Bool of whether a type is a colour code enum.
 enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
                         is(T : BashFormat) || is(T : BashReset) ||
                         is(T == int);  // FIXME
@@ -110,14 +119,9 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +  a `BashReset` and composes them into a colour code token.
  +
  +  This function creates an `Appender` and fills it with the return value of
- +  `colour(Sink, Codes...)`.
+ +  the output range version of `colour`.
  +
- +  Params:
- +      codes = a variadic list of Bash format codes.
- +
- +  Returns:
- +      A Bash code sequence of the passed codes.
- +
+ +  Example:
  +  ------------
  +  string blinkOn = colour(BashForeground.white, BashBackground.yellow,
  +      BashEffect.blink);
@@ -125,6 +129,12 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +      BashReset.blink);
  +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
  +  ------------
+ +
+ +  Params:
+ +      codes = Variadic list of Bash format codes.
+ +
+ +  Returns:
+ +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
 string colour(Codes...)(Codes codes) pure nothrow
@@ -147,15 +157,17 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +
  +  This is the composing function that fills its result into an output range.
  +
- +  Params:
- +      codes = a variadic list of Bash format codes.
- +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +  sink.colour(BashForeground.red, BashEffect.bold);
  +  sink.put("Foo");
  +  sink.colour(BashForeground.default_, BashReset.bold);
  +  ------------
+ +
+ +  Params:
+ +      sink = Output range to write output to.
+ +      codes = Variadic list of Bash format codes.
  +/
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
@@ -184,16 +196,17 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
  +  Convenience function to colour or format a piece of text without an output
  +  buffer to fill into.
  +
- +  Params:
- +      text = text to format
- +      codes = Bash formatting codes (colour, underscore, bold, ...) to apply
- +
- +  Returns:
- +      A Bash code sequence of the passed codes, encompassing the passed text.
- +
+ +  Example:
  +  ------------
  +  string foo = "Foo Bar".colour(BashForeground.bold, BashEffect.reverse);
  +  ------------
+ +
+ +  Params:
+ +      text = Text to format.
+ +      codes = Bash formatting codes (colour, underscore, bold, ...) to apply.
+ +
+ +  Returns:
+ +      A Bash code sequence of the passed codes, encompassing the passed text.
  +/
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes) pure nothrow
@@ -216,10 +229,21 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +  Takes a colour and, if it deems it is too bright to see on a light terminal
  +  background, makes it darker.
  +
+ +  Example:
+ +  ------------
+ +  int r = 255;
+ +  int g = 128;
+ +  int b = 100;
+ +  normaliseColoursBright(r, g, b);
+ +  assert(r != 255);
+ +  assert(g != 128);
+ +  assert(b != 100);
+ +  ------------
+ +
  +  Params:
- +      ref r = red
- +      ref g = green
- +      ref b = blue
+ +      r = Reference to a red value.
+ +      g = Reference to a green value.
+ +      b = Reference to a blue value.
  +/
 version(Colours)
 void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
@@ -277,10 +301,21 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
  +  Takes a colour and, if it deems it is too dark to see on a black terminal
  +  background, makes it brighter.
  +
+ +  Example:
+ +  ------------
+ +  int r = 255;
+ +  int g = 128;
+ +  int b = 100;
+ +  normaliseColoursBright(r, g, b);
+ +  assert(r != 255);
+ +  assert(g != 128);
+ +  assert(b != 100);
+ +  ------------
+ +
  +  Params:
- +      ref r = red
- +      ref g = green
- +      ref b = blue
+ +      r = Reference to a red value.
+ +      g = Reference to a green value.
+ +      b = Reference to a blue value.
  +/
 version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
@@ -439,13 +474,7 @@ unittest
  +  Produces a Bash colour token for the colour passed, expressed in terms of
  +  red, green and blue.
  +
- +  Params:
- +      normalise = normalise colours so that they aren't too dark.
- +      sink = output range to write the final code into
- +      r = red
- +      g = green
- +      b = blue
- +
+ +  Example:
  +  ------------
  +  Appender!string sink;
  +  int r, g, b;
@@ -453,7 +482,16 @@ unittest
  +  sink.truecolour(r, g, b);
  +  sink.put("Foo");
  +  sink.colour(BashReset.all);
+ +  writeln(sink);  // "Foo" in #3C507D
  +  ------------
+ +
+ +  Params:
+ +      normalise = Whether to normalise colours so that they aren't too dark.
+ +      sink = Output range to write the final code into.
+ +      r = Red value.
+ +      g = Green value.
+ +      b = Blue value.
+ +      bright = Whether the terminal has a bright background or not.
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
@@ -489,6 +527,7 @@ if (isOutputRange!(Sink,string))
  +  Convenience function to colour a piece of text without being passed an
  +  output sink to fill into.
  +
+ +  Example:
  +  ------------
  +  string foo = "Foo Bar".truecolour(172, 172, 255);
  +
@@ -496,6 +535,17 @@ if (isOutputRange!(Sink,string))
  +  numFromHex("003388", r, g, b);
  +  string bar = "Bar Foo".truecolour(r, g, b);
  +  ------------
+ +
+ +  Params:
+ +      normalise = Whether to normalise colours so that they aren't too dark.
+ +      word = The string to tint.
+ +      r = Red value.
+ +      g = Green value.
+ +      b = Blue value.
+ +      bright = Whether the terminal has a bright background or not.
+ +
+ +  Returns:
+ +      The passed string word encompassed by Bash colour tags.
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
@@ -533,10 +583,19 @@ unittest
 /++
  +  Bash-inverts the colours of a piece of text in a string.
  +
+ +  Example:
  +  ------------
  +  immutable line = "This is an example!";
- +  writeln(line.invert("example"));  // "example" inverted
+ +  writeln(line.invert("example"));  // "example" substring visually inverted
  +  ------------
+ +
+ +  Params:
+ +      line = Line to examine and invert a substring of.
+ +      toInvert = Substring to invert.
+ +
+ +  Returns:
+ +      Line with the substring in it inverted, if inversion was successful,
+ +      else (a duplicate of) the line unchanged.
  +/
 version(Colours)
 string invert(const string line, const string toInvert)
@@ -618,63 +677,53 @@ unittest
         immutable expected = pre ~ "abc" ~ post;
         assert((line == expected), line);
     }
-
     {
         immutable line = "abc abc".invert("abc");
         immutable inverted = pre ~ "abc" ~ post;
         immutable expected = inverted ~ ' ' ~ inverted;
         assert((line == expected), line);
     }
-
     {
         immutable line = "abca abc".invert("abc");
         immutable inverted = pre ~ "abc" ~ post;
         immutable expected = "abca " ~ inverted;
         assert((line == expected), line);
     }
-
     {
         immutable line = "abcabc".invert("abc");
         immutable expected = "abcabc";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso^^".invert("kameloso");
         immutable expected = "kameloso^^";
         assert((line == expected), line);
     }
-
     {
         immutable line = "foo kameloso bar".invert("kameloso");
         immutable expected = "foo " ~ pre ~ "kameloso" ~ post ~ " bar";
         assert((line == expected), line);
     }
-
     {
         immutable line = "fookameloso bar".invert("kameloso");
         immutable expected = "fookameloso bar";
         assert((line == expected), line);
     }
-
     {
         immutable line = "foo kamelosobar".invert("kameloso");
         immutable expected = "foo kamelosobar";
         assert((line == expected), line);
     }
-
     {
         immutable line = "foo(kameloso)bar".invert("kameloso");
         immutable expected = "foo(" ~ pre ~ "kameloso" ~ post ~ ")bar";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso: 8ball".invert("kameloso");
         immutable expected = pre ~ "kameloso" ~ post ~ ": 8ball";
         assert((line == expected), line);
     }
-
     {
         immutable line = "Welcome to the freenode Internet Relay Chat Network kameloso^"
             .invert("kameloso^");
@@ -682,67 +731,56 @@ unittest
             pre ~ "kameloso^" ~ post;
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso^: wfwef".invert("kameloso^");
         immutable expected = pre ~ "kameloso^" ~ post ~ ": wfwef";
         assert((line == expected), line);
     }
-
     {
         immutable line = "[kameloso^]".invert("kameloso^");
         immutable expected = "[kameloso^]";
         assert((line == expected), line);
     }
-
     {
         immutable line = `"kameloso^"`.invert("kameloso^");
         immutable expected = "\"" ~ pre ~ "kameloso^" ~ post ~ "\"";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso^".invert("kameloso");
         immutable expected = "kameloso^";
         assert((line == expected), line);
     }
-
     {
         immutable line = "That guy kameloso? is a bot".invert("kameloso");
         immutable expected = "That guy " ~ pre ~ "kameloso" ~ post  ~ "? is a bot";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso`".invert("kameloso");
         immutable expected = "kameloso`";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso9".invert("kameloso");
         immutable expected = "kameloso9";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso-".invert("kameloso");
         immutable expected = "kameloso-";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso_".invert("kameloso");
         immutable expected = "kameloso_";
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso_".invert("kameloso_");
         immutable expected = pre ~ "kameloso_" ~ post;
         assert((line == expected), line);
     }
-
     {
         immutable line = "kameloso kameloso kameloso kameloso kameloso".invert("kameloso");
         immutable expected = "%1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s"
