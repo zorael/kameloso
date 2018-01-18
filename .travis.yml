@@ -1,5 +1,7 @@
 language: d
 
+sudo: false
+
 d:
     - dmd
 
@@ -8,10 +10,23 @@ os:
     - windows
     - osx
 
+addons:
+    apt:
+        packages:
+            - libevent-dev
+
 script:
-    - dub test --compiler=${DC} --build-mode=singleFile
     - dub test --compiler=${DC} --build-mode=singleFile -c vanilla
     - dub test --compiler=${DC} --build-mode=singleFile -c colours+web
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c vanilla
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours+web
+    - dub build -b ddox --compiler=${DC}
+
+deploy:
+    local_dir: docs
+    provider: pages
+    skip_cleanup: true
+    github_token: $GH_REPO_TOKEN
+    on:
+        branch: master
+    cache: { directories: [$HOME/.dub] }
