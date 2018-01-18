@@ -249,7 +249,8 @@ public:
 
 // listenFiber
 /++
- +  A `Socket`-reading `Generator` `Fiber`.
+ +  A `std.socket.Socket`-reading `std.concurrency.Generator`
+ +  `core.thread.Fiber`.
  +
  +  It maintains its own buffer into which it receives from the server, though
  +  not neccessarily full lines. It thus keeps filling the buffer until it
@@ -272,7 +273,8 @@ public:
  +  ------------
  +
  +  Params:
- +      conn = `Connection` whose `Socket` it reads from the server with.
+ +      conn = `Connection` whose `std.socket.Socket` it reads from the server
+ +          with.
  +      abort = Reference flag which, if set, means we should abort and return.
  +
  +  Yields:

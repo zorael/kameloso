@@ -1,5 +1,5 @@
 /++
- +  The `package` file contains the list of `EnabledPlugins`, to which you
+ +  This `package` file contains the list of `EnabledPlugins`, to which you
  +  append your plugin to have it be instantiated and included in the bot's
  +  normal routines.
  +/
@@ -7,7 +7,10 @@ module kameloso.plugins;
 
 import std.meta : AliasSeq;
 
-/// Publically import all plugins so that only kameloso.plugins need be imported.
+/++
+ +  Publically import all plugins so that only `kameloso.plugins` need be
+ +  imported.
+ +/
 public import kameloso.plugins.admin;
 public import kameloso.plugins.chatbot;
 public import kameloso.plugins.common;
@@ -23,23 +26,29 @@ public import kameloso.plugins.persistence;
 
 version(Posix)
 {
-    // Implicitly enabled if imported
+    // Implicitly enabled if imported.
     public import kameloso.plugins.pipeline;
 }
 
 version(Web)
 {
-    // Implicitly enabled if imported
+    // Implicitly enabled if imported.
     public import kameloso.plugins.webtitles;
     public import kameloso.plugins.bashquotes;
     public import kameloso.plugins.reddit;
 }
 
-/// Add plugins to this list to enable them
+/++
+ +  List of enabled plugins. Add and remove to enable and disable.
+ +
+ +  Note that `dub` will still compile any files in the `plugins` directory!
+ +  To completely omit a plugin you will either have to compile the bot
+ +  manually, or add an `__EOF__` at the top of the plugin source file.
+ +/
 public alias EnabledPlugins = AliasSeq!(
-    TwitchService,
-    PersistenceService,
-    PrinterPlugin,
+    TwitchService, // Must be before PersistenceService
+    PersistenceService, // Should be early
+    PrinterPlugin,  // Might as well be early
     ConnectService,
     ChanQueriesService,
     CTCPService,

@@ -1,14 +1,14 @@
 /++
  +  The Persistence service keeps track of all seen users, gathering as much
- +  information about them as possible, then injects them into `IRCEvent`s where
- +  such information was not present.
+ +  information about them as possible, then injects them into
+ +  `kameloso.ircdefs.IRCEvent`s where such information was not present.
  +
  +  This means that even if a service only refers to a user by nickname, things
  +  like his ident and address will be available to plugins as well, assuming
  +  the Persistence service had seen that previously.
  +
  +  It has no commands. It only does postprocessing and doesn't handle
- +  `IRCEvents` in the normal sense at all.
+ +  `kameloso.ircdefs.IRCEvent`s in the normal sense at all.
  +
  +  It is technically optional but it's very enriching for plugins, so it stays
  +  recommended.
@@ -23,9 +23,9 @@ private:
 
 // postprocess
 /++
- +  Hijacks a ref `IRCEvent` after parsing and fleshes out the `event.sender`
- +  and/or `event.target` fields, so that things like account names that are
- +  only sent sometimes carry over.
+ +  Hijacks a reference to a `kameloso.ircdefs.IRCEvent` after parsing and
+ +  fleshes out the `event.sender` and/or `event.target` fields, so that things
+ +  like account names that are only sent sometimes carry over.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
@@ -84,8 +84,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
- +  Removes a user's `IRCUser` entry from a the `state.users` list upon them
- +  disconnecting.
+ +  Removes a user's `kameloso.ircdefs.IRCUser` entry from the `users`
+ +  associative array of the current `PersistenceService`'s
+ +  `kameloso.plugins.common.IRCPluginState` upon them disconnecting.
  +/
 @(IRCEvent.Type.QUIT)
 void onQuit(PersistenceService service, const IRCEvent event)
@@ -96,8 +97,9 @@ void onQuit(PersistenceService service, const IRCEvent event)
 
 // onNick
 /++
- +  Update the entry of someone in the `users` array to when they change
- +  nickname, point to the new `IRCUser`.
+ +  Update the entry of someone in the `users` associative array of the current
+ +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` when they
+ +  change nickname, point to the new `kameloso.ircdefs.IRCUser`.
  +
  +  Removes the old entry.
  +/
@@ -123,11 +125,12 @@ void onNick(PersistenceService service, const IRCEvent event)
 
 // onPing
 /++
- +  Rehash the internal `state.users` associative array of `IRCUser`s, once
- +  every `hoursBetweenRehashes` hours.
+ +  Rehash the internal `users` associative array of the current
+ +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` once every
+ +  `hoursBetweenRehashes` hours.
  +
  +  We ride the periodicity of `PING` to get a natural cadence without
- +  having to resort to timed `Fiber`s.
+ +  having to resort to timed `core.thread.Fiber`s.
  +
  +  The number of hours is so far hardcoded but can be made configurable if
  +  there's a use-case for it.
@@ -158,17 +161,19 @@ public:
 
 // PersistenceService
 /++
- +  The Persistence service melds new `IRCUser`s (from postprocessing new
- +  `IRCEvent`s) with old records of themselves,
+ +  The Persistence service melds new `kameloso.ircdefs.IRCUser`s (from
+ +  postprocessing new `kameloso.ircdefs.IRCEvent`s) with old records of
+ +  themselves,
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in
- +  an `IRCEvent` may be his/her nickname, even though the event before detailed
- +  everything, even including their account name. With this service we aim to
- +  complete such `IRCUser` entries with the union of everything we know from
- +  previous events.
+ +  an `kameloso.ircdefs.IRCEvent` may be his/her nickname, even though the
+ +  event before detailed everything, even including their account name. With
+ +  this service we aim to complete such `kameloso.ircdefs.IRCUser` entries with
+ +  the union of everything we know from previous events.
  +
- +  It only needs part of `UserAwareness` for minimal bookkeeping, not the full
- +  package, so we only copy/paste the relevant bits to stay slim.
+ +  It only needs part of `kameloso.plugins.common.UserAwareness` for minimal
+ +  bookkeeping, not the full package, so we only copy/paste the relevant bits
+ +  to stay slim.
  +/
 final class PersistenceService : IRCPlugin
 {

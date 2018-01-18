@@ -1,8 +1,8 @@
 /++
- +  The Twitch service postprocesses `IRCEvent`s after they are parsed but
- +  before they are sent to the plugins for handling, and deals with Twitch-
- +  specifics. Those include extracting the colour someone's name should be
- +  printed in, their alias/"display namee" (generally their nickname
+ +  The Twitch service postprocesses `kameloso.ircdefs.IRCEvent`s after they are
+ +  parsed but before they are sent to the plugins for handling, and deals with
+ +  Twitch-specifics. Those include extracting the colour someone's name should
+ +  be printed in, their alias/"display namee" (generally their nickname
  +  capitalised), converting the event to some event types unique to Twitch,
  +  etc.
  +
@@ -23,13 +23,6 @@ private:
 // TwitchSettings
 /++
  +  Twitch-specific settings, gathered in a struct.
- +
- +  ------------
- +  struct TwitchSettings
- +  {
- +      bool twitchColours = true;
- +  }
- +  ------------
  +/
 struct TwitchSettings
 {
@@ -43,11 +36,12 @@ struct TwitchSettings
 
 // postprocess
 /++
- +  Handle Twitch specifics, modifying the `IRCEvent` to add things like
- +  `colour` and differentiate between temporary and permanent bans.
+ +  Handle Twitch specifics, modifying the `kameloso.ircdefs.IRCEvent` to add
+ +  things like `colour` and differentiate between temporary and permanent bans.
  +
  +  Params:
- +      event = the `IRCEvent` to modify.
+ +      service = Current `TwitchService`.
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 void postprocess(TwitchService service, ref IRCEvent event)
 {
@@ -75,7 +69,9 @@ void postprocess(TwitchService service, ref IRCEvent event)
  +  The event is passed by ref as many tags neccessitate changes to it.
  +
  +  Params:
- +      ref event = A reference to the IRCEvent whose tags should be parsed.
+ +      service = Current `TwitchService`.
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` whose tags should
+ +          be parsed.
  +/
 void parseTwitchTags(TwitchService service, ref IRCEvent event)
 {
@@ -120,7 +116,8 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "mod":
         case "subscriber":
         case "turbo":
-            // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
+            // 1 if the user has a (moderator|subscriber|turbo) badge;
+            // otherwise, 0.
             if (value == "0") break;
 
             if (!event.sender.badge.length)
@@ -358,7 +355,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "target-msg-id":
             // banphrase
 
-            // Ignore these events
+            // Ignore these events.
             break;
 
         case "message":
@@ -390,7 +387,7 @@ public:
  +/
 final class TwitchService : IRCPlugin
 {
-    /// All Twitch service options gathered
+    /// All Twitch service options gathered.
     @Settings TwitchSettings twitchSettings;
 
     mixin IRCPluginImpl;

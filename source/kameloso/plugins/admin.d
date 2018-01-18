@@ -8,24 +8,25 @@
  +  and removing homes on-the-fly, whitelisting or un-whitelisting account
  +  names, joining or leavin channels, as well as plain quitting.
  +
- +  It has a few commands:
- +      `addhome`
- +      `delhome`
- +      `join`
- +      `part`
- +      `channels`
- +      `users`
- +      `user`
- +      `printall`
- +      `printbytes`
- +      `resetterm`
- +      `sudo`
- +      `asserts`
- +      `forgetaccounts`
- +      `whitelist`
- +      `unwhitelist`
- +      `writeconfig` | `save`
- +      `quit`
+ +  It has a few command, whose names should be fairly self-explanatory:
+ +
+ +  `addhome`<br>
+ +  `delhome`<br>
+ +  `join`<br>
+ +  `part`<br>
+ +  `channels`<br>
+ +  `users`<br>
+ +  `user`<br>
+ +  `printall`<br>
+ +  `printbytes`<br>
+ +  `resetterm`<br>
+ +  `sudo`<br>
+ +  `asserts`<br>
+ +  `forgetaccounts`<br>
+ +  `whitelist`<br>
+ +  `unwhitelist`<br>
+ +  `writeconfig` | `save`<br>
+ +  `quit`
  +
  +  It is optional if you don't intend to be controlling the bot from another
  +  client.
@@ -46,9 +47,17 @@ private:
 
 // onAnyEvent
 /++
- +  Prints all incoming events raw if the flag to do so has been set with
- +  `onCommandPrintAll`, by way of the `printall` verb. Also prints the content
- +  of any incomings events, cast to bytes.
+ +  Prints all incoming events to the local terminal, in forms depending on
+ +  which flags have been set with bot commands.
+ +
+ +  If `printAll` is set by way of invoking `onCommandPrintAll`, prints all
+ +  incoming server strings.
+ +
+ +  If `printBytes` is set by way of invoking `onCommandPrintBytes`, prints all
+ +  incoming server strings byte per byte.
+ +
+ +  If `printAsserts` is set by way of invoking `onCommandPrintAll`, prints all
+ +  incoming events as assert statements, for use in unittest blocks.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
@@ -89,6 +98,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowOneUser
 /++
  +  Prints the details of a specific, supplied user.
+ +
+ +  It basically prints the matching `kameloso.ircdefs.IRCUser`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -114,13 +125,17 @@ void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
 // onCommandForgetUserAccounts
 /++
  +  Forgets all users' accounts, prompting new `WHOIS` calls.
+ +
+ +  This is only done locally to this plugin; other plugins will retain the
+ +  information. It is a tool to help diagnose whether logins are being caught
+ +  or not, used in tandem with `onCommandShowOneUser`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "forgetaccounts")
-@Description("[debug] Forget user accounts.")
+@Description("[debug] Forget user accounts (for this plugin).")
 void onCommandForgetAccounts(AdminPlugin plugin)
 {
     import kameloso.common : printObject;
@@ -137,6 +152,8 @@ void onCommandForgetAccounts(AdminPlugin plugin)
 // onCommandSave
 /++
  +  Saves current configuration to disk.
+ +
+ +  This saves all plugins' configuration, not just this plugin's.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -156,7 +173,8 @@ void onCommandSave(AdminPlugin plugin)
 
 // onCommandShowUsers
 /++
- +  Prints out the current `state.users` array to the local terminal.
+ +  Prints out the current `users` array of the `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -187,7 +205,8 @@ void onCommandShowUsers(AdminPlugin plugin)
 
 // onCommandShowChannels
 /++
- +  Prints out the current `state.channels` array to the local terminal.
+ +  Prints out the current `channels` array of the `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -215,6 +234,8 @@ void onCommandShowChannels(AdminPlugin plugin)
 // onCommandSudo
 /++
  +  Sends supplied text to the server, verbatim.
+ +
+ +  You need basic knowledge of IRC server strings to use this.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -232,7 +253,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Sends a `QUIT` event to the server.
  +
- +  If any extra text is following the 'quit' prefix, it uses that as the quit
+ +  If any extra text is following the "`quit`" prefix, it uses that as the quit
  +  reason, otherwise it falls back to the default as specified in the
  +  configuration file.
  +/
@@ -260,7 +281,9 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAddChan
 /++
- +  Add a channel to the list of currently active home channels.
+ +  Add a channel to the list of currently active home channels, in the
+ +  `kameloso.ircdefs.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -298,7 +321,9 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandDelHome
 /++
- +  Removes a channel from the list of currently active home channels.
+ +  Removes a channel from the list of currently active home channels, from the
+ +  `kameloso.ircdefs.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -339,7 +364,9 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandWhitelist
 /++
- +  Add a nickname to the list of users who may trigger the bot.
+ +  Add a nickname to the list of users who may trigger the bot, to the current
+ +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is at a `whitelist` level, as opposed to `anyone` and `admin`.
  +/
@@ -378,7 +405,11 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandUnwhitelist
 /++
- +  Remove a nickname from the list of users who may trigger the bot.
+ +  Remove a nickname from the list of users who may trigger the bot, from the
+ +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
+ +
+ +  This is at a `whitelist` level, as opposed to `admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -447,7 +478,7 @@ void onCommandResetTerminal()
 
 // onCommandPrintAll
 /++
- +  Toggles a flag to print all incoming events raw.
+ +  Toggles a flag to print all incoming events *raw*.
  +
  +  This is for debugging purposes.
  +/
@@ -466,7 +497,7 @@ void onCommandPrintAll(AdminPlugin plugin)
 
 // onCommandPrintBytes
 /++
- +  Toggles a flag to print all incoming events as bytes.
+ +  Toggles a flag to print all incoming events *as individual bytes*.
  +
  +  This is for debugging purposes.
  +/
@@ -485,9 +516,9 @@ void onCommandPrintBytes(AdminPlugin plugin)
 
 // onCommandAsserts
 /++
- +  Toggles a flag to print assert statements for incoming events.
+ +  Toggles a flag to print *assert statements* of incoming events.
  +
- +  This is for debugging purposes.
+ +  This is for creating unittest blocks in the source code.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -556,19 +587,28 @@ public:
 
 // AdminPlugin
 /++
- +  A plugin aimed for adḿinistrative use and debugging.
+ +  The `AdminPlugin` is a plugin aimed for adḿinistrative use and debugging.
  +
- +  It was historically part of `Chatbot`.
+ +  It was historically part of the `kameloso.plugins.chatbot.ChatbotPlugin`.
  +/
 final class AdminPlugin : IRCPlugin
 {
-    /// Toggles whether onAnyEvent prints the raw strings of all incoming events
+    /++
+     +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
+     +  events.
+     +/
     bool printAll;
 
-    /// Toggles whether onAnyEvent prints the raw bytes of the *contents* of events
+    /++
+     +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents* of
+     +  events.
+     +/
     bool printBytes;
 
-    /// Toggles whether onAnyEvent prints assert statements for incoming events
+    /++
+     +  Toggles whether `onAnyEvent` prints assert statements for incoming
+     +  events.
+     +/
     bool printAsserts;
 
     mixin IRCPluginImpl;

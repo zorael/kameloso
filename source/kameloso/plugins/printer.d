@@ -1,10 +1,11 @@
 /++
- +  The Printer plugin takes incoming `IRCEvent`s, formats them into being
- +  easily readable and prints them to the screen, optionally with colours.
+ +  The Printer plugin takes incoming `kameloso.ircdefs.IRCEvent`s, formats them
+ +  into being easily readable and prints them to the screen, optionally with
+ +  colours.
  +
- +  It has no commands; all `IRCEvents` will be parsed and pinted, excluding
- +  certain types that were deemed too spammy. Print them as well by disabling
- +  `PrinteSettings.filterVerbose`.
+ +  It has no commands; all `kameloso.ircdefs.IRCEvent`s will be parsed and
+ +  pinted, excluding certain types that were deemed too spammy. Print them as
+ +  well by disabling `PrinterSettings.filterVerbose`.
  +
  +  It is not technically neccessary, but it is the main form of feedback you
  +  get from the plugin, so you will only want to disable it if you want a
@@ -23,35 +24,23 @@ private:
 
 // PrinterSettings
 /++
- +  All Printer plugin options gathered in a struct
- +
- +  ------------
- +  struct PrinterSettings
- +  {
- +      bool truecolor = true;
- +      bool normaliseTrueclour = true;
- +      bool randomNickColours = true;
- +      bool filterVerbose = true;
- +      bool badgesInCaps = false;
- +      bool typesInCaps = true;
- +  }
- +  ------------
+ +  All Printer plugin options gathered in a struct.
  +/
 struct PrinterSettings
 {
-    /// Flag to display advanced colours in RRGGBB rather than simple Bash
+    /// Flag to display advanced colours in RRGGBB rather than simple Bash.
     bool truecolour = true;
 
-    /// Flag to normalise truecolours; make dark brighter and bright darker
+    /// Flag to normalise truecolours; make dark brighter and bright darker.
     bool normaliseTruecolour = true;
 
-    /// Flag to display nicks in random colour based on their nickname hash
+    /// Flag to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
-    /// Flag to filter away most uninteresting events
+    /// Flag to filter away most uninteresting events.
     bool filterVerbose = true;
 
-    /// Flag to print the badge field in caps (as they used to be earlier)
+    /// Flag to print the badge field in caps (as they used to be earlier).
     bool badgesInCaps = false;
 
     /// Flag to send a terminal bell signal when the bot is mentioned in chat.
@@ -66,7 +55,7 @@ struct PrinterSettings
 /++
  +  Print an event to the local terminal.
  +
- +  Does not allocate, writes directly to a `LockingTextWriter`.
+ +  Does not allocate, writes directly to a `std.stdio.LockingTextWriter`.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
@@ -125,8 +114,8 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
  +  Puts a variadic list of values into an output range sink.
  +
  +  Params:
- +      sink = output range to sink items into
- +      args = variadic list of things to put
+ +      sink = Output range to sink items into.
+ +      args = Variadic list of things to put into the output range.
  +/
 void put(Sink, Args...)(auto ref Sink sink, Args args)
 {
@@ -149,17 +138,19 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
 
 // formatMessage
 /++
- +  Formats an `IRCEvent` into an output range sink.
+ +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  By default output is in colours, unless on Windows. The behaviour is stored
- +  and read from the `printerSettings` struct.
+ +  and read from the `PrinterPlugin.printerSettings` struct.
  +
  +  Params:
- +      sink = output range to format the IRCEvent into
- +      event = the reference event that is being formatted
+ +      plugin = Current `PrinterPlugin`.
+ +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
+ +      event = The reference event that is being formatted.
+ +      monochrome = Whether to print text monochrome or coloured.
  +/
 void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
     bool monochrome)
@@ -650,6 +641,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 // mapEffects
 /++
  +  Map mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
+ +
+ +  Params:
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
 void mapEffects(ref IRCEvent event)
@@ -687,7 +681,10 @@ void mapEffects(ref IRCEvent event)
 // stripEffects
 /++
  +  Removes all form of IRC formatting (colours, bold, italics, underlined) from
- +  an `IRCEvent`.
+ +  an `kameloso.ircdefs.IRCEvent`.
+ +
+ +  Params:
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 void stripEffects(ref IRCEvent event)
 {
@@ -724,6 +721,9 @@ void stripEffects(ref IRCEvent event)
 // mapColours
 /++
  +  Map mIRC effect color tokens to Bash ones.
+ +
+ +  Params:
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
 void mapColours(ref IRCEvent event)
@@ -856,7 +856,10 @@ unittest
 
 
 /++
- +  Removes IRC colouring from an `IRCEvent`.
+ +  Removes IRC colouring from an `kameloso.ircdefs.IRCEvent`.
+ +
+ +  Params:
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 void stripColours(ref IRCEvent event)
 {
@@ -929,9 +932,9 @@ unittest
  +  more at the end in case there was an odd token only toggling on.
  +
  +  Params:
- +      bashEffectCode = the Bash equivalent of the mircToken effect
- +      mircToken = the mIRC token for a particular text effect
- +      ref event = the IRC event whose content body to work on
+ +      mircToken = mIRC token for a particular text effect.
+ +      bashEffectCode = Bash equivalent of the mircToken effect.
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
 void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
@@ -984,11 +987,11 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
         hits = hits.post.matchAll(engine);
     }
 
-    // We've gone through them pair-wise, now see if there are any singles left
+    // We've gone through them pair-wise, now see if there are any singles left.
     auto singleTokenEngine = (cast(char)mircToken~"").regex;
     sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
 
-    // End tags and commit
+    // End tags and commit.
     sink.colour(BashReset.all);
     event.content = sink.data;
 }
@@ -1020,15 +1023,15 @@ public:
 
 // Printer
 /++
- +  The Printer plugin takes all `IRCEvent`s and prints them to the local
- +  terminal, formatted and optionally in colour.
+ +  The Printer plugin takes all `kameloso.ircdefs.IRCEvent`s and prints them to
+ +  the local terminal, formatted and optionally in colour.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split
  +  off into its own plugin.
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    /// All Printer plugin options gathered
+    /// All Printer plugin options gathered.
     @Settings PrinterSettings printerSettings;
 
     mixin IRCPluginImpl;

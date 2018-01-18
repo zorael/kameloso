@@ -118,8 +118,8 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
  +  a `BashReset` and composes them into a colour code token.
  +
- +  This function creates an `Appender` and fills it with the return value of
- +  the output range version of `colour`.
+ +  This function creates an `std.array.Appender` and fills it with the return
+ +  value of the output range version of `colour`.
  +
  +  Example:
  +  ------------

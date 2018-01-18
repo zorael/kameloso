@@ -206,7 +206,8 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
 unittest
 {
-    // Ensure onCTCPs implement cases for all its annotated `IRCEvent.Type`s.
+    // Ensure onCTCPs implement cases for all its annotated
+    // `kameloso.ircdefs.IRCEvent.Type`s.
     import std.traits : getUDAs;
 
     auto service = new CTCPService(IRCPluginState.init);
@@ -224,9 +225,9 @@ unittest
 /++
  +  Sends a list of which `CTCP` events we understand.
  +
- +  This builds a string of the names of all `IRCEvent.Types` that begin
- +  with `CTCP_`, at compile-time. As such, as long as we name any new
- +  such types `CTCP_SOMETHING`, this list will always be correct.
+ +  This builds a string of the names of all `kameloso.ircdefs.IRCEvent.Type`s
+ +  that begin with `CTCP_`, at compile-time. As such, as long as we name any
+ +  new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPService service, const IRCEvent event)

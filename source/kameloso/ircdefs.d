@@ -2093,8 +2093,9 @@ struct IRCChannel
 
     /++
      +  Array of all the nicknames inhabiting the channel. These are not
-     +  `IRCUser`s; those are kept in `IRCPluginState.users`. These are merely
-     +  keys to that associative array.
+     +  `IRCUser`s; those are kept in the `users` associative array of
+     +  `kameloso.plugins.common.IRCPluginState.users`. These are merely keys to
+     +  that array.
      +/
     string[] users;
 

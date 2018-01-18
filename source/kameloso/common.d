@@ -106,7 +106,10 @@ struct ThreadMessage
     /// Concurrency message type asking to have plugins' configuration saved.
     struct Save {}
 
-    /// Concurrency message asking for a reference to the `IRCPlugin[]` array.
+    /++
+     +  Concurrency message asking for a reference to the arrays of
+     +  `IRCPlugin`s in the current `kameloso.common.Client`.
+     +/
     struct PeekPlugins {}
 }
 
@@ -1173,9 +1176,9 @@ struct Client
 
     /++
      +  A runtime array of all plugins. We iterate these when we have finished
-     +  parsing an `IRCEvent`, and call the relevant event handlers of each.
+     +  parsing an `kameloso.ircdefs.IRCEvent`, and call the relevant event
+     +  handlers of each.
      +/
-    /// to react to.
     IRCPlugin[] plugins;
 
     /// When a nickname was called `WHOIS` on, for hysteresis.
@@ -1317,7 +1320,7 @@ struct Client
     +  all plugins to have an updated copy of it.
     +
     +  Params:
-    +      bot = `IRCBot` to propagate to all plugins.
+    +      bot = `kameloso.ircdefs.IRCBot` to propagate to all plugins.
     +/
     void propagateBot(IRCBot bot) pure nothrow @nogc @safe
     {

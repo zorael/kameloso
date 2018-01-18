@@ -1,6 +1,6 @@
 /++
- +  The `common` file is not a plugin by itself but contains code common to all
- +  plugins, without which they will not function.
+ +  The `plugins.common` file is not a plugin by itself but contains code common
+ +  to all plugins, without which they will *not* function.
  +
  +  It is mandatory if you plan to use any form of plugin. Indeed, the very
  +  definition of an `IRCPlugin` is in here.
@@ -31,61 +31,70 @@ interface IRCPlugin
 
     @safe:
 
-    /// Executed to return a reference to the current `IRCBot`
+    /// Executed to return a reference to the current `kameloso.ircdefs.IRCBot`.
     ref IRCBot bot() pure nothrow @nogc @property;
 
-    /// Executed to get a list of nicknames a plugin wants `WHOIS`ed
+    /// Executed to get a list of nicknames a plugin wants `WHOIS`ed.
     ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc;
 
-    /// Executed to let plugins modify an event mid-parse
+    /// Executed to let plugins modify an event mid-parse.
     void postprocess(ref IRCEvent) @system;
 
-    /// Executed upon new IRC event parsed from the server
+    /// Executed upon new IRC event parsed from the server.
     void onEvent(const IRCEvent) @system;
 
-    /// Executed when the plugin is requested to write its settings to disk
+    /// Executed when the plugin is requested to write its settings to disk.
     void writeConfig(const string);
 
-    /// Executed during setup to let plugins read settings from disk
+    /// Executed during setup to let plugins read settings from disk.
     void loadConfig(const string);
 
-    /// Executed when gathering things to put in the configuration file
+    /// Executed when gathering things to put in the configuration file.
     void addToConfig(ref Appender!string) const;
 
-    /// Executed during start if we want to change a setting by its string name
+    /// Executed during start if we want to change a setting by its string name.
     void setSettingByName(const string, const string);
 
-    /// Executed when connection has been established
+    /// Executed when connection has been established.
     void start() @system;
 
-    /// Executed when we want a plugin to print its settings and such
+    /// Executed when we want a plugin to print its settings and such.
     void present() const;
 
-    /// Executed when a plugin wants to examine all the other plugins
+    /// Executed when a plugin wants to examine all the other plugins.
     void peekPlugins(const IRCPlugin[]) @system;
 
-    /// Executed when we want a plugin to print its Settings struct
+    /// Executed when we want a plugin to print its Settings struct.
     void printSettings() @system const;
 
-    /// Executed during shutdown or plugin restart
+    /// Executed during shutdown or plugin restart.
     void teardown() @system;
 
-    /// Returns the name of the plugin, sliced off the module name
+    /// Returns the name of the plugin, sliced off the module name.
     string name() @property const;
 
-    /// Returns an array of the descriptions of the bot commands a plugin offers
+    /// Returns an array of the descriptions of the commands a plugin offers.
     string[string] commands() pure nothrow @property const;
 
-    /// Returns a reference to the current `IRCPluginState`
+    /// Returns a reference to the current `IRCPluginState`.
     ref IRCPluginState state() pure nothrow @nogc @property;
 
-    /// Returns a reference to the list of awaiting `Fiber`s, keyed by `Type`
+    /++
+     +  Returns a reference to the list of awaiting `core.thread.Fiber`s, keyed
+     +  by `kameloso.ircdefs.IRCEvent.Type`.
+     +/
     ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property;
 
-    /// Returns a reference to the list of timed `Fiber`s, labeled by UNIX time
+    /++
+     +  Returns a reference to the list of timed `core.thread.Fiber`s, labeled
+     +  by UNIX time.
+     +/
     ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property;
 
-    /// Returns a counter for which hour the plugin should rehash its user array
+    /++
+     +  Returns a counter for which hour the plugin should rehash its user
+     +  array.
+     +/
     ref int rehashCounter() pure nothrow @nogc @property;
 }
 
@@ -98,16 +107,16 @@ interface IRCPlugin
  +/
 abstract class WHOISRequest
 {
-    /// Stored `IRCEvent` to replay
+    /// Stored `kameloso.ircdefs.IRCEvent` to replay.
     IRCEvent event;
 
-    /// `PrivilegeLevel` of the function to replay
+    /// `PrivilegeLevel` of the function to replay.
     PrivilegeLevel privilegeLevel;
 
-    /// When this request was issued
+    /// When this request was issued.
     long when;
 
-    /// Replay the event
+    /// Replay the stored event.
     void trigger();
 
     this() @safe
@@ -124,18 +133,19 @@ abstract class WHOISRequest
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
- +  returns we trigger the object and the original IRCEvent is replayed.
+ +  returns we trigger the object and the original `kameloso.ircdefs.IRCEvent`
+ +  is replayed.
  +/
 final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {
     @safe:
 
-    /// Stored function pointer/delegate
+    /// Stored function pointer/delegate.
     F fn;
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the `IRCEvent`
+        /// Command payload aside from the `kameloso.ircdefs.IRCEvent`.
         Payload payload;
 
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
@@ -162,7 +172,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 
     /++
      +  Call the passed function/delegate pointer, optionally with the stored
-     +  `IRCEvent` and/or `Payload`.
+     +  `kameloso.ircdefs.IRCEvent` and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -196,7 +206,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         }
     }
 
-    /// Identify the queue entry, in case we ever need that
+    /// Identify the queue entry, in case we ever need that.
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : format;
@@ -271,6 +281,17 @@ unittest
 /++
  +  Convenience function that returns a `WHOISRequestImpl` of the right type,
  +  *with* a payload attached.
+ +
+ +  Params:
+ +      payload = Payload to attach to the `WHOISRequest`.
+ +      event = `kameloso.ircdefs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
+ +          results.
+ +      fn = Function/delegate pointer to call upon receiving the results.
+ +
+ +  Returns:
+ +      A `WHOISRequest` with template parameters inferred from the arguments
+ +      passed to this function.
  +/
 WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
     PrivilegeLevel privilegeLevel, F fn) @safe
@@ -283,6 +304,16 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
 /++
  +  Convenience function that returns a `WHOISRequestImpl` of the right type,
  +  *without* a payload attached.
+ +
+ +  Params:
+ +      event = `kameloso.ircdefs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
+ +          results.
+ +      fn = Function/delegate pointer to call upon receiving the results.
+ +
+ +  Returns:
+ +      A `WHOISRequest` with template parameters inferred from the arguments
+ +      passed to this function.
  +/
 WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn) @safe
 {
@@ -307,28 +338,34 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `IRCBot`, containing information pertaining to bot in the
-     +  bot in the context of the current (alive) connection.
+     +  The current `kameloso.ircdefs.IRCBot`, containing information pertaining
+     +  to bot in the bot in the context of the current (alive) connection.
      +/
     IRCBot bot;
 
     /// The current settings of the bot, non-specific to any plugins.
     CoreSettings settings;
 
-    /// Thread ID to the main thread
+    /// Thread ID to the main thread.
     Tid mainThread;
 
-    /// Hashmap of IRC user details
+    /// Hashmap of IRC user details.
     IRCUser[string] users;
 
-    /// Hashmap of IRC channels
+    /// Hashmap of IRC channels.
     IRCChannel[string] channels;
 
-    /// Queued `WHOIS` requests and pertaining `IRCEvents` to replay
+    /++
+     +  Queued `WHOIS` requests and pertaining `kameloso.ircdefs.IRCEvent`s to
+     +  replay.
+     +/
     WHOISRequest[string] whoisQueue;
 }
 
-/// The results trie from comparing a username with the whitelist
+/++
+ +  The results trie from comparing a username with the admin or whitelist
+ +  lists.
+ +/
 enum FilterResult { fail, pass, whois }
 
 
@@ -338,14 +375,18 @@ enum FilterResult { fail, pass, whois }
  +/
 enum NickPolicy
 {
-    ignored,      /// Any prefixes will be ignored.
-    direct,       /// Message should begin with `CoreSettings.prefix`.
-    optional,     /// Message may begin with bot name, if so will be stripped.
-    required,     /// Message must begin with bot name, except in `QUERY` events.
-    hardRequired, /// Message must begin with bot name, regardless of type.
+    ignored,     /// Any prefixes will be ignored.
+    /++
+     +  Message should begin with `kameloso.common.CoreSettings.prefix`
+     +  (e.g. "`!`")
+     +/
+    direct,
+    optional,    /// Message may begin with bot name, if so will be stripped.
+    required,    /// Message must begin with bot name, except in `QUERY` events.
+    hardRequired,/// Message must begin with bot name, regardless of type.
 }
 
-/// If an annotated function should work in all channels or just in homes
+/// If an annotated function should work in all channels or just in homes.
 enum ChannelPolicy
 {
     /++
@@ -359,7 +400,7 @@ enum ChannelPolicy
 }
 
 
-/// What level of privilege is needed to trigger an event
+/// What level of privilege is needed to trigger an event.
 enum PrivilegeLevel
 {
     anyone, /// Anyone may trigger this event.
@@ -373,15 +414,15 @@ enum PrivilegeLevel
  +  Defines an IRC bot command, for people to trigger with messages.
  +
  +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
- +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
- +  the `string_`. (Usually "`!`", making it "`!command`".)
+ +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
+ +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
  +/
 struct BotCommand
 {
-    /// The policy to which extent the command needs the bot's nickname
+    /// The policy to which extent the command needs the bot's nickname.
     NickPolicy policy;
 
-    /// The prefix string, one word with no spaces
+    /// The prefix string, one word with no spaces.
     string string_;
 
     this(const NickPolicy policy, const string string_) pure
@@ -403,14 +444,14 @@ struct BotCommand
  +  Defines an IRC bot regular expression, for people to trigger with messages.
  +
  +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
- +  and look for `CoreSettings.prefix` at the beginning of messages, to prefix
- +  the `string_`. (Usually "`!`", making it "`!command`".)
+ +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
+ +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
  +/
 struct BotRegex
 {
     import std.regex : Regex, regex;
 
-    /// The policy to which extent the command needs the bot's nickname
+    /// The policy to which extent the command needs the bot's nickname.
     NickPolicy policy;
 
     /++
@@ -486,10 +527,10 @@ struct Settings;
 
 // Description
 /++
- +  Describes an `IRCEvent`-annotated handler function.
+ +  Describes an `kameloso.ircdefs.IRCEvent`-annotated handler function.
  +
- +  This is used to describe functions triggered by `BotCommands`, in the help
- +  listing routine in `chatbot.d`.
+ +  This is used to describe functions triggered by `BotCommand`s, in the help
+ +  listing routine in `kameloso.plugins.chatbot`.
  +/
 struct Description
 {
@@ -509,12 +550,23 @@ struct Description
 
 // filterUser
 /++
- +  Decides whether a nick is known good, known bad, or needs `WHOIS`.
+ +  Decides whether a nickname is known good (whitelisted/admin), known bad (not
+ +  whitelisted/admin), or needs `WHOIS` (to tell if whitelisted/admin).
  +
  +  This is used to tell whether a user is allowed to use the bot's services.
- +  If the user is not in the in-memory user array, return whois.
+ +  If the user is not in the in-memory user array, return `FilterResult.whois`.
  +  If the user's NickServ account is in the whitelist (or equals one of the
- +  bot's admins'), return pass. Else, return fail and deny use.
+ +  bot's admins'), return `FilterResult.pass`. Else, return `FilterResult.fail`
+ +  and deny use.
+ +
+ +  Params:
+ +      state = The current `IRCPluginState` for context (`admins` and
+ +          `whitelist` arrays, etc).
+ +      event = `kameloso.ircdefs.IRCEvent` to filter.
+ +
+ +  Returns:
+ +      A `FilterResult` saying the event should `pass`, `fail`, or that more
+ +      information about the sender is needed via a `WHOIS` call.
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
@@ -589,21 +641,6 @@ unittest
  +
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
- +      .onEvent            (doesn't proxy anymore)
- +      .bot                (by ref; accessor and mutator)
- +      .postprocess        (proxy for modifications to an event during parsing)
- +      .yieldWHOISRequests (returns queue)
- +      .writeConfig
- +      .loadConfig
- +      .present            (unused, subject for removal)
- +      .peekPlugins        (takes a reference to the main `IRCPlugin[]` array)
- +      .printSettings      (prints settings)
- +      .addToConfig
- +      .start
- +      .teardown
- +      .name               (returns plugin type name)
- +      .state              (returns privateState)
- +      .initialise         (via this())
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
@@ -622,8 +659,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEvent
     /++
-     +  Pass on the supplied `IRCEvent` to functions annotated with the right
-     +  `IRCEvent.Types`.
+     +  Pass on the supplied `kameloso.ircdefs.IRCEvent` to functions annotated
+     +  with the right `kameloso.ircdefs.IRCEvent.Type`s.
+     +
+     +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
+     +  `NickPolicy` where such is appropriate.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.ircdefs.IRCEvent` to dispatch to event
+     +          handlers.
      +/
     void onEvent(const IRCEvent event) @system
     {
@@ -1074,8 +1118,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  exists.
      +
      +  Params:
-     +      state = the aggregate of all plugin state variables, making
-     +              this the "original state" of the plugin.
+     +      state = The aggregate of all plugin state variables, making
+     +          this the "original state" of the plugin.
      +/
     this(IRCPluginState state) @system
     {
@@ -1090,10 +1134,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // bot
     /++
-     +  Yields a reference of the current `IRCBot` to the caller.
+     +  Yields a reference of the current `kameloso.ircdefs.IRCBot` to the
+     +  caller.
      +
      +  This is used to let the main loop examine and update the otherwise
      +  inaccessible `privateState.bot`.
+     +
+     +  Returns:
+     +      Reference to the `kameloso.ircdefs.IRCBot` of the current
+     +      `IRCPlugin`'s `IRCPluginState`.
      +/
     ref IRCBot bot() pure nothrow @nogc @property
     {
@@ -1103,11 +1152,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // postprocess
     /++
-     +  Lets a plugin modify an `IRCEvent` while it's begin constructed, before
-     +  it's finalised and passed on to be handled.
-     +
-     +  Params:
-     +      event = `IRCEvent` undergoing parsing.
+     +  Lets a plugin modify an `kameloso.ircdefs.IRCEvent` while it's begin
+     +  constructed, before it's finalised and passed on to be handled.
      +/
     void postprocess(ref IRCEvent event) @system
     {
@@ -1128,7 +1174,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  replayed.
      +
      +  Returns:
-     +      a reference to the local `WHOIS` request queue.
+     +      Reference to the local `WHOIS` request queue.
      +/
     ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc
     {
@@ -1141,7 +1187,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Writes configuration to disk.
      +
      +  Params:
-     +      configFile = the file to write to.
+     +      configFile = Filename of file to write to.
      +/
     void writeConfig(const string configFile)
     {
@@ -1215,6 +1261,31 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
 
     // setSettingByName
+    /++
+     +  Change a plugin's `Settings`-annotated settings struct member by their
+     +  string name.
+     +
+     +  This is used to allow for command-line argument to set any plugin's
+     +  setting only by knowing its name.
+     +
+     +  Example:
+     +  ------------
+     +  struct FooSettings
+     +  {
+     +      int bar;
+     +  }
+     +
+     +  @Settings FooSettings settings;
+     +
+     +  setSettingByName("bar", 42);
+     +  assert(settings.bar == 42);
+     +  ------------
+     +
+     +  Params:
+     +      setting = String name of the struct member to set.
+     +      value = String value to set it to (after converting it to the
+     +          correct type).
+     +/
     void setSettingByName(const string setting, const string value)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -1245,6 +1316,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // present
     /++
      +  Print some information to the screen, usually settings.
+     +
+     +  Scheduled for removal.
      +/
     void present() @system const
     {
@@ -1257,7 +1330,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // peekPlugins
     /++
-     +  Lends a const reference to the `IRCPlugin[]` array to the plugin.
+     +  Lends a const reference to the array of `IRCPlugin`s to the plugin.
+     +
+     +  This is to allow for plugins to inspect eachother, notably for the
+     +  Chatbot plugin to list all plugins' `BotCommand`s. This is not to be
+     +  directly used, but rather to be called by the main loop's
+     +  message-receiving after having been sent a
+     +  `kameloso.common.ThreadMessage.PeekPlugins`.
      +/
     void peekPlugins(const IRCPlugin[] plugins) @system
     {
@@ -1274,7 +1353,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  to suit all the other plugins' settings member name lengths, to date.
      +
      +  It both prints module-level structs as well as structs in the
-     +  `IRCPlugin` (subtype) itself.
+     +  `kameloso.ircdefs.IRCPlugin` (subtype) itself.
+     +
+     +  Update the width as longer `Settings` members are added.
      +/
     void printSettings() const
     {
@@ -1312,8 +1393,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Gathers the configuration text the plugin wants to contribute to the
      +  configuration file.
      +
+     +  Example:
+     +  ------------
+     +  Appender!string sink;
+     +  sink.reserve(128);  // LDC fix
+     +  addToConfig(sink);
+     +  ------------
+     +
      +  Params:
-     +      ref sink = `Appender` to fill with plugin-specific settings text.
+     +      sink = Reference `std.array.Appender` to fill with plugin-specific
+     +          settings text.
      +/
     import std.array : Appender;
     void addToConfig(ref Appender!string sink) const
@@ -1393,9 +1482,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // commands
     /++
-     +  Collects all bot command strings that this plugin offers and returns
+     +  Collects all `BotCommand` strings that this plugin offers and returns
      +  them alongside their `Description`s as an associative `string[string]`
      +  array.
+     +
+     +  Returns:
+     +      Associative array of all `Descriptions`, keyed by `BotCommand`s.
      +/
     string[string] commands() pure nothrow @property const
     {
@@ -1430,8 +1522,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Accessor and mutator, returns a reference to the current private
      +  `IRCPluginState`.
      +
-     +  This is needed to have `state` be part of the `IRCPlugin` interface, so
-     +  `main.d` can access the property, albeit indirectly.
+     +  This is needed to have `state` be part of the `IRCPlugin` *interface*,
+     +  so `main.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
     ref IRCPluginState state() pure nothrow @nogc @property
@@ -1442,10 +1534,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // awaitingFibers
     /++
-     +  Returns a reference to a plugin's list of `Fiber`s awaiting events.
+     +  Returns a reference to a plugin's list of `core.thread.Fiber`s awaiting
+     +  *events*.
      +
-     +  These are callback `Fiber`s, registered when a plugin wants an action
-     +  performed and then to react to the server's response to it.
+     +  These are callback `core.thread.Fiber`s, registered when a plugin wants
+     +  an action performed and then to react to the server's response to it.
+     +
+     +  Returns:
+     +      Associative array of `core.thread.Fiber` arrays, one or more, keyed
+     +      by `kameloso.ircdefs.IRCEvent` types.
      +/
     pragma(inline)
     ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property
@@ -1456,11 +1553,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // timedFibers
     /++
-     +  Returns a reference to a plugin's list of `Fiber`s awaiting execution by
-     +  time.
+     +  Returns a reference to a plugin's list of `core.thread.Fiber`s awaiting
+     +  execution *by time*.
      +
-     +  Like `awaitingFibers` these are callback `Fiber`s, registered when a
-     +  plugin wants an action performed at a certain point in time.
+     +  Like `awaitingFibers` these are callback `core.thread.Fiber`s,
+     +  registered when a plugin wants an action performed though at a certain
+     +  point in time.
+     +
+     +  Returns:
+     +      An array of `kameloso.common.Labeled` `core.thread.Fiber`s,
+     +      identified by UNIX timestamp `long`s.
      +/
     pragma(inline)
     ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property
@@ -1471,11 +1573,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // delayFiber
     /++
-     +  Queues a `Fiber` to be called at a point n seconds later, by appending
-     +  it to `timedFibers`.
+     +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
+     +  appending it to `timedFibers`.
      +
-     +  It only supports a precision of `kameloso.constants.Timeout.receive` + 1
-     +  seconds.
+     +  It only supports a precision of a *worst* case of
+     +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
+     +  than that. See the main loop for more information.
      +/
     void delayFiber(Fiber fiber, const long secs)
     {
@@ -1490,7 +1593,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // counter
     /++
      +  Returns the private `counter` number, used by plugins to schedule
-     +  rehashes of their internal `IRCUser` arrays.
+     +  rehashes of their internal `kameloso.ircdefs.IRCUser` arrays.
+     +
+     +  This is a hack.
      +/
     ref int rehashCounter() pure nothrow @nogc @property
     {
@@ -1687,7 +1792,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 
 // UserAwareness
 /++
- +  Implements user awareness in a plugin module.
+ +  Implements *user awareness* in a plugin module.
  +
  +  Plugins that deal with users in any form will need event handlers to handle
  +  people joining and leaving channels, disconnecting from the server, and
@@ -1703,8 +1808,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessQuitMixin
     /++
-     +  Removes a user's `IRCUser` entry from a plugin's user list upon them
-     +  disconnecting.
+     +  Removes a user's `kameloso.ircdefs.IRCUser` entry from a plugin's user
+     +  list upon them disconnecting.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -1717,8 +1822,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessNickMixin
     /++
-     +  Upon someone changing nickname, update their entry in the `users` array
-     +  to point to the new nickname.
+     +  Upon someone changing nickname, update their entry in the `IRCPlugin`'s
+     +  `IRCPluginState.users` array to point to the new nickname.
      +
      +  Does *not* add a new entry if one doesn't exits, to counter the fact
      +  that `NICK` events don't belong to a channel, and as such can't be
@@ -1746,9 +1851,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessUserInfoMixin
     /++
-     +  Catches a user's information and saves it in the plugin's `IRCUser`
-     +  array, along with a timestamp of the results of the last `WHOIS` call,
-     +  which is this.
+     +  Catches a user's information and saves it in the plugin's
+     +  `kameloso.ircdefs.IRCUser` array, along with a timestamp of the results
+     +  of the last `WHOIS` call, which is this.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -1768,18 +1873,18 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessAccountInfoSenderMixin
     /++
-     +  Adds a user to the `IRCUser` array, potentially including their services
-     +  account name.
+     +  Adds a user to the `IRCPlugin`'s `IRCPluginState.users` array,
+     +  potentially including their services account name.
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  account name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we won't have to `WHOIS` them later.
      +
-     +  `ACCOUNTS` events will only be processed if a user's `IRCUser` entry
-     +  already exists, to counter the fact that `ACCOUNT` events don't imply a
-     +  specific channel and as such can't honour `ChannelPolicy.home`.
-     +  This way the user will only be updated with its account info if it was
-     +  already created elsewhere.
+     +  `ACCOUNTS` events will only be processed if a user's
+     +  `kameloso.ircdefs.IRCUser` entry already exists, to counter the fact
+     +  that `ACCOUNT` events don't imply a specific channel and as such can't
+     +  honour `ChannelPolicy.home`. This way the user will only be updated with
+     +  its account info if it was already created elsewhere.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -1800,8 +1905,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessAccountInfoTargetMixin
     /++
-     +  Records a user's services account by saving it to the user's `IRCBot` in
-     +  the `state.users` associative array.
+     +  Records a user's services account by saving it to the user's
+     +  `kameloso.ircdefs.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  associative array.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -1960,8 +2066,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessEndOfWhoNames
     /++
-     +  Rehashes, or optimises, the `IRCUser` associative array upon the end
-     +  of a `WHO` or a `NAMES` reply.
+     +  Rehashes, or optimises, the `IRCPlugin`'s `IRCPluginState.users`
+     +  associative array upon the end of a `WHO` or a `NAMES` reply.
      +
      +  These replies can list hundreds of users depending on the size of the
      +  channel. Once an associative array has grown sufficiently it becomes
@@ -2001,11 +2107,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessPingMixin
     /++
-     +  Rehash the internal `state.users` associative array of `IRCUser`s, once
-     +  every `hoursBetweenRehashes` hours.
+     +  Rehash the internal `IRCPluginState.users` associative array of
+     +  `kameloso.ircdefs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
      +  We ride the periodicity of `PING` to get a natural cadence without
-     +  having to resort to timed `Fiber`s.
+     +  having to resort to timed `core.thread.Fiber`s.
      +
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
@@ -2037,7 +2143,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
 // ChannelAwareness
 /++
- +  Implements channel awareness in a plugin module.
+ +  Implements *channel awareness* in a plugin module.
  +
  +  Plugins that need to track channels and the users in them need some event
  +  handlers to handle the bookkeeping. Notably when the bot joins and leaves
@@ -2057,8 +2163,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessSelfjoinMixin
     /++
-     +  Create a new `IRCChannel` in the `state.channels` associative array list
-     +  when the bot joins a channel.
+     +  Create a new `kameloso.ircdefs.IRCChannel` in the the `IRCPlugin`'s
+     +  `IRCPluginState.channels` associative array when the bot joins a
+     +  channel.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2072,7 +2179,12 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  Remove an `IRCChannel` from the internal list when the bot leaves it.
+     +  Remove an `kameloso.ircdefs.IRCChannel` from the internal list when the
+     +  bot leaves it.
+     +
+     +  Additionally decremnets the reference count of all known
+     +  `kameloso.ircdefs.IRCUser`s that was in that channel, to keep track of
+     +  when a user runs out of scope.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2108,6 +2220,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     // onChannelAwarenessChannelAwarenessJoinMixin
     /++
      +  Add a user as being part of a channel when they join one.
+     +
+     +  Increments the `kameloso.ircdefs.IRCUser`'s reference count, so that we
+     +  know the user is in one more channel that we're monitoring.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2134,6 +2249,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     // onChannelAwarenessPartMixin
     /++
      +  Remove a user from being part of a channel when they leave one.
+     +
+     +  Decrements the user's reference count, so we know that it is in one
+     +  channel less now (and should possibly be removed if it is no longer in
+     +  any).
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2172,8 +2291,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessNickMixin
     /++
-     +  Upon someone changing nickname, update their entry in the `users` array
-     +  to point to the new nickname.
+     +  Upon someone changing nickname, update their entry in the
+     +  `IRCPluginState.users` array point to the new nickname.
      +
      +  Removes the old entry.
      +/
@@ -2221,7 +2340,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessTopicMixin
     /++
-     +  Update the entry for an `IRCChannel` if someone changes the topic of it.
+     +  Update the entry for an `kameloso.ircdefs.IRCChannel` if someone changes
+     +  the topic of it.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2254,7 +2374,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Sets a mode for a channel.
      +
      +  Most modes replace others of the same type, notable exceptions being
-     +  bans and mode exemptions.
+     +  bans and mode exemptions. We let `kameloso.irc.setMode` take care of
+     +  that.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2298,7 +2419,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
                         plugin.addChannelUserMode(channels[event.channel],
-                            *modechar, event.target.nickname, bot.server);
+                            *modechar, event.target.nickname);
                     }
                     else
                     {
@@ -2337,9 +2458,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  On some servers this does not include information about the users, only
      +  their nickname and their channel mode (e.g. `@` for operator), but other
      +  servers express the users in the full `user!ident@address` form. It's
-     +  not the job of `ChannelAwareness` to create `IRCUsers` out of them, but
-     +  we need a skeletal `IRCUser.init` at least, to increment the refcount
-     +  of.
+     +  not the job of `ChannelAwareness` to create `kameloso.ircdefs.IRCUser`s
+     +  out of them, but we need a skeletal `kameloso.ircdefs.IRCUser.init` at
+     +  least, to increment the refcount of.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2385,7 +2506,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
                         plugin.addChannelUserMode(channels[event.channel],
-                            *modechar, nickname, bot.server);
+                            *modechar, nickname);
                     }
                     else
                     {
@@ -2483,7 +2604,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     // onChannelAwarenessEndOfMotd
     /++
      +  After successfully connecting, create entries for all home channels in
-     +  each channel-aware plugin's `state.channels`.
+     +  each channel-aware plugin's `IRCPluginState.channels`.
      +
      +  Without this we may try to index it when it's not yet available.
      +/
@@ -2508,7 +2629,18 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
  +  If it doesn't match, the `onEvent` routine shall consider the UDA as not
  +  matching and continue with the next one.
  +
- +  TODO: Support for verbose.
+ +  Params:
+ +      privateState = `IRCPluginState` of the calling `IRCPlugin`.
+ +      policy = Policy to apply.
+ +      mutEvent = Reference to the mutable `kameloso.ircdefs.IRCEvent` we're
+ +          considering.
+ +
+ +  Returns:
+ +      `true` if the message is in a context where the event matches the
+ +      `policy`, `false` if not.
+ +
+ +  TODO:
+ +      Support for verbose.
  +/
 bool nickPolicyMatches(const IRCPluginState privateState,
     const NickPolicy policy, ref IRCEvent mutEvent) @safe
@@ -2621,9 +2753,16 @@ bool nickPolicyMatches(const IRCPluginState privateState,
 
 // catchUser
 /++
- +  Catch an `IRCUser`, saving it to the `state.users` array of an `IRCPlugin`.
+ +  Catch an `kameloso.ircdefs.IRCUser`, saving it to the `IRCPlugin`'s
+ +  `IRCPluginState.users` array.
  +
  +  If a user already exists, meld the new information into the old one.
+ +
+ +  Params:
+ +      overwrite = Whether the catch should completely overwrite any old
+ +          entries, or if they should be conservatively melded.
+ +      plugin = Current `IRCPlugin`.
+ +      newUser = The `kameloso.ircdefs.IRCUser` to catch.
  +/
 void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
     (IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
@@ -2664,8 +2803,14 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
  +  replay the event.
  +
  +  Params:
- +      event = `IRCEvent` to replay once we have `WHOIS` account information.
- +      fn = Function pointer to call when that happens.
+ +      plugin = Current `IRCPlugin`.
+ +      payload = Payload to attach to the `WHOISRequest`, generally an
+ +          `kameloso.ircdefs.IRCEvent` to replay once the `WHOIS` result
+ +          return.
+ +      event = `kameloso.ircdefs.IRCEvent` that instigated this `WHOIS` call.
+ +      nickname = Nickname of the user to `WHOIS`.
+ +      privilegeLevel = Privilege level to compare the user with.
+ +      fn = Function/delegate pointer to call when the results return.
  +/
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     const IRCEvent event, const string nickname, PrivilegeLevel privilegeLevel,
@@ -2715,9 +2860,15 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
  +  This is done by populating the `mods` associative array, keyed by the
  +  *modechar* of the mode (o for +o and @, v for +v and +, etc) with values of
  +  `string[]` arrays of nicknames with that mode ("prefix").
+ +
+ +  Params:
+ +      plugin = Current `IRCPlugin`.
+ +      channel = Reference to the channel to add/remove the mode to/from.
+ +      modechar = Mode character, e.g. o for @, v for +.
+ +      nickname = Nickname the modechange relates to.
  +/
 void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
-    const char modechar, const string nickname, const IRCServer) pure nothrow @safe
+    const char modechar, const string nickname) pure nothrow @safe
 {
     import std.algorithm.searching : canFind;
 
@@ -2746,6 +2897,11 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
  +
  +  This merely iterates the passed `plugins` and calls their `setSettingByName`
  +  methods.
+ +
+ +  Params:
+ +      plugins = Array of all `IRCPlugin`s.
+ +      customSettings = Array of custom settings to apply to plugins' own
+ +          setting, in the string forms of `plugin.setting=value`.
  +/
 void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
 {

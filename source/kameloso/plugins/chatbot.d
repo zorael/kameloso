@@ -1,5 +1,5 @@
 /++
- +  The Chatbot plugin is a collection of small, harmless functions like 8ball
+ +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
  +  and repeating text, along with the ability to save user quotes.
  +
  +  A user quote can be added by triggering the "`addquote`" bot command, by use
@@ -7,13 +7,14 @@
  +  by use o the "`quote [nickname]`" command.
  +
  +  It has a few commands:
- +      `8ball`
- +      `quote`
- +      `addquote`
- +      `help` | `hello`
- +      `say` | `säg`
- +      `reloadquotes`
- +      `printquotes`
+ +
+ +  `8ball`<br>
+ +  `quote`<br>
+ +  `addquote`<br>
+ +  `help` | `hello`<br>
+ +  `say` | `säg`<br>
+ +  `reloadquotes`<br>
+ +  `printquotes`
  +
  +  It is very optional.
  +/
@@ -31,37 +32,42 @@ private:
 
 // ChatbotSettings
 /++
- +  Settings for a chatbot.
- +
- +  ------------
- +  struct ChatbotSettings
- +  {
- +      string quotesFile = "quotes.json";
- +      bool eightball = true;
- +      bool quotes = true;
- +      bool say = true;
- +  }
- +  ------------
+ +  Settings for a chatbot, to toggle its features.
  +/
 struct ChatbotSettings
 {
+    /// Filename of file to save the quotes to.
     string quotesFile = "quotes.json";
+
+    /// Enable or disable the magic eightball feature.
     bool eightball = true;
+
+    /// Enable or disable the quote feature.
     bool quotes = true;
+
+    /// Enable or disable the "say" feature.
     bool say = true;
 }
 
 
 // getQuote
 /++
- +  Fetches a quote for the specified nickname from the in-memory JSON storage.
+ +  Fetches a quote for the specified nickname from the in-memory JSON array.
+ +
+ +  Example:
+ +  ------------
+ +  string quote = plugin.getQuote(event.sender.nickame);
+ +  if (!quote.length) return;
+ +  // ...
+ +  ------------
  +
  +  Params:
- +      nickname = nickname of the user to fetch quotes for.
+ +      plugin = Current `ChatbotPlugin`.
+ +      nickname = Nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      a random quote string. If no quote is available it returns an empty
- +      string instead.
+ +      Random quote string. If no quote is available it returns an empty string
+ +      instead.
  +/
 string getQuote(ChatbotPlugin plugin, const string nickname)
 {
@@ -85,8 +91,9 @@ string getQuote(ChatbotPlugin plugin, const string nickname)
  +  It does not save it to disk; this has to be done separately.
  +
  +  Params:
- +      nickname = nickname of the quoted user.
- +      line = the quote itself.
+ +      plugin = Current `ChatbotPlugin`.
+ +      nickname = Nickname of the quoted user.
+ +      line = The quote to add.
  +/
 void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
 {
@@ -109,7 +116,8 @@ void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
  +  This should be done whenever a new quote is added to the database.
  +
  +  Params:
- +      filename = filename of the JSON storage.
+ +      plugin = Current `ChatbotPlugin`.
+ +      filename = Filename of the JSON storage file.
  +/
 void saveQuotes(ChatbotPlugin plugin, const string filename)
 {
@@ -128,7 +136,7 @@ void saveQuotes(ChatbotPlugin plugin, const string filename)
  +  This only needs to be done at plugin (re-)initialisation.
  +
  +  Params:
- +      filename = filename of the JSON storage.
+ +      filename = Filename of the JSON storage file.
  +/
 JSONValue loadQuotes(const string filename)
 {
@@ -137,7 +145,6 @@ JSONValue loadQuotes(const string filename)
 
     if (!filename.exists || !filename.isFile)
     {
-        //logger.info(filename, " does not exist or is not a file!");
         JSONValue newJSON;
         newJSON.object = null;
         return newJSON;
@@ -181,14 +188,11 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 
 // onCommand8ball
 /++
- +  Implements 8ball.
+ +  Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
  +
- +  Randomises a response from the table kameloso.constants.eightballAnswers
+ +  Randomises a response from the table `kameloso.constants.eightballAnswers`
  +  and sends it back to the channel in which the triggering event happened,
  +  or in a query if it was a private message.
- +
- +  Params:
- +      event = the triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -240,10 +244,8 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +  Fetches and repeats a random quote of a supplied nickname.
  +
  +  The quote is read from in-memory JSON storage, and it is sent to the
- +  channel the triggering event occured in.
- +
- +  Params:
- +      event = the triggering IRCEvent.
+ +  channel the triggering event occured in, alternatively in a private message
+ +  if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -300,9 +302,6 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
  +
  +  It is added to the in-memory JSON storage which then gets immediately
  +  written to disk.
- +
- +  Params:
- +      event = The triggering IRCEvent.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -390,7 +389,7 @@ void onCommandReloadQuotes(ChatbotPlugin plugin)
 
 // onEndOfMotd
 /++
- +  Initialises the Chatbot plugin. Loads the quotes from disk.
+ +  Initialises the passed `ChatbotPlugin`. Loads the quotes from disk.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(ChatbotPlugin plugin)
@@ -405,18 +404,22 @@ void onEndOfMotd(ChatbotPlugin plugin)
  +  private query). A hack.
  +
  +  Plugins don't know about other plugin; the only thing they know of the
- +  outside world is the thread ID of the main thread (`state.mainThread`).
- +  As such, we can't easily query each plugin for their `BotCommand`-annotated
+ +  outside world is the thread ID of the main thread `mainThread` of
+ +  (`kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
+ +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated
  +  functions.
  +
- +  To work around this we save the initial requesting `IRCEvent`, then send a
- +  concurrency message to the main thread asking for a const reference to the
- +  main `IRCPlugin[]` array. We create a function in interface `IRCPlugin` that
- +  passes said array on to the top-level `peekPlugins`, wherein we process the
- +  list and collect the bot command strings.
+ +  To work around this we save the initial requesting
+ +  `kameloso.ircdefs.IRCEvent`, then send a concurrency message to the main
+ +  thread asking for a const reference to the main
+ +  `kameloso.common.Client.plugins` array of
+ +  `kameloso.plugins.common.IRCPlugin`. We create a function in interface
+ +  `kameloso.plugins.common.IRCPlugin` that passes said array on to the top-
+ +  level `peekPlugins`, wherein we process the list and collect the bot command
+ +  strings.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
- +  which we remember since we saved the original `IRCEvent`.
+ +  which we remember since we saved the original `kameloso.ircdefs.IRCEvent`.
  +/
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -436,10 +439,12 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 
 // peekPlugins
 /++
- +  Takes a const reference to the main `IRCPlugin[]` array and gathers and
- +  formats each plugin's list of available bot commands.
+ +  Takes a const reference to the main `kameloso.common.Client.plugins` array
+ +  of `kameloso.plugins.common.IRCPlugin`s, and gathers and formats each
+ +  plugin's list of available bot commands.
  +
- +  This does not include bot regexes.
+ +  This does not include bot regexes, as we do not know how to extract the
+ +  expression from the `Regex` structure.
  +/
 void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
 {
@@ -537,13 +542,15 @@ public:
 
 // Chatbot
 /++
- +  Chatbot plugin to provide common chat functionality.
+ +  The Chatbot plugin provides common chat functionality. This includes magic
+ +  8ball, user quotes, and some other miscellanea.
  +
- +  Administrative actions have been broken out into a plugin of its own.
+ +  Administrative actions have been broken out into
+ +  `kameloso.plugins.admin.AdminPlugin`.
  +/
 final class ChatbotPlugin : IRCPlugin
 {
-    /// All Chatbot plugin settings gathered
+    /// All Chatbot plugin settings gathered.
     @Settings ChatbotSettings chatbotSettings;
 
     // quotes
@@ -555,6 +562,11 @@ final class ChatbotPlugin : IRCPlugin
     +/
     JSONValue quotes;
 
+    /++
+    +   The event that spawned a "`help`" request. As a hack it is currently
+    +   stored here, so the plugin knows what to do when the results of
+    +   `kameloso.common.ThreadMessage.PeekPlugins` return.
+    +/
     IRCEvent helpEvent;
 
     mixin IRCPluginImpl;

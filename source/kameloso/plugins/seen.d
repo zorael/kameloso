@@ -1,10 +1,8 @@
 /++
- +  This is an example plugin.
+ +  The Seen plugin implements `seen` functionality; the ability for someone to
+ +  query when a given nickname was last seen online.
  +
- +  We will be writing a plugin with `seen` functionality; the ability for
- +  someone to query when a given nickname was last seen online.
- +
- +  We will implement this by keeping an internal `long[string]` asociative
+ +  We will implement this by keeping an internal `long[string]` associative
  +  array of timestamps keyed by nickname. Whenever we see a user do something,
  +  we will update his or her timestamp with the current time. We'll save this
  +  array to disk when closing the program and read it from file when starting
@@ -20,11 +18,12 @@
  +  with `UDA`s of IRC event *types*. When an event is incoming it will trigger
  +  the function(s) annotated with its type.
  +
- +  Callback `Fiber`s *are* supported but are not in any large-scale use. They
- +  can be registered to process on incoming events, or timed with a worst-case
- +  precision of roughly `kameloso.constants.Timeout.receive` *
+ +  Callback `core.thread.Fiber`s *are* supported but are not in any large-scale
+ +  use. They can be registered to process on incoming events, or timed with a
+ +  worst-case precision of roughly `kameloso.constants.Timeout.receive` *
  +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
- +  using `IRCEvent` triggers they are expensive, in a micro-optimiing sense.
+ +  using `kameloso.ircdefs.IRCEvent` triggers they are expensive, in a
+ +  micro-optimiing sense.
  +/
 
 module kameloso.plugins.seen;
@@ -40,9 +39,9 @@ import kameloso.common : logger;
 
 /++
  +  Most of the module can (and ideally should) be kept private. Our surface
- +  area here will be restricted to only one `IRCPlugin` class, and the usual
- +  pattern used is to have the private bits first and that public class last.
- +  We'll turn that around here to make it easier to parse.
+ +  area here will be restricted to only one `kameloso.plugins.common.IRCPlugin`
+ +  class, and the usual pattern used is to have the private bits first and that
+ +  public class last. We'll turn that around here to make it easier to parse.
  +/
 
 public:
@@ -59,12 +58,13 @@ public:
  +  parallel. This is not yet supported but there's nothing stopping it.
  +
  +  As such it houses this plugin's *state*, notably its instance of
- +  `SeenSettings` and its `IRCPluginState`.
+ +  `SeenSettings` and its `kameloso.plugins.common.IRCPluginState`.
  +
- +  The `IRCPluginState` is a struct housing various variables that together
- +  make up the plugin's state. This is where information is kept about the bot,
- +  the server, and some metathings allowing us to send messages to the server.
- +  We don't define it here; we mix it in later with the `IRCPluginImpl` mixin.
+ +  The `kameloso.plugins.common.IRCPluginState` is a struct housing various
+ +  variables that together make up the plugin's state. This is where
+ +  information is kept about the bot, the server, and some metathings allowing
+ +  us to send messages to the server. We don't define it here; we mix it in
+ +  later with the `kameloso.plugins.common.IRCPluginImpl` mixin.
  +
  +  --------------
  +  struct IRCPluginState
@@ -88,17 +88,19 @@ public:
  +     directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
- +     that key is an `IRCUser` representing that user in terms of nickname,
- +     address, ident, and services account name. This is a way to keep track of
- +     users by more than merely their name. It is however not saved at the end
- +     of the program; it is merely state and transient.
+ +     that key is an `kameloso.ircdefs.IRCUser` representing that user in terms
+ +     of nickname, address, ident, and services account name. This is a way to
+ +     keep track of users by more than merely their name. It is however not
+ +     saved at the end of the program; it is merely state and transient.
  +
  +  * `whoisQueue` is also an associative array into which we place
- +    `WHOISRequest`s. The main loop will pick up on these and call `WHOIS` on
- +     the nickname in the key. A `WHOISRequest` is otherwise just an `IRCEvent`
- +     to be played back when the `WHOIS` results return, as well as a function
- +     pointer to call with that event. This is all wrapped in a function
- +     `doWhois`, with the queue management handled behind the scenes.
+ +    `kameloso.plugins.common.WHOISRequest`s. The main loop will pick up on
+ +     these and call `WHOIS` on the nickname in the key. A
+ +     `kameloso.plugins.common.WHOISRequest` is otherwise just an
+ +     `kameloso.ircdefs.IRCEvent` to be played back when the `WHOIS` results
+ +     return, as well as a function pointer to call with that event. This is
+ +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
+ +     queue management handled behind the scenes.
  +/
 final class SeenPlugin : IRCPlugin
 {
@@ -142,12 +144,13 @@ final class SeenPlugin : IRCPlugin
 
     // mixin IRCPluginImpl
     /++
-     +  This mixes in functions that fully implement an `IRCPlugin`. They don't
-     +  do much by themselves other than call the module's functions.
+     +  This mixes in functions that fully implement an
+     +  `kameloso.plugins.common.IRCPlugin`. They don't do much by themselves
+     +  other than call the module's functions.
      +
      +  As an exception, it mixes in contains the bits needed to automatically
-     +  call functions based on their `IRCEvent.Type` annotations. It is
-     +  mandatory, if you want things to work.
+     +  call functions based on their `kameloso.ircdefs.IRCEvent.Type`
+     +  annotations. It is mandatory, if you want things to work.
      +
      +  Seen from any other module, this module is a big block of private things
      +  they can't see, plus this visible plugin class. By having this class
@@ -218,26 +221,29 @@ struct SeenSettings
  +  Whenever a user does something, record this user as having been seen at the
  +  current time.
  +
- +  This function will be called whenever an `IRCEvent` is being processed of
- +  the `IRCEvent.Type`s that we annotate the function with.
+ +  This function will be called whenever an `kameloso.ircdefs.IRCEvent` is
+ +  being processed of the `kameloso.ircdefs.IRCEvent.Type`s that we annotate
+ +  the function with.
  +
- +  The `Chainable` annotations mean that the plugin will also process other
- +  functions with the same `IRCEvent.Type` annotations, even if this one
- +  matched. The default is otherwise that it will end early after one match,
- +  but this doesn't ring well with catch-all functions like these. It's
- +  sensible to save `Chainable` for the functions that actually need it.
+ +  The `kameloso.plugins.common.Chainable` annotations mean that the plugin
+ +  will also process other functions with the same
+ +  `kameloso.ircdefs.IRCEvent.Type` annotations, even if this one matched. The
+ +  default is otherwise that it will end early after one match, but this
+ +  doesn't ring well with catch-all functions like these. It's sensible to save
+ +  `kameloso.plugins.common.Chainable` for the functions that actually need it.
  +
- +  The `ChannelPolicy` annotation decides whether this function should be
- +  called based on the *channel* the event took place in, if applicable.
- +  The two policies are `home`, in which only events in channels in the `homes`
- +  array will be allowed to trigger this; or `any`, in which case anywhere
- +  goes.
+ +  The `kameloso.plugins.common.ChannelPolicy` annotation decides whether this
+ +  function should be called based on the *channel* the event took place in, if
+ +  applicable. The two policies are `home`, in which only events in channels in
+ +  the `homes` array will be allowed to trigger this; or `any`, in which case
+ +  anywhere goes.
  +
  +  Not all events relate to a particular channel, such as `QUIT` (quitting
  +  leaves every channel).
  +
- +  The `PrivilegeLevel` annotation dictates who is authorised to trigger the
- +  function. It has three policies; `anyone`, `whitelist` and `admin`.
+ +  The `kameloso.plugins.common.PrivilegeLevel` annotation dictates who is
+ +  authorised to trigger the function. It has three policies; `anyone`,
+ +  `whitelist` and `admin`.
  +
  +  * `anyone` will let precisely anyone trigger it, without looking them up.
  +  * `whitelist will only allow users in the `whitelist` array in the
@@ -293,10 +299,10 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     /++
      +  There may not be an old one if the user was not indexed upon us joinng
-     +  the channel, which is the case with `ChannelPolicy.home` and non-home
-     +  channels. If there is no entry that means nothing channel-aware has
-     +  added it, which implies that it's not in a home channel. Ignore it if
-     +  so.
+     +  the channel, which is the case with
+     +  `kameloso.plugins.common.ChannelPolicy.home` and non-home channels. If
+     +  there is no entry that means nothing channel-aware has added it, which
+     +  implies that it's not in a home channel. Ignore it if so.
      +/
 
     if (auto user = event.sender.nickname in plugin.seenUsers)
@@ -313,7 +319,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
  +  users list, creating them if they don't exist.
  +
  +  A `WHO` request enumerates all members in a channel. It returns several
- +  replies, one event per each user in the channel. The *ChannelQueries* plugin
+ +  replies, one event per each user in the channel. The *ChanQueries* plugin
  +  instigates this shortly after having joined one, as a service to the other
  +  plugins.
  +/
@@ -343,8 +349,9 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
     import std.algorithm.iteration : splitter;
 
     /++
-     +  Use a `splitter` to iterate each name and call `updateUser` to update
-     +  (or create) their entry in the seenUsers associative array.
+     +  Use a `std.algorithm.iteration.splitter` to iterate each name and call
+     +  `updateUser` to update (or create) their entry in the `seenUsers`
+     +  associative array.
      +/
 
     foreach (const signed; event.content.splitter(" "))
@@ -393,10 +400,11 @@ void onEndOfList(SeenPlugin plugin)
  +  we can just keep track of when we last saved, and save anew after the set
  +  number of hours have passed.
  +
- +  An alternative to this would be to set up a timer `Fiber`, to process once
- +  every n seconds. It would have to be placed elsewhere though, not in a UDA-
- +  annotated on-`IRCEvent` function. Someplace only run once, like `start`, or
- +  at the end of the message of the day (event type `RPL_ENDOFMOTD`).
+ +  An alternative to this would be to set up a timer `core.thread.Fiber`, to
+ +  process once every *n* seconds. It would have to be placed elsewhere though,
+ +  not in a UDA-annotated on-`kameloso.ircdefs.IRCEvent` function. Someplace
+ +  only run once, like `start`, or at the end of the message of the day (event
+ +  type `RPL_ENDOFMOTD`).
  +
  +  ------------
  +  // The Fiber delegate must re-add its own Fiber
@@ -446,10 +454,10 @@ void onPing(SeenPlugin plugin)
  +  Whenever someone says "seen" in a `CHAN` or a `QUERY`, and if `CHAN` then
  +  only if in a *home*, process this function.
  +
- +  The `BotCommand` annotation defines a piece of text that the incoming
- +  message must start with for this function to be called. `NickPolicy` deals
- +  with whether the message has to start with the name of the *bot* or not, and
- +  to what extent.
+ +  The `kameloso.plugins.common.BotCommand` annotation defines a piece of text
+ +  that the incoming message must start with for this function to be called.
+ +  `kameloso.plugins.common.NickPolicy` deals with whether the message has to
+ +  start with the name of the *bot* or not, and to what extent.
  +
  +  Nickname policies can be one of:
  +  * `optional`, where the bot's nickname will be allowed and stripped away,
@@ -461,9 +469,9 @@ void onPing(SeenPlugin plugin)
  +  * `direct`, where the raw command is expected without any bot prefix at all.
  +
  +  The plugin system will have made certain we only get messages starting with
- +  "`seen`", since we annotated this function with such a `BotCommand`. It will
- +  since have been sliced off, so we're left only with the "arguments" to
- +  "`seen`".
+ +  "`seen`", since we annotated this function with such a
+ +  `kameloso.plugins.common.BotCommand`. It will ssince have been sliced off,
+ +  so we're left only with the "arguments" to "`seen`".
  +
  +  If this is a `CHAN` event, the original lines could (for example) have been
  +  "`kameloso: seen Joe`", or merely "`!seen Joe`" (asuming a `!` prefix).
@@ -471,7 +479,7 @@ void onPing(SeenPlugin plugin)
  +  omitted. In either case, we're left with only the parts we're interested in,
  +  and the rest sliced off.
  +
- +  As a result, the `IRCEvent` would look something like this:
+ +  As a result, the `kameloso.ircdefs.IRCEvent` would look something like this:
  +
  +  --------------
  +  event.type = IRCEvent.Type.CHAN;
@@ -606,6 +614,11 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +
  +  This is not annotated with an IRC event type and will merely be invoked from
  +  elsewhere, like any normal function.
+ +
+ +  Params:
+ +      plugin = Current `SeenPlugin`.
+ +      signedNickname = Nickname to update, potentially prefixed with a
+ +          modesign (@, +, %, ...).
  +/
 void updateUser(SeenPlugin plugin, const string signedNickname)
 {
@@ -615,8 +628,10 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
 
     with (plugin.state)
     {
-        /// Make sure to strip the modesign, so `@foo` is the same person as
-        // `foo`.
+        /++
+         +  Make sure to strip the modesign, so `@foo` is the same person as
+         +  `foo`.
+         +/
         string nickname = signedNickname;
         bot.server.stripModesign(nickname);
 
@@ -641,6 +656,13 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
  +  Given a filename, read the contents and load it into a `long[string]`
  +  associative array, then return it. If there was no file there to read,
  +  return an empty array for a fresh start.
+ +
+ +  Params:
+ +      filename = Filename of the file to read from.
+ +
+ +  Returns:
+ +      `long[string]` associative array; UNIX timestamp longs keyed by nickname
+ +          strings.
  +/
 long[string] loadSeen(const string filename)
 {
@@ -678,6 +700,10 @@ long[string] loadSeen(const string filename)
  +  Saves the passed seen users associative array to disk, but in `JSON` format.
  +
  +  This is a convenient way to serialise the array.
+ +
+ +  Params:
+ +      seenUsers = The associative array of seen users to save.
+ +      filename = Filename of the file to write to.
  +/
 void saveSeen(const long[string] seenUsers, const string filename)
 {
@@ -739,19 +765,21 @@ void teardown(SeenPlugin plugin)
 
 
 /++
- +  `UserAwareness` is a mixin template; a few functions defined in
- +  `kameloso.plugins.common` to deal with common bookkeeping that every plugin
- +  *that wants to keep track of users* need. If you don't want to track which
- +  users you have seen (and are visible to you now), you don't need this.
+ +  `kameloso.plugins.common.UserAwareness` is a mixin template; a few functions
+ +  defined in `kameloso.plugins.common` to deal with common bookkeeping that
+ +  every plugin *that wants to keep track of users* need. If you don't want to
+ +  track which users you have seen (and are visible to you now), you don't need
+ +  this.
  +/
 mixin UserAwareness;
 
 
 /++
- +  Complementary to `UserAwareness` is `ChannelAwareness`, which will add in
- +  bookkeeping about the channels the bot is in, their topics, modes and list
- +  of participants. Channel awareness requires user awareness, but not the
- +  other way around.
+ +  Complementary to `kameloso.plugins.common.UserAwareness` is
+ +  `kameloso.plugins.common.ChannelAwareness`, which will add in bookkeeping
+ +  about the channels the bot is in, their topics, modes and list of
+ +  participants. Channel awareness requires user awareness, but not the other
+ +  way around.
  +
  +  We will want it to limit the amount of tracked users to people in our home
  +  channels.

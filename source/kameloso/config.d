@@ -151,8 +151,8 @@ if (Things.length > 1)
 /++
  +  Serialise the fields of an object into an .ini file-like format.
  +
- +  It only serialises fields not annotated with `Unconfigurable`, and it
- +  doesn't recurse into other structs or classes.
+ +  It only serialises fields not annotated with `kameloso.uda.Unconfigurable`,
+ +  and it doesn't recurse into other structs or classes.
  +
  +  Example:
  +  ------------

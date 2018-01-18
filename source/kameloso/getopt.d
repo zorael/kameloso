@@ -14,9 +14,9 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `CoreSettings` and `IRCBot` from file into temporaries, then meld them
- +  into the real ones, into which the command-line arguments will have been
- +  applied.
+ +  Read `kameloso.common.CoreSettings` and `kameloso.ircdefs.IRCBot` from file
+ +  into temporaries, then meld them into the real ones, into which the
+ +  command-line arguments will have been applied.
  +
  +  Example:
  +  ------------
@@ -27,8 +27,9 @@ private:
  +  ------------
  +
  +  Params:
- +      bot = Reference `IRCBot` to apply changes to.
- +      setttings = Reference `CoreSettings` to apply changes to.
+ +      bot = Reference `kameloso.ircdefs.IRCBot` to apply changes to.
+ +      setttings = Reference `kameloso.common.CoreSettings` to apply changes
+ +          to.
  +/
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
@@ -68,7 +69,7 @@ public:
  +  ------------
  +
  +  Params:
- +      client = Reference to the current Client.
+ +      client = Reference to the current `kameloso.common.Client`.
  +      args = The `string[]` args the program was called with.
  +      customSettings = Refernce array of custom settings to apply on top of
  +          the settings read from the configuration file.

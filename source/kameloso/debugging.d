@@ -129,8 +129,8 @@ unittest
 
 // formatBotAssignment
 /++
- +  Constructs statement lines for each changed field of an `IRCBot`, including
- +  instantiating a fresh one.
+ +  Constructs statement lines for each changed field of an
+ +  `kameloso.ircdefs.IRCBot`, including instantiating a fresh one.
  +
  +  Example:
  +  ------------
@@ -142,7 +142,7 @@ unittest
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      bot = `IRCBot` to simulate the assignment of.
+ +      bot = `kameloso.ircdefs.IRCBot` to simulate the assignment of.
  +/
 void formatBotAssignment(Sink)(auto ref Sink sink, const IRCBot bot)
 {
@@ -219,7 +219,8 @@ with (parser.bot)
 
 // formatEventAssertBlock
 /++
- +  Constructs assert statement blocks for each changed field of an `IRCEvent`.
+ +  Constructs assert statement blocks for each changed field of an
+ +  `kameloso.ircdefs.IRCEvent`.
  +
  +  Example:
  +  ------------
@@ -230,7 +231,7 @@ with (parser.bot)
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      event = `IRCEvent` to construct assert statements for.
+ +      event = `kameloso.ircdefs.IRCEvent` to construct assert statements for.
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
@@ -301,10 +302,11 @@ unittest
 
 // generateAsserts
 /++
- +  Reads raw server strings from `stdin`, parses them to `IRCEvent`s and
- +  constructs assert blocks of their contents.
+ +  Reads raw server strings from `stdin`, parses them to
+ +  `kameloso.ircdefs.IRCEvent`s and constructs assert blocks of their contents.
  +
- +  We can't use an `Appender` or dmd will hit a stack overflow, error -11.
+ +  We can't use an `std.array.Appender` or dmd will hit a stack overflow,
+ +  error -11.
  +
  +  Example:
  +  ------------

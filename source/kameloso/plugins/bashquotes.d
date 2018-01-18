@@ -4,7 +4,8 @@
  +  by quote ID.
  +
  +  It has one command:
-'+      `bash`
+ +
+ +  `bash`
  +
  +  It requires version `Web`.
  +/
@@ -21,7 +22,7 @@ private:
 
 // onMessage
 /++
- +  Fetch a random or specified bash.org quote.
+ +  Fetch a random or specified `bash.org` quote.
  +
  +  Defers to the worker subthread.
  +/
@@ -46,7 +47,8 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +  Looks up a Bash quote and reports it to the appropriate nickname or
  +  channel.
  +
- +  Suppose to be run in its own, shortlived thread.
+ +  Supposed to be run in its own, shortlived thread. As such, it initialises
+ +  its own `kameloso.logger.KamelosoLogger`.
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
@@ -129,8 +131,9 @@ public:
 
 // BashQuotesPlugin
 /++
- +  The Bash Quotes plugin fetches random or specified quotes from `bash.org`
- +  and echoes them to the channel.
+ +  The Bash Quotes plugin fetches quotes from `www.bash.org` and displays them
+ +  in a channel (or to a private query). It can fetch a random one or one
+ +  by quote ID.
  +/
 final class BashQuotesPlugin : IRCPlugin
 {

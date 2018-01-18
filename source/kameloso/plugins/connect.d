@@ -23,38 +23,28 @@ private:
 
 // ConnectSettings
 /++
- +  Connection settings, gathered in a struct.
- +
- +  ------------
- +  struct ConnectSetting
- +  {
- +      bool sasl = true;
- +      bool joinOnInvite = false;
- +      bool exitOnSASLFailure = false;
- +      string[] sendAfterConnect;
- +  }
- +  ------------
+ +  ConnectService settings.
  +/
 struct ConnectSettings
 {
     import kameloso.common : Separator;
 
-    /// Flag to use SASL authrentication
+    /// Flag to use SASL authrentication.
     bool sasl = true;
 
-    /// Flag to join channels upon being invited to them
+    /// Flag to join channels upon being invited to them.
     bool joinOnInvite = false;
 
-    /// Flag to abort and exit if SASL authentication fails
+    /// Flag to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
 
-    /// Lines to send after successfully connecting and registering
+    /// Lines to send after successfully connecting and registering.
     @Separator(";")
     string[] sendAfterConnect;
 }
 
 
-/// Shorthand alias to `IRCBot.Status`
+/// Shorthand alias to `kameloso.ircdefs.IRCBot.Status`.
 alias Status = IRCBot.Status;
 
 
@@ -101,10 +91,9 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Record a channel in the `bot.channels` array upon successfully joining it.
- +
- +  Separate this from the `WHO` calls in `onEndOfNames` so that this can be
- +  kept `ChannelPolicy.any` and that `ChannelPolicy.home`.
+ +  Record a channel in the `channels` array of the `kameloso.ircdefs.IRCBot` in
+ +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState`
+ +  upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -127,7 +116,9 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
 // joinChannels
 /++
- +  Joins all channels listed as homes *and* channels in the `IRCBot` object.
+ +  Joins all channels listed as homes *and* channels in the
+ +  `kameloso.ircdefs.IRCBot` in the current `ConnectService`'s
+ +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void joinChannels(ConnectService service)
 {
@@ -163,9 +154,9 @@ void joinChannels(ConnectService service)
 // onToConnectType
 /++
  +  Responds to `ERR_BADPING` events by sending the text (supplied as content in
- +  the `IRCEvent`) to the server.
+ +  the `kameloso.ircdefs.IRCEvent`) to the server.
  +
- +  "Also known as ERR_NEEDPONG (Unreal/Ultimate) for use during registration,
+ +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
  +  however it's not used in Unreal (and might not be used in Ultimate either)."
  +/
 @(IRCEvent.Type.ERR_BADPING)
@@ -182,8 +173,9 @@ void onToConnectType(ConnectService service, const IRCEvent event)
  +  Pongs the server upon `PING`.
  +
  +  We make sure to ping with the sender as target, and not the neccessarily
- +  the server as saved in the IRCServer struct. For example, `ERR_BADPING`
- +  generally wants you to ping a random number or string.
+ +  the server as saved in the `kameloso.ircdefs.IRCServer`` struct. For
+ +  example, `ERR_BADPING` (or is it `ERR_NEEDPONG`?) generally wants you to
+ +  ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
 void onPing(ConnectService service, const IRCEvent event)
@@ -533,15 +525,17 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
 
 // onSASLAuthenticate
 /++
- +  Constructs a SASL authentication token from the bot's `authLogin` and
- +  `authPassword`, then sends it to the server, during registration.
+ +  Constructs a SASL plain authentication token from the bot's
+ +  `kameloso.ircdefs.IRCBot.authLogin` and
+ +  `kameloso.ircdefs.IRCBot.authPassword`, then sends it to the server, during
+ +  registration.
  +
- +  A SASL authentication token is composed like so:
-
- +     `base64(authLogin \0 authLogin \0 authPassword`)
-
- +  ...where `authLogin` is the services account name and `authPassword` is
- +  the services account password.
+ +  A SASL plain authentication token is composed like so:
+ +
+ +     `base64(authLogin \0 authLogin \0 authPassword)`
+ +
+ +  ...where `kameloso.ircdefs.IRCBot.authLogin` is the services account name
+ +  and `kameloso.ircdefs.IRCBot.authPassword` is the services account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -630,7 +624,8 @@ void onSASLFailure(ConnectService service)
 
 // onWelcome
 /++
- +  On RPL_WELCOME (001) the registration will be completed, so mark it as such.
+ +  On `RPL_WELCOME` (001) the registration will be completed, so mark it as
+ +  such.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service)
@@ -710,10 +705,10 @@ public:
  +/
 final class ConnectService : IRCPlugin
 {
-    /// All Connect service settings gathered
+    /// All Connect service settings gathered.
     @Settings ConnectSettings connectSettings;
 
-    /// Flag whether the server has sent at least one `PING`
+    /// Flag whether the server has sent at least one `PING`.
     bool serverPinged;
 
     mixin IRCPluginImpl;

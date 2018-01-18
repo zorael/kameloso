@@ -58,10 +58,10 @@ void signalHandler(int sig) nothrow @nogc @system
  +  should exit or not.
  +
  +  Params:
- +      client = Reference to the current `Client`.
+ +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
- +      Yes.quit or No.quit, depending.
+ +      `Yes.quit` or `No.quit`, depending.
  +/
 Flag!"quit" checkMessages(ref Client client)
 {
@@ -153,8 +153,9 @@ Flag!"quit" checkMessages(ref Client client)
     }
 
     /++
-     +  Passes a reference to the main `IRCPlugin[]` array (housing all plugins)
-     +  to the supplied `IRCPlugin`.
+     +  Passes a reference to the main array of
+     +  `kameloso.plugins.common.IRCPlugin`s array (housing all plugins) to the
+     +  supplied `kameloso.plugins.common.IRCPlugin`.
      +/
     void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin)
     {
@@ -298,17 +299,19 @@ void removeMeWhenPossible()
 
 // mainLoop
 /++
- +  This loops creates a `Generator` `Fiber` to loop over the over `Socket`,
- +  reading and yielding lines as it goes.
+ +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
+ +  over the over `std.socket.Socket`, reading and yielding lines as it goes.
  +
- +  Full lines are yielded in the Generator to be caught here, consequently
- +  parsed into IRCEvents, and then dispatched to all the plugins.
+ +  Full lines are yielded in the `std.concurrency.Generator` to be caught here,
+ +  consequently parsed into `kameloso.ircdefs.IRCEvent`s, and then dispatched
+ +  to all the plugins.
  +
  +  Params:
- +      client = Reference to the current `Client`.
+ +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
- +      Yes.quit if circumstances mean the bot should exit, otherwise No.quit.
+ +      `Yes.quit` if circumstances mean the bot should exit, otherwise
+ +      `No.quit.`
  +/
 Flag!"quit" mainLoop(ref Client client)
 {
@@ -365,11 +368,8 @@ Flag!"quit" mainLoop(ref Client client)
 
             /++
              +  At a cadence of once every `checkFiberFibersEveryN`, walk the
-             +  array of plugins and see if they have timed `Fiber`s to call.
-             +
-             +  This is inarguably the hottest path of the entire program. After
-             +  some effort it's leaner but nothing gets called more except the
-             +  actual `Socket`-reading itself.
+             +  array of plugins and see if they have timed `core.thread.Fiber`s
+             +  to call.
              +/
             if (--timedFiberCheckCounter <= 0)
             {
@@ -634,15 +634,16 @@ Flag!"quit" mainLoop(ref Client client)
 
 // handleFibers
 /++
- +  Takes an array of `Fiber`s and processes them.
+ +  Takes an array of `core.thread.Fiber`s and processes them.
  +
  +  If passed `Yes.exhaustive` they are removed from the arrays after they are
  +  called, so they won't be triggered again next pass. Otherwise only the
  +  finished ones are removed.
  +
  +  Params:
- +      exhaustive = Whether to always remove `Fiber`s after processing.
- +      fibers = Reference to an array of `Fiber`s to process.
+ +      exhaustive = Whether to always remove `core.thread.Fiber`s after
+ +          processing.
+ +      fibers = Reference to an array of `core.thread.Fiber`s to process.
  +/
 void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibers)
 {
@@ -687,7 +688,7 @@ void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibe
  +  one.
  +
  +  Params:
- +      client = Reference to the current `Client`.
+ +      client = Reference to the current `kameloso.common.Client`.
  +      reqs = Refernce to an associative array of `WHOISRequest`s.
  +/
 void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)

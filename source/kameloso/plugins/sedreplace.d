@@ -3,8 +3,10 @@
  +  replacemnt/substitution of text. It does not require the tool itself though,
  +  and will work on Windows builds too.
  +
- +  $ echo "foo bar baz" | sed 's/bar/qux/'
+ +  ------------
+ +  $ echo "foo bar baz" | sed "s/bar/qux/"
  +  foo qux baz
+ +  ------------
  +
  +  It has no bot commands, as everything is done by scanning messages for signs
  +  of `s/this/that/` patterns.
@@ -12,9 +14,11 @@
  +  It supports a delimiteter of `/`, `#` and `|`. You can also end it with a
  +  `g` to set the global flag, to have more than one match substituted.
  +
- +  $ echo "foo bar baz" | sed 's/bar/qux/g'
- +  $ echo "foo bar baz" | sed 's#bar#qux#g'
- +  $ echo "foo bar baz" | sed 's|bar|qux|g'
+ +  ------------
+ +  $ echo "foo bar baz" | sed "s/bar/qux/g"
+ +  $ echo "foo bar baz" | sed "s#bar#qux#g"
+ +  $ echo "foo bar baz" | sed "s|bar|qux|g"
+ +  ------------
  +
  +  It is very optional.
  +/
@@ -25,10 +29,10 @@ import kameloso.ircdefs;
 
 private:
 
-/// Lifetime of a `Line` in `prevlines`, in seconds
+/// Lifetime of a `Line` in `prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;
 
-/// Regex patterns to find lines like `s/foo/bar/`
+/// Regex patterns to find lines like `s/foo/bar/`.
 enum sedPattern  = `^s/([^/]+)/([^/]*)/(g?)$`;
 enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
 enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
@@ -37,39 +41,31 @@ enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
 // Line
 /++
  +  Struct aggregate of a spoken line and the timestamp when it was said.
- +
- +  ------------
- +  struct Line
- +  {
- +      string content;
- +      long timestamp;
- +  }
- +  ------------
  +/
 struct Line
 {
     import std.datetime.systime : SysTime;
 
-    /// Contents of last line uttered
+    /// Contents of last line uttered.
     string content;
 
-    /// When the last line was spoken, in UNIX time
+    /// When the last line was spoken, in UNIX time.
     long timestamp;
 }
 
 
 // sedReplace
 /++
- +  sed-replace a line with a substitution string.
+ +  `sed`-replace a line with a substitution string.
  +
- +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`
+ +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`.
  +
  +  Params:
- +      originalLine = the line to apply the sed-replace pattern to.
- +      expression = the replace pattern to apply.
+ +      originalLine = Line to apply the `sed`-replace pattern to.
+ +      expression = Replacement pattern to apply.
  +
  +  Returns:
- +      the original line with the changes the replace pattern caused.
+ +      Original line with the changes the replace pattern incurred.
  +/
 string sedReplace(const string originalLine, const string expression) @safe
 {
@@ -130,19 +126,16 @@ unittest
         immutable after = before.sedReplace("s/123/789/");
         assert((after == "abc 789 def 456"), after);
     }
-
     {
         enum before = "I am a fish";
         immutable after = before.sedReplace("s|a|e|g");
         assert((after == "I em e fish"), after);
     }
-
     {
         enum before = "Lorem ipsum dolor sit amet";
         immutable after = before.sedReplace("s###g");
         assert((after == "Lorem ipsum dolor sit amet"), after);
     }
-
     {
         enum before = "高所恐怖症";
         immutable after = before.sedReplace("s/高所/閉所/");
@@ -230,8 +223,10 @@ public:
  +/
 final class SedReplacePlugin : IRCPlugin
 {
-    /// A `Line[string]` 1-buffer of the previous line every user said,
-    /// with nickname as key
+    /++
+     +  A `Line[string]` 1-buffer of the previous line every user said, with
+     +  with nickname as key.
+     +/
     Line[string] prevlines;
 
     mixin IRCPluginImpl;

@@ -1,14 +1,14 @@
 /++
- +  The Chan Queries service queries channels for information about themselves
- +  (in terms of topic and modes) as well as its list of participants. It does
- +  this shortly after having joined a channel, as a service to all other
- +  plugins, so they don't each try to do it theemselves.
+ +  The Channel Queries service queries channels for information about them (in
+ +  terms of topic and modes) as well as its list of participants. It does this
+ +  shortly after having joined a channel, as a service to all other plugins,
+ +  so they don't each try to do it theemselves.
  +
  +  It has no commands.
  +
- +  It is qualifeid as a service, so while it is not technically mandatory,
- +  it is highly recommended if you plan on mixing in `ChannelAwareness` in your
- +  plugins.
+ +  It is qualified as a service, so while it is not technically mandatory, it
+ +  is highly recommended if you plan on mixing in
+ +  `kameloso.plugins.common.ChannelAwareness` in your plugins.
  +/
 module kameloso.plugins.chanqueries;
 
@@ -20,7 +20,7 @@ private:
 
 // onPing
 /++
- +  Query channels for information about themselves and their users.
+ +  Query channels for information about them and their users.
  +
  +  Check an internal list of channels once every `PING`, and if one we inhabit
  +  hasn't been queried, query it.
@@ -99,7 +99,8 @@ void onPing(ChanQueriesService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Add a channel we join to the internal list of channels.
+ +  Add a channel we join to the internal `ChanQueriesService.channels` list of
+ +  channels.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -113,7 +114,8 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 
 // onSelfpart
 /++
- +  Remove a channel we part from the internal list of channels.
+ +  Remove a channel we part from the internal `ChanQueriesService.channels`
+ +  list of channels.
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.any)
@@ -130,12 +132,17 @@ public:
 
 // ChanQueriesService
 /++
- +  The Channel Queries service queries channels for information about it, so
- +  that other plugins that implement channel awareness can catch the results.
+ +  The Channel Queries service queries channels for information about them (in
+ +  terms of topic and modes) as well as its list of participants. It does this
+ +  shortly after having joined a channel, as a service to all other plugins,
+ +  so they don't each try to do it theemselves.
  +/
 final class ChanQueriesService : IRCPlugin
 {
-    /// Extra seconds delay between channel mode/user queries.
+    /++
+     +  Extra seconds delay between channel mode/user queries. Not delaying may
+     +  cause kicks and disconnects if results are returned quickly.
+     +/
     enum secondsBetween = 2;
 
     /++

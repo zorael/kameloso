@@ -3,7 +3,8 @@
  +  URL has been posted there it will print the post link to the channel.
  +
  +  It has one command:
- +      `reddit`
+ +
+ +  `reddit`
  +
  +  It requires version `Web` as HTTP requests will have to be made.
  +
@@ -27,22 +28,15 @@ private:
  +  A record of a Reddit post lookup.
  +
  +  Merely pairs an URL with a timestamp.
- +
- +  ------------
- +  struct RedditLookup
- +  {
- +      string url;
- +      long when;
- +  }
- +  ------------
  +/
 struct RedditLookup
 {
     import std.datetime.systime : SysTime;
 
+    /// Lookup result URL.
     string url;
 
-    /// The UNIX timestamp of when the URL was looked up
+    /// UNIX timestamp of when the URL was looked up.
     long when;
 }
 
@@ -105,6 +99,15 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
  +  channel or in the private message query.
  +
  +  Run in it own thread, so arguments have to be value types or shared.
+ +
+ +  Params:
+ +      sState = The `kameloso.plugins.common.IRCPluginState` of the original
+ +          `RedditPlugin`, `shared` so that it may be passed to the worker
+ +          threads.
+ +      cache = Cache of previous Reddit lookups, in an associative array keyed
+ +          with the original URL.
+ +      url = Current URL to look up.
+ +      event = `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
 void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     const string url, const IRCEvent event)
@@ -139,6 +142,12 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
 // lookupReddit
 /++
  +  Given an URL, looks it up on Reddit to see if it has been posted there.
+ +
+ +  Params:
+ +      url = URL to query Reddit for.
+ +
+ +  Returns:
+ +      URL to the Reddit post that links to `url`.
  +/
 string lookupReddit(const string url)
 {
@@ -177,6 +186,12 @@ string lookupReddit(const string url)
 // reportReddit
 /++
  +  Reports the result of a Reddit lookup to a channel or in a private message.
+ +
+ +  Params:
+ +      tid = Thread ID of the original thread, to which we should send the
+ +          final reporting message.
+ +      reddit = URL of the Reddit post.
+ +      event = `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
 void reportReddit(Tid tid, const string reddit, const IRCEvent event)
 {
@@ -202,6 +217,10 @@ void reportReddit(Tid tid, const string reddit, const IRCEvent event)
 // prune
 /++
  +  Garbage-collects old entries in a `RedditLookup[string]` lookup cache.
+ +
+ +  Params:
+ +      cache = Cache of Reddit lookups, `shared` so that it can persist over
+ +          multiple lookups (multiple threads).
  +/
 void prune(shared RedditLookup[string] cache)
 {
@@ -253,12 +272,12 @@ mixin UserAwareness;
  +  been posted there.
  +
  +  It does this by simply appending the URL to https://www.reddit.com/, which
- +  makes Reddit either rediret you to a login page, to a submit-this-link page,
- +  or to a/the post that links to that URL.
+ +  makes Reddit either redirect you to a login page, to a submit-this-link
+ +  page, or to a/the post that links to that URL.
  +/
 final class RedditPlugin : IRCPlugin
 {
-    /// Cache of recently looked-up URLs
+    /// Cache of recently looked-up URLs.
     shared RedditLookup[string] cache;
 
     mixin IRCPluginImpl;

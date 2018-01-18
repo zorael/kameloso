@@ -7,7 +7,7 @@
  +
  +  It reqiures version `Web` for obvious reasons.
  +
- +  It is also optinal.
+ +  It is optinal.
  +/
 module kameloso.plugins.webtitles;
 
@@ -22,72 +22,61 @@ import std.regex : ctRegex;
 
 private:
 
-/// Regex pattern to match a URI, to see if one was pasted
+/// Regex pattern to match a URL, to see if one was pasted.
 enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 
-/// Regex engine to catch URIs
+/// Regex engine to catch URLs.
 static urlRegex = ctRegex!stephenhay;
 
-/// Regex pattern to match YouTube urls
+/// Regex pattern to match YouTube urls.
 enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
 
 // TitleLookup
 /++
- +  A record of a URI lookup.
+ +  A record of a URL lookup.
  +
  +  This is both used to aggregate information about the lookup, as well as to
  +  add hysteresis to lookups, so we don't look the same one up over and over
  +  if they were pasted over and over.
- +
- +  ------------
- +  struct TitleLookup
- +  {
- +      string title;
- +      string domain;
- +      long when;
- +  }
- +  ------------
  +/
 struct TitleLookup
 {
     import std.datetime.systime : SysTime;
 
+    /// Looked up web page title.
     string title;
+
+    /// Domain name of the looked up URL.
     string domain;
 
-    /// The UNIX timestamp of when the title was looked up
+    /// The UNIX timestamp of when the title was looked up.
     long when;
 }
 
 
 // TitleRequest
 /++
- +  A record of an URI lookup request.
+ +  A record of an URL lookup request.
  +
  +  This is used to aggregate information about a lookup request, making it
  +  easier to pass it inbetween functions. It serves no greater purpose.
- +
- +  ------------
- +  struct TitleRequest
- +  {
- +      string url;
- +      string target;
- +  }
- +  ------------
  +/
 struct TitleRequest
 {
+    /// The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
     IRCEvent event;
+
+    /// URL to look up.
     string url;
 }
 
 
 // onMessage
 /++
- +  Parses a message to see if the message contains an URI.
+ +  Parses a message to see if the message contains an URL.
  +
- +  It uses a simple regex and exhaustively tries to match every URI it detects.
+ +  It uses a simple regex and exhaustively tries to match every URL it detects.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -111,7 +100,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         return;
     }
 
-    // Early abort so we don't use the regex as much
+    // Early abort so we don't use the regex as much.
     if (!event.content.has!(Yes.decode)("http")) return;
 
     auto matches = event.content.matchAll(urlRegex);
@@ -155,6 +144,13 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +  channel.
  +
  +  Supposed to be run in its own, shortlived thread.
+ +
+ +  Params:
+ +      sState = The `kameloso.plugins.common.IRCPluginState` of the current
+ +          `WebtitlesPlugin`, `shared` so that it will persist between lookups
+ +          (between multiple threads).
+ +      cache = Reference to the cache of previous `TitleLookup`s.
+ +      titleReq = The current title request.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     const TitleRequest titleReq)
@@ -187,6 +183,11 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
 /++
  +  Prints the result of a web title lookup in the channel or as a message to
  +  the user specified.
+ +
+ +  Params:
+ +      tid = Thread ID of the main thread, to report the lookup to.
+ +      lookup = Finished title lookup.
+ +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
 void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
 {
@@ -216,6 +217,12 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
  +  want you to solve a captcha to fetch the page. We hack our way around it
  +  by rewriting the URL to be one to ListenOnRepeat with the same video ID.
  +  Then we get our YouTube title.
+ +
+ +  Params:
+ +      titleReq = Current title request.
+ +
+ +  Returns:
+ +      A finished `TitleLookup`.
  +/
 TitleLookup lookupTitle(const TitleRequest titleReq)
 {
@@ -285,8 +292,9 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +  URL to ListenOnRepeat with the same video ID and fetch its title there.
  +
  +  Params:
- +      ref lookup = the failing TitleLookup that we want to try hacking around
- +      url = the original URL string
+ +      lookup = Reference to the failing TitleLookup, that we want to try
+ +          hacking around
+ +      titleReq = The original title request.
  +/
 void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 {
@@ -322,6 +330,12 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 /++
  +  Remove unwanted characters from a title, and decode HTML entities in it
  +  (like &mdash; and &nbsp;).
+ +
+ +  Params:
+ +      title = Title string to parse and reomve tags and entities from.
+ +
+ +  Returns:
+ +      A modified title string, with unwanted bits stripped out.
  +/
 string parseTitle(const string title)
 {
@@ -368,6 +382,10 @@ unittest
 // prune
 /++
  +  Garbage-collects old entries in a `TitleLookup[string]` lookup cache.
+ +
+ +  Params:
+ +      cache = Cache of previous `TitleLookup`s, `shared` so that it can be
+ +          reused in further lookup (other threads).
  +/
 void prune(shared TitleLookup[string] cache)
 {
@@ -415,13 +433,13 @@ public:
 
 // Webtitles
 /++
- +  The Webtitles plugin catches HTTP URI links in an IRC channel, connects to
+ +  The Webtitles plugin catches HTTP URL links in an IRC channel, connects to
  +  its server and and streams the web page itself, looking for the web page's
  +  title. This is then reported to the originating channel or personal query.
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
-    /// Cache of recently looked-up web titles
+    /// Cache of recently looked-up web titles.
     shared TitleLookup[string] cache;
 
     mixin IRCPluginImpl;

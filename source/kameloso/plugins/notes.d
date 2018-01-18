@@ -3,11 +3,12 @@
  +  when they next log in.
  +
  +  It has a few commands:
- +      `note` | `addnote`
- +      `fakejoin`
- +      `fakechan`
- +      `printnotes`
- +      `reloadnotes`
+ +
+ +  `note` | `addnote`<br>
+ +  `fakejoin`<br>
+ +  `fakechan`<br>
+ +  `printnotes`<br>
+ +  `reloadnotes`<br>
  +
  +  It is vey optional.
  +/
@@ -26,20 +27,16 @@ private:
 // NotesSettings
 /++
  +  Notes plugin settings.
- +
- +  ------------
- +  struct NotesSettings
- +  {
- +      string notesFile = "notes.json";
- +      bool replayOnJoin = true;
- +      bool replayOnSelfjoin = false;
- +  }
- +  ------------
  +/
 struct NotesSettings
 {
+    /// Filename of file to save the notes to.
     string notesFile = "notes.json";
+
+    /// Whether or not to replay notes when the user joins.
     bool replayOnJoin = true;
+
+    /// Whether or not to replay notes when the bot joins.
     bool replayOnSelfjoin = false;
 }
 
@@ -47,7 +44,7 @@ struct NotesSettings
 // onReplayEvent
 /++
  +  Sends notes queued for a user to a channel when they speak up, or when they
- +  join iff the `replayOnJoin` setting is set.
+ +  join iff the `NotesSettings.replayOnJoin` setting is set.
  +
  +  Nothing is sent if no notes are stored.
  +/
@@ -271,7 +268,8 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +  Fetches the notes for a specified user, from the in-memory JSON storage.
  +
  +  Params:
- +      nickname = the user whose notes to fetch.
+ +      plugin = Current `NotesPlugin`.
+ +      nickname = The user whose notes to fetch.
  +
  +  Returns:
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
@@ -318,11 +316,12 @@ auto getNotes(NotesPlugin plugin, const string nickname)
 
 // clearNotes
 /++
- +  Clears the note storage of any notes pertaining to the specified user,
- +  then saves it to disk.
+ +  Clears the note storage of any notes pertaining to the specified user, then
+ +  saves it to disk.
  +
  +  Params:
- +      nickname = the nickname whose notes to clear.
+ +      plugins = Current `NotesPlugin`.
+ +      nickname = Nickname whose notes to clear.
  +/
 void clearNotes(NotesPlugin plugin, const string nickname)
 {
@@ -359,9 +358,10 @@ void clearNotes(NotesPlugin plugin, const string nickname)
  +  Creates a note and saves it in the in-memory JSON storage.
  +
  +  Params:
- +      nickname = the user for whom the note is meant.
- +      sender = the originating user who places the note.
- +      line = the note text.
+ +      plugin = Current `NotesPlugin`.
+ +      nickname = Nickname for whom the note is meant.
+ +      sender = Originating user who places the note.
+ +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string line)
@@ -405,7 +405,8 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
  +  Saves all notes to disk.
  +
  +  Params:
- +      filename = the filename to save to.
+ +      plugin = Current `NotesPlugin`.
+ +      filename = Filename of file to save to.
  +/
 void saveNotes(NotesPlugin plugin, const string filename)
 {
@@ -424,7 +425,12 @@ void saveNotes(NotesPlugin plugin, const string filename)
  +  Loads notes from disk into the in-memory storage.
  +
  +  Params:
- +      filename = the filename to read.
+ +      filename = Filename of file to read from.
+ +
+ +  Returns:
+ +      A JSON array in the form of `Note[][string]`, where `Note[]` is an
+ +      array of Voldemort `Note`s (from `getNotes`), keyed by nickname strings.
+ +
  +/
 JSONValue loadNotes(const string filename)
 {
