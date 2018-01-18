@@ -1125,9 +1125,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         this.privateState = state;
 
-        static if (__traits(compiles, .initialise(this)))
+        static if (__traits(compiles, .initialise))
         {
-            .initialise(this);
+            static if (__traits(compiles, .initialise(this)))
+            {
+                .initialise(this);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".initialise does not compile");
+            }
         }
     }
 
@@ -1157,9 +1164,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void postprocess(ref IRCEvent event) @system
     {
-        static if (__traits(compiles, .postprocess(this, event)))
+        static if (__traits(compiles, .postprocess))
         {
-            .postprocess(this, event);
+            static if (__traits(compiles, .postprocess(this, event)))
+            {
+                .postprocess(this, event);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".postprocess does not compile");
+            }
         }
     }
 
@@ -1191,9 +1205,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void writeConfig(const string configFile)
     {
-        static if (__traits(compiles, .writeConfig(this, string.init)))
+        static if (__traits(compiles, .writeConfig))
         {
-            .writeConfig(this, configFile);
+            static if (__traits(compiles, .writeConfig(this, string.init)))
+            {
+                .writeConfig(this, configFile);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".writeConfig does not compile");
+            }
         }
     }
 
@@ -1321,9 +1342,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void present() @system const
     {
-        static if (__traits(compiles, .present(this)))
+        static if (__traits(compiles, .present))
         {
-            .present(this);
+            static if (__traits(compiles, .present(this)))
+            {
+                .present(this);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".present does not compile");
+            }
         }
     }
 
@@ -1340,9 +1368,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void peekPlugins(const IRCPlugin[] plugins) @system
     {
-        static if (__traits(compiles, .peekPlugins(this, plugins)))
+        static if (__traits(compiles, .peekPlugins))
         {
-            .peekPlugins(this, plugins);
+            static if (__traits(compiles, .peekPlugins(this, plugins)))
+            {
+                .peekPlugins(this, plugins);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".peekPlugins does not compile");
+            }
         }
     }
 
@@ -1438,9 +1473,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void start() @system
     {
-        static if (__traits(compiles, .start(this)))
+        static if (__traits(compiles, .start))
         {
-            .start(this);
+            static if (__traits(compiles, .start(this)))
+            {
+                .start(this);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".start does not compile");
+            }
         }
     }
 
@@ -1451,9 +1493,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void teardown() @system
     {
-        static if (__traits(compiles, .teardown(this)))
+        static if (__traits(compiles, .teardown))
         {
-            .teardown(this);
+            static if (__traits(compiles, .teardown(this)))
+            {
+                .teardown(this);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".teardown does not compile");
+            }
         }
     }
 
