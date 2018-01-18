@@ -1,6 +1,7 @@
 language: d
 
-sudo: false
+sudo: required
+dist: trusty
 
 d:
     - dmd
@@ -20,7 +21,7 @@ script:
     - dub test --compiler=${DC} --build-mode=singleFile -c colours+web
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c vanilla
     - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours+web
-    - dub build -b ddox --compiler=${DC}
+    - dub build -b ddox --compiler=${DC} --build-mode=singleFile -c colours+web
 
 deploy:
     local_dir: docs
