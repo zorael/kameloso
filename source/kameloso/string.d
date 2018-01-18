@@ -349,45 +349,6 @@ unittest
 }
 
 
-// arrayify
-/++
- +  Takes a string and, with a separator token, splits it into discrete token
- +  and makes it into a dynamic array.
- +
- +  Example:
- +  ------------
- +  string[] things = "one,two,three,four".arrayify;
- +  assert(things == [ "one", "two", "three", "four" ]);
- +  ------------
- +
- +  Params:
- +      separator = String to use for delimenating fields.
- +      line = Line to split.
- +
- +  Returns:
- +      An array with fields split, out of the `line` argument.
- +/
-T[] arrayify(string separator = ",", T)(const T line) pure
-{
-    import std.algorithm.iteration : map, splitter;
-    import std.array : array;
-    import std.string : strip;
-
-    return line.splitter(separator).map!(a => a.strip()).array;
-}
-
-///
-unittest
-{
-    assert("foo,bar,baz".arrayify     == [ "foo", "bar", "baz" ]);
-    assert("foo|bar|baz".arrayify!"|" == [ "foo", "bar", "baz" ]);
-    assert("foo bar baz".arrayify!" " == [ "foo", "bar", "baz" ]);
-    assert("only one entry".arrayify  == [ "only one entry" ]);
-    assert("not one entry".arrayify!" "  == [ "not", "one", "entry" ]);
-    assert("".arrayify == []);
-}
-
-
 /// stripPrefix
 /++
  +  Strips a prefix word from a string, also stripping away some non-word
