@@ -23,6 +23,13 @@ shared static this()
 
 private:
 
+/++
+ +  Abort flag.
+ +
+ +  This is set when the program is interrupted (such as via Ctrl+C). Other
+ +  parts of the program will be monitoring it, to take the cue and abort when
+ +  it is set.
+ +/
 __gshared bool abort;
 
 
