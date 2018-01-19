@@ -58,9 +58,6 @@ interface IRCPlugin
     /// Executed when connection has been established.
     void start() @system;
 
-    /// Executed when we want a plugin to print its settings and such.
-    void present() const;
-
     /// Executed when a plugin wants to examine all the other plugins.
     void peekPlugins(const IRCPlugin[]) @system;
 
@@ -1329,28 +1326,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 (is(typeof(this.tupleof[i]) == struct)))
             {
                 symbol.setMemberByName(setting, value);
-            }
-        }
-    }
-
-
-    // present
-    /++
-     +  Print some information to the screen, usually settings.
-     +
-     +  Scheduled for removal.
-     +/
-    void present() @system const
-    {
-        static if (__traits(compiles, .present))
-        {
-            static if (__traits(compiles, .present(this)))
-            {
-                .present(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".present does not compile");
             }
         }
     }

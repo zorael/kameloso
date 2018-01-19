@@ -207,13 +207,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             printObjects(bot, bot.server, settings);
 
-            foreach (plugin; plugins)
-            {
-                // Not all plugins with configuration is important enough to list, so
-                // not all will have something to present()
-                plugin.present();
-            }
-
             client.writeConfigurationFile(settings.configFile);
             return Yes.quit;
         }
