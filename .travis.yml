@@ -5,6 +5,7 @@ dist: trusty
 
 d:
     - dmd
+    - ldc
 
 os:
     - linux
@@ -17,11 +18,11 @@ addons:
             - libevent-dev
 
 script:
-    - dub test --compiler=${DC} --build-mode=singleFile -c vanilla
-    - dub test --compiler=${DC} --build-mode=singleFile -c colours+web
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c vanilla
-    - dub build -b plain --compiler=${DC} --build-mode=singleFile -c colours+web
-    - dub build -b ddox --compiler=${DC} --build-mode=singleFile -c colours+web
+    - dub test --compiler=${DC} -c vanilla
+    - dub test --compiler=${DC} -c colours+web
+    - dub build -b plain --compiler=${DC} -c vanilla
+    - dub build -b plain --compiler=${DC} -c colours+web
+    - dub build -b ddox --compiler=${DC} -c colours+web
 
 deploy:
     local_dir: docs
