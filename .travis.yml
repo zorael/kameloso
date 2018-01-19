@@ -9,7 +9,6 @@ d:
 
 os:
     - linux
-    - windows
     - osx
 
 addons:
