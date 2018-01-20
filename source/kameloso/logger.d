@@ -56,8 +56,8 @@ final class KamelosoLogger : Logger
         LogLevel.fatal   : BashForeground.red,
     ];
 
-    bool monochrome;  /// Whether to use colours or not in logger output
-    bool brightTerminal;   /// Whether to use colours for a bright background
+    bool monochrome;  /// Whether to use colours or not in logger output.
+    bool brightTerminal;   /// Whether to use colours for a bright background.
 
     this(LogLevel lv = LogLevel.all, bool monochrome = false,
         bool brightTerminal = false)

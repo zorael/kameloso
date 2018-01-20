@@ -75,8 +75,8 @@ public:
  +          the settings read from the configuration file.
  +
  +  Returns:
- +      Yes.quit or No.quit depending on whether the arguments chosen mean the
- +      program should proceed or not.
+ +      `Yes.quit` or `No.quit` depending on whether the arguments chosen mean
+ +      the program should proceed or not.
  +/
 Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {

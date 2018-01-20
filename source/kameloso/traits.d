@@ -66,7 +66,7 @@ unittest
  +  This is used for formatting configuration files, so that columns line up.
  +
  +  Params:
- +      Things = Types to examine and count name lengths.
+ +      Things = Types to examine and count member name lengths of.
  +/
 template longestMemberName(Things...)
 if (Things.length > 0)

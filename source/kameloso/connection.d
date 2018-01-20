@@ -23,20 +23,23 @@ private:
     /// Real IPv4 and IPv6 sockets to connect through.
     Socket socket4, socket6;
 
-    /// Pointer to the socket of the AddressFamily we want to connect with
+    /++
+     +  Pointer to the socket of the `std.socket.AddressFamily` we want to
+     +  connect with.
+     +/
     Socket* socket;
 
 public:
-    /// IPs already resolved using Connection.resolve.
+    /// IPs already resolved using `Connection.resolve`.
     Address[] ips;
 
     /++
-     +  Implicitly proxy calls to the current Socket. This successfully proxies
-     +  to Socket.receive.
+     +  Implicitly proxies calls to the current `socket`. This successfully
+     +  proxies to `Socket.receive`.
      +/
     alias socket this;
 
-    /// Is the connection known to be active?
+    /// Whether we are connected or not.
     bool connected;
 
 
@@ -54,16 +57,18 @@ public:
 
         setOptions(socket4);
         setOptions(socket6);
+
+        connected = false;
     }
 
 
     // setOptions
     /++
-     +  Set up sockets with the SocketOptions needed. These include timeouts
-     +  and buffer sizes.
+     +  Sets up sockets with the `std.socket.SocketOptions` needed. These
+     +  include timeouts and buffer sizes.
      +
      +  Params:
-     +      socketToSetup = ref `socket` to modify.
+     +      socketToSetup = Reference to the `socket` to modify.
      +/
     void setOptions(Socket socketToSetup)
     {
@@ -84,7 +89,7 @@ public:
 
     // resolve
     /++
-     +  Given an address and a port, build an array of `Address`es into IPs.
+     +  Given an address and a port, builds an array of `Address`es into IPs.
      +
      +  Example:
      +  ------------
@@ -93,8 +98,8 @@ public:
      +  ------------
      +
      +  Params:
-     +      address = The string address to look up.
-     +      port = The remote port build into the `Address`.
+     +      address = String address to look up.
+     +      port = Remote port build into the `Address`.
      +      abort = Reference bool which, if set, should make us abort and
      +          return.
      +
@@ -267,8 +272,7 @@ public:
  +
  +  foreach (immutable line; generator)
  +  {
- +      /* ... */
- +      yield(someString);
+ +      // line is a yielded string
  +  }
  +  ------------
  +

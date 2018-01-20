@@ -56,7 +56,7 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 
 // configReader
 /++
- +  Read configuration file into a string.
+ +  Reads configuration file into a string.
  +
  +  Example:
  +  ------------
@@ -80,7 +80,6 @@ string configReader(const string configFile)
         return string.init;
     }
 
-    // Read the contents and split by newline
     return configFile
         .readText
         .chomp;
@@ -105,7 +104,7 @@ string configReader(const string configFile)
  +
  +  Params:
  +      configFile = Filename of file to read from.
- +      things = Reference variadic tuple of things to set values of, according
+ +      things = Reference variadic list of things to set values of, according
  +          to the text in the configuration file.
  +/
 void readConfigInto(T...)(const string configFile, ref T things)
@@ -149,7 +148,7 @@ if (Things.length > 1)
 
 // serialise
 /++
- +  Serialise the fields of an object into an .ini file-like format.
+ +  Serialises the fields of an object into an .ini file-like format.
  +
  +  It only serialises fields not annotated with `kameloso.uda.Unconfigurable`,
  +  and it doesn't recurse into other structs or classes.

@@ -315,7 +315,7 @@ unittest
  +  ------------
  +
  +  Params:
- +      client = ref current Client, with all its settings.
+ +      client = Reference to the current Client, with all its settings.
  +/
 void generateAsserts(ref Client client) @system
 {

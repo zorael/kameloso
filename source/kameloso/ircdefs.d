@@ -822,12 +822,12 @@ struct IRCEvent
 
     /++
      +  With a numeric event, the number of the event type, alternatively some
-     +  other kind of numeral associated with the event (such a Twitch resub
-     +  number of months).
+     +  other kind of arbitrary numeral associated with the event (such a Twitch
+     +  resub number of months).
      +/
     uint num;
 
-    /// A timestamp of when the event occured.
+    /// A timestamp of when the event transpired.
     long time;
 }
 
@@ -839,17 +839,24 @@ struct IRCEvent
  +/
 struct IRCBot
 {
+    /// Bot nickname.
     string nickname   = "kameloso";
+
+    /// Bot "user" or full name.
     string user       = "kameloso!";
+
+    /// Bot IDENT identifier.
     string ident      = "NaN";
+
+    /// Default reason given when quitting without specifying one.
     string quitReason = "beep boop I am a bot";
 
-    /// Username to use for services account
+    /// Username to use for services account.
     string authLogin;
 
     @Hidden
     {
-        /// Password for services account
+        /// Password for services account.
         string authPassword;
 
         /// Login `PASS`, different from `SASL` and services.
@@ -858,15 +865,20 @@ struct IRCBot
 
     @Separator(",")
     {
-        /// The nickname services accounts of the bot's *administrators*
+        /// The nickname services accounts of the bot's *administrators*.
         string[] admins;
 
+        /// List of homes, where the bot should be active.
         string[] homes;
+
+        /// Whitelist of services accounts that may trigger the bot.
         string[] whitelist;
+
+        /// Currently inhabited channels (though not neccessarily homes)
         string[] channels;
     }
 
-    /// Status of a process
+    /// Status of a process.
     enum Status
     {
         unset,
@@ -877,18 +889,19 @@ struct IRCBot
 
     @Unconfigurable
     {
+        /// The current `IRCServer` we're connected to.
         IRCServer server;
 
-        /// The original bot nickname before connecting, in case it changed
+        /// The original bot nickname before connecting, in case it changed.
         string origNickname;
 
-        /// Status of authentication process (SASL, NickServ)
+        /// Status of authentication process (SASL, NickServ).
         Status authentication;
 
-        /// Status of registration process (logon)
+        /// Status of registration process (logon).
         Status registration;
 
-        /// Flag signifying that the bot was altered.
+        /// Whether or not the bot was altered.
         bool updated;
     }
 
@@ -952,7 +965,10 @@ struct IRCServer
         ithildin,
     }
 
+    /// Server address (or IP).
     string address = "irc.freenode.net";
+
+    /// The port to connect to, usually 6667-6669.
     ushort port = 6667;
 
     @Unconfigurable
@@ -1011,7 +1027,7 @@ struct IRCServer
 
 
 /++
- +  An aggregate of fields representing a single user on IRC. Instances of this
+ +  An aggregate of fields representing a single user on IRC. Instances of these
  +  should not survive a disconnect and reconnect; they are on a per-connection
  +  basis.
  +/
@@ -1019,11 +1035,16 @@ struct IRCUser
 {
     @safe:
 
+    /// The nickname of the user
     string nickname;
 
     /// The alternate "display name" of the user, such as those on Twitch
     string alias_;
+
+    /// Ther user's IDENT identification.
     string ident;
+
+    /// The reported user address, which may be a cloak.
     string address;
 
     /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc)
@@ -1037,7 +1058,7 @@ struct IRCUser
 
     /++
      +  Flag that the user is "special", which is usually that it is a service
-     + like nickname services, or channel or memo or spam ...
+     +  like nickname services, or channel or memo or spam.
      +/
     bool special;
 
@@ -1073,7 +1094,7 @@ struct IRCUser
             special ? "*" : string.init, lastWhois, refcount);
     }
 
-    /// Guesses that a sender is a server
+    /// Guesses that a sender is a server.
     bool isServer() pure @property const
     {
         import kameloso.string : has;
@@ -1112,6 +1133,9 @@ struct IRCUser
      +
      +  Returns:
      +      `true` if the `IRCUser`s are deemed to match, `false` if not.
+     +
+     +  TODO:
+     +      Support partial globs.
      +/
     bool matchesByMask(IRCUser other) pure nothrow @nogc const
     {
@@ -2022,7 +2046,8 @@ struct Typenums
  +
  +  An IRC channel may have a topic, a creation date, and one or more *modes*.
  +  Modes define how the channel behaves and how it treats its users, including
- +  which ones have operator and voice status, as well as which are banned.
+ +  which ones have operator and voice status, as well as which are banned, and
+ +  more.
  +/
 struct IRCChannel
 {

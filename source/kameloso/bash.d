@@ -116,7 +116,7 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
 // colour
 /++
  +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset` and composes them into a colour code token.
+ +  a `BashReset` and composes them into a single Bash colour code token.
  +
  +  This function creates an `std.array.Appender` and fills it with the return
  +  value of the output range version of `colour`.
@@ -538,7 +538,7 @@ if (isOutputRange!(Sink,string))
  +
  +  Params:
  +      normalise = Whether to normalise colours so that they aren't too dark.
- +      word = The string to tint.
+ +      word = String to tint.
  +      r = Red value.
  +      g = Green value.
  +      b = Blue value.

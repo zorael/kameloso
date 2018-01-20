@@ -32,12 +32,13 @@ import std.typecons : Flag, No, Yes;
  +  Params:
  +      decode = Whether to use auto-decoding functions, or try to keep to non-
  +          decoding ones (when possible).
- +      line = The string to walk and advance.
- +      separator = The token that deliminates what should be returned and to
- +          where to advance.
+ +      line = String to walk and advance.
+ +      separator = Token that deliminates what should be returned and to where
+ +          to advance.
  +
  +  Returns:
- +      The string `line` from the start up to the separator.
+ +      The string `line` from the start up to the separator. The original
+ +      variable is advanced to after the separator.
  +/
 pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator) pure
@@ -206,7 +207,7 @@ unittest
  +  ------------
  +
  +  Params:
- +      num = The numerical count of the noun.
+ +      num = Numerical count of the noun.
  +      singular = The noun in singular form.
  +      plural = The noun in plural form.
  +
@@ -232,7 +233,7 @@ unittest
 
 // unquoted
 /++
- +  Removes one preceding and one trailing quote, unquoting a word.
+ +  Removes paired preceding and trailing double quotes, unquoting a word.
  +
  +  Example:
  +  ------------
@@ -292,7 +293,7 @@ unittest
 
 // beginsWith
 /++
- +  A cheaper variant of std.algorithm.searching.startsWith, since it is
+ +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
  +  such a hotspot.
  +
  +  Example:
@@ -349,13 +350,13 @@ unittest
 }
 
 
-/// stripPrefix
+// stripPrefix
 /++
  +  Strips a prefix word from a string, also stripping away some non-word
  +  characters.
  +
  +  This is to make a helper for stripping away bot prefixes, where such may be
- +  "kameloso:".
+ +  "`kameloso:`".
  +
  +  Example:
  +  ------------
@@ -409,7 +410,7 @@ unittest
 
 // timeSince
 /++
- +  Express how long time has passed in a `Duration`, in natural (English)
+ +  Express how much time has passed in a `Duration`, in natural (English)
  +  language.
  +
  +  Write the result to a passed output range `sink`.
@@ -512,7 +513,7 @@ unittest
 
 // toEnum
 /++
- +  Takes the member of an enum by string and returns that member.
+ +  Takes the member of an enum by string and returns that enum member.
  +
  +  It lowers to a big switch of the enum member strings. It is faster than
  +  `std.conv.to` and generates less template bloat.
@@ -860,6 +861,9 @@ unittest
  +
  +  Returns:
  +      The number of domains the two strings share.
+ +
+ +  TODO:
+ +      Support partial globs.
  +/
 uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
 {

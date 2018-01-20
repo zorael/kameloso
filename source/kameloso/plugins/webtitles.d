@@ -150,7 +150,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +          `WebtitlesPlugin`, `shared` so that it will persist between lookups
  +          (between multiple threads).
  +      cache = Reference to the cache of previous `TitleLookup`s.
- +      titleReq = The current title request.
+ +      titleReq = Current title request.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     const TitleRequest titleReq)
@@ -294,7 +294,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +  Params:
  +      lookup = Reference to the failing TitleLookup, that we want to try
  +          hacking around
- +      titleReq = The original title request.
+ +      titleReq = Original title request.
  +/
 void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 {

@@ -43,8 +43,9 @@ Logger logger;
 
 // initLogger
 /++
- +  Initialises the `KamelosoLogger` logger for use in this thread of the whole
- +  program.
+ +  Initialises the `KamelosoLogger` logger for use in this thread.
+ +
+ +  It needs to be separately instantiated per thread.
  +
  +  Example:
  +  ------------
@@ -229,7 +230,7 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
 /++
  +  Single-object `printObjects`.
  +
- +  An alias for when there is only one object to print.
+ +  A shorthand "alias" for when there is only one object to print.
  +
  +  Example:
  +  ------------
@@ -520,10 +521,10 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
  +  Takes two structs and melds them together, making the members a union of
  +  the two.
  +
- +  It only overwrites members that are `typeof(member).init`, so only unset
- +  members get their values overwritten by the melding struct. Supply a
- +  template parameter `Yes.overwrite` to make it overwrite if the melding
- +  struct's member is not `typeof(member).init`.
+ +  It only overwrites members in `intoThis` that are `typeof(member).init`, so
+ +  only unset members get their values overwritten by the melding struct.
+ +  Supply a template parameter `Yes.overwrite` to make it always overwrite,
+    except if the melding struct's member is `typeof(member).init`.
  +
  +  Example:
  +  ------------
@@ -1015,8 +1016,8 @@ enum : ubyte
  +
  +  Params:
  +      oneUp = Whether to always overshoot.
- +      num = The number to reach.
- +      n = The value to find a multiplier for.
+ +      num = Number to reach.
+ +      n = Base value to find a multiplier for.
  +
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
@@ -1334,7 +1335,7 @@ struct Client
 
 // printVersionInfo
 /++
- +  Prints out the bot banner with the version number and github URL, with the
+ +  Prints out the bot banner with the version number and GitHub URL, with the
  +  passed colouring.
  +
  +  Example:
@@ -1482,7 +1483,8 @@ uint deepSizeof(T)(const T thing) pure @nogc @safe @property
  +  Labels an item by wrapping it in a struct with an `id` field.
  +
  +  Access to the `thing` is passed on by use of `std.typecons.Proxy`, so this
- +  will transparently act like the original `thing` in many cases.
+ +  will transparently act like the original `thing` in most cases. The original
+ +  object can be accessed via the `thing` member when it doesn't.
  +/
 struct Labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
 {

@@ -1239,7 +1239,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
  +  Special senders include services and staff, administrators and the like. The
  +  use of this is contested and the notion may be removed at a later date. For
  +  now, the only thing it does is add an asterisk to the sender's nickname, in
- +  the `Printer` output.
+ +  the `kameloso.plugins.printer.PrinterPlugin` output.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
@@ -1452,7 +1452,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +  by looking at the target field of it; if it starts with a `#`, it is a
  +  channel message.
  +
- +  Also handle `ACTION` events (`/me slap foo with a large trout`), and change
+ +  Also handle `ACTION` events (`/me slaps foo with a large trout`), and change
  +  the type to `CTCP_`-types if applicable.
  +
  +  Params:
@@ -1572,9 +1572,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
 // onMode
 /++
- +  Handle `MODE` changes.
- +
- +  This only changes the `type` of the event, no other actions are taken.
+ +  Handles `MODE` changes.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
@@ -1622,8 +1620,8 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pu
  +
  +  `ISUPPORT` contains a bunch of interesting information that changes how we
  +  look at the `kameloso.ircdefs.IRCServer`. Notably which *network* the server
- +  is of and its max channel and nick lengths. Then much more that we're
- +  currently ignoring.
+ +  is of and its max channel and nick lengths, and available modes. Then much
+ +  more that we're currently ignoring.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
@@ -1884,14 +1882,14 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
 // toIRCEvent
 /++
- +  Parser an IRC string into an `kameloso.ircdefs.IRCEvent`.
+ +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
  +
  +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them, in order.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      raw = The raw IRC string to parse.
+ +      raw = Raw IRC string to parse.
  +
  +  Returns:
  +      A finished `kameloso.ircdefs.IRCEvent`.
@@ -2028,7 +2026,7 @@ unittest
 
 // isFromAuthService
 /++
- +  Looks at an event and decides whether it is from nickname services.
+ +  Looks at an  and decides whether it is from nickname services.
  +
  +  Example:
  +  ------------
@@ -2205,7 +2203,7 @@ unittest
  +  Returns:
  +      `true` if the string content is judged to be a channel, `false` if not.
  +/
-bool isValidChannel(const string line, const IRCServer server = IRCServer.init) pure @nogc
+bool isValidChannel(const string line, const IRCServer server) pure @nogc
 {
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
@@ -2349,10 +2347,10 @@ unittest
 /++
  +  Determines whether a passed `char` can be part of a nickname.
  +
- +  The IRC standard describes nicknames as being a string of the following
- +  characters:
+ +  The IRC standard describes nicknames as being a string of any of the
+ +  following characters:
  +
- +      [a-z] [A-Z] [0-9] _-\[]{}^`|
+ +  `[a-z] [A-Z] [0-9] _-\[]{}^`|`
  +
  +  Example:
  +  ------------
@@ -2433,7 +2431,8 @@ unittest
  +      nickname = String with a signed nickname.
  +
  +  Returns:
- +      The nickname with the sign sliced off.
+ +      The sign prepending the nickname, if there were any. The original
+ +      nickname variable is changed to be only the nickname part.
  +/
 string stripModesign(const IRCServer server, ref string nickname) pure nothrow @nogc
 {
@@ -2684,7 +2683,7 @@ struct IRCParser
 /++
  +  Sets a new or removes a `Mode`.
  +
- +  `Mode`s that are simply a character in `modechars` are simpy removed if
+ +  `Mode`s that are merely a character in `modechars` are simpy removed if
  +   the *sign* of the mode change is negative, whereas a more elaborate
  +  `Mode` in the `modes` array are only replaced or removed if they match a
  +   comparison test.
@@ -3092,7 +3091,7 @@ unittest
  +/
 final class IRCParseException : Exception
 {
-    /// Bundled `kameloso.ircdefs.IRCEvent` that threw this exception
+    /// Bundled `kameloso.ircdefs.IRCEvent`, parsing which threw this exception.
     IRCEvent event;
 
     this(const string message, const string file = __FILE__,

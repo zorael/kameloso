@@ -1,5 +1,9 @@
 /++
  +  Functions used to send messages to the server.
+ +
+ +  It does this by crafting `kameloso.ircdefs.IRCEvent`s from the passed
+ +  arguments, then sends it to the concurrency message-reading parts of the
+ +  main loop, which formats them into strings and sends them to the server.
  +/
 module kameloso.messaging;
 

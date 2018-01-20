@@ -93,7 +93,7 @@ string getQuote(ChatbotPlugin plugin, const string nickname)
  +  Params:
  +      plugin = Current `ChatbotPlugin`.
  +      nickname = Nickname of the quoted user.
- +      line = The quote to add.
+ +      line = Quote to add.
  +/
 void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
 {

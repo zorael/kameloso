@@ -269,7 +269,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = Current `NotesPlugin`.
- +      nickname = The user whose notes to fetch.
+ +      nickname = Nickname of user whose notes to fetch.
  +
  +  Returns:
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
