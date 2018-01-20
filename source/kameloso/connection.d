@@ -324,9 +324,13 @@ void listenFiber(Connection conn, ref bool abort)
 
             if (elapsed > Timeout.keepalive)
             {
+                import kameloso.string : timeSince;
+
                 // Too much time has passed; we can reasonably assume the socket is disconnected
+                immutable elapsedInWords = (Clock.currTime - SysTime.fromUnixTime(elapsed))
+                    .timeSince;
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                              elapsed, Timeout.keepalive.seconds);
+                              elapsedInWords, Timeout.keepalive.seconds);
                 return;
             }
 

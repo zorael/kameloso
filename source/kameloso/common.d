@@ -1511,6 +1511,22 @@ public:
     mixin Proxy!thing;
 }
 
+///
+unittest
+{
+    struct Foo {}
+    Foo foo;
+    Foo bar;
+
+    Labeled!(Foo,int)[] arr;
+
+    arr ~= labeled(foo, 1);
+    arr ~= labeled(bar, 2);
+
+    assert(arr[0].id == 1);
+    assert(arr[1].id == 2);
+}
+
 
 // labeled
 /++
@@ -1523,7 +1539,7 @@ public:
  +  auto namedFoo = labeled(foo, "hello world");
  +
  +  Foo bar;
- +  auto numbereBar = labeled(bar, 42);
+ +  auto numberedBar = labeled(bar, 42);
  +  ------------
  +
  +  Params:
@@ -1537,4 +1553,14 @@ auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
     (Thing thing, Label label) pure nothrow @nogc @safe
 {
     return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
+}
+
+///
+unittest
+{
+    auto foo = labeled("FOO", "foo");
+    assert(is(typeof(foo) == Labeled!(string, string)));
+
+    assert(foo.thing == "FOO");
+    assert(foo.id == "foo");
 }
