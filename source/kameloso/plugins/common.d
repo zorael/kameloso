@@ -644,6 +644,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     import kameloso.common : Labeled;
     import core.thread : Fiber;
+    import std.array : Appender;
     import std.concurrency : Tid;
 
     @safe:
