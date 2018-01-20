@@ -56,7 +56,7 @@ struct Line
 
 // sedReplace
 /++
- +  `sed`-replace a line with a substitution string.
+ +  `sed`-replaces a line with a substitution string.
  +
  +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`.
  +

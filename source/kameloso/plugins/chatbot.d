@@ -1,10 +1,10 @@
 /++
  +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
- +  and repeating text, along with the ability to save user quotes.
+ +  and repeating text, along with the ability to save and replay user quotes.
  +
  +  A user quote can be added by triggering the "`addquote`" bot command, by use
- +  of "`botname: addquote`" or "`!addquote`". A random one can then be replayed
- +  by use o the "`quote [nickname]`" command.
+ +  of "`botname: addquote`" or "`!addquote`" (assuming a prefix of "`!`"). A
+ +  random one can then be replayed by use o the "`quote [nickname]`" command.
  +
  +  It has a few commands:
  +
@@ -190,9 +190,9 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 /++
  +  Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
  +
- +  Randomises a response from the table `kameloso.constants.eightballAnswers`
- +  and sends it back to the channel in which the triggering event happened,
- +  or in a query if it was a private message.
+ +  Randomises a response from the internal `eightballAnswers` table and sends
+ +  it back to the channel in which the triggering event happened, or in a query
+ +  if it was a private message.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -310,7 +310,7 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 @BotCommand("addquote")
 @BotCommand(NickPolicy.required, "addquote")
 @Description("Creates a new quote.")
-void onCommanAddQuote(ChatbotPlugin plugin, const IRCEvent event)
+void onCommandAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.quotes) return;
 
@@ -403,7 +403,7 @@ void onEndOfMotd(ChatbotPlugin plugin)
  +  Starts the process of echoing all available bot commands to a user (in a
  +  private query). A hack.
  +
- +  Plugins don't know about other plugin; the only thing they know of the
+ +  Plugins don't know about other plugins; the only thing they know of the
  +  outside world is the thread ID of the main thread `mainThread` of
  +  (`kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
  +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated
@@ -413,7 +413,7 @@ void onEndOfMotd(ChatbotPlugin plugin)
  +  `kameloso.ircdefs.IRCEvent`, then send a concurrency message to the main
  +  thread asking for a const reference to the main
  +  `kameloso.common.Client.plugins` array of
- +  `kameloso.plugins.common.IRCPlugin`. We create a function in interface
+ +  `kameloso.plugins.common.IRCPlugin`s. We create a function in interface
  +  `kameloso.plugins.common.IRCPlugin` that passes said array on to the top-
  +  level `peekPlugins`, wherein we process the list and collect the bot command
  +  strings.
@@ -444,7 +444,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
  +  plugin's list of available bot commands.
  +
  +  This does not include bot regexes, as we do not know how to extract the
- +  expression from the `Regex` structure.
+ +  expression from the `std.regex.Regex` structure.
  +/
 void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
 {

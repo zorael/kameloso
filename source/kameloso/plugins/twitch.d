@@ -2,7 +2,7 @@
  +  The Twitch service postprocesses `kameloso.ircdefs.IRCEvent`s after they are
  +  parsed but before they are sent to the plugins for handling, and deals with
  +  Twitch-specifics. Those include extracting the colour someone's name should
- +  be printed in, their alias/"display namee" (generally their nickname
+ +  be printed in, their alias/"display name" (generally their nickname
  +  capitalised), converting the event to some event types unique to Twitch,
  +  etc.
  +
@@ -10,7 +10,7 @@
  +
  +  It is useless on other servers but crucial on Twitch itself. Even enabled
  +  it won't slow the bot down though, as the vey fist thing it does is to
- +  verify that it is on a Twitch server, abort if not.
+ +  verify that it is on a Twitch server, and aborts and returns if not.
  +/
 module kameloso.plugins.twitch;
 
@@ -27,8 +27,8 @@ private:
 struct TwitchSettings
 {
     /++
-     +  Flag to store the display name colour of users that the server sends,
-     +  for use in the `Printer` plugin.
+     +  Whether to store the display name colour of users that the server sends,
+     +  for use in the `kameloso.plugins.printer.PrinterPlugin` plugin.
      +/
     bool twitchColours = true;
 }

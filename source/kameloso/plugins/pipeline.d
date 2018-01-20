@@ -4,7 +4,7 @@
  +
  +  It has no commands; indeed, it doesn't listen to
  +  `kameloso.ircdefs.IRCEvent`s at all, only to what is sent to it via the
- +  named fifo pipe.
+ +  named FIFO pipe.
  +
  +  This requires version `Posix`, which is true for UNIX-like systems (like
  +  Linux and OSX).
@@ -27,14 +27,14 @@ private:
 
 // pipereader
 /++
- +  Reads a fifo (named pipe) and relays lines received there to the main
+ +  Reads a FIFO (named pipe) and relays lines received there to the main
  +  thread, to send to the server.
  +
  +  It is to be run in a separate thread.
  +
  +  Params:
  +      newState = The `kameloso.plugins.common.IRCPluginState` of the original
- +          `PipelinePlugin, to provide the main thread's `core.thread.Tid` for
+ +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
  +          concurrency messages, made `shared` to allow being sent between
  +          threads.
  +/
@@ -143,16 +143,16 @@ void pipereader(shared IRCPluginState newState)
 
 // createFIFO
 /++
- +  Creates a fifo (named pipe) in the filesystem.
+ +  Creates a FIFO (named pipe) in the filesystem.
  +
- +  It will be named a hardcoded <bot nickname>@<server address>.
+ +  It will be named a hardcoded [bot nickname]@[server address].
  +
  +  Params:
  +      state = The `kameloso.plugins.common.IRCPluginState` of the
  +          original `PipelinePlugin`.
  +
  +  Returns:
- +      A `std.stdio.File` repersenting the named fifo we want to read from.
+ +      A `std.stdio.File` repersenting the named FIFO we want to read from.
  +/
 File createFIFO(const IRCPluginState state)
 {
@@ -267,8 +267,10 @@ public:
 // Pipeline
 /++
  +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to
- +  send to the server. It is for debugging purposes until such time we figure
- +  out a way to properly input lines via the terminal.
+ +  send to the server.
+ +
+ +  It is for debugging purposes until such time we figure out a way to properly
+ +  2input lines via the terminal.
  +/
 final class PipelinePlugin : IRCPlugin
 {

@@ -19,7 +19,7 @@ private:
 
 // onCTCPs
 /++
- +  Handle `CTCP` requests.
+ +  Handles `CTCP` requests.
  +
  +  This is a catch-all function handling most `CTCP` requests we support,
  +  instead of having five different functions each dealing with one.

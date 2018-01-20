@@ -256,7 +256,7 @@ public:
  +  not neccessarily full lines. It thus keeps filling the buffer until it
  +  finds a newline character, yields it back to the caller of the fiber,
  +  checks for more lines to yield, and if none yields `string.init` to wait for
- +  its turn to read from the sever again. The buffer logic is complex.
+ +  its turn to read from the server again. The buffer logic is complex.
  +
  +  Example:
  +  ------------
@@ -268,7 +268,7 @@ public:
  +  foreach (immutable line; generator)
  +  {
  +      /* ... */
- +      yield(someString)
+ +      yield(someString);
  +  }
  +  ------------
  +

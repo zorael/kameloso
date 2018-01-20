@@ -273,7 +273,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +
  +  Returns:
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
- +      and metadata thereof.
+ +      and metadata thereto.
  +/
 auto getNotes(NotesPlugin plugin, const string nickname)
 {

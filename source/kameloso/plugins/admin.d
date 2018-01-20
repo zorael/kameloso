@@ -6,7 +6,7 @@
  +
  +  It also offers some less debug-y, more administrative functions, like adding
  +  and removing homes on-the-fly, whitelisting or un-whitelisting account
- +  names, joining or leavin channels, as well as plain quitting.
+ +  names, joining or leaving channels, as well as plain quitting.
  +
  +  It has a few command, whose names should be fairly self-explanatory:
  +
@@ -50,14 +50,15 @@ private:
  +  Prints all incoming events to the local terminal, in forms depending on
  +  which flags have been set with bot commands.
  +
- +  If `printAll` is set by way of invoking `onCommandPrintAll`, prints all
- +  incoming server strings.
+ +  If `AdminPlugin.printAll` is set by way of invoking `onCommandPrintAll`,
+ +  prints all incoming server strings.
  +
- +  If `printBytes` is set by way of invoking `onCommandPrintBytes`, prints all
- +  incoming server strings byte per byte.
+ +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
+ +  prints all incoming server strings byte per byte.
  +
- +  If `printAsserts` is set by way of invoking `onCommandPrintAll`, prints all
- +  incoming events as assert statements, for use in unittest blocks.
+ +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintAll`,
+ +  prints all incoming events as assert statements, for use in soure code
+ +  `unittest` blocks.
  +/
 @(Chainable)
 @(IRCEvent.Type.ANY)
@@ -281,7 +282,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandAddChan
 /++
- +  Add a channel to the list of currently active home channels, in the
+ +  Adds a channel to the list of currently active home channels, in the
  +  `kameloso.ircdefs.IRCBot.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
@@ -364,11 +365,11 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandWhitelist
 /++
- +  Add a nickname to the list of users who may trigger the bot, to the current
+ +  Adds a nickname to the list of users who may trigger the bot, to the current
  +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  This is at a `whitelist` level, as opposed to `anyone` and `admin`.
+ +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -405,11 +406,11 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandUnwhitelist
 /++
- +  Remove a nickname from the list of users who may trigger the bot, from the
+ +  Removes a nickname from the list of users who may trigger the bot, from the
  +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  This is at a `whitelist` level, as opposed to `admin`.
+ +  This is on a `whitelist` level, as opposed to `admin`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -459,7 +460,7 @@ void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
  +
  +  This helps with restoring it if the bot has accidentally printed a different
  +  control character putting it would-be binary mode, like what happens when
- +  you try to cat a binary file.
+ +  you try to `cat` a binary file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -518,7 +519,7 @@ void onCommandPrintBytes(AdminPlugin plugin)
 /++
  +  Toggles a flag to print *assert statements* of incoming events.
  +
- +  This is for creating unittest blocks in the source code.
+ +  This is used to creating unittest blocks in the source code.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)

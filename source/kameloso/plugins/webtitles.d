@@ -7,7 +7,7 @@
  +
  +  It reqiures version `Web` for obvious reasons.
  +
- +  It is optinal.
+ +  It is optional.
  +/
 module kameloso.plugins.webtitles;
 
@@ -28,7 +28,7 @@ enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 /// Regex engine to catch URLs.
 static urlRegex = ctRegex!stephenhay;
 
-/// Regex pattern to match YouTube urls.
+/// Regex pattern to match YouTube URLs.
 enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
 
@@ -288,7 +288,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
 
 // fixYoutubeTitles
 /++
- +  If a YouTube video link resolves its title to just "YouTube", rewrite the
+ +  If a YouTube video link resolves its title to just "YouTube", rewrites the
  +  URL to ListenOnRepeat with the same video ID and fetch its title there.
  +
  +  Params:
@@ -328,8 +328,8 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 
 // parseTitle
 /++
- +  Remove unwanted characters from a title, and decode HTML entities in it
- +  (like &mdash; and &nbsp;).
+ +  Removes unwanted characters from a title, and decode HTML entities in it
+ +  (like `&mdash;` and `&nbsp;`).
  +
  +  Params:
  +      title = Title string to parse and reomve tags and entities from.
@@ -415,7 +415,7 @@ void prune(shared TitleLookup[string] cache)
 
 // start
 /++
- +  Initialise the shared cache, else it won't retain changes.
+ +  Initialises the shared cache, else it won't retain changes.
  +
  +  Just assign it an entry and remove it.
  +/

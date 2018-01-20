@@ -29,13 +29,13 @@ struct ConnectSettings
 {
     import kameloso.common : Separator;
 
-    /// Flag to use SASL authrentication.
+    /// Whether to use SASL authentication or not.
     bool sasl = true;
 
-    /// Flag to join channels upon being invited to them.
+    /// Whether to join channels upon being invited to them.
     bool joinOnInvite = false;
 
-    /// Flag to abort and exit if SASL authentication fails.
+    /// Whether to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
 
     /// Lines to send after successfully connecting and registering.
@@ -91,8 +91,8 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Record a channel in the `channels` array of the `kameloso.ircdefs.IRCBot` in
- +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState`
+ +  Records a channel in the `channels` array in the `kameloso.ircdefs.IRCBot`
+ +  of the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState`
  +  upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
@@ -116,8 +116,8 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
 // joinChannels
 /++
- +  Joins all channels listed as homes *and* channels in the
- +  `kameloso.ircdefs.IRCBot` in the current `ConnectService`'s
+ +  Joins all channels listed as homes *and* channels in the arrays in
+ +  `kameloso.ircdefs.IRCBot` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void joinChannels(ConnectService service)
@@ -158,6 +158,8 @@ void joinChannels(ConnectService service)
  +
  +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
  +  however it's not used in Unreal (and might not be used in Ultimate either)."
+ +
+ +  Encountered at least once, on a private server.
  +/
 @(IRCEvent.Type.ERR_BADPING)
 void onToConnectType(ConnectService service, const IRCEvent event)
@@ -201,7 +203,7 @@ void onPing(ConnectService service, const IRCEvent event)
 
 // tryAuth
 /++
- +  Try to authenticate with services.
+ +  Tries to authenticate with services.
  +
  +  The command to send vary greatly between server daemons (and networks), so
  +  use some heuristics and try the best guess.
@@ -310,7 +312,7 @@ void tryAuth(ConnectService service)
 // onEndOfMotd
 /++
  +  Joins channels at the end of the `MOTD`, and tries to authenticate with
- +  such services if applicable.
+ +  services if applicable.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -346,7 +348,7 @@ void onEndOfMotd(ConnectService service)
 
 // onAuthEnd
 /++
- +  Flag authentication as finished and join channels.
+ +  Flags authentication as finished and join channels.
  +
  +  Fires when an authentication service sends a message with a known success,
  +  invalid or rejected auth text, signifying completed login.
@@ -391,8 +393,8 @@ void onNickInUse(ConnectService service)
 
 // onErroneousNickname
 /++
- +  Aborts a registration attempt if the nickname is too long or contains
- +  invalid characters.
+ +  Aborts a registration attempt and quits if the requested nickname is too
+ +  long or contains invalid characters.
  +/
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
@@ -409,7 +411,7 @@ void onBadNick(ConnectService service)
 
 // onInvite
 /++
- +  Upon being invited to a channel, join it if the settings say we should.
+ +  Upon being invited to a channel, joins it if the settings say we should.
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
@@ -427,7 +429,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 
 // onRegistrationEvent
 /++
- +  Handle `CAP` exchange.
+ +  Handles server capability exchange.
  +
  +  This is a neccessary step to register with some IRC server; the capabilities
  +  have to be requested (`CAP LS`), and the negotiations need to be ended
@@ -535,7 +537,7 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
  +     `base64(authLogin \0 authLogin \0 authPassword)`
  +
  +  ...where `kameloso.ircdefs.IRCBot.authLogin` is the services account name
- +  and `kameloso.ircdefs.IRCBot.authPassword` is the services account password.
+ +  and `kameloso.ircdefs.IRCBot.authPassword` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -561,10 +563,10 @@ void onSASLAuthenticate(ConnectService service)
 
 // onSASLSuccess
 /++
- +  On SASL authentication success, call a `CAP END` to finish the `CAP`
+ +  On SASL authentication success, calls a `CAP END` to finish the `CAP`
  +  negotiations.
  +
- +  Flag the bot as having finished registering and authing, allowing the main
+ +  Flags the bot as having finished registering and authing, allowing the main
  +  loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
@@ -594,10 +596,10 @@ void onSASLSuccess(ConnectService service)
 
 // onSASLFailure
 /++
- +  On SASL authentication failure, call a `CAP END` to finish the `CAP`
+ +  On SASL authentication failure, calls a `CAP END` to finish the `CAP`
  +  negotiations and finish registration.
  +
- +  Flag the bot as having finished registering, allowing the main loop to
+ +  Flags the bot as having finished registering, allowing the main loop to
  +  pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
@@ -624,8 +626,7 @@ void onSASLFailure(ConnectService service)
 
 // onWelcome
 /++
- +  On `RPL_WELCOME` (001) the registration will be completed, so mark it as
- +  such.
+ +  Marks registratino as completed upon `RPL_WELCOME` (numeric 001).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service)
@@ -640,7 +641,7 @@ void onWelcome(ConnectService service)
 
 // register
 /++
- +  Register with/log onto an IRC server.
+ +  Registers with/logs onto an IRC server.
  +/
 void register(ConnectService service)
 {
@@ -676,7 +677,7 @@ void register(ConnectService service)
 
 // initialise
 /++
- +  Register with the server.
+ +  Registers with the server.
  +
  +  This initialisation event fires immediately after a successful connect, and
  +  so instead of waiting for something from the server to trigger our
@@ -708,7 +709,7 @@ final class ConnectService : IRCPlugin
     /// All Connect service settings gathered.
     @Settings ConnectSettings connectSettings;
 
-    /// Flag whether the server has sent at least one `PING`.
+    /// Whether the server has sent at least one `PING`.
     bool serverPinged;
 
     mixin IRCPluginImpl;

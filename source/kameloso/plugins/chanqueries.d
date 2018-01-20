@@ -20,10 +20,10 @@ private:
 
 // onPing
 /++
- +  Query channels for information about them and their users.
+ +  Queries channels for information about them and their users.
  +
- +  Check an internal list of channels once every `PING`, and if one we inhabit
- +  hasn't been queried, query it.
+ +  Checks an internal list of channels once every `PING`, and if one we inhabit
+ +  hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
 void onPing(ChanQueriesService service, const IRCEvent event)
@@ -99,7 +99,7 @@ void onPing(ChanQueriesService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Add a channel we join to the internal `ChanQueriesService.channels` list of
+ +  Adds a channel we join to the internal `ChanQueriesService.channels` list of
  +  channels.
  +/
 @(IRCEvent.Type.SELFJOIN)
@@ -114,7 +114,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 
 // onSelfpart
 /++
- +  Remove a channel we part from the internal `ChanQueriesService.channels`
+ +  Removes a channel we part from the internal `ChanQueriesService.channels`
  +  list of channels.
  +/
 @(IRCEvent.Type.SELFPART)

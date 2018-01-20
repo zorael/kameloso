@@ -37,7 +37,7 @@ import kameloso.ircdefs;
 /// `kameloso.common` for the instance of the *logger*, for terminal output.
 import kameloso.common : logger;
 
-/++
+/+
  +  Most of the module can (and ideally should) be kept private. Our surface
  +  area here will be restricted to only one `kameloso.plugins.common.IRCPlugin`
  +  class, and the usual pattern used is to have the private bits first and that
@@ -181,7 +181,7 @@ final class SeenPlugin : IRCPlugin
 }
 
 
-/++
+/+
  +  The rest will be private.
  +/
 private:
@@ -230,7 +230,8 @@ struct SeenSettings
  +  `kameloso.ircdefs.IRCEvent.Type` annotations, even if this one matched. The
  +  default is otherwise that it will end early after one match, but this
  +  doesn't ring well with catch-all functions like these. It's sensible to save
- +  `kameloso.plugins.common.Chainable` for the functions that actually need it.
+ +  `kameloso.plugins.common.Chainable` for the modules and functions that
+ +  actually need it.
  +
  +  The `kameloso.plugins.common.ChannelPolicy` annotation decides whether this
  +  function should be called based on the *channel* the event took place in, if
@@ -246,8 +247,9 @@ struct SeenSettings
  +  `whitelist` and `admin`.
  +
  +  * `anyone` will let precisely anyone trigger it, without looking them up.
+ +     <br>
  +  * `whitelist will only allow users in the `whitelist` array in the
- +     configuration file.
+ +     configuration file.<br>
  +  * `admin` will allow only you and your other adminitrators, also as defined
  +     in the configuration file.
  +
@@ -270,7 +272,7 @@ struct SeenSettings
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     /++
-     +  Update the user's timestamp to the current time.
+     +  Updates the user's timestamp to the current time.
      +
      +  This will, as such, be automatically called on `EMOTE`, `QUERY`, `CHAN`,
      +  `JOIN`, `PART` and `QUIT` events. Furthermore, it will only trigger if
@@ -287,7 +289,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 
 // onNick
 /++
- +  When someone changes nickname, move the old seen timestamp to a new entry
+ +  When someone changes nickname, moves the old seen timestamp to a new entry
  +  for the new nickname, and remove the old one.
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
@@ -315,13 +317,13 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 
 // onWHOReply
 /++
- +  Catch each user listed in a `WHO` reply and update their entries in the seen
- +  users list, creating them if they don't exist.
+ +  Catches each user listed in a `WHO` reply and update their entries in the
+ +  seen users list, creating them if they don't exist.
  +
  +  A `WHO` request enumerates all members in a channel. It returns several
- +  replies, one event per each user in the channel. The *ChanQueries* plugin
- +  instigates this shortly after having joined one, as a service to the other
- +  plugins.
+ +  replies, one event per each user in the channel. The
+ +  `kameloso.plugins.chanqueries.ChanQueriesService` services instigates this
+ +  shortly after having joined one, as a service to the other plugins.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
@@ -378,7 +380,8 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 // onEndOfList
 /++
  +  At the end of a long listing of users in a channel, when we're reasonably
- +  sure we've added users to our associative array of seen users, *rehash* it.
+ +  sure we've added users to our associative array of seen users, *rehashes*
+ +  it.
  +
  +  Rehashing optimises lookup and makes sense after we've added a big amount of
  +  entries.
@@ -394,7 +397,7 @@ void onEndOfList(SeenPlugin plugin)
 
 // onPing
 /++
- +  Save seen files to disk once every `hoursBetweenSaves` hours.
+ +  Saves seen files to disk once every `hoursBetweenSaves` hours.
  +
  +  If we ride the periodicity of `PING` (which is sent to us every few minutes)
  +  we can just keep track of when we last saved, and save anew after the set
@@ -428,7 +431,7 @@ void onEndOfList(SeenPlugin plugin)
  +  ------------
  +
  +  Mind that this approach is more expensive than relying on `PING`, as it
- +  incurs lots of associative array lookups.
+ +  incurs lots of array lookups.
  +/
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
@@ -452,7 +455,7 @@ void onPing(SeenPlugin plugin)
 // onCommandSeen
 /++
  +  Whenever someone says "seen" in a `CHAN` or a `QUERY`, and if `CHAN` then
- +  only if in a *home*, process this function.
+ +  only if in a *home*, processes this function.
  +
  +  The `kameloso.plugins.common.BotCommand` annotation defines a piece of text
  +  that the incoming message must start with for this function to be called.
@@ -462,10 +465,11 @@ void onPing(SeenPlugin plugin)
  +  Nickname policies can be one of:
  +  * `optional`, where the bot's nickname will be allowed and stripped away,
  +     but the function will still be invoked given the right command string.
+ +     <br>
  +  * `required`, where the message has to start with the name of the bot if in
- +     a `CHAN` message, but it needn't be there in a `QUERY`.
+ +     a `CHAN` message, but it needn't be there in a `QUERY`.<br>
  +  * `hardRequired`, where the message *has* to start with the bot's nickname
- +     at all times, or this function will not be called.
+ +     at all times, or this function will not be called.<br>
  +  * `direct`, where the raw command is expected without any bot prefix at all.
  +
  +  The plugin system will have made certain we only get messages starting with
@@ -479,7 +483,8 @@ void onPing(SeenPlugin plugin)
  +  omitted. In either case, we're left with only the parts we're interested in,
  +  and the rest sliced off.
  +
- +  As a result, the `kameloso.ircdefs.IRCEvent` would look something like this:
+ +  As a result, the `kameloso.ircdefs.IRCEvent` `event` would look something
+ +  like this:
  +
  +  --------------
  +  event.type = IRCEvent.Type.CHAN;
@@ -588,7 +593,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
 // onCommandPrintSeen
 /++
- +  As a tool to help debug, print the current `seenUsers` associative array to
+ +  As a tool to help debug, prints the current `seenUsers` associative array to
  +  the local terminal.
  +/
 @(IRCEvent.Type.CHAN)
@@ -609,7 +614,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
 
 // updateUser
 /++
- +  Update a given nickname's entry in the seen array with the current time,
+ +  Updates a given nickname's entry in the seen array with the current time,
  +  expressed in UNIX time.
  +
  +  This is not annotated with an IRC event type and will merely be invoked from
@@ -653,7 +658,7 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
 
 // loadSeen
 /++
- +  Given a filename, read the contents and load it into a `long[string]`
+ +  Given a filename, reads the contents and load it into a `long[string]`
  +  associative array, then return it. If there was no file there to read,
  +  return an empty array for a fresh start.
  +
@@ -720,7 +725,7 @@ void saveSeen(const long[string] seenUsers, const string filename)
 // onEndOfMotd
 /++
  +  After we have registered on the server and seen the "message of the day"
- +  spam, load our seen users from file.`
+ +  spam, loads our seen users from file.`
  +
  +  At the same time, zero out the periodic save schedule, so that the next
  +  save will be in `hoursBetweenSaves` hours from now. See `onPing` for
@@ -755,7 +760,7 @@ void onEndOfMotd(SeenPlugin plugin)
 
 // teardown
 /++
- +  When closing the program or when crashing with grace, save the seen users
+ +  When closing the program or when crashing with grace, saves the seen users
  +  array to disk for later reloading.
  +/
 void teardown(SeenPlugin plugin)

@@ -250,9 +250,9 @@ void prune(shared RedditLookup[string] cache)
 
 // start
 /++
- +  Initialise the shared cache, else it won't retain changes.
+ +  Initialises the shared cache, else it won't retain changes.
  +
- +  Just assign it an entry and remove it.
+ +  Just assigns it an entry and remove it.
  +/
 void start(RedditPlugin plugin)
 {

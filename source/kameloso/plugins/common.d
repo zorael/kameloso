@@ -1,6 +1,6 @@
 /++
- +  The `kameloso.plugins.common` file is not a plugin by itself but contains
- +  code common to all plugins, without which they will *not* function.
+ +  The is not a plugin by itself but contains code common to all plugins,
+ +  without which they will *not* function.
  +
  +  It is mandatory if you plan to use any form of plugin. Indeed, the very
  +  definition of an `IRCPlugin` is in here.
@@ -9,6 +9,7 @@ module kameloso.plugins.common;
 
 import kameloso.ircdefs;
 
+import std.array : Appender;
 import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
 
@@ -27,7 +28,6 @@ interface IRCPlugin
 {
     import kameloso.common : Labeled;
     import core.thread : Fiber;
-    import std.array : Appender;
 
     @safe:
 
@@ -327,7 +327,7 @@ WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn
  +  functions, since any state could be passed to it with variables of this
  +  type.
  +
- +  Plugin-specific state will be kept inside the `IRCPlugin` itself.
+ +  Plugin-specific state should be kept inside the `IRCPlugin` itself.
  +/
 struct IRCPluginState
 {
@@ -360,15 +360,15 @@ struct IRCPluginState
 }
 
 /++
- +  The results trie from comparing a username with the admin or whitelist
+ +  The tristate results from comparing a username with the admin or whitelist
  +  lists.
  +/
 enum FilterResult { fail, pass, whois }
 
 
 /++
- +  Whether an annotated event ignores, allows or requires the event to be
- +  prefixed with the bot's nickname.
+ +  To what extent the annotated function demands its triggering
+ +  `kameloso.ircdefs.IRCEvent`'s contents be prefixed with the bot's nickname.
  +/
 enum NickPolicy
 {
@@ -378,21 +378,21 @@ enum NickPolicy
      +  (e.g. "`!`")
      +/
     direct,
-    optional,    /// Message may begin with bot name, if so will be stripped.
+    optional,    /// Message may begin with bot name, if so it will be stripped.
     required,    /// Message must begin with bot name, except in `QUERY` events.
     hardRequired,/// Message must begin with bot name, regardless of type.
 }
 
-/// If an annotated function should work in all channels or just in homes.
+/// Whether an annotated function should work in all channels or just in homes.
 enum ChannelPolicy
 {
     /++
-     +  The function will only trigger if the event happened in a home, where
-     +  applicable (not all events have channels).
+     +  The annotated function will only trigger if the event happened in a
+     +  home, where applicable (not all events have channels).
      +/
     home,
 
-    /// The function will trigger regardless of channel.
+    /// The annotated function will trigger regardless of channel.
     any,
 }
 
@@ -485,15 +485,16 @@ struct BotRegex
 
 
 /++
- +  Flag denoting that an event-handling function let other functions in the
- +  same module process after it.
+ +  Annotation denoting that an event-handling function let other functions in
+ +  the same module process after it.
  +/
 struct Chainable;
 
 
 /++
- +  Flag denoting that an event-handling function is the end of a chain, letting
- +  no other functions in the same module be triggered after it has been.
+ +  Annotation denoting that an event-handling function is the end of a chain,
+ +  letting no other functions in the same module be triggered after it has
+ +  been.
  +
  +  This is not strictly neccessary since anything non-`Chainable` is implicitly
  +  `Terminating`, but we add it to silence warnings and in hopes of the code
@@ -503,21 +504,21 @@ struct Terminating;
 
 
 /++
- +  Flag denoting that we want verbose debug output of the plumbing when
- +  handling events, iterating through the module
+ +  Annotation denoting that we want verbose debug output of the plumbing when
+ +  handling events, iterating through the module's event handler functions.
  +/
 struct Verbose;
 
 
 /++
- +  Flag denoting that a function is part of an awareness mixin.
+ +  Annotation denoting that a function is part of an awareness mixin.
  +/
 struct AwarenessMixin;
 
 
 /++
- +  Flag denoting that a variable is to be considered settings and should be
- +  saved in the configuration file.
+ +  Annotation denoting that a variable is to be as considered as settings for a
+ +  plugin and thus should be serialised and saved in the configuration file.
  +/
 struct Settings;
 
@@ -647,9 +648,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     @safe:
 
+    /// This plugin's `IRCPluginState` structure.
     IRCPluginState privateState;
+
+    /++
+     +  Associative array of arrays of `core.thread.Fiber`s, keyed by
+     +  `kameloso.ircdefs.IRCEvent.Type`. These will be called when the next
+     +  event of the matching type comes along.
+     +/
     Fiber[][IRCEvent.Type] privateAwaitingFibers;
+
+    /++
+     +  Array of `Labeled` `core.thread.Fiber`s, identified by a UNIX timestamp
+     +  `long`. These will be called when the UNIX time is equal to or above
+     +  the identifying number.
+     +/
     Labeled!(Fiber, long)[] privateTimedFibers;
+
+    /// Internal counter for when the next scheduled rehash counter should be.
     int privateRehashCounter;
 
     enum hasIRCPluginImpl = true;
@@ -1180,7 +1196,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Yields a reference to the `WHOIS` request queue.
      +
      +  The main loop does this after processing all on-event functions so as to
-     +  know what nicks the plugin wants a` WHOIS` for. After the `WHOIS`
+     +  know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
      +  response returns, the event bundled with the `WHOISRequest` will be
      +  replayed.
      +
@@ -1284,7 +1300,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  string name.
      +
      +  This is used to allow for command-line argument to set any plugin's
-     +  setting only by knowing its name.
+     +  setting by only knowing its name.
      +
      +  Example:
      +  ------------
@@ -1336,10 +1352,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Lends a const reference to the array of `IRCPlugin`s to the plugin.
      +
      +  This is to allow for plugins to inspect eachother, notably for the
-     +  Chatbot plugin to list all plugins' `BotCommand`s. This is not to be
-     +  directly used, but rather to be called by the main loop's
-     +  message-receiving after having been sent a
-     +  `kameloso.common.ThreadMessage.PeekPlugins`.
+     +  `kameloso.plugins.chatbot.Chatbot` plugin to list all plugins'
+     +  `BotCommand`s. This is not to be directly used, but rather to be called
+     +  by the main loop's message-receiving after having been sent a
+     +  `kameloso.common.ThreadMessage.PeekPlugins` thread message.
      +/
     void peekPlugins(const IRCPlugin[] plugins) @system
     {
@@ -1414,7 +1430,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      sink = Reference `std.array.Appender` to fill with plugin-specific
      +          settings text.
      +/
-    import std.array : Appender;
     void addToConfig(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -1444,7 +1459,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // start
     /++
-     +  Activates the plugin, run when connection has been established.
+     +  Runs early after-connect routines, immediately after connection has been
+     +  established.
      +/
     void start() @system
     {
@@ -1511,7 +1527,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  array.
      +
      +  Returns:
-     +      Associative array of all `Descriptions`, keyed by `BotCommand`s.
+     +      Associative array of all `Descriptions`, keyed by
+     +      `BotCommand.string_`s.
      +/
     string[string] commands() pure nothrow @property const
     {
@@ -1581,7 +1598,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  execution *by time*.
      +
      +  Like `awaitingFibers` these are callback `core.thread.Fiber`s,
-     +  registered when a plugin wants an action performed though at a certain
+     +  registered when a plugin wants an action performed, though at a certain
      +  point in time.
      +
      +  Returns:
@@ -1617,7 +1634,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     // counter
     /++
      +  Returns the private `counter` number, used by plugins to schedule
-     +  rehashes of their internal `kameloso.ircdefs.IRCUser` arrays.
+     +  rehashes of their internal arrays of `kameloso.ircdefs.IRCUser`s.
      +
      +  This is a hack.
      +/
@@ -1876,8 +1893,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     // onUserAwarenessUserInfoMixin
     /++
      +  Catches a user's information and saves it in the plugin's
-     +  `kameloso.ircdefs.IRCUser` array, along with a timestamp of the results
-     +  of the last `WHOIS` call, which is this.
+     +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s, along with
+     +  a timestamp of the results of the last `WHOIS` call, which is this.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -1902,7 +1919,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Servers with the (enabled) capability `extended-join` will include the
      +  account name of whoever joins in the event string. If it's there, catch
-     +  the user into the user array so we won't have to `WHOIS` them later.
+     +  the user into the user array so we don't have to `WHOIS` them later.
      +
      +  `ACCOUNTS` events will only be processed if a user's
      +  `kameloso.ircdefs.IRCUser` entry already exists, to counter the fact
@@ -2077,7 +2094,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
     // onUserAwarenessEndOfWHOISMixin
     /++
-     +  Remove an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
+     +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2094,7 +2111,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  associative array upon the end of a `WHO` or a `NAMES` reply.
      +
      +  These replies can list hundreds of users depending on the size of the
-     +  channel. Once an associative array has grown sufficiently it becomes
+     +  channel. Once an associative array has grown sufficiently, it becomes
      +  inefficient. Rehashing it makes it take its new size into account and
      +  makes lookup faster.
      +/
@@ -2203,10 +2220,10 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  Remove an `kameloso.ircdefs.IRCChannel` from the internal list when the
+     +  Removes an `kameloso.ircdefs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
-     +  Additionally decremnets the reference count of all known
+     +  Additionally decrements the reference count of all known
      +  `kameloso.ircdefs.IRCUser`s that was in that channel, to keep track of
      +  when a user runs out of scope.
      +/
@@ -2243,7 +2260,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessChannelAwarenessJoinMixin
     /++
-     +  Add a user as being part of a channel when they join one.
+     +  Adds a user as being part of a channel when they join one.
      +
      +  Increments the `kameloso.ircdefs.IRCUser`'s reference count, so that we
      +  know the user is in one more channel that we're monitoring.
@@ -2272,11 +2289,11 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessPartMixin
     /++
-     +  Remove a user from being part of a channel when they leave one.
+     +  Removes a user from being part of a channel when they leave one.
      +
      +  Decrements the user's reference count, so we know that it is in one
      +  channel less now (and should possibly be removed if it is no longer in
-     +  any).
+     +  any we're tracking).
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2316,7 +2333,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     // onChannelAwarenessNickMixin
     /++
      +  Upon someone changing nickname, update their entry in the
-     +  `IRCPluginState.users` array point to the new nickname.
+     +  `IRCPluginState.users` associative array point to the new nickname.
      +
      +  Removes the old entry.
      +/
@@ -2415,7 +2432,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessWHOReplyMixin
     /++
-     +  Add a user as being part of a channel upon receiving the reply from the
+     +  Adds a user as being part of a channel upon receiving the reply from the
      +  request for info on all the participants.
      +
      +  This events includes all normal fields like ident and address, but not
@@ -2476,15 +2493,15 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessNamesReplyMixin
     /++
-     +  Add users as being part of a channel upon receiving the reply from the
+     +  Adds users as being part of a channel upon receiving the reply from the
      +  request for a list of all the participants.
      +
      +  On some servers this does not include information about the users, only
      +  their nickname and their channel mode (e.g. `@` for operator), but other
      +  servers express the users in the full `user!ident@address` form. It's
      +  not the job of `ChannelAwareness` to create `kameloso.ircdefs.IRCUser`s
-     +  out of them, but we need a skeletal `kameloso.ircdefs.IRCUser.init` at
-     +  least, to increment the refcount of.
+     +  out of them, but we need a skeletal `kameloso.ircdefs.IRCUser` at least,
+     +  to increment the refcount of.
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2571,8 +2588,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Adds the list of banned users to a tracked channel's list of modes.
      +
-     +  Bans are just normal channel modes that are paired with a user and that
-     +  don't overwrite other bans (can be stacked).
+     +  Bans are just normal A-mode channel modes that are paired with a user
+     +  and that don't overwrite other bans (can be stacked).
      +/
     @(AwarenessMixin)
     @(Chainable)
@@ -2627,7 +2644,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
 
     // onChannelAwarenessEndOfMotd
     /++
-     +  After successfully connecting, create entries for all home channels in
+     +  After successfully connecting, creates entries for all home channels in
      +  each channel-aware plugin's `IRCPluginState.channels`.
      +
      +  Without this we may try to index it when it's not yet available.
@@ -2878,12 +2895,13 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
 
 // addChannelUserMode
 /++
- +  Adds a channel mode to a channel, to elevate a participating user to a
- +  prefixed mode, like operator, halfop and voiced.
+ +  Adds a channel mode to a channel, to elevate or demote a participating user
+ +  to/from a prefixed mode, like operator, halfop and voiced.
  +
- +  This is done by populating the `mods` associative array, keyed by the
- +  *modechar* of the mode (o for +o and @, v for +v and +, etc) with values of
- +  `string[]` arrays of nicknames with that mode ("prefix").
+ +  This is done by populating the `mods` associative array of
+ +  `IRCPluginState.channel[channelName]`, keyed by the *modechar* of the mode
+ +  (o for +o and @, v for +v and +, etc) with values of `string[]` arrays of
+ +  nicknames with that mode ("prefix").
  +
  +  Params:
  +      plugin = Current `IRCPlugin`.
@@ -2916,8 +2934,8 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
 
 // applyCustomSettings
 /++
- +  Changes a setting of a plugin, given both their name and the setting in
- +  string form.
+ +  Changes a setting of a plugin, given both the names of the plugin and the
+ +  setting, in string form.
  +
  +  This merely iterates the passed `plugins` and calls their `setSettingByName`
  +  methods.
@@ -2925,7 +2943,7 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
  +  Params:
  +      plugins = Array of all `IRCPlugin`s.
  +      customSettings = Array of custom settings to apply to plugins' own
- +          setting, in the string forms of `plugin.setting=value`.
+ +          setting, in the string forms of "`plugin.setting=value`".
  +/
 void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
 {

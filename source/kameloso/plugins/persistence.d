@@ -1,7 +1,7 @@
 /++
  +  The Persistence service keeps track of all seen users, gathering as much
  +  information about them as possible, then injects them into
- +  `kameloso.ircdefs.IRCEvent`s where such information was not present.
+ +  `kameloso.ircdefs.IRCEvent`s when such information is not present.
  +
  +  This means that even if a service only refers to a user by nickname, things
  +  like his ident and address will be available to plugins as well, assuming
@@ -24,8 +24,9 @@ private:
 // postprocess
 /++
  +  Hijacks a reference to a `kameloso.ircdefs.IRCEvent` after parsing and
- +  fleshes out the `event.sender` and/or `event.target` fields, so that things
- +  like account names that are only sent sometimes carry over.
+ +  fleshes out the `kameloso.ircdefs.IRCEvent.sender` and/or
+ +  `kameloso.ircdefs.IRCEvent.target` fields, so that things like account names
+ +  that are only sent sometimes carry over.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
@@ -97,9 +98,9 @@ void onQuit(PersistenceService service, const IRCEvent event)
 
 // onNick
 /++
- +  Update the entry of someone in the `users` associative array of the current
+ +  Updates the entry of someone in the `users` associative array of the current
  +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` when they
- +  change nickname, point to the new `kameloso.ircdefs.IRCUser`.
+ +  change nickname, to point to the new `kameloso.ircdefs.IRCUser`.
  +
  +  Removes the old entry.
  +/
@@ -125,7 +126,7 @@ void onNick(PersistenceService service, const IRCEvent event)
 
 // onPing
 /++
- +  Rehash the internal `users` associative array of the current
+ +  Rehashes the internal `users` associative array of the current
  +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` once every
  +  `hoursBetweenRehashes` hours.
  +
@@ -168,7 +169,7 @@ public:
  +  Sometimes the only bit of information about a sender (or target) embedded in
  +  an `kameloso.ircdefs.IRCEvent` may be his/her nickname, even though the
  +  event before detailed everything, even including their account name. With
- +  this service we aim to complete such `kameloso.ircdefs.IRCUser` entries with
+ +  this service we aim to complete such `kameloso.ircdefs.IRCUser` entries as
  +  the union of everything we know from previous events.
  +
  +  It only needs part of `kameloso.plugins.common.UserAwareness` for minimal

@@ -28,32 +28,35 @@ private:
  +/
 struct PrinterSettings
 {
-    /// Flag to display advanced colours in RRGGBB rather than simple Bash.
+    /// Whether to display advanced colours in RRGGBB rather than simple Bash.
     bool truecolour = true;
 
-    /// Flag to normalise truecolours; make dark brighter and bright darker.
+    /// Whether to normalise truecolours; make dark brighter and bright darker.
     bool normaliseTruecolour = true;
 
-    /// Flag to display nicks in random colour based on their nickname hash.
+    /// Whether to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
-    /// Flag to filter away most uninteresting events.
+    /// Whether to filter away most uninteresting events.
     bool filterVerbose = true;
 
-    /// Flag to print the badge field in caps (as they used to be earlier).
+    /// Whether to print the badge field in caps (as they used to be earlier).
     bool badgesInCaps = false;
 
-    /// Flag to send a terminal bell signal when the bot is mentioned in chat.
+    /++
+     +  Whether or not to send a terminal bell signal when the bot is mentioned
+     +  in chat.
+     +/
     bool bellOnMention = true;
 
-    /// Flag to have the type names be in capital letters.
+    /// Whether to have the type names be in capital letters.
     bool typesInCaps = true;
 }
 
 
 // onAnyEvent
 /++
- +  Print an event to the local terminal.
+ +  Prints an event to the local terminal.
  +
  +  Does not allocate, writes directly to a `std.stdio.LockingTextWriter`.
  +/
@@ -149,7 +152,8 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +  Params:
  +      plugin = Current `PrinterPlugin`.
  +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
- +      event = The reference event that is being formatted.
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` that is being
+ +          formatted.
  +      monochrome = Whether to print text monochrome or coloured.
  +/
 void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
@@ -640,7 +644,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
 // mapEffects
 /++
- +  Map mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
+ +  Maps mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
  +
  +  Params:
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
@@ -680,8 +684,8 @@ void mapEffects(ref IRCEvent event)
 
 // stripEffects
 /++
- +  Removes all form of IRC formatting (colours, bold, italics, underlined) from
- +  an `kameloso.ircdefs.IRCEvent`.
+ +  Removes all form of mIRC formatting (colours, bold, italics, underlined)
+ +  from an `kameloso.ircdefs.IRCEvent`.
  +
  +  Params:
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
@@ -720,7 +724,7 @@ void stripEffects(ref IRCEvent event)
 
 // mapColours
 /++
- +  Map mIRC effect color tokens to Bash ones.
+ +  Maps mIRC effect color tokens to Bash ones.
  +
  +  Params:
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
