@@ -954,28 +954,14 @@ unittest
  +/
 string tabs(uint spaces = 4)(int num) pure nothrow
 {
-    enum tab = ()
-    {
-        string indentation;
+    import std.range : repeat, takeExactly;
+    import std.array : array, join;
 
-        foreach (i; 0..spaces)
-        {
-            indentation ~= ' ';
-        }
-
-        return indentation;
-    }();
+    enum tab =  ' '.repeat.takeExactly(spaces).array;
 
     assert((num >= 0), "Negative amount of tabs");
 
-    string total;
-
-    foreach (i; 0..num)
-    {
-        total ~= tab;
-    }
-
-    return total;
+    return tab.repeat.takeExactly(num).join;
 }
 
 ///
