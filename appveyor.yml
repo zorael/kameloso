@@ -2,6 +2,8 @@ platform: x64
 
 environment:
  matrix:
+  - appveyor_build_worker_cloud: gce
+  - APPVEYOR_BUILD_WORKER_CLOUD: gce
   - DC: dmd
     DVersion: 2.078.0
     arch: x64
