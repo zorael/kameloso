@@ -1497,6 +1497,7 @@ public:
     /// The label applied to the wrapped item.
     Label id;
 
+    /// Create a new `Labeled` struct with the passed `id` identifier.
     this(Thing thing, Label id) pure nothrow @nogc @safe
     {
         this.thing = thing;

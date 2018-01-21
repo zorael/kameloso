@@ -116,6 +116,7 @@ abstract class WHOISRequest
     /// Replay the stored event.
     void trigger();
 
+    /// Creates a new `WHOISRequest` with a timestamp of the current time.
     this() @safe
     {
         import std.datetime.systime : Clock;
@@ -145,6 +146,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         /// Command payload aside from the `kameloso.ircdefs.IRCEvent`.
         Payload payload;
 
+        /// Create a new `WHOISRequestImpl` with the passed variables.
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
             super();
@@ -157,6 +159,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     }
     else
     {
+        /// Create a new `WHOISRequestImpl` with the passed variables.
         this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
             super();
@@ -422,12 +425,20 @@ struct BotCommand
     /// The prefix string, one word with no spaces.
     string string_;
 
+    /++
+     +  Create a new `BotCommand` with the passed `policy` and trigger
+     +  `string_`.
+     +/
     this(const NickPolicy policy, const string string_) pure
     {
         this.policy = policy;
         this.string_ = string_;
     }
 
+    /++
+     +  Create a new `BotCommand` with a default `direct` policy and the passed
+     +  trigger `string_`.
+     +/
     this(const string string_) pure
     {
         this.policy = NickPolicy.direct;
@@ -458,24 +469,31 @@ struct BotRegex
      +/
     Regex!char engine;
 
+    /// Creates a new `BotRegex` with the passed `policy` and regex `engine`.
     this(const NickPolicy policy, Regex!char engine) pure
     {
         this.policy = policy;
         this.engine = engine;
     }
 
+    /++
+     +  Creates a new `BotRegex` with the passed `policy` and regex `expression`
+     +  string.
+     +/
     this(const NickPolicy policy, const string expression)
     {
         this.policy = policy;
         this.engine = expression.regex;
     }
 
+    /// Creates a new `BotRegex` with the passed regex `engine`.
     this(Regex!char engine) pure
     {
         this.policy = NickPolicy.direct;
         this.engine = engine;
     }
 
+    /// Creates a new `BotRegex` with the passed regex `expression` string.
     this(const string expression)
     {
         this.policy = NickPolicy.direct;
@@ -534,6 +552,7 @@ struct Description
 {
     string string_;
 
+    /// Creates a new `Description` with the passed `string_` description text.
     this(const string string_)
     {
         this.string_ = string_;

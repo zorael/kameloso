@@ -1068,6 +1068,7 @@ struct IRCUser
     /// How many references to this user exists
     int refcount;
 
+    /// Create a new `IRCUser` based on a `*!*@*` mask string.
     this(string userstring) pure
     {
         import std.format : formattedRead;
@@ -1078,6 +1079,10 @@ struct IRCUser
         if (address == "*") address = string.init;
     }
 
+    /++
+     +  Create a new `IRCUser` inheriting passed `nickname`, `ident`, and
+     +  `address` strings.
+     +/
     this(const string nickname, const string ident, const string address) pure nothrow @nogc
     {
         this.nickname = nickname;
@@ -1085,6 +1090,7 @@ struct IRCUser
         this.address = address;
     }
 
+    /// Formats the `IRCBot` to a humanly readable (and printable) string.
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;

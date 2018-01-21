@@ -2522,6 +2522,10 @@ struct IRCParser
         return .toIRCEvent(this, raw);
     }
 
+    /++
+     +  Create a new `IRCParser` with the passed `kameloso.ircdefs.IRCBot` as
+     +  base.
+     +/
     this(IRCBot bot) pure
     {
         this.bot = bot;
@@ -3094,12 +3098,20 @@ final class IRCParseException : Exception
     /// Bundled `kameloso.ircdefs.IRCEvent`, parsing which threw this exception.
     IRCEvent event;
 
+    /++
+     +  Create a new `IRCParseException`, without attaching an
+     +  `kameloso.ircdefs.IRCEvent`.
+     +/
     this(const string message, const string file = __FILE__,
         const size_t line = __LINE__) pure
     {
         super(message, file, line);
     }
 
+    /++
+     +  Create a new `IRCParseException`, attaching an
+     +  `kameloso.ircdefs.IRCEvent` to it.
+     +/
     this(const string message, const IRCEvent event,
         const string file = __FILE__, const size_t line = __LINE__) pure
     {
