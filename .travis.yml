@@ -4,30 +4,33 @@ sudo: required
 dist: trusty
 
 d:
-    - dmd
-    - ldc
+  - dmd
+  - ldc
 
 os:
-    - linux
-    - osx
+  - linux
+  - osx
 
 addons:
-    apt:
-        packages:
-            - libevent-dev
+  apt:
+    packages:
+      - libevent-dev
 
 script:
-    - dub test --compiler=${DC} -c vanilla
-    - dub test --compiler=${DC} -c colours+web
-    - dub build -b plain --compiler=${DC} -c vanilla
-    - dub build -b plain --compiler=${DC} -c colours+web
-    - dub build -b ddox --compiler=${DC} -c colours+web
+  - dub test --compiler=${DC} -c vanilla
+  - dub test --compiler=${DC} -c colours+web
+  - dub build -b plain --compiler=${DC} -c vanilla
+  - dub build -b plain --compiler=${DC} -c colours+web
+  - dub build -b ddox --compiler=${DC} -c colours+web
 
 deploy:
-    local_dir: docs
-    provider: pages
-    skip_cleanup: true
-    github_token: $GH_REPO_TOKEN
-    on:
-        branch: master
-    cache: { directories: [$HOME/.dub] }
+  local_dir: docs
+  file: .circleci/config.yml
+  provider: pages
+  skip_cleanup: true
+  github_token: $GH_REPO_TOKEN
+  on:
+    branch: master
+  cache:
+    directories:
+      - $HOME/.dub
