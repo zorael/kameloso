@@ -25,9 +25,7 @@ script:
 
 deploy:
   provider: pages
-  local_dir:
-    - docs
-    - .circleci
+  local_dir: docs
   skip_cleanup: true
   github_token: $GH_REPO_TOKEN
   on:
@@ -36,3 +34,4 @@ deploy:
   cache:
     directories:
       - $HOME/.dub
+  verbose: true
