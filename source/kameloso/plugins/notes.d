@@ -480,7 +480,7 @@ final class NotesPlugin : IRCPlugin
     /++
     +  The in-memory JSON storage of all stored notes.
     +
-    +  It is in the JSON form of `string[][string]`, where the first key is
+    +  It is in the JSON form of `Note[][string]`, where the first string key is
     +  a nickname.
     +/
     JSONValue notes;
