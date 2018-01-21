@@ -557,11 +557,6 @@ struct Description
     {
         this.string_ = string_;
     }
-
-    this(const string string_, bool b)
-    {
-        this.string_ = string_;
-    }
 }
 
 
