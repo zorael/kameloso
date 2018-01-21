@@ -27,14 +27,15 @@
         {
             "name": "windows",
             "platforms": [ "windows" ],
-            "buildRequirements": [ "silenceDeprecations" ]
+            "buildRequirements": [ "silenceDeprecations" ],
+            "dependencies-windows": { "requests": "~>0.6.0" }
         },
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Cygwin_", "Web", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.6.0" }
+            "dependencies-windows": { "requests": "~>0.6.0" }
         },
         {
             "name": "vanilla",
