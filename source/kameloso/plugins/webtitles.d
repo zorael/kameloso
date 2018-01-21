@@ -272,6 +272,10 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
     {
         fixYoutubeTitles(lookup, titleReq);
     }
+    else
+    {
+        lookup.title = decodeTitle(lookup.title);
+    }
 
     lookup.domain = res.finalURI.host; // original_host;  // thanks to ikod
 
@@ -326,9 +330,9 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
 }
 
 
-// parseTitle
+// decodeTitle
 /++
- +  Removes unwanted characters from a title, and decode HTML entities in it
+ +  Removes unwanted characters from a title, and decodes HTML entities in it
  +  (like `&mdash;` and `&nbsp;`).
  +
  +  Params:
@@ -337,7 +341,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
  +  Returns:
  +      A modified title string, with unwanted bits stripped out.
  +/
-string parseTitle(const string title)
+string decodeTitle(const string title)
 {
     import arsd.dom : htmlEntitiesDecode;
     import std.regex : regex, replaceAll;
@@ -362,20 +366,24 @@ string parseTitle(const string title)
 unittest
 {
     immutable t1 = "&quot;Hello&nbsp;world!&quot;";
-    immutable t1p = parseTitle(t1);
+    immutable t1p = decodeTitle(t1);
     assert((t1p == "\"Hello\u00A0world!\""), t1p);  // not a normal space
 
     immutable t2 = "&lt;/title&gt;";
-    immutable t2p = parseTitle(t2);
+    immutable t2p = decodeTitle(t2);
     assert((t2p == "</title>"), t2p);
 
     immutable t3 = "&mdash;&micro;&acute;&yen;&euro;";
-    immutable t3p = parseTitle(t3);
+    immutable t3p = decodeTitle(t3);
     assert((t3p == "—µ´¥€"), t3p);  // not a normal dash
 
     immutable t4 = "&quot;Se&ntilde;or &THORN;&quot; &copy;2017";
-    immutable t4p = parseTitle(t4);
+    immutable t4p = decodeTitle(t4);
     assert((t4p == `"Señor Þ" ©2017`), t4p);
+
+    immutable t5 = "\n        Nyheter - NSD.se        \n";
+    immutable t5p = decodeTitle(t5);
+    assert(t5p == "Nyheter - NSD.se");
 }
 
 
