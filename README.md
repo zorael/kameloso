@@ -2,9 +2,9 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. Ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. [API documentation is now available.](https://zorael.github.io/kameloso) Any and all ideas welcome.
 
-It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often merely a case of specialcasing it for that particular IRC network or server daemon.
+It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
 
@@ -27,7 +27,7 @@ Current functionality includes:
 
 There are a few Windows caveats.
 
-* Web URL lookup, including the `bash.org` quotes and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. As such, such functionality is disabled on Windows by default.
+* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP accesses should work fine.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours disabled, but they can be enabled by specifying a different *build configuration*.
 
 # Getting Started
@@ -75,7 +75,7 @@ The available build configurations are:
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, equals `colours+web`
 * `windows`, default on Windows, equals `vanilla`
-* `cygwin`, equals `colours` but with extra code needed for running it under the default Cygwin terminal (*mintty*, which can display colours)
+* `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (*mintty*, which can display colours)
 
 You can specify which to build with the `-c` switch.
 
@@ -162,10 +162,9 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * blacklists; by mask, by account?
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
-* notes to always trigger on joins if not present when note placed, only on activity if present? (later)
+* notes to always trigger on joins if not present when note placed, only on activity if present? channel-split? (later)
+* `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
-* documentation run; examples, params
-* try github.io ddoc hosting? guide in forums
 
 # Built With
 
