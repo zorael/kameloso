@@ -696,10 +696,6 @@ void stripEffects(ref IRCEvent event)
     import kameloso.string : has;
     import std.regex : regex, replaceAll;
 
-    auto rBold = (""~I.bold).regex;
-    auto rItalics = (""~I.italics).regex;
-    auto rUnderlined = (""~I.underlined).regex;
-
     if (event.content.has(cast(ubyte)I.colour))
     {
         event.content = stripColours(event.content);
@@ -707,16 +703,19 @@ void stripEffects(ref IRCEvent event)
 
     if (event.content.has(cast(ubyte)I.bold))
     {
+        auto rBold = (""~I.bold).regex;
         event.content = event.content.replaceAll(rBold, string.init);
     }
 
     if (event.content.has(cast(ubyte)I.italics))
     {
+        auto rItalics = (""~I.italics).regex;
         event.content = event.content.replaceAll(rItalics, string.init);
     }
 
     if (event.content.has(cast(ubyte)I.underlined))
     {
+        auto rUnderlined = (""~I.underlined).regex;
         event.content = event.content.replaceAll(rUnderlined, string.init);
     }
 }
