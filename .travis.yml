@@ -30,7 +30,7 @@ deploy:
   github_token: $GH_REPO_TOKEN
   on:
     branch: master
-    #condition: ${DC} = dmd
+    condition: ${DC} = dmd
   cache:
     directories:
       - $HOME/.dub
