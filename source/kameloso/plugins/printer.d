@@ -702,7 +702,7 @@ void stripEffects(ref IRCEvent event)
 
     if (event.content.has(cast(ubyte)I.colour))
     {
-        event.stripColours();
+        event.content = stripColours(event.content);
     }
 
     if (event.content.has(cast(ubyte)I.bold))
@@ -859,13 +859,14 @@ unittest
 }
 
 
+// stripColours
 /++
- +  Removes IRC colouring from an `kameloso.ircdefs.IRCEvent`.
+ +  Removes IRC colouring from a passed string.
  +
  +  Params:
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
+ +      line = String to strip of IRC colour tags.
  +/
-void stripColours(ref IRCEvent event)
+string stripColours(const string line)
 {
     import kameloso.irc : I = IRCControlCharacter;
     import std.regex : matchAll, regex, replaceAll;
@@ -875,16 +876,16 @@ void stripColours(ref IRCEvent event)
 
     bool strippedSomething;
 
-    immutable originalContent = event.content;
+    string slice = line;
 
-    foreach (hit; originalContent.matchAll(engine))
+    foreach (hit; line.matchAll(engine))
     {
         import std.array : Appender;
         import std.conv : to;
 
         if (!hit[1].length) continue;
 
-        event.content = event.content.replaceAll(hit[0].regex, string.init);
+        slice = slice.replaceAll(hit[0].regex, string.init);
         strippedSomething = true;
     }
 
@@ -893,31 +894,35 @@ void stripColours(ref IRCEvent event)
         enum endPattern = I.colour ~ ""; // ~ "(?:[0-9])?";
         auto endEngine = endPattern.regex;
 
-        event.content = event.content.replaceAll(endEngine, string.init);
+        slice = slice.replaceAll(endEngine, string.init);
     }
+
+    return slice;
 }
 
+///
 unittest
 {
     import kameloso.irc : I = IRCControlCharacter;
 
-    IRCEvent e1;
-    e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
-    e1.stripColours();
-    assert((e1.content == "This is all red! while this is not."), e1.content);
-
-    IRCEvent e2;
-    e2.content = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-    e2.stripColours();
-    assert((e2.content == "This time there's no ending token, only magenta."),
-        e2.content);
-
-    IRCEvent e3;
-    e3.content = "This time there's" ~ I.colour ~ "6 no ending " ~ I.colour ~
-        "6token, only " ~ I.colour ~ "magenta.";
-    e3.stripColours();
-    assert((e3.content == "This time there's no ending token, only magenta."),
-        e3.content);
+    {
+        immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
+        immutable stripped = line.stripColours();
+        assert((stripped == "This is all red! while this is not."), stripped);
+    }
+    {
+        immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
+        immutable stripped = line.stripColours();
+        assert((stripped == "This time there's no ending token, only magenta."),
+            stripped);
+    }
+    {
+        immutable line = "This time there's" ~ I.colour ~ "6 no ending " ~ I.colour ~
+            "6token, only " ~ I.colour ~ "magenta.";
+        immutable stripped = line.stripColours();
+        assert((stripped == "This time there's no ending token, only magenta."),
+            stripped);
+    }
 }
 
 
