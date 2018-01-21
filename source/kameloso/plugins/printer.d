@@ -659,7 +659,7 @@ void mapEffects(ref IRCEvent event)
     if (event.content.has(I.colour))
     {
         // Colour is mIRC 3
-        event.mapColours();
+        event.content = mapColours(event.content);
     }
 
     if (event.content.has(I.bold))
@@ -724,13 +724,13 @@ void stripEffects(ref IRCEvent event)
 
 // mapColours
 /++
- +  Maps mIRC effect color tokens to Bash ones.
+ +  Maps mIRC effect colour tokens to Bash ones.
  +
  +  Params:
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-void mapColours(ref IRCEvent event)
+string mapColours(const string line)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset,
         TerminalToken, colour;
@@ -784,17 +784,14 @@ void mapColours(ref IRCEvent event)
         15 : B.lightgrey,
     ];
 
-    immutable originalContent = event.content;
+    string slice = line;
 
-    foreach (hit; originalContent.matchAll(engine))
+    foreach (hit; line.matchAll(engine))
     {
         import std.array : Appender;
         import std.conv : to;
 
         if (!hit[1].length) continue;
-
-        Appender!string sink;
-        sink.reserve(8);
 
         immutable fgIndex = hit[1].to!ubyte;
 
@@ -805,6 +802,8 @@ void mapColours(ref IRCEvent event)
             continue;
         }
 
+        Appender!string sink;
+        sink.reserve(8);
         sink.put(TerminalToken.bashFormat ~ "[");
         sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
 
@@ -824,7 +823,7 @@ void mapColours(ref IRCEvent event)
         }
 
         sink.put('m');
-        event.content = event.content.replaceAll(hit[0].regex, sink.data);
+        slice = slice.replaceAll(hit[0].regex, sink.data);
         colouredSomething = true;
     }
 
@@ -833,10 +832,11 @@ void mapColours(ref IRCEvent event)
         enum endPattern = I.colour ~ ""; // ~ "([0-9])?";
         auto endEngine = endPattern.regex;
 
-        event.content = event.content.replaceAll(endEngine,
-            TerminalToken.bashFormat ~ "[0m"); //$1");
-        event.content ~= BashReset.all.colour;
+        slice = slice.replaceAll(endEngine, TerminalToken.bashFormat ~ "[0m"); //$1");
+        slice ~= BashReset.all.colour;
     }
+
+    return slice;
 }
 
 ///
@@ -845,17 +845,19 @@ unittest
 {
     import kameloso.irc : I = IRCControlCharacter;
 
-    IRCEvent e1;
-    e1.content = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
-    e1.mapColours();
-    assert((e1.content == "This is \033[91mall red!\033[0m while this is not.\033[0m"),
-        e1.content);
+    {
+        immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
+        immutable mapped = mapColours(line);
+        assert((mapped == "This is \033[91mall red!\033[0m while this is not.\033[0m"),
+            mapped);
+    }
 
-    IRCEvent e2;
-    e2.content = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-    e2.mapColours();
-    assert((e2.content == "This time there's\033[35m no ending token, only magenta.\033[0m"),
-        e2.content);
+    {
+        immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
+        immutable mapped = mapColours(line);
+        assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[0m"),
+            mapped);
+    }
 }
 
 
