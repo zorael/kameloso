@@ -585,8 +585,7 @@ Flag!"quit" mainLoop(ref Client client)
                         }
 
                         // Fetch any queued `WHOIS` requests and handle
-                        auto reqs = plugin.yieldWHOISRequests();
-                        client.handleWHOISQueue(reqs);
+                        client.handleWHOISQueue(plugin.whoisQueue);
 
                         if (plugin.bot.updated)
                         {

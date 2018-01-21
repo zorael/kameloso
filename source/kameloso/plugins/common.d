@@ -35,7 +35,7 @@ interface IRCPlugin
     ref IRCBot bot() pure nothrow @nogc @property;
 
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed.
-    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc;
+    ref WHOISRequest[string] whoisQueue() pure nothrow @nogc @property;
 
     /// Executed to let plugins modify an event mid-parse.
     void postprocess(ref IRCEvent) @system;
@@ -1206,7 +1206,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // yieldWHOISReuests
+    // whoisQueue
     /++
      +  Yields a reference to the `WHOIS` request queue.
      +
@@ -1218,7 +1218,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      Reference to the local `WHOIS` request queue.
      +/
-    ref WHOISRequest[string] yieldWHOISRequests() pure nothrow @nogc
+    ref WHOISRequest[string] whoisQueue() pure nothrow @nogc @property
     {
         return privateState.whoisQueue;
     }
