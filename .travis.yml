@@ -24,22 +24,15 @@ script:
   - dub build -b ddox --compiler=${DC} -c colours+web
 
 deploy:
-  local_dir: docs
-  file:
-    - .circleci/config.yml
   provider: pages
+  local_dir:
+    - docs
+    - .circleci
   skip_cleanup: true
   github_token: $GH_REPO_TOKEN
   on:
     branch: master
+    #condition: ${DC} = dmd
   cache:
     directories:
       - $HOME/.dub
-
-after_deploy:
-  - echo DC ${DC}
-  - echo Creating .circleci
-  - mkdir -p .circleci
-  - if [ -e .circleci/config.yml ]; then echo EXISTS; fi
-  - echo Creating config.yml
-  - echo -e "general:\n  branches:\n    ignore:\n      gh-pages" > .circleci/config.yml
