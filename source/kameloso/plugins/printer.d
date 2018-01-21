@@ -665,19 +665,19 @@ void mapEffects(ref IRCEvent event)
     if (event.content.has(I.bold))
     {
         // Bold is bash 1, mIRC 2
-        event.mapAlternatingEffectImpl!(I.bold, B.bold)();
+        event.content = mapAlternatingEffectImpl!(I.bold, B.bold)(event.content);
     }
 
     if (event.content.has(I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        event.mapAlternatingEffectImpl!(I.italics, B.italics)();
+        event.content = mapAlternatingEffectImpl!(I.italics, B.italics)(event.content);
     }
 
     if (event.content.has(I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        event.mapAlternatingEffectImpl!(I.underlined, B.underlined)();
+        event.content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(event.content);
     }
 }
 
@@ -948,8 +948,8 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
-    (ref IRCEvent event)
+string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
+    (const string line)
 {
     import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
@@ -964,9 +964,9 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
     auto engine = pattern.regex;
 
     Appender!string sink;
-    sink.reserve(cast(size_t)(event.content.length * 1.1));
+    sink.reserve(cast(size_t)(line.length * 1.1));
 
-    auto hits = event.content.matchAll(engine);
+    auto hits = line.matchAll(engine);
 
     while (hits.front.length)
     {
@@ -1004,7 +1004,7 @@ void mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
 
     // End tags and commit.
     sink.colour(BashReset.all);
-    event.content = sink.data;
+    return sink.data;
 }
 
 ///
