@@ -322,6 +322,7 @@ void removeMeWhenPossible()
  +/
 Flag!"quit" mainLoop(ref Client client)
 {
+    import kameloso.common : printObjects;
     import kameloso.connection : listenFiber;
     import core.thread : Fiber;
     import std.concurrency : Generator, yield;
@@ -783,6 +784,7 @@ else
  +/
 int main(string[] args)
 {
+    import kameloso.common : printObjects;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
     import std.stdio : writeln;

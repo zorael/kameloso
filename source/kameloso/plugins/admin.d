@@ -139,8 +139,6 @@ void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
 @Description("[debug] Forget user accounts (for this plugin).")
 void onCommandForgetAccounts(AdminPlugin plugin)
 {
-    import kameloso.common : printObject;
-
     foreach (ref user; plugin.state.users)
     {
         writeln("Clearing ", user.nickname);

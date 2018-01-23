@@ -6,7 +6,6 @@ module kameloso.irc;
 
 public import kameloso.ircdefs;
 
-import kameloso.common;
 import kameloso.string : has, nom;
 
 @safe:
@@ -1169,6 +1168,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
+    import kameloso.common : logger, printObject;
     import kameloso.string : beginsWith;
     import std.stdio : writeln;
 
