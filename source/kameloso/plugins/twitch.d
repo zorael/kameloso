@@ -250,7 +250,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "color":
-            // Hexadecimal RGB color code. This is empty if it is never set.
+            // Hexadecimal RGB colour code. This is empty if it is never set.
             if (service.twitchSettings.twitchColours && value.length)
             {
                 event.sender.colour = value[1..$];

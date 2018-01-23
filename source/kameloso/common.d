@@ -28,7 +28,8 @@ shared static this()
 
 // logger
 /++
- +  Instance of a `KamelosoLogger`, providing timestamped and coloured logging.
+ +  Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
+ +  coloured logging.
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
  +  and `fatal`. It is not global, so instantiate a thread-local `Logger` if
@@ -43,7 +44,8 @@ Logger logger;
 
 // initLogger
 /++
- +  Initialises the `KamelosoLogger` logger for use in this thread.
+ +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this
+ +  thread.
  +
  +  It needs to be separately instantiated per thread.
  +
@@ -109,7 +111,7 @@ struct ThreadMessage
 
     /++
      +  Concurrency message asking for a reference to the arrays of
-     +  `IRCPlugin`s in the current `kameloso.common.Client`.
+     +  `kameloso.plugins.common.IRCPlugin`s in the current `Client`.
      +/
     struct PeekPlugins {}
 }
@@ -117,7 +119,7 @@ struct ThreadMessage
 
 // SupportColours
 /++
- +  Set version `SupportsColors` depending on the build configuration.
+ +  Set version `SupportsColours` depending on the build configuration.
  +
  +  We can't do "version(blah) || version(bluh)" because of design decisions,
  +  so we do it this way to accomodate for version `Cygwin_` implying both

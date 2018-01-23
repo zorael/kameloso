@@ -296,8 +296,8 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +  URL to ListenOnRepeat with the same video ID and fetch its title there.
  +
  +  Params:
- +      lookup = Reference to the failing TitleLookup, that we want to try
- +          hacking around
+ +      lookup = Reference to the failing `TitleLookup`, that we want to try
+ +          hacking around.
  +      titleReq = Original title request.
  +/
 void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
@@ -336,7 +336,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
  +  (like `&mdash;` and `&nbsp;`).
  +
  +  Params:
- +      title = Title string to parse and reomve tags and entities from.
+ +      title = Title string to decode entities and remove tags from.
  +
  +  Returns:
  +      A modified title string, with unwanted bits stripped out.

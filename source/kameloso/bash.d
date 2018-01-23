@@ -502,7 +502,7 @@ if (isOutputRange!(Sink,string))
 
     // \033[
     // 38 foreground
-    // 2 truecolor?
+    // 2 truecolour?
     // r;g;bm
 
     static if (normalise)
