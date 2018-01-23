@@ -1664,7 +1664,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             string prefixes;
             value.formattedRead("(%s)%s", modes, prefixes);
 
-            for (size_t i = 0; i<modes.length; ++i)
+            foreach (immutable i; 0..modes.length)
             {
                 bot.server.prefixchars[prefixes[i]] = modes[i];
                 bot.server.prefixes ~= modes[i];
