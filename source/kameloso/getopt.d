@@ -33,8 +33,8 @@ private:
  +/
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
-    import kameloso.common : meldInto;
     import kameloso.config : readConfigInto;
+    import kameloso.meld : meldInto;
 
     IRCBot botFromConfig;
     CoreSettings settingsFromConfig;

@@ -1258,9 +1258,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import kameloso.config : readConfigInto;
+        import kameloso.meld : meldInto;
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
+        import std.typecons : No, Yes;
 
         alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
 
@@ -1274,10 +1277,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 // --> this is a reconnect
                 continue;
             }
-
-            import kameloso.common : meldInto;
-            import kameloso.config : readConfigInto;
-            import std.typecons : No, Yes;
 
             T tempSymbol;
             configFile.readConfigInto(tempSymbol);
@@ -1296,10 +1295,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     // As above
                     continue;
                 }
-
-                import kameloso.common : meldInto;
-                import kameloso.config : readConfigInto;
-                import std.typecons : No, Yes;
 
                 T tempSymbol;
                 configFile.readConfigInto(tempSymbol);
@@ -2060,8 +2055,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(ChannelPolicy.home)
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.common : meldInto;
         import kameloso.irc : stripModesign;
+        import kameloso.meld : meldInto;
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
@@ -2823,7 +2818,7 @@ bool nickPolicyMatches(const IRCPluginState privateState,
 void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
     (IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 {
-    import kameloso.common : meldInto;
+    import kameloso.meld : meldInto;
 
     if (!newUser.nickname.length || (newUser.nickname == plugin.state.bot.nickname))
     {

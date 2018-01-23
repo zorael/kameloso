@@ -30,7 +30,7 @@ private:
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    import kameloso.common : meldInto;
+    import kameloso.meld : meldInto;
     import std.range : only;
     import std.typecons : Flag, No, Yes;
 

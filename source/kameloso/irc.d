@@ -2545,6 +2545,8 @@ struct IRCParser
      +/
     void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
+        import kameloso.meld : meldInto;
+
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
         // Reset
