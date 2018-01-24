@@ -1215,7 +1215,8 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         writeln();
         version(Cygwin_) stdout.flush();
     }
-    else if (event.channel.length && !event.channel.beginsWith('#') &&
+    else if (event.channel.length &&
+        !parser.bot.server.chantypes.has(event.channel[0]) &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
         (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
         (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
@@ -1691,7 +1692,9 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             break;
 
         case "CHANTYPES":
-            // TODO: Logic here to register channel prefix signs
+            // CHANTYPES=#
+            // ...meaning which characters may prefix channel names.
+            parser.bot.server.chantypes = value;
             break;
 
         case "CHANMODES":

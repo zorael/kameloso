@@ -2273,6 +2273,12 @@ struct IRCChannel
     /// Array of voiced channel users.
     alias voiced = modsShorthand!'v';
 
+    /++
+     +  Supported channel prefix characters, as announced by the server in the
+     +  `ISUPPORT` event, before the MOTD.
+     +/
+    string chantypes = "#";
+
     /// When the channel was created, expresed in UNIX time.
     long created;
 
