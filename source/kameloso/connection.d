@@ -293,7 +293,7 @@ void listenFiber(Connection conn, ref bool abort)
     import std.socket : Socket, lastSocketError;
 
     ubyte[BufferSize.socketReceive*2] buffer;
-    long timeLastReceived = Clock.currTime.toUnixTime;
+    SysTime timeLastReceived = Clock.currTime;
     size_t start;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -324,17 +324,15 @@ void listenFiber(Connection conn, ref bool abort)
         }
         else if (bytesReceived == Socket.ERROR)
         {
-            auto elapsed = (Clock.currTime.toUnixTime - timeLastReceived);
+            auto elapsed = (Clock.currTime - timeLastReceived);
 
-            if (elapsed > Timeout.keepalive)
+            if (elapsed > Timeout.keepalive.seconds)
             {
                 import kameloso.string : timeSince;
 
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                immutable elapsedInWords = (Clock.currTime - SysTime.fromUnixTime(elapsed))
-                    .timeSince;
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                              elapsedInWords, Timeout.keepalive.seconds);
+                              elapsedInWords.timeSince, Timeout.keepalive.seconds);
                 return;
             }
 
@@ -367,7 +365,7 @@ void listenFiber(Connection conn, ref bool abort)
             continue;
         }
 
-        timeLastReceived = Clock.currTime.toUnixTime;
+        timeLastReceived = Clock.currTime;
 
         const ptrdiff_t end = (start + bytesReceived);
         auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
