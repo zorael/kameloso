@@ -548,7 +548,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 }
                 else
                 {
-                    put(sink, target.nickname, ')');
+                    sink.put(target.nickname);
+                    sink.colour(default_);
+                    sink.put(')');
 
                     if (target.special)
                     {
