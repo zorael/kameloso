@@ -1720,6 +1720,15 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         case "NETWORK":
             bot.server.network = value;
+
+            if (value == "RusNet")
+            {
+                // RusNet servers do not advertise an easily-identifiable
+                // daemonstring like "1.5.24/uk_UA.KOI8-U", so fake the daemon
+                // here.
+                parser.setDaemon(IRCServer.Daemon.rusnet, "RusNet");
+            }
+
             bot.updated = true;
             break;
 
@@ -1846,10 +1855,15 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     // https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
-    with (parser.bot.server)
     with (IRCServer.Daemon)
     {
-        if (daemonstring_.has("unreal"))
+        IRCServer.Daemon daemon;
+
+        if (parser.bot.server.daemon != IRCServer.Daemon.init)
+        {
+            // Daemon was already faked elsewhere (e.g. RusNet); pass through
+        }
+        else if (daemonstring_.has("unreal"))
         {
             daemon = unreal;
         }
