@@ -2578,6 +2578,7 @@ struct IRCParser
     void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
         import kameloso.meld : meldInto;
+        import std.typecons : Flag, No, Yes;
 
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
 
@@ -2590,22 +2591,22 @@ struct IRCParser
 
         with (Typenums)
         with (Daemon)
-        final switch (daemon)
+        final switch (bot.server.daemon)
         {
         case unreal:
-            Typenums.unreal.meldInto(typenums);
+            Typenums.unreal.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case inspircd:
-            Typenums.inspIRCd.meldInto(typenums);
+            Typenums.inspIRCd.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case bahamut:
-            Typenums.bahamut.meldInto(typenums);
+            Typenums.bahamut.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ratbox:
-            Typenums.ratBox.meldInto(typenums);
+            Typenums.ratBox.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case u2:
@@ -2613,96 +2614,101 @@ struct IRCParser
             break;
 
         case rizon:
-            Typenums.hybrid.meldInto(typenums);
-            Typenums.rizon.meldInto(typenums);
+            // Rizon is hybrid but has some own extras
+            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
+            Typenums.rizon.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case hybrid:
-            Typenums.hybrid.meldInto(typenums);
+            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ircu:
-            Typenums.ircu.meldInto(typenums);
+            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case aircd:
-            Typenums.aircd.meldInto(typenums);
+            Typenums.aircd.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case rfc1459:
-            Typenums.rfc1459.meldInto(typenums);
+            Typenums.rfc1459.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case rfc2812:
-            Typenums.rfc2812.meldInto(typenums);
+            Typenums.rfc2812.meldInto!(Yes.overwrite)(typenums);
             break;
 
-        case quakenet:
-            Typenums.quakenet.meldInto(typenums);
+        case snircd:
+            // snircd is based on ircu
+            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
+            Typenums.snircd.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case nefarious:
-            Typenums.nefarious.meldInto(typenums);
+            // Both nefarious and nefarious2 are based on ircu
+            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
+            Typenums.nefarious.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case rusnet:
-            Typenums.rusnet.meldInto(typenums);
+            Typenums.rusnet.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case austhex:
-            Typenums.austHex.meldInto(typenums);
+            Typenums.austHex.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ircnet:
-            Typenums.ircNet.meldInto(typenums);
+            Typenums.ircNet.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ptlink:
-            Typenums.ptlink.meldInto(typenums);
+            Typenums.ptlink.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ultimate:
-            Typenums.ultimate.meldInto(typenums);
+            Typenums.ultimate.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case charybdis:
-            Typenums.charybdis.meldInto(typenums);
+            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ircdseven:
             // Nei | freenode is based in charybdis which is based on ratbox iirc
-            Typenums.hybrid.meldInto(typenums);
-            Typenums.ratBox.meldInto(typenums);
-            Typenums.charybdis.meldInto(typenums);
+            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ratBox.meldInto!(Yes.overwrite)(typenums);
+            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case undernet:
-            Typenums.undernet.meldInto(typenums);
+            Typenums.undernet.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case anothernet:
-            //Typenums.anothernet.meldInto(typenums);
+            //Typenums.anothernet.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case sorircd:
-            Typenums.charybdis.meldInto(typenums);
-            Typenums.sorircd.meldInto(typenums);
+            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
+            Typenums.sorircd.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case bdqircd:
-            //Typenums.bdqIrcD.meldInto(typenums);
+            //Typenums.bdqIrcD.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case chatircd:
-            //Typenums.chatIRCd.meldInto(typenums);
+            //Typenums.chatIRCd.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case irch:
-            //Typenums.irch.meldInto(typenums);
+            //Typenums.irch.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case ithildin:
-            //Typenums.ithildin.meldInto(typenums);
+            //Typenums.ithildin.meldInto!(Yes.overwrite)(typenums);
             break;
 
         case twitch:
@@ -2710,6 +2716,7 @@ struct IRCParser
             break;
 
         case unknown:
+        case unset:
             // do nothing...
             break;
         }
