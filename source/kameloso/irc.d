@@ -774,6 +774,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_HELPSTART: // 704
     case RPL_HELPTXT: // 705
     case RPL_ENDOFHELP: // 706
+    case RPL_CODEPAGE: // 222
+        // :irc.run.net 222 kameloso KOI8-U :is your charset now
         // :leguin.freenode.net 704 kameloso^ index :Help topics available to users:
         // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
@@ -989,6 +991,12 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :Miyabro!~Miyabro@DA8192E8:4D54930F:650EE60D:IP CHGHOST ~Miyabro Miyako.is.mai.waifu
         event.sender.ident = slice.nom(' ');
         event.sender.address = slice;
+        break;
+
+    case RPL_HELLO:
+        // :irc.run.net 020 irc.run.net :*** You are connected to RusNet. Please wait...
+        slice.nom(" :");
+        event.content = slice;
         break;
 
     default:
