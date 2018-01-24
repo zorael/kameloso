@@ -332,7 +332,7 @@ void listenFiber(Connection conn, ref bool abort)
 
                 // Too much time has passed; we can reasonably assume the socket is disconnected
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                              elapsedInWords.timeSince, Timeout.keepalive.seconds);
+                              elapsed.timeSince, Timeout.keepalive.seconds);
                 return;
             }
 
