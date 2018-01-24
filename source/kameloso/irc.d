@@ -1761,16 +1761,16 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         }
     }
 
-    with (parser)
+    with (parser.bot.server)
     {
-        if (!bot.server.network.length)
+        if (!network.length)
         {
             import std.algorithm.searching : endsWith;
 
-            if (bot.server.address.endsWith(".twitch.tv"))
+            if (address.endsWith(".twitch.tv"))
             {
-                bot.server.network = "Twitch";
-                bot.updated = true;
+                network = "Twitch";
+                parser.bot.updated = true;
             }
         }
     }
@@ -1885,7 +1885,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         }
         else if (daemonstring_.has("hybrid"))
         {
-            if (address.has(".rizon."))
+            if (parser.bot.server.address.has(".rizon."))
             {
                 daemon = rizon;
             }
