@@ -534,6 +534,8 @@ Flag!"quit" mainLoop(ref Client client)
                 // Let each plugin process the event
                 foreach (plugin; plugins)
                 {
+                    import std.utf : UTFException;
+
                     try
                     {
                         plugin.onEvent(event);
@@ -604,6 +606,11 @@ Flag!"quit" mainLoop(ref Client client)
                             parser.bot = bot;
                             propagateBot(bot);
                         }
+                    }
+                    catch (const UTFException e)
+                    {
+                        logger.warningf("UTFException %s.onEvent: %s",
+                            plugin.name, e.msg);
                     }
                     catch (const Exception e)
                     {
