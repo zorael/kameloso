@@ -931,7 +931,8 @@ struct IRCServer
      +/
     enum Daemon
     {
-        unknown,    /// invalid daemon
+        unset,      /// Unset or invalid daemon.
+        unknown,    /// Reported but unknown daemon.
 
         unreal,
         inspircd,

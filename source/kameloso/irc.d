@@ -1906,10 +1906,10 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         {
             daemon = ircdseven;
         }
-        /*else if (daemonstring_.has(""))
+        else
         {
             daemon = unknown;
-        }*/
+        }
 
         parser.setDaemon(daemon, daemonstringRaw);
     }
