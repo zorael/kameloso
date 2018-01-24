@@ -2474,8 +2474,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     }
                     else
                     {
-                        logger.warning("Invalid modesign in RPL_WHOREPLY: ",
-                            modesign);
+                        logger.warningf(`Invalid modesign in RPL_WHOREPLY: "%s" ` ~
+                            `The server did not advertise it!`, modesign);
                     }
                 }
             }
