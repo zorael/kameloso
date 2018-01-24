@@ -992,9 +992,6 @@ struct IRCServer
         /// Max channel name length as per IRC specs.
         uint maxChannelLength = 200;
 
-        /// Modes available on this server (in A,B,C,D notation)
-        //string chanmodes;
-
         /+
          +  A = Mode that adds or removes a nick or address to a list.
          +      Always has a parameter.
