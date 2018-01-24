@@ -153,7 +153,7 @@ Flag!"quit" checkMessages(ref Client client)
         quit = Yes.quit;
     }
 
-    /// Saves current configuration to disk
+    /// Saves current configuration to disk.
     void save(ThreadMessage.Save)
     {
         client.writeConfigurationFile(client.settings.configFile);
@@ -170,7 +170,7 @@ Flag!"quit" checkMessages(ref Client client)
         plugin.peekPlugins(client.plugins);
     }
 
-    /// Reverse-formats an event and sends it to the server
+    /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
         import std.format : format;
@@ -331,7 +331,7 @@ Flag!"quit" mainLoop(ref Client client)
     /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
 
-    /// Keep track of daemon and network so we know when to report detection
+    /// Keep track of daemon and network so we know when to report detection.
     IRCServer.Daemon detectedDaemon;
     string detectedNetwork;
 
@@ -339,10 +339,13 @@ Flag!"quit" mainLoop(ref Client client)
     auto generator = new Generator!string(() =>
         listenFiber(client.conn, *(client.abort)));
 
-    /// How often to check for timed Fibers, multiples of `Timeout.receive`.
+    /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
 
-    /// How many more receive passes until it should next check for timed Fibers
+    /++
+     +  How many more receive passes until it should next check for timed
+     +  `Fiber`s.
+     +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
     while (!quit)
@@ -875,8 +878,10 @@ int main(string[] args)
         /// Flag denoting that we should quit the program.
         Flag!"quit" quit;
 
-        /// Bool whether this is the first connection attempt or if we have
-        /// connected at least once already.
+        /++
+         +  Bool whether this is the first connection attempt or if we have
+         +  connected at least once already.
+         +/
         bool firstConnect = true;
 
         do

@@ -329,7 +329,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
-    /// Update the user's entry
+    // Update the user's entry
     plugin.updateUser(event.target.nickname);
 }
 

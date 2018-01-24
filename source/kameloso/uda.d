@@ -3,13 +3,13 @@
  +/
 module kameloso.uda;
 
-/// UDA conveying that a field is not to be saved in configuration files
+/// UDA conveying that a field is not to be saved in configuration files.
 struct Unconfigurable {}
 
-/// UDA conveying that a string is an array with this token as separator
+/// UDA conveying that a string is an array with this token as separator.
 struct Separator
 {
-    /// Separator, can be more than one character
+    /// Separator, can be more than one character.
     string token = ",";
 }
 

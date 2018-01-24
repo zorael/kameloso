@@ -34,7 +34,7 @@ final class KamelosoLogger : Logger
         import kameloso.bash : colour;
     }
 
-    /// Logger colours to use with a dark terminal
+    /// Logger colours to use with a dark terminal.
     static immutable BashForeground[193] logcoloursDark  =
     [
         LogLevel.all     : BashForeground.white,
@@ -45,7 +45,7 @@ final class KamelosoLogger : Logger
         LogLevel.fatal   : BashForeground.red,
     ];
 
-    /// Logger colours to use with a bright terminal
+    /// Logger colours to use with a bright terminal.
     static immutable BashForeground[193] logcoloursBright  =
     [
         LogLevel.all     : BashForeground.black,
@@ -68,10 +68,10 @@ final class KamelosoLogger : Logger
         super(lv);
     }
 
-    /// This override is needed or it won't compile
+    /// This override is needed or it won't compile.
     override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
 
-    /// Outputs the head of a logger message
+    /// Outputs the head of a logger message.
     protected void beginLogMsg(Sink)(auto ref Sink sink,
         string file, int line, string funcName,
         string prettyFuncName, string moduleName, LogLevel logLevel,
@@ -112,7 +112,7 @@ final class KamelosoLogger : Logger
             prettyFuncName, moduleName, logLevel, threadId, timestamp, logger);
     }
 
-    /// Outputs the message part of a logger message; the content
+    /// Outputs the message part of a logger message; the content.
     protected void logMsgPart(Sink)(auto ref Sink sink, const(char)[] msg) const
     {
         sink.put(msg);
@@ -126,7 +126,7 @@ final class KamelosoLogger : Logger
         return logMsgPart(stdout.lockingTextWriter, msg);
     }
 
-    /// Outputs the tail of a logger message
+    /// Outputs the tail of a logger message.
     protected void finishLogMsg(Sink)(auto ref Sink sink) const
     {
         version(Colours)

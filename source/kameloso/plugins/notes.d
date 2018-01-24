@@ -473,7 +473,7 @@ public:
  +/
 final class NotesPlugin : IRCPlugin
 {
-    /// All Notes plugin settings gathered
+    /// All Notes plugin settings gathered.
     @Settings NotesSettings notesSettings;
 
     // notes

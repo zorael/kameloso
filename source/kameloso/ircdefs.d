@@ -35,67 +35,67 @@ struct IRCEvent
      +/
     enum Type
     {
-        UNSET,      /// Invalid `IRCEvent` with no `Type`
-        ANY,        /// Meta-`Type` for *any* kind of `IRCEvent`
-        ERROR,      /// Generic error `Type`
-        NUMERIC,    /// *Numeric* event of an unknown `Type`
-        PRIVMSG,    /// Private message or channel message
-        CHAN,       /// Channel message
-        QUERY,      /// Private query message
-        EMOTE,      /// CTCP **ACTION**; `/me slaps Foo with a large trout`
-        SELFQUERY,  /// A message from you in a query (CAP znc.in/self-message)
-        SELFCHAN,   /// A message from you in a channel (CAP znc.in/self-message)
-        AWAY,       /// Someone flagging themselves as away (from keyboard)
-        BACK,       /// Someone returning from AWAY
-        JOIN,       /// Someone joined a channel
-        PART,       /// Someone left a channel
-        QUIT,       /// Someone quit the server
-        KICK,       /// Someone was kicked from a channel
-        INVITE,     /// You were invited to a channel
-        NOTICE,     /// A server `NOTICE` event
-        PING,       /// The server periodically `PING`ed you
-        PONG,       /// The server actually `PONG`ed you
-        NICK,       /// Someone changed nickname
-        MODE,       /// Someone changed the modes of a channel
-        SELFQUIT,   /// You quit the server
-        SELFJOIN,   /// You joined a channel
-        SELFPART,   /// You left a channel
-        SELFMODE,   /// You changed your modes
-        SELFNICK,   /// You changed your nickname
-        SELFKICK,   /// You were kicked
-        TOPIC,      /// Someone changed channel topic
-        CAP,        /// CAPability exchange during connect
-        CTCP_VERSION,/// Something requested bot version info
-        CTCP_TIME,  /// Something requested your time
-        CTCP_PING,  /// Something pinged you
-        CTCP_CLIENTINFO,/// Something asked what CTCP events the bot can handle
-        CTCP_DCC,   /// Something requested a DCC connection (chat, file transfer)
-        CTCP_SOURCE,/// Something requested an URL to the bot source code
-        CTCP_USERINFO,/// Something requested the nickname and user of the bot
-        CTCP_FINGER,/// Someone requested miscellaneous info about the bot
+        UNSET,      /// Invalid `IRCEvent` with no `Type`.
+        ANY,        /// Meta-`Type` for *any* kind of `IRCEvent`.
+        ERROR,      /// Generic error `Type`.
+        NUMERIC,    /// *Numeric* event of an unknown `Type`.
+        PRIVMSG,    /// Private message or channel message.
+        CHAN,       /// Channel message.
+        QUERY,      /// Private query message.
+        EMOTE,      /// CTCP **ACTION**; `/me slaps Foo with a large trout`.
+        SELFQUERY,  /// A message from you in a query (CAP `znc.in/self-message`).
+        SELFCHAN,   /// A message from you in a channel (CAP `znc.in/self-message`).
+        AWAY,       /// Someone flagged themselves as away (from keyboard).
+        BACK,       /// Someone returned from `AWAY`.
+        JOIN,       /// Someone joined a channel.
+        PART,       /// Someone left a channel.
+        QUIT,       /// Someone quit the server.
+        KICK,       /// Someone was kicked from a channel.
+        INVITE,     /// You were invited to a channel.
+        NOTICE,     /// A server `NOTICE` event.
+        PING,       /// The server periodically `PING`ed you.
+        PONG,       /// The server actually `PONG`ed you.
+        NICK,       /// Someone changed nickname.
+        MODE,       /// Someone changed the modes of a channel.
+        SELFQUIT,   /// You quit the server.
+        SELFJOIN,   /// You joined a channel.
+        SELFPART,   /// You left a channel.
+        SELFMODE,   /// You changed your modes.
+        SELFNICK,   /// You changed your nickname.
+        SELFKICK,   /// You were kicked.
+        TOPIC,      /// Someone changed channel topic.
+        CAP,        /// CAPability exchange during connect.
+        CTCP_VERSION,/// Something requested bot version info.
+        CTCP_TIME,  /// Something requested your time.
+        CTCP_PING,  /// Something pinged you.
+        CTCP_CLIENTINFO,/// Something asked what CTCP events the bot can handle.
+        CTCP_DCC,   /// Something requested a DCC connection (chat, file transfer).
+        CTCP_SOURCE,/// Something requested an URL to the bot source code.
+        CTCP_USERINFO,/// Something requested the nickname and user of the bot.
+        CTCP_FINGER,/// Someone requested miscellaneous info about the bot.
         CTCP_LAG,   /// Something requested LAG info?
-        CTCP_AVATAR,/// Someone requested an avatar image
-        CTCP_SLOTS, /// Someone broadcasting their file transfer slots
-        USERSTATE,  /// Twitch user information
-        ROOMSTATE,  /// Twitch channel information
-        GLOBALUSERSTATE,/// Twitch information about self upon login
-        CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user
-        USERNOTICE, /// Twitch subscription or resubscription event
-        HOSTTARGET, /// Twitch channel hosting target
-        HOSTSTART,  /// Twitch channel hosting start
-        HOSTEND,    /// Twitch channel hosting end
-        SUB,        /// Twitch subscription event
-        RESUB,      /// Twitch resub event
-        TEMPBAN,    /// Twitch temporary ban (seconds in `aux`)
-        PERMBAN,    /// Twitch permanent ban
-        SUBGIFT,    /// Twitch subscription gift event
-        BITS,       /// Twitch "bits" donation
-        ACCOUNT,    /// Someone logged in on nickname services
-        SASL_AUTHENTICATE,/// SASL authentication negotiation
-        AUTH_CHALLENGE,/// Authentication challenge
-        AUTH_FAILURE,/// Authentication failure
-        CHGHOST,    /// User "changes host", which is a thing on some networks
-        ENDOFEXEMPTOPSLIST,// = 953 ///End of exempt channel ops list
+        CTCP_AVATAR,/// Someone requested an avatar image.
+        CTCP_SLOTS, /// Someone broadcasted their file transfer slots.
+        USERSTATE,  /// Twitch user information.
+        ROOMSTATE,  /// Twitch channel information.
+        GLOBALUSERSTATE,/// Twitch information about self upon login.
+        CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user.
+        USERNOTICE, /// Twitch subscription or resubscription event.
+        HOSTTARGET, /// Twitch channel hosting target.
+        HOSTSTART,  /// Twitch channel hosting start.
+        HOSTEND,    /// Twitch channel hosting end.
+        SUB,        /// Twitch subscription event.
+        RESUB,      /// Twitch resub event.
+        TEMPBAN,    /// Twitch temporary ban (seconds in `aux`).
+        PERMBAN,    /// Twitch permanent ban.
+        SUBGIFT,    /// Twitch subscription gift event.
+        BITS,       /// Twitch "bits" donation.
+        ACCOUNT,    /// Someone logged in on nickname services.
+        SASL_AUTHENTICATE,/// SASL authentication negotiation.
+        AUTH_CHALLENGE,/// Authentication challenge.
+        AUTH_FAILURE,/// Authentication failure.
+        CHGHOST,    /// User "changes host", which is a thing on some networks.
+        ENDOFEXEMPTOPSLIST,// = 953 ///End of exempt channel ops list.
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
@@ -874,7 +874,7 @@ struct IRCBot
         /// Whitelist of services accounts that may trigger the bot.
         string[] whitelist;
 
-        /// Currently inhabited channels (though not neccessarily homes)
+        /// Currently inhabited channels (though not neccessarily homes).
         string[] channels;
     }
 
@@ -983,13 +983,13 @@ struct IRCServer
         /// The reported daemon, with version.
         string daemonstring;
 
-        /// The IRC server address handed to us by the round robin pool
+        /// The IRC server address handed to us by the round robin pool.
         string resolvedAddress;
 
-        /// Max nickname length as per IRC specs, but not the de facto standard
+        /// Max nickname length as per IRC specs, but not the de facto standard.
         uint maxNickLength = 9;
 
-        /// Max channel name length as per IRC specs
+        /// Max channel name length as per IRC specs.
         uint maxChannelLength = 200;
 
         /// Modes available on this server (in A,B,C,D notation)
@@ -1036,10 +1036,10 @@ struct IRCUser
 {
     @safe:
 
-    /// The nickname of the user
+    /// The user's nickname.
     string nickname;
 
-    /// The alternate "display name" of the user, such as those on Twitch
+    /// The alternate "display name" of the user, such as those on Twitch.
     string alias_;
 
     /// Ther user's IDENT identification.
@@ -1048,7 +1048,7 @@ struct IRCUser
     /// The reported user address, which may be a cloak.
     string address;
 
-    /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc)
+    /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc).
     string account;
 
     /// The highest priority "badge" the sender has, in this context.
@@ -1063,10 +1063,10 @@ struct IRCUser
      +/
     bool special;
 
-    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often
+    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
     long lastWhois;
 
-    /// How many references to this user exists
+    /// How many references to this user exists (in channels).
     int refcount;
 
     /// Create a new `IRCUser` based on a `*!*@*` mask string.
@@ -1661,6 +1661,11 @@ struct Typenums
         999 : Type.ERR_NUMERIC_ERR,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `UnrealIRCd` daemon.
+     +
+     +  https://www.unrealircd.org
+     +/
     static immutable Type[975] unreal =
     [
         6 : Type.RPL_MAP,
@@ -1720,6 +1725,11 @@ struct Typenums
         974 : Type.ERR_CANNOTCHANGECHANMODE,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `ircu` (Undernet) daemon.
+     +
+     +  http://coder-com.undernet.org
+     +/
     static immutable Type[569] ircu =
     [
         15 : Type.RPL_MAP,
@@ -1759,6 +1769,16 @@ struct Typenums
         568 : Type.ERR_LASTERROR,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `aircd` (?) daemon.
+     +
+     +  "After AnotherNet had become a commercial and proprietary-client chat
+     +  network, the former users of AnotherNet's #trax decided to found their
+     +  own network - "where free speech and ideas would be able to run
+     +  unbounded through the pastures of #trax and #coders". They use the
+     +  "`aircd`" IRC daemon, coded by an ex-member of the demoscene, simon
+     +  kirby."
+     +/
     static immutable Type[471] aircd =
     [
         210 : Type.RPL_STATS,
@@ -1783,6 +1803,11 @@ struct Typenums
         470 : Type.ERR_KICKEDFROMCHAN,
     ];
 
+    /++
+     +  Delta typenum mappings for servers adhering to the `RFC1459` draft.
+     +
+     +  https://tools.ietf.org/html/rfc1459
+     +/
     static immutable Type[502] rfc1459 =
     [
         214 : Type.RPL_STATSNLINE,
@@ -1794,6 +1819,11 @@ struct Typenums
         501 : Type.ERR_UMODEUNKNOWNFLAG,
     ];
 
+    /++
+     +  Delta typenum mappings for servers adhering to the `RFC2812` draft.
+     +
+     +  https://tools.ietf.org/html/rfc2812
+     +/
     static immutable Type[485] rfc2812 =
     [
         240 : Type.RPL_STATSVLINE,
@@ -1807,6 +1837,11 @@ struct Typenums
         484 : Type.ERR_RESTRICTED,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `IRCD-Hybrid` daemon.
+     +
+     +  http://www.ircd-hybrid.org
+     +/
     static immutable Type[716] hybrid =
     [
         220 : Type.RPL_STATSPLINE,
@@ -1836,6 +1871,12 @@ struct Typenums
         715 : Type.ERR_TOOMANYINVITE,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `Bahamut` daemon
+     +  (DALnet).
+     +
+     +  https://www.dal.net/?page=bahamut
+     +/
     static immutable Type[621] bahamut =
     [
         220 : Type.RPL_STATSBLINE,
@@ -1890,6 +1931,13 @@ struct Typenums
         553 : Type.ERR_STATSSLINE,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `Nefarious` or
+     +  `Nefarious2` daemons, based on `ircu`.
+     +
+     +  https://github.com/evilnet/nefarious
+     +  https://github.com/evilnet/nefarious2
+     +/
     static immutable Type[976] nefarious =
     [
         220 : Type.RPL_STATSWLINE,
@@ -1908,6 +1956,12 @@ struct Typenums
         975 : Type.ERR_LASTERROR,
     ];
 
+    /++
+     +  Delta typenum mappings for `RusNet` servers. Unsure of what daemon they
+     +  run.
+     +
+     +  http://www.rus-net.org
+     +/
     static immutable Type[501] rusnet =
     [
         222 : Type.RPL_CODEPAGE,
@@ -1921,6 +1975,12 @@ struct Typenums
         500 : Type.ERR_NOREHASHPARAM,
     ];
 
+    /++
+     +  Delta typenum mappings for `Rizon` network servers. Supposedly they use
+     +  a mixture of Hybrid typenums, plus a few of their own.
+     +
+     +  https://www.rizon.net
+     +/
     static immutable Type[716] rizon =
     [
         227 : Type.RPL_STATSBLINE,
@@ -1928,6 +1988,11 @@ struct Typenums
         715 : Type.RPL_INVITETHROTTLE,
     ];
 
+    /++
+     +  Delta typenum mappings for `austHex` AUSTNet Development servers.
+     +
+     +  https://sourceforge.net/projects/austhex
+     +/
     static immutable Type[521] austHex =
     [
         240 : Type.RPL_STATSXLINE,
@@ -1947,6 +2012,12 @@ struct Typenums
         520 : Type.ERR_WHOTRUNC,        // deprecated
     ];
 
+    /++
+     +  Delta typenum mappings for the `IRCnet` network of servers. Unsure of
+     +  what server daemon they run.
+     +
+     +  http://www.ircnet.org
+     +/
     static immutable Type[489] ircNet =
     [
         245 : Type.RPL_STATSSLINE,
@@ -1957,6 +2028,11 @@ struct Typenums
         488 : Type.ERR_TSLESSCHAN,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `PTlink` daemon.
+     +
+     +  https://sourceforge.net/projects/ptlinksoft
+     +/
     static immutable Type[616] ptlink =
     [
         247 : Type.RPL_STATSXLINE,
@@ -1965,6 +2041,11 @@ struct Typenums
         615 : Type.RPL_MAPMORE,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `InspIRCd` daemon.
+     +
+     +  http://www.inspircd.org
+     +/
     static immutable Type[976] inspIRCd =
     [
         270 : Type.RPL_MAPUSERS,
@@ -1980,6 +2061,10 @@ struct Typenums
         975 : Type.RPL_LOADEDMODULE
     ];
 
+    /++
+     +  Delta typenum mapping for servers running the `ultimate` daemon.
+     +  Based off of `Bahamut`.
+     +/
     static immutable Type[624] ultimate =
     [
         275 : Type.RPL_USINGSSL,
@@ -1997,6 +2082,11 @@ struct Typenums
         623 : Type.RPL_MAPMORE,
     ];
 
+    /++
+     +  Delta typenum mappings extending `ircu` typenums, for UnderNet.
+     +
+     +  https://github.com/UndernetIRC/ircu2
+     +/
     static immutable Type[490] undernet =
     [
         396 : Type.RPL_HOSTHIDDEN,
@@ -2004,6 +2094,12 @@ struct Typenums
         489 : Type.ERR_VOICENEEDED,
     ];
 
+    /++
+     +  Delta typenum mapping for servers running the `ratbox` daemon. It is
+     +  primarily used on EFnet.
+     +
+     +  https://www.ratbox.org
+     +/
     static immutable Type[716] ratBox =
     [
         480 : Type.ERR_THROTTLE,
@@ -2013,12 +2109,23 @@ struct Typenums
         715 : Type.ERR_KNOCKDISABLED,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `charybdis` daemon.
+     +
+     +  https://github.com/charybdis-ircd/charybdis
+     +/
     static immutable Type[495] charybdis =
     [
         492 : Type.ERR_CANNOTSENDTOUSER,
         494 : Type.ERR_OWNMODE,
     ];
 
+    /++
+     +  Delta typenum mappings for servers running the `sorircd` daemon
+     +  (SorceryNet).
+     +
+     +  http://www.nongnu.org/snservices/sorircd.html
+     +/
     static immutable Type[326] sorircd =
     [
         325 : Type.RPL_CHANNELMLOCKIS,  // deprecated

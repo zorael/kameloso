@@ -51,7 +51,7 @@ void pipereader(shared IRCPluginState newState)
     kameloso.common.settings = state.settings;  // FIXME
     initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
-    /// Named pipe (FIFO) to send messages to the server through
+    /// Named pipe (FIFO) to send messages to the server through.
     File fifo;
 
     try

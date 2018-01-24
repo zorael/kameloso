@@ -2543,13 +2543,12 @@ struct IRCParser
      +/
     IRCBot bot;
 
-    /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric
-    /// resolution.
+    /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
     Type[1024] typenums = Typenums.base;
 
     // toIRCEvent
     /++
-    +  Parser an IRC string into an `kameloso.ircdefs.IRCEvent`.
+    +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
     +
     +  Proxies the call to the top-level `toIRCEvent(IRCParser, string)`.
     +/
