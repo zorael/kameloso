@@ -594,10 +594,20 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
+        // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
         slice.nom(' ');  // bot nickname
         event.channel = slice.nom(' ');
-        event.content = slice.nom(' ');
-        event.aux = slice;
+
+        if (slice.has(' '))
+        {
+            event.content = slice.nom(' ');
+            event.aux = slice;
+        }
+        else
+        {
+            // RusNet-like
+            event.content = slice;
+        }
         break;
 
     case RPL_WHOISHOST: // 378
