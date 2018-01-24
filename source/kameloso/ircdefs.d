@@ -939,7 +939,7 @@ struct IRCServer
         ratbox,
         u2,
         hybrid,
-        quakenet,
+        snircd,
         rizon,
         undernet,
         ircdseven,
@@ -1869,7 +1869,13 @@ struct Typenums
         620 : Type.RPL_DCCINFO,
     ];
 
-    static immutable Type[554] quakenet =
+    /++
+     +  Delta typenum mappings for servers running the `snircd` daemon
+     +  (QuakeNet), based on `ircu`.
+     +
+     +  https://development.quakenet.org
+     +/
+    static immutable Type[554] snircd =
     [
         285 : Type.RPL_NEWHOSTIS,
         286 : Type.RPL_CHKHEAD,

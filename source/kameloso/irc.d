@@ -1871,6 +1871,10 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         {
             daemon = inspircd;
         }
+        else if (daemonstring_.has("snircd"))
+        {
+            daemon = snircd;
+        }
         else if (daemonstring_.has("u2."))
         {
             daemon = u2;

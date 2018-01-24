@@ -269,7 +269,7 @@ void tryAuth(ConnectService service)
                 .format(serviceNick, verb));
             break;
 
-        case quakenet:
+        case snircd:
         case ircdseven:
         case u2:
             // Accepts auth login
