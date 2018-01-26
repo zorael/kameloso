@@ -6,8 +6,6 @@ Features are added as plugins, written as [**D**](https://www.dlang.org) modules
 
 It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register and reserve nicknames for both yourself and the bot, where available.
-
 Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
@@ -23,19 +21,15 @@ Current functionality includes:
 * **mIRC** colour coding and text effects (bold, underlined, ...), translated into **Bash** formatting
 * [**SASL**](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 
-What does *not* work:
-* codepages other than UTF-8 and compatible; in the best case you'll get empty characters, in the wost case ��� (sorry, RusNet)
-* web title lookup on international domain names, until `dlang-requests` gets updated
-* quirky IRC server daemons that haven't been tested against (need more information and examples)
-* no blacklists yet, only whitelists
-* glob-comparing two masks is not perfect
+Current limitations:
 
-## Windows
+* web title lookup does not work on domain names with international (non-English) characters until `dlang-requests` gets updated
+* many plugins don't differentiate between different *home* channels
+* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need examples to fix)
 
-There are a few Windows caveats.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register yourself and the bot, where available.
 
-* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP accesses should work fine.
-* Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this. By default it will compile on Windows with colours disabled, but they can be enabled by specifying a different *build configuration*.
+Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
 
 # Getting Started
 
@@ -47,11 +41,11 @@ You need a **D** compiler and the official [`dub`](https://code.dlang.org/downlo
 
 **kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), but the GCC-based [`gdc`](https://gdcproject.org/downloads) comes with a version of the standard library that is too old, at time of writing.
 
-It's *possible* to build it manually without `dub`, but it is non-trivial if you want web-related plugins to work.
+It's *possible* to build it manually without `dub`, but it is non-trivial if you want the web-related plugins to work.
 
 ## Downloading
 
-GitHub offers downloads in ZIP format, but it's easier to use `git` and clone the repository that way.
+GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use `git` and get a copy of the source that way.
 
 ```bash
 $ git clone https://github.com/zorael/kameloso.git
@@ -66,33 +60,41 @@ $ dub build
 
 This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols. You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Refer to the output of `dub build --help` for more build types.
 
-Unit tests are built into the language, but you need to compile the project in `unittest` mode for them to run.
+Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
 ```bash
 $ dub build -b unittest
 ```
 
-The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run the program in one go.
+The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run them in one go. `unittest` builds will only run the unit tests and immediately exit.
 
-The available build configurations are:
+The available *build configurations* are:
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, equals `colours+web`
-* `windows`, default on Windows, equals `vanilla`
-* `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (*mintty*, which can display colours)
+* `windows`, default on Windows, equals `web`
+* `cygwin`, equals `colours+web` but with extra code needed for running it under the default **Cygwin** terminal (*mintty*)
 
-You can specify which to build with the `-c` switch.
+You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
 ```bash
-$ dub build -b release -c vanilla
+$ dub build -b release -c cygwin
 ```
+
+## Windows
+
+There are a few Windows caveats.
+
+* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP accesses should work fine.
+* Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this.
+* Use in Cygwin terminals without the aforementioned build configuration `cygwin` will be unpleasant. Normal `cmd` and Powershell consoles are not affected.
 
 # How to use
 
-The bot needs the services account name of the administrator of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two. The hardcoded defaults contain neither, so you need to create and edit a configuration file before starting.
+The bot needs the services account name of the administrator(s) of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two, so you need to create and edit a configuration file before starting.
 
 ```bash
 $ ./kameloso --writeconfig
@@ -100,11 +102,9 @@ $ ./kameloso --writeconfig
 
 Open the new `kameloso.conf` in a text editor and fill in the fields.
 
-If you have an old configuration file and you notice missing options, such as plugin-specific settings, just run it with `--writeconfig` again and your file should be updated with all entries. There are *many* more plugin-specific and less important options available than what is displayed at program start.
+If you have compiled in colours, they may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-The colours may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (Read: Monokai, Breeze, Solaris, ...)
-
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services and enter your administrators' account names in the configuration file before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
 
 ```
      you | !say herp
@@ -131,7 +131,7 @@ kameloso | Reddit post: https://www.reddit.com/r/programming/comments/7o2tcw/dmd
 
 Send `help` to the bot in a private query message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* will not be shown, due to technical reasons.
 
-The *prefix* character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The *prefix* character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
 ```ini
 [Core]
@@ -156,7 +156,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that a full Twitch bot cannot be implemented as an IRC client.
 
@@ -168,10 +168,10 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * pipedream two: `ncurses`
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
-* notes to always trigger on joins if not present when note placed, only on activity if present? channel-split? (later)
+* notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
-* blacklists; by mask, by account?
+* blacklists; by mask, by account? where and when?
 * auto-mode plugin?
 
 # Built With
