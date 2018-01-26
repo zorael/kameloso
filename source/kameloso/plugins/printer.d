@@ -104,25 +104,9 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
 
     default:
         import std.stdio : stdout;
-        import std.utf : UTFException;
 
-        try
-        {
-            plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
-        }
-        catch (const UTFException e)
-        {
-            import std.encoding : sanitize;
-
-            logger.warningf("UTFException in late printer.onEvent: %s", e.msg);
-            mutEvent.content = mutEvent.content.sanitize();
-            plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
-        }
-        finally
-        {
-            version(Cygwin_) stdout.flush();
-        }
-
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
+        version(Cygwin_) stdout.flush();
         break;
     }
 }
