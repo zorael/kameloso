@@ -327,6 +327,7 @@ Flag!"quit" mainLoop(ref Client client)
     import core.thread : Fiber;
     import std.concurrency : Generator, yield;
     import std.datetime.systime : Clock;
+    import std.utf : UTFException;
 
     /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
@@ -453,7 +454,16 @@ Flag!"quit" mainLoop(ref Client client)
 
             try
             {
-                mutEvent = parser.toIRCEvent(line);
+                try
+                {
+                    mutEvent = parser.toIRCEvent(line);
+                }
+                catch (const UTFException e)
+                {
+                    import std.encoding : sanitize;
+                    // Silently sanitise and retry once
+                    mutEvent = parser.toIRCEvent(sanitize(line));
+                }
 
                 if (parser.bot.updated)
                 {
@@ -534,8 +544,6 @@ Flag!"quit" mainLoop(ref Client client)
                 // Let each plugin process the event
                 foreach (plugin; plugins)
                 {
-                    import std.utf : UTFException;
-
                     try
                     {
                         plugin.onEvent(event);
@@ -625,7 +633,10 @@ Flag!"quit" mainLoop(ref Client client)
                 logger.warningf("IRCParseException at %s:%d: %s",
                     e.file, e.line, e.msg);
                 printObject(e.event);
-                continue;
+            }
+            catch (const UTFException e)
+            {
+                logger.warning("UTFException: ", e.msg);
             }
             catch (const Exception e)
             {
@@ -636,8 +647,6 @@ Flag!"quit" mainLoop(ref Client client)
                 {
                     printObject(mutEvent);
                 }
-
-                continue;
             }
         }
 
