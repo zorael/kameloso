@@ -28,6 +28,7 @@
             "name": "windows",
             "platforms": [ "windows" ],
             "buildRequirements": [ "silenceDeprecations" ],
+            "versions": [ "Web" ],
             "dependencies-windows": { "requests": "~>0.6.0" }
         },
         {
