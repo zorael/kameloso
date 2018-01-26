@@ -15,6 +15,10 @@ branches:
     - master
     - stable
 
+artifacts:
+  - path: kameloso.exe
+    name: kameloso
+
 install:
   - ps: function SetUpDCompiler
         {
@@ -86,7 +90,8 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
- - dub test --arch=%Darch% --compiler=%DC% -c vanilla
- - dub test --arch=%Darch% --compiler=%DC% -c colours+web
- - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla
- - dub build --arch=%Darch% --compiler=%DC% -b plain -c colours+web
+# - dub test --arch=%Darch% --compiler=%DC% -c vanilla
+# - dub test --arch=%Darch% --compiler=%DC% -c colours+web
+# - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla
+# - dub build --arch=%Darch% --compiler=%DC% -b plain -c colours+web
+ - dub build --arch=%Darch% --compiler=%DC% -b plain -c cygwin
