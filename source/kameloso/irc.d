@@ -2729,6 +2729,25 @@ struct IRCParser
     }
 }
 
+unittest
+{
+    import kameloso.meld : meldInto;
+    import std.typecons : Flag, No, Yes;
+
+    IRCParser parser;
+
+    alias T = IRCEvent.Type;
+
+    with (parser)
+    {
+        typenums = Typenums.base;
+
+        assert(typenums[344] == T.init);
+        Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
+        assert(typenums[344] != T.init);
+    }
+}
+
 
 // setMode
 /++
