@@ -1147,20 +1147,31 @@ struct IRCUser
      +  TODO:
      +      Support partial globs.
      +/
-    bool matchesByMask(IRCUser other) pure nothrow @nogc const
+    bool matchesByMask(const IRCUser other) pure nothrow const
     {
-        // Match first
+        import std.path : CaseSensitive, globMatch;
+
+        // Change this if we want case-sentivity
+        enum caseSetting = CaseSensitive.no;
+
+        // globMatch in both directions
         // If no match and either is empty, that means they're *
         immutable matchNick = ((this.nickname == other.nickname) ||
-            (!this.nickname.length || !other.nickname.length));
+            this.nickname.globMatch!caseSetting(other.nickname) ||
+            other.nickname.globMatch!caseSetting(this.nickname) ||
+            !this.nickname.length || !other.nickname.length);
         if (!matchNick) return false;
 
-        immutable matchIdent = ((ident == other.ident) ||
-            (!this.ident.length || !other.ident.length));
+        immutable matchIdent = ((this.ident == other.ident) ||
+            this.ident.globMatch!caseSetting(other.ident) ||
+            other.ident.globMatch!caseSetting(this.ident) ||
+            !this.ident.length || !other.ident.length);
         if (!matchIdent) return false;
 
-        immutable matchAddress = ((address == other.address) ||
-            (!this.address.length || !other.address.length));
+        immutable matchAddress = ((this.address == other.address) ||
+            this.address.globMatch!caseSetting(other.address) ||
+            other.address.globMatch!caseSetting(this.address) ||
+            !this.address.length || !other.address.length);
         if (!matchAddress) return false;
 
         return true;
@@ -1170,6 +1181,27 @@ struct IRCUser
     bool matchesByMask(const string userstring) pure const
     {
         return matchesByMask(IRCUser(userstring));
+    }
+
+    ///
+    unittest
+    {
+        import std.path : globMatch;
+
+        IRCUser first = IRCUser("kameloso!NaN@wopkfoewopk.com");
+
+        IRCUser second = IRCUser("*!*@*");
+        assert(first.matchesByMask(second));
+
+        IRCUser third = IRCUser("kame*!*@*.com");
+        assert(first.matchesByMask(third));
+
+        IRCUser fourth = IRCUser("*loso!*@wop*");
+        assert(first.matchesByMask(fourth));
+
+        assert(second.matchesByMask(first));
+        assert(third.matchesByMask(first));
+        assert(fourth.matchesByMask(first));
     }
 }
 
@@ -2205,7 +2237,7 @@ struct IRCChannel
          +  Compare two `Mode`s with eachother to see if they are both of the
          +  same type, as well as having the same `data` and/or `user`.
          +/
-        bool opEquals(const Mode other) pure nothrow @nogc @safe const
+        bool opEquals(const Mode other) pure nothrow @safe const
         {
             // Ignore exemptions when comparing Modes
             immutable charMatch = (modechar == other.modechar);

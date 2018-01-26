@@ -28,7 +28,7 @@ What does *not* work:
 * web title lookup on international domain names, until `dlang-requests` gets updated
 * quirky IRC server daemons that haven't been tested against (need more information and examples)
 * no blacklists yet, only whitelists
-* partial mask matching; only full match or only wildcard
+* glob-comparing two masks is not perfect
 
 ## Windows
 
@@ -172,7 +172,6 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
 * blacklists; by mask, by account?
-* glob matches for masks?
 * auto-mode plugin?
 
 # Built With
