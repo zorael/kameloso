@@ -324,6 +324,7 @@ Flag!"quit" mainLoop(ref Client client)
 {
     import kameloso.common : printObjects;
     import kameloso.connection : listenFiber;
+    import core.exception : UnicodeException;
     import core.thread : Fiber;
     import std.concurrency : Generator, yield;
     import std.datetime.systime : Clock;
@@ -454,14 +455,19 @@ Flag!"quit" mainLoop(ref Client client)
 
             try
             {
+                import std.encoding : sanitize;
+                // Sanitise and try again once on UTF/Unicode exceptions
+
                 try
                 {
                     mutEvent = parser.toIRCEvent(line);
                 }
                 catch (const UTFException e)
                 {
-                    import std.encoding : sanitize;
-                    // Silently sanitise and retry once
+                    mutEvent = parser.toIRCEvent(sanitize(line));
+                }
+                catch (const UnicodeException e)
+                {
                     mutEvent = parser.toIRCEvent(sanitize(line));
                 }
 
@@ -638,6 +644,10 @@ Flag!"quit" mainLoop(ref Client client)
             {
                 logger.warning("UTFException: ", e.msg);
             }
+            catch (const UnicodeException e)
+            {
+                logger.warning("UnicodeException: ", e.msg);
+            }
             catch (const Exception e)
             {
                 logger.warningf("Unhandled exception at %s:%d: %s",
@@ -646,6 +656,10 @@ Flag!"quit" mainLoop(ref Client client)
                 if (mutEvent != IRCEvent.init)
                 {
                     printObject(mutEvent);
+                }
+                else
+                {
+                    logger.warningf(`Offending line: "%s"`, line);
                 }
             }
         }

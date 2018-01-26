@@ -1150,7 +1150,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (fun; funsInOrder)
         {
+            import core.exception : UnicodeException;
             import std.utf : UTFException;
+            import std.encoding : sanitize;
+
+            // Sanitise and try again once on UTF/Unicode exceptions
 
             try
             {
@@ -1158,9 +1162,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
             catch (const UTFException e)
             {
-                import std.encoding : sanitize;
-
-                // Sanitise and try again once
+                IRCEvent saneEvent = event;
+                saneEvent.content = sanitize(saneEvent.content);
+                handle!fun(cast(const)saneEvent);
+            }
+            catch (const UnicodeException e)
+            {
                 IRCEvent saneEvent = event;
                 saneEvent.content = sanitize(saneEvent.content);
                 handle!fun(cast(const)saneEvent);
