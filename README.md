@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. [API documentation is now available.](https://zorael.github.io/kameloso) Any and all ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. [API documentation is now available](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
 It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
 
@@ -22,6 +22,13 @@ Current functionality includes:
 * piping text from the terminal to the server
 * **mIRC** colour coding and text effects (bold, underlined, ...), translated into **Bash** formatting
 * [**SASL**](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+
+What does *not* work:
+* codepages other than UTF-8 and compatible; in the best case you'll get empty characters, in the wost case ��� (sorry, RusNet)
+* web title lookup on international domain names, until `dlang-requests` gets updated
+* quirky IRC server daemons that haven't been tested against (need more information and examples)
+* no blacklists yet, only whitelists
+* partial mask matching; only full match or only wildcard
 
 ## Windows
 
@@ -159,12 +166,14 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 * pipedream: DCC
 * pipedream two: `ncurses`
-* blacklists; by mask, by account?
 * optional formatting in IRC output? (later)
 * channel-split notes (later)
 * notes to always trigger on joins if not present when note placed, only on activity if present? channel-split? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
+* blacklists; by mask, by account?
+* glob matches for masks?
+* auto-mode plugin?
 
 # Built With
 
