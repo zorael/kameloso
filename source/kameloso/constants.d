@@ -29,7 +29,7 @@ enum Timeout
     retry = 10,
     send = 5,
     receive = 1,
-    keepalive = 300,
+    keepalive = 600,
     resolve = 10,
     ping = 200,
     whois = 15,
