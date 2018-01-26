@@ -714,8 +714,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         alias notAwarenessFuns = Filter!(templateNot!isAwarenessMixin, funs);
         alias funsInOrder = AliasSeq!(awarenessFuns, notAwarenessFuns);
 
-        funloop:
-        foreach (fun; funsInOrder)
+        enum Next
+        {
+            unset,
+            continue_,
+            repeat,
+            abort,
+        }
+
+        Next handle(alias fun)(const IRCEvent event)
         {
             enum verbose = hasUDA!(fun, Verbose) || debug_;
 
@@ -725,13 +732,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 import std.stdio : writeln, writefln;
             }
 
+            udaloop:
             foreach (eventTypeUDA; getUDAs!(fun, IRCEvent.Type))
             {
-                import std.format : format;
-
                 enum name = ()
                 {
                     import kameloso.string : enumToString, nom;
+                    import std.format : format;
 
                     string pluginName = module_;
                     // pop two dots
@@ -795,7 +802,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         // channel policy does not match
-                        continue funloop;  // next function
+                        return Next.continue_;  // next function
                     }
                     break;
 
@@ -814,7 +821,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Event has a `BotCommand` set up but
                         // `event.content` is empty; cannot possibly be of
                         // interest.
-                        continue funloop;  // next function
+                        return Next.continue_;  // next function
                     }
 
                     foreach (commandUDA; getUDAs!(fun, BotCommand))
@@ -874,16 +881,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 // Iff no match from BotCommands, evaluate BotRegexes
-                if (!mutEvent.aux.length)
+                static if (hasUDA!(fun, BotRegex))
                 {
-                    static if (hasUDA!(fun, BotRegex))
+                    if (!mutEvent.aux.length)
                     {
                         if (!event.content.length)
                         {
                             // Event has a `BotRegex` set up but
                             // `event.content` is empty; cannot possibly be
                             // of interest.
-                            continue funloop;  // next function
+                            return Next.continue_;  // next function
                         }
 
                         foreach (regexUDA; getUDAs!(fun, BotRegex))
@@ -935,7 +942,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 continue;  // next BotRegex
                             }
 
-                            if (mutEvent.aux.length) break;
+                            if (mutEvent.aux.length) continue udaloop;
                         }
                     }
                 }
@@ -949,7 +956,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             "continue funloop");
                     }
 
-                    if (!mutEvent.aux.length) continue funloop; // next fun
+                    if (!mutEvent.aux.length) return Next.continue_; // next fun
                 }
                 else static if (!hasUDA!(fun, Chainable) &&
                     !hasUDA!(fun, Terminating) &&
@@ -963,14 +970,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         .format(name, typestring));
                 }
 
-                with (IRCEvent.Type)
-                {
-                    alias U = eventTypeUDA;
 
-                    static if (!hasUDA!(fun, PrivilegeLevel) &&
-                        !hasUDA!(fun, AwarenessMixin))
+                static if (!hasUDA!(fun, PrivilegeLevel) &&
+                    !hasUDA!(fun, AwarenessMixin))
+                {
+                    with (IRCEvent.Type)
                     {
                         import kameloso.string : enumToString;
+
+                        alias U = eventTypeUDA;
 
                         enum message = module_ ~ '.' ~ __traits(identifier, fun) ~
                             " is annotated with user-facing IRCEvent.Type." ~
@@ -1028,7 +1036,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                         "what we want; continue",
                                         mutEvent.sender.nickname);
                                 }
-                                continue funloop;
+                                return Next.continue_;
                             }
                             break;
 
@@ -1047,14 +1055,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (is(Params : AliasSeq!IRCEvent) ||
                                 (arity!fun == 0))
                             {
-                                return this.doWhois(mutEvent,
+                                this.doWhois(mutEvent,
                                     mutEvent.sender.nickname, privilegeLevel, &fun);
+                                return Next.continue_;
                             }
                             else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
                                 is(Params : AliasSeq!This))
                             {
-                                return this.doWhois(this, mutEvent,
+                                this.doWhois(this, mutEvent,
                                     mutEvent.sender.nickname, privilegeLevel, &fun);
+                                return Next.continue_;
                             }
                             else static if (Filter!(isIRCPluginParam, Params).length)
                             {
@@ -1079,7 +1089,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 logger.warningf("...%s failed privilege " ~
                                     "check; continue", mutEvent.sender.nickname);
                             }
-                            continue funloop;
+                            return Next.continue_;
                         }
                         break;
 
@@ -1125,14 +1135,35 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // onEvent found an event and triggered a function, but
                     // it's Chainable and there may be more, so keep looking
-                    continue funloop;
+                    break udaloop;  // drop down
                 }
                 else /*static if (hasUDA!(fun, Terminating))*/
                 {
                     // The triggered function is not Chainable so return and
                     // let the main loop continue with the next plugin.
-                    return;
+                    return Next.abort;
                 }
+            }
+
+            return Next.continue_;
+        }
+
+        foreach (fun; funsInOrder)
+        {
+            import std.utf : UTFException;
+
+            try
+            {
+                handle!fun(event);
+            }
+            catch (const UTFException e)
+            {
+                import std.encoding : sanitize;
+
+                // Sanitise and try again once
+                IRCEvent saneEvent = event;
+                saneEvent.content = sanitize(saneEvent.content);
+                handle!fun(cast(const)saneEvent);
             }
         }
     }
