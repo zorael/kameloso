@@ -16,13 +16,20 @@ install_deps() {
 }
 
 build() {
+    mkdir -p artifacts
     dub test --compiler="$1" --build-mode=singleFile
+    mv kameloso artifacts/kameloso-test
     dub test --compiler="$1" --build-mode=singleFile -c vanilla
+    mv kameloso artifacts/kameloso-test-vanilla
     dub test --compiler="$1" --build-mode=singleFile -c colours+web
+    mv kameloso artifacts/kameloso-test-colours+web
 
     #dub build --compiler="$1" --build-mode=singleFile -b plain
+    #mv kameloso artifacts/kameloso-plain
     dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla
+    mv kameloso artifacts/kameloso-plain-vanilla
     dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web
+    mv kameloso artifacts/kameloso-plain-colours+web
 }
 
 # execution start
