@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. [API documentation is now available](https://zorael.github.io/kameloso). Any and all ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. [API documentation](https://zorael.github.io/kameloso) is available online. Any and all ideas welcome.
 
 It includes a framework that works with the vast majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
 
@@ -23,8 +23,8 @@ Current functionality includes:
 
 Current limitations:
 
-* web title lookup does not work on domain names with international (non-English) characters until `dlang-requests` gets updated
-* many plugins don't differentiate between different *home* channels
+* until `dlang-requests` gets updated, web title lookup will not work on domain names with international (non-English) characters, e.g. such containing *åäö*, or even **高所恐怖症.com**
+* many plugins don't differentiate between different home channels if there are more than one
 * quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need examples to fix)
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register yourself and the bot, where available.
@@ -160,13 +160,17 @@ port                6667
 
 Mind that a full Twitch bot cannot be implemented as an IRC client.
 
+# Use as a library
+
+The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely discoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one funtion that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Version that function out and you can drop the files into your own project.
+
 # TODO
 
 (But not neccessarily for `1.0.0`)
 
 * pipedream: DCC
 * pipedream two: `ncurses`
-* optional formatting in IRC output? (later)
+* optional formatting in IRC output? (later if at all)
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
