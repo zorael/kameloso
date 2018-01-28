@@ -23,7 +23,7 @@ Current functionality includes:
 
 Current limitations:
 
-* until `dlang-requests` gets updated, web title lookup will not work on domain names with international (non-English) characters, e.g. such containing *åäö*, or even **高所恐怖症.com**
+* until `dlang-requests` gets updated, web title lookup will not work on domain names with international (non-English) characters, e.g. such containing *åäö*, or even 高所恐怖症.com
 * many plugins don't differentiate between different home channels if there are more than one
 * quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need examples to fix)
 
