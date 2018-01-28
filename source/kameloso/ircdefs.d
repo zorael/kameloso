@@ -1136,6 +1136,7 @@ struct IRCUser
      +  }
      +
      +  assert(u1.matchesByMask(u2));
+     +  assert(u1.matchesByMask("f*!NaN@*.com"));
      +  ------------
      +
      +  Params:
@@ -1143,9 +1144,6 @@ struct IRCUser
      +
      +  Returns:
      +      `true` if the `IRCUser`s are deemed to match, `false` if not.
-     +
-     +  TODO:
-     +      Support partial globs.
      +/
     bool matchesByMask(const IRCUser other) pure nothrow const
     {
