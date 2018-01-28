@@ -4,7 +4,7 @@
  +/
 module kameloso.ircdefs;
 
-import kameloso.common : Hidden, Separator, Unconfigurable;
+import kameloso.uda : Hidden, Separator, Unconfigurable;
 
 final:
 @safe:
