@@ -343,6 +343,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
 
             logger.logf("Clearing stored notes for %s in %s", nickname, channel);
             plugin.notes[channel].object.remove(nickname);
+            plugin.pruneNotes();
             plugin.saveNotes(plugin.notesSettings.notesFile);
         }
     }
@@ -357,6 +358,37 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
     catch (const ErrnoException e)
     {
         logger.error("Failed to open/close notes file: ", e.msg);
+    }
+}
+
+
+// pruneNotes
+/++
+ +  Prunes the notes database of empty channel entries.
+ +
+ +  Individual nickname entries are not touched as they are assumed to be
+ +  cleared and removed after replaying its notes.
+ +
+ +  Params:
+ +      plugin = Current `NotesPlugin`.
+ +/
+void pruneNotes(NotesPlugin plugin)
+{
+    foreach (immutable channel, channelNotes; plugin.notes)
+    {
+        /*foreach (immutable nickname, nickNotes; plugin.notes[channel])
+        {
+            if (nickNotes.array.length == 0)
+            {
+                plugin.notes[channel].object.remove(nickname);
+            }
+        }*/
+
+        if (channelNotes.array.length == 0)
+        {
+            // Dead channel
+            plugin.notes.object.remove(channel);
+        }
     }
 }
 
