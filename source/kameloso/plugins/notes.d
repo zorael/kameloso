@@ -69,7 +69,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
     try
     {
-        const noteArray = plugin.getNotes(event.sender.nickname);
+        const noteArray = plugin.getNotes(event.channel, event.sender.nickname);
 
         with (plugin.state)
         {
@@ -91,18 +91,18 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 {
                     immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                    plugin.chan(event.channel, "%s left note %s ago: %s"
+                    plugin.chan(event.channel, "%s %s ago: %s"
                         .format(note.sender, timestamp, note.line));
                 }
             }
         }
 
-        plugin.clearNotes(event.sender.nickname);
+        plugin.clearNotes(event.sender.nickname, event.channel);
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not fetch and/or replay notes for '%s': %s",
-            event.sender.nickname, e.msg);
+        logger.errorf("Could not fetch and/or replay notes for '%s' on '%s': %s",
+            event.sender.nickname, event.channel, e.msg);
     }
 }
 
@@ -125,6 +125,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     if (!plugin.notesSettings.replayOnSelfjoin) return;
 
     if (!plugin.state.bot.homes.canFind(event.channel)) return;
+
+    if (event.channel !in plugin.notes) return;
 
     foreach (immutable prefixedNickname; event.content.splitter)
     {
@@ -161,20 +163,19 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
-    import std.format : format, formattedRead;
+    import kameloso.string : has, nom;
     import std.json : JSONException;
+    import std.typecons : No, Yes;
 
-    string nickname, line;
+    if (!event.content.has(" ")) return;
 
-    // formattedRead advances a slice so we need a mutable copy of event.content
-    string content = event.content;
-    immutable hits = content.formattedRead("%s %s", nickname, line);
-
-    if (hits != 2) return;
+    string slice = event.content;
+    immutable nickname = slice.nom!(Yes.decode)(" ");
+    immutable line = slice;
 
     try
     {
-        plugin.addNote(nickname, event.sender.nickname, line);
+        plugin.addNote(nickname, event.sender.nickname, event.channel, line);
         plugin.chan(event.channel, "Note added.");
 
         plugin.saveNotes(plugin.notesSettings.notesFile);
@@ -275,9 +276,10 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
  +      and metadata thereto.
  +/
-auto getNotes(NotesPlugin plugin, const string nickname)
+auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 {
     import std.datetime.systime : SysTime;
+    import std.format : format;
     import std.json : JSON_TYPE;
 
     struct Note
@@ -288,25 +290,26 @@ auto getNotes(NotesPlugin plugin, const string nickname)
 
     Note[] noteArray;
 
-    if (const arr = nickname in plugin.notes)
+    if (const channelNotes = channel in plugin.notes)
     {
-        if (arr.type != JSON_TYPE.ARRAY)
+        assert((channelNotes.type == JSON_TYPE.OBJECT),
+            "Invalid channel notes list type for %s: %s"
+            .format(channel, channelNotes.type));
+
+        if (const nickNotes = nickname in channelNotes.object)
         {
-            logger.warningf("Invalid notes list for %s (type is %s)",
-                        nickname, arr.type);
+            assert((nickNotes.type == JSON_TYPE.ARRAY),
+            "Invalid notes list type for %s on %s: %s"
+            .format(nickname, channel, nickNotes.type));
 
-            plugin.clearNotes(nickname);
+            noteArray.length = nickNotes.array.length;
 
-            return noteArray;
-        }
-
-        noteArray.length = arr.array.length;
-
-        foreach (i, note; arr.array)
-        {
-            noteArray[i].sender = note["sender"].str;
-            noteArray[i].line = note["line"].str;
-            noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+            foreach (immutable i, note; nickNotes.array)
+            {
+                noteArray[i].sender = note["sender"].str;
+                noteArray[i].line = note["line"].str;
+                noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+            }
         }
     }
 
@@ -323,18 +326,23 @@ auto getNotes(NotesPlugin plugin, const string nickname)
  +      plugins = Current `NotesPlugin`.
  +      nickname = Nickname whose notes to clear.
  +/
-void clearNotes(NotesPlugin plugin, const string nickname)
+void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
 {
     import std.file : FileException;
+    import std.format : format;
     import std.exception : ErrnoException;
-    import std.json : JSONException;
+    import std.json : JSONException, JSON_TYPE;
 
     try
     {
-        if (nickname in plugin.notes)
+        if (nickname in plugin.notes[channel])
         {
-            logger.log("Clearing stored notes for ", nickname);
-            plugin.notes.object.remove(nickname);
+            assert((plugin.notes[channel].type == JSON_TYPE.OBJECT),
+                "Invalid channel notes list type for %s: %s"
+                .format(channel, plugin.notes[channel].type));
+
+            logger.logf("Clearing stored notes for %s in %s", nickname, channel);
+            plugin.notes[channel].object.remove(nickname);
             plugin.saveNotes(plugin.notesSettings.notesFile);
         }
     }
@@ -364,10 +372,9 @@ void clearNotes(NotesPlugin plugin, const string nickname)
  +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
-    const string line)
+    const string channel, const string line)
 {
     import std.datetime.systime : Clock;
-    import std.json : JSON_TYPE;
 
     if (!line.length)
     {
@@ -387,16 +394,20 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
     auto asJSON = JSONValue(senderAndLine);
     asJSON["when"] = Clock.currTime.toUnixTime;  // workaround to the above
 
-    auto nicknote = nickname in plugin.notes;
+    // If there is no channel in the JSON, add it
+    if (channel !in plugin.notes)
+    {
+        plugin.notes[channel] = null;
+        plugin.notes[channel].object = null;
+    }
 
-    if (nicknote && (nicknote.type == JSON_TYPE.ARRAY))
+    if (nickname !in plugin.notes[channel])
     {
-        plugin.notes[nickname].array ~= asJSON;
+        plugin.notes[channel][nickname] = null;
+        plugin.notes[channel][nickname].array = null;
     }
-    else
-    {
-        plugin.notes[nickname] = [ asJSON ];
-    }
+
+    plugin.notes[channel][nickname].array ~= asJSON;
 }
 
 
@@ -410,7 +421,6 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
  +/
 void saveNotes(NotesPlugin plugin, const string filename)
 {
-    import std.file : exists, isFile;
     import std.stdio : File, write, writeln;
 
     auto file = File(filename, "w");
@@ -480,8 +490,8 @@ final class NotesPlugin : IRCPlugin
     /++
     +  The in-memory JSON storage of all stored notes.
     +
-    +  It is in the JSON form of `Note[][string]`, where the first string key is
-    +  a nickname.
+    +  It is in the JSON form of `Note[][string][string]`, where the first
+    +  string key is a channel and the second a nickname.
     +/
     JSONValue notes;
 
