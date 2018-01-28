@@ -374,7 +374,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
  +/
 void pruneNotes(NotesPlugin plugin)
 {
-    foreach (immutable channel, channelNotes; plugin.notes)
+    foreach (immutable channel, channelNotes; plugin.notes.object)
     {
         /*foreach (immutable nickname, nickNotes; plugin.notes[channel])
         {
