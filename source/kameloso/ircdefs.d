@@ -840,13 +840,13 @@ struct IRCEvent
 struct IRCBot
 {
     /// Bot nickname.
-    string nickname   = "kameloso";
+    string nickname = "kameloso";
 
     /// Bot "user" or full name.
-    string user       = "kameloso!";
+    string user = "kameloso!";
 
     /// Bot IDENT identifier.
-    string ident      = "NaN";
+    string ident = "NaN";
 
     /// Default reason given when quitting without specifying one.
     string quitReason = "beep boop I am a bot";
@@ -1217,7 +1217,7 @@ struct Typenums
 {
     alias Type = IRCEvent.Type;
 
-    /// Default mappings
+    /// Default mappings.
     static immutable Type[1024] base =
     [
         1   : Type.RPL_WELCOME,
