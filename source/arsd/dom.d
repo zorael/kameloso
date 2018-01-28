@@ -27,6 +27,8 @@
 +/
 module arsd.dom;
 
+version(Web):
+
 // FIXME: support the css standard namespace thing in the selectors too
 
 version(with_arsd_jsvar)
