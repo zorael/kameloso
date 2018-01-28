@@ -2510,11 +2510,11 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                         plugin.addChannelUserMode(channels[event.channel],
                             *modechar, event.target.nickname);
                     }
-                    else
+                    /*else
                     {
                         logger.warningf(`Invalid modesign in RPL_WHOREPLY: "%s" ` ~
                             `The server did not advertise it!`, modesign);
-                    }
+                    }*/
                 }
             }
 
