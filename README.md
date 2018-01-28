@@ -167,7 +167,6 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 * pipedream: DCC
 * pipedream two: `ncurses`
 * optional formatting in IRC output? (later)
-* channel-split notes (later)
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
