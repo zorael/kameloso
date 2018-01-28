@@ -90,9 +90,21 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_LOCALUSERS:
     case RPL_STATSCONN:
     case RPL_CREATED:
+    case RPL_CREATIONTIME:
     case RPL_MYINFO:
     case RPL_ENDOFWHO:
     case RPL_WHOREPLY:
+    case RPL_CHANNELMODEIS:
+    case RPL_BANLIST:
+    case RPL_ENDOFBANLIST:
+    case RPL_QUIETLIST:
+    case RPL_ENDOFQUIETLIST:
+    case RPL_INVITELIST:
+    case RPL_ENDOFINVITELIST:
+    case RPL_EXCEPTLIST:
+    case RPL_ENDOFEXCEPTLIST:
+    case SPAMFILTERLIST:
+    case ENDOFSPAMFILTERLIST:
     case CAP:
         // These event types are too spammy; ignore
         if (!plugin.printerSettings.filterVerbose) goto default;
