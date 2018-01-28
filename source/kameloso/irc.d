@@ -430,6 +430,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case PART:
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PART #flerrp :"WeeChat 1.6"
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
+        // :Swatas!~4--Uos3UH@9e19ee35.915b96ad.a7c9320c.IP4 PART :#cncnet-mo
         event.type = (event.sender.nickname == bot.nickname) ? SELFPART : PART;
 
         if (slice.has(' '))
@@ -441,6 +442,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         else
         {
             event.channel = slice;
+            if (slice.beginsWith(':'))
+            {
+                // Seen on GameSurge
+                slice = slice[1..$];
+            }
         }
         break;
 
