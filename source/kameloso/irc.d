@@ -1220,7 +1220,8 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
         (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
         (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFNAMES))
+        (event.type != IRCEvent.Type.RPL_ENDOFNAMES) &&
+        (event.type != IRCEvent.Type.RPL_LIST)) // Curious
     {
         writeln();
         logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
