@@ -999,10 +999,19 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.sender.address = slice;
         break;
 
-    case RPL_HELLO:
+    case RPL_HELLO: // 020
         // :irc.run.net 020 irc.run.net :*** You are connected to RusNet. Please wait...
         slice.nom(" :");
         event.content = slice;
+        break;
+
+    case SPAMFILTERLIST: // 941
+        // :siren.de.SpotChat.org 941 kameloso #linuxmint-help spotify.com/album Butterfly 1513796216
+        slice.nom(' '); // bot nickname
+        event.channel = slice.nom(' ');
+        event.content = slice.nom(' ');
+        slice.nom(' ');  // nickname that set the mode. no appropriate field.
+        event.aux = slice;
         break;
 
     default:
