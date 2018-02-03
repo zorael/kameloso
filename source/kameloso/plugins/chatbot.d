@@ -265,8 +265,8 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
     import std.string : strip;
 
     // stripModesign to allow for quotes from @nickname and +dudebro
-    string nickname = event.content.strip;
-    plugin.state.bot.server.stripModesign(nickname);
+    immutable signed = event.content.strip;
+    immutable nickname = plugin.state.bot.server.stripModesign(signed);
 
     if (!nickname.isValidNickname(plugin.state.bot.server))
     {
@@ -321,8 +321,8 @@ void onCommandAddQuote(ChatbotPlugin plugin, const IRCEvent event)
     import std.typecons : Yes;
 
     string slice = event.content;  // need mutable
-    string nickname = slice.nom!(Yes.decode)(' ');
-    plugin.state.bot.server.stripModesign(nickname);
+    immutable signed = slice.nom!(Yes.decode)(' ');
+    immutable nickname = plugin.state.bot.server.stripModesign(signed);
 
     if (!nickname.length || !slice.length) return;
 

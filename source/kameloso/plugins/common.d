@@ -2115,10 +2115,10 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
             foreach (immutable userstring; names)
             {
                 string slice = userstring;
-                string nickname = slice.nom('!');
+                immutable signed = slice.nom('!');
 
                 // UserAwareness doesn't care about the modes
-                bot.server.stripModesign(nickname);
+                immutable nickname = bot.server.stripModesign(signed);
 
                 if (nickname == bot.nickname) continue;
 

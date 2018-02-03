@@ -128,10 +128,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     if (event.channel !in plugin.notes) return;
 
-    foreach (immutable prefixedNickname; event.content.splitter)
+    foreach (immutable signed; event.content.splitter)
     {
-        string nickname = prefixedNickname;
-        plugin.state.bot.server.stripModesign(nickname);
+        immutable nickname = plugin.state.bot.server.stripModesign(signed);
         if (nickname == plugin.state.bot.nickname) continue;
 
         IRCEvent fakeEvent;

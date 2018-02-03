@@ -2470,13 +2470,14 @@ unittest
 // stripModesign
 /++
  +  Takes a nickname and strips it of any prepended mode signs, like the `@` in
- +  `@nickname`.
+ +  `@nickname`. Saves the stripped signs in the ref string `modesigns`.
  +
  +  Example:
  +  ------------
  +  IRCServer server;
- +  string nickname = "@+kameloso";
- +  immutable signs = server.stripModeSign(nickname);
+ +  immutable signed = "@+kameloso";
+ +  string signs;
+ +  immutable nickname = server.stripModeSign(signed, signs);
  +  assert((nickname == "kameloso"), nickname);
  +  assert((signs == "@+"), signs);
  +  ------------
@@ -2484,12 +2485,13 @@ unittest
  +  Params:
  +      server = `kameloso.ircdefs.IRCServer`, with all its settings.
  +      nickname = String with a signed nickname.
+ +      modesign = Reference string to write the stripped modesigns to.
  +
  +  Returns:
- +      The sign prepending the nickname, if there were any. The original
- +      nickname variable is changed to be only the nickname part.
+ +      The nickname without any prepended prefix signs.
  +/
-string stripModesign(const IRCServer server, ref string nickname) pure nothrow @nogc
+string stripModesign(const IRCServer server, const string nickname,
+    ref string modesigns) pure nothrow @nogc
 {
     if (!nickname.length) return string.init;
 
@@ -2497,21 +2499,17 @@ string stripModesign(const IRCServer server, ref string nickname) pure nothrow @
 
     for (i = 0; i<nickname.length; ++i)
     {
-        if (nickname[i] in server.prefixchars)
-        {
-            continue;
-        }
-        else
+        if (nickname[i] !in server.prefixchars)
         {
             break;
         }
     }
 
-    scope(exit) nickname = nickname[i..$];
-
-    return nickname[0..i];
+    modesigns = nickname[0..i];
+    return nickname[i..$];
 }
 
+///
 unittest
 {
     IRCServer server;
@@ -2523,24 +2521,66 @@ unittest
     ];
 
     {
-        string nickname = "@kameloso";
-        immutable signs = server.stripModesign(nickname);
-        assert(nickname == "kameloso");
+        immutable signed = "@kameloso";
+        string signs;
+        immutable nickname = server.stripModesign(signed, signs);
+        assert((nickname == "kameloso"), nickname);
         assert((signs == "@"), signs);
     }
 
     {
-        string nickname = "kameloso";
-        immutable signs = server.stripModesign(nickname);
-        assert(nickname == "kameloso");
-        assert((signs == string.init), signs);
+        immutable signed = "kameloso";
+        string signs;
+        immutable nickname = server.stripModesign(signed, signs);
+        assert((nickname == "kameloso"), nickname);
+        assert(!signs.length, signs);
     }
 
     {
-        string nickname = "@+kameloso";
-        immutable signs = server.stripModesign(nickname);
-        assert(nickname == "kameloso");
+        immutable signed = "@+kameloso";
+        string signs;
+        immutable nickname = server.stripModesign(signed, signs);
+        assert((nickname == "kameloso"), nickname);
         assert((signs == "@+"), signs);
+    }
+}
+
+
+// stripModesign
+/++
+ +  Convenience function to `stripModesign` that doesn't take a ref string
+ +  parameter to store the stripped modesign characters in.
+ +
+ +  Example:
+ +  ------------
+ +  IRCServer server;
+ +  immutable signed = "@+kameloso";
+ +  immutable nickname = server.stripModeSign(signed);
+ +  assert((nickname == "kameloso"), nickname);
+ +  assert((signs == "@+"), signs);
+ +  ------------
+ +/
+string stripModesign(const IRCServer server, const string nickname) pure nothrow @nogc
+{
+    string nothing;
+    return stripModesign(server, nickname, nothing);
+}
+
+///
+unittest
+{
+    IRCServer server;
+    server.prefixchars =
+    [
+        '@' : 'o',
+        '+' : 'v',
+        '%' : 'h',
+    ];
+
+    {
+        immutable signed = "@+kameloso";
+        immutable nickname = server.stripModesign(signed);
+        assert((nickname == "kameloso"), nickname);
     }
 }
 

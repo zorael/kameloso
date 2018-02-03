@@ -637,8 +637,7 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
          +  Make sure to strip the modesign, so `@foo` is the same person as
          +  `foo`.
          +/
-        string nickname = signedNickname;
-        bot.server.stripModesign(nickname);
+        immutable nickname = bot.server.stripModesign(event.sender.nickname);
 
         // Only update the user if he/she is in a home channel.
         foreach (homechan; bot.homes)
