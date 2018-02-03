@@ -369,7 +369,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
             nickname = nickname.nom('!');
         }
 
-        plugin.state.bot.server.stripModesign(nickname);
+        nickname = plugin.state.bot.server.stripModesign(nickname);
         if (nickname == plugin.state.bot.nickname) continue;
 
         plugin.updateUser(nickname);
@@ -625,7 +625,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +      signedNickname = Nickname to update, potentially prefixed with a
  +          modesign (@, +, %, ...).
  +/
-void updateUser(SeenPlugin plugin, const string signedNickname)
+void updateUser(SeenPlugin plugin, const string signed)
 {
     import kameloso.irc : stripModesign;
     import std.algorithm.searching : canFind;
@@ -637,7 +637,7 @@ void updateUser(SeenPlugin plugin, const string signedNickname)
          +  Make sure to strip the modesign, so `@foo` is the same person as
          +  `foo`.
          +/
-        immutable nickname = bot.server.stripModesign(event.sender.nickname);
+        immutable nickname = bot.server.stripModesign(signed);
 
         // Only update the user if he/she is in a home channel.
         foreach (homechan; bot.homes)
