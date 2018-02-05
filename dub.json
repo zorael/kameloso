@@ -22,21 +22,21 @@
             "platforms": [ "posix" ],
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Web", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.6.0" }
+            "dependencies-posix": { "requests": "~>0.7.0" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Web" ],
-            "dependencies-windows": { "requests": "~>0.6.0" }
+            "dependencies-windows": { "requests": "~>0.7.0" }
         },
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Cygwin_", "Web", "Colours" ],
-            "dependencies-windows": { "requests": "~>0.6.0" }
+            "dependencies-windows": { "requests": "~>0.7.0" }
         },
         {
             "name": "vanilla",
@@ -51,20 +51,20 @@
             "name": "web",
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Web" ],
-            "dependencies": { "requests": "~>0.6.0" }
+            "dependencies": { "requests": "~>0.7.0" }
         },
         {
             "name": "colours+web",
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Colours", "Web" ],
-            "dependencies": { "requests": "~>0.6.0" }
+            "dependencies": { "requests": "~>0.7.0" }
         },
 
         {
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "Web", "Colours" ],
-            "dependencies": { "requests": "~>0.6.0" }
+            "dependencies": { "requests": "~>0.7.0" }
         },
 
         {
@@ -76,7 +76,7 @@
             "name": "nocolours",
             "buildRequirements": [ "silenceDeprecations" ],
             "versions": [ "Web" ],
-            "dependencies-posix": { "requests": "~>0.6.0" }
+            "dependencies-posix": { "requests": "~>0.7.0" }
         },
         {
             "name": "nowebtitles-nocolours",

@@ -277,7 +277,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
         lookup.title = decodeTitle(lookup.title);
     }
 
-    lookup.domain = res.finalURI.host; // original_host;  // thanks to ikod
+    lookup.domain = res.finalURI.original_host;  // thanks to ikod
 
     if (lookup.domain.beginsWith("www"))
     {
