@@ -2584,7 +2584,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     nickname = userstring;
                 }
 
-                immutable modesigns = bot.server.stripModesign(nickname);
+                string modesigns;
+                nickname = bot.server.stripModesign(nickname, modesigns);
 
                 // Register operators, half-ops, voiced etc
                 // Can be more than one if multi-prefix capability is enabled
