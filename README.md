@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online]((https://zorael.github.io/kameloso)). Any and all ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
 It includes a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
 
@@ -75,7 +75,7 @@ The available *build configurations* are:
 * `colours+web`, includes both of the above
 * `posix`, default on Posix-like systems, equals `colours+web`
 * `windows`, default on Windows, equals `web`
-* `cygwin`, equals `colours+web` but with extra code needed for running it under the default **Cygwin** terminal (*mintty*)
+* `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (*mintty*)
 
 You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
@@ -175,6 +175,7 @@ The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely discoup
 * update wiki
 * blacklists; by mask, by account? where and when?
 * auto-mode plugin?
+* logging plugin?
 
 # Built With
 
