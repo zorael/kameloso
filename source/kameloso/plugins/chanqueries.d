@@ -54,19 +54,19 @@ void onPing(ChanQueriesService service, const IRCEvent event)
 
         foreach (channel; querylist)
         {
-            raw(service.state.mainThread, "WHO " ~ channel);
+            raw!(Yes.quiet)(service.state.mainThread, "WHO " ~ channel);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw(service.state.mainThread, "TOPIC " ~ channel);
+            raw!(Yes.quiet)(service.state.mainThread, "TOPIC " ~ channel);
             Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
             service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw(service.state.mainThread, "MODE " ~ channel);
+            raw!(Yes.quiet)(service.state.mainThread, "MODE " ~ channel);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             service.delayFiber(fiber, service.secondsBetween);
@@ -76,7 +76,7 @@ void onPing(ChanQueriesService service, const IRCEvent event)
             {
                 import std.format : format;
 
-                raw(service.state.mainThread,
+                raw!(Yes.quiet)(service.state.mainThread,
                     "MODE %s +%c".format(channel, modechar));
                 service.delayFiber(fiber, service.secondsBetween);
                 Fiber.yield();
