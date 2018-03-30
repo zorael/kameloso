@@ -28,7 +28,7 @@ private:
  +  hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
-void onPing(ChanQueriesService service, const IRCEvent event)
+void onPing(ChanQueriesService service)
 {
     import core.thread : Fiber;
 
