@@ -1080,6 +1080,9 @@ unittest
  +          decoding ones (when possible).
  +      haystack = String to search for `needle`.
  +      needle = Substring to search `haystack` for.
+ +
+ +  Returns:
+ +      Whether the passed string contained the passed substring or token.
  +/
 bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
