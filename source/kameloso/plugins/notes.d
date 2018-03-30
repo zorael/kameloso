@@ -90,7 +90,8 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
                 foreach (const note; noteArray)
                 {
-                    immutable timestamp = (Clock.currTime - note.when).timeSince;
+                    immutable timestamp = (Clock.currTime - note.when)
+                        .timeSince!(Yes.abbreviate);
 
                     plugin.throttleline(event.channel, string.init, "%s %s ago: %s"
                         .format(note.sender, timestamp, note.line));
