@@ -1125,6 +1125,7 @@ unittest
 }
 
 
+// strippedRight
 /++
  +  Returns a slice of the passed string with any trailing whitespace and/or
  +  linebreaks sliced off.
@@ -1189,5 +1190,124 @@ unittest
         immutable linebreak = "abc\r\n  \r\n";
         immutable stripped = linebreak.strippedRight;
         assert((stripped == "abc"), stripped);
+    }
+}
+
+
+// strippedLeft
+/++
+ +  Returns a slice of the passed string with any preceding whitespace and/or
+ +  linebreaks sliced off.
+ +
+ +  Params:
+ +      line = Line to stripLeft.
+ +
+ +  Returns:
+ +      The passed line without any preceding whitespace or linebreaks.
+ +/
+string strippedLeft(const string line) pure nothrow @nogc @safe @property
+{
+    if (!line.length) return line;
+
+    size_t pos;
+
+    loop:
+    while (pos < line.length)
+    {
+        switch (line[pos])
+        {
+        case ' ':
+        case '\n':
+        case '\r':
+        case '\t':
+            ++pos;
+            break;
+
+        default:
+            break loop;
+        }
+    }
+
+    return line[pos..$];
+}
+
+///
+@safe
+unittest
+{
+    {
+        immutable preceded = "   abc";
+        immutable stripped = preceded.strippedLeft;
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable preceded = "   ";
+        immutable stripped = preceded.strippedLeft;
+        assert((stripped == ""), stripped);
+    }
+    {
+        immutable empty = "";
+        immutable stripped = empty.strippedLeft;
+        assert((stripped == ""), stripped);
+    }
+    {
+        immutable noPreceded = "abc";
+        immutable stripped = noPreceded.strippedLeft;
+        assert((stripped == noPreceded), stripped);
+    }
+    {
+        immutable linebreak  = "\r\n\r\n  abc";
+        immutable stripped = linebreak.strippedLeft;
+        assert((stripped == "abc"), stripped);
+    }
+}
+
+
+// stripped
+/++
+ +  Returns a slice of the passed string with any preceding or trailing
+ +  whitespace or linebreaks sliced off.
+ +
+ +  It merely calls both `strippedLeft` and `strippedRight`.
+ +
+ +  Params:
+ +      line = Line to strip.
+ +
+ +  Returns:
+ +      The passed line, stripped.
+ +/
+string stripped(const string line) pure nothrow @nogc @safe @property
+{
+    return line.strippedLeft.strippedRight;
+}
+
+///
+@safe
+unittest
+{
+    {
+        immutable line = "   abc   ";
+        immutable stripped_ = line.stripped;
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = "   ";
+        immutable stripped_ = line.stripped;
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "";
+        immutable stripped_ = line.stripped;
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "abc";
+        immutable stripped_ = line.stripped;
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = " \r\n  abc\r\n\r\n";
+        immutable stripped_ = line.stripped;
+        assert((stripped_ == "abc"), stripped_);
     }
 }
