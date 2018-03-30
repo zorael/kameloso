@@ -339,8 +339,8 @@ void onEndOfMotd(ConnectService service)
         // Run commands defined in the settings
         foreach (immutable line; service.connectSettings.sendAfterConnect)
         {
-            import std.string : strip;
-            service.raw(line.strip());
+            import kameloso.string : stripped;
+            service.raw(line.stripped);
         }
     }
 }

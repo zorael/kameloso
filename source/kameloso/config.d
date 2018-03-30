@@ -338,7 +338,7 @@ pipyon 3
 void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
-    import kameloso.string : unquoted;
+    import kameloso.string : stripped, unquoted;
     import kameloso.traits : isConfigurableVariable;
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
@@ -381,10 +381,9 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                             try
                             {
                                 import std.range : ElementType;
-                                import std.string : strip;
 
                                 thing.tupleof[i] ~= entry
-                                    .strip()
+                                    .stripped
                                     .unquoted
                                     .to!(ElementType!T);
                             }
@@ -492,17 +491,16 @@ unittest
  +/
 void applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
-    import kameloso.string : stripSuffix;
+    import kameloso.string : stripped, stripSuffix;
     import std.format : formattedRead;
     import std.regex : matchFirst, regex;
-    import std.string : strip, stripLeft;
     import std.traits : Unqual, hasUDA, isType;
 
     string section;
 
     foreach (rawline; range)
     {
-        string line = rawline.strip();
+        string line = rawline.stripped;
         if (!line.length) continue;
 
         switch (line[0])
@@ -710,10 +708,10 @@ naN     !"#¤%&/`;
  +/
 string justifiedConfigurationText(const string origLines)
 {
+    import kameloso.string : stripped;
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
     import std.regex : matchFirst, regex;
-    import std.string : strip;
 
     enum entryValuePattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
     auto entryValueEngine = entryValuePattern.regex;
@@ -723,7 +721,7 @@ string justifiedConfigurationText(const string origLines)
 
     foreach (immutable rawline; origLines.splitter("\n"))
     {
-        string line = rawline.strip();
+        string line = rawline.stripped;
 
         if (!line.length)
         {
@@ -799,7 +797,7 @@ string justifiedConfigurationText(const string origLines)
         }
     }
 
-    return justified.data.strip();
+    return justified.data.stripped;
 }
 
 unittest

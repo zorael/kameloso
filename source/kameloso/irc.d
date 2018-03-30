@@ -388,7 +388,6 @@ unittest
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string;
-    import std.string : strip, stripLeft;
 
     with (parser)
     with (IRCEvent.Type)
@@ -412,7 +411,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             // :kameloso!~NaN@2001:41d0:2:80b4:: JOIN #hirrsteff2 kameloso : kameloso!
             event.channel = slice.nom(' ');
             event.sender.account = slice.nom(" :");
-            //event.content = slice.strip();  // no need for full name...
+            //event.content = slice.stripped;  // no need for full name...
         }
         else
         {
@@ -556,7 +555,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
 
         slice.nom(' ');  // hopcount
-        event.content = slice.stripLeft();
+        event.content = slice.strippedLeft;
         break;
 
     case RPL_ENDOFWHO: // 315
@@ -690,7 +689,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.target.nickname = slice.nom(' ');
         event.target.ident = slice.nom(' ');
         event.target.address = slice.nom(" * :");
-        event.content = slice.stripLeft();
+        event.content = slice.strippedLeft;
         break;
 
     case RPL_WHOISSERVER: // 312
@@ -990,7 +989,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' '); // bot nickname
         event.target.nickname = slice.nom(' ');
         event.content = slice.nom(" :");
-        event.aux = slice.strip();
+        event.aux = slice.stripped;
         break;
 
     case CHGHOST:

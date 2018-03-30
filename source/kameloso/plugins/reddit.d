@@ -57,13 +57,12 @@ struct RedditLookup
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
-    import kameloso.string : has;
+    import kameloso.string : has, stripped;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
-    import std.string : strip;
 
-    immutable url = event.content.strip();
+    immutable url = event.content.stripped;
 
     if (!url.length || url.has(' '))
     {

@@ -156,17 +156,16 @@ unittest
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.messaging : chan;
-    import kameloso.string : beginsWith;
+    import kameloso.string : beginsWith, stripped;
     import core.time : seconds;
     import std.datetime.systime : Clock;
     import std.format : format;
-    import std.string : strip;
 
-    immutable stripped = event.content.strip();
+    immutable stripped_ = event.content.stripped;
 
-    if (stripped.beginsWith("s") && (stripped.length > 2))
+    if (stripped_.beginsWith("s") && (stripped_.length > 2))
     {
-        switch (stripped[1])
+        switch (stripped_[1])
         {
         case '/':
         case '|':
@@ -199,12 +198,12 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         }
     }
 
-    // We're either here because !stripped.beginsWith("s") *or* stripped[1]
+    // We're either here because !stripped_.beginsWith("s") *or* stripped_[1]
     // is not '/', '|' nor '#'
     // --> normal message, store as previous line
 
     Line line;
-    line.content = stripped;
+    line.content = stripped_;
     line.timestamp = Clock.currTime.toUnixTime;
     plugin.prevlines[event.sender.nickname] = line;
 }

@@ -293,10 +293,10 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
+    import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
-    import std.string : strip;
 
-    immutable channel = event.content.strip();
+    immutable channel = event.content.stripped;
 
     if (!channel.isValidChannel(plugin.state.bot.server))
     {
@@ -333,10 +333,10 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel;
+    import kameloso.string : stripped;
     import std.algorithm : countUntil, remove;
-    import std.string : strip;
 
-    immutable channel = event.content.strip();
+    immutable channel = event.content.stripped;
 
     if (!channel.isValidChannel(plugin.state.bot.server))
     {
@@ -377,10 +377,9 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a nickname to the whitelist of users who may trigger the bot.")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : has;
-    import std.string : strip;
+    import kameloso.string : has, stripped;
 
-    immutable nickname = event.content.strip();
+    immutable nickname = event.content.stripped;
 
     if (!nickname.length)
     {
@@ -418,11 +417,10 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a nickname from the whitelist of users who may trigger the bot.")
 void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : has;
+    import kameloso.string : has, stripped;
     import std.algorithm : countUntil, remove;
-    import std.string : strip;
 
-    immutable nickname = event.content.strip();
+    immutable nickname = event.content.stripped;
 
     if (!nickname.length)
     {
