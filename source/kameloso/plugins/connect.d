@@ -27,7 +27,7 @@ private:
  +/
 struct ConnectSettings
 {
-    import kameloso.common : Separator;
+    import kameloso.uda : Separator;
 
     /// Whether to use SASL authentication or not.
     bool sasl = true;

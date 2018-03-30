@@ -15,6 +15,8 @@ module kameloso.plugins.chanqueries;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
+import std.typecons : Flag, No, Yes;
+
 private:
 
 

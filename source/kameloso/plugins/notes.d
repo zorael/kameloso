@@ -20,6 +20,7 @@ import kameloso.common;
 import kameloso.messaging;
 
 import std.json : JSONValue;
+import std.typecons : Flag, No, Yes;
 
 private:
 

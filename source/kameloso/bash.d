@@ -7,7 +7,7 @@
 module kameloso.bash;
 
 import std.range : isOutputRange;
-import std.traits : allSatisfy;
+import std.meta : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
 @safe:
