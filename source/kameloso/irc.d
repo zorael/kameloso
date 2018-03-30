@@ -1463,10 +1463,10 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 if ((content == rizon) ||
                     (content == quakenet) ||
                     (content == gamesurge) ||
-                     content.has(freenodeInvalid) ||
-                    (content.beginsWith(freenodeRejected)) ||
-                     content.has(dalnet) ||
-                     content.has(unreal))
+                     content.has(cast(string)freenodeInvalid) ||
+                    (content.beginsWith(cast(string)freenodeRejected)) ||
+                     content.has(cast(string)dalnet) ||
+                     content.has(cast(string)unreal))
                 {
                     event.type = IRCEvent.Type.AUTH_FAILURE;
                 }
