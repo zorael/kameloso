@@ -80,19 +80,19 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                plugin.chan(event.channel, "%s! %s left note %s ago: %s"
+                plugin.throttleline(event.channel, string.init, "%s! %s left note %s ago: %s"
                     .format(event.sender.nickname, note.sender, timestamp, note.line));
             }
             else
             {
-                plugin.chan(event.channel, "%s! You have %d notes."
+                plugin.throttleline(event.channel, string.init, "%s! You have %d notes."
                     .format(event.sender.nickname, noteArray.length));
 
                 foreach (const note; noteArray)
                 {
                     immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                    plugin.chan(event.channel, "%s %s ago: %s"
+                    plugin.throttleline(event.channel, string.init, "%s %s ago: %s"
                         .format(note.sender, timestamp, note.line));
                 }
             }
