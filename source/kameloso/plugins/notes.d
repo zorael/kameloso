@@ -100,11 +100,18 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         }
 
         plugin.clearNotes(event.sender.nickname, event.channel);
+        plugin.saveNotes(plugin.notesSettings.notesFile);
     }
     catch (const JSONException e)
     {
         logger.errorf("Could not fetch and/or replay notes for '%s' on '%s': %s",
             event.sender.nickname, event.channel, e.msg);
+
+        if (e.msg == "JSONValue is not an object")
+        {
+            plugin.notes = emptyNotes();
+            plugin.saveNotes(plugin.notesSettings.notesFile);
+        }
     }
 }
 
@@ -345,7 +352,6 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
             logger.logf("Clearing stored notes for %s in %s", nickname, channel);
             plugin.notes[channel].object.remove(nickname);
             plugin.pruneNotes();
-            plugin.saveNotes(plugin.notesSettings.notesFile);
         }
     }
     catch (const JSONException e)
@@ -477,19 +483,40 @@ void saveNotes(NotesPlugin plugin, const string filename)
  +/
 JSONValue loadNotes(const string filename)
 {
-    import std.file   : exists, isFile, readText;
-    import std.json   : parseJSON;
+    import std.file : exists, isFile, readText;
+    import std.json : JSONException, parseJSON;
 
     if (!filename.exists || !filename.isFile)
     {
         //logger.info(filename, " does not exist or is not a file!");
-        JSONValue newJSON;
-        newJSON.object = null;
-        return newJSON;
+        return emptyNotes();
     }
 
-    immutable wholeFile = readText(filename);
-    return parseJSON(wholeFile);
+    try
+    {
+        immutable wholeFile = readText(filename);
+        return parseJSON(wholeFile);
+    }
+    catch (const JSONException e)
+    {
+        logger.error("Could not load notes JSON from file: ", e.msg);
+        return emptyNotes();
+    }
+}
+
+
+// emptyNotes
+/++
+ +  Initialises an empty JSON storage object.
+ +
+ +  Returns:
+ +      An empty JSON value of `JSON_TYPE.OBJECT`.
+ +/
+JSONValue emptyNotes()
+{
+    JSONValue newJSON;
+    newJSON.object = null;
+    return newJSON;
 }
 
 
