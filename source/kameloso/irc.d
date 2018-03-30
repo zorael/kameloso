@@ -388,7 +388,7 @@ unittest
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string;
-    import std.string : strip, stripLeft, stripRight;
+    import std.string : strip, stripLeft;
 
     with (parser)
     with (IRCEvent.Type)
@@ -523,7 +523,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' ');  // bot nickname
         slice.nom(' ');
         event.channel = slice.nom(" :");
-        event.content = slice;  // .stripRight();
+        event.content = slice;  // .strippedRight;
         break;
 
     case RPL_WHOREPLY: // 352
@@ -1181,7 +1181,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
     }
 
-    event.content = event.content.stripRight();
+    event.content = event.content.strippedRight;
 }
 
 
