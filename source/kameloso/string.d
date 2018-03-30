@@ -1120,3 +1120,71 @@ unittest
     assert(!"Lorem ipsum".has('!'));
     assert("Lorem ipsum"d.has("m"d));
 }
+
+
+/++
+ +  Returns a slice of the passed string with any trailing whitespace and/or
+ +  linebreaks sliced off.
+ +
+ +  Params:
+ +      line = Line to stripRight.
+ +
+ +  Returns:
+ +      The passed line without any trailing whitespace or linebreaks.
+ +/
+string strippedRight(const string line) pure nothrow @nogc @safe @property
+{
+    if (!line.length) return line;
+
+    size_t pos = line.length;
+
+    loop:
+    while (pos > 0)
+    {
+        switch (line[pos-1])
+        {
+        case ' ':
+        case '\n':
+        case '\r':
+        case '\t':
+            --pos;
+            break;
+
+        default:
+            break loop;
+        }
+    }
+
+    return line[0..pos];
+}
+
+///
+@safe
+unittest
+{
+    {
+        immutable trailing = "abc  ";
+        immutable stripped = trailing.strippedRight;
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "  ";
+        immutable stripped = trailing.strippedRight;
+        assert((stripped == ""), stripped);
+    }
+    {
+        immutable empty = "";
+        immutable stripped = empty.strippedRight;
+        assert((stripped == ""), stripped);
+    }
+    {
+        immutable noTrailing = "abc";
+        immutable stripped = noTrailing.strippedRight;
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable linebreak = "abc\r\n  \r\n";
+        immutable stripped = linebreak.strippedRight;
+        assert((stripped == "abc"), stripped);
+    }
+}
