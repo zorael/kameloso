@@ -670,8 +670,8 @@ void updateUser(SeenPlugin plugin, const string signed)
  +/
 long[string] loadSeen(const string filename)
 {
-    import std.file   : exists, isFile, readText;
-    import std.json   : parseJSON;
+    import std.file : exists, isFile, readText;
+    import std.json : JSONException, parseJSON;
 
     long[string] aa;
 
@@ -686,12 +686,19 @@ long[string] loadSeen(const string filename)
         return aa;
     }
 
-    const asJSON = parseJSON(filename.readText).object;
-
-    // Manually insert each entry from the JSON file into the long[string] AA.
-    foreach (user, time; asJSON)
+    try
     {
-        aa[user] = time.integer;
+        const asJSON = parseJSON(filename.readText).object;
+
+        // Manually insert each entry from the JSON file into the long[string] AA.
+        foreach (user, time; asJSON)
+        {
+            aa[user] = time.integer;
+        }
+    }
+    catch (const JSONException e)
+    {
+        logger.error("Could not load seen JSON from file: ", e.msg);
     }
 
     // Rehash the AA, since we potentially added a *lot* of users.
