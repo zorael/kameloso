@@ -119,7 +119,7 @@ final class KamelosoLogger : Logger
     }
 
     /// ditto
-    override protected void logMsgPart(const(char)[] msg) @trusted const
+    override protected void logMsgPart(scope const(char)[] msg) @trusted const
     {
         if (!msg.length) return;
 
