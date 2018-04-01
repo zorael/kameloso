@@ -23,6 +23,7 @@ It includes a framework that works with the majority of server networks. IRC is 
 
 ### Current limitations:
 
+* **segfaults the dmd compiler** if compiling in `plain` or `release` modes; only `debug` works with dmd ([bug reported](https://issues.dlang.org/show_bug.cgi?id=18026), use `ldc` for non-`debug` builds)
 * some plugins don't yet differentiate between different home channels, if there are more than one
 * quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need examples to fix)
 
