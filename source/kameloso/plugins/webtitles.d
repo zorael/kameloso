@@ -85,7 +85,7 @@ struct TitleRequest
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
-    import kameloso.string : beginsWith, has;
+    import kameloso.string : beginsWith, has, nom;
     import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
@@ -109,7 +109,15 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
     {
         if (!urlHit.length) continue;
 
-        immutable url = urlHit[0];
+        string url = urlHit[0];  // needs mutable
+
+        if (url.has!(Yes.decode)('#'))
+        {
+            // URL contains an octorhorpe fragment identifier, like
+            // https://www.google.com/index.html#this%20bit
+            // Strip that.
+            url = url.nom!(Yes.decode)('#');
+        }
 
         logger.log("Caught URL: ", url);
 
