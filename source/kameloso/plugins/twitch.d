@@ -1,3 +1,5 @@
+__EOF__
+
 /++
  +  The Twitch service postprocesses `kameloso.ircdefs.IRCEvent`s after they are
  +  parsed but before they are sent to the plugins for handling, and deals with

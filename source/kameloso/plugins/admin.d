@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Admin plugin features bot commands which help with debugging the current
  +  state of the running bot, like printing the current list of users, the

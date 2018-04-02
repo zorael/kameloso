@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Pipeline plugin opens a Posix named pipe in the current directory, to
  +  which you can pipe text and have it be sent verbatim to the server.

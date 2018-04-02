@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Printer plugin takes incoming `kameloso.ircdefs.IRCEvent`s, formats them
  +  into being easily readable and prints them to the screen, optionally with

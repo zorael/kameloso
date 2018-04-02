@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
  +  as well as managing authentication to services.

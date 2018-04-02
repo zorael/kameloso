@@ -1,3 +1,4 @@
+__EOF__
 /++
  +  The SedReplace plugin imitates the UNIX `sed` tool, allowing for the
  +  replacemnt/substitution of text. It does not require the tool itself though,

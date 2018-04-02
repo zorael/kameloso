@@ -11,7 +11,7 @@ import std.meta : AliasSeq;
  +  Publically import all plugins so that only `kameloso.plugins` need be
  +  imported.
  +/
-public import kameloso.plugins.admin;
+/*public import kameloso.plugins.admin;
 public import kameloso.plugins.chatbot;
 public import kameloso.plugins.common;
 public import kameloso.plugins.connect;
@@ -37,7 +37,7 @@ version(Web)
     public import kameloso.plugins.bashquotes;
     public import kameloso.plugins.reddit;
 }
-
+*/
 /++
  +  List of enabled plugins. Add and remove to enable and disable.
  +
@@ -46,7 +46,7 @@ version(Web)
  +  manually, or add an `__EOF__` at the top of the plugin source file.
  +/
 public alias EnabledPlugins = AliasSeq!(
-    TwitchService, // Must be before PersistenceService
+/*    TwitchService, // Must be before PersistenceService
     PersistenceService, // Should be early
     PrinterPlugin,  // Might as well be early
     ConnectService,
@@ -56,5 +56,5 @@ public alias EnabledPlugins = AliasSeq!(
     ChatbotPlugin,
     NotesPlugin,
     SedReplacePlugin,
-    SeenPlugin,
+    SeenPlugin,*/
 );

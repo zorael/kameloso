@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Notes plugin allows for storing notes to offline users, to be replayed
  +  when they next log in.

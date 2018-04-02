@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Persistence service keeps track of all seen users, gathering as much
  +  information about them as possible, then injects them into

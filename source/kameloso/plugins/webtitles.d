@@ -1,3 +1,4 @@
+__EOF__
 /++
  +  The Webtiltes plugin catches URLs pasted in a channel, follows them and
  +  reports beck the title of the web page that was linked to.

@@ -1,3 +1,4 @@
+__EOF__
 /++
  +  The Reddit plugin allows you to query Reddit with a web URL, and if that
  +  URL has been posted there it will print the post link to the channel.

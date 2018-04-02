@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The CTCP service handles responding to CTCP (client-to-client protocol)
  +  requests behind the scenes.

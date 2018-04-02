@@ -839,7 +839,7 @@ struct Client
     void initPlugins(string[] customSettings)
     {
         import kameloso.plugins;
-        import kameloso.plugins.common : IRCPluginState;
+        import kameloso.plugins.common; // : IRCPluginState;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
 
@@ -861,6 +861,7 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
+        version(none)
         version(Web)
         {
             plugins ~= new WebtitlesPlugin(state);
@@ -868,6 +869,7 @@ struct Client
             plugins ~= new BashQuotesPlugin(state);
         }
 
+        version(none)
         version(Posix)
         {
             plugins ~= new PipelinePlugin(state);

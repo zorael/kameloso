@@ -1,3 +1,4 @@
+__EOF__
 /++
  +  The Seen plugin implements `seen` functionality; the ability for someone to
  +  query when a given nickname was last seen online.

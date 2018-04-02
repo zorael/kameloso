@@ -1,3 +1,4 @@
+//__EOF__
 /++
  +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
  +  and repeating text, along with the ability to save and replay user quotes.
