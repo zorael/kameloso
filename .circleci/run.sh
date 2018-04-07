@@ -13,15 +13,14 @@ install_deps() {
     sudo apt install dmd-compiler dub
 
     sudo apt install ldc
+
+    dmd --version
+    ldc --version
 }
 
 build() {
-    mkdir -p artifacts
     dub test --compiler="$1"
-    mv kameloso artifacts/kameloso-test
-
     dub build --compiler="$1" -b plain
-    mv kameloso artifacts/kameloso-plain
 }
 
 # execution start
