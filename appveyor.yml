@@ -94,4 +94,5 @@ test_script:
 # - dub test --arch=%Darch% --compiler=%DC% -c colours+web
 # - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla
 # - dub build --arch=%Darch% --compiler=%DC% -b plain -c colours+web
- - dub build --arch=%Darch% --compiler=%DC% -b plain -c cygwin
+ - dub build --arch=%Darch% --compiler=%DC%
+ - dub build --arch=%Darch% --compiler=%DC% -b plain

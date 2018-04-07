@@ -17,19 +17,11 @@ install_deps() {
 
 build() {
     mkdir -p artifacts
-    dub test --compiler="$1" --build-mode=singleFile
+    dub test --compiler="$1"
     mv kameloso artifacts/kameloso-test
-    dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    mv kameloso-test-vanilla artifacts/
-    dub test --compiler="$1" --build-mode=singleFile -c colours+web
-    mv kameloso-test-colours+web artifacts/
 
-    #dub build --compiler="$1" --build-mode=singleFile -b plain
-    #mv kameloso artifacts/kameloso-plain
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla
-    mv kameloso artifacts/kameloso-plain-vanilla
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web
-    mv kameloso artifacts/kameloso-plain-colours+web
+    dub build --compiler="$1" -b plain
+    mv kameloso artifacts/kameloso-plain
 }
 
 # execution start
@@ -40,7 +32,7 @@ case "$1" in
         ;;
     build)
         build dmd;
-        #build ldc2;  # doesn't support single build mode
+        build ldc2;
         ;;
     *)
         echo "Unknown command: $1";
