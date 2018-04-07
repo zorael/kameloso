@@ -1,0 +1,5 @@
+#!/bin/sh
+
+dmd -debug kameloso/*.d kameloso/plugins/*.d && \
+    gdb --batch -ex "run" --args dmd kameloso/*.d kameloso/plugins/*.d 2>&1 \
+    | grep "needsCodegen"
