@@ -15,7 +15,7 @@ install_deps() {
     sudo apt install ldc
 
     dmd --version
-    ldc --version
+    ldc2 --version
 }
 
 build() {
