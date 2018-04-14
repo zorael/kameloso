@@ -160,7 +160,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +      titleReq = Current title request.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
-    const TitleRequest titleReq)
+    TitleRequest titleReq)
 {
     import kameloso.common;
 
@@ -174,6 +174,18 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     try
     {
         import kameloso.string : beginsWith;
+
+        // imgur direct links naturally have no titles, but the normal pages do
+        // Rewrite and look those up instead.
+
+        if (titleReq.url.beginsWith("https://i.imgur.com/"))
+        {
+            titleReq.url = "https://imgur.com/" ~ titleReq.url[20..$];
+        }
+        else if (titleReq.url.beginsWith("http://i.imgur.com/"))
+        {
+            titleReq.url = "https://imgur.com/" ~ titleReq.url[19..$];
+        }
 
         auto lookup = lookupTitle(titleReq);
         state.mainThread.reportURL(lookup, titleReq.event);
