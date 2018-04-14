@@ -187,7 +187,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
             titleReq.url = "https://imgur.com/" ~ titleReq.url[19..$];
         }
 
-        auto lookup = lookupTitle(titleReq);
+        auto lookup = lookupTitle(titleReq.url);
         state.mainThread.reportURL(lookup, titleReq.event);
         cache[titleReq.url] = lookup;
     }
@@ -243,7 +243,7 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
  +  Returns:
  +      A finished `TitleLookup`.
  +/
-TitleLookup lookupTitle(const TitleRequest titleReq)
+TitleLookup lookupTitle(const string url)
 {
     import kameloso.constants : BufferSize;
     import kameloso.string : beginsWith, has;
@@ -262,7 +262,7 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    auto res = req.get(titleReq.url);
+    auto res = req.get(url);
 
     if (res.code >= 400)
     {
@@ -287,9 +287,9 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
     lookup.title = doc.title;
 
     if ((lookup.title == "YouTube") &&
-        titleReq.url.has("youtube.com/watch?"))
+        url.has("youtube.com/watch?"))
     {
-        fixYoutubeTitles(lookup, titleReq);
+        fixYoutubeTitles(lookup, url);
     }
     else
     {
@@ -319,20 +319,19 @@ TitleLookup lookupTitle(const TitleRequest titleReq)
  +          hacking around.
  +      titleReq = Original title request.
  +/
-void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
+void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 {
     import kameloso.string : has;
     import std.regex : regex, replaceFirst;
 
     logger.log("Bland YouTube title ...");
 
-    immutable onRepeatURL = titleReq.url
+    immutable onRepeatURL = url
         .replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
 
     logger.log("ListenOnRepeat URL: ", onRepeatURL);
-    titleReq.url = onRepeatURL;
 
-    auto onRepeatLookup = lookupTitle(titleReq);
+    auto onRepeatLookup = lookupTitle(onRepeatURL);
 
     logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
 
