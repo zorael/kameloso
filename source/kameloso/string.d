@@ -375,10 +375,10 @@ unittest
  +/
 string stripPrefix(const string line, const string prefix)
 {
+    import kameloso.string : strippedLeft;
     import std.regex : matchFirst, regex;
-    import std.string : munch, stripLeft;
 
-    string slice = line.stripLeft();
+    string slice = line.strippedLeft;
 
     // the onus is on the caller that slice begins with prefix
     slice.nom!(Yes.decode)(prefix);

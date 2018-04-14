@@ -350,9 +350,9 @@ void fixYoutubeTitles(ref TitleLookup lookup, TitleRequest titleReq)
  +/
 string decodeTitle(const string title)
 {
+    import kameloso.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
     import std.regex : regex, replaceAll;
-    import std.string : strip;
 
     enum rPattern = "\r";
     enum nPattern = "\n";
@@ -365,7 +365,7 @@ string decodeTitle(const string title)
     return title
         .replaceAll(rEngine, string.init)
         .replaceAll(nEngine, " ")
-        .strip
+        .stripped
         .htmlEntitiesDecode();
 }
 

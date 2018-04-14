@@ -261,11 +261,11 @@ void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
     if (!plugin.chatbotSettings.quotes) return;
 
     import kameloso.irc : isValidNickname, stripModesign;
+    import kameloso.string : stripped;
     import std.format : format;
-    import std.string : strip;
 
     // stripModesign to allow for quotes from @nickname and +dudebro
-    immutable signed = event.content.strip;
+    immutable signed = event.content.stripped;
     immutable nickname = plugin.state.bot.server.stripModesign(signed);
 
     if (!nickname.isValidNickname(plugin.state.bot.server))

@@ -245,9 +245,8 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 
     enum string allCTCPTypes = ()
     {
-        import kameloso.string : beginsWith;
+        import kameloso.string : beginsWith, strippedRight;
         import std.conv : to;
-        import std.string : stripRight;
         import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
 
         string allTypes;
@@ -262,13 +261,13 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 
                     static if (typestring.beginsWith("CTCP_"))
                     {
-                        allTypes = allTypes ~ typestring[5..$] ~ " ";
+                        allTypes ~= typestring[5..$] ~ " ";
                     }
                 }
             }
         }
 
-        return allTypes.stripRight();
+        return allTypes.strippedRight;
     }();
 
     // Don't forget to add ACTION, it's handed elsewhere
