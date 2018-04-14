@@ -254,7 +254,6 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
 unittest
 {
-    import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
     struct FooSettings
@@ -804,7 +803,6 @@ unittest
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import std.conv : text;
     import kameloso.uda : Separator;
 
     struct Foo

@@ -157,7 +157,6 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import kameloso.messaging : chan;
     import kameloso.string : beginsWith, stripped;
-    import core.time : seconds;
     import std.datetime.systime : Clock;
     import std.format : format;
 

@@ -510,7 +510,6 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : has, timeSince;
     import std.algorithm : canFind;
-    import std.concurrency : send;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
@@ -740,8 +739,6 @@ void saveSeen(const long[string] seenUsers, const string filename)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(SeenPlugin plugin)
 {
-    import std.datetime.systime : Clock;
-
     with (plugin)
     {
         seenUsers = loadSeen(seenSettings.seenFile);

@@ -2844,7 +2844,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
     import std.algorithm.iteration : splitter;
     import std.algorithm.mutation : remove;
     import std.conv : to;
-    import std.range : StoppingPolicy, lockstep, retro, zip;
+    import std.range : StoppingPolicy, retro, zip;
 
     immutable sign = signedModestring[0];
     immutable modestring = signedModestring[1..$];
@@ -3106,7 +3106,6 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 unittest
 {
     import std.stdio;
-    import std.conv : text;
 
     IRCServer server;
     // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz

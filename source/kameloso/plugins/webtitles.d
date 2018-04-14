@@ -86,7 +86,6 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
     import kameloso.string : beginsWith, has, nom;
-    import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
@@ -412,8 +411,6 @@ void prune(shared TitleLookup[string] cache)
     foreach (key, entry; cache)
     {
         import std.datetime.systime : Clock;
-        import core.time : minutes;
-
         const now = Clock.currTime.toUnixTime;
 
         if ((now - entry.when) > expireSeconds)

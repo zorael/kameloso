@@ -1185,8 +1185,6 @@ struct IRCUser
     ///
     unittest
     {
-        import std.path : globMatch;
-
         IRCUser first = IRCUser("kameloso!NaN@wopkfoewopk.com");
 
         IRCUser second = IRCUser("*!*@*");

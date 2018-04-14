@@ -9,7 +9,6 @@ import kameloso.uda;
 
 import std.datetime.systime : SysTime;
 import std.experimental.logger;
-import std.meta : allSatisfy;
 import std.range : isOutputRange;
 import std.traits : Unqual, isType, isArray, isAssociativeArray;
 import std.typecons : Flag, No, Yes;
@@ -1064,7 +1063,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +/
 uint deepSizeof(T)(const T thing) pure @nogc @safe @property
 {
-    import std.traits : isArray, isAssociativeArray, isSomeString;
+    import std.traits : isArray, isAssociativeArray;
 
     uint total;
 

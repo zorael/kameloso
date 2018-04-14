@@ -583,7 +583,6 @@ struct Description
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
     import kameloso.constants : Timeout;
-    import core.time : seconds;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
@@ -659,7 +658,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.array : Appender;
-    import std.concurrency : Tid;
 
     @safe:
 
@@ -2211,7 +2209,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     void onUserAwarenessPingMixin(IRCPlugin plugin)
     {
         import std.datetime.systime : Clock;
-        import std.stdio : writeln;
 
         const hour = Clock.currTime.hour;
 
@@ -2907,8 +2904,7 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     F fn)
 {
     import kameloso.constants : Timeout;
-    import core.time : seconds;
-    import std.datetime.systime : Clock, SysTime;
+    import std.datetime.systime : Clock;
 
     const user = nickname in plugin.state.users;
     const now = Clock.currTime.toUnixTime;

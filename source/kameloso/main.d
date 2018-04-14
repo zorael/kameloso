@@ -326,7 +326,7 @@ Flag!"quit" mainLoop(ref Client client)
     import kameloso.connection : listenFiber;
     import core.exception : UnicodeException;
     import core.thread : Fiber;
-    import std.concurrency : Generator, yield;
+    import std.concurrency : Generator;
     import std.datetime.systime : Clock;
     import std.utf : UTFException;
 
@@ -916,8 +916,6 @@ int main(string[] args)
 
         do
         {
-            import std.datetime.systime : Clock;
-
             if (!firstConnect)
             {
                 import kameloso.constants : Timeout;

@@ -177,7 +177,6 @@ public:
      +/
     void connect(ref bool abort)
     {
-        import core.thread : Thread;
         import std.socket : AddressFamily, SocketException;
 
         assert((ips.length > 0), "Tried to connect to an unresolved connection");

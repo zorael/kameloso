@@ -35,7 +35,6 @@ private:
 void onCTCPs(CTCPService service, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
-    import std.concurrency : send;
     import std.format : format;
 
     /// https://modern.ircdocs.horse/ctcp.html
@@ -232,7 +231,6 @@ unittest
 @(IRCEvent.Type.CTCP_CLIENTINFO)
 void onCTCPClientinfo(CTCPService service, const IRCEvent event)
 {
-    import std.concurrency : send;
     import std.format : format;
 
     /*  This metadata query returns a list of the CTCP messages that this

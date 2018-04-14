@@ -4,7 +4,6 @@
  +/
 module kameloso.logger;
 
-import kameloso.common : settings;
 import std.experimental.logger : Logger;
 
 @safe:
@@ -26,7 +25,6 @@ final class KamelosoLogger : Logger
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
-    import std.format : formattedWrite;
     import std.stdio : stdout;
 
     version(Colours)

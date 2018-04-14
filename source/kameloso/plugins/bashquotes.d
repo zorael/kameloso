@@ -58,7 +58,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     import requests : getContent;
     import std.algorithm.iteration : splitter;
     import std.format : format;
-    import std.regex : matchFirst, regex, replaceAll;
+    import std.regex : regex, replaceAll;
 
     IRCPluginState state = cast(IRCPluginState)sState;
 

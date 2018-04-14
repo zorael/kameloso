@@ -7,7 +7,7 @@ module kameloso.string;
 
 import core.time : Duration;
 import std.range.primitives : ElementEncodingType, ElementType;
-import std.traits : isArray, isSomeString;
+import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
 @safe:

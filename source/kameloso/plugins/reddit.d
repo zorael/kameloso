@@ -58,7 +58,6 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : Timeout;
     import kameloso.string : has, stripped;
-    import core.time : seconds;
     import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
 
@@ -194,10 +193,7 @@ string lookupReddit(const string url)
  +/
 void reportReddit(Tid tid, const string reddit, const IRCEvent event)
 {
-    import kameloso.common : ThreadMessage;
     import kameloso.messaging : privmsg;
-    import std.concurrency : send;
-    import std.format : format;
 
     if (reddit.length)
     {
@@ -230,8 +226,6 @@ void prune(shared RedditLookup[string] cache)
     foreach (key, entry; cache)
     {
         import std.datetime : Clock;
-        import core.time : minutes;
-
         const now = Clock.currTime.toUnixTime;
 
         if ((now - entry.when) > expireSeconds)
