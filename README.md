@@ -4,7 +4,7 @@
 
 Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
-It includes a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing it for that particular IRC network or server daemon.
+Included is a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some outright [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
@@ -17,21 +17,21 @@ It includes a framework that works with the majority of server networks. IRC is 
 * [`bash.org`](http://bash.org) quoting
 * Twitch events; simple Twitch chatbot is now easy (see notes on connecting below)
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
-* piping text from the terminal to the server
-* mIRC colour coding and text effects (bold, underlined, ...), translated into Bash formatting
+* piping text from the terminal to the server (Posix-like only)
+* mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 
 ### Current limitations:
 
-* **segfaults the dmd compiler** if compiling in `plain` or `release` modes; only `debug` works with dmd ([bug reported](https://issues.dlang.org/show_bug.cgi?id=18026), use `ldc` for non-`debug` builds)
-* some plugins don't yet differentiate between different home channels, if there are more than one
-* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need examples to fix)
+* building **segfaults the dmd compiler** if compiling in `plain` or `release` modes; only `debug` works with dmd 2.079.0 and later (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+* some plugins don't yet differentiate between different home channels if there is more than one
+* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need concrete examples to fix, please report oddities)
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. As such you will probably want to register yourself and the bot, where available.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. You will probably want to register yourself with such, where available.
 
 Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
 
-# Getting Started
+# Getting started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes, as well as general use.
 
@@ -45,7 +45,7 @@ It's *possible* to build it manually without `dub`, but it is non-trivial if you
 
 ## Downloading
 
-GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use `git` and get a copy of the source that way.
+GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use `git` and clone a copy of the source that way.
 
 ```bash
 $ git clone https://github.com/zorael/kameloso.git
@@ -58,7 +58,11 @@ $ cd kameloso
 $ dub build
 ```
 
-This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols. You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Refer to the output of `dub build --help` for more build types.
+This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols.
+
+> You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+
+The above will currently not work. See the segfault bullet point under current limitations.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
@@ -88,9 +92,9 @@ $ dub build -b release -c cygwin
 
 There are a few Windows caveats.
 
-* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP accesses should work fine.
+* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP access should work fine.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this.
-* Use in Cygwin terminals without the aforementioned build configuration `cygwin` will be unpleasant. Normal `cmd` and Powershell consoles are not affected.
+* Use in Cygwin terminals without compiling the aforementioned `cygwin` build configuration will be unpleasant. Normal `cmd` and Powershell consoles are not affected.
 
 # How to use
 
@@ -104,7 +108,7 @@ Open the new `kameloso.conf` in a text editor and fill in the fields.
 
 If you have compiled in colours, they may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) before it will listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
+Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
 
 ```
      you | !say herp
@@ -156,13 +160,13 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is different from `authPassword` in that it is supplied very early during login/registration to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is different from `authPassword` in that it is supplied very early during login (registration) to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 # Use as a library
 
-The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely discoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one funtion that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Version that function out and you can drop the files into your own project.
+The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely decoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one function that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Version that function out and you can drop the files into your own project.
 
 # TODO
 
@@ -177,8 +181,10 @@ The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely discoup
 * blacklists; by mask, by account? where and when?
 * auto-mode plugin?
 * logging plugin?
+* break out quotes from `chatbot`?
+* imgur link renames?
 
-# Built With
+# Built with
 
 * [**D**](https://dlang.org)
 * [`dub`](https://code.dlang.org)
