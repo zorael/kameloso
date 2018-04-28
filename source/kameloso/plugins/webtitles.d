@@ -22,16 +22,6 @@ import std.regex : ctRegex;
 
 private:
 
-/// Regex pattern to match a URL, to see if one was pasted.
-enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
-
-/// Regex engine to catch URLs.
-static urlRegex = ctRegex!stephenhay;
-
-/// Regex pattern to match YouTube URLs.
-enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
-
-
 // TitleLookup
 /++
  +  A record of a URL lookup.
@@ -90,6 +80,12 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
     import std.regex : matchAll;
     import std.typecons : No, Yes;
+
+    /// Regex pattern to match a URL, to see if one was pasted.
+    enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
+
+    /// Regex engine to catch URLs.
+    static urlRegex = ctRegex!stephenhay;
 
     immutable prefix = plugin.state.settings.prefix;
     if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
@@ -323,6 +319,9 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 {
     import kameloso.string : has;
     import std.regex : regex, replaceFirst;
+
+    /// Regex pattern to match YouTube URLs.
+    enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
     logger.log("Bland YouTube title ...");
 
