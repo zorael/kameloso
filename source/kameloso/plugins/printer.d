@@ -523,10 +523,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             sink.put('\n');
         }
-        else version(Cygwin_)
-        {
-            stdout.flush();
-        }
     }
     else
     {
@@ -851,10 +847,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             static if (!__traits(hasMember, Sink, "data"))
             {
                 sink.put('\n');
-            }
-            else version(Cygwin_)
-            {
-                stdout.flush();
             }
         }
         else
