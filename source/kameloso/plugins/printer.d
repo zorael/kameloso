@@ -51,6 +51,18 @@ struct PrinterSettings
 
     /// Whether to have the type names be in capital letters.
     bool typesInCaps = true;
+
+    /// Whether to log events.
+    bool saveLogs = false;
+
+    /// Whether to log raw events.
+    bool saveRaw = false;
+
+    /// Whether to buffer writes.
+    bool bufferWrites = true;
+
+    /// Where to save logs (absolute or relative path).
+    string logLocation = "kameloso.logs";
 }
 
 
@@ -63,7 +75,7 @@ struct PrinterSettings
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
-void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
+void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
     IRCEvent mutEvent = event; // need a mutable copy
 
@@ -117,9 +129,209 @@ void onAnyEvent(PrinterPlugin plugin, const IRCEvent event)
     default:
         import std.stdio : stdout;
 
-        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome);
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome,
+            plugin.printerSettings.bellOnMention);
         version(Cygwin_) stdout.flush();
         break;
+    }
+}
+
+
+// LogLineBuffer
+/++
+ +
+ +/
+struct LogLineBuffer
+{
+    import std.array : Appender;
+
+    string path;
+    Appender!(string[]) lines;
+
+    this(const string path)
+    {
+        this.path = path;
+    }
+}
+
+
+// onLoggableEvent
+/++
+ +
+ +/
+@(Chainable)
+@(ChannelPolicy.any)
+@(IRCEvent.Type.ANY)
+void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
+{
+    import std.stdio : File, writeln;
+    import std.path : buildNormalizedPath, expandTilde;
+    import std.file : FileException, exists, isDir;
+
+    if (!plugin.printerSettings.saveLogs) return;
+
+    immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
+
+    if (!logLocation.exists || !logLocation.isDir)
+    {
+        if (!plugin.naggedAboutDir)
+        {
+            logger.warningf("Specified log directory (%s) does not exist or " ~
+                "is not a directory", logLocation);
+            plugin.naggedAboutDir = true;
+        }
+        return;
+    }
+
+    if (plugin.printerSettings.saveRaw)
+    {
+        try
+        {
+            immutable path = buildNormalizedPath(logLocation,
+                plugin.state.bot.server.address ~ ".raw.log");
+
+            if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
+
+            if (plugin.printerSettings.bufferWrites)
+            {
+                plugin.buffers[path].lines.put(event.raw);
+            }
+            else
+            {
+                auto file = File(path, "a");
+                file.writeln(event.raw);
+            }
+        }
+        catch (const FileException e)
+        {
+            logger.warning(e.msg);
+        }
+        catch (const Exception e)
+        {
+            logger.warning(e.msg);
+        }
+    }
+
+    // Some events are tricky to attribute to a channel. Ignore them for now as
+    // it would require channel and user awareness to properly differentiate.
+    with (IRCEvent.Type)
+    switch (event.type)
+    {
+    case QUIT:
+    case NICK:
+    case ACCOUNT:
+    case SASL_AUTHENTICATE:
+        return;
+
+    default:
+        break;
+    }
+
+    string path;
+
+    if (event.channel.length && event.sender.nickname.length)
+    {
+        // Channel message
+        path = buildNormalizedPath(logLocation, event.channel ~ ".log");
+    }
+    else if (event.sender.nickname.length)
+    {
+        // Implicitly not a channel; query
+        path = buildNormalizedPath(logLocation, event.sender.nickname ~ ".log");
+    }
+    else if (!event.sender.nickname.length && event.sender.address.length)
+    {
+        // Server
+        path = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".log");
+    }
+    else
+    {
+        // Don't know what to do; bail
+        import kameloso.common : printObject;
+        logger.warning("Unsure how to log that event");
+        printObject(event);
+        return;
+    }
+
+    try
+    {
+        // First bool monochrome true, second bell on mention false
+
+        if (plugin.printerSettings.bufferWrites)
+        {
+            if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
+
+            import std.array : Appender;
+
+            Appender!string sink;
+            sink.reserve(512);
+            plugin.formatMessage(sink, event, true, false);
+            plugin.buffers[path].lines ~= sink.data;
+        }
+        else
+        {
+            plugin.formatMessage(File(path, "a").lockingTextWriter, event, true, false);
+        }
+    }
+    catch (const FileException e)
+    {
+        logger.warning("File exception caught when writing to log: ", e.msg);
+    }
+    catch (const Exception e)
+    {
+        logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+    }
+}
+
+
+// commitLogs
+/++
+ +
+ +/
+@(IRCEvent.Type.PING)
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void commitLogs(PrinterPlugin plugin)
+{
+    import std.file : FileException;
+    import std.stdio : File, writeln;
+
+    string[] garbage;
+
+    foreach (buffer; plugin.buffers)
+    {
+        if (!buffer.lines.data.length)
+        {
+            garbage ~= buffer.path;
+            continue;
+        }
+
+        try
+        {
+            writeln(buffer.path);
+            auto file = File(buffer.path, "a");
+
+            foreach (const line; buffer.lines.data)
+            {
+                file.writeln(line);
+            }
+        }
+        catch (const FileException e)
+        {
+            logger.warning("File exception caught when committing logs: ", e.msg);
+        }
+        catch (const Exception e)
+        {
+            logger.warning("Unhandled exception caught when committing logs: ", e.msg);
+        }
+        finally
+        {
+            buffer.lines.clear();
+        }
+    }
+
+    foreach (deadBuffer; garbage)
+    {
+        plugin.buffers.remove(deadBuffer);
     }
 }
 
@@ -169,7 +381,7 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
  +      monochrome = Whether to print text monochrome or coloured.
  +/
 void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
-    bool monochrome)
+    bool monochrome, bool bellOnMention)
 {
     import kameloso.bash : BashForeground;
     import kameloso.string : enumToString, beginsWith;
@@ -587,7 +799,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     case QUERY:
                         import kameloso.string : has;
 
-                        if (event.content.has!(Yes.decode)(bot.nickname))
+                        if (bellOnMention && event.content.has!(Yes.decode)(bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
                             immutable inverted = content.invert(bot.nickname);
@@ -650,7 +862,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             // This will only change this plugin's monochrome setting...
             // We have no way to propagate it
             settings.monochrome = true;
-            return plugin.formatMessage(sink, event, settings.monochrome);
+            return plugin.formatMessage(sink, event, settings.monochrome,
+                plugin.printerSettings.bellOnMention);
         }
     }
 }
@@ -1042,6 +1255,13 @@ unittest
 }
 
 
+void teardown(PrinterPlugin plugin)
+{
+    // Commit all logs before exiting
+    commitLogs(plugin);
+}
+
+
 public:
 
 
@@ -1057,6 +1277,12 @@ final class PrinterPlugin : IRCPlugin
 {
     /// All Printer plugin options gathered.
     @Settings PrinterSettings printerSettings;
+
+    /// Whether we have nagged about an invalid log directory.
+    bool naggedAboutDir;
+
+    /// Buffers, to clump log file writes together.
+    LogLineBuffer[string] buffers;
 
     mixin IRCPluginImpl;
 }
