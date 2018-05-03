@@ -3,10 +3,10 @@ platform: x64
 environment:
  matrix:
   - DC: dmd
-    DVersion: 2.078.1
+    DVersion: 2.080.0
     arch: x64
   - DC: ldc
-    DVersion: 1.7.0
+    DVersion: 1.9.0
     arch: x64
 
 skip_tags: true
@@ -56,7 +56,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
-  - powershell -Command Invoke-WebRequest https://code.dlang.org/files/dub-1.7.1-windows-x86.zip -OutFile dub.zip
+  - powershell -Command Invoke-WebRequest https://code.dlang.org/files/dub-1.8.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version
@@ -90,8 +90,8 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
-# - dub test --arch=%Darch% --compiler=%DC% -c vanilla
-# - dub test --arch=%Darch% --compiler=%DC% -c colours+web
-# - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla
-# - dub build --arch=%Darch% --compiler=%DC% -b plain -c colours+web
+ - dub test --arch=%Darch% --compiler=%DC% -c vanilla
+ - dub test --arch=%Darch% --compiler=%DC% -c colours+web
+ - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla
+ - dub build --arch=%Darch% --compiler=%DC% -b plain -c colours+web
  - dub build --arch=%Darch% --compiler=%DC% -b plain -c cygwin
