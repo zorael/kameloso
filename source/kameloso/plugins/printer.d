@@ -293,7 +293,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 void commitLogs(PrinterPlugin plugin)
 {
     import std.file : FileException;
-    import std.stdio : File, writeln;
 
     string[] garbage;
 
@@ -307,7 +306,8 @@ void commitLogs(PrinterPlugin plugin)
 
         try
         {
-            writeln(buffer.path);
+            import std.stdio : File, writeln;
+
             auto file = File(buffer.path, "a");
 
             foreach (const line; buffer.lines.data)
