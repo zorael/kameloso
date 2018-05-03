@@ -1296,10 +1296,19 @@ unittest
 }
 
 
+// teardown
+/++
+ +  Deinitialises the plugin.
+ +
+ +  If we're buffering writes, commit all queued lines to disk.
+ +/
 void teardown(PrinterPlugin plugin)
 {
-    // Commit all logs before exiting
-    commitLogs(plugin);
+    if (plugin.printerSettings.bufferedWrites)
+    {
+        // Commit all logs before exiting
+        commitLogs(plugin);
+    }
 }
 
 
