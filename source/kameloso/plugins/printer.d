@@ -59,7 +59,7 @@ struct PrinterSettings
     bool saveRaw = false;
 
     /// Whether to buffer writes.
-    bool bufferWrites = true;
+    bool bufferedWrites = true;
 
     /// Where to save logs (absolute or relative path).
     string logLocation = "kameloso.logs";
@@ -192,7 +192,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
             if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
 
-            if (plugin.printerSettings.bufferWrites)
+            if (plugin.printerSettings.bufferedWrites)
             {
                 plugin.buffers[path].lines.put(event.raw);
             }
@@ -257,7 +257,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     {
         // First bool monochrome true, second bell on mention false
 
-        if (plugin.printerSettings.bufferWrites)
+        if (plugin.printerSettings.bufferedWrites)
         {
             if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
 
