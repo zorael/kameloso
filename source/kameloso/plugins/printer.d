@@ -151,6 +151,11 @@ struct LogLineBuffer
     string path;
     Appender!(string[]) lines;
 
+    /++
+     +  How many PINGs a buffer must be empty during to be considered dead and
+     +  ripe for garbage collection.
+     +/
+    uint lives = 20;  // Arbitrary number
     this(const string path)
     {
         this.path = path;
@@ -317,13 +322,18 @@ void commitLogs(PrinterPlugin plugin)
 
     string[] garbage;
 
-    foreach (buffer; plugin.buffers)
+    foreach (ref buffer; plugin.buffers)
     {
         if (!buffer.lines.data.length)
         {
-            garbage ~= buffer.path;
+            if (--buffer.lives == 0)
+            {
+                garbage ~= buffer.path;
+            }
             continue;
         }
+
+        buffer.lives = typeof(buffer).init.lives;
 
         try
         {
