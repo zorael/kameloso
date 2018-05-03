@@ -174,7 +174,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.saveLogs) return;
 
     if (!plugin.printerSettings.logAllChannels &&
-        (event.channel !in plugin.state.bot.homes))
+        event.channel.length && (event.channel !in plugin.state.bot.homes))
     {
         // Not logging all channels and this is not a home.
         return;
