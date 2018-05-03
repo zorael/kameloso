@@ -61,6 +61,9 @@ struct PrinterSettings
     /// Whether to buffer writes.
     bool bufferedWrites = true;
 
+    /// Whether to log non-home channels.
+    bool logAllChannels = false;
+
     /// Where to save logs (absolute or relative path).
     string logLocation = "kameloso.logs";
 }
@@ -169,6 +172,13 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.file : FileException, exists, isDir;
 
     if (!plugin.printerSettings.saveLogs) return;
+
+    if (!plugin.printerSettings.logAllChannels &&
+        (event.channel !in plugin.state.bot.homes))
+    {
+        // Not logging all channels and this is not a home.
+        return;
+    }
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
 
