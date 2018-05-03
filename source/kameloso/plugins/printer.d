@@ -142,13 +142,21 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
 // LogLineBuffer
 /++
+ +  A struct containing lines to write to a log file when next committing such.
  +
+ +  This is only relevant if `PrinterSettings.bufferedWrites` is set.
+ +
+ +  As a micro-optimisation an `std.array.Appender` is used to store the lines,
+ +  instead of a normal `string[]`.
  +/
 struct LogLineBuffer
 {
     import std.array : Appender;
 
+    /// The filesystem path to the log file, used as an identifier.
     string path;
+
+    /// An `std.array.Appender` housing queued lines to write.
     Appender!(string[]) lines;
 
     /++
@@ -156,6 +164,8 @@ struct LogLineBuffer
      +  ripe for garbage collection.
      +/
     uint lives = 20;  // Arbitrary number
+
+    /// Create a new `LogLineBuffer` with the passed path strig as identifier.
     this(const string path)
     {
         this.path = path;
@@ -312,7 +322,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
 // commitLogs
 /++
+ +  Write buffered log lines to disk.
  +
+ +  This is a way of queueing writes so that they can be committed seldomly and
+ +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
+ +  losing uncommitted lines in a catastrophical crash.
+ +
+ +  In order to not accumulate a boundless amount of buffers, keep a counter of
+ +  how many PINGs a buffer has been empty. When the counter reaches zero (value
+ +  hardcoded in struct `LogLineBuffer`), remove the dead buffer from the array.
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
