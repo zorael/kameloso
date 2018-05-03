@@ -12,6 +12,12 @@ import kameloso.string : has, nom;
 
 private:
 
+/++
+ +  Comment this to opt out and remove the last dependency of `kameloso.common`,
+ +  making this more of a library.
+ +/
+version = PostParseSanityCheck;
+
 
 // parseBasic
 /++
@@ -1198,6 +1204,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +/
+version(PostParseSanityCheck)
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
     import kameloso.common : logger, printObject;
@@ -1998,9 +2005,12 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
 
-    // Final pass: sanity check. This verifies some fields and gives meaningful
-    // error messages if something doesn't look right.
-    parser.postparseSanityCheck(event);
+    version(PostParseSanityCheck)
+    {
+        // Final pass: sanity check. This verifies some fields and gives
+        // meaningful error messages if something doesn't look right.
+        parser.postparseSanityCheck(event);
+    }
 
     return event;
 }
