@@ -181,33 +181,75 @@ public:
 
         assert((ips.length > 0), "Tried to connect to an unresolved connection");
 
+        iploop:
         foreach (immutable i, ip; ips)
         {
-            if (abort) break;
-
             // Decide which kind of socket to use based on the AddressFamily of
             // the resolved ip; IPv4 or IPv6
             socket = (ip.addressFamily == AddressFamily.INET6) ? &socket6 : &socket4;
 
-            try
-            {
-                logger.logf("Connecting to %s ...", ip);
-                socket.connect(ip);
+            enum connectionRetries = 3;
 
-                // If we're here no exception was thrown, so we're connected
-                connected = true;
-                logger.log("Connected!");
-                return;
-            }
-            catch (const SocketException e)
+            retryloop:
+            foreach (immutable retry; 0..connectionRetries)
             {
-                logger.error("Failed! ", e.msg);
+                if (abort) break iploop;
 
-                if (i < ips.length)
+                if ((i > 0) || (retry > 0))
                 {
-                    logger.infof("Trying next ip in %d seconds", Timeout.retry);
-                    interruptibleSleep(Timeout.retry.seconds, abort);
+                    import std.socket : SocketShutdown;
+                    socket.shutdown(SocketShutdown.BOTH);
+                    socket.close();
+                    reset();
                 }
+
+                try
+                {
+                    if (retry == 0)
+                    {
+                        logger.logf("Connecting to %s ...", ip);
+                    }
+                    else
+                    {
+                        logger.logf("Connecting to %s ... (attempt %d)", ip, retry+1);
+                    }
+
+                    socket.connect(ip);
+
+                    // If we're here no exception was thrown, so we're connected
+                    connected = true;
+                    logger.log("Connected!");
+                    return;
+                }
+                catch (const SocketException e)
+                {
+                    logger.error("Failed! ", e.msg);
+
+                    switch (e.msg)
+                    {
+                    //case "Unable to connect socket: Connection refused":
+                    case "Unable to connect socket: Address family not supported by protocol":
+                        // Skip this IP entirely
+                        break retryloop;
+
+                    //case "Unable to connect socket: Network is unreachable":
+                    default:
+                        // Don't delay for retrying on the last retry
+                        if (retry < (connectionRetries - 1))
+                        {
+                            logger.infof("Retrying same IP in %d seconds", Timeout.retry);
+                            interruptibleSleep(Timeout.retry.seconds, abort);
+                        }
+                        break;
+                    }
+
+                }
+            }
+
+            if (i < ips.length)
+            {
+                logger.infof("Trying next IP in %d seconds", Timeout.retry);
+                interruptibleSleep(Timeout.retry.seconds, abort);
             }
         }
 
