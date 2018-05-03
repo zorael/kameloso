@@ -198,6 +198,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             // --writeconfig was passed; write configuration to file and quit
             printVersionInfo(BashForeground.white);
+            writeln();
 
             logger.info("Writing configuration to ", settings.configFile);
             writeln();
