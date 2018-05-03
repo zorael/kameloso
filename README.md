@@ -23,13 +23,21 @@ Included is a framework that works with the majority of server networks. IRC is 
 
 ### Current limitations:
 
-* building **segfaults the dmd compiler** if compiling in `plain` or `release` modes; only `debug` works with dmd 2.079.0 and later (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
+* building **segfaults the dmd compiler** if compiling in `plain` or `release` modes with dmd **up to version 2.079.0**; only `debug` works (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)); fixed in 2.079.1?
 * some plugins don't yet differentiate between different home channels if there is more than one
 * quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need concrete examples to fix, please report oddities)
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. You will probably want to register yourself with such, where available.
 
 Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
+
+# News
+
+* Readme now has a news section!
+* segfault seems gone in 2.079.1?
+* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback
+* direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
+* remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
 
 # Getting started
 
@@ -166,7 +174,7 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 # Use as a library
 
-The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely decoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one function that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Version that function out and you can drop the files into your own project.
+The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely decoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one function that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Comment the `version = PostParseSanityCheck` at the top of `irc.d` to opt out and remove this dependency.
 
 # TODO
 
@@ -180,9 +188,8 @@ The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely decoupl
 * update wiki
 * blacklists; by mask, by account? where and when?
 * auto-mode plugin?
-* logging plugin?
 * break out quotes from `chatbot`?
-* imgur link renames?
+* set up a real configuration home like `~/.kameloso`? what of Windows?
 
 # Built with
 
