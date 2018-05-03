@@ -160,21 +160,32 @@ struct LogLineBuffer
 
 // onLoggableEvent
 /++
+ +  Logs an event to disk.
  +
+ +  It is set to `ChannelPolicy.any`, and configuration decides whether non-home
+ +  events should be logged. Likewise whether raw events should be logged.
+ +
+ +  Lines will either be saved immediately to disk, opening a `std.stdio.File`
+ +  with appending privileges for each event as they occur, or buffered by
+ +  populating arrays of lines to be written in bulk, once in a while.
+ +
+ +  See_Also:
+ +      commitLogs
  +/
 @(Chainable)
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    import std.stdio : File, writeln;
-    import std.path : buildNormalizedPath, expandTilde;
+    import std.algorithm.searching : canFind;
     import std.file : FileException, exists, isDir;
+    import std.path : buildNormalizedPath, expandTilde;
+    import std.stdio : File, writeln;
 
     if (!plugin.printerSettings.saveLogs) return;
 
     if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && (event.channel !in plugin.state.bot.homes))
+        event.channel.length && plugin.state.bot.homes.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
