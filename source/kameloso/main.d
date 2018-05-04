@@ -938,27 +938,27 @@ int main(string[] args)
 
             version(Colours)
             {
-                import kameloso.bash : BashReset, colour;
-                import kameloso.logger : KamelosoLogger;
-                import std.array : Appender;
-                import std.conv : to;
-                import std.experimental.logger : LogLevel;
-
-                Appender!string sink;
-                sink.reserve(64);
-
                 if (!settings.monochrome)
                 {
+                    import kameloso.bash : BashForeground;
+
                     with (settings)
                     with (BashForeground)
                     {
-                        // "%s resolved into %d IPs."
+                        import kameloso.bash : BashReset, colour;
+                        import kameloso.logger : KamelosoLogger;
+                        import std.array : Appender;
+                        import std.conv : to;
+                        import std.experimental.logger : LogLevel;
 
-                        immutable infotint = settings.brightTerminal ?
+                        Appender!string sink;
+                        sink.reserve(64);
+
+                        immutable infotint = brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.info] :
                             KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                        immutable logtint = settings.brightTerminal ?
+                        immutable logtint = brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.all] :
                             KamelosoLogger.logcoloursDark[LogLevel.all];
 
