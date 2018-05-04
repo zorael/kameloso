@@ -208,15 +208,67 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
 
-    if (!logLocation.exists || !logLocation.isDir)
+    if (logLocation.exists)
     {
-        if (!plugin.naggedAboutDir)
+        if (!logLocation.isDir)
         {
-            logger.warningf("Specified log directory (%s) does not exist or " ~
-                "is not a directory", logLocation);
-            plugin.naggedAboutDir = true;
+            if (!plugin.naggedAboutDir)
+            {
+                logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+                plugin.naggedAboutDir = true;
+            }
+            return;
         }
-        return;
+    }
+    else
+    {
+        // Create missing log directory
+        import std.file : mkdirRecurse;
+        mkdirRecurse(logLocation);
+
+        version(Colours)
+        {
+            if (!plugin.state.settings.monochrome)
+            {
+                import kameloso.bash : BashForeground;
+
+                with (plugin.state.settings)
+                with (BashForeground)
+                {
+                    import kameloso.bash : BashReset, colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.array : Appender;
+                    import std.experimental.logger : LogLevel;
+
+                    Appender!string sink;
+                    sink.reserve(64);  // Usually <64
+
+                    immutable infotint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    sink.colour(infotint);
+                    sink.put("Created log directory: ");
+                    sink.colour(logtint);
+                    sink.put(logLocation);
+                    sink.colour(BashReset.all);
+
+                    logger.trace(sink.data);
+                }
+            }
+            else
+            {
+                logger.info("Created log directory: ", logLocation);
+            }
+        }
+        else
+        {
+            logger.info("Created log directory: ", logLocation);
+        }
     }
 
     if (plugin.printerSettings.saveRaw)
