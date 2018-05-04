@@ -661,13 +661,14 @@ void updateUser(SeenPlugin plugin, const string signed)
  +  return an empty array for a fresh start.
  +
  +  Params:
+ +      plugin = The current `SeenPlugin`.
  +      filename = Filename of the file to read from.
  +
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname
  +          strings.
  +/
-long[string] loadSeen(const string filename)
+long[string] loadSeen(SeenPlugin plugin, const string filename)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
@@ -676,7 +677,52 @@ long[string] loadSeen(const string filename)
 
     scope(exit)
     {
-        logger.logf("Seen users loaded, currently %s users seen.", aa.length);
+        version(Colours)
+        {
+            if (!plugin.state.settings.monochrome)
+            {
+                import kameloso.bash : BashForeground;
+
+                with (plugin.state.settings)
+                with (BashForeground)
+                {
+                    import kameloso.bash : BashReset, colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.array : Appender;
+                    import std.conv : to;
+                    import std.experimental.logger : LogLevel;
+
+                    Appender!string sink;
+                    sink.reserve(64);
+
+                    immutable infotint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    sink.colour(infotint);
+                    sink.put("Seen users loaded, currently ");
+                    sink.colour(logtint);
+                    sink.put(aa.length.to!string);
+                    sink.colour(infotint);
+                    sink.put(" users seen.");
+                    sink.colour(BashReset.all);
+
+                    logger.trace(sink.data);
+                }
+            }
+            else
+            {
+                logger.logf("Seen users loaded, currently %s users seen.", aa.length);
+            }
+        }
+        else
+        {
+            logger.logf("Seen users loaded, currently %s users seen.", aa.length);
+        }
     }
 
     if (!filename.exists || !filename.isFile)
@@ -741,7 +787,7 @@ void onEndOfMotd(SeenPlugin plugin)
 {
     with (plugin)
     {
-        seenUsers = loadSeen(seenSettings.seenFile);
+        seenUsers = plugin.loadSeen(seenSettings.seenFile);
 
         if ((seenSettings.hoursBetweenSaves > 24) ||
             (seenSettings.hoursBetweenSaves < 0))
