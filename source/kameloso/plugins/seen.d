@@ -248,7 +248,7 @@ struct SeenSettings
  +
  +  * `anyone` will let precisely anyone trigger it, without looking them up.
  +     <br>
- +  * `whitelist will only allow users in the `whitelist` array in the
+ +  * `whitelist` will only allow users in the `whitelist` array in the
  +     configuration file.<br>
  +  * `admin` will allow only you and your other adminitrators, also as defined
  +     in the configuration file.

@@ -66,6 +66,8 @@ void initLogger(bool monochrome = settings.monochrome,
     logger = new KamelosoLogger(LogLevel.all, monochrome, bright);
 }
 
+
+// settings
 /++
  +  A local copy of the `CoreSettings` struct, housing certain runtime settings.
  +
