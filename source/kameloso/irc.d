@@ -2494,7 +2494,7 @@ unittest
  +  Params:
  +      server = `kameloso.ircdefs.IRCServer`, with all its settings.
  +      nickname = String with a signed nickname.
- +      modesign = Reference string to write the stripped modesigns to.
+ +      modesigns = Reference string to write the stripped modesigns to.
  +
  +  Returns:
  +      The nickname without any prepended prefix signs.

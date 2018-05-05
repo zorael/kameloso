@@ -35,6 +35,8 @@ import std.typecons : Flag, No, Yes;
  +      line = String to walk and advance.
  +      separator = Token that deliminates what should be returned and to where
  +          to advance.
+ +      callingFile = Name of the calling source file.
+ +      callingLine = Line number where in the source file this is called.
  +
  +  Returns:
  +      The string `line` from the start up to the separator. The original
