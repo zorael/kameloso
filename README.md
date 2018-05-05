@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. Any and all ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
 Included is a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some outright [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing for that particular IRC network or server daemon.
 
@@ -38,7 +38,6 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback
 * direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
 * remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
-* online API documentation [temporarily offline](https://zorael.github.io/kameloso)
 
 # Getting started
 
@@ -175,7 +174,14 @@ Mind that a full Twitch bot cannot be implemented as an IRC client.
 
 # Use as a library
 
-The IRC server string-parsing modules (`irc.d`, `ircdefs.d`) are largely decoupled from the rest of the program, needing only some helper modules; `string.d` and `meld.d`. The big exception is one function that warns the user of abnormalities after parsing (`postparseSanityCheck` in `irc.d`), which uses a *logger* class to inform the user of what seems wrong. The logger in turn imports more. Comment the `version = PostParseSanityCheck` at the top of `irc.d` to opt out and remove this dependency.
+The IRC server string-parsing modules are largely decoupled from the rest of the program, needing only some helper modules.
+
+* [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d)
+* [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
+* [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
+* [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
+
+The big exception is one function that warns the user of abnormalities after parsing, which uses a *Logger* to inform the user when something seems wrong. The Logger in turn imports more. Comment the [`version = PostParseSanityCheck`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d#L19) at the top of `irc.d` to opt out of these messages and remove this dependency.
 
 # TODO
 
