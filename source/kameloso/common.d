@@ -8,7 +8,7 @@ import kameloso.bash : BashForeground;
 import kameloso.uda;
 
 import std.datetime.systime : SysTime;
-import std.experimental.logger;
+import std.experimental.logger : Logger;
 import std.range : isOutputRange;
 import std.traits : Unqual, isType, isArray, isAssociativeArray;
 import std.typecons : Flag, No, Yes;
