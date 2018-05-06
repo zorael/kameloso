@@ -1,3 +1,8 @@
+/++
+ +  This module contains the `meldInto` functions; functions that take two
+ +  structs and combines them, creating a resulting struct with values from both
+ +  parent structs. Array and associative array variants exist too.
+ +/
 module kameloso.meld;
 
 import std.typecons : Flag, No, Yes;
