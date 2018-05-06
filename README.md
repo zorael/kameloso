@@ -31,6 +31,24 @@ Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services)
 
 Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
 
+
+# Table of contents
+
+* [News](#news)
+* [Getting started](#getting-started)
+    * [Prerequisites](#prerequisites)
+    * [Downloading](#downloading)
+    * [Compiling](#compiling)
+        * [Windows](#windows)
+* [How to use](#how-to-use)
+    * [Twitch](#twitch)
+    * [Use as a library](#use-as-a-library)
+* [TODO](#todo)
+* [Built with](#built-with)
+    * [License](#license)
+    * [Acknowledgements](#acknowledgements)
+---
+
 # News
 
 * Readme now has a news section!
@@ -168,11 +186,11 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is different from `authPassword` in that it is supplied very early during login (registration) to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that a full Twitch bot cannot be implemented as an IRC client.
 
-# Use as a library
+## Use as a library
 
 The IRC server string-parsing modules are largely decoupled from the rest of the program, needing only some helper modules.
 
@@ -181,7 +199,7 @@ The IRC server string-parsing modules are largely decoupled from the rest of the
 * [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
 * [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
 
-The big exception is one function that warns the user of abnormalities after parsing, which uses a *Logger* to inform the user when something seems wrong. The Logger in turn imports more. Comment the [`version = PostParseSanityCheck`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d#L19) at the top of `irc.d` to opt out of these messages and remove this dependency.
+The big exception is one function that warns the user of abnormalities after parsing, which uses a *Logger* to inform the user when something seems wrong. The Logger in turn imports more. Comment the `version = PostParseSanityCheck` [at the top of `irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d#L19) to opt out of these messages and remove this dependency.
 
 # TODO
 
@@ -193,7 +211,7 @@ The big exception is one function that warns the user of abnormalities after par
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
-* blacklists; by mask, by account? where and when?
+* blacklists; by mask, by account? where and when? own service?
 * auto-mode plugin?
 * break out quotes from `chatbot`?
 * set up a real configuration home like `~/.kameloso`? what of Windows?
@@ -209,7 +227,7 @@ The big exception is one function that warns the user of abnormalities after par
 
 This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## Acknowledgements
 
 * [kameloso](https://www.youtube.com/watch?v=s-mOy8VUEBk) for obvious reasons
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
