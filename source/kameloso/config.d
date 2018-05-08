@@ -334,7 +334,7 @@ pipyon 3
  +      valueToSet = String contents of the value to set the member to; string
  +          even if the member is of a different type.
  +/
-void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
+bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
 {
     import kameloso.string : stripped, unquoted;
@@ -342,6 +342,8 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
         isSomeString, isType;
+
+    bool success;
 
     top:
     switch (memberToSet)
@@ -385,6 +387,8 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                     .stripped
                                     .unquoted
                                     .to!(ElementType!T);
+
+                                success = true;
                             }
                             catch (const ConvException e)
                             {
@@ -397,6 +401,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                     else static if (is(T : string))
                     {
                         thing.tupleof[i] = valueToSet.unquoted;
+                        success = true;
                     }
                     else static if (isAssociativeArray!T)
                     {
@@ -409,6 +414,7 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                             /*writefln("%s.%s = %s.to!%s", Thing.stringof,
                                 memberstring, valueToSet, T.stringof);*/
                             thing.tupleof[i] = valueToSet.unquoted.to!T;
+                            success = true;
                         }
                         catch (const ConvException e)
                         {
@@ -424,6 +430,8 @@ void setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     default:
         break;
     }
+
+    return success;
 }
 
 ///
@@ -450,20 +458,39 @@ unittest
     }
 
     Foo foo;
-    foo.setMemberByName("bar", "asdf fdsa adf");
+    bool success;
+
+    success = foo.setMemberByName("bar", "asdf fdsa adf");
+    assert(success);
     assert((foo.bar == "asdf fdsa adf"), foo.bar);
-    foo.setMemberByName("baz", "42");
+
+    success = foo.setMemberByName("baz", "42");
+    assert(success);
     assert((foo.baz == 42), foo.baz.to!string);
-    foo.setMemberByName("arr", "herp|derp|dirp|darp");
+
+    success = foo.setMemberByName("arr", "herp|derp|dirp|darp");
+    assert(success);
     assert((foo.arr == [ "herp", "derp", "dirp", "darp"]), foo.arr.to!string);
-    foo.setMemberByName("matey", "this,should,not,be,separated");
+
+    success = foo.setMemberByName("matey", "this,should,not,be,separated");
+    assert(success);
     assert((foo.matey == [ "this,should,not,be,separated" ]), foo.matey.to!string);
-    foo.setMemberByName("parrots", "squaawk;;parrot sounds;;repeating");
+
+    success = foo.setMemberByName("parrots", "squaawk;;parrot sounds;;repeating");
+    assert(success);
     assert((foo.parrots == [ "squaawk", "parrot sounds", "repeating"]),
         foo.parrots.to!string);
-    foo.setMemberByName("withSpaces", `         squoonk         ;;"  spaced  ";;" "`);
+
+    success = foo.setMemberByName("withSpaces", `         squoonk         ;;"  spaced  ";;" "`);
+    assert(success);
     assert((foo.withSpaces == [ "squoonk", `  spaced  `, " "]),
         foo.withSpaces.to!string);
+
+    success = foo.setMemberByName("invalid", "oekwpo");
+    assert(!success);
+
+    success = foo.setMemberByName("", "true");
+    assert(!success);
 }
 
 
