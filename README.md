@@ -215,6 +215,8 @@ The big exception is one function that warns the user of abnormalities after par
 * auto-mode plugin?
 * break out quotes from `chatbot`?
 * set up a real configuration home like `~/.kameloso`? what of Windows?
+* `admin` verb `set` to change configuration on the fly
+* `admin` verb `save`|`writeconfig` doesn't seem to work?
 
 # Built with
 

@@ -576,6 +576,42 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onSetCommand
+/++
+ +  Sets a plugin option by variable string name.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@BotCommand(NickPolicy.required, "set")
+@Description("[DEBUG] Changes a plugin's settings")
+void onSetCommand(AdminPlugin plugin, const IRCEvent event)
+{
+    import kameloso.common : ThreadMessage;
+    import std.concurrency : send;
+
+    plugin.setEvent = event;
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
+        cast(shared IRCPlugin)plugin);
+}
+
+
+// peekPlugins
+/++
+ +  Takes a reference to the main `kameloso.common.Client.plugins` array of
+ +  `kameloso.plugins.common.IRCPlugin`s, and applies any queued custom settings
+ +  to them, as were saved in `plugin.setEvent` upon someone requesting the verb
+ +  "`set`".
+ +/
+void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins)
+{
+    if (plugin.setEvent == IRCEvent.init) return;
+    scope(exit) plugin.setEvent = IRCEvent.init;
+
+    plugins.applyCustomSettings([ plugin.setEvent.content ]);
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 
@@ -607,6 +643,13 @@ final class AdminPlugin : IRCPlugin
      +  events.
      +/
     bool printAsserts;
+
+    /++
+    +   The event that spawned a "`set`" request. As a hack it is currently
+    +   stored here, so the plugin knows what to do when the results of
+    +   `kameloso.common.ThreadMessage.PeekPlugins` return.
+    +/
+    IRCEvent setEvent;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;

@@ -439,14 +439,14 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 
 // peekPlugins
 /++
- +  Takes a const reference to the main `kameloso.common.Client.plugins` array
- +  of `kameloso.plugins.common.IRCPlugin`s, and gathers and formats each
+ +  Takes a reference to the main `kameloso.common.Client.plugins` array of
+ +  `kameloso.plugins.common.IRCPlugin`s, and gathers and formats each
  +  plugin's list of available bot commands.
  +
  +  This does not include bot regexes, as we do not know how to extract the
  +  expression from the `std.regex.Regex` structure.
  +/
-void peekPlugins(ChatbotPlugin plugin, const IRCPlugin[] plugins)
+void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
 {
     import kameloso.constants : KamelosoInfo;
     import kameloso.string : has, nom;

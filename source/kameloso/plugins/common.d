@@ -90,7 +90,7 @@ interface IRCPlugin
     void start() @system;
 
     /// Executed when a plugin wants to examine all the other plugins.
-    void peekPlugins(const IRCPlugin[]) @system;
+    void peekPlugins(IRCPlugin[]) @system;
 
     /// Executed when we want a plugin to print its Settings struct.
     void printSettings() @system const;
@@ -1401,16 +1401,19 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
+        import kameloso.common : logger;
         import kameloso.config : setMemberByName;
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
 
         alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
+        bool success;
 
         foreach (ref symbol; symbols)
         {
-            symbol.setMemberByName(setting, value);
+            success = symbol.setMemberByName(setting, value);
+            if (success) break;
         }
 
         foreach (immutable i, ref symbol; this.tupleof)
@@ -1418,8 +1421,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (hasUDA!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
             {
-                symbol.setMemberByName(setting, value);
+                success = symbol.setMemberByName(setting, value);
+                if (success) break;
             }
+        }
+
+        if (!success)
+        {
+            logger.warning("No such %s member: %s", this.stringof, setting);
         }
     }
 
@@ -1434,7 +1443,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  by the main loop's message-receiving after having been sent a
      +  `kameloso.common.ThreadMessage.PeekPlugins` thread message.
      +/
-    void peekPlugins(const IRCPlugin[] plugins) @system
+    void peekPlugins(IRCPlugin[] plugins) @system
     {
         static if (__traits(compiles, .peekPlugins))
         {
@@ -3025,6 +3034,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
 {
     import kameloso.common : logger;
     import kameloso.string : has, nom;
+    import std.string : toLower;
 
     top:
     foreach (immutable line; customSettings)
@@ -3040,7 +3050,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
             continue;
         }
 
-        pluginstring = slice.nom!(Yes.decode)(".");
+        pluginstring = slice.nom!(Yes.decode)(".").toLower;
 
         if (slice.has!(Yes.decode)("="))
         {
@@ -3053,11 +3063,34 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
             value = "true";
         }
 
-        foreach (plugin; plugins)
+        if (pluginstring == "core")
         {
-            if (plugin.name != pluginstring) continue;
-            plugin.setSettingByName(setting, value);
+            import kameloso.common : initLogger, settings;
+            import kameloso.config : setMemberByName;
+
+            settings.setMemberByName(setting, value);
+
+            if ((setting == "monochrome") || (setting == "brightTerminal"))
+            {
+                initLogger(settings.monochrome, settings.brightTerminal);
+            }
+
+            // FIXME: Re-evaluate whether plugins should keep a copy of the settings
+            foreach (plugin; plugins)
+            {
+                plugin.state.settings.setMemberByName(setting, value);
+            }
+
             continue top;
+        }
+        else
+        {
+            foreach (plugin; plugins)
+            {
+                if (plugin.name != pluginstring) continue;
+                plugin.setSettingByName(setting, value);
+                continue top;
+            }
         }
 
         logger.warning("Invalid plugin: ", pluginstring);
