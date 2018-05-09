@@ -81,7 +81,7 @@ public:
 Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
     import kameloso.bash : BashForeground;
-    import kameloso.common : initLogger, printObjects, printVersionInfo;
+    import kameloso.common : initLogger, printObjects, printVersionInfo, settings;
     import std.format : format;
     import std.getopt;
     import std.stdio : stdout, writeln;

@@ -792,7 +792,7 @@ struct Client
     IRCBot bot;
 
     /// Runtime settings for bot behaviour.
-    CoreSettings settings;
+    //CoreSettings settings;
 
     /// The socket we use to connect to the server.
     Connection conn;

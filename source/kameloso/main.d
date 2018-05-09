@@ -73,7 +73,7 @@ void signalHandler(int sig) nothrow @nogc @system
 Flag!"quit" checkMessages(ref Client client)
 {
     import kameloso.plugins.common : IRCPlugin;
-    import kameloso.common : initLogger;
+    import kameloso.common : initLogger, settings;
     import core.time : seconds;
     import std.concurrency : receiveTimeout;
     import std.variant : Variant;
@@ -156,7 +156,7 @@ Flag!"quit" checkMessages(ref Client client)
     /// Saves current configuration to disk.
     void save(ThreadMessage.Save)
     {
-        client.writeConfigurationFile(client.settings.configFile);
+        client.writeConfigurationFile(settings.configFile);
     }
 
     /++
@@ -830,7 +830,7 @@ int main(string[] args)
 
     // Initialise the logger immediately so it's always available, reinit later
     // when we know the settings for monochrome
-    initLogger(client.settings.monochrome, client.settings.brightTerminal);
+    initLogger(settings.monochrome, settings.brightTerminal);
 
     scope(failure)
     {
