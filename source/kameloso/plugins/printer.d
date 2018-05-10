@@ -82,6 +82,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
     IRCEvent mutEvent = event; // need a mutable copy
 
+    with (plugin)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -122,7 +123,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     case CAP:
         // These event types are too spammy; ignore
-        if (!plugin.printerSettings.filterVerbose) goto default;
+        if (!printerSettings.filterVerbose) goto default;
         break;
 
     case PING:
@@ -132,8 +133,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     default:
         import std.stdio : stdout;
 
-        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, settings.monochrome,
-            plugin.printerSettings.bellOnMention);
+        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, state.settings.monochrome,
+            printerSettings.bellOnMention);
         version(Cygwin_) stdout.flush();
         break;
     }
@@ -271,32 +272,35 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (plugin.printerSettings.saveRaw)
+    with (plugin)
     {
-        try
+        if (printerSettings.saveRaw)
         {
-            immutable path = buildNormalizedPath(logLocation,
-                plugin.state.bot.server.address ~ ".raw.log");
-
-            if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
-
-            if (plugin.printerSettings.bufferedWrites)
+            try
             {
-                plugin.buffers[path].lines.put(event.raw);
+                immutable path = buildNormalizedPath(logLocation,
+                    state.bot.server.address ~ ".raw.log");
+
+                if (path !in buffers) buffers[path] = LogLineBuffer(path);
+
+                if (printerSettings.bufferedWrites)
+                {
+                    buffers[path].lines.put(event.raw);
+                }
+                else
+                {
+                    auto file = File(path, "a");
+                    file.writeln(event.raw);
+                }
             }
-            else
+            catch (const FileException e)
             {
-                auto file = File(path, "a");
-                file.writeln(event.raw);
+                logger.warning(e.msg);
             }
-        }
-        catch (const FileException e)
-        {
-            logger.warning(e.msg);
-        }
-        catch (const Exception e)
-        {
-            logger.warning(e.msg);
+            catch (const Exception e)
+            {
+                logger.warning(e.msg);
+            }
         }
     }
 
@@ -317,28 +321,32 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     string path;
 
-    if (event.channel.length && event.sender.nickname.length)
+    with (plugin)
+    with (event)
     {
-        // Channel message
-        path = buildNormalizedPath(logLocation, event.channel ~ ".log");
-    }
-    else if (event.sender.nickname.length)
-    {
-        // Implicitly not a channel; query
-        path = buildNormalizedPath(logLocation, event.sender.nickname ~ ".log");
-    }
-    else if (!event.sender.nickname.length && event.sender.address.length)
-    {
-        // Server
-        path = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".log");
-    }
-    else
-    {
-        // Don't know what to do; bail
-        import kameloso.common : printObject;
-        logger.warning("Unsure how to log that event");
-        printObject(event);
-        return;
+        if (channel.length && sender.nickname.length)
+        {
+            // Channel message
+            path = buildNormalizedPath(logLocation, channel ~ ".log");
+        }
+        else if (sender.nickname.length)
+        {
+            // Implicitly not a channel; query
+            path = buildNormalizedPath(logLocation, sender.nickname ~ ".log");
+        }
+        else if (!sender.nickname.length && sender.address.length)
+        {
+            // Server
+            path = buildNormalizedPath(logLocation, state.bot.server.address ~ ".log");
+        }
+        else
+        {
+            // Don't know what to do; bail
+            import kameloso.common : printObject;
+            logger.warning("Unsure how to log that event");
+            printObject(event);
+            return;
+        }
     }
 
     try
@@ -589,7 +597,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 case QUERY:
                     import kameloso.string : has;
 
-                    if (event.content.has!(Yes.decode)(bot.nickname))
+                    if (content.has!(Yes.decode)(bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
                         if (plugin.printerSettings.bellOnMention)
@@ -976,28 +984,31 @@ void mapEffects(ref IRCEvent event)
     import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : has;
 
-    if (event.content.has(I.colour))
+    with (event)
     {
-        // Colour is mIRC 3
-        event.content = mapColours(event.content);
-    }
+        if (content.has(I.colour))
+        {
+            // Colour is mIRC 3
+            content = mapColours(content);
+        }
 
-    if (event.content.has(I.bold))
-    {
-        // Bold is bash 1, mIRC 2
-        event.content = mapAlternatingEffectImpl!(I.bold, B.bold)(event.content);
-    }
+        if (content.has(I.bold))
+        {
+            // Bold is bash 1, mIRC 2
+            content = mapAlternatingEffectImpl!(I.bold, B.bold)(content);
+        }
 
-    if (event.content.has(I.italics))
-    {
-        // Italics is bash 3 (not really), mIRC 29
-        event.content = mapAlternatingEffectImpl!(I.italics, B.italics)(event.content);
-    }
+        if (content.has(I.italics))
+        {
+            // Italics is bash 3 (not really), mIRC 29
+            content = mapAlternatingEffectImpl!(I.italics, B.italics)(content);
+        }
 
-    if (event.content.has(I.underlined))
-    {
-        // Underlined is bash 4, mIRC 31
-        event.content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(event.content);
+        if (content.has(I.underlined))
+        {
+            // Underlined is bash 4, mIRC 31
+            content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(content);
+        }
     }
 }
 
@@ -1016,27 +1027,30 @@ void stripEffects(ref IRCEvent event)
     import kameloso.string : has;
     import std.regex : regex, replaceAll;
 
-    if (event.content.has(cast(ubyte)I.colour))
+    with (event)
     {
-        event.content = stripColours(event.content);
-    }
+        if (content.has(cast(ubyte)I.colour))
+        {
+            content = stripColours(content);
+        }
 
-    if (event.content.has(cast(ubyte)I.bold))
-    {
-        auto rBold = (""~I.bold).regex;
-        event.content = event.content.replaceAll(rBold, string.init);
-    }
+        if (content.has(cast(ubyte)I.bold))
+        {
+            auto rBold = (""~I.bold).regex;
+            content = content.replaceAll(rBold, string.init);
+        }
 
-    if (event.content.has(cast(ubyte)I.italics))
-    {
-        auto rItalics = (""~I.italics).regex;
-        event.content = event.content.replaceAll(rItalics, string.init);
-    }
+        if (content.has(cast(ubyte)I.italics))
+        {
+            auto rItalics = (""~I.italics).regex;
+            content = content.replaceAll(rItalics, string.init);
+        }
 
-    if (event.content.has(cast(ubyte)I.underlined))
-    {
-        auto rUnderlined = (""~I.underlined).regex;
-        event.content = event.content.replaceAll(rUnderlined, string.init);
+        if (content.has(cast(ubyte)I.underlined))
+        {
+            auto rUnderlined = (""~I.underlined).regex;
+            content = content.replaceAll(rUnderlined, string.init);
+        }
     }
 }
 
