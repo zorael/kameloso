@@ -960,8 +960,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         }
         else
         {
-            // This will only change this plugin's monochrome setting...
-            // We have no way to propagate it
             settings.monochrome = true;
             return plugin.formatMessage(sink, event, settings.monochrome,
                 plugin.printerSettings.bellOnMention);
