@@ -46,6 +46,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     switch (event.type)
     {
     case CTCP_VERSION:
+        import std.system : os;
         /*  This metadata query is used to return the name and version of the
             client software in use. There is no specified format for the version
             string.
@@ -57,7 +58,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Response:  VERSION WeeChat 1.5-rc2 (git: v1.5-rc2-1-gc1441b1) (Apr 25 2016)
          */
 
-        line = "VERSION kameloso:%s:linux".format(cast(string)KamelosoInfo.version_);
+        line = "VERSION kameloso:%s:%s".format(cast(string)KamelosoInfo.version_, os);
         break;
 
     case CTCP_FINGER:
