@@ -3030,7 +3030,7 @@ void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
  +      customSettings = Array of custom settings to apply to plugins' own
  +          setting, in the string forms of "`plugin.setting=value`".
  +/
-void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @safe
+void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
     import kameloso.common : logger;
     import kameloso.string : has, nom;

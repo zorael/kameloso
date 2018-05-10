@@ -72,7 +72,7 @@ void initLogger(bool monochrome = settings.monochrome,
  +  `kameloso.common.settings`, so they know to use monochrome output or not. It
  +  is a problem that needs solving.
  +/
-CoreSettings settings;
+__gshared CoreSettings settings;
 
 
 // ThreadMessage
@@ -290,7 +290,7 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +/
 private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, Things things)
+    (auto ref Sink sink, Things things) @trusted
 {
     import kameloso.string : stripSuffix;
     import kameloso.traits : isConfigurableVariable, longestMemberName, UnqualArray;
