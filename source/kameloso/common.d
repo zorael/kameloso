@@ -66,7 +66,7 @@ void initLogger(bool monochrome = settings.monochrome,
 
 // settings
 /++
- +  A local copy of the `CoreSettings` struct, housing certain runtime settings.
+ +  A `CoreSettings` struct global, housing certain runtime settings.
  +
  +  This will be accessed from other parts of the program, via
  +  `kameloso.common.settings`, so they know to use monochrome output or not. It
