@@ -7,10 +7,7 @@ module kameloso.common;
 import kameloso.bash : BashForeground;
 import kameloso.uda;
 
-import std.datetime.systime : SysTime;
 import std.experimental.logger : Logger;
-import std.range : isOutputRange;
-import std.traits : Unqual, isType, isArray, isAssociativeArray;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -298,7 +295,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
     import kameloso.string : stripSuffix;
     import kameloso.traits : isConfigurableVariable, longestMemberName, UnqualArray;
     import std.format : formattedWrite;
-    import std.traits : hasUDA;
+    import std.traits : Unqual, hasUDA, isType;
 
     static if (coloured)
     {
@@ -759,6 +756,8 @@ struct Client
     import kameloso.irc : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
+    import std.datetime.systime : SysTime;
+
     // ThrottleValues
     /++
      +  Aggregate of values and state needed to throttle messages without
@@ -1177,6 +1176,7 @@ unittest
 auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
     (Thing thing, Label label) pure nothrow @nogc @safe
 {
+    import std.traits : Unqual;
     return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
 }
 

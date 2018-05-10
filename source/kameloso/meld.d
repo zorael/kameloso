@@ -6,7 +6,7 @@
 module kameloso.meld;
 
 import std.typecons : Flag, No, Yes;
-import std.traits : isArray, isAssociativeArray, isType;
+import std.traits : isArray, isAssociativeArray;
 
 // meldInto
 /++
@@ -47,6 +47,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
     import kameloso.traits : isOfAssignableType;
+    import std.traits : isType;
 
     if (meldThis == Thing.init)
     {
