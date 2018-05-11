@@ -25,8 +25,6 @@ import kameloso.ircdefs;
 import kameloso.common : logger;
 import kameloso.messaging;
 
-import std.json : JSONValue;
-
 private:
 
 
@@ -97,6 +95,8 @@ string getQuote(ChatbotPlugin plugin, const string nickname)
  +/
 void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
 {
+    import std.json : JSONValue;
+
     if (nickname in plugin.quotes)
     {
         plugin.quotes[nickname].array ~= JSONValue(line);
@@ -104,54 +104,8 @@ void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
     else
     {
         // No quotes for nickname
-        plugin.quotes.object[nickname] = JSONValue([ line ]);
+        plugin.quotes[nickname] = JSONValue([ line ]);
     }
-}
-
-
-// saveQuotes
-/++
- +  Saves the JSON quote list to disk.
- +
- +  This should be done whenever a new quote is added to the database.
- +
- +  Params:
- +      plugin = Current `ChatbotPlugin`.
- +      filename = Filename of the JSON storage file.
- +/
-void saveQuotes(ChatbotPlugin plugin, const string filename)
-{
-    import std.stdio : File, write, writeln;
-
-    auto file = File(filename, "w");
-    file.write(plugin.quotes.toPrettyString);
-    file.writeln();
-}
-
-
-// loadQuotes
-/++
- +  Loads JSON quote list from disk.
- +
- +  This only needs to be done at plugin (re-)initialisation.
- +
- +  Params:
- +      filename = Filename of the JSON storage file.
- +/
-JSONValue loadQuotes(const string filename)
-{
-    import std.file   : exists, isFile, readText;
-    import std.json   : parseJSON;
-
-    if (!filename.exists || !filename.isFile)
-    {
-        JSONValue newJSON;
-        newJSON.object = null;
-        return newJSON;
-    }
-
-    immutable wholeFile = readText(filename);
-    return parseJSON(wholeFile);
 }
 
 
@@ -329,7 +283,7 @@ void onCommandAddQuote(ChatbotPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addQuote(nickname, slice);
-        plugin.saveQuotes(plugin.chatbotSettings.quotesFile);
+        plugin.quotes.save(plugin.chatbotSettings.quotesFile);
 
         plugin.privmsg(event.channel, event.sender.nickname,
             "Quote for %s saved (%d on record)"
@@ -383,7 +337,7 @@ void onCommandReloadQuotes(ChatbotPlugin plugin)
     if (!plugin.chatbotSettings.quotes) return;
 
     logger.log("Reloading quotes");
-    plugin.quotes = loadQuotes(plugin.chatbotSettings.quotesFile);
+    plugin.quotes.load(plugin.chatbotSettings.quotesFile);
 }
 
 
@@ -394,7 +348,9 @@ void onCommandReloadQuotes(ChatbotPlugin plugin)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(ChatbotPlugin plugin)
 {
-    plugin.quotes = loadQuotes(plugin.chatbotSettings.quotesFile);
+    if (!plugin.chatbotSettings.quotes) return;
+
+    plugin.quotes.load(plugin.chatbotSettings.quotesFile);
 }
 
 
@@ -550,6 +506,8 @@ public:
  +/
 final class ChatbotPlugin : IRCPlugin
 {
+    import kameloso.json : JSONStorage;
+
     /// All Chatbot plugin settings gathered.
     @Settings ChatbotSettings chatbotSettings;
 
@@ -560,7 +518,7 @@ final class ChatbotPlugin : IRCPlugin
     +  It is in the JSON form of `string[][string]`, where the first key is the
     +  nickname of a user.
     +/
-    JSONValue quotes;
+    JSONStorage quotes;
 
     /++
     +   The event that spawned a "`help`" request. As a hack it is currently
