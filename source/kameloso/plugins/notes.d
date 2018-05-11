@@ -19,7 +19,6 @@ import kameloso.ircdefs;
 import kameloso.common;
 import kameloso.messaging;
 
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 private:
@@ -100,7 +99,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         }
 
         plugin.clearNotes(event.sender.nickname, event.channel);
-        plugin.saveNotes(plugin.notesSettings.notesFile);
+        plugin.notes.save(plugin.notesSettings.notesFile);
     }
     catch (const JSONException e)
     {
@@ -109,8 +108,8 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
         if (e.msg == "JSONValue is not an object")
         {
-            plugin.notes = emptyNotes();
-            plugin.saveNotes(plugin.notesSettings.notesFile);
+            plugin.notes.reset();
+            plugin.notes.save(plugin.notesSettings.notesFile);
         }
     }
 }
@@ -185,8 +184,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     {
         plugin.addNote(nickname, event.sender.nickname, event.channel, line);
         plugin.chan(event.channel, "Note added.");
-
-        plugin.saveNotes(plugin.notesSettings.notesFile);
+        plugin.notes.save(plugin.notesSettings.notesFile);
     }
     catch (const JSONException e)
     {
@@ -231,7 +229,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
 void onCommandReloadQuotes(NotesPlugin plugin)
 {
     logger.log("Reloading notes");
-    plugin.notes = loadNotes(plugin.notesSettings.notesFile);
+    plugin.notes.load(plugin.notesSettings.notesFile);
 }
 
 
@@ -414,6 +412,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string channel, const string line)
 {
     import std.datetime.systime : Clock;
+    import std.json : JSONValue;
 
     if (!line.length)
     {
@@ -450,76 +449,6 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 }
 
 
-// saveNotes
-/++
- +  Saves all notes to disk.
- +
- +  Params:
- +      plugin = Current `NotesPlugin`.
- +      filename = Filename of file to save to.
- +/
-void saveNotes(NotesPlugin plugin, const string filename)
-{
-    import std.stdio : File, write, writeln;
-
-    auto file = File(filename, "w");
-
-    file.write(plugin.notes.toPrettyString);
-    file.writeln();
-}
-
-
-// loadNotes
-/++
- +  Loads notes from disk into the in-memory storage.
- +
- +  Params:
- +      filename = Filename of file to read from.
- +
- +  Returns:
- +      A JSON array in the form of `Note[][string]`, where `Note[]` is an
- +      array of Voldemort `Note`s (from `getNotes`), keyed by nickname strings.
- +
- +/
-JSONValue loadNotes(const string filename)
-{
-    import std.file : exists, isFile, readText;
-    import std.json : JSONException, parseJSON;
-
-    if (!filename.exists || !filename.isFile)
-    {
-        //logger.info(filename, " does not exist or is not a file!");
-        return emptyNotes();
-    }
-
-    try
-    {
-        immutable wholeFile = readText(filename);
-        return parseJSON(wholeFile);
-    }
-    catch (const JSONException e)
-    {
-        logger.error("Could not load notes JSON from file: ", e.msg);
-        return emptyNotes();
-    }
-}
-
-
-// emptyNotes
-/++
- +  Initialises an empty JSON storage object.
- +
- +  Returns:
- +      An empty JSON value of `JSON_TYPE.OBJECT`.
- +/
-JSONValue emptyNotes()
-{
-    JSONValue newJSON;
-    newJSON.object = null;
-    return newJSON;
-}
-
-
 // onEndOfMotd
 /++
  +  Initialises the Notes plugin. Loads the notes from disk.
@@ -527,7 +456,7 @@ JSONValue emptyNotes()
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(NotesPlugin plugin)
 {
-    plugin.notes = loadNotes(plugin.notesSettings.notesFile);
+    plugin.notes.load(plugin.notesSettings.notesFile);
 }
 
 
@@ -543,6 +472,8 @@ public:
  +/
 final class NotesPlugin : IRCPlugin
 {
+    import kameloso.json : JSONStorage;
+
     /// All Notes plugin settings gathered.
     @Settings NotesSettings notesSettings;
 
@@ -553,7 +484,7 @@ final class NotesPlugin : IRCPlugin
     +  It is in the JSON form of `Note[][string][string]`, where the first
     +  string key is a channel and the second a nickname.
     +/
-    JSONValue notes;
+    JSONStorage notes;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
