@@ -91,9 +91,11 @@ struct JSONStorage
 }
 
 ///
+@system
 unittest
 {
     import std.conv : text;
+    import std.json : JSONValue;
 
     JSONStorage s;
     s.reset();
@@ -102,10 +104,10 @@ unittest
     s.storage["key"]["subkey1"] = "abc";
     s.storage["key"]["subkey2"] = "def";
     s.storage["key"]["subkey3"] = "ghi";
-    assert((s.storage["key"].length == 3), s.storage["key"].length.text);
+    assert((s.storage["key"].object.length == 3), s.storage["key"].object.length.text);
 
     s.storage["foo"] = null;
     s.storage["foo"]["arr"] = JSONValue([ "blah "]);
-    s.storage["foo"]["arr"] ~= JSONValue("bluh");
+    s.storage["foo"]["arr"].array ~= JSONValue("bluh");
     assert((s.storage["foo"]["arr"].array.length == 2), s.storage["foo"]["arr"].array.length.text);
 }
