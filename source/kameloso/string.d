@@ -27,6 +27,9 @@ import std.typecons : Flag, No, Yes;
  +  assert((foo == "foo"), foo);
  +  assert((bar == "bar"), bar);
  +  assert(!foobar.length);
+ +
+ +  enum line = "abc def ghi";
+ +  string def = line[4..$].nom(" ");  // now with auto ref
  +  ------------
  +
  +  Params:
@@ -194,6 +197,10 @@ unittest
         string user = "foo!bar@asdf.adsf.com";
         user = user.nom('!');
         assert((user == "foo"), user);
+    }
+    {
+        immutable def = "abc def ghi"[4..$].nom(" ");
+        assert((def == "def"), def);
     }
 }
 
