@@ -170,6 +170,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     try
     {
         import kameloso.string : beginsWith, nom;
+        import std.typecons : No, Yes;
 
         // imgur direct links naturally have no titles, but the normal pages do
         // Rewrite and look those up instead.
