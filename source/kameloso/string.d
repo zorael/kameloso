@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
  +      variable is advanced to after the separator.
  +/
 pragma(inline)
-T nom(Flag!"decode" decode = No.decode, T, C)(ref T line, const C separator,
+T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,
     string callingFile = __FILE__, size_t callingLine = __LINE__) pure
 if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
