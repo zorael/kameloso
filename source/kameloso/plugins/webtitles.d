@@ -169,23 +169,29 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
 
     try
     {
-        import kameloso.string : beginsWith;
+        import kameloso.string : beginsWith, nom;
 
         // imgur direct links naturally have no titles, but the normal pages do
         // Rewrite and look those up instead.
 
+        immutable originalURL = titleReq.url;
+
         if (titleReq.url.beginsWith("https://i.imgur.com/"))
         {
-            titleReq.url = "https://imgur.com/" ~ titleReq.url[20..$];
+            immutable path = titleReq.url[20..$].nom!(Yes.decode)('.');
+            titleReq.url = "https://imgur.com/" ~ path;
+            logger.log("imgur URL; rewritten");
         }
         else if (titleReq.url.beginsWith("http://i.imgur.com/"))
         {
-            titleReq.url = "https://imgur.com/" ~ titleReq.url[19..$];
+            immutable path = titleReq.url[19..$].nom!(Yes.decode)('.');
+            titleReq.url = "https://imgur.com/" ~ path;
+            logger.log("imgur URL; rewritten");
         }
 
         auto lookup = lookupTitle(titleReq.url);
         state.mainThread.reportURL(lookup, titleReq.event);
-        cache[titleReq.url] = lookup;
+        cache[originalURL] = lookup;
     }
     catch (const Exception e)
     {
