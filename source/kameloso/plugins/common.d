@@ -437,6 +437,7 @@ enum PrivilegeLevel
     anyone, /// Anyone may trigger this event.
     whitelist, /// Only those in the `whitelist` array may trigger this event.
     admin, /// Only the administrators may trigger this event.
+    ignore, /// Override privilege checks.
 }
 
 
@@ -1030,11 +1031,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (hasUDA!(fun, PrivilegeLevel))
                 {
-                    static assert (is(typeof(.hasUserAwareness)),
-                        module_ ~ " is missing UserAwareness mixin " ~
-                        "(needed for PrivilegeLevel checks).");
-
                     enum privilegeLevel = getUDAs!(fun, PrivilegeLevel)[0];
+
+                    static if (privilegeLevel != PrivilegeLevel.ignore)
+                    {
+                        static assert (is(typeof(.hasUserAwareness)),
+                            module_ ~ " is missing UserAwareness mixin " ~
+                            "(needed for PrivilegeLevel checks).");
+                    }
 
                     static if (verbose)
                     {
@@ -1123,6 +1127,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         break;
 
                     case anyone:
+                    case ignore:
                         break;
                     }
                 }
@@ -2093,6 +2098,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 case anyone:
                     request.trigger();
                     whoisQueue.remove(event.target.nickname);
+                    break;
+
+                case ignore:
                     break;
                 }
             }
