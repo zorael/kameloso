@@ -641,13 +641,13 @@ void updateUser(SeenPlugin plugin, const string signed)
         // Only update the user if he/she is in a home channel.
         foreach (homechan; bot.homes)
         {
-            assert((homechan in channels), "Home channel " ~ homechan ~
-                " was not in channels! Channel awareness should have added it.");
-
-            if (channels[homechan].users.canFind(nickname))
+            if (const channel = homechan in channels)
             {
-                plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
-                return;
+                if (channel.users.canFind(nickname))
+                {
+                    plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
+                    return;
+                }
             }
         }
     }
