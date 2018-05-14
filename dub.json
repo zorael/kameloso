@@ -67,7 +67,7 @@
         {
             "name": "nocolours",
             "versions": [ "Web" ],
-            "dependencies-posix": { "requests": "~>0.7.0" }
+            "dependencies": { "requests": "~>0.7.0" }
         },
         {
             "name": "nowebtitles-nocolours",
