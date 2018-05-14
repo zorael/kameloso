@@ -36,7 +36,7 @@
             "dependencies-windows": { "requests": "~>0.7.0" }
         },
         {
-            "name": "vanilla",
+            "name": "vanilla"
         },
         {
             "name": "colours",
@@ -58,19 +58,6 @@
             "buildType": "unittest",
             "versions": [ "Web", "Colours" ],
             "dependencies": { "requests": "~>0.7.0" }
-        },
-
-        {
-            "name": "nowebtitles",
-            "versions": [ "Colours" ]
-        },
-        {
-            "name": "nocolours",
-            "versions": [ "Web" ],
-            "dependencies": { "requests": "~>0.7.0" }
-        },
-        {
-            "name": "nowebtitles-nocolours",
         }
     ]
 }
