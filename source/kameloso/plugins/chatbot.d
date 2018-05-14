@@ -380,7 +380,6 @@ void onEndOfMotd(ChatbotPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "help")
-@BotCommand(NickPolicy.required, "hello")
 @Description("Shows the command list.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
