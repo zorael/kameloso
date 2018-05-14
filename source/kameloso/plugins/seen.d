@@ -703,11 +703,11 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
                         KamelosoLogger.logcoloursBright[LogLevel.all] :
                         KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                    sink.colour(infotint);
-                    sink.put("Seen users loaded, currently ");
                     sink.colour(logtint);
-                    sink.put(aa.length.to!string);
+                    sink.put("Seen users loaded, currently ");
                     sink.colour(infotint);
+                    sink.put(aa.length.to!string);
+                    sink.colour(logtint);
                     sink.put(" users seen.");
                     sink.colour(BashReset.all);
 
