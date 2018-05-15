@@ -161,7 +161,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     import kameloso.irc : isValidChannel, isValidNickname;
-    import kameloso.string : nom;
+    import kameloso.string : beginsWith, nom;
     import std.algorithm.searching : count;
 
     if (event.content.count(" ") != 2)
@@ -174,6 +174,12 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     immutable channel = line.nom!(Yes.decode)(" ");
     immutable account = line.nom!(Yes.decode)(" ");
+
+    while (line.beginsWith("+"))
+    {
+        line.nom!(Yes.decode)("+");
+    }
+
     immutable mode = line;
 
     if (!channel.isValidChannel(plugin.state.bot.server))
