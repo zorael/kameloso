@@ -23,6 +23,7 @@ public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
 public import kameloso.plugins.chanqueries;
 public import kameloso.plugins.persistence;
+public import kameloso.plugins.automode;
 
 version(Posix)
 {
@@ -57,4 +58,5 @@ public alias EnabledPlugins = AliasSeq!(
     NotesPlugin,
     SedReplacePlugin,
     SeenPlugin,
+    AutomodePlugin,
 );

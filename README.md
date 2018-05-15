@@ -53,6 +53,7 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 
 * Readme now has a news section!
 * segfault seems gone in 2.079.1?
+* experimental `automodes` plugin, please test
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback
 * direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
 * remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
@@ -212,10 +213,10 @@ The big exception is one function that warns the user of abnormalities after par
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
 * blacklists; by mask, by account? where and when? own service?
-* auto-mode plugin?
 * break out quotes from `chatbot`?
 * set up a real configuration home like `~/.kameloso`? what of Windows?
-* sort out who gets copies of `CoreSettings` and which one is accessed when
+* whitelist as JSON?
+* should *all* plugins have an `enabled` setting?
 
 # Built with
 
