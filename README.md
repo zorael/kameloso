@@ -9,6 +9,7 @@ Included is a framework that works with the majority of server networks. IRC is 
 ### Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
+* automatic mode sets (eg. auto `+o` for op)
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
@@ -23,9 +24,9 @@ Included is a framework that works with the majority of server networks. IRC is 
 
 ### Current limitations:
 
-* building **segfaults the dmd compiler** if compiling in `plain` or `release` modes with dmd **up to version 2.079.0**; only `debug` works (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)); fixed in 2.079.1?
+* building **may segfault the dmd compiler** if compiling in `plain` or `release` modes with dmd **up to version 2.079.0**; in some cases only `debug` works (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)); fixed in 2.079.1?
 * some plugins don't yet differentiate between different home channels if there is more than one
-* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need concrete examples to fix, please report oddities)
+* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need concrete examples to fix, please report abnormalities)
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. You will probably want to register yourself with such, where available.
 
@@ -43,7 +44,7 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 * [How to use](#how-to-use)
     * [Twitch](#twitch)
     * [Use as a library](#use-as-a-library)
-* [TODO](#todo)
+* [Roadmap](#roadmap)
 * [Built with](#built-with)
     * [License](#license)
     * [Acknowledgements](#acknowledgements)
@@ -57,6 +58,7 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback
 * direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
 * remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
+* all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the configuration file entries
 
 # Getting started
 
@@ -87,9 +89,7 @@ $ dub build
 
 This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols.
 
-> You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
-
-The above will currently not work. See the segfault bullet point under current limitations.
+You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
@@ -138,8 +138,12 @@ If you have compiled in colours, they may be hard to see and the text difficult 
 Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
 
 ```
+     you joined #channel
+kameloso sets mode +o you
      you | !say herp
 kameloso | herp
+     you | s/herp/actually blarp/
+kameloso | you | actually blarp
      you | !8ball
 kameloso | It is decidedly so
      you | !addquote you This is a quote
@@ -150,7 +154,7 @@ kameloso | you | This is a quote
 kameloso | Note added.
      you | !seen OfflinePerson
 kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
-     you | kameloso: sudo PRIVMSG #thischannel :this is a raw IRC command
+     you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
 kameloso | this is a raw IRC command
      you | !bash 85514
 kameloso | <Reverend> IRC is just multiplayer notepad.
@@ -202,9 +206,7 @@ The IRC server string-parsing modules are largely decoupled from the rest of the
 
 The big exception is one function that warns the user of abnormalities after parsing, which uses a *Logger* to inform the user when something seems wrong. The Logger in turn imports more. Comment the `version = PostParseSanityCheck` [at the top of `irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d#L19) to opt out of these messages and remove this dependency.
 
-# TODO
-
-(But not neccessarily for `1.0.0`)
+# Roadmap
 
 * pipedream: DCC
 * pipedream two: `ncurses`
@@ -216,7 +218,6 @@ The big exception is one function that warns the user of abnormalities after par
 * break out quotes from `chatbot`?
 * set up a real configuration home like `~/.kameloso`? what of Windows?
 * whitelist as JSON?
-* should *all* plugins have an `enabled` setting?
 
 # Built with
 
