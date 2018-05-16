@@ -210,9 +210,9 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Fetches and repeats a random quote of a supplied nickname.")
 void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
 {
-    import std.json : JSONException;
-
     if (!plugin.chatbotSettings.quotes) return;
+
+    import std.json : JSONException;
 
     import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : stripped;
@@ -310,9 +310,9 @@ void onCommandAddQuote(ChatbotPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints all quotes to the local terminal.")
 void onCommandPrintQuotes(ChatbotPlugin plugin)
 {
-    import std.stdio : writeln, stdout;
-
     if (!plugin.chatbotSettings.quotes) return;
+
+    import std.stdio : writeln, stdout;
 
     writeln(plugin.quotes.toPrettyString);
     version(Cygwin_) stdout.flush();
@@ -507,9 +507,6 @@ final class ChatbotPlugin : IRCPlugin
 {
     import kameloso.json : JSONStorage;
 
-    /// All Chatbot plugin settings gathered.
-    @Settings ChatbotSettings chatbotSettings;
-
     // quotes
     /++
     +  The in-memory JSON storage of all user quotes.
@@ -525,6 +522,9 @@ final class ChatbotPlugin : IRCPlugin
     +   `kameloso.common.ThreadMessage.PeekPlugins` return.
     +/
     IRCEvent helpEvent;
+
+    /// All Chatbot plugin settings gathered.
+    @Settings ChatbotSettings chatbotSettings;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
