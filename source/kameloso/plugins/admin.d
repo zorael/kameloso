@@ -45,6 +45,17 @@ import std.stdio;
 private:
 
 
+// AdminSettings
+/++
+ +  All Admin plugin settings, gathered in a struct.
+ +/
+struct AdminSettings
+{
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+}
+
+
 // onAnyEvent
 /++
  +  Prints all incoming events to the local terminal, in forms depending on
@@ -65,6 +76,8 @@ private:
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     if (plugin.printAll) writeln(event.raw, '$');
 
     if (plugin.printBytes)
@@ -110,6 +123,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints the details of a specific user.")
 void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.common : printObject;
 
     if (event.content in plugin.state.users)
@@ -139,6 +154,8 @@ void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
 @Description("[debug] Forget user accounts (for this plugin).")
 void onCommandForgetAccounts(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     foreach (ref user; plugin.state.users)
     {
         writeln("Clearing ", user.nickname);
@@ -163,6 +180,8 @@ void onCommandForgetAccounts(AdminPlugin plugin)
 @Description("Saves current configuration to disk.")
 void onCommandSave(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.common : ThreadMessage;
 
     logger.info("Saving configuration to disk.");
@@ -183,6 +202,8 @@ void onCommandSave(AdminPlugin plugin)
 @Description("[debug] Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.common : deepSizeof, printObject;
 
     logger.trace("Printing Admin's users");
@@ -215,6 +236,8 @@ void onCommandShowUsers(AdminPlugin plugin)
 @Description("Prints out the current channels array to the local terminal.")
 void onCommandShowChannels(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.common : printObject;
 
     logger.trace("Printing Admin's channels");
@@ -244,6 +267,8 @@ void onCommandShowChannels(AdminPlugin plugin)
 @Description("Sends supplied text to the server, verbatim.")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     plugin.raw(event.content);
 }
 
@@ -264,6 +289,8 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 @Description("Send a QUIT event to the server and exits the program.")
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     with (plugin.state)
     {
         if (event.content.length)
@@ -292,6 +319,8 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
@@ -332,6 +361,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a channel from the list of homes.")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm : countUntil, remove;
@@ -377,6 +408,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a nickname to the whitelist of users who may trigger the bot.")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.string : has, stripped;
 
     immutable nickname = event.content.stripped;
@@ -417,6 +450,8 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a nickname from the whitelist of users who may trigger the bot.")
 void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.string : has, stripped;
     import std.algorithm : countUntil, remove;
 
@@ -465,8 +500,10 @@ void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.required, "resetterm")
 @Description("Outputs the ASCII control character 15 to the terminal, " ~
     "to recover from binary garbage mode")
-void onCommandResetTerminal()
+void onCommandResetTerminal(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
     version(Cygwin_) stdout.flush();
@@ -487,6 +524,8 @@ void onCommandResetTerminal()
 @Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandPrintAll(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     plugin.printAll = !plugin.printAll;
     logger.info("Printing all: ", plugin.printAll);
 }
@@ -506,6 +545,8 @@ void onCommandPrintAll(AdminPlugin plugin)
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
 void onCommandPrintBytes(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     plugin.printBytes = !plugin.printBytes;
     logger.info("Printing bytes: ", plugin.printBytes);
 }
@@ -525,6 +566,8 @@ void onCommandPrintBytes(AdminPlugin plugin)
 @Description("[debug] Toggles a flag to generate assert statements for incoming events")
 void onCommandAsserts(AdminPlugin plugin)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.debugging : formatBotAssignment;
 
     plugin.printAsserts = !plugin.printAsserts;
@@ -547,6 +590,8 @@ void onCommandAsserts(AdminPlugin plugin)
 @Description("Joins/parts a channel.")
 void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : joiner, splitter;
     import std.array : array;
@@ -584,9 +629,11 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "set")
-@Description("[DEBUG] Changes a plugin's settings")
+@Description("[debug] Changes a plugin's settings")
 void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.adminSettings.enabled) return;
+
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
@@ -650,6 +697,9 @@ final class AdminPlugin : IRCPlugin
     +   `kameloso.common.ThreadMessage.PeekPlugins` return.
     +/
     IRCEvent setEvent;
+
+    /// All Admin options gathered.
+    @Settings AdminSettings adminSettings;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
