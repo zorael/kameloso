@@ -30,6 +30,9 @@ private:
  +/
 struct NotesSettings
 {
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+
     /// Filename of file to save the notes to.
     string notesFile = "notes.json";
 
@@ -56,6 +59,8 @@ struct NotesSettings
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     import kameloso.string : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
@@ -125,6 +130,8 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.RPL_NAMREPLY)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     import kameloso.irc : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
@@ -170,6 +177,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     import kameloso.string : has, nom;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -207,6 +216,8 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints saved notes to the local terminal.")
 void onCommandPrintNotes(NotesPlugin plugin)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     import std.stdio : stdout, writeln;
 
     writeln(plugin.notes.toPrettyString);
@@ -228,6 +239,8 @@ void onCommandPrintNotes(NotesPlugin plugin)
 @Description("[debug] Reloads quotes from disk.")
 void onCommandReloadQuotes(NotesPlugin plugin)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     logger.log("Reloading notes");
     plugin.notes.load(plugin.notesSettings.notesFile);
 }
@@ -247,6 +260,8 @@ void onCommandReloadQuotes(NotesPlugin plugin)
 @Description("[debug] Fakes a user being active in a channel.")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     import kameloso.string : has, nom;
     import std.typecons : Yes;
 
@@ -456,6 +471,8 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(NotesPlugin plugin)
 {
+    if (!plugin.notesSettings.enabled) return;
+
     plugin.notes.load(plugin.notesSettings.notesFile);
 }
 
