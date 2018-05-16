@@ -28,6 +28,9 @@ private:
  +/
 struct PrinterSettings
 {
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+
     /// Whether to display advanced colours in RRGGBB rather than simple Bash.
     bool truecolour = true;
 
@@ -80,6 +83,8 @@ struct PrinterSettings
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.printerSettings.enabled) return;
+
     IRCEvent mutEvent = event; // need a mutable copy
 
     with (plugin)
@@ -193,6 +198,8 @@ struct LogLineBuffer
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.printerSettings.enabled) return;
+
     import std.algorithm.searching : canFind;
     import std.file : FileException, exists, isDir;
     import std.path : buildNormalizedPath, expandTilde;
@@ -396,6 +403,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void commitLogs(PrinterPlugin plugin)
 {
+    if (!plugin.printerSettings.enabled) return;
+
     import std.file : FileException;
 
     string[] garbage;
@@ -1389,14 +1398,14 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    /// All Printer plugin options gathered.
-    @Settings PrinterSettings printerSettings;
-
     /// Whether we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
+
+    /// All Printer plugin options gathered.
+    @Settings PrinterSettings printerSettings;
 
     mixin IRCPluginImpl;
 }
