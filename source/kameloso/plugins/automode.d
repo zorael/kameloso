@@ -20,7 +20,7 @@ private:
  +/
 struct AutomodeSettings
 {
-    /// Whether to automode people at all or not.
+    /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
     /// The file to read and save automode definitions from/to.
@@ -91,13 +91,13 @@ void saveAutomodes(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.automodeSettings.enabled) return;
+
     import kameloso.messaging : raw;
     import std.algorithm.searching : canFind;
     import std.array : array, join;
     import std.format : format;
     import std.range : repeat;
-
-    if (!plugin.automodeSettings.enabled) return;
 
     string account, nickname;
 
@@ -160,6 +160,8 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 @Description("Adds an automatic mode change for a user account.")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.automodeSettings.enabled) return;
+
     import kameloso.irc : isValidChannel, isValidNickname;
     import kameloso.string : beginsWith, nom;
     import std.algorithm.searching : count;
@@ -218,6 +220,8 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 @Description("Clears any automatic mode change definitions for an account in a channel.")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.automodeSettings.enabled) return;
+
     import kameloso.string : nom;
     import std.algorithm.searching : count;
 
@@ -259,6 +263,8 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 @Description("[debug] Prints out automodes definitions to the local terminal.")
 void onCommandPrintModes(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.automodeSettings.enabled) return;
+
     import std.json : JSONValue;
     import std.stdio : writeln;
 
@@ -355,14 +361,14 @@ public:
  +/
 final class AutomodePlugin : IRCPlugin
 {
-    /// All Automode options gathered.
-    @Settings AutomodeSettings automodeSettings;
-
     /// Associative array of automodes.
     string[string][string] automodes;
 
     /// Records of applied automodes so we don't repeat ourselves.
     bool[string][string] appliedAutomodes;
+
+    /// All Automode options gathered.
+    @Settings AutomodeSettings automodeSettings;
 
     mixin IRCPluginImpl;
 }
