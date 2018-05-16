@@ -22,6 +22,17 @@ import std.regex : ctRegex;
 
 private:
 
+// WebtitlesSettings
+/++
+ +  All Webtitles settings, gathered in a struct.
+ +/
+struct WebtiltesSettings
+{
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+}
+
+
 // TitleLookup
 /++
  +  A record of a URL lookup.
@@ -74,6 +85,8 @@ struct TitleRequest
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.webtitlesSettings.enabled) return;
+
     import kameloso.constants : Timeout;
     import kameloso.string : beginsWith, has, nom;
     import std.concurrency : spawn;
@@ -471,6 +484,9 @@ final class WebtitlesPlugin : IRCPlugin
 {
     /// Cache of recently looked-up web titles.
     shared TitleLookup[string] cache;
+
+    /// All Webtitles options gathered.
+    @Settings WebtiltesSettings webtitlesSettings;
 
     mixin IRCPluginImpl;
 }
