@@ -561,9 +561,17 @@ struct Verbose;
 
 
 /++
- +  Annotation denoting that a function is part of an awareness mixin.
+ +  Annotation denoting that a function is part of an awareness mixin that
+ +  should be processed *before* normal plugin functions.
  +/
-struct AwarenessMixin;
+struct AwarenessEarly {}
+
+
+/++
+ +  Annotation denoting that a function is part of an awareness mixin that
+ +  should be processed *after* normal plugin functions.
+ +/
+struct AwarenessLate {}
 
 
 /++
@@ -732,17 +740,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.string : beginsWith, has, nom, stripPrefix;
-        import std.meta : AliasSeq, Filter, templateNot;
+        import std.meta : AliasSeq, Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
         import std.typecons : No, Yes;
 
-        alias isAwarenessMixin(alias T) = hasUDA!(T, AwarenessMixin);
-        alias isNotAwarenessMixin = templateNot!isAwarenessMixin;
+        alias earlyAwareness(alias T) = hasUDA!(T, AwarenessEarly);
+        alias lateAwareness(alias T) = hasUDA!(T, AwarenessLate);
+        alias isAwarenessFunction = templateOr!(earlyAwareness, lateAwareness);
+        alias isNormalPluginFunction = templateNot!isAwarenessFunction;
 
         alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
-        alias awarenessFuns = Filter!(isAwarenessMixin, funs);
-        alias notAwarenessFuns = Filter!(templateNot!isAwarenessMixin, funs);
-        alias funsInOrder = AliasSeq!(awarenessFuns, notAwarenessFuns);
+
+        alias beforeFuns = Filter!(earlyAwareness, funs);
+        alias afterFuns = Filter!(earlyAwareness, funs);
+        alias pluginFuns = Filter!(isNormalPluginFunction, funs);
+        alias funsInOrder = AliasSeq!(beforeFuns, AliasSeq!(pluginFuns, afterFuns));
 
         enum Next
         {
@@ -1000,9 +1012,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         .format(name, typestring));
                 }
 
-
-                static if (!hasUDA!(fun, PrivilegeLevel) &&
-                    !hasUDA!(fun, AwarenessMixin))
+                static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
                 {
                     with (IRCEvent.Type)
                     {
@@ -1943,7 +1953,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Removes a user's `kameloso.ircdefs.IRCUser` entry from a plugin's user
      +  list upon them disconnecting.
      +/
-    @(AwarenessMixin)
+    @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1964,7 +1974,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +
      +  Removes the old entry after assigning it to the new key.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)  // late?
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -1987,7 +1997,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s, along with
      +  a timestamp of the results of the last `WHOIS` call, which is this.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2018,7 +2028,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  honour `ChannelPolicy.home`. This way the user will only be updated with
      +  its account info if it was already created elsewhere.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
@@ -2041,7 +2051,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  `kameloso.ircdefs.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
@@ -2114,7 +2124,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +
      +  It usually contains everything interesting except services account name.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
@@ -2133,7 +2143,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Freenode only sends a list of the nicknames but SpotChat sends the full
      +  information.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.home)
@@ -2190,7 +2200,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2209,7 +2219,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  inefficient. Rehashing it makes it take its new size into account and
      +  makes lookup faster.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
@@ -2227,7 +2237,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  This is a thing on some servers that allow for custom user host
      +  addresses.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)  // late?
     @(Chainable)
     @(IRCEvent.Type.CHGHOST)
     void onUserAwarenessChangeHostMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2251,7 +2261,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.PING)
     void onUserAwarenessPingMixin(IRCPlugin plugin)
@@ -2301,7 +2311,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  `IRCPluginState.channels` associative array when the bot joins a
      +  channel.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.SELFJOIN)
     @(ChannelPolicy.home)
@@ -2320,7 +2330,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  `kameloso.ircdefs.IRCUser`s that was in that channel, to keep track of
      +  when a user runs out of scope.
      +/
-    @(AwarenessMixin)
+    @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.SELFPART)
     @(ChannelPolicy.home)
@@ -2358,7 +2368,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Increments the `kameloso.ircdefs.IRCUser`'s reference count, so that we
      +  know the user is in one more channel that we're monitoring.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(ChannelPolicy.home)
@@ -2388,7 +2398,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  channel less now (and should possibly be removed if it is no longer in
      +  any we're tracking).
      +/
-    @(AwarenessMixin)
+    @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.PART)
     @(ChannelPolicy.home)
@@ -2430,7 +2440,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +
      +  Removes the old entry.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2455,7 +2465,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Does not touch the internal list of users; the user awareness bits are
      +  expected to take care of that.
      +/
-    @(AwarenessMixin)
+    @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2477,7 +2487,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Update the entry for an `kameloso.ircdefs.IRCChannel` if someone changes
      +  the topic of it.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
@@ -2492,7 +2502,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Stores the timestamp of when a channel was created.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     @(ChannelPolicy.home)
@@ -2511,7 +2521,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  bans and mode exemptions. We let `kameloso.irc.setMode` take care of
      +  that.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.MODE)
     @(ChannelPolicy.home)
@@ -2531,7 +2541,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  This events includes all normal fields like ident and address, but not
      +  their channel modes (e.g. `@` for operator).
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
@@ -2596,7 +2606,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  out of them, but we need a skeletal `kameloso.ircdefs.IRCUser` at least,
      +  to increment the refcount of.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.home)
@@ -2685,7 +2695,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Bans are just normal A-mode channel modes that are paired with a user
      +  and that don't overwrite other bans (can be stacked).
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
@@ -2722,7 +2732,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     /++
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     @(ChannelPolicy.home)
@@ -2743,7 +2753,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +
      +  Without this we may try to index it when it's not yet available.
      +/
-    @(AwarenessMixin)
+    @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFMOTD)
     void onChannelAwarenessEndOfMotd(IRCPlugin plugin)
