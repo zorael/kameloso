@@ -23,6 +23,17 @@ import std.concurrency : Tid;
 private:
 
 
+// RedditSettings
+/++
+ +  All Reddit plugin settings, gathered in a struct.
+ +/
+struct RedditSettings
+{
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+}
+
+
 // RedditLookup
 /++
  +  A record of a Reddit post lookup.
@@ -56,6 +67,8 @@ struct RedditLookup
 @Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.redditSettings.enabled) return;
+
     import kameloso.constants : Timeout;
     import kameloso.string : has, stripped;
     import std.concurrency : spawn;
@@ -272,6 +285,9 @@ final class RedditPlugin : IRCPlugin
 {
     /// Cache of recently looked-up URLs.
     shared RedditLookup[string] cache;
+
+    /// All Reddit plugin options gathered.
+    @Settings RedditSettings redditSettings;
 
     mixin IRCPluginImpl;
 }
