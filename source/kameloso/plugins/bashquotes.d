@@ -20,6 +20,17 @@ import kameloso.common : logger;
 private:
 
 
+// BashQuotesSettings
+/++
+ +  All `BashQuotesPlugin` settings, gathered in a struct.
+ +/
+struct BashQuotesSettings
+{
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+}
+
+
 // onMessage
 /++
  +  Fetch a random or specified `bash.org` quote.
@@ -35,6 +46,8 @@ private:
 @Description("Fetch a random or specified bash.org quote.")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.bashQuotesSettings.enabled) return;
+
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
@@ -137,5 +150,8 @@ public:
  +/
 final class BashQuotesPlugin : IRCPlugin
 {
+    /// All BashQuotes options gathered.
+    @Settings BashQuotesSettings bashQuotesSettings;
+
     mixin IRCPluginImpl;
 }
