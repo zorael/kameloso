@@ -38,6 +38,17 @@ enum sedPattern2 = `^s#([^#]+)#([^#]*)#(g?)$`;
 enum sedPattern3 = `^s\|([^|]+)\|([^|]*)\|(g?)$`;
 
 
+// SedReplaceSettings
+/++
+ +  All sed-replace plugin settings, gathered in a struct.
+ +/
+struct SedReplaceSettings
+{
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+}
+
+
 // Line
 /++
  +  Struct aggregate of a spoken line and the timestamp when it was said.
@@ -155,6 +166,8 @@ unittest
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.sedReplaceSettings.enabled) return;
+
     import kameloso.messaging : chan;
     import kameloso.string : beginsWith, stripped;
     import std.datetime.systime : Clock;
@@ -226,6 +239,9 @@ final class SedReplacePlugin : IRCPlugin
      +  with nickname as key.
      +/
     Line[string] prevlines;
+
+    /// All sed-replace options gathered.
+    @Settings SedReplaceSettings sedReplaceSettings;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
