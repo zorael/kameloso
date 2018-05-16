@@ -203,9 +203,11 @@ private:
  +/
 struct SeenSettings
 {
+    /// Toggles whether or not the plugin should react to events at all.
+    bool enabled = true;
+
     /// How often to save seen users to disk (aside from program exit).
     int hoursBetweenSaves = 6;
-
 
     // seenFile
     /+
@@ -271,6 +273,8 @@ struct SeenSettings
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     /++
      +  Updates the user's timestamp to the current time.
      +
@@ -299,6 +303,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.anyone)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     /++
      +  There may not be an old one if the user was not indexed upon us joinng
      +  the channel, which is the case with
@@ -329,6 +335,8 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     // Update the user's entry
     plugin.updateUser(event.target.nickname);
 }
@@ -348,6 +356,8 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onNameReply(SeenPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     import std.algorithm.iteration : splitter;
 
     /++
@@ -391,6 +401,8 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onEndOfList(SeenPlugin plugin)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     plugin.seenUsers.rehash();
 }
 
@@ -436,6 +448,8 @@ void onEndOfList(SeenPlugin plugin)
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     with (plugin)
     {
         import std.datetime.systime : Clock;
@@ -508,6 +522,8 @@ void onPing(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     import kameloso.string : has, timeSince;
     import std.algorithm : canFind;
     import std.datetime.systime : Clock, SysTime;
@@ -603,6 +619,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     import std.json : JSONValue;
     import std.stdio : stdout, writeln;
 
@@ -785,6 +803,8 @@ void saveSeen(const long[string] seenUsers, const string filename)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 void onEndOfMotd(SeenPlugin plugin)
 {
+    if (!plugin.seenSettings.enabled) return;
+
     with (plugin)
     {
         seenUsers = plugin.loadSeen(seenSettings.seenFile);
