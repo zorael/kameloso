@@ -120,7 +120,6 @@ unittest
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
-        assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
         assert((content == "kameloso: 8ball"), content);
 `, '\n' ~ sink.data);
@@ -245,6 +244,7 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
         1.tabs, raw);
     sink.formattedWrite("%swith (IRCEvent.Type)\n", 1.tabs);
+    sink.formattedWrite("%swith (IRCUser.Class)\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
     sink.formatAssertStatementLines(event, string.init, 2);
@@ -292,7 +292,6 @@ unittest
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
-        assert(!sender.special, sender.special.to!string);
         assert((channel == "#flerrp"), channel);
         assert((content == "kameloso: 8ball"), content);
     }

@@ -1040,6 +1040,16 @@ struct IRCUser
 {
     @safe:
 
+    /// Classifiers; roles which a user is one of.
+    enum Class
+    {
+        anyone,
+        blacklist,
+        whitelist,
+        admin,
+        special,
+    }
+
     /// The user's nickname.
     string nickname;
 
@@ -1061,11 +1071,28 @@ struct IRCUser
     /// The colour (RRGGBB) to tint the user's nickname with.
     string colour;
 
+    /// User classifier.
+    Class class_;
+
     /++
      +  Flag that the user is "special", which is usually that it is a service
      +  like nickname services, or channel or memo or spam.
+     +
+     +  Now implemented as a `Class.special` classifier.
      +/
-    bool special;
+    pragma(inline)
+    bool special() const @property pure nothrow
+    {
+        return (class_ == Class.special);
+    }
+
+    /// Modify the user's specialness.
+    pragma(inline)
+    void special(const bool setting) @property pure nothrow
+    {
+        if (setting) class_ = Class.special;
+        else class_ = Class.anyone;  // What should be the fallback classifier?
+    }
 
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
     long lastWhois;
