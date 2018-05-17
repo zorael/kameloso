@@ -71,7 +71,6 @@ struct AdminSettings
  +  prints all incoming events as assert statements, for use in soure code
  +  `unittest` blocks.
  +/
-@(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)

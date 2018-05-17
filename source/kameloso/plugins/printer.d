@@ -78,7 +78,6 @@ struct PrinterSettings
  +
  +  Does not allocate, writes directly to a `std.stdio.LockingTextWriter`.
  +/
-@(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
@@ -193,7 +192,6 @@ struct LogLineBuffer
  +  See_Also:
  +      commitLogs
  +/
-@(Chainable)
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
