@@ -745,7 +745,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
 
         alias beforeFuns = Filter!(earlyAwareness, funs);
-        alias afterFuns = Filter!(earlyAwareness, funs);
+        alias afterFuns = Filter!(lateAwareness, funs);
         alias pluginFuns = Filter!(isNormalPluginFunction, funs);
         alias funsInOrder = AliasSeq!(beforeFuns, AliasSeq!(pluginFuns, afterFuns));
 
