@@ -590,10 +590,10 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 
                 default:
                     // Unknown setting in known section
-                    logger.infof("Found invalid %s under [%s]. " ~
+                    logger.logf("Found invalid %s under [%s]. " ~
                         "It is either malformed or no longer in use.",
                         hits["entry"], section);
-                    logger.info("Use --writeconfig to update your configuration file.");
+                    logger.log("Use --writeconfig to update your configuration file.");
                     break;
                 }
             }
