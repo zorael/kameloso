@@ -262,6 +262,7 @@ struct SeenSettings
  +
  +  This particular function doesn't care.
  +/
+@(Chainable)
 @(IRCEvent.Type.EMOTE)
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)
@@ -297,6 +298,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +/
+@(Chainable)
 @(IRCEvent.Type.NICK)
 @(PrivilegeLevel.anyone)
 void onNick(SeenPlugin plugin, const IRCEvent event)

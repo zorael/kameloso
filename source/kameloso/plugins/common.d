@@ -535,6 +535,13 @@ struct BotRegex
 
 
 /++
+ +  Annotation denoting that an event-handling function let other functions in
+ +  the same module process after it.
+ +/
+struct Chainable;
+
+
+/++
  +  Annotation denoting that an event-handling function is the end of a chain,
  +  letting no other functions in the same module be triggered after it has
  +  been.
@@ -993,6 +1000,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     if (!mutEvent.aux.length) return Next.continue_; // next fun
                 }
+                else static if (!hasUDA!(fun, Chainable) &&
+                    !hasUDA!(fun, Terminating) &&
+                    ((eventTypeUDA == IRCEvent.Type.CHAN) ||
+                    (eventTypeUDA == IRCEvent.Type.QUERY)))
+                {
+                    import kameloso.string : enumToString;
+                    enum typestring = eventTypeUDA.enumToString;
+                    pragma(msg, ("Note: %s is a wildcard %s event but is not " ~
+                        "Chainable nor Terminating")
+                        .format(name, typestring));
+                }
 
                 static if (!hasUDA!(fun, PrivilegeLevel) && !isAwarenessFunction!fun)
                 {
@@ -1157,18 +1175,17 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static assert(0, "Unknown event handler function signature");
                 }
 
-                static if (hasUDA!(fun, Terminating))
-                {
-                    // The triggered function is Terminating so return and let
-                    // the main loop continue with the next plugin.
-                    return Next.abort;
-                }
-                else
+                static if (hasUDA!(fun, Chainable))
                 {
                     // onEvent found an event and triggered a function, but
-                    // it wasn't Terminating and there may be more, so keep
-                    // looking
+                    // it's Chainable and there may be more, so keep looking
                     break udaloop;  // drop down
+                }
+                else /*static if (hasUDA!(fun, Terminating))*/
+                {
+                    // The triggered function is not Chainable so return and
+                    // let the main loop continue with the next plugin.
+                    return Next.abort;
                 }
             }
 
@@ -1937,6 +1954,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  list upon them disconnecting.
      +/
     @(AwarenessLate)
+    @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1957,6 +1975,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Removes the old entry after assigning it to the new key.
      +/
     @(AwarenessEarly)  // late?
+    @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -1979,6 +1998,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  a timestamp of the results of the last `WHOIS` call, which is this.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2009,6 +2029,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  its account info if it was already created elsewhere.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
     @(ChannelPolicy.home)
@@ -2031,6 +2052,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  associative array.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2103,6 +2125,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  It usually contains everything interesting except services account name.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
     void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2121,6 +2144,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  information.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.home)
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2177,6 +2201,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2195,6 +2220,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  makes lookup faster.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
     @(ChannelPolicy.home)
@@ -2212,6 +2238,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  addresses.
      +/
     @(AwarenessEarly)  // late?
+    @(Chainable)
     @(IRCEvent.Type.CHGHOST)
     void onUserAwarenessChangeHostMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2235,6 +2262,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  there's a use-case for it.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.PING)
     void onUserAwarenessPingMixin(IRCPlugin plugin)
     {
@@ -2284,6 +2312,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  channel.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.SELFJOIN)
     @(ChannelPolicy.home)
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2302,6 +2331,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  when a user runs out of scope.
      +/
     @(AwarenessLate)
+    @(Chainable)
     @(IRCEvent.Type.SELFPART)
     @(ChannelPolicy.home)
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2339,6 +2369,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  know the user is in one more channel that we're monitoring.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(ChannelPolicy.home)
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2368,6 +2399,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  any we're tracking).
      +/
     @(AwarenessLate)
+    @(Chainable)
     @(IRCEvent.Type.PART)
     @(ChannelPolicy.home)
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2409,6 +2441,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Removes the old entry.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2433,6 +2466,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  expected to take care of that.
      +/
     @(AwarenessLate)
+    @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2454,6 +2488,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  the topic of it.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
     @(ChannelPolicy.home)
@@ -2468,6 +2503,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Stores the timestamp of when a channel was created.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     @(ChannelPolicy.home)
     void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
@@ -2486,6 +2522,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  that.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.MODE)
     @(ChannelPolicy.home)
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2505,6 +2542,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  their channel modes (e.g. `@` for operator).
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2569,6 +2607,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  to increment the refcount of.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @(ChannelPolicy.home)
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2657,6 +2696,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  and that don't overwrite other bans (can be stacked).
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
     @(IRCEvent.Type.RPL_INVITELIST)
@@ -2693,6 +2733,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     @(ChannelPolicy.home)
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
@@ -2713,6 +2754,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
      +  Without this we may try to index it when it's not yet available.
      +/
     @(AwarenessEarly)
+    @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFMOTD)
     void onChannelAwarenessEndOfMotd(IRCPlugin plugin)
     {
