@@ -174,7 +174,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    import kameloso.irc : stripModesign;
+    import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : nom;
     import std.format : format;
     import std.json : JSONException;
