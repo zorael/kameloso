@@ -1,20 +1,13 @@
 /++
  +  The Chatbot plugin is a collection of small, harmless functions like `8ball`
- +  and repeating text, along with the ability to save and replay user quotes.
- +
- +  A user quote can be added by triggering the "`addquote`" bot command, by use
- +  of "`botname: addquote`" or "`!addquote`" (assuming a prefix of "`!`"). A
- +  random one can then be replayed by use o the "`quote [nickname]`" command.
+ +  and repeating text, as well as providing an "online help", sending a list of
+ +  all the available bot verbs to the querying nickname.
  +
  +  It has a few commands:
  +
  +  `8ball`<br>
- +  `quote`<br>
- +  `addquote`<br>
- +  `help` | `hello`<br>
- +  `say` | `säg`<br>
- +  `reloadquotes`<br>
- +  `printquotes`
+ +  `help`<br>
+ +  `say` | `säg`
  +
  +  It is very optional.
  +/
@@ -34,78 +27,8 @@ private:
  +/
 struct ChatbotSettings
 {
-    /// Filename of file to save the quotes to.
-    string quotesFile = "quotes.json";
-
-    /// Enable or disable the magic eightball feature.
-    bool eightball = true;
-
-    /// Enable or disable the quote feature.
-    bool quotes = true;
-
-    /// Enable or disable the "say" feature.
-    bool say = true;
-}
-
-
-// getQuote
-/++
- +  Fetches a quote for the specified nickname from the in-memory JSON array.
- +
- +  Example:
- +  ------------
- +  string quote = plugin.getQuote(event.sender.nickame);
- +  if (!quote.length) return;
- +  // ...
- +  ------------
- +
- +  Params:
- +      plugin = Current `ChatbotPlugin`.
- +      nickname = Nickname of the user to fetch quotes for.
- +
- +  Returns:
- +      Random quote string. If no quote is available it returns an empty string
- +      instead.
- +/
-string getQuote(ChatbotPlugin plugin, const string nickname)
-{
-    if (const arr = nickname in plugin.quotes)
-    {
-        import std.random : uniform;
-
-        return arr.array[uniform(0, arr.array.length)].str;
-    }
-    else
-    {
-        return string.init;
-    }
-}
-
-
-// addQuote
-/++
- +  Adds a quote to the in-memory JSON storage.
- +
- +  It does not save it to disk; this has to be done separately.
- +
- +  Params:
- +      plugin = Current `ChatbotPlugin`.
- +      nickname = Nickname of the quoted user.
- +      line = Quote to add.
- +/
-void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
-{
-    import std.json : JSONValue;
-
-    if (nickname in plugin.quotes)
-    {
-        plugin.quotes[nickname].array ~= JSONValue(line);
-    }
-    else
-    {
-        // No quotes for nickname
-        plugin.quotes[nickname] = JSONValue([ line ]);
-    }
+    /// Whether the Chatbot plugin should react to events at all.
+    bool enabled = true;
 }
 
 
@@ -126,7 +49,7 @@ void addQuote(ChatbotPlugin plugin, const string nickname, const string line)
 @Description("Repeats text to the channel the event was sent to.")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.chatbotSettings.say) return;
+    if (!plugin.chatbotSettings.enabled) return;
 
     import std.format : format;
 
@@ -157,7 +80,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Implements 8ball. Randomises a vague yes/no response.")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.chatbotSettings.eightball) return;
+    if (!plugin.chatbotSettings.enabled) return;
 
     import std.format : format;
     import std.random : uniform;
@@ -190,167 +113,6 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
     plugin.privmsg(event.channel, event.sender.nickname, reply);
-}
-
-
-// onCommandQuote
-/++
- +  Fetches and repeats a random quote of a supplied nickname.
- +
- +  The quote is read from in-memory JSON storage, and it is sent to the
- +  channel the triggering event occured in, alternatively in a private message
- +  if the request was sent in one such.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.whitelist)
-@(ChannelPolicy.home)
-@BotCommand("quote")
-@BotCommand(NickPolicy.required, "quote")
-@Description("Fetches and repeats a random quote of a supplied nickname.")
-void onCommandQuote(ChatbotPlugin plugin, const IRCEvent event)
-{
-    if (!plugin.chatbotSettings.quotes) return;
-
-    import std.json : JSONException;
-
-    import kameloso.irc : isValidNickname, stripModesign;
-    import kameloso.string : stripped;
-    import std.format : format;
-
-    // stripModesign to allow for quotes from @nickname and +dudebro
-    immutable signed = event.content.stripped;
-    immutable nickname = plugin.state.bot.server.stripModesign(signed);
-
-    if (!nickname.isValidNickname(plugin.state.bot.server))
-    {
-        logger.errorf("Invalid nickname: '%s'", nickname);
-        return;
-    }
-
-    try
-    {
-        immutable quote = plugin.getQuote(nickname);
-
-        if (quote.length)
-        {
-            plugin.privmsg(event.channel, event.sender.nickname,
-                "%s | %s".format(nickname, quote));
-        }
-        else
-        {
-            plugin.privmsg(event.channel, event.sender.nickname,
-                "No quote on record for %s".format(nickname));
-        }
-    }
-    catch (const JSONException e)
-    {
-        logger.errorf("Could not quote '%s': %s", nickname, e.msg);
-    }
-}
-
-
-// onCommandAddQuote
-/++
- +  Creates a new quote.
- +
- +  It is added to the in-memory JSON storage which then gets immediately
- +  written to disk.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.whitelist)
-@(ChannelPolicy.home)
-@BotCommand("addquote")
-@BotCommand(NickPolicy.required, "addquote")
-@Description("Creates a new quote.")
-void onCommandAddQuote(ChatbotPlugin plugin, const IRCEvent event)
-{
-    if (!plugin.chatbotSettings.quotes) return;
-
-    import kameloso.irc : stripModesign;
-    import kameloso.string : nom;
-    import std.format : format;
-    import std.json : JSONException;
-    import std.typecons : Yes;
-
-    string slice = event.content;  // need mutable
-    immutable signed = slice.nom!(Yes.decode)(' ');
-    immutable nickname = plugin.state.bot.server.stripModesign(signed);
-
-    if (!nickname.length || !slice.length) return;
-
-    try
-    {
-        plugin.addQuote(nickname, slice);
-        plugin.quotes.save(plugin.chatbotSettings.quotesFile);
-
-        plugin.privmsg(event.channel, event.sender.nickname,
-            "Quote for %s saved (%d on record)"
-            .format(nickname, plugin.quotes[nickname].array.length));
-    }
-    catch (const JSONException e)
-    {
-        logger.errorf("Could not add quote for '%s': %s", nickname, e.msg);
-    }
-}
-
-
-// onCommandPrintQuotes
-/++
- +  Prints the in-memory quotes JSON storage to the local terminal.
- +
- +  This is for debugging purposes.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "printquotes")
-@Description("[debug] Prints all quotes to the local terminal.")
-void onCommandPrintQuotes(ChatbotPlugin plugin)
-{
-    if (!plugin.chatbotSettings.quotes) return;
-
-    import std.stdio : writeln, stdout;
-
-    writeln(plugin.quotes.toPrettyString);
-    version(Cygwin_) stdout.flush();
-}
-
-
-// onCommandReloadQuotes
-/++
- +  Reloads the JSON quotes from disk.
- +
- +  This is both for debugging purposes and to simply allow for live manual
- +  editing of quotes.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "reloadquotes")
-@Description("[debug] Reloads quotes from disk.")
-void onCommandReloadQuotes(ChatbotPlugin plugin)
-{
-    if (!plugin.chatbotSettings.quotes) return;
-
-    logger.log("Reloading quotes");
-    plugin.quotes.load(plugin.chatbotSettings.quotesFile);
-}
-
-
-// onEndOfMotd
-/++
- +  Initialises the passed `ChatbotPlugin`. Loads the quotes from disk.
- +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-void onEndOfMotd(ChatbotPlugin plugin)
-{
-    if (!plugin.chatbotSettings.quotes) return;
-
-    plugin.quotes.load(plugin.chatbotSettings.quotesFile);
 }
 
 
@@ -498,24 +260,16 @@ public:
 // Chatbot
 /++
  +  The Chatbot plugin provides common chat functionality. This includes magic
- +  8ball, user quotes, and some other miscellanea.
+ +  8ball and some other miscellanea.
  +
  +  Administrative actions have been broken out into
  +  `kameloso.plugins.admin.AdminPlugin`.
+ +
+ +  User quotes have been broken out into
+ +  `kameloso.plugins.quotes.QuotesPlugin`.
  +/
 final class ChatbotPlugin : IRCPlugin
 {
-    import kameloso.json : JSONStorage;
-
-    // quotes
-    /++
-    +  The in-memory JSON storage of all user quotes.
-    +
-    +  It is in the JSON form of `string[][string]`, where the first key is the
-    +  nickname of a user.
-    +/
-    JSONStorage quotes;
-
     /++
     +   The event that spawned a "`help`" request. As a hack it is currently
     +   stored here, so the plugin knows what to do when the results of

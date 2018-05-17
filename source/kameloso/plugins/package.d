@@ -24,6 +24,7 @@ public import kameloso.plugins.seen;
 public import kameloso.plugins.chanqueries;
 public import kameloso.plugins.persistence;
 public import kameloso.plugins.automode;
+public import kameloso.plugins.quotes;
 
 version(Posix)
 {
@@ -59,4 +60,5 @@ public alias EnabledPlugins = AliasSeq!(
     SedReplacePlugin,
     SeenPlugin,
     AutomodePlugin,
+    QuotesPlugin,
 );
