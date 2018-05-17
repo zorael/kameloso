@@ -316,11 +316,11 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
 
-    const account = plugin.state.users[event.sender.nickname].account;
+    if (!event.sender.account.length) return;
 
     foreach (ref channelApplications; plugin.appliedAutomodes)
     {
-        channelApplications.remove(account);
+        channelApplications.remove(event.sender.account);
     }
 }
 
