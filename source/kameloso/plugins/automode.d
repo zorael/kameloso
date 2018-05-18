@@ -87,17 +87,10 @@ void saveAutomodes(AutomodePlugin plugin)
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
+@(PrivilegeLevel.anyone)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
-
-    import kameloso.messaging : raw;
-    import std.algorithm.searching : canFind;
-    import std.array : array, join;
-    import std.format : format;
-    import std.range : repeat;
 
     string account, nickname;
 
@@ -119,16 +112,39 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         if (!sender.account.length)
         {
             // Not an extended join
-            // FIXME: Preemptively WHOIS?
-            logger.log("Preemptively WHOIS?");
+            import kameloso.messaging : throttleraw;
+            plugin.state.mainThread.throttleraw("WHOIS " ~ nickname);
             return;
         }
         goto case ACCOUNT;
 
     default:
-        assert(0, "Invalid IRCEvent.Type annotation on %s: %s"
-            .format(__FUNCTION__, event.type));
+        assert(0);
     }
+
+    plugin.applyAutomodes(nickname, account);
+}
+
+
+// applyAutomodes
+/++
+ +  Applies automodes for a specific user.
+ +
+ +  It applies any and all defined modestrings for said user, in any and all
+ +  channels the bot is operator in.
+ +
+ +  Params:
+ +      plugin = The current `AutomodePlugin`
+ +      nickname = String nickname of the user to apply modes to.
+ +      account = String account of the user, to look up definitions for.
+ +/
+void applyAutomodes(AutomodePlugin plugin, const string nickname, const string account)
+{
+    import kameloso.messaging : throttleraw;
+    import std.algorithm.searching : canFind;
+    import std.array : array, join;
+    import std.format : format;
+    import std.range : repeat;
 
     foreach (const channel, const channelaccounts; plugin.automodes)
     {
@@ -136,13 +152,14 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         if (!modes || !modes.length) continue;
 
         auto occupiedChannel = channel in plugin.state.channels;
-        if (!occupiedChannel || (occupiedChannel.ops.canFind(plugin.state.bot.nickname)))
+        if (!occupiedChannel || !occupiedChannel.ops.canFind(plugin.state.bot.nickname))
         {
-            // We aren't in the channel we have this automode definition for
+            logger.log("We aren't in or we aren't op in the channel we have this automode definition for");
+            logger.logf("(%s, %s, %s)", channel, nickname, *modes);
             continue;
         }
 
-        plugin.state.mainThread.raw("MODE %s %s%s %s".format(event.channel,
+        plugin.state.mainThread.throttleraw("MODE %s %s%s %s".format(channel,
             "+".repeat((*modes).length).join, *modes, nickname));
     }
 }
@@ -271,6 +288,7 @@ void onCommandPrintModes(AutomodePlugin plugin, const IRCEvent event)
     writeln(JSONValue(plugin.automodes).toPrettyString);
 }
 
+
 // onCommandHello
 /++
  +  Triggers a WHOIS of the user invoking it with bot commands.
@@ -280,11 +298,14 @@ void onCommandPrintModes(AutomodePlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "hello")
-@Description("Forces the bot to query for a user's account, to see if he/she is due an automode.")
-void onCommandHello(AutomodePlugin plugin, const IRCEvent event) {}
+@Description("Forces the bot to attempt to apply automodes.")
+void onIntroduction(AutomodePlugin plugin, const IRCEvent event)
+{
+    plugin.applyAutomodes(event.sender.nickname, event.sender.account);
+}
 
 
 // onUserPart
@@ -322,6 +343,18 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
     {
         channelApplications.remove(event.sender.account);
     }
+}
+
+
+// onEndOfMotd
+/++
+ +  Populate automodes array after we have successfully logged onto the server.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMotd(AutomodePlugin plugin)
+{
+    plugin.populateAutomodes();
 }
 
 
