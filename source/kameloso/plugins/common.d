@@ -1094,15 +1094,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (is(Params : AliasSeq!IRCEvent) ||
                                 (arity!fun == 0))
                             {
-                                this.doWhois(mutEvent,
-                                    mutEvent.sender.nickname, privilegeLevel, &fun);
+                                this.doWhois(mutEvent, privilegeLevel, &fun);
                                 return Next.continue_;
                             }
                             else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
                                 is(Params : AliasSeq!This))
                             {
-                                this.doWhois(this, mutEvent,
-                                    mutEvent.sender.nickname, privilegeLevel, &fun);
+                                this.doWhois(this, mutEvent, privilegeLevel, &fun);
                                 return Next.continue_;
                             }
                             else static if (Filter!(isIRCPluginParam, Params).length)
@@ -3013,21 +3011,19 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
  +          `kameloso.ircdefs.IRCEvent` to replay once the `WHOIS` result
  +          return.
  +      event = `kameloso.ircdefs.IRCEvent` that instigated this `WHOIS` call.
- +      nickname = Nickname of the user to `WHOIS`.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
-void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
-    const IRCEvent event, const string nickname, PrivilegeLevel privilegeLevel,
-    F fn)
+void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event,
+    PrivilegeLevel privilegeLevel, F fn)
 {
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
-    const user = nickname in plugin.state.users;
+    const user = event.sender;
     const now = Clock.currTime.toUnixTime;
 
-    if (user && ((now - user.lastWhois) < Timeout.whois))
+    if ((now - user.lastWhois) < Timeout.whois)
     {
         return;
     }
@@ -3036,23 +3032,21 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload,
     {
         static if (!is(Payload == typeof(null)))
         {
-            state.whoisQueue[nickname] = whoisRequest(payload, event,
+            state.whoisQueue[user.nickname] = whoisRequest(payload, event,
                 privilegeLevel, fn);
         }
         else
         {
-            state.whoisQueue[nickname] = whoisRequest(state, event,
+            state.whoisQueue[user.nickname] = whoisRequest(state, event,
                 privilegeLevel, fn);
         }
     }
 }
 
 /// Ditto
-void doWhois(F)(IRCPlugin plugin, const IRCEvent event,
-    const string nickname, PrivilegeLevel privilegeLevel, F fn)
+void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
 {
-    return doWhois!(F, typeof(null))(plugin, null, event, nickname,
-        privilegeLevel, fn);
+    return doWhois!(F, typeof(null))(plugin, null, event, privilegeLevel, fn);
 }
 
 
