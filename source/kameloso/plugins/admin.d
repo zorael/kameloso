@@ -127,9 +127,9 @@ void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
 
     import kameloso.common : printObject;
 
-    if (event.content in plugin.state.users)
+    if (const user = event.content in plugin.state.users)
     {
-        printObject(plugin.state.users[event.sender.nickname]);
+        printObject(*user);
     }
     else
     {
@@ -329,7 +329,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     if (!channel.isValidChannel(plugin.state.bot.server))
     {
-        logger.error("Invalid channel");
+        logger.warning("Invalid channel: ", channel);
         return;
     }
 
@@ -371,7 +371,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     if (!channel.isValidChannel(plugin.state.bot.server))
     {
-        logger.error("Invalid channel");
+        logger.warning("Invalid channel: ", channel);
         return;
     }
 
@@ -381,7 +381,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         if (homeIndex == -1)
         {
-            logger.errorf("Channel %s was not in bot.homes", channel);
+            logger.warningf("Channel %s was not in bot.homes", channel);
             return;
         }
 
@@ -464,7 +464,7 @@ void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 
     if (whitelistIndex == -1)
     {
-        logger.error("No such user in whitelist");
+        logger.warning("No such user in whitelist");
         return;
     }
 
@@ -592,7 +592,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        logger.error("No channels supplied...");
+        logger.warning("No channels supplied...");
         return;
     }
 
