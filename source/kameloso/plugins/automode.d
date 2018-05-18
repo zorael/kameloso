@@ -324,8 +324,7 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
-        immutable account = plugin.state.users[event.sender.nickname].account;
-        (*channelApplications).remove(account);
+        (*channelApplications).remove(event.sender.account);
     }
 }
 
