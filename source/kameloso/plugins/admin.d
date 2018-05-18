@@ -405,7 +405,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "whitelist")
-@Description("Adds a nickname to the whitelist of users who may trigger the bot.")
+@Description("Adds an account to the whitelist of users who may trigger the bot.")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -413,24 +413,19 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
     import kameloso.irc : isValidNickname;
     import kameloso.string : has, stripped;
 
-    immutable nickname = event.content.stripped;
+    immutable account = event.content.stripped;
 
-    if (!nickname.isValidNickname(plugin.state.bot.server))
+    if (!account.isValidNickname(plugin.state.bot.server))
     {
-        logger.warning("Invalid nickname: ", nickname);
+        logger.warning("Invalid account: ", account);
         return;
     }
 
-    with (plugin.state)
-    {
-        bot.whitelist ~= nickname;
-        bot.updated = true;
-        logger.infof("%s added to whitelist", nickname);
-    }
+    plugin.alterAccountClassifier(Yes.add, "whitelist", account);
 }
 
 
-// onCommandUnwhitelist
+// onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
  +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
@@ -442,38 +437,129 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "unwhitelist")
-@Description("Removes a nickname from the whitelist of users who may trigger the bot.")
-void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
+@BotCommand(NickPolicy.required, "dewhitelist")
+@Description("Removes an account from the whitelist of users who may trigger the bot.")
+void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
+{
+    if (!plugin.adminSettings.enabled) return;
+
+    import kameloso.string : stripped;
+
+    plugin.alterAccountClassifier(No.add, "whitelist", event.content.stripped);
+}
+
+
+// onCommandBlacklist
+/++
+ +  Adds a nickname to the list of users who may not trigger the bot whatsoever,
+ +  even on actions annotated `PrivilegeLevel.anyone`.
+ +
+ +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(NickPolicy.required, "blacklist")
+@Description("Adds an account to the blacklist, exempting them from triggering the bot.")
+void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.irc : isValidNickname;
     import kameloso.string : has, stripped;
-    import std.algorithm : countUntil, remove;
 
-    immutable nickname = event.content.stripped;
+    immutable account = event.content.stripped;
 
-    if (!nickname.isValidNickname(plugin.state.bot.server))
+    if (!account.isValidNickname(plugin.state.bot.server))
     {
-        logger.warning("Invalid nickname: ", nickname);
+        logger.warning("Invalid account: ", account);
         return;
     }
 
-    immutable whitelistIndex = plugin.state.bot.whitelist.countUntil(nickname);
+    plugin.alterAccountClassifier(Yes.add, "blacklist", account);
+}
 
-    if (whitelistIndex == -1)
+
+// onCommandDeblacklist
+/++
+ +  Removes a nickname from the list of users who may not trigger the bot
+ +  whatsoever.
+ +
+ +  This is on a `whitelist` level, as opposed to `admin`.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(NickPolicy.required, "deblacklist")
+@Description("Removes an account from the blacklist, allowing them to trigger the bot again.")
+void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
+{
+    if (!plugin.adminSettings.enabled) return;
+
+    import kameloso.string : stripped;
+
+    plugin.alterAccountClassifier(No.add, "blacklist", event.content.stripped);
+}
+
+
+// alterAccountClassifier
+/++
+ +  Adds or removes an account from the file of user classifier definitions,
+ +  and reloads all plugins to make them read the updated lists.
+ +/
+void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
+    const string section, const string account)
+{
+    import kameloso.json : JSONStorage;
+    import kameloso.common : ThreadMessage;
+    import std.concurrency : send;
+    import std.json : JSONValue;
+
+    assert(((section == "whitelist") || (section == "blacklist")), section);
+
+    JSONStorage json;
+    json.reset();
+    json.load(plugin.usersFile);
+
+    /*if ("admin" !in json)
     {
-        logger.warning("No such user in whitelist");
-        return;
+        json["admin"] = null;
+        json["admin"].array = null;
+    }*/
+
+    if ("whitelist" !in json)
+    {
+        json["whitelist"] = null;
+        json["whitelist"].array = null;
     }
 
-    with (plugin.state)
+    if ("blacklist" !in json)
     {
-        bot.whitelist = bot.whitelist.remove(whitelistIndex);
-        bot.updated = true;
-        logger.infof("%s removed from whitelist", nickname);
+        json["blacklist"] = null;
+        json["blacklist"].array = null;
     }
+
+    const accountAsJSON = JSONValue(account);
+
+    if (add)
+    {
+        json[section].array ~= accountAsJSON;
+    }
+    else
+    {
+        import std.algorithm.mutation : remove;
+        import std.algorithm.searching : countUntil;
+
+        immutable index = json[section].array.countUntil(accountAsJSON);
+        json[section] = json[section].array.remove(index);
+    }
+
+    json.save(plugin.usersFile);
+
+    // Force persistence to reload the file with the new changes
+    plugin.state.mainThread.send(ThreadMessage.Reload());
 }
 
 
@@ -665,6 +751,9 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
+    /// FIXME: File with user definitions. Must be the same as in persistence.d.
+    enum usersFile = "users.json";
+
     /++
      +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
      +  events.
