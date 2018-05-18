@@ -873,7 +873,7 @@ struct IRCBot
         string[] homes;
 
         /// Whitelist of services accounts that may trigger the bot.
-        string[] whitelist;
+        //string[] whitelist;
 
         /// Currently inhabited channels (though not neccessarily homes).
         string[] channels;
@@ -910,8 +910,8 @@ struct IRCBot
     {
         import std.format : format;
 
-        sink("%s:%s!~%s | homes:%s | chans:%s | whitelist:%s | server:%s"
-             .format(nickname, authLogin, ident, homes, channels, whitelist, server));
+        sink("%s:%s!~%s | homes:%s | chans:%s | server:%s"
+             .format(nickname, authLogin, ident, homes, channels, server));
     }
 }
 

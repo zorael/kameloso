@@ -909,7 +909,7 @@ int main(string[] args)
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 
-        if (!bot.homes.length && !bot.admins.length && !bot.whitelist.length)
+        if (!bot.homes.length && !bot.admins.length)
         {
             import std.path : baseName;
 

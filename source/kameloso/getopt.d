@@ -113,9 +113,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "password",      &bot.authPassword,
             "m|admins",      "Services accounts of the bot's masters, who get " ~
                              "access to administrative functions", &bot.admins,
-            "W|whitelist",   "Whitelist of account names that may trigger normal, " ~
+            /*"W|whitelist",   "Whitelist of account names that may trigger normal, " ~
                              "non-administrative functions (comma-separated)",
-                             &bot.whitelist,
+                             &bot.whitelist,*/
             "H|home",        "Home channels to operate in, comma-separated" ~
                             " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~
