@@ -112,6 +112,9 @@ struct ThreadMessage
      +  `kameloso.plugins.common.IRCPlugin`s in the current `Client`.
      +/
     struct PeekPlugins {}
+
+    /// Concurrency message asking plugins to "reload".
+    struct Reload {}
 }
 
 

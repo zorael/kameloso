@@ -124,6 +124,9 @@ interface IRCPlugin
      +  array.
      +/
     ref int rehashCounter() pure nothrow @nogc @property;
+
+    /// Reloads the plugin, where such is applicable.
+    void reload() @system;
 }
 
 
@@ -1781,6 +1784,26 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref int rehashCounter() pure nothrow @nogc @property
     {
         return privateRehashCounter;
+    }
+
+
+    // reload
+    /++
+     +  Reloads the plugin, where such makes sense.
+     +/
+    void reload() @system
+    {
+        static if (__traits(compiles, .reload))
+        {
+            static if (__traits(compiles, .reload(this)))
+            {
+                .reload(this);
+            }
+            else
+            {
+                static assert(0, module_ ~ ".reload does not compile");
+            }
+        }
     }
 }
 

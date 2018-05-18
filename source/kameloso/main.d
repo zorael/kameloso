@@ -142,6 +142,15 @@ Flag!"quit" checkMessages(ref Client client)
         client.conn.sendline("PONG :", target);
     }
 
+    /// Ask plugins to reload.
+    void reload(ThreadMessage.Reload)
+    {
+        foreach (plugin; client.plugins)
+        {
+            plugin.reload();
+        }
+    }
+
     /// Quit the server with the supplied reason, or the default.
     void quitServer(ThreadMessage.Quit, string givenReason)
     {
