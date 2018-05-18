@@ -666,24 +666,23 @@ unittest
     immutable res1 = state.filterUser(event);
     assert((res1 == FilterResult.whois), res1.text);
 
-    state.users["zorael"] = IRCUser.init;
-    state.users["zorael"].account = "zorael";
+    event.sender.account = "zorael";
     state.bot.admins = [ "zorael" ];
 
     immutable res2 = state.filterUser(event);
     assert((res2 == FilterResult.pass), res2.text);
 
-    /*state.bot.admins = [ "harbl" ];
-    state.bot.whitelist ~= "zorael";
+    state.bot.admins = [ "harbl" ];
+    event.sender.class_ = IRCUser.Class.whitelist;
 
     immutable res3 = state.filterUser(event);
     assert((res3 == FilterResult.pass), res3.text);
 
-    state.bot.whitelist = [];
-    state.users["zorael"].lastWhois = Clock.currTime.toUnixTime;
+    event.sender.class_ = IRCUser.Class.anyone;
+    event.sender.lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = state.filterUser(event);
-    assert((res4 == FilterResult.fail), res4.text);*/
+    assert((res4 == FilterResult.fail), res4.text);
 }
 
 
