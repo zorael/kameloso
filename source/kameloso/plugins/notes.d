@@ -396,15 +396,7 @@ void pruneNotes(NotesPlugin plugin)
 {
     foreach (immutable channel, channelNotes; plugin.notes.object)
     {
-        /*foreach (immutable nickname, nickNotes; plugin.notes[channel])
-        {
-            if (nickNotes.array.length == 0)
-            {
-                plugin.notes[channel].object.remove(nickname);
-            }
-        }*/
-
-        if (channelNotes.array.length == 0)
+        if (channelNotes.object.length == 0)
         {
             // Dead channel
             plugin.notes.object.remove(channel);

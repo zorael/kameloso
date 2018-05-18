@@ -298,14 +298,11 @@ void onCommandPrintModes(AutomodePlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.anyone)
+@(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "hello")
 @Description("Forces the bot to attempt to apply automodes.")
-void onIntroduction(AutomodePlugin plugin, const IRCEvent event)
-{
-    plugin.applyAutomodes(event.sender.nickname, event.sender.account);
-}
+void onIntroduction(AutomodePlugin plugin, const IRCEvent event) {}
 
 
 // onUserPart
