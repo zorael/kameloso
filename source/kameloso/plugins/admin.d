@@ -410,18 +410,14 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import kameloso.irc : isValidNickname;
     import kameloso.string : has, stripped;
 
     immutable nickname = event.content.stripped;
 
-    if (!nickname.length)
+    if (!nickname.isValidNickname(plugin.state.bot.server))
     {
-        logger.error("No nickname supplied...");
-        return;
-    }
-    else if (nickname.has!(Yes.decode)(' ') != -1)
-    {
-        logger.error("Nickname must not contain spaces");
+        logger.warning("Invalid nickname: ", nickname);
         return;
     }
 
@@ -452,19 +448,15 @@ void onCommandUnwhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import kameloso.irc : isValidNickname;
     import kameloso.string : has, stripped;
     import std.algorithm : countUntil, remove;
 
     immutable nickname = event.content.stripped;
 
-    if (!nickname.length)
+    if (!nickname.isValidNickname(plugin.state.bot.server))
     {
-        logger.error("No nickname supplied...");
-        return;
-    }
-    else if (nickname.has!(Yes.decode)(' ') != -1)
-    {
-        logger.error("Only one nick at a time. Nickname must not contain spaces");
+        logger.warning("Invalid nickname: ", nickname);
         return;
     }
 
