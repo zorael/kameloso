@@ -593,6 +593,7 @@ struct Settings;
  +/
 struct Description
 {
+    /// Description string.
     string string_;
 
     /// Creates a new `Description` with the passed `string_` description text.
@@ -636,7 +637,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     immutable isAdmin = state.bot.admins.canFind(user.account);
     immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
 
-    if (user.account.length && isAdmin || isWhitelisted)
+    if (user.account.length && (isAdmin || isWhitelisted))
     {
         return FilterResult.pass;
     }

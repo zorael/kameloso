@@ -278,7 +278,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printmodes")
 @Description("[debug] Prints out automodes definitions to the local terminal.")
-void onCommandPrintModes(AutomodePlugin plugin, const IRCEvent event)
+void onCommandPrintModes(AutomodePlugin plugin)
 {
     if (!plugin.automodeSettings.enabled) return;
 

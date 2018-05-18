@@ -204,7 +204,6 @@ void rehashUserArray(PersistenceService service)
 void reloadClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.json : JSONStorage;
-    import std.stdio;
 
     JSONStorage json;
     json.reset();
