@@ -2049,29 +2049,28 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // onUserAwarenessUserInfoMixin
+    // onUserAwarenessCatchSenderMixin
     /++
      +  Catches a user's information and saves it in the plugin's
-     +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s, along with
-     +  a timestamp of the results of the last `WHOIS` call, which is this.
+     +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s.
+     +
+     +  `IRCEvent.Type.RPL_WHOISUSER` events carry values in the
+     +  `IRCUser.lastWhois` field that we want to store.
+     +
+     +  `IRCEvent.Type.CHGHOST` occurs when a user changes host on some servers
+     +  that allow for custom host addresses.
      +/
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
-    void onUserAwarenessUserInfoMixin(IRCPlugin plugin, const IRCEvent event)
+    @(IRCEvent.Type.CHGHOST)
+    void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.datetime.systime : Clock;
-
         plugin.catchUser(event.target);
-
-        // Record lastWhois here so it happens even if no `RPL_WHOISACCOUNT`
-        auto user = event.target.nickname in plugin.state.users;
-        if (!user) return;  // probably the bot
-        user.lastWhois = Clock.currTime.toUnixTime;
     }
 
 
-    // onUserAwarenessAccountInfoSenderMixin
+    // onUserAwarenessCatchSenderInHomeMixin
     /++
      +  Adds a user to the `IRCPlugin`'s `IRCPluginState.users` array,
      +  potentially including their services account name.
@@ -2080,25 +2079,17 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  account name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we don't have to `WHOIS` them later.
      +
-     +  `ACCOUNTS` events will only be processed if a user's
-     +  `kameloso.ircdefs.IRCUser` entry already exists, to counter the fact
-     +  that `ACCOUNT` events don't imply a specific channel and as such can't
-     +  honour `ChannelPolicy.home`. This way the user will only be updated with
-     +  its account info if it was already created elsewhere.
+     +  `IRCEvent.Type.RPL_WHOREPLY` is included here to deduplicate
+     +  functionality.
      +/
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
+    @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
-    void onUserAwarenessAccountInfoSenderMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessCatchSenderInHomeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        if ((event.type == IRCEvent.Type.ACCOUNT) &&
-            (event.sender.nickname !in plugin.state.users))
-        {
-            return;
-        }
-
         plugin.catchUser(event.sender);
     }
 
@@ -2117,14 +2108,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         with (plugin.state)
         {
-            if (auto user = event.target.nickname in users)
-            {
-                user.account = event.target.account;
-            }
-            else
-            {
-                users[event.target.nickname] = event.target;
-            }
+            users[event.target.nickname] = event.target;
 
             // See if there are any queued WHOIS requests to trigger
             if (auto request = event.target.nickname in whoisQueue)
@@ -2173,22 +2157,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 }
             }
         }
-    }
-
-
-    // onUserAwarenessWHOReplyMixin
-    /++
-     +  Catches a user's information from a `WHO` reply event.
-     +
-     +  It usually contains everything interesting except services account name.
-     +/
-    @(AwarenessEarly)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_WHOREPLY)
-    @(ChannelPolicy.home)
-    void onUserAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        plugin.catchUser(event.target);
     }
 
 
@@ -2285,26 +2253,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
     {
         plugin.state.users.rehash();
-    }
-
-
-    // onUserAwarenessChangeHostMixin
-    /++
-     +  Catches a user when he/she changes host.
-     +
-     +  This is a thing on some servers that allow for custom user host
-     +  addresses.
-     +/
-    @(AwarenessEarly)  // late?
-    @(Chainable)
-    @(IRCEvent.Type.CHGHOST)
-    void onUserAwarenessChangeHostMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        if (event.sender.nickname in plugin.state.users)
-        {
-            // Existing user changed host; catch it
-            plugin.catchUser(event.sender);
-        }
     }
 
 
