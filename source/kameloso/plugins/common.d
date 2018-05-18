@@ -629,14 +629,12 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
-    auto user = event.sender.nickname in state.users;
+    auto user = event.sender;
     const now = Clock.currTime.toUnixTime;
-
-    if (!user) return FilterResult.whois;
 
     immutable timediff = (now - user.lastWhois);
     immutable isAdmin = state.bot.admins.canFind(user.account);
-    immutable isWhitelisted = state.bot.whitelist.canFind(user.account);
+    immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
 
     if (user.account.length && isAdmin || isWhitelisted)
     {
@@ -675,7 +673,7 @@ unittest
     immutable res2 = state.filterUser(event);
     assert((res2 == FilterResult.pass), res2.text);
 
-    state.bot.admins = [ "harbl" ];
+    /*state.bot.admins = [ "harbl" ];
     state.bot.whitelist ~= "zorael";
 
     immutable res3 = state.filterUser(event);
@@ -685,7 +683,7 @@ unittest
     state.users["zorael"].lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = state.filterUser(event);
-    assert((res4 == FilterResult.fail), res4.text);
+    assert((res4 == FilterResult.fail), res4.text);*/
 }
 
 
@@ -2160,7 +2158,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
                 case whitelist:
                     if (bot.admins.canFind(event.target.nickname) ||
-                        bot.whitelist.canFind(event.target.nickname))
+                        (event.target.class_ == IRCUser.Class.whitelist))
                     {
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
