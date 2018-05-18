@@ -179,6 +179,15 @@ Flag!"quit" checkMessages(ref Client client)
         plugin.peekPlugins(client.plugins);
     }
 
+    /// Reloads all plugins.
+    void reloadPlugins(ThreadMessage.Reload)
+    {
+        foreach (plugin; client.plugins)
+        {
+            plugin.reload();
+        }
+    }
+
     /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
@@ -282,6 +291,7 @@ Flag!"quit" checkMessages(ref Client client)
             &eventToServer,
             &quitServer,
             &save,
+            &reloadPlugins,
             &peekPlugins,
             (Variant v)
             {
