@@ -55,6 +55,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 // Record WHOIS if we have new account information
                 import std.datetime.systime : Clock;
                 lastWhois = Clock.currTime.toUnixTime;
+
+                if (const classifier = account in service.userClasses)
+                {
+                    class_ = *classifier;
+                }
                 break;
 
             default:
@@ -124,6 +129,18 @@ void onNick(PersistenceService service, const IRCEvent event)
 }
 
 
+// onEndOfMotd
+/++
+ +  Reloads classifier definitions from disk.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMotd(PersistenceService service)
+{
+    service.reloadClassifiersFromDisk();
+}
+
+
 // onPing
 /++
  +  Rehashes the internal `users` associative array of the current
@@ -139,6 +156,28 @@ void onNick(PersistenceService service, const IRCEvent event)
 @(IRCEvent.Type.PING)
 void onPing(PersistenceService service)
 {
+    service.rehashUserArray();
+}
+
+
+// reload
+/++
+ +  Reloads the plugin, rehashing the user array and loading
+ +  admin/whitelist/blacklist classifier definitions from disk.
+ +/
+void reload(PersistenceService service)
+{
+    service.rehashUserArray();
+    service.reloadClassifiersFromDisk();
+}
+
+
+// rehashUserArray
+/++
+ +  Rehashes the user array, allowing for optimised access.
+ +/
+void rehashUserArray(PersistenceService service)
+{
     import std.datetime.systime : Clock;
 
     const hour = Clock.currTime.hour;
@@ -152,6 +191,68 @@ void onPing(PersistenceService service)
         {
             rehashCounter = (rehashCounter + hoursBetweenRehashes) % 24;
             state.users.rehash();
+        }
+    }
+}
+
+
+// reloadClassifiersFromDisk
+/++
+ +  Reloads admin/whitelist/blacklist classifier definitions from disk.
+ +/
+void reloadClassifiersFromDisk(PersistenceService service)
+{
+    import kameloso.json : JSONStorage;
+    import std.stdio;
+
+    JSONStorage json;
+    json.reset();
+    json.load(service.userFile);
+
+    service.userClasses.clear();
+
+    if (const adminFromJSON = "admin" in json)
+    {
+        try
+        {
+            foreach (const account; adminFromJSON.array)
+            {
+                service.userClasses[account.str] = IRCUser.Class.admin;
+            }
+        }
+        catch (const Exception e)
+        {
+            writeln(e.msg);
+        }
+    }
+
+    if (const whitelistFromJSON = "whitelist" in json)
+    {
+        try
+        {
+            foreach (const account; whitelistFromJSON.array)
+            {
+                service.userClasses[account.str] = IRCUser.Class.whitelist;
+            }
+        }
+        catch (const Exception e)
+        {
+            writeln(e.msg);
+        }
+    }
+
+    if (const blacklistFromJSON = "blacklist" in json)
+    {
+        try
+        {
+            foreach (const account; blacklistFromJSON.array)
+            {
+                service.userClasses[account.str] = IRCUser.Class.blacklist;
+            }
+        }
+        catch (const Exception e)
+        {
+            writeln(e.msg);
         }
     }
 }
@@ -178,5 +279,11 @@ public:
  +/
 final class PersistenceService : IRCPlugin
 {
+    /// File with user definitions.
+    enum userFile = "users.json";
+
+    /// Associative array of user classifications, per account string name.
+    IRCUser.Class[string] userClasses;
+
     mixin IRCPluginImpl;
 }
