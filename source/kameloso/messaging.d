@@ -281,3 +281,21 @@ void raw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
 
     tid.send(event);
 }
+
+
+// throttleraw
+/++
+ +  Sends text to the server, verbatim.
+ +
+ +  It sends it in a throttled fashion, usable for long output when the bot
+ +  may otherwise get kicked for spamming.
+ +
+ +  This is used to send messages of types for which there exist no helper
+ +  functions.
+ +/
+void throttleraw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
+{
+    import kameloso.common : ThreadMessage;
+
+    tid.send(ThreadMessage.Throttleline(), line);
+}
