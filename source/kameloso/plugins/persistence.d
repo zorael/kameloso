@@ -203,6 +203,7 @@ void rehashUserArray(PersistenceService service)
  +/
 void reloadClassifiersFromDisk(PersistenceService service)
 {
+    import kameloso.common : logger;
     import kameloso.json : JSONStorage;
 
     JSONStorage json;
@@ -222,7 +223,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
         }
         catch (const Exception e)
         {
-            writeln(e.msg);
+            logger.warning(e.msg);
         }
     }
 
@@ -237,7 +238,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
         }
         catch (const Exception e)
         {
-            writeln(e.msg);
+            logger.warning(e.msg);
         }
     }
 
@@ -252,7 +253,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
         }
         catch (const Exception e)
         {
-            writeln(e.msg);
+            logger.warning(e.msg);
         }
     }
 }
