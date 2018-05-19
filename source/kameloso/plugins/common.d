@@ -636,10 +636,15 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     immutable timediff = (now - user.lastWhois);
     immutable isAdmin = state.bot.admins.canFind(user.account);
     immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
+    immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
 
     if (user.account.length && (isAdmin || isWhitelisted))
     {
         return FilterResult.pass;
+    }
+    else if (isBlacklisted)
+    {
+        return FilterResult.fail;
     }
     else if ((!user.account.length && (timediff > Timeout.whois)) ||
         (!isWhitelisted && (timediff > 6 * Timeout.whois)))
@@ -684,6 +689,12 @@ unittest
 
     immutable res4 = state.filterUser(event);
     assert((res4 == FilterResult.fail), res4.text);
+
+    event.sender.class_ = IRCUser.Class.blacklist;
+    event.sender.lastWhois = long.init;
+
+    immutable res5 = state.filterUser(event);
+    assert((res5 == FilterResult.fail), res5.text);
 }
 
 
@@ -1131,6 +1142,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         break;
 
                     case anyone:
+                        if (mutEvent.sender.class_ == IRCUser.Class.blacklist)
+                        {
+                            // Continue with the next function or abort?
+                            return Next.continue_;
+                        }
+                        break;
+
                     case ignore:
                         break;
                     }
@@ -2164,7 +2182,12 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                     break;
 
                 case anyone:
-                    request.trigger();
+                    if (event.target.class_ != IRCUser.Class.blacklist)
+                    {
+                        request.trigger();
+                    }
+
+                    // Always remove queued request even if blacklisted
                     whoisQueue.remove(event.target.nickname);
                     break;
 
