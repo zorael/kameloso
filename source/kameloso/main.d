@@ -935,6 +935,29 @@ int main(string[] args)
 
         do
         {
+            // Reset fields in the bot that should not survive a reconnect
+            import kameloso.ircdefs : IRCBot;  // fix visibility warning
+            import kameloso.irc : IRCParser;
+
+            bot.registration = IRCBot.Status.notStarted;
+            bot.authentication = IRCBot.Status.notStarted;
+
+            /+
+             +  If we're reconnecting we're connecting to the same server, so we
+             +  can likely assume the daemon, daemonstring and network stay the
+             +  unchanged. Not so for the resolvedAddress, as we're likely
+             +  connecting to a server that redirects by round-robin to other
+             +  servers.
+             +/
+            /*bot.server.daemon = IRCServer.Daemon.init;
+            bot.server.daemontring = string.init;
+            bot.server.network = string.init;*/
+            bot.server.resolvedAddress = string.init;
+
+            parser = IRCParser(bot);
+
+            initPlugins(customSettings);
+
             if (!firstConnect)
             {
                 import kameloso.constants : Timeout;
@@ -951,7 +974,8 @@ int main(string[] args)
 
             if (!resolved)
             {
-                // plugins not initialised so no need to teardown
+                teardownPlugins();
+                logger.error("Exiting...");
                 return 1;
             }
 
@@ -1005,29 +1029,6 @@ int main(string[] args)
                 logger.infof("%s resolved into %d IPs.", bot.server.address,
                     conn.ips.length);
             }
-
-            // Reset fields in the bot that should not survive a reconnect
-            import kameloso.ircdefs : IRCBot;  // fix visibility warning
-            import kameloso.irc : IRCParser;
-
-            bot.registration = IRCBot.Status.notStarted;
-            bot.authentication = IRCBot.Status.notStarted;
-
-            /+
-             +  If we're reconnecting we're connecting to the same server, so we
-             +  can likely assume the daemon, daemonstring and network stay the
-             +  unchanged. Not so for the resolvedAddress, as we're likely
-             +  connecting to a server that redirects by round-robin to other
-             +  servers.
-             +/
-            /*bot.server.daemon = IRCServer.Daemon.init;
-            bot.server.daemontring = string.init;
-            bot.server.network = string.init;*/
-            bot.server.resolvedAddress = string.init;
-
-            parser = IRCParser(bot);
-
-            initPlugins(customSettings);
 
             conn.connect(*abort);
 
