@@ -960,49 +960,75 @@ int main(string[] args)
 
             if (invalidEntries.length)
             {
-                import kameloso.bash : BashReset, colour;
-                import kameloso.logger : KamelosoLogger;
-                import std.array : Appender;
-                import std.experimental.logger : LogLevel;
-
                 logger.log("Found invalid configuration entries:");
 
-                Appender!(char[]) sink;
-                sink.reserve(64);
-
-                immutable infotint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                immutable logtint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                foreach (const section, const sectionEntries; invalidEntries)
+                version(Colours)
                 {
-                    import std.format : format;
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.bash : BashReset, colour;
+                        import kameloso.logger : KamelosoLogger;
+                        import std.array : Appender;
+                        import std.experimental.logger : LogLevel;
 
-                    sink.colour(logtint);
-                    sink.put('[');
-                    sink.colour(infotint);
-                    sink.put(section);
-                    sink.colour(logtint);
-                    sink.put("]: ");
-                    sink.colour(infotint);
-                    sink.put(`%-("%s"%|, %)`.format(sectionEntries));
-                    sink.colour(BashReset.all);
-                    logger.trace(sink.data);
-                    sink.clear();
+                        Appender!(char[]) sink;
+                        sink.reserve(64);
+
+                        immutable infotint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.info] :
+                            KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                        immutable logtint = settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.all] :
+                            KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                        foreach (const section, const sectionEntries; invalidEntries)
+                        {
+                            import std.format : format;
+
+                            sink.colour(logtint);
+                            sink.put("...under [");
+                            sink.colour(infotint);
+                            sink.put(section);
+                            sink.colour(logtint);
+                            sink.put("]: ");
+                            sink.colour(infotint);
+                            sink.put(`%-("%s"%|, %)`.format(sectionEntries));
+                            sink.colour(BashReset.all);
+                            logger.trace(sink.data);
+                            sink.clear();
+                        }
+
+                        sink.colour(logtint);
+                        sink.put("They are either malformed or no longer in use. Use ");
+                        sink.colour(infotint);
+                        sink.put("--writeconfig");
+                        sink.colour(logtint);
+                        sink.put(" to update your configuration file.");
+                        sink.colour(BashReset.all);
+                        logger.trace(sink.data);
+                    }
+                    else
+                    {
+                        foreach (const section, const sectionEntries; invalidEntries)
+                        {
+                            logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
+                        }
+
+                        logger.log("They are either malformed or no longer in use. " ~
+                            "Use --writeconfig to update your configuration file.");
+                    }
                 }
+                else
+                {
+                    foreach (const section, const sectionEntries; invalidEntries)
+                    {
+                        logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
+                    }
 
-                sink.colour(logtint);
-                sink.put("They are either malformed or no longer in use. Use ");
-                sink.colour(infotint);
-                sink.put("--writeconfig");
-                sink.colour(logtint);
-                sink.put(" to update your configuration file.");
-                sink.colour(BashReset.all);
-                logger.trace(sink.data);
+                    logger.log("They are either malformed or no longer in use. " ~
+                        "Use --writeconfig to update your configuration file.");
+                }
             }
 
             if (!firstConnect)
