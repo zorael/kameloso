@@ -556,6 +556,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
         json[section] = json[section].array.remove(index);
     }
 
+    logger.log("%s %s%sed", account, (add ? string.init : "de"), section);
     json.save(plugin.usersFile);
 
     // Force persistence to reload the file with the new changes
