@@ -956,7 +956,54 @@ int main(string[] args)
 
             parser = IRCParser(bot);
 
-            initPlugins(customSettings);
+            string[][string] invalidEntries = initPlugins(customSettings);
+
+            if (invalidEntries.length)
+            {
+                import kameloso.bash : BashReset, colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.array : Appender;
+                import std.experimental.logger : LogLevel;
+
+                logger.log("Found invalid configuration entries:");
+
+                Appender!(char[]) sink;
+                sink.reserve(64);
+
+                immutable infotint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                    KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                immutable logtint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.all] :
+                    KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                foreach (const section, const sectionEntries; invalidEntries)
+                {
+                    import std.format : format;
+
+                    sink.colour(logtint);
+                    sink.put('[');
+                    sink.colour(infotint);
+                    sink.put(section);
+                    sink.colour(logtint);
+                    sink.put("]: ");
+                    sink.colour(infotint);
+                    sink.put(`%-("%s"%|, %)`.format(sectionEntries));
+                    sink.colour(BashReset.all);
+                    logger.trace(sink.data);
+                    sink.clear();
+                }
+
+                sink.colour(logtint);
+                sink.put("They are either malformed or no longer in use. Use ");
+                sink.colour(infotint);
+                sink.put("--writeconfig");
+                sink.colour(logtint);
+                sink.put(" to update your configuration file.");
+                sink.colour(BashReset.all);
+                logger.trace(sink.data);
+            }
 
             if (!firstConnect)
             {

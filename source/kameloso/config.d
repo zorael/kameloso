@@ -107,11 +107,11 @@ string configReader(const string configFile)
  +      things = Reference variadic list of things to set values of, according
  +          to the text in the configuration file.
  +/
-void readConfigInto(T...)(const string configFile, ref T things)
+string[][string] readConfigInto(T...)(const string configFile, ref T things)
 {
     import std.algorithm.iteration : splitter;
 
-    configFile
+    return configFile
         .configReader
         .splitter("\n")
         .applyConfiguration(things);
@@ -515,7 +515,7 @@ unittest
  +      things = Reference variadic list of one or more objects to apply the
  +          configuration to.
  +/
-void applyConfiguration(Range, Things...)(Range range, ref Things things)
+string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.string : stripped, stripSuffix;
     import std.format : formattedRead;
@@ -523,6 +523,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
     import std.traits : Unqual, hasUDA, isType;
 
     string section;
+    string[][string] invalidEntries;
 
     foreach (rawline; range)
     {
@@ -590,10 +591,7 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
 
                 default:
                     // Unknown setting in known section
-                    logger.logf("Found invalid %s under [%s]. " ~
-                        "It is either malformed or no longer in use.",
-                        hits["entry"], section);
-                    logger.log("Use --writeconfig to update your configuration file.");
+                    invalidEntries[section] ~= hits["entry"];
                     break;
                 }
             }
@@ -601,6 +599,8 @@ void applyConfiguration(Range, Things...)(Range range, ref Things things)
             break;
         }
     }
+
+    return invalidEntries;
 }
 
 unittest

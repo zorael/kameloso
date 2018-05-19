@@ -78,7 +78,7 @@ interface IRCPlugin
     void writeConfig(const string);
 
     /// Executed during setup to let plugins read settings from disk.
-    void loadConfig(const string);
+    string[][string] loadConfig(const string);
 
     /// Executed when gathering things to put in the configuration file.
     void addToConfig(ref Appender!string) const;
@@ -1374,7 +1374,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
      +/
-    void loadConfig(const string configFile)
+    string[][string] loadConfig(const string configFile)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -1386,6 +1386,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.typecons : No, Yes;
 
         alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
+
+        string[][string] invalidEntries;
 
         foreach (ref symbol; symbols)
         {
@@ -1399,7 +1401,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
 
             T tempSymbol;
-            configFile.readConfigInto(tempSymbol);
+            const theseInvalidEntries = configFile.readConfigInto(tempSymbol);
+
+            foreach (const section, const sectionEntries; theseInvalidEntries)
+            {
+                invalidEntries[section] ~= sectionEntries;
+            }
+
             tempSymbol.meldInto!(Yes.overwrite)(symbol);
         }
 
@@ -1417,10 +1425,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
 
                 T tempSymbol;
-                configFile.readConfigInto(tempSymbol);
+                const theseInvalidEntries = configFile.readConfigInto(tempSymbol);
+
+                foreach (const section, const sectionEntries; theseInvalidEntries)
+                {
+                    invalidEntries[section] ~= sectionEntries;
+                }
+
                 tempSymbol.meldInto!(Yes.overwrite)(symbol);
             }
         }
+
+        return invalidEntries;
     }
 
 

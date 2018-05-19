@@ -839,7 +839,7 @@ struct Client
      +      customSettings = String array of custom settings to apply to plugins
      +          in addition to those read from the configuration file.
      +/
-    void initPlugins(string[] customSettings)
+    string[][string] initPlugins(string[] customSettings)
     {
         import kameloso.plugins;
         import kameloso.plugins.common : IRCPluginState;
@@ -876,13 +876,24 @@ struct Client
             plugins ~= new PipelinePlugin(state);
         }
 
+        string[][string] allInvalidEntries;
+
         foreach (plugin; plugins)
         {
-            plugin.loadConfig(state.settings.configFile);
+            auto theseInvalidEntries = plugin.loadConfig(state.settings.configFile);
+
+            if (theseInvalidEntries.length)
+            {
+                import kameloso.meld : meldInto;
+                theseInvalidEntries.meldInto(allInvalidEntries);
+            }
+
             plugin.rehashCounter = now.hour + 1;  // rehash next hour
         }
 
         plugins.applyCustomSettings(customSettings);
+
+        return allInvalidEntries;
     }
 
 
