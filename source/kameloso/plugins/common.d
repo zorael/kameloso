@@ -1052,8 +1052,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (privilegeLevel != PrivilegeLevel.ignore)
                     {
-                        static assert (is(typeof(.hasUserAwareness)),
-                            module_ ~ " is missing UserAwareness mixin " ~
+                        static assert (is(typeof(.hasMinimalAuthentication)),
+                            module_ ~ " is missing MinimalAuthentication mixin " ~
                             "(needed for PrivilegeLevel checks).");
                     }
 
