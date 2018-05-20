@@ -786,8 +786,7 @@ void saveSeen(const long[string] seenUsers, const string filename)
 
     auto file = File(filename, "w");
 
-    file.write(JSONValue(seenUsers).toPrettyString);
-    file.writeln();
+    file.writeln(JSONValue(seenUsers).toPrettyString);
 }
 
 

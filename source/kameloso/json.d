@@ -81,12 +81,11 @@ struct JSONStorage
      +/
     void save(const string filename)
     {
-        import std.stdio : File, write, writeln;
+        import std.stdio : File, writeln;
 
         auto file = File(filename, "w");
 
-        file.write(storage.toPrettyString);
-        file.writeln();
+        file.writeln(storage.toPrettyString);
     }
 }
 
