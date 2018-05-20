@@ -380,13 +380,26 @@ void onAuthEnd(ConnectService service)
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
 {
-    import kameloso.constants : altNickSign;
-
     with (service.state)
     {
-        bot.nickname ~= altNickSign;
-        bot.updated = true;
-        service.raw("NICK " ~ bot.nickname);
+        if (service.state.bot.registration == IRCBot.Status.started)
+        {
+            if (service.renamedDuringRegistration)
+            {
+                import std.conv : text;
+                import std.random : uniform;
+
+                bot.nickname ~= uniform(0, 1000).text;
+            }
+            else
+            {
+                import kameloso.constants : altNickSign;
+                bot.nickname ~= altNickSign;
+            }
+
+            bot.updated = true;
+            service.raw("NICK " ~ bot.nickname);
+        }
     }
 }
 
@@ -711,6 +724,9 @@ final class ConnectService : IRCPlugin
 
     /// Whether the server has sent at least one `PING`.
     bool serverPinged;
+
+    /// Whether or not the bot has renamed itself during registration
+    bool renamedDuringRegistration;
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
