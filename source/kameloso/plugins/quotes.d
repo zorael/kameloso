@@ -266,7 +266,7 @@ void onEndOfMotd(QuotesPlugin plugin)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

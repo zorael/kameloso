@@ -692,7 +692,7 @@ void start(ConnectService service)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

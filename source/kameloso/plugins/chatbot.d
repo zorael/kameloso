@@ -252,7 +252,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

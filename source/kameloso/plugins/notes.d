@@ -469,7 +469,7 @@ void onEndOfMotd(NotesPlugin plugin)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

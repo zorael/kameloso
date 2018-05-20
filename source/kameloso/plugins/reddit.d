@@ -267,10 +267,9 @@ void start(RedditPlugin plugin)
 }
 
 
+mixin MinimalAuthentication;
+
 public:
-
-mixin UserAwareness;
-
 
 // RedditPlugin
 /++

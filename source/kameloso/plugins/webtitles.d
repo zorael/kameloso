@@ -469,7 +469,7 @@ void start(WebtitlesPlugin plugin)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

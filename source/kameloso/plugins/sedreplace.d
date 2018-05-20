@@ -221,7 +221,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 

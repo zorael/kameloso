@@ -137,7 +137,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 }
 
 
-mixin UserAwareness;
+mixin MinimalAuthentication;
 
 public:
 
