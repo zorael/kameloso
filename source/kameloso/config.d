@@ -74,7 +74,8 @@ string configReader(const string configFile)
     import std.file   : exists, isFile, readText;
     import std.string : chomp;
 
-    if (!configFile.exists || !configFile.isFile)
+    if (!configFile.exists) return string.init;
+    else if (!configFile.isFile)
     {
         logger.info("Config file does not exist or is not a file!");
         return string.init;
