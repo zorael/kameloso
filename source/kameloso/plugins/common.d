@@ -2024,6 +2024,96 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 }
 
 
+// MinimalAuthenticator
+/++
+ +  Implements triggering of queued events in a plugin module.
+ +
+ +
+ +/
+mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
+{
+    enum hasMinimalAuthentication = true;
+
+    // onMinmialAuthenticationAccountInfoTargetMixin
+    /++
+     +  Replays any queued requests awaiting the result of a WHOIS.
+     +
+     +  This function was part of `UserAwareness` but triggering queued requests
+     +  is too common to conflate with it.
+     +
+     +  Most of the time a plugin doesn't require a full `UserAwareness`; only
+     +  those that need looking up users outside of the current event do. The
+     +  persistency service allows for plugins to just read the information from
+     +  the `kameloso.ircdefs.IRCUser` embedded in th event directly, and that's
+     +  often enough.
+     +
+     +  General rule: if a plugin doesn't access `state.users`, it's probably
+     +  going to be enough with only `MinimalAuthentication`.
+     +/
+    @(AwarenessEarly)
+    @(Chainable)
+    @(IRCEvent.Type.RPL_WHOISACCOUNT)
+    @(IRCEvent.Type.RPL_WHOISREGNICK)
+    void onMinmialAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        with (plugin.state)
+        {
+            // See if there are any queued WHOIS requests to trigger
+            if (auto request = event.target.nickname in whoisQueue)
+            {
+                import kameloso.constants : Timeout;
+                import std.algorithm.searching : canFind;
+                import std.datetime.systime : Clock;
+
+                const now = Clock.currTime.toUnixTime;
+                const then = request.when;
+
+                if ((now - then) > Timeout.whois)
+                {
+                    // Entry is too old, request timed out. Remove it.
+                    whoisQueue.remove(event.target.nickname);
+                    return;
+                }
+
+                with (PrivilegeLevel)
+                final switch (request.privilegeLevel)
+                {
+                case admin:
+                    if (bot.admins.canFind(event.target.nickname))
+                    {
+                        request.trigger();
+                        whoisQueue.remove(event.target.nickname);
+                    }
+                    break;
+
+                case whitelist:
+                    if (bot.admins.canFind(event.target.nickname) ||
+                        (event.target.class_ == IRCUser.Class.whitelist))
+                    {
+                        request.trigger();
+                        whoisQueue.remove(event.target.nickname);
+                    }
+                    break;
+
+                case anyone:
+                    if (event.target.class_ != IRCUser.Class.blacklist)
+                    {
+                        request.trigger();
+                    }
+
+                    // Always remove queued request even if blacklisted
+                    whoisQueue.remove(event.target.nickname);
+                    break;
+
+                case ignore:
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
 // UserAwareness
 /++
  +  Implements *user awareness* in a plugin module.
@@ -2039,6 +2129,10 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
 
+    static if (!is(hasMinmialAuthentication))
+    {
+        mixin MinimalAuthentication!(debug_, module_);
+    }
 
     // onUserAwarenessQuitMixin
     /++
@@ -2140,62 +2234,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin.state)
-        {
-            users[event.target.nickname] = event.target;
-
-            // See if there are any queued WHOIS requests to trigger
-            if (auto request = event.target.nickname in whoisQueue)
-            {
-                import kameloso.constants : Timeout;
-                import std.algorithm.searching : canFind;
-                import std.datetime.systime : Clock;
-
-                const now = Clock.currTime.toUnixTime;
-                const then = request.when;
-
-                if ((now - then) > Timeout.whois)
-                {
-                    // Entry is too old, request timed out. Remove it.
-                    whoisQueue.remove(event.target.nickname);
-                    return;
-                }
-
-                with (PrivilegeLevel)
-                final switch (request.privilegeLevel)
-                {
-                case admin:
-                    if (bot.admins.canFind(event.target.nickname))
-                    {
-                        request.trigger();
-                        whoisQueue.remove(event.target.nickname);
-                    }
-                    break;
-
-                case whitelist:
-                    if (bot.admins.canFind(event.target.nickname) ||
-                        (event.target.class_ == IRCUser.Class.whitelist))
-                    {
-                        request.trigger();
-                        whoisQueue.remove(event.target.nickname);
-                    }
-                    break;
-
-                case anyone:
-                    if (event.target.class_ != IRCUser.Class.blacklist)
-                    {
-                        request.trigger();
-                    }
-
-                    // Always remove queued request even if blacklisted
-                    whoisQueue.remove(event.target.nickname);
-                    break;
-
-                case ignore:
-                    break;
-                }
-            }
-        }
+        plugin.state.users[event.target.nickname] = event.target;
     }
 
 
