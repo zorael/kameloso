@@ -524,6 +524,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
 
+    import kameloso.irc : isValidNickname;
     import kameloso.string : has, timeSince;
     import std.algorithm : canFind;
     import std.datetime.systime : Clock, SysTime;
@@ -567,7 +568,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             // No nickname supplied...
             return;
         }
-        else if (event.content.has!(Yes.decode)(" "))
+        else if (event.content.isValidNickname(plugin.state.bot.server))
         {
             // Nickname contained a space
             privmsg(event.channel, event.sender.nickname, "Invalid user: " ~
