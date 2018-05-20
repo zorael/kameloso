@@ -4,7 +4,7 @@
 
 Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
-Included is a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some outright [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others.  If something doesn't immediately work it's often mostly a case of specialcasing for that particular IRC network or server daemon.
+Included is a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some outright [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often a case of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
@@ -215,8 +215,10 @@ The big exception is one function that warns the user of abnormalities after par
 * optional formatting in IRC output? (later if at all)
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
-* update wiki
+* update wiki!
 * set up a real configuration home like `~/.kameloso`? what of Windows?
+* refresh `seen.d'
+* rethink default nickname and fallback
 
 # Built with
 
