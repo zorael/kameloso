@@ -59,7 +59,8 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 * direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
 * remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the configuration file entries
-* New `admin`/`whitelist`/`blacklist` handling is not yet complete, and functionality is split between the old and the new. New definitions must as of yet still be written by hand, into a `users.json` file. It will simplify things greatly once it's solid
+* New `whitelist`/`blacklist` handling needs testing
+* plugins can now mixin `MinimalAuthentification` rather than the full `UserAwareness` if they don't need `ChannelAwareness` and/or access to the `state.users` array
 
 # Getting started
 
@@ -216,7 +217,6 @@ The big exception is one function that warns the user of abnormalities after par
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * update wiki
 * set up a real configuration home like `~/.kameloso`? what of Windows?
-* tint writeconfig hint (tricky)
 
 # Built with
 
