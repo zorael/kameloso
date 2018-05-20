@@ -76,6 +76,20 @@ void saveAutomodes(AutomodePlugin plugin)
 }
 
 
+// initResources
+/++
+ +  Ensures that there is an automodes file, creating one if there isn't.
+ +/
+void initResources(AutomodePlugin plugin)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.automodeSettings.automodeFile);
+    json.save(plugin.automodeSettings.automodeFile);
+}
+
+
 // onAccountInfo
 /++
  +  Potentially applies an automode, depending on the definitions and the user

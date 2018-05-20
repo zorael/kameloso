@@ -838,6 +838,20 @@ void teardown(SeenPlugin plugin)
 }
 
 
+// initResources
+/++
+ +  Reads and writes the file of seen people to disk, ensuring that it's there.
+ +/
+void initResources(SeenPlugin plugin)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.seenSettings.seenFile);
+    json.save(plugin.seenSettings.seenFile);
+}
+
+
 /++
  +  `kameloso.plugins.common.UserAwareness` is a mixin template; a few functions
  +  defined in `kameloso.plugins.common` to deal with common bookkeeping that

@@ -469,6 +469,20 @@ void onEndOfMotd(NotesPlugin plugin)
 }
 
 
+// initResources
+/++
+ +  Ensures that there is a notes file, creating one if there isn't.
+ +/
+void initResources(NotesPlugin plugin)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.notesSettings.notesFile);
+    json.save(plugin.notesSettings.notesFile);
+}
+
+
 mixin MinimalAuthentication;
 
 public:

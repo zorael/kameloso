@@ -266,6 +266,20 @@ void onEndOfMotd(QuotesPlugin plugin)
 }
 
 
+// initResources
+/++
+ +  Reads and writes the file of quotes to disk, ensuring that it's there.
+ +/
+void initResources(QuotesPlugin plugin)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.quotesSettings.quotesFile);
+    json.save(plugin.quotesSettings.quotesFile);
+}
+
+
 mixin MinimalAuthentication;
 
 public:

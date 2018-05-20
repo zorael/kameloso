@@ -259,6 +259,38 @@ void reloadClassifiersFromDisk(PersistenceService service)
 }
 
 
+// initResources
+/++
+ +  Reads, completes and saves the user classification JSON file, creating one
+ +  if one doesn't exist.
+ +
+ +  This ensures there will be a `"whitelist"` and `"blacklist"` array in it.
+ +/
+void initResources(PersistenceService service)
+{
+    import kameloso.json : JSONStorage;
+    import std.json : JSONValue;
+
+    JSONStorage json;
+    json.reset();
+    json.load(service.userFile);
+
+    if ("whitelist" !in json)
+    {
+        json["whitelist"] = null;
+        json["whitelist"].array = null;
+    }
+
+    if ("blacklist" !in json)
+    {
+        json["blacklist"] = null;
+        json["blacklist"].array = null;
+    }
+
+    json.save(service.userFile);
+}
+
+
 public:
 
 
