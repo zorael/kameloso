@@ -214,7 +214,7 @@ struct SeenSettings
      +  The filename to which to persistently store our list of seen users
      +  between executions of the program.
      +/
-    string seenFile = "seen.conf";
+    string seenFile = "seen.json";
 }
 
 
