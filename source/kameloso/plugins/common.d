@@ -1077,7 +1077,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             import std.algorithm.searching : canFind;
 
                             if ((privilegeLevel == admin) &&
-                                !bot.admins.canFind(users[mutEvent.sender.nickname].account))
+                                !bot.admins.canFind(mutEvent.sender.account))
                             {
                                 static if (verbose)
                                 {
