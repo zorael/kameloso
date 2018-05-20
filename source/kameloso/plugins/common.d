@@ -2129,7 +2129,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
 
-    static if (!is(hasMinmialAuthentication))
+    static if (!is(typeof(.hasMinimalAuthentication)))
     {
         mixin MinimalAuthentication!(debug_, module_);
     }
