@@ -212,7 +212,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
 
     service.userClasses.clear();
 
-    if (const adminFromJSON = "admin" in json)
+    /*if (const adminFromJSON = "admin" in json)
     {
         try
         {
@@ -225,7 +225,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
         {
             logger.warning(e.msg);
         }
-    }
+    }*/
 
     if (const whitelistFromJSON = "whitelist" in json)
     {
