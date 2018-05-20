@@ -127,6 +127,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case SPAMFILTERLIST:
     case ENDOFSPAMFILTERLIST:
     case CAP:
+    case ERR_CHANOPRIVSNEEDED:
         // These event types are too spammy; ignore
         if (!printerSettings.filterVerbose) goto default;
         break;
