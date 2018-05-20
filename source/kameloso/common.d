@@ -1038,6 +1038,7 @@ void writeConfigurationFile(ref Client client, const string filename)
 
         foreach (plugin; plugins)
         {
+            plugin.initResources();  // This is sort of out of place
             plugin.addToConfig(sink);
         }
 
