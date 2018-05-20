@@ -74,8 +74,8 @@ interface IRCPlugin
     /// Executed upon new IRC event parsed from the server.
     void onEvent(const IRCEvent) @system;
 
-    /// Executed when the plugin is requested to write its settings to disk.
-    void writeConfig(const string);
+    /// Executed when the plugin is requested to initialise its disk resources.
+    void initResources() @system;
 
     /// Executed during setup to let plugins read settings from disk.
     string[][string] loadConfig(const string);
@@ -1362,24 +1362,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // writeConfig
+    // initResources
     /++
-     +  Writes configuration to disk.
-     +
-     +  Params:
-     +      configFile = Filename of file to write to.
+     +  Writes plugin resources to disk, creating them if they don't exist.
      +/
-    void writeConfig(const string configFile)
+    void initResources() @system
     {
-        static if (__traits(compiles, .writeConfig))
+        static if (__traits(compiles, .initResources))
         {
-            static if (__traits(compiles, .writeConfig(this, string.init)))
+            static if (__traits(compiles, .initResources(this)))
             {
-                .writeConfig(this, configFile);
+                .initResources(this);
             }
             else
             {
-                static assert(0, module_ ~ ".writeConfig does not compile");
+                static assert(0, module_ ~ ".initResources does not compile");
             }
         }
     }
