@@ -438,7 +438,7 @@ enum ChannelPolicy
 enum PrivilegeLevel
 {
     anyone, /// Anyone may trigger this event.
-    whitelist, /// Only those in the `whitelist` array may trigger this event.
+    whitelist, /// Only those of the `whitelist` class may trigger this event.
     admin, /// Only the administrators may trigger this event.
     ignore, /// Override privilege checks.
 }
@@ -2034,7 +2034,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 {
     enum hasMinimalAuthentication = true;
 
-    // onMinmialAuthenticationAccountInfoTargetMixin
+    // onMinimalAuthenticationAccountInfoTargetMixin
     /++
      +  Replays any queued requests awaiting the result of a WHOIS.
      +
@@ -2054,7 +2054,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onMinmialAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
+    void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin.state)
         {
