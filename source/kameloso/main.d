@@ -914,8 +914,49 @@ int main(string[] args)
             import std.path : baseName;
 
             logger.error("No administrators nor channels configured!");
-            logger.logf("Use %s --writeconfig to generate a configuration file.",
-                args[0].baseName);
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.bash : BashReset, colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.array : Appender;
+                    import std.experimental.logger : LogLevel;
+                    import std.path : baseName;
+
+                    Appender!(char[]) sink;
+                    sink.reserve(64);
+
+                    immutable infotint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    sink.colour(logtint);
+                    sink.put("Use ");
+                    sink.colour(infotint);
+                    sink.put(args[0].baseName);
+                    sink.put(" --writeconfig");
+                    sink.colour(logtint);
+                    sink.put(" to generate a configuration file.");
+                    sink.colour(BashReset.all);
+                    logger.trace(sink.data);
+                }
+                else
+                {
+                    logger.logf("Use %s --writeconfig to generate a configuration file.",
+                        args[0].baseName);
+                }
+            }
+            else
+            {
+                logger.logf("Use %s --writeconfig to generate a configuration file.",
+                        args[0].baseName);
+            }
 
             return 1;
         }
