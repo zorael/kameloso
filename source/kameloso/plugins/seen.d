@@ -568,7 +568,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             // No nickname supplied...
             return;
         }
-        else if (event.content.isValidNickname(plugin.state.bot.server))
+        else if (!event.content.isValidNickname(plugin.state.bot.server))
         {
             // Nickname contained a space
             privmsg(event.channel, event.sender.nickname, "Invalid user: " ~
