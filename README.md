@@ -60,7 +60,7 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 * remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the configuration file entries
 * New `whitelist`/`blacklist` handling needs testing
-* plugins can now mixin `MinimalAuthentification` rather than the full `UserAwareness` if they don't need `ChannelAwareness` and/or access to the `state.users` array
+* plugins can now mix in the slimmer `MinimalAuthentification` mixin rather than the full `UserAwareness` if they don't need `ChannelAwareness` and/or access to the `state.users` array
 
 # Getting started
 
@@ -218,7 +218,6 @@ The big exception is one function that warns the user of abnormalities after par
 * update wiki!
 * set up a real configuration home like `~/.kameloso`? what of Windows?
 * refresh `seen.d'
-* rethink default nickname and fallback
 
 # Built with
 
