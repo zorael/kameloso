@@ -265,8 +265,7 @@ void tryAuth(ConnectService service)
 
             service.query!(Yes.quiet)(serviceNick, "%s %s"
                 .format(verb, bot.authPassword));
-            logger.trace("--> PRIVMSG %s :%s hunter2"
-                .format(serviceNick, verb));
+            logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
         case snircd:
@@ -285,8 +284,7 @@ void tryAuth(ConnectService service)
 
             service.query!(Yes.quiet)(serviceNick, "%s %s %s"
                 .format(verb, account, bot.authPassword));
-            logger.trace("--> PRIVMSG %s :%s %s hunter2"
-                .format(serviceNick, verb, account));
+            logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
         case twitch:

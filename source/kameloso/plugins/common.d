@@ -1512,7 +1512,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         if (!success)
         {
-            logger.warning("No such %s member: %s", this.stringof, setting);
+            logger.warningf("No such %s member: %s", this.stringof, setting);
         }
     }
 

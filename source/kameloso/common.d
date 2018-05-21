@@ -556,7 +556,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
                 // scopeguard mixin
                 scope(%1$s)
                 {
-                    logger.info("[%2$s] %3$s");
+                    logger.infof("[%2$s] %3$s");
                 }
             }.format(state.toLower, state, scopeName);
         }
@@ -584,7 +584,7 @@ string scopeguard(ubyte states = exit, string scopeName = string.init)
         {
             return
             q{
-                logger.info("[%s] %s");
+                logger.infof("[%s] %s");
             }.format(scopeName, state);
         }
         else
