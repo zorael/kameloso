@@ -36,15 +36,17 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
     import kameloso.config : readConfigInto;
     import kameloso.meld : meldInto;
 
-    IRCBot botFromConfig;
-    CoreSettings settingsFromConfig;
+    IRCBot tempBot;
+    CoreSettings tempSettings;
 
     // These arguments are by reference.
-    settings.configFile.readConfigInto(botFromConfig,
-        botFromConfig.server, settingsFromConfig);
+    settings.configFile.readConfigInto(tempBot, tempBot.server, tempSettings);
 
-    botFromConfig.meldInto(bot);
-    settingsFromConfig.meldInto(settings);
+    bot.meldInto(tempBot);
+    settings.meldInto(tempSettings);
+
+    bot = tempBot;
+    settings = tempSettings;
 }
 
 
