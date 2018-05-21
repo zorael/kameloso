@@ -1030,7 +1030,7 @@ void writeConfigurationFile(ref Client client, const string filename)
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(512);
+    sink.reserve(1536);  // ~1097
 
     with (client)
     {

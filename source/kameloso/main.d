@@ -977,7 +977,7 @@ int main(string[] args)
                     import std.path : baseName;
 
                     Appender!(char[]) sink;
-                    sink.reserve(64);
+                    sink.reserve(96);  // ~79
 
                     immutable infotint = settings.brightTerminal ?
                         KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -1064,7 +1064,7 @@ int main(string[] args)
                         import std.experimental.logger : LogLevel;
 
                         Appender!(char[]) sink;
-                        sink.reserve(64);
+                        sink.reserve(128);  // ~118
 
                         immutable infotint = settings.brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -1160,7 +1160,7 @@ int main(string[] args)
                         import std.experimental.logger : LogLevel;
 
                         Appender!string sink;
-                        sink.reserve(64);
+                        sink.reserve(96);  // ~62
 
                         immutable infotint = brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.info] :
