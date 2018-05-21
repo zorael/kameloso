@@ -553,6 +553,13 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
         import std.algorithm.searching : countUntil;
 
         immutable index = json[section].array.countUntil(accountAsJSON);
+
+        if (index == -1)
+        {
+            logger.logf("No such account %s to de%s", account, section);
+            return;
+        }
+
         json[section] = json[section].array.remove(index);
     }
 
