@@ -94,6 +94,35 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     bool shouldShowSettings;
     bool shouldGenerateAsserts;
 
+    bool monochromeFromArgs;
+    bool monochromeWasSet;
+    bool brightTerminalFromArgs;
+    bool brightTerminalWasSet;
+
+    void boolWrapper(const string setting, const string value)
+    {
+        import std.conv : to;
+
+        /+  Due to how melding works, bools need a hack to be able to overwrite
+            a command-line false over a config file true.
+            These are the only getopt bools currently. +/
+
+        if (setting == "monochrome")
+        {
+            monochromeFromArgs = value.to!bool;
+            monochromeWasSet = true;
+        }
+        else if (setting == "bright")
+        {
+            brightTerminalFromArgs = value.to!bool;
+            brightTerminalWasSet = true;
+        }
+        else
+        {
+            assert(0);
+        }
+    }
+
     arraySep = ",";
 
     with (client)
@@ -132,14 +161,17 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                              &shouldGenerateAsserts,
             "gen",           &shouldGenerateAsserts,
             "bright",        "Bright terminal colour setting (BETA)",
-                             &settings.brightTerminal,
-            "monochrome",    "Use monochrome output", &settings.monochrome,
+                             &boolWrapper,
+            "monochrome",    "Use monochrome output", &boolWrapper,
             "set",           "Manually change a setting (--set plugin.option=setting)",
                              &customSettings,
         );
 
         meldSettingsFromFile(bot, settings);
         client.parser.bot = bot;
+
+        if (monochromeWasSet) settings.monochrome = monochromeFromArgs;
+        if (brightTerminalWasSet) settings.brightTerminal = brightTerminalFromArgs;
 
         // Give common.d a copy of CoreSettings for printObject. FIXME
         static import kameloso.common;
