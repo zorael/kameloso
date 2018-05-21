@@ -503,24 +503,51 @@ Flag!"quit" mainLoop(ref Client client)
                         import kameloso.string : enumToString;
 
                         // We know the Daemon
-
                         detectedDaemon = bot.server.daemon;
-                        string daemonName = bot.server.daemon.enumToString;
 
-                        version (Colours)
+                        version(Colours)
                         {
                             if (!settings.monochrome)
                             {
-                                import kameloso.bash : BashForeground, colour;
+                                import kameloso.bash : BashReset, colour;
+                                import kameloso.logger : KamelosoLogger;
+                                import std.array : Appender;
+                                import std.experimental.logger : LogLevel;
+                                import std.format : format;
 
-                                immutable tint = settings.brightTerminal ?
-                                    BashForeground.black : BashForeground.white;
-                                daemonName = daemonName.colour(tint);
+                                Appender!string sink;
+                                sink.reserve(128);  // ~66
+
+                                immutable infotint = settings.brightTerminal ?
+                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                                    KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                                immutable logtint = settings.brightTerminal ?
+                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
+                                    KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                                sink.colour(logtint);
+                                sink.put("Detected daemon: ");
+                                sink.colour(infotint);
+                                sink.put(bot.server.daemon.enumToString);
+                                sink.colour(BashReset.all);
+                                sink.put(" (%s)".format(bot.server.daemonstring));
+
+                                logger.trace(sink.data);
+                            }
+                            else
+                            {
+                                logger.logf("Detected daemon: %s (%s)",
+                                    bot.server.daemon.enumToString,
+                                    bot.server.daemonstring);
                             }
                         }
-
-                        logger.infof("Detected daemon: %s (%s)",
-                            daemonName, bot.server.daemonstring);
+                        else
+                        {
+                            logger.logf("Detected daemon: %s (%s)",
+                                bot.server.daemon.enumToString,
+                                bot.server.daemonstring);
+                        }
                     }
 
                     if (!detectedNetwork.length && bot.server.network != detectedNetwork)
@@ -529,24 +556,48 @@ Flag!"quit" mainLoop(ref Client client)
                         import std.uni : isLower;
 
                         // We know the network string
-
                         detectedNetwork = bot.server.network;
-                        string networkName = bot.server.network[0].isLower ?
+
+                        immutable networkName = bot.server.network[0].isLower ?
                             bot.server.network.capitalize() : bot.server.network;
 
-                        version (Colours)
+                        version(Colours)
                         {
                             if (!settings.monochrome)
                             {
-                                import kameloso.bash : BashForeground, colour;
+                                import kameloso.bash : BashReset, colour;
+                                import kameloso.logger : KamelosoLogger;
+                                import std.array : Appender;
+                                import std.experimental.logger : LogLevel;
 
-                                immutable tint = settings.brightTerminal ?
-                                    BashForeground.black : BashForeground.white;
-                                networkName = networkName.colour(tint);
+                                Appender!string sink;
+                                sink.reserve(64);  // ~40
+
+                                immutable infotint = settings.brightTerminal ?
+                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                                    KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                                immutable logtint = settings.brightTerminal ?
+                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
+                                    KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                                sink.colour(logtint);
+                                sink.put("Detected network: ");
+                                sink.colour(infotint);
+                                sink.put(networkName);
+                                sink.colour(BashReset.all);
+
+                                logger.trace(sink.data);
+                            }
+                            else
+                            {
+                                logger.log("Detected network: ", networkName);
                             }
                         }
-
-                        logger.info("Detected network: ", networkName);
+                        else
+                        {
+                            logger.log("Detected network: ", networkName);
+                        }
                     }
                 }
 

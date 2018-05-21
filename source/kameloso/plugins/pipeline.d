@@ -191,14 +191,19 @@ File createFIFO(const IRCPluginState state)
             Appender!string sink;
             sink.reserve(128);  // ~96
 
-            immutable BashForeground[] logcolours = state.settings.monochrome ?
-                KamelosoLogger.logcoloursBright : KamelosoLogger.logcoloursDark;
+            immutable infotint = state.settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.info] :
+                KamelosoLogger.logcoloursDark[LogLevel.info];
 
-            sink.colour(logcolours[LogLevel.info]);
+            immutable logtint = state.settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.all] :
+                KamelosoLogger.logcoloursDark[LogLevel.all];
+
+            sink.colour(logtint);
             sink.put("Pipe text to [");
-            sink.colour(logcolours[LogLevel.all]);
+            sink.colour(infotint);
             sink.put(filename);
-            sink.colour(logcolours[LogLevel.info]);
+            sink.colour(logtint);
             sink.put("] to send raw commands to the server.");
             sink.colour(BashReset.all);
 
