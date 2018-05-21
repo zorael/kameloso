@@ -2108,6 +2108,19 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
             }
         }
     }
+
+
+    // onMinimalAuthenticationEndOfWHOISMixin
+    /++
+     +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
+     +/
+    @(AwarenessEarly)
+    @(Chainable)
+    @(IRCEvent.Type.RPL_ENDOFWHOIS)
+    void onMinimalAuthenticationEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
+    {
+        plugin.state.whoisQueue.remove(event.target.nickname);
+    }
 }
 
 
@@ -2294,19 +2307,6 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 }
             }
         }
-    }
-
-
-    // onUserAwarenessEndOfWHOISMixin
-    /++
-     +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
-     +/
-    @(AwarenessEarly)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_ENDOFWHOIS)
-    void onUserAwarenessEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        plugin.state.whoisQueue.remove(event.target.nickname);
     }
 
 
