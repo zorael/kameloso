@@ -4,9 +4,9 @@
  +
  +  We will implement this by keeping an internal `long[string]` associative
  +  array of timestamps keyed by nickname. Whenever we see a user do something,
- +  we will update his or her timestamp with the current time. We'll save this
+ +  we will update his or her timestamp to the current time. We'll save this
  +  array to disk when closing the program and read it from file when starting
- +  it, as well as occasionally once every few (configurable) hours.
+ +  it, as well as saving occasionally once every few (configurable) hours.
  +
  +  We will rely on the `ChanQueriesPlugin` (in `chanqueries.d`) to query
  +  channels for full lists of users upon joining new channels, including the
@@ -23,7 +23,7 @@
  +  worst-case precision of roughly `kameloso.constants.Timeout.receive` *
  +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
  +  using `kameloso.ircdefs.IRCEvent` triggers they are expensive, in a
- +  micro-optimiing sense.
+ +  micro-optimising sense.
  +/
 
 module kameloso.plugins.seen;
@@ -73,6 +73,7 @@ public:
  +      CoreSettings settings;
  +      Tid mainThread;
  +      IRCUser[string] users;
+ +      IRCChannel[string] channels;
  +      WHOISRequest[string] whoisQueue;
  +  }
  +  --------------
@@ -93,6 +94,10 @@ public:
  +     keep track of users by more than merely their name. It is however not
  +     saved at the end of the program; it is merely state and transient.
  +
+ +  * `channels` is another associative array, this one with all the known
+ +     channels keyed by their names. This way we can access detailed
+ +     information about any given channel, knowing only their name.
+ +
  +  * `whoisQueue` is also an associative array into which we place
  +    `kameloso.plugins.common.WHOISRequest`s. The main loop will pick up on
  +     these and call `WHOIS` on the nickname in the key. A
@@ -109,7 +114,8 @@ final class SeenPlugin : IRCPlugin
      +  An instance of *settings* for the Seen plugin. We will define this
      +  later. The members of it will be saved to and loaded from the
      +  configuration file, for use in our module. We need to annotate it
-     +  `@Settings` to ensure it ends up there. The wizardry will pick it up.
+     +  `@Settings` to ensure it ends up there, and the wizardry will pick it
+     +  up.
      +
      +  This settings variable can be at top-level scope, but it can be
      +  considered good practice to keep it nested here. The entire
@@ -148,9 +154,9 @@ final class SeenPlugin : IRCPlugin
      +  `kameloso.plugins.common.IRCPlugin`. They don't do much by themselves
      +  other than call the module's functions.
      +
-     +  As an exception, it mixes in contains the bits needed to automatically
-     +  call functions based on their `kameloso.ircdefs.IRCEvent.Type`
-     +  annotations. It is mandatory, if you want things to work.
+     +  As an exception, it mixes in the bits needed to automatically call
+     +  functions based on their `kameloso.ircdefs.IRCEvent.Type` annotations.
+     +  It is mandatory, if you want things to work.
      +
      +  Seen from any other module, this module is a big block of private things
      +  they can't see, plus this visible plugin class. By having this class
@@ -228,7 +234,7 @@ struct SeenSettings
  +  the function with.
  +
  +  The `kameloso.plugins.common.Chainable` annotations mean that the plugin
- +  will also process other functions with the same
+ +  will also process other functions in this module with the same
  +  `kameloso.ircdefs.IRCEvent.Type` annotations, even if this one matched. The
  +  default is otherwise that it will end early after one match, but this
  +  doesn't ring well with catch-all functions like these. It's sensible to save
@@ -239,7 +245,8 @@ struct SeenSettings
  +  function should be called based on the *channel* the event took place in, if
  +  applicable. The two policies are `home`, in which only events in channels in
  +  the `homes` array will be allowed to trigger this; or `any`, in which case
- +  anywhere goes.
+ +  anywhere goes. For events that don't correspond to a channel (such as
+ +  `IRCEvent.Type.QUERY`) the setting is ignored.
  +
  +  Not all events relate to a particular channel, such as `QUIT` (quitting
  +  leaves every channel).
@@ -294,7 +301,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 // onNick
 /++
  +  When someone changes nickname, moves the old seen timestamp to a new entry
- +  for the new nickname, and remove the old one.
+ +  for the new nickname, removing the old one.
  +
  +  Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +/
@@ -306,11 +313,8 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
     if (!plugin.seenSettings.enabled) return;
 
     /++
-     +  There may not be an old one if the user was not indexed upon us joinng
-     +  the channel, which is the case with
-     +  `kameloso.plugins.common.ChannelPolicy.home` and non-home channels. If
-     +  there is no entry that means nothing channel-aware has added it, which
-     +  implies that it's not in a home channel. Ignore it if so.
+     +  There may not be an old one if the user was not indexed upon us joining
+     +  the channel for some reason.
      +/
 
     if (auto user = event.sender.nickname in plugin.seenUsers)
@@ -323,7 +327,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 
 // onWHOReply
 /++
- +  Catches each user listed in a `WHO` reply and update their entries in the
+ +  Catches each user listed in a `WHO` reply and updates their entries in the
  +  seen users list, creating them if they don't exist.
  +
  +  A `WHO` request enumerates all members in a channel. It returns several
@@ -343,14 +347,13 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 
 
 /++
+ +  Catch a `NAMES` reply and record each person as having been seen.
+ +
  +  When requesting `NAMES` on a channel, the server will send a big list of
  +  every participant in it, in a big string of nicknames separated by spaces.
  +  This is done automatically when you join a channel. Nicknames are prefixed
  +  with mode signs if they are operators, voiced or similar, so we'll need to
  +  strip that away.
- +
- +  We want to catch the `NAMES` reply and record each person as having been
- +  seen.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
@@ -389,12 +392,11 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 
 // onEndOfList
 /++
+ +  Optimises the lookups in the associative array of seen users.
+ +
  +  At the end of a long listing of users in a channel, when we're reasonably
  +  sure we've added users to our associative array of seen users, *rehashes*
  +  it.
- +
- +  Rehashing optimises lookup and makes sense after we've added a big amount of
- +  entries.
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(IRCEvent.Type.RPL_ENDOFWHO)
@@ -443,7 +445,8 @@ void onEndOfList(SeenPlugin plugin)
  +  ------------
  +
  +  Mind that this approach is more expensive than relying on `PING`, as it
- +  incurs lots of array lookups.
+ +  incurs lots of array lookups. "Expensive" in a micro-optimising sense; it's
+ +  still just array lookups.
  +/
 @(IRCEvent.Type.PING)
 void onPing(SeenPlugin plugin)
@@ -676,8 +679,8 @@ void updateUser(SeenPlugin plugin, const string signed)
 // loadSeen
 /++
  +  Given a filename, reads the contents and load it into a `long[string]`
- +  associative array, then return it. If there was no file there to read,
- +  return an empty array for a fresh start.
+ +  associative array, then returns it. If there was no file there to read,
+ +  returns an empty array for a fresh start.
  +
  +  Params:
  +      plugin = The current `SeenPlugin`.
@@ -702,36 +705,32 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
             {
                 import kameloso.bash : BashForeground;
 
-                with (plugin.state.settings)
-                with (BashForeground)
-                {
-                    import kameloso.bash : BashReset, colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.array : Appender;
-                    import std.conv : to;
-                    import std.experimental.logger : LogLevel;
+                import kameloso.bash : BashReset, colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.array : Appender;
+                import std.conv : to;
+                import std.experimental.logger : LogLevel;
 
-                    Appender!string sink;
-                    sink.reserve(64);
+                Appender!string sink;
+                sink.reserve(64);  // ~61
 
-                    immutable infotint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
+                immutable infotint = plugin.state.settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                    KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                    immutable logtint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
+                immutable logtint = plugin.state.settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.all] :
+                    KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                    sink.colour(logtint);
-                    sink.put("Seen users loaded, currently ");
-                    sink.colour(infotint);
-                    sink.put(aa.length.to!string);
-                    sink.colour(logtint);
-                    sink.put(" users seen.");
-                    sink.colour(BashReset.all);
+                sink.colour(logtint);
+                sink.put("Seen users loaded, currently ");
+                sink.colour(infotint);
+                sink.put(aa.length.to!string);
+                sink.colour(logtint);
+                sink.put(" users seen.");
+                sink.colour(BashReset.all);
 
-                    logger.trace(sink.data);
-                }
+                logger.trace(sink.data);
             }
             else
             {
@@ -876,5 +875,5 @@ mixin ChannelAwareness;
 
 
 /++
- +  This full plugin is 104 source lines of code. (`dscanner --sloc seen.d`)
+ +  This full plugin is 146 source lines of code. (`dscanner --sloc seen.d`)
  +/
