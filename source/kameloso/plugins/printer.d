@@ -40,6 +40,9 @@ struct PrinterSettings
     /// Whether to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
+    /// Whether to show Message of the Day upon connecting.
+    bool motd = true;
+
     /// Whether to filter away most uninteresting events.
     bool filterVerbose = true;
 
@@ -91,8 +94,15 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     with (IRCEvent.Type)
     switch (event.type)
     {
-    case RPL_NAMREPLY:
+    case RPL_MOTDSTART:
     case RPL_MOTD:
+    case RPL_ENDOFMOTD:
+    case ERR_NOMOTD:
+        // Only show these if we're configured to
+        if (!plugin.printerSettings.motd) goto default;
+        break;
+
+    case RPL_NAMREPLY:
     case RPL_YOURHOST:
     case RPL_ISUPPORT:
     case RPL_TOPICWHOTIME:
@@ -104,8 +114,6 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_LUSERUNKNOWN:
     case RPL_WHOISSERVER:
     case RPL_ENDOFWHOIS:
-    case RPL_MOTDSTART:
-    case RPL_ENDOFMOTD:
     case RPL_ENDOFNAMES:
     case RPL_GLOBALUSERS:
     case RPL_LOCALUSERS:
@@ -128,7 +136,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     case CAP:
     case ERR_CHANOPRIVSNEEDED:
-        // These event types are too spammy; ignore
+        // These event types are spammy; ignore if we're configured to
         if (!printerSettings.filterVerbose) goto default;
         break;
 
