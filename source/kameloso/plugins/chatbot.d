@@ -220,6 +220,9 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
                         .format(width, p.name, p.commands.keys.sort()));
                     return;
                 }
+
+                throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                    "No such plugin: " ~ helpEvent.content);
             }
         }
         else
