@@ -751,7 +751,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.string : beginsWith, has, nom, stripPrefix;
+        import kameloso.string : beginsWith, has, nom, stripPrefix, strippedLeft;
         import std.meta : AliasSeq, Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
         import std.typecons : No, Yes;
@@ -900,6 +900,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         import std.string : toLower;
 
                         string thisCommand;
+
+                        mutEvent.content = mutEvent.content.strippedLeft;
 
                         if (mutEvent.content.has!(Yes.decode)(' '))
                         {
