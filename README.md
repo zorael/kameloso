@@ -206,7 +206,7 @@ The IRC server string-parsing modules are largely decoupled from the rest of the
 * [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
 * [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
 
-The big exception is one function that warns the user of abnormalities after parsing, which uses a *Logger* to inform the user when something seems wrong. The Logger in turn imports more. Comment the `version = PostParseSanityCheck` [at the top of `irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d#L19) to opt out of these messages and remove this dependency.
+Feel free to copy these and drop them into your own project.
 
 # Roadmap
 

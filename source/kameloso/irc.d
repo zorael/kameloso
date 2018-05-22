@@ -12,12 +12,6 @@ import kameloso.string : has, nom;
 
 private:
 
-/++
- +  Comment this to opt out and remove the last dependency of `kameloso.common`,
- +  making this more of a library.
- +/
-version = PostParseSanityCheck;
-
 
 // parseBasic
 /++
@@ -1195,9 +1189,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +  Checks for some specific erroneous edge cases in an
  +  `kameloso.ircdefs.IRCEvent`, complains about all of them and corrects some.
  +
- +  This is one of the last remaining uses of `logger` in this module. If we can
- +  manage to root it out somehow without breaking debugging completely, we'd
- +  have a proper library.
+ +  This is one of the last remaining uses of `logger` in this module. If we
+ +  don't compile this in we're closer to a library.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
