@@ -592,7 +592,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                 default:
                     // Unknown setting in known section
-                    invalidEntries[section] ~= hits["entry"];
+                    invalidEntries[section] ~= hits["entry"].length ? hits["entry"] : line;
                     break;
                 }
             }
