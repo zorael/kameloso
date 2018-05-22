@@ -160,6 +160,15 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     import std.format : format;
     import std.range : repeat;
 
+    foreach (const channelaccounts; plugin.appliedAutomodes)
+    {
+        if (account in channelaccounts)
+        {
+            logger.log("Already applied modes to ", nickname);
+            return;
+        }
+    }
+
     foreach (const channel, const channelaccounts; plugin.automodes)
     {
         const modes = account in channelaccounts;
@@ -175,6 +184,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
         plugin.state.mainThread.throttleraw("MODE %s %s%s %s".format(channel,
             "+".repeat((*modes).length).join, *modes, nickname));
+        plugin.appliedAutomodes[channel][account] = true;
     }
 }
 
