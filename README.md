@@ -70,7 +70,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
 
-**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), but the GCC-based [`gdc`](https://gdcproject.org/downloads) comes with a version of the standard library that is too old, at time of writing.
+**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), but the GCC-based [`gdc`](https://gdcproject.org/downloads) (8.1.0) crashes with an internal compiler error when building, at time of writing.
 
 It's *possible* to build it manually without `dub`, but it is non-trivial if you want the web-related plugins to work.
 
@@ -133,11 +133,11 @@ The bot needs the services account name of the administrator(s) of the bot, and/
 $ ./kameloso --writeconfig
 ```
 
-Open the new `kameloso.conf` in a text editor and fill in the fields.
+Open the new `kameloso.conf` in a text editor and fill in the fields. Additional resource files will be created as well; for instance, see `users.json` for where to enter whitelisted (and blacklisted) account names.
 
 If you have compiled in colours, they may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-Once the bot has joined a channel it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its internal whitelists.
+Once the bot has joined a channel, it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its whitelist.
 
 ```
      you joined #channel
