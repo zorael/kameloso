@@ -1054,7 +1054,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (privilegeLevel != PrivilegeLevel.ignore)
                     {
-                        static assert (is(typeof(.hasMinimalAuthentication)),
+                        static assert (__traits(compiles, .hasMinimalAuthentication),
                             module_ ~ " is missing MinimalAuthentication mixin " ~
                             "(needed for PrivilegeLevel checks).");
                     }
@@ -2108,7 +2108,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
 
-    static if (!is(typeof(.hasMinimalAuthentication)))
+    static if (!__traits(compiles, typeof(.hasMinimalAuthentication)))
     {
         mixin MinimalAuthentication!(debug_, module_);
     }
@@ -2349,7 +2349,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert(is(typeof(.hasUserAwareness)), module_ ~
+    static assert(__traits(compiles, typeof(.hasUserAwareness)), module_ ~
         " is missing UserAwareness mixin (needed for ChannelAwareness).");
 
     enum hasChannelAwareness = true;
