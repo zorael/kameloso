@@ -1206,75 +1206,42 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             return Next.continue_;
         }
 
-        import core.exception : UnicodeException;
-        import std.utf : UTFException;
-        import std.encoding : sanitize;
+        alias earlyFuns = Filter!(earlyAwareness, funs);
+        alias lateFuns = Filter!(lateAwareness, funs);
+        alias pluginFuns = Filter!(isNormalPluginFunction, funs);
 
         // Sanitise and try again once on UTF/Unicode exceptions
 
-        alias beforeFuns = Filter!(earlyAwareness, funs);
-        alias afterFuns = Filter!(lateAwareness, funs);
-        alias pluginFuns = Filter!(isNormalPluginFunction, funs);
-
-        foreach (fun; beforeFuns)  // early awareness
+        void tryCatchHandle(funlist...)(const IRCEvent event)
         {
-            try
+            import core.exception : UnicodeException;
+            import std.utf : UTFException;
+            import std.encoding : sanitize;
+
+            foreach (fun; funlist)
             {
-                handle!fun(event);
-            }
-            catch (const UTFException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
-            }
-            catch (const UnicodeException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
+                try
+                {
+                    handle!fun(event);
+                }
+                catch (const UTFException e)
+                {
+                    IRCEvent saneEvent = event;
+                    saneEvent.content = sanitize(saneEvent.content);
+                    handle!fun(cast(const)saneEvent);
+                }
+                catch (const UnicodeException e)
+                {
+                    IRCEvent saneEvent = event;
+                    saneEvent.content = sanitize(saneEvent.content);
+                    handle!fun(cast(const)saneEvent);
+                }
             }
         }
 
-        foreach (fun; pluginFuns)  // plugin functions
-        {
-            try
-            {
-                handle!fun(event);
-            }
-            catch (const UTFException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
-            }
-            catch (const UnicodeException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
-            }
-        }
-
-        foreach (fun; afterFuns)  // late awareness
-        {
-            try
-            {
-                handle!fun(event);
-            }
-            catch (const UTFException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
-            }
-            catch (const UnicodeException e)
-            {
-                IRCEvent saneEvent = event;
-                saneEvent.content = sanitize(saneEvent.content);
-                handle!fun(cast(const)saneEvent);
-            }
-        }
+        tryCatchHandle!earlyFuns(event);
+        tryCatchHandle!pluginFuns(event);
+        tryCatchHandle!lateFuns(event);
     }
 
 
