@@ -765,10 +765,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         enum Next
         {
-            unset,
             continue_,
             repeat,
-            abort,
+            return_,
         }
 
         Next handle(alias fun)(const IRCEvent event)
@@ -1201,7 +1200,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     // The triggered function is not Chainable so return and
                     // let the main loop continue with the next plugin.
-                    return Next.abort;
+                    return Next.return_;
                 }
             }
 
