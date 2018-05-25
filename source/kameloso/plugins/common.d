@@ -1223,7 +1223,25 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 try
                 {
-                    handle!fun(event);
+                    immutable next = handle!fun(event);
+
+                    with (Next)
+                    final switch (next)
+                    {
+                    case continue_:
+                        continue;
+
+                    case repeat:
+                        // only repeat once so we don't endlessly loop
+                        if (handle!fun(event) == continue_) continue;
+                        else
+                        {
+                            return;
+                        }
+
+                    case return_:
+                        return;
+                    }
                 }
                 catch (const UTFException e)
                 {
