@@ -148,9 +148,9 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    plugin.helpEvent = event;
+    IRCEvent mutEvent = event;
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin);
+        cast(shared IRCPlugin)plugin, mutEvent);
 }
 
 
@@ -163,7 +163,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
  +  This does not include bot regexes, as we do not know how to extract the
  +  expression from the `std.regex.Regex` structure.
  +/
-void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
+void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
     import kameloso.string : has, nom;
@@ -171,16 +171,14 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
     import std.algorithm.sorting : sort;
     import std.format : format;
 
-    if (plugin.helpEvent == IRCEvent.init) return;
-    scope(exit) plugin.helpEvent = IRCEvent.init;
-
+    with (event)
     with (plugin)
     {
-        if (helpEvent.content.length)
+        if (content.length)
         {
-            if (helpEvent.content.has!(Yes.decode)(" "))
+            if (content.has!(Yes.decode)(" "))
             {
-                string slice = helpEvent.content;
+                string slice = content;
                 immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
                 immutable specifiedCommand = slice;
 
@@ -190,20 +188,20 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
 
                     if (auto description = specifiedCommand in p.commands)
                     {
-                        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                        throttleline(channel, sender.nickname,
                             "[%s] %s: %s".format(p.name, specifiedCommand, *description));
                         return;
                     }
                     else
                     {
-                        throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                        throttleline(channel, sender.nickname,
                             "No help available for command %s of plugin %s"
                             .format(specifiedCommand, specifiedPlugin));
                         return;
                     }
                 }
 
-                throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                throttleline(channel, sender.nickname,
                     "No such plugin: " ~ specifiedPlugin);
                 return;
             }
@@ -211,18 +209,18 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
             {
                 foreach (p; plugins)
                 {
-                    if (p.name != helpEvent.content) continue;
+                    if (p.name != content) continue;
 
                     enum width = 11;
 
-                    throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                    throttleline(channel, sender.nickname,
                         "* %-*s %-([%s]%| %)"
                         .format(width, p.name, p.commands.keys.sort()));
                     return;
                 }
 
-                throttleline(helpEvent.channel, helpEvent.sender.nickname,
-                    "No such plugin: " ~ helpEvent.content);
+                throttleline(channel, sender.nickname,
+                    "No such plugin: " ~ content);
             }
         }
         else
@@ -231,8 +229,8 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
                 .format(cast(string)KamelosoInfo.version_,
                 cast(string)KamelosoInfo.built);
 
-            throttleline(helpEvent.channel, helpEvent.sender.nickname, banner);
-            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+            throttleline(channel, sender.nickname, banner);
+            throttleline(channel, sender.nickname,
                 "Available bot commands per plugin (beta):");
 
             foreach (p; plugins)
@@ -241,14 +239,14 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins)
 
                 enum width = 11;
 
-                throttleline(helpEvent.channel, helpEvent.sender.nickname,
+                throttleline(channel, sender.nickname,
                     "* %-*s %-([%s]%| %)"
                     .format(width, p.name, p.commands.keys.sort()));
             }
 
-            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+            throttleline(channel, sender.nickname,
                 "Use help [plugin] [command] for information about a command.");
-            throttleline(helpEvent.channel, helpEvent.sender.nickname,
+            throttleline(channel, sender.nickname,
                 "Additional unlisted regex commands may be available.");
         }
     }
@@ -273,13 +271,6 @@ public:
  +/
 final class ChatbotPlugin : IRCPlugin
 {
-    /++
-    +   The event that spawned a "`help`" request. As a hack it is currently
-    +   stored here, so the plugin knows what to do when the results of
-    +   `kameloso.common.ThreadMessage.PeekPlugins` return.
-    +/
-    IRCEvent helpEvent;
-
     /// All Chatbot plugin settings gathered.
     @Settings ChatbotSettings chatbotSettings;
 
