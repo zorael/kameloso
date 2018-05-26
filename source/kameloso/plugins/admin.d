@@ -723,9 +723,10 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    plugin.setEvent = event;
+    plugin.currentPeekType = AdminPlugin.PeekType.set;
+    IRCEvent mutEvent = event;
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin);
+        cast(shared IRCPlugin)plugin, mutEvent);
 }
 
 
