@@ -730,6 +730,29 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onAuthCommand
+/++
+ +  Asks the `ConnectService` to (re-)authenticate to services.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@BotCommand(NickPolicy.required, "auth")
+@Description("(Re-)authenticates with services. Useful if the server has forcefully logged us out.")
+void onCommandAuth(AdminPlugin plugin, const IRCEvent event)
+{
+    if (!plugin.adminSettings.enabled) return;
+
+    import kameloso.common : ThreadMessage;
+    import std.concurrency : send;
+
+    plugin.currentPeekType = AdminPlugin.PeekType.auth;
+    IRCEvent mutEvent;  // may as well be .init, we won't use the information
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
+        cast(shared IRCPlugin)plugin, mutEvent);
+}
+
+
 // peekPlugins
 /++
  +  Takes a reference to the main `kameloso.common.Client.plugins` array of
