@@ -726,6 +726,8 @@ final class ConnectService : IRCPlugin
     /// Whether or not the bot has renamed itself during registration
     bool renamedDuringRegistration;
 
+    alias auth = .tryAuth;
+
     mixin IRCPluginImpl;
     mixin MessagingProxy;
 }
