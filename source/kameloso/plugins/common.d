@@ -90,7 +90,7 @@ interface IRCPlugin
     void start() @system;
 
     /// Executed when a plugin wants to examine all the other plugins.
-    void peekPlugins(IRCPlugin[]) @system;
+    void peekPlugins(IRCPlugin[], const IRCEvent event) @system;
 
     /// Executed when we want a plugin to print its Settings struct.
     void printSettings() @system const;
@@ -1515,13 +1515,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  by the main loop's message-receiving after having been sent a
      +  `kameloso.common.ThreadMessage.PeekPlugins` thread message.
      +/
-    void peekPlugins(IRCPlugin[] plugins) @system
+    void peekPlugins(IRCPlugin[] plugins, const IRCEvent event) @system
     {
         static if (__traits(compiles, .peekPlugins))
         {
-            static if (__traits(compiles, .peekPlugins(this, plugins)))
+            static if (__traits(compiles, .peekPlugins(this, plugins, IRCEvent.init)))
             {
-                .peekPlugins(this, plugins);
+                .peekPlugins(this, plugins, event);
             }
             else
             {
