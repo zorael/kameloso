@@ -2,33 +2,34 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled but it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
+Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled and it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
-Included is a framework that works with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some outright [conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an issue of specialcasing for that particular IRC network or server daemon.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an issue of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` for op)
+* looking up titles of pasted web URLs
+* `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * user `quotes` service
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
-* looking up titles of pasted web URLs
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
 * Twitch events; simple Twitch chatbot is now easy (see notes on connecting below)
-* `sed`-replacement of the last message sent (`s/this/that/` substitution)
-* piping text from the terminal to the server (Posix-like only)
+* piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 
 ### Current limitations:
 
-* building **may segfault the dmd compiler** if compiling in `plain` or `release` modes with dmd **up to version 2.079.0**; in some cases only `debug` works (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)); fixed in 2.079.1?
-* some plugins don't yet differentiate between different home channels if there is more than one
-* quirky IRC server daemons that haven't been tested against can exhibit weird behaviour when parsing goes awry (need concrete examples to fix, please report abnormalities)
+* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below).
+* **the gdc compiler segfaults** with an internal compiler error when building in any mode.
+* some plugins don't yet differentiate between different home channels if there is more than one.
+* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
 
-Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) may be difficult, since the bot identifies people by their services (`NickServ`/`Q`/`AuthServ`/...) account names. You will probably want to register yourself with such, where available.
+Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
 Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
 
@@ -52,15 +53,11 @@ Testing is mainly done on [freenode](https://freenode.net), so support and cover
 
 # News
 
-* Readme now has a news section!
-* segfault seems gone in 2.079.1?
-* experimental `automodes` plugin, please test
-* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback
-* direct **imgur** links are now rewritten (to the non-direct HTML page) so we can get a meaningful page title, like stale YouTube ones are
-* remember to `dub upgrade` to get a fresh `dlang-requests` (~>0.7.0)
-* all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the configuration file entries
-* New `whitelist`/`blacklist` handling needs testing
-* plugins can now mix in the slimmer `MinimalAuthentification` mixin rather than the full `UserAwareness` if they don't need `ChannelAwareness` and/or access to the `state.users` array
+* compiler segfaults are back.
+* experimental `automodes` plugin, please test.
+* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
+* direct **imgur** links are now rewritten to the non-direct HTML page so we can get a meaningful page title, as we do stale YouTube ones.
+* all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
 
 # Getting started
 
@@ -70,7 +67,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
 
-**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), but the GCC-based [`gdc`](https://gdcproject.org/downloads) (8.1.0) crashes with an internal compiler error when building, at time of writing.
+**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [`gdc`](https://gdcproject.org/downloads) crashes with an internal compiler error when building in any mode.
 
 It's *possible* to build it manually without `dub`, but it is non-trivial if you want the web-related plugins to work.
 
@@ -91,7 +88,9 @@ $ dub build
 
 This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols.
 
-You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+> You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+
+The above will currently not work, as the compiler will crash on anything other than `debug` mode.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
@@ -114,7 +113,7 @@ The available *build configurations* are:
 You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
 ```bash
-$ dub build -b release -c cygwin
+$ dub build -c cygwin
 ```
 
 ## Windows
@@ -123,7 +122,7 @@ There are a few Windows caveats.
 
 * Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP access should work fine.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this.
-* Use in Cygwin terminals without compiling the aforementioned `cygwin` build configuration will be unpleasant. Normal `cmd` and Powershell consoles are not affected.
+* Use in Cygwin terminals without compiling the aforementioned `cygwin` build configuration will be unpleasant. Normal `cmd` and Powershell consoles are not affected and can be used with any configuration.
 
 # How to use
 
@@ -133,19 +132,17 @@ The bot needs the services account name of the administrator(s) of the bot, and/
 $ ./kameloso --writeconfig
 ```
 
-Open the new `kameloso.conf` in a text editor and fill in the fields. Additional resource files will be created as well; for instance, see `users.json` for where to enter whitelisted (and blacklisted) account names.
+Open the new `kameloso.conf` in a text editor and fill in the fields. Additional resource files will have been created as well; for instance, see `users.json` for where to enter whitelisted (and blacklisted) account names.
 
-If you have compiled in colours, they may be hard to see and the text difficult to read if you have a bright terminal background. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
-
-Once the bot has joined a channel, it's ready. Mind that you need to authorise yourself with any services (with an account listed as an adminisrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its whitelist.
+Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services (with an account listed as an administrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
 ```
      you joined #channel
 kameloso sets mode +o you
-     you | !say herp
-kameloso | herp
-     you | s/herp/actually blarp/
-kameloso | you | actually blarp
+     you | !say foo
+kameloso | foo
+     you | s/!say foo/bar/
+kameloso | you | bar
      you | !8ball
 kameloso | It is decidedly so
      you | !addquote you This is a quote
@@ -177,6 +174,8 @@ prefix              !
 
 It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix token, like `"please "`.
 
+If you have compiled in colours and you have bright terminal background, they may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
+
 ## Twitch
 
 To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
@@ -193,13 +192,13 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to even allow you to connect, even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
-Mind that a full Twitch bot cannot be implemented as an IRC client.
+Mind that a full Twitch bot cannot be implemented as an IRC client. It needs **Nightbot** or similar to be able to *see* events like subscriptions, donations, cheers and other Twitch-specifics.
 
 ## Use as a library
 
-The IRC server string-parsing modules are largely decoupled from the rest of the program, needing only some helper modules.
+The IRC event parsing bits are largely decoupled from the rest of the program, needing only some helper modules.
 
 * [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d)
 * [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
@@ -210,6 +209,7 @@ Feel free to copy these and drop them into your own project.
 
 # Roadmap
 
+* pipedream zero: no compiler segfaults
 * pipedream: DCC
 * pipedream two: `ncurses`
 * optional formatting in IRC output? (later if at all)
@@ -235,4 +235,4 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests) making the web-related plugins possible
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd), extending web functionality
 * [`#d` on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
-* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on Freenode](irc://irc.freenode.org:6667/#ircdocs) for their excellent resource pages
+* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on freenode](irc://irc.freenode.org:6667/#ircdocs) for their excellent resource pages
