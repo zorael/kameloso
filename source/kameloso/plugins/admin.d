@@ -759,6 +759,12 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
+    enum PeekType
+    {
+        unset,
+        set,
+        auth,
+    }
     /// FIXME: File with user definitions. Must be the same as in persistence.d.
     enum usersFile = "users.json";
 
@@ -780,12 +786,8 @@ final class AdminPlugin : IRCPlugin
      +/
     bool printAsserts;
 
-    /++
-    +   The event that spawned a "`set`" request. As a hack it is currently
-    +   stored here, so the plugin knows what to do when the results of
-    +   `kameloso.common.ThreadMessage.PeekPlugins` return.
-    +/
-    IRCEvent setEvent;
+    /// Which sort of peek is currently in flight; see `peekPlugins`.
+    PeekType currentPeekType;
 
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
