@@ -173,10 +173,10 @@ Flag!"quit" checkMessages(ref Client client)
      +  `kameloso.plugins.common.IRCPlugin`s array (housing all plugins) to the
      +  supplied `kameloso.plugins.common.IRCPlugin`.
      +/
-    void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin)
+    void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin, IRCEvent event)
     {
         auto plugin = cast(IRCPlugin)sPlugin;
-        plugin.peekPlugins(client.plugins);
+        plugin.peekPlugins(client.plugins, event);
     }
 
     /// Reloads all plugins.
