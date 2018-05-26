@@ -756,16 +756,40 @@ void onCommandAuth(AdminPlugin plugin, const IRCEvent event)
 // peekPlugins
 /++
  +  Takes a reference to the main `kameloso.common.Client.plugins` array of
- +  `kameloso.plugins.common.IRCPlugin`s, and applies any queued custom settings
- +  to them, as were saved in `plugin.setEvent` upon someone requesting the verb
- +  "`set`".
+ +  `kameloso.plugins.common.IRCPlugin`s. Either sets a plugin's settings' value
+ +  by name, or tells the `kameloso.plugins.connect.ConnectService` to reauth
+ +  with services, depending on how the peek was requested.
  +/
-void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins)
+void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
 {
-    if (plugin.setEvent == IRCEvent.init) return;
-    scope(exit) plugin.setEvent = IRCEvent.init;
+    with (plugin.PeekType)
+    final switch (plugin.currentPeekType)
+    {
+    case set:
+        plugins.applyCustomSettings([ event.content ]);
+        break;
 
-    plugins.applyCustomSettings([ plugin.setEvent.content ]);
+    case auth:
+        foreach (basePlugin; plugins)
+        {
+            import kameloso.plugins.connect;
+
+            ConnectService service = cast(ConnectService)basePlugin;
+            if (!service) continue;
+
+            service.auth(service);
+            plugin.state.bot = service.state.bot;
+            plugin.state.bot.updated = true;
+            break;
+        }
+        break;
+
+    case unset:
+        logger.error("Admin peekPlugins type of peek was unset!");
+        break;
+    }
+
+    plugin.currentPeekType = AdminPlugin.PeekType.unset;
 }
 
 
