@@ -107,6 +107,12 @@ string configReader(const string configFile)
  +      configFile = Filename of file to read from.
  +      things = Reference variadic list of things to set values of, according
  +          to the text in the configuration file.
+ +
+ +  Returns:
+ +      An associative array of string arrays of invalid configuration entries
+ +      encountered while reading the configuration file.
+ +      The associative array key is the section the entry was found under, and
+ +      the arrays merely lists of such erroneous entries thereunder.
  +/
 string[][string] readConfigInto(T...)(const string configFile, ref T things)
 {
@@ -334,6 +340,9 @@ pipyon 3
  +      memberToSet = String name of the thing's member to set.
  +      valueToSet = String contents of the value to set the member to; string
  +          even if the member is of a different type.
+ +
+ +  Returns:
+ +      `true` if a member was found and set, `false` if not.
  +/
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     const string valueToSet)
@@ -515,6 +524,11 @@ unittest
  +      range = Input range from which to read the configuration text.
  +      things = Reference variadic list of one or more objects to apply the
  +          configuration to.
+ +
+ +  Returns:
+ +      An associative array of string arrays of invalid configuration entries.
+ +      The associative array key is the section the entry was found under, and
+ +      the arrays merely lists of such erroneous entries thereunder.
  +/
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
