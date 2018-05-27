@@ -46,13 +46,14 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         typestring = slice;
     }
 
+    with (IRCEvent.Type)
     with (parser)
     switch (typestring)
     {
     case "PING":
         // PING :3466174537
         // PING :weber.freenode.net
-        event.type = IRCEvent.Type.PING;
+        event.type = PING;
 
         if (slice.has('.'))
         {
@@ -66,7 +67,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 
     case "ERROR":
         // ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)
-        event.type = IRCEvent.Type.ERROR;
+        event.type = ERROR;
         event.content = slice;
         break;
 
@@ -74,7 +75,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
     case "NOTICE":
         // QuakeNet/Undernet
         // NOTICE AUTH :*** Couldn't look up your hostname
-        event.type = IRCEvent.Type.NOTICE;
+        event.type = NOTICE;
         event.content = slice;
 
         if (bot.server.address != IRCServer.init.address)
@@ -92,7 +93,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 
     case "AUTHENTICATE":
         event.content = slice;
-        event.type = IRCEvent.Type.SASL_AUTHENTICATE;
+        event.type = SASL_AUTHENTICATE;
         break;
 
     default:
