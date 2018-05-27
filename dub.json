@@ -1,14 +1,14 @@
 {
     "name": "kameloso",
-    "description": "An IRC bot",
+    "description": "IRC bot in D",
     "authors": [ "JR" ],
     "copyright": "Copyright © 2018, JR",
     "license": "MIT",
     "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
-    "sourcePaths": [ "source", "tests" ],
-    "importPaths": [ "source", "tests" ],
-    "libs-posix-dmd": [ "phobos2" ],
+    "sourcePaths": [ "source" ],
+    "importPaths": [ "source" ],
+    "libs-posix": [ "phobos2" ],
     "-ddoxFilterArgs":
     [
         "--unittest-examples",
@@ -58,6 +58,8 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "Web", "Colours" ],
+            "sourcePaths": [ "tests" ],
+            "importPaths": [ "tests" ],
             "dependencies": { "requests": "~>0.7.0" }
         }
     ]
