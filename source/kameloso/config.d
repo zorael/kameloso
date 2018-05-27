@@ -572,9 +572,11 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 {
                     if (section != T.stringof.stripSuffix("Settings")) continue;
 
+                    immutable entry = hits["entry"];
+
                     foreach (immutable n, ref member; things[i].tupleof)
                     {
-                        switch (hits["entry"])
+                        switch (entry)
                         {
                             static if (!isType!member &&
                                 !hasUDA!(Things[i].tupleof[n], Unconfigurable))
@@ -583,16 +585,16 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                     Things[i].tupleof[n]);
 
                                 case memberstring:
-                                    things[i].setMemberByName(hits["entry"],
-                                        hits["value"]);
+                                    things[i].setMemberByName(entry, hits["value"]);
                                     continue thingloop;
                             }
                         default:
-                            // Unknown setting in known section
-                            invalidEntries[section] ~= hits["entry"].length ? hits["entry"] : line;
                             break;
                         }
                     }
+
+                    // If we're here, unknown setting in known section
+                    invalidEntries[section] ~= entry.length ? entry : line;
                 }
             }
 
