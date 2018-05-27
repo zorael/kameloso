@@ -1111,6 +1111,29 @@ struct IRCUser
         if (address == "*") address = string.init;
     }
 
+    ///
+    unittest
+    {
+        {
+            immutable user = IRCUser("nickname!~ident@address");
+            assert((user.nickname == "nickname"), user.nickname);
+            assert((user.ident == "~ident"), user.ident);
+            assert((user.address == "address"), user.address);
+        }
+        {
+            immutable user = IRCUser("*!~ident@address");
+            assert(!user.nickname.length, user.nickname);
+            assert((user.ident == "~ident"), user.ident);
+            assert((user.address == "address"), user.address);
+        }
+        {
+            immutable user = IRCUser("*!*@*");
+            assert(!user.nickname.length, user.nickname);
+            assert(!user.ident.length, user.ident);
+            assert(!user.address.length, user.address);
+        }
+    }
+
     /++
      +  Create a new `IRCUser` inheriting passed `nickname`, `ident`, and
      +  `address` strings.
