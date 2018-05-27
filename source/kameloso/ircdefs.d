@@ -1135,8 +1135,24 @@ struct IRCUser
     /// Guesses that a sender is a server.
     bool isServer() pure @property const
     {
-        import kameloso.string : has;
-        return (!nickname.length && address.has('.'));
+        import std.string : indexOf;
+        return !nickname.length && (address.indexOf('.') != -1);
+    }
+
+    ///
+    unittest
+    {
+        IRCUser user;
+
+        user.address = "blah.freenode.net";
+        assert(user.isServer);
+
+        user.nickname = "foo";
+        assert(!user.isServer);
+
+        user.nickname = string.init;
+        user.address = "nodots";
+        assert(!user.isServer);  // unsure what to even make of no-dot addresses
     }
 
 
