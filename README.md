@@ -4,7 +4,7 @@
 
 Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled and it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an issue of specialcasing for that particular IRC network or server daemon.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
@@ -12,9 +12,9 @@ It works well with the majority of server networks. IRC is standardised but serv
 * automatic mode sets (eg. auto `+o` for op)
 * looking up titles of pasted web URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
-* user `quotes` service
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
+* user `quotes` service
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
 * Twitch events; simple Twitch chatbot is now easy (see notes on connecting below)
@@ -24,15 +24,14 @@ It works well with the majority of server networks. IRC is standardised but serv
 
 ### Current limitations:
 
-* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below).
-* **the gdc compiler segfaults** with an internal compiler error when building in any mode.
-* some plugins don't yet differentiate between different home channels if there is more than one.
+* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below). Don't trust the **failed/error/failing** build badges.
+* the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
+* some plugins don't yet differentiate between different home channels if there are more than one.
 * quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
 Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
-
 
 # Table of contents
 
@@ -65,9 +64,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## Prerequisites
 
-You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview.
+You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017).
 
-**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [`gdc`](https://gdcproject.org/downloads) crashes with an internal compiler error when building in any mode.
+**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [`gdc`](https://gdcproject.org/downloads) is currently too old to be used.
 
 It's *possible* to build it manually without `dub`, but it is non-trivial if you want the web-related plugins to work.
 
@@ -126,7 +125,7 @@ There are a few Windows caveats.
 
 # How to use
 
-The bot needs the services account name of the administrator(s) of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two, so you need to create and edit a configuration file before starting.
+The bot needs the services account name of the administrator(s) of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two, so you need to generate and edit a configuration file before starting.
 
 ```bash
 $ ./kameloso --writeconfig
@@ -134,15 +133,16 @@ $ ./kameloso --writeconfig
 
 Open the new `kameloso.conf` in a text editor and fill in the fields. Additional resource files will have been created as well; for instance, see `users.json` for where to enter whitelisted (and blacklisted) account names.
 
-Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services (with an account listed as an administrator in the configuration file) to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
+Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
 ```
      you joined #channel
 kameloso sets mode +o you
      you | !say foo
 kameloso | foo
-     you | s/!say foo/bar/
-kameloso | you | bar
+     you | foo bar baz
+     you | s/bar/BAR/
+kameloso | you | foo BAR baz
      you | !8ball
 kameloso | It is decidedly so
      you | !addquote you This is a quote
@@ -163,7 +163,7 @@ kameloso | [youtube.com] Danish language
 kameloso | Reddit post: https://www.reddit.com/r/programming/comments/7o2tcw/dmd_20780_has_been_released
 ```
 
-Send `help` to the bot in a private query message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* will not be shown, due to technical reasons.
+Send `help` to the bot in a private message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
 
 The *prefix* character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
@@ -174,7 +174,7 @@ prefix              !
 
 It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix token, like `"please "`.
 
-If you have compiled in colours and you have bright terminal background, they may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
+If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
 ## Twitch
 
@@ -192,7 +192,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to services after registration is finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that a full Twitch bot cannot be implemented as an IRC client. It needs **Nightbot** or similar to be able to *see* events like subscriptions, donations, cheers and other Twitch-specifics.
 
@@ -216,6 +216,8 @@ Feel free to copy these and drop them into your own project.
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * set up a real configuration home like `~/.kameloso`? what of Windows?
+* logger timestamps at new day? rethink periodic events?
+* automode channel awareness boost
 
 # Built with
 
