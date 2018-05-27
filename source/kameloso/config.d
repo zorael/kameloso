@@ -568,13 +568,13 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             {
                 alias T = Unqual!(typeof(thing));
 
-                if (section != T.stringof.stripSuffix("Settings")) continue;
-
-                switch (hits["entry"])
+                static if (!is(T == enum))
                 {
-                    static if (!is(T == enum))
+                    if (section != T.stringof.stripSuffix("Settings")) continue;
+
+                    foreach (immutable n, ref member; things[i].tupleof)
                     {
-                        foreach (immutable n, ref member; things[i].tupleof)
+                        switch (hits["entry"])
                         {
                             static if (!isType!member &&
                                 !hasUDA!(Things[i].tupleof[n], Unconfigurable))
@@ -587,13 +587,12 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                         hits["value"]);
                                     continue thingloop;
                             }
+                        default:
+                            // Unknown setting in known section
+                            invalidEntries[section] ~= hits["entry"].length ? hits["entry"] : line;
+                            break;
                         }
                     }
-
-                default:
-                    // Unknown setting in known section
-                    invalidEntries[section] ~= hits["entry"].length ? hits["entry"] : line;
-                    break;
                 }
             }
 
