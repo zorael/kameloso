@@ -356,18 +356,18 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     bool success;
 
     top:
-    foreach (immutable i, member; thing.tupleof)
+    switch (memberToSet)
     {
-        alias T = Unqual!(typeof(member));
+        static foreach (immutable i; 0..thing.tupleof.length)
+        {{
+            alias T = Unqual!(typeof(thing.tupleof[i]));
 
-        static if (!isType!member &&
-            isConfigurableVariable!member &&
-            !hasUDA!(member, Unconfigurable))
-        {
-            enum memberstring = __traits(identifier, thing.tupleof[i]);
-
-            switch (memberToSet)
+            static if (!isType!(thing.tupleof[i]) &&
+                isConfigurableVariable!(thing.tupleof[i]) &&
+                !hasUDA!(thing.tupleof[i], Unconfigurable))
             {
+                enum memberstring = __traits(identifier, thing.tupleof[i]);
+
                 case memberstring:
                 {
                     static if (is(T == struct) || is(T == class))
@@ -432,13 +432,13 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                                 valueToSet, T.stringof, e.msg);
                         }
                     }
-                    break;
+                    break top;
                 }
-
-            default:
-                break;
             }
-        }
+        }}
+
+    default:
+        break;
     }
 
     return success;
@@ -588,27 +588,26 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                     immutable entry = hits["entry"];
 
-                    foreach (immutable n, ref member; things[i].tupleof)
+                    switch (entry)
                     {
-                        switch (entry)
-                        {
-                            static if (!isType!member &&
+                        static foreach (immutable n; 0..things[i].tupleof.length)
+                        {{
+                            static if (!isType!(Things[i].tupleof[n]) &&
                                 !hasUDA!(Things[i].tupleof[n], Unconfigurable))
                             {
-                                enum memberstring = __traits(identifier,
-                                    Things[i].tupleof[n]);
+                                enum memberstring = __traits(identifier, Things[i].tupleof[n]);
 
                                 case memberstring:
                                     things[i].setMemberByName(entry, hits["value"]);
                                     continue thingloop;
                             }
-                        default:
-                            break;
-                        }
+                        }}
+                    default:
+                        // Unknown setting in known section
+                        invalidEntries[section] ~= entry.length ? entry : line;
+                        break;
                     }
 
-                    // If we're here, unknown setting in known section
-                    invalidEntries[section] ~= entry.length ? entry : line;
                 }
             }
 
