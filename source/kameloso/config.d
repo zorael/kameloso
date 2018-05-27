@@ -347,18 +347,18 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
     bool success;
 
     top:
-    switch (memberToSet)
+    foreach (immutable i, member; thing.tupleof)
     {
-        foreach (immutable i, member; thing.tupleof)
+        alias T = Unqual!(typeof(member));
+
+        static if (!isType!member &&
+            isConfigurableVariable!member &&
+            !hasUDA!(member, Unconfigurable))
         {
-            alias T = Unqual!(typeof(member));
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-            static if (!isType!member &&
-                isConfigurableVariable!member &&
-                !hasUDA!(member, Unconfigurable))
+            switch (memberToSet)
             {
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
-
                 case memberstring:
                 {
                     static if (is(T == struct) || is(T == class))
@@ -425,11 +425,11 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
                     }
                     break;
                 }
+
+            default:
+                break;
             }
         }
-
-    default:
-        break;
     }
 
     return success;
