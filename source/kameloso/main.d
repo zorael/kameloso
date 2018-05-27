@@ -353,8 +353,8 @@ Flag!"quit" mainLoop(ref Client client)
     Flag!"quit" quit;
 
     /// Keep track of daemon and network so we know when to report detection.
-    IRCServer.Daemon detectedDaemon;
-    string detectedNetwork;
+    IRCServer.Daemon detectedDaemon = client.bot.server.daemon;
+    string detectedNetwork = client.bot.server.network;
 
     // Instantiate a Generator to read from the socket and yield lines
     auto generator = new Generator!string(() =>
