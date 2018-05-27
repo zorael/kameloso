@@ -88,6 +88,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 
     case "PONG":
         // PONG :tmi.twitch.tv
+        event.type = PONG;
         event.sender.address = slice;
         break;
 
