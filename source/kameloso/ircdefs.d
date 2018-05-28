@@ -1149,10 +1149,9 @@ struct IRCUser
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
         import std.format : formattedWrite;
-
-        sink.formattedWrite("n:%s L:%s a:%s i!%s A:%s%s w:%s   [%d]",
-            nickname, account, alias_, ident, address,
-            special ? "*" : string.init, lastWhois, refcount);
+        sink.formattedWrite("%s!%s@%s#%s%s @%d [%d]",
+            nickname, ident, address, account,
+            special ? " *" : string.init, lastWhois, refcount);
     }
 
     /// Guesses that a sender is a server.
