@@ -517,8 +517,7 @@ if (isOutputRange!(Sink,string))
         }
     }
 
-    sink.formattedWrite("%c[38;2;%d;%d;%dm",
-        cast(char)TerminalToken.bashFormat, r, g, b);
+    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat, r, g, b);
 }
 
 
@@ -605,9 +604,8 @@ string invert(const string line, const string toInvert)
     import std.format : format;
     import std.string : indexOf;
 
-    immutable inverted = "%c[%dm%s%c[%dm"
-        .format(TerminalToken.bashFormat, BashEffect.reverse,
-            toInvert, TerminalToken.bashFormat, BashReset.invert);
+    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.bashFormat,
+        BashEffect.reverse, toInvert, TerminalToken.bashFormat, BashReset.invert);
 
     Appender!string sink;
     sink.reserve(512);  // Maximum IRC message length by spec

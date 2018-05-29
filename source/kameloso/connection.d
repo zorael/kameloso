@@ -284,7 +284,6 @@ public:
         foreach (const string_; strings)
         {
             import std.algorithm.comparison : min;
-
             socket.send(string_[0..min(string_.length, 511)]);
         }
 
@@ -370,10 +369,9 @@ void listenFiber(Connection conn, ref bool abort)
             if (elapsed > Timeout.keepalive.seconds)
             {
                 import kameloso.string : timeSince;
-
                 // Too much time has passed; we can reasonably assume the socket is disconnected
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                              elapsed.timeSince, Timeout.keepalive.seconds);
+                    elapsed.timeSince, Timeout.keepalive.seconds);
                 return;
             }
 

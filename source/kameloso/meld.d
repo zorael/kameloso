@@ -281,8 +281,7 @@ void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
 if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     && !is(Array2 == immutable))
 {
-    assert((intoThis.length >= meldThis.length),
-        "Can't meld a larger array into a smaller one");
+    assert((intoThis.length >= meldThis.length), "Can't meld a larger array into a smaller one");
 
     foreach (immutable i, val; meldThis)
     {

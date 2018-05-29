@@ -66,13 +66,12 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
             static if (is(T == bool))
             {
                 enum pattern = "%sassert(%s%s%s, %s%s.to!string);\n";
-                sink.formattedWrite(pattern,
-                        indents.tabs,
-                        !value ? "!" : string.init,
-                        prefix.length ? prefix ~ '.' : string.init,
-                        memberstring,
-                        prefix.length ? prefix ~ '.' : string.init,
-                        memberstring);
+                sink.formattedWrite(pattern, indents.tabs,
+                    !value ? "!" : string.init,
+                    prefix.length ? prefix ~ '.' : string.init,
+                    memberstring,
+                    prefix.length ? prefix ~ '.' : string.init,
+                    memberstring);
             }
             else
             {
@@ -89,8 +88,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
                         enum pattern = "%sassert((%s%s == %s), %s%s.to!string);\n";
                     }
 
-                    sink.formattedWrite(pattern,
-                        indents.tabs,
+                    sink.formattedWrite(pattern, indents.tabs,
                         prefix.length ? prefix ~ '.' : string.init,
                         memberstring, value,
                         prefix.length ? prefix ~ '.' : string.init,
@@ -241,8 +239,7 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
         "@%s %s".format(event.tags, event.raw) : event.raw;
 
     sink.put("{\n");
-    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
-        1.tabs, raw);
+    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, raw);
     sink.formattedWrite("%swith (IRCEvent.Type)\n", 1.tabs);
     sink.formattedWrite("%swith (IRCUser.Class)\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
@@ -275,8 +272,7 @@ unittest
 
     // copy/paste the above
     sink.put("{\n");
-    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n",
-        1.tabs, event.raw);
+    sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, event.raw);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
     sink.formatAssertStatementLines(event, string.init, 2);

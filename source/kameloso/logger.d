@@ -83,8 +83,7 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                sink.colour(brightTerminal ? BashForeground.black :
-                    BashForeground.white);
+                sink.colour(brightTerminal ? BashForeground.black : BashForeground.white);
             }
         }
 
@@ -96,8 +95,7 @@ final class KamelosoLogger : Logger
 
         version(Colours)
         {
-            sink.colour(brightTerminal ? logcoloursBright[logLevel] :
-                logcoloursDark[logLevel]);
+            sink.colour(brightTerminal ? logcoloursBright[logLevel] : logcoloursDark[logLevel]);
         }
     }
 

@@ -369,8 +369,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                 {
                     static if (coloured)
                     {
-                        immutable thisWidth = member.length ?
-                            (width + 2) : (width + 4);
+                        immutable thisWidth = member.length ? (width + 2) : (width + 4);
 
                         enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
                         immutable memberColour = bright ? black : white;
@@ -385,8 +384,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        immutable thisWidth = member.length ?
-                            (width + 2) : (width + 4);
+                        immutable thisWidth = member.length ? (width + 2) : (width + 4);
 
                         enum arrayPattern = "%9s %-*s%s(%d)\n";
 
@@ -644,8 +642,7 @@ enum : ubyte
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
-uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
-    (Number num, int n)
+uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(Number num, int n)
 {
     assert((n > 0), "Cannot get multiple of 0 or negatives");
     assert((num >= 0), "Cannot get multiples for a negative number");

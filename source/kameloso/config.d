@@ -71,7 +71,7 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
  +/
 string configReader(const string configFile)
 {
-    import std.file   : exists, isFile, readText;
+    import std.file : exists, isFile, readText;
     import std.string : chomp;
 
     if (!configFile.exists) return string.init;
@@ -207,8 +207,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 // array, join it together
                 static assert (hasUDA!(thing.tupleof[i], Separator),
                     "%s.%s is not annotated with a Separator"
-                    .format(Thing.stringof,
-                    __traits(identifier, thing.tupleof[i])));
+                    .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
 
                 enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
                 static assert(separator.length, "Invalid separator (empty)");
@@ -247,13 +246,11 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             if (comment)
             {
                 // .init or otherwise disabled
-                sink.formattedWrite("#%s\n",
-                    __traits(identifier, thing.tupleof[i]));
+                sink.formattedWrite("#%s\n", __traits(identifier, thing.tupleof[i]));
             }
             else
             {
-                sink.formattedWrite("%s %s\n",
-                    __traits(identifier, thing.tupleof[i]), value);
+                sink.formattedWrite("%s %s\n", __traits(identifier, thing.tupleof[i]), value);
             }
         }
     }
@@ -806,8 +803,7 @@ string justifiedConfigurationText(const string origLines)
     assert(longestEntryLength);
     assert(unjustified.data.length);
 
-    immutable width = max(12, longestEntryLength
-        .getMultipleOf!(Yes.alwaysOneUp)(4));
+    immutable width = max(12, longestEntryLength.getMultipleOf!(Yes.alwaysOneUp)(4));
 
     foreach (line; unjustified.data)
     {
@@ -831,9 +827,7 @@ string justifiedConfigurationText(const string origLines)
             import std.format : formattedWrite;
 
             auto hits = line.matchFirst(entryValueEngine);
-
-            justified.formattedWrite("%-*s%s\n", width, hits["entry"],
-                hits["value"]);
+            justified.formattedWrite("%-*s%s\n", width, hits["entry"], hits["value"]);
             break;
         }
     }

@@ -210,12 +210,8 @@ Flag!"quit" checkMessages(ref Client client)
 
         case EMOTE:
             alias I = IRCControlCharacter;
-
-            immutable emoteTarget = target.nickname.length ?
-                target.nickname : channel;
-
-            line = "PRIVMSG %s :%s%s%s".format(emoteTarget,
-                cast(int)I.ctcp, content, cast(int)I.ctcp);
+            immutable emoteTarget = target.nickname.length ? target.nickname : channel;
+            line = "PRIVMSG %s :%s%s%s".format(emoteTarget, cast(int)I.ctcp, content, cast(int)I.ctcp);
             break;
 
         case MODE:
@@ -357,8 +353,7 @@ Flag!"quit" mainLoop(ref Client client)
     string detectedNetwork = client.bot.server.network;
 
     // Instantiate a Generator to read from the socket and yield lines
-    auto generator = new Generator!string(() =>
-        listenFiber(client.conn, *(client.abort)));
+    auto generator = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
 
     /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -426,10 +421,8 @@ Flag!"quit" mainLoop(ref Client client)
                             // case the time-to-fire is lower than the current
                             // counter value. This gives it more precision.
 
-                            immutable next = cast(int)(fiber.id - nowInUnix) /
-                                Timeout.receive;
-                            timedFiberCheckCounter = min(timedFiberCheckCounter,
-                                next);
+                            immutable next = cast(int)(fiber.id - nowInUnix) / Timeout.receive;
+                            timedFiberCheckCounter = min(timedFiberCheckCounter, next);
                             continue;
                         }
 
@@ -445,15 +438,13 @@ Flag!"quit" mainLoop(ref Client client)
                         }
                         catch (const IRCParseException e)
                         {
-                            logger.warningf("IRCParseException %s.timedFibers[%d]: %s",
-                                plugin.name, i, e.msg);
+                            logger.warningf("IRCParseException %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
                             printObject(e.event);
                             toRemove ~= i;
                         }
                         catch (const Exception e)
                         {
-                            logger.warningf("Exception %s.timedFibers[%d]: %s",
-                                plugin.name, i, e.msg);
+                            logger.warningf("Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
                             toRemove ~= i;
                         }
                     }
@@ -497,8 +488,7 @@ Flag!"quit" mainLoop(ref Client client)
                     bot = parser.bot;
                     propagateBot(bot);
 
-                    if ((detectedDaemon == IRCServer.Daemon.init) &&
-                        (bot.server.daemon != detectedDaemon))
+                    if ((detectedDaemon == IRCServer.Daemon.init) && (bot.server.daemon != detectedDaemon))
                     {
                         import kameloso.string : enumToString;
 
@@ -645,8 +635,7 @@ Flag!"quit" mainLoop(ref Client client)
                                 }
                                 catch (const IRCParseException e)
                                 {
-                                    logger.warningf("IRCParseException %s." ~
-                                        "awaitingFibers[%d]: %s",
+                                    logger.warningf("IRCParseException %s.awaitingFibers[%d]: %s",
                                         plugin.name, i, e.msg);
                                     printObject(e.event);
                                     toRemove ~= i;
@@ -693,21 +682,18 @@ Flag!"quit" mainLoop(ref Client client)
                     }
                     catch (const UTFException e)
                     {
-                        logger.warningf("UTFException %s.onEvent: %s",
-                            plugin.name, e.msg);
+                        logger.warningf("UTFException %s.onEvent: %s", plugin.name, e.msg);
                     }
                     catch (const Exception e)
                     {
-                        logger.warningf("Exception %s.onEvent: %s",
-                            plugin.name, e.msg);
+                        logger.warningf("Exception %s.onEvent: %s", plugin.name, e.msg);
                         printObject(event);
                     }
                 }
             }
             catch (const IRCParseException e)
             {
-                logger.warningf("IRCParseException at %s:%d: %s",
-                    e.file, e.line, e.msg);
+                logger.warningf("IRCParseException at %s:%d: %s", e.file, e.line, e.msg);
                 printObject(e.event);
             }
             catch (const UTFException e)
@@ -720,8 +706,7 @@ Flag!"quit" mainLoop(ref Client client)
             }
             catch (const Exception e)
             {
-                logger.warningf("Unhandled exception at %s:%d: %s",
-                    e.file, e.line, e.msg);
+                logger.warningf("Unhandled exception at %s:%d: %s", e.file, e.line, e.msg);
 
                 if (mutEvent != IRCEvent.init)
                 {
@@ -1134,8 +1119,7 @@ int main(string[] args)
 
             conn.reset();
 
-            immutable resolved = conn.resolve(bot.server.address,
-                bot.server.port, *abort);
+            immutable resolved = conn.resolve(bot.server.address, bot.server.port, *abort);
 
             if (!resolved)
             {
@@ -1185,14 +1169,12 @@ int main(string[] args)
                 }
                 else
                 {
-                    logger.infof("%s resolved into %d IPs.", bot.server.address,
-                    conn.ips.length);
+                    logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
                 }
             }
             else
             {
-                logger.infof("%s resolved into %d IPs.", bot.server.address,
-                    conn.ips.length);
+                logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
             }
 
             conn.connect(*abort);

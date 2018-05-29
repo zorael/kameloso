@@ -1025,8 +1025,7 @@ struct IRCServer
     {
         import std.format : format;
 
-        sink("[Daemon.%s@%s] %s:%d (%s)"
-            .format(daemon, network, address, port,resolvedAddress));
+        sink("[Daemon.%s@%s] %s:%d (%s)".format(daemon, network, address, port,resolvedAddress));
     }
 }
 
@@ -2314,8 +2313,7 @@ struct IRCChannel
         void toString(scope void delegate(const(char)[]) @safe sink) const
         {
             import std.format : formattedWrite;
-            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user,
-                exemptions);
+            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user, exemptions);
         }
 
         string toString() const

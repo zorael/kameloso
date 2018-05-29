@@ -539,8 +539,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(' ');  // bot nickname
         event.channel = slice.nom(' ');
         if (event.channel == "*") event.channel = string.init;
+
         immutable userOrIdent = slice.nom(' ');
         if (userOrIdent.beginsWith('~')) event.target.ident = userOrIdent;
+
         event.target.address = slice.nom(' ');
         slice.nom(' ');  // server
         event.target.nickname = slice.nom(' ');
@@ -773,8 +775,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         else
         {
-            throw new IRCParseException("Unknown variant of to-connect-type?",
-                event);
+            throw new IRCParseException("Unknown variant of to-connect-type?", event);
         }
         break;
 
@@ -1210,8 +1211,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
     // stdout.flush, which surely *must* be trusted if writeln to stdout is?
     version(Cygwin_) import std.stdio : stdout;
 
-    if (event.target.nickname.has(' ') ||
-        event.channel.has(' '))
+    if (event.target.nickname.has(' ') || event.channel.has(' '))
     {
         writeln();
         logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
@@ -1344,13 +1344,11 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 
         case "q":
             // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
-            return ((sender.ident == "TheQBot") &&
-                (sender.address == "CServe.quakenet.org"));
+            return ((sender.ident == "TheQBot") && (sender.address == "CServe.quakenet.org"));
 
         case "authserv":
             // :AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :Could not find your account
-            return ((sender.ident == "AuthServ") &&
-                (sender.address == "Services.GameSurge.net"));
+            return ((sender.ident == "AuthServ") && (sender.address == "Services.GameSurge.net"));
 
         default:
             break;
@@ -1539,8 +1537,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
     if (slice.length < 3) return;
 
-    if ((slice[0] == IRCControlCharacter.ctcp) &&
-        (slice[$-1] == IRCControlCharacter.ctcp))
+    if ((slice[0] == IRCControlCharacter.ctcp) && (slice[$-1] == IRCControlCharacter.ctcp))
     {
         slice = slice[1..$-1];
         immutable ctcpEvent = slice.has(' ') ? slice.nom(' ') : slice;
@@ -2160,13 +2157,11 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 
     case "q":
         // :Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.
-        return ((sender.ident == "TheQBot") &&
-            (sender.address == "CServe.quakenet.org"));
+        return ((sender.ident == "TheQBot") && (sender.address == "CServe.quakenet.org"));
 
     case "authserv":
         // :AuthServ!AuthServ@Services.GameSurge.net NOTICE kameloso :Could not find your account
-        return ((sender.ident == "AuthServ") &&
-            (sender.address == "Services.GameSurge.net"));
+        return ((sender.ident == "AuthServ") && (sender.address == "Services.GameSurge.net"));
 
     default:
         if (sender.address.has("/staff/"))
@@ -2294,8 +2289,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
-        return (!line[2..$].has('#')) &&
-                (!line[2..$].has('&'));
+        return (!line[2..$].has('#')) && (!line[2..$].has('&'));
     }
 
     return false;
@@ -2990,8 +2984,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     newMode.exemptions ~= carriedExemptions;
                     carriedExemptions.length = 0;
                 }
-                else if (server.bModes.has(modechar) ||
-                    server.cModes.has(modechar))
+                else if (server.bModes.has(modechar) || server.cModes.has(modechar))
                 {
                     /++
                      +  B = Mode that changes a setting and always has a
@@ -3059,8 +3052,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                         modes = modes.remove(i);
                     }
                 }
-                else if (server.bModes.has(modechar) ||
-                    server.cModes.has(modechar))
+                else if (server.bModes.has(modechar) || server.cModes.has(modechar))
                 {
                     /++
                      +  B = Mode that changes a setting and always has a
@@ -3234,8 +3226,7 @@ final class IRCParseException : Exception
      +  Create a new `IRCParseException`, without attaching an
      +  `kameloso.ircdefs.IRCEvent`.
      +/
-    this(const string message, const string file = __FILE__,
-        const size_t line = __LINE__) pure
+    this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
     {
         super(message, file, line);
     }
@@ -3244,8 +3235,7 @@ final class IRCParseException : Exception
      +  Create a new `IRCParseException`, attaching an
      +  `kameloso.ircdefs.IRCEvent` to it.
      +/
-    this(const string message, const IRCEvent event,
-        const string file = __FILE__, const size_t line = __LINE__) pure
+    this(const string message, const IRCEvent event, const string file = __FILE__, const size_t line = __LINE__) pure
     {
         this.event = event;
         super(message, file, line);
