@@ -703,8 +703,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     import std.traits : EnumMembers;
 
-                    static immutable BashForeground[17] fg =
-                        [ EnumMembers!BashForeground ];
+                    static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
 
                     auto colourIndex = hashOf(nickname) % 16;
 
@@ -734,8 +733,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
              +/
             void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
             {
-                if (!user.isServer && user.colour.length &&
-                    plugin.printerSettings.truecolour)
+                if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
                 {
                     import kameloso.bash : truecolour;
                     import kameloso.string : numFromHex;
@@ -745,19 +743,16 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                     if (plugin.printerSettings.normaliseTruecolour)
                     {
-                        sink.truecolour!(Yes.normalise)
-                            (r, g, b, settings.brightTerminal);
+                        sink.truecolour!(Yes.normalise)(r, g, b, settings.brightTerminal);
                     }
                     else
                     {
-                        sink.truecolour!(No.normalise)
-                            (r, g, b, settings.brightTerminal);
+                        sink.truecolour!(No.normalise)(r, g, b, settings.brightTerminal);
                     }
                 }
                 else
                 {
-                    sink.colour(colourByHash(user.isServer ?
-                        user.address : user.nickname));
+                    sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
                 }
             }
 
@@ -927,8 +922,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             // Nick was mentioned (naïve guess)
                             immutable inverted = content.invert(bot.nickname);
 
-                            if ((content != inverted) &&
-                                plugin.printerSettings.bellOnMention)
+                            if ((content != inverted) && plugin.printerSettings.bellOnMention)
                             {
                                 // Nick was indeed mentioned, or so the regex says
                                 import kameloso.bash : TerminalToken;
@@ -1081,8 +1075,7 @@ void stripEffects(ref IRCEvent event)
 version(Colours)
 string mapColours(const string line)
 {
-    import kameloso.bash : BashBackground, BashForeground, BashReset,
-        TerminalToken, colour;
+    import kameloso.bash : BashBackground, BashForeground, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
     import std.regex : matchAll, regex, replaceAll;
 
@@ -1146,8 +1139,7 @@ string mapColours(const string line)
 
         if (fgIndex > 15)
         {
-            logger.warning("mIRC foreground colour code out of bounds: ",
-                           fgIndex);
+            logger.warning("mIRC foreground colour code out of bounds: ", fgIndex);
             continue;
         }
 
@@ -1162,8 +1154,7 @@ string mapColours(const string line)
 
             if (bgIndex > 15)
             {
-                logger.warning("mIRC background colour code out of bounds: ",
-                               bgIndex);
+                logger.warning("mIRC background colour code out of bounds: ", bgIndex);
                 continue;
             }
 
@@ -1197,15 +1188,13 @@ unittest
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
         immutable mapped = mapColours(line);
-        assert((mapped == "This is \033[91mall red!\033[0m while this is not.\033[0m"),
-            mapped);
+        assert((mapped == "This is \033[91mall red!\033[0m while this is not.\033[0m"), mapped);
     }
 
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
         immutable mapped = mapColours(line);
-        assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[0m"),
-            mapped);
+        assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[0m"), mapped);
     }
 }
 
@@ -1264,15 +1253,13 @@ unittest
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
         immutable stripped = line.stripColours();
-        assert((stripped == "This time there's no ending token, only magenta."),
-            stripped);
+        assert((stripped == "This time there's no ending token, only magenta."), stripped);
     }
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending " ~ I.colour ~
             "6token, only " ~ I.colour ~ "magenta.";
         immutable stripped = line.stripColours();
-        assert((stripped == "This time there's no ending token, only magenta."),
-            stripped);
+        assert((stripped == "This time there's no ending token, only magenta."), stripped);
     }
 }
 

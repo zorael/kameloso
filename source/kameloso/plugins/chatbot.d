@@ -201,8 +201,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
                     }
                 }
 
-                throttleline(channel, sender.nickname,
-                    "No such plugin: " ~ specifiedPlugin);
+                throttleline(channel, sender.nickname, "No such plugin: " ~ specifiedPlugin);
                 return;
             }
             else
@@ -213,14 +212,12 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
 
                     enum width = 11;
 
-                    throttleline(channel, sender.nickname,
-                        "* %-*s %-([%s]%| %)"
+                    throttleline(channel, sender.nickname, "* %-*s %-([%s]%| %)"
                         .format(width, p.name, p.commands.keys.sort()));
                     return;
                 }
 
-                throttleline(channel, sender.nickname,
-                    "No such plugin: " ~ content);
+                throttleline(channel, sender.nickname, "No such plugin: " ~ content);
             }
         }
         else
@@ -230,8 +227,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
                 cast(string)KamelosoInfo.built);
 
             throttleline(channel, sender.nickname, banner);
-            throttleline(channel, sender.nickname,
-                "Available bot commands per plugin (beta):");
+            throttleline(channel, sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -239,8 +235,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
 
                 enum width = 11;
 
-                throttleline(channel, sender.nickname,
-                    "* %-*s %-([%s]%| %)"
+                throttleline(channel, sender.nickname, "* %-*s %-([%s]%| %)"
                     .format(width, p.name, p.commands.keys.sort()));
             }
 

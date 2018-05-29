@@ -169,15 +169,13 @@ File createFIFO(const IRCPluginState state)
 
         if (mkfifo.status != 0)
         {
-            throw new FileException("Could not create FIFO (mkfio returned %d)"
-                .format(mkfifo));
+            throw new FileException("Could not create FIFO (mkfio returned %d)".format(mkfifo));
         }
     }
     else if (filename.isDir)
     {
         throw new FileException("Wanted to create FIFO %s but a directory " ~
-            "exists with the same name"
-            .format(filename));
+            "exists with the same name".format(filename));
     }
 
     version(Colours)
@@ -211,14 +209,12 @@ File createFIFO(const IRCPluginState state)
         }
         else
         {
-            logger.infof("Pipe text to [%s] to send raw commands to the server",
-                filename);
+            logger.infof("Pipe text to [%s] to send raw commands to the server", filename);
         }
     }
     else
     {
-        logger.infof("Pipe text to [%s] to send raw commands to the server",
-            filename);
+        logger.infof("Pipe text to [%s] to send raw commands to the server", filename);
     }
 
     return File(filename, "r");

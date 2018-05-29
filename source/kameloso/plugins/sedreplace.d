@@ -184,8 +184,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         case '#':
             if (const line = event.sender.nickname in plugin.prevlines)
             {
-                if ((Clock.currTime.toUnixTime - line.timestamp) >
-                    replaceTimeoutSeconds)
+                if ((Clock.currTime.toUnixTime - line.timestamp) > replaceTimeoutSeconds)
                 {
                     // Entry is too old, remove it
                     plugin.prevlines.remove(event.sender.nickname);
@@ -195,8 +194,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
 
-                plugin.chan(event.channel, "%s | %s"
-                    .format(event.sender.nickname, result));
+                plugin.chan(event.channel, "%s | %s".format(event.sender.nickname, result));
 
                 plugin.prevlines.remove(event.sender.nickname);
             }

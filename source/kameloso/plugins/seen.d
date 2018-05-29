@@ -574,8 +574,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         else if (!event.content.isValidNickname(plugin.state.bot.server))
         {
             // Nickname contained a space
-            privmsg(event.channel, event.sender.nickname, "Invalid user: " ~
-                event.content);
+            privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content);
             return;
         }
         else if (event.sender.nickname == event.content)
@@ -584,8 +583,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             privmsg(event.channel, event.sender.nickname, "That's you!");
             return;
         }
-        else if (event.channel.length && state.channels[event.channel].users
-            .canFind(event.content))
+        else if (event.channel.length && state.channels[event.channel].users.canFind(event.content))
         {
             // Channel message and the user is in the channel
             chan(event.channel, event.content ~ " is here right now!");

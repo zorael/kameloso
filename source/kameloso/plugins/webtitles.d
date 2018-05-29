@@ -134,8 +134,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         const cachedLookup = url in plugin.cache;
 
-        if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when)
-            < Timeout.titleCache))
+        if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
         {
             logger.log("Found title lookup in cache");
             plugin.state.mainThread.reportURL(*cachedLookup, event);
@@ -345,8 +344,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     logger.log("Bland YouTube title ...");
 
-    immutable onRepeatURL = url
-        .replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
+    immutable onRepeatURL = url.replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
 
     logger.log("ListenOnRepeat URL: ", onRepeatURL);
 

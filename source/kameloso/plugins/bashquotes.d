@@ -126,8 +126,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         foreach (line; range)
         {
-            state.mainThread.throttleline(event.channel,
-                event.sender.nickname, line);
+            state.mainThread.throttleline(event.channel, event.sender.nickname, line);
         }
     }
     catch (const Exception e)

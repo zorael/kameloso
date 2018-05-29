@@ -76,8 +76,7 @@ void onPing(ChanQueriesService service)
             {
                 import std.format : format;
 
-                raw!(Yes.quiet)(service.state.mainThread,
-                    "MODE %s +%c".format(channel, modechar));
+                raw!(Yes.quiet)(service.state.mainThread, "MODE %s +%c".format(channel, modechar));
                 service.delayFiber(fiber, service.secondsBetween);
                 Fiber.yield();
             }

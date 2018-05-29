@@ -103,8 +103,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        if (!bot.channels.canFind(event.channel) &&
-            !bot.homes.canFind(event.channel))
+        if (!bot.channels.canFind(event.channel) && !bot.homes.canFind(event.channel))
         {
             // Track new channel in the channels array
             bot.channels ~= event.channel;
@@ -183,8 +182,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 void onPing(ConnectService service, const IRCEvent event)
 {
     service.serverPinged = true;
-    immutable target = (event.content.length) ?
-        event.content : event.sender.address;
+    immutable target = (event.content.length) ? event.content : event.sender.address;
 
     with (service.state)
     {
@@ -263,8 +261,7 @@ void tryAuth(ConnectService service)
                 return;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s"
-                .format(verb, bot.authPassword));
+            service.query!(Yes.quiet)(serviceNick, "%s %s".format(verb, bot.authPassword));
             logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
@@ -282,8 +279,7 @@ void tryAuth(ConnectService service)
                 account = bot.origNickname;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s %s"
-                .format(verb, account, bot.authPassword));
+            service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, bot.authPassword));
             logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
@@ -414,8 +410,7 @@ void onBadNick(ConnectService service)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters");
-        service.state.mainThread.prioritySend(ThreadMessage.Quit(),
-            "Invalid nickname");
+        service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Invalid nickname");
     }
 }
 
@@ -561,8 +556,7 @@ void onSASLAuthenticate(ConnectService service)
         bot.updated = true;
 
         immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
-        immutable authToken = "%s%c%s%c%s"
-            .format(authLogin, '\0', authLogin, '\0', bot.authPassword);
+        immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', bot.authPassword);
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);

@@ -235,8 +235,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         }
         else
         {
-            static assert(0, "Unknown function signature in WHOISRequestImpl: "~
-                typeof(fn).stringof);
+            static assert(0, "Unknown function signature in WHOISRequestImpl: " ~ typeof(fn).stringof);
         }
     }
 
@@ -793,8 +792,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     pluginName.nom('.');
                     pluginName.nom('.');
 
-                    return "[%s] %s (%s)".format(pluginName,
-                        __traits(identifier, fun), eventTypeUDA.enumToString);
+                    return "[%s] %s (%s)".format(pluginName, __traits(identifier, fun), eventTypeUDA.enumToString);
                 }();
 
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
@@ -845,8 +843,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         static if (verbose)
                         {
-                            writeln("...ignore invalid channel ",
-                                    event.channel);
+                            writeln("...ignore invalid channel ", event.channel);
+                            version(Cygwin_) stdout.flush();
                         }
 
                         // channel policy does not match
@@ -874,8 +872,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     foreach (commandUDA; getUDAs!(fun, BotCommand))
                     {
-                        static assert(commandUDA.string_.length,
-                            name ~ " had an empty BotCommand string");
+                        static assert(commandUDA.string_.length, name ~ " had an empty BotCommand string");
 
                         static if (verbose)
                         {
@@ -885,8 +882,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations
                         mutEvent = event;
 
-                        if (!privateState.nickPolicyMatches(commandUDA.policy,
-                            mutEvent))
+                        if (!privateState.nickPolicyMatches(commandUDA.policy, mutEvent))
                         {
                             static if (verbose)
                             {
@@ -904,8 +900,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         if (mutEvent.content.has!(Yes.decode)(' '))
                         {
-                            thisCommand = mutEvent.content
-                                .nom!(Yes.decode)(' ');
+                            thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
                         }
                         else
                         {
@@ -948,8 +943,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static assert((regexUDA.ending == Regex!char.init),
                                 name ~ " has an incomplete BotRegex");
 
-                            if (!privateState.nickPolicyMatches(regexUDA.policy,
-                                event))
+                            if (!privateState.nickPolicyMatches(regexUDA.policy, event))
                             {
                                 static if (verbose)
                                 {
@@ -965,8 +959,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             if (mutEvent.content.has!(Yes.decode)(' '))
                             {
-                                thisCommand = mutEvent.content
-                                    .nom!(Yes.decode)(' ');
+                                thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
                             }
                             else
                             {
@@ -1002,8 +995,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     // Bot{Command,Regex} exists but neither matched; skip
                     static if (verbose)
                     {
-                        writeln("...neither BotCommand nor BotRegex matched; " ~
-                            "continue funloop");
+                        writeln("...neither BotCommand nor BotRegex matched; continue funloop");
+                        version(Cygwin_) stdout.flush();
                     }
 
                     if (!mutEvent.aux.length) return Next.continue_; // next fun
@@ -1017,8 +1010,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.format : format;
 
                     enum typestring = eventTypeUDA.enumToString;
-                    pragma(msg, ("Note: %s is a wildcard %s event but is not " ~
-                        "Chainable nor Terminating")
+                    pragma(msg, "Note: %s is a wildcard %s event but is not Chainable nor Terminating"
                         .format(name, typestring));
                 }
 
@@ -1084,10 +1076,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             {
                                 static if (verbose)
                                 {
-                                    writefln("...%s passed privilege " ~
-                                        "check but isn't admin when admin is " ~
-                                        "what we want; continue",
+                                    writefln("...%s passed privilege check but isn't admin " ~
+                                        "when admin is what we want; continue",
                                         mutEvent.sender.nickname);
+                                    version(Cygwin_) stdout.flush();
                                 }
                                 return Next.continue_;
                             }
@@ -1122,8 +1114,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 pragma(msg, name);
                                 pragma(msg, typeof(fun).stringof);
                                 pragma(msg, Params);
-                                static assert(0, "Function signature takes " ~
-                                    "IRCPlugin instead of subclass plugin");
+                                static assert(0, "Function signature takes IRCPlugin instead of subclass plugin");
                             }
                             else
                             {
@@ -1137,8 +1128,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 import kameloso.common : logger;
-                                logger.warningf("...%s failed privilege " ~
-                                    "check; continue", mutEvent.sender.nickname);
+                                logger.warningf("...%s failed privilege check; continue", mutEvent.sender.nickname);
                             }
                             return Next.continue_;
                         }
@@ -1876,8 +1866,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!quiet(state.mainThread, channel,
-            nickname, content);
+        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
     }
 
 
@@ -1893,8 +1882,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.throttleline!quiet(state.mainThread, channel,
-            nickname, content);
+        return kameloso.messaging.throttleline!quiet(state.mainThread, channel, nickname, content);
     }
 
 
@@ -1906,8 +1894,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
         const string content)
     {
-        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget,
-            content);
+        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
     }
 
 
@@ -2481,11 +2468,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
             immutable userIndex = channels[event.channel].users
                 .countUntil(event.sender.nickname);
 
-            assert((userIndex != -1), "Tried to part a user that wasn't there: " ~
-                event.sender.nickname);
+            assert((userIndex != -1), "Tried to part a user that wasn't there: " ~ event.sender.nickname);
 
-            channels[event.channel].users = channels[event.channel].users
-                .remove(userIndex);
+            channels[event.channel].users = channels[event.channel].users.remove(userIndex);
 
             auto user = event.sender.nickname in users;
             if (!user)
@@ -2597,8 +2582,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
-        plugin.state.channels[event.channel]
-            .setMode(event.aux, event.content, plugin.state.bot.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.bot.server);
     }
 
 
@@ -2719,8 +2703,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
-                        plugin.addChannelUserMode(channels[event.channel],
-                            *modechar, nickname);
+                        plugin.addChannelUserMode(channels[event.channel], *modechar, nickname);
                     }
                     else
                     {
@@ -2791,8 +2774,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 assert(0);
             }
 
-            channels[event.channel]
-                .setMode(mode, event.content, plugin.state.bot.server);
+            channels[event.channel].setMode(mode, event.content, plugin.state.bot.server);
         }
     }
 
@@ -2810,8 +2792,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         import kameloso.irc : setMode;
 
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-        plugin.state.channels[event.channel]
-            .setMode(event.aux, event.content, plugin.state.bot.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.bot.server);
     }
 
 
@@ -2919,8 +2900,7 @@ bool nickPolicyMatches(const IRCPluginState privateState,
             content = content[1..$];
         }
 
-        if (content.beginsWith(bot.nickname) &&
-            (content.length > bot.nickname.length))
+        if (content.beginsWith(bot.nickname) && (content.length > bot.nickname.length))
         {
             /*static if (verbose)
             {
@@ -3043,13 +3023,11 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     {
         static if (!is(Payload == typeof(null)))
         {
-            state.whoisQueue[user.nickname] = whoisRequest(payload, event,
-                privilegeLevel, fn);
+            state.whoisQueue[user.nickname] = whoisRequest(payload, event, privilegeLevel, fn);
         }
         else
         {
-            state.whoisQueue[user.nickname] = whoisRequest(state, event,
-                privilegeLevel, fn);
+            state.whoisQueue[user.nickname] = whoisRequest(state, event, privilegeLevel, fn);
         }
     }
 }

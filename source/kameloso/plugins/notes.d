@@ -320,8 +320,8 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
         if (const nickNotes = nickname in channelNotes.object)
         {
             assert((nickNotes.type == JSON_TYPE.ARRAY),
-            "Invalid notes list type for %s on %s: %s"
-            .format(nickname, channel, nickNotes.type));
+                "Invalid notes list type for %s on %s: %s"
+                .format(nickname, channel, nickNotes.type));
 
             noteArray.length = nickNotes.array.length;
 
