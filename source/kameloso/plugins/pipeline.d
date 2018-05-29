@@ -198,11 +198,11 @@ File createFIFO(const IRCPluginState state)
                 KamelosoLogger.logcoloursDark[LogLevel.all];
 
             sink.colour(logtint);
-            sink.put("Pipe text to [");
+            sink.put("Pipe text to ");
             sink.colour(infotint);
             sink.put(filename);
             sink.colour(logtint);
-            sink.put("] to send raw commands to the server.");
+            sink.put(" to send raw commands to the server.");
             sink.colour(BashReset.all);
 
             logger.trace(sink.data);
