@@ -58,12 +58,12 @@ void pipereader(shared IRCPluginState newState)
     {
         fifo = createFIFO(state);
     }
-    catch (FileException e)
+    catch (const FileException e)
     {
         logger.error("Failed to create pipeline FIFO: ", e.msg);
         return;
     }
-    catch (Exception e)
+    catch (const Exception e)
     {
         logger.error("Unhandled exception creating pipeline FIFO: ", e.msg);
         return;

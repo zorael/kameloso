@@ -778,7 +778,7 @@ struct IRCEvent
                     if (arr[idx] != typeof(arr[idx]).init) stderr.writeln("DUPLICATE! ", idx);
                     arr[idx] = hits[1];
                 }
-                catch (Exception e)
+                catch (const Exception e)
                 {
                     //writeln(e.msg, ": ", line);
                 }
