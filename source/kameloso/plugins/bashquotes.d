@@ -131,7 +131,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     }
     catch (const Exception e)
     {
-        logger.error("Bashquotes could not fetch ", url, ": ", e.msg);
+        logger.warning("Bashquotes could not fetch ", url, ": ", e.msg);
     }
 }
 

@@ -237,7 +237,7 @@ public:
                         // Don't delay for retrying on the last retry
                         if (retry < (connectionRetries - 1))
                         {
-                            logger.infof("Retrying same IP in %d seconds", Timeout.retry);
+                            logger.logf("Retrying same IP in %d seconds", Timeout.retry);
                             interruptibleSleep(Timeout.retry.seconds, abort);
                         }
                         break;
@@ -248,7 +248,7 @@ public:
 
             if (i < ips.length)
             {
-                logger.infof("Trying next IP in %d seconds", Timeout.retry);
+                logger.logf("Trying next IP in %d seconds", Timeout.retry);
                 interruptibleSleep(Timeout.retry.seconds, abort);
             }
         }
