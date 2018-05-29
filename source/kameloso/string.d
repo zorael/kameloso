@@ -908,8 +908,7 @@ string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
         if (line.length <= suffix.length) return line;
     }
 
-    return (line[($-suffix.length)..$] == suffix) ?
-        line[0..($-suffix.length)] : line;
+    return (line[($-suffix.length)..$] == suffix) ? line[0..($-suffix.length)] : line;
 }
 
 ///
