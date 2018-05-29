@@ -1280,14 +1280,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         static if (__traits(compiles, .initialise))
         {
-            static if (__traits(compiles, .initialise(this)))
-            {
-                .initialise(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".initialise does not compile");
-            }
+            .initialise(this);
         }
     }
 
@@ -1319,14 +1312,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
-            static if (__traits(compiles, .postprocess(this, event)))
-            {
-                .postprocess(this, event);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".postprocess does not compile");
-            }
+            .postprocess(this, event);
         }
     }
 
@@ -1357,14 +1343,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            static if (__traits(compiles, .initResources(this)))
-            {
-                .initResources(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".initResources does not compile");
-            }
+            .initResources(this);
         }
     }
 
@@ -1518,14 +1497,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .peekPlugins))
         {
-            static if (__traits(compiles, .peekPlugins(this, plugins, IRCEvent.init)))
-            {
-                .peekPlugins(this, plugins, event);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".peekPlugins does not compile");
-            }
+            .peekPlugins(this, plugins, event);
         }
     }
 
@@ -1623,14 +1595,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            static if (__traits(compiles, .start(this)))
-            {
-                .start(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".start does not compile");
-            }
+            .start(this);
         }
     }
 
@@ -1643,14 +1608,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            static if (__traits(compiles, .teardown(this)))
-            {
-                .teardown(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".teardown does not compile");
-            }
+            .teardown(this);
         }
     }
 
@@ -1809,14 +1767,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            static if (__traits(compiles, .reload(this)))
-            {
-                .reload(this);
-            }
-            else
-            {
-                static assert(0, module_ ~ ".reload does not compile");
-            }
+            .reload(this);
         }
     }
 }
