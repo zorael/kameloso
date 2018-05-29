@@ -2074,7 +2074,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
 
-    static if (!__traits(compiles, typeof(.hasMinimalAuthentication)))
+    static if (!__traits(compiles, .hasMinimalAuthentication))
     {
         mixin MinimalAuthentication!(debug_, module_);
     }
@@ -2315,7 +2315,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
  +/
 mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
 {
-    static assert(__traits(compiles, typeof(.hasUserAwareness)), module_ ~
+    static assert(__traits(compiles, .hasUserAwareness), module_ ~
         " is missing UserAwareness mixin (needed for ChannelAwareness).");
 
     enum hasChannelAwareness = true;
