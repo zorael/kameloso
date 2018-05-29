@@ -566,14 +566,14 @@ struct Verbose;
  +  Annotation denoting that a function is part of an awareness mixin that
  +  should be processed *before* normal plugin functions.
  +/
-struct AwarenessEarly {}
+struct AwarenessEarly;
 
 
 /++
  +  Annotation denoting that a function is part of an awareness mixin that
  +  should be processed *after* normal plugin functions.
  +/
-struct AwarenessLate {}
+struct AwarenessLate;
 
 
 /++
