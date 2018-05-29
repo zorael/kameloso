@@ -326,7 +326,7 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "hello")
 @Description("Forces the bot to attempt to apply automodes.")
-void onIntroduction(AutomodePlugin plugin, const IRCEvent event)
+void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 {
     if (event.sender.account.length)
     {
