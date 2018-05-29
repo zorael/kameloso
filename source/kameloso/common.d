@@ -934,7 +934,7 @@ struct Client
             plugin.start();
             auto pluginBot = plugin.bot;
 
-            if (pluginBot != bot)
+            if (pluginBot.updated)
             {
                 // start changed the bot; propagate
                 bot = pluginBot;
