@@ -417,14 +417,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         else
         {
-            if (slice.beginsWith(':'))
-            {
-                event.channel = slice[1..$];
-            }
-            else
-            {
-                event.channel = slice;
-            }
+            event.channel = slice.beginsWith(':') ? slice[1..$] : slice;
         }
         break;
 
@@ -583,16 +576,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
         // :irc.oftc.net 344 kameloso #garderoben harbl!snarbl@* kameloso!~NaN@194.117.188.126 1515418362
         slice.nom(' ');  // bot nickname
-
-        if (slice.has(" q "))
-        {
-            event.channel = slice.nom(" q ");
-        }
-        else
-        {
-            event.channel = slice.nom(' ');
-        }
-
+        event.channel = slice.has(" q ") ? slice.nom(" q ") : slice.nom(' ');
         event.content = slice.nom(' ');
         event.aux = slice;
         break;
@@ -967,16 +951,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :niven.freenode.net 729 kameloso^ #hirrsteff q :End of Channel Quiet List
         // :irc.oftc.net 345 kameloso #garderoben :End of Channel Quiet List
         slice.nom(' ');
-
-        if (slice.has(" q :"))
-        {
-            event.channel = slice.nom(" q :");
-        }
-        else
-        {
-            event.channel = slice.nom(" :");
-        }
-
+        event.channel = slice.has(" q :") ? slice.nom(" q :") : slice.nom(" :");
         event.content = slice;
         break;
 
