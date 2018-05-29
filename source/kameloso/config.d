@@ -46,8 +46,7 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
 
-        file.writefln("# kameloso bot config (%s)", timestamp);
-        file.writeln();
+        file.writefln("# kameloso bot config (%s)\n", timestamp);
     }
 
     file.writeln(configurationText);
