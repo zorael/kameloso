@@ -777,6 +777,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 import kameloso.string : enumToString;
                 import std.stdio : writeln, writefln;
+                version(Cygwin_) import std.stdio : flush;
             }
 
             udaloop:
@@ -812,6 +813,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("-- ", name);
+                    version(Cygwin_) stdout.flush();
                 }
 
                 static if (hasUDA!(fun, ChannelPolicy))
@@ -827,6 +829,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.", policy.enumToString);
+                    version(Cygwin_) stdout.flush();
                 }
 
                 with (ChannelPolicy)
@@ -877,6 +880,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writefln(`...BotCommand "%s"`, commandUDA.string_);
+                            version(Cygwin_) stdout.flush();
                         }
 
                         // Reset between iterations
@@ -887,6 +891,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writeln("...policy doesn't match; continue next BotCommand");
+                                version(Cygwin_) stdout.flush();
                             }
 
                             continue;  // next BotCommand UDA
@@ -917,6 +922,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writeln("...command matches!");
+                                version(Cygwin_) stdout.flush();
                             }
 
                             mutEvent.aux = thisCommand;
@@ -948,6 +954,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 static if (verbose)
                                 {
                                     writeln("...policy doesn't match; continue next BotRegex");
+                                    version(Cygwin_) stdout.flush();
                                 }
 
                                 continue;  // next BotRegex UDA
@@ -1055,6 +1062,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...PrivilegeLevel.", privilegeLevel.enumToString);
+                        version(Cygwin_) stdout.flush();
                     }
 
                     with (PrivilegeLevel)
@@ -1095,6 +1103,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writefln("...%s WHOIS", typeof(this).stringof);
+                                version(Cygwin_) stdout.flush();
                             }
 
                             static if (is(Params : AliasSeq!IRCEvent) ||
