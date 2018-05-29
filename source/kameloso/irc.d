@@ -1438,7 +1438,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                     (content == quakenet) ||
                     (content == gamesurge) ||
                      content.has(cast(string)freenodeInvalid) ||
-                    (content.beginsWith(cast(string)freenodeRejected)) ||
+                     content.beginsWith(cast(string)freenodeRejected) ||
                      content.has(cast(string)dalnet) ||
                      content.has(cast(string)unreal))
                 {
@@ -3001,7 +3001,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     if (!prefixedUsers) continue;
 
                     immutable index = (*prefixedUsers).countUntil(newMode.data);
-                    if (index != -1) (*prefixedUsers) = (*prefixedUsers).remove(index);
+                    if (index != -1) *prefixedUsers = (*prefixedUsers).remove(index);
                 }
 
                 if (server.aModes.has(modechar))
