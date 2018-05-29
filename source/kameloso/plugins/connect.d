@@ -137,7 +137,7 @@ void joinChannels(ConnectService service)
 
         // FIXME: line should split if it reaches 512 characters
         // Needs .array or .dup, sort() will sort in-place and reorder homes
-        auto chanlist = chain(bot.homes, bot.channels)
+        immutable chanlist = chain(bot.homes, bot.channels)
             .array
             .sort()
             .uniq

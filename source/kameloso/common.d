@@ -731,7 +731,7 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
     {
         if (abort) return;
 
-        const nextStep = min((left-step), step);
+        immutable nextStep = min((left-step), step);
 
         if (nextStep <= nothing) break;
 
