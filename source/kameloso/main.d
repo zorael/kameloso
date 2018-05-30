@@ -311,21 +311,6 @@ Flag!"quit" checkMessages(ref Client client)
 }
 
 
-// removeMeWhenPossible
-/++
- +  Removing this breaks `-c vanilla -b plain` compilation, dmd error -11.
- +/
-void removeMeWhenPossible()
-{
-    import kameloso.debugging : formatEventAssertBlock;
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-    sink.formatEventAssertBlock(IRCEvent.init);
-    assert(0);
-}
-
-
 // mainLoop
 /++
  +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
