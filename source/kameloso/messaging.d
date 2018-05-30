@@ -75,40 +75,8 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     }
 }
 
-
-// throttleline
-/++
- +  Sends either a channel message or a private query message depending on
- +  the arguments passed to it.
- +
- +  It sends it in a throttled fashion, usable for long output when the bot
- +  may otherwise get kicked for spamming.
- +/
-void throttleline(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
-    const string nickname, const string content)
-{
-    import kameloso.common : ThreadMessage;
-    import std.format : format;
-
-    string line;
-
-    if (channel.length)
-    {
-        assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
-        line = "PRIVMSG %s :%s".format(channel, content);
-    }
-    else if (nickname.length)
-    {
-        assert((nickname[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
-        line = "PRIVMSG %s :%s".format(nickname, content);
-    }
-    else
-    {
-        assert(0, "Empty privmsg");
-    }
-
-    tid.send(ThreadMessage.Throttleline(), line);
-}
+deprecated("throttleline is deprecated, use privmsg instead.")
+alias throttleline = privmsg;
 
 
 // emote
@@ -280,22 +248,4 @@ void raw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
     event.content = line;
 
     tid.send(event);
-}
-
-
-// throttleraw
-/++
- +  Sends text to the server, verbatim.
- +
- +  It sends it in a throttled fashion, usable for long output when the bot
- +  may otherwise get kicked for spamming.
- +
- +  This is used to send messages of types for which there exist no helper
- +  functions.
- +/
-void throttleraw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
-{
-    import kameloso.common : ThreadMessage;
-
-    tid.send(ThreadMessage.Throttleline(), line);
 }

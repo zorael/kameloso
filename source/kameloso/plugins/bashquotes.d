@@ -66,7 +66,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
     import kameloso.common;
-    import kameloso.messaging : privmsg, throttleline;
+    import kameloso.messaging : privmsg;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;
@@ -121,12 +121,12 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
             .replaceAll(brEngine, string.init)
             .splitter("\n");
 
-        state.mainThread.throttleline(event.channel, event.sender.nickname,
+        state.mainThread.privmsg(event.channel, event.sender.nickname,
             "[bash.org] #%s".format(num));
 
         foreach (line; range)
         {
-            state.mainThread.throttleline(event.channel, event.sender.nickname, line);
+            state.mainThread.privmsg(event.channel, event.sender.nickname, line);
         }
     }
     catch (const Exception e)

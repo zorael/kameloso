@@ -83,7 +83,7 @@ Flag!"quit" checkMessages(ref Client client)
     Flag!"quit" quit;
 
     /// Echo a line to the terminal and send it to the server.
-    void throttleline(ThreadMessage.Throttleline, string line)
+    void throttlelineImpl(Strings...)(const Strings strings)
     {
         import core.thread : Thread;
         import core.time : seconds, msecs;
@@ -115,8 +115,7 @@ Flag!"quit" checkMessages(ref Client client)
                 if (*(client.abort)) return;
             }
 
-            logger.trace("--> ", line);
-            client.conn.sendline(line);
+            client.conn.sendline(strings);
 
             m = y + increment;
             t0 = Clock.currTime;
@@ -127,19 +126,19 @@ Flag!"quit" checkMessages(ref Client client)
     void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
-        client.conn.sendline(line);
+        throttlelineImpl(line);
     }
 
     /// Send a line to the server without echoing it.
     void quietline(ThreadMessage.Quietline, string line)
     {
-        client.conn.sendline(line);
+        throttlelineImpl(line);
     }
 
     /// Respond to `PING` with `PONG` to the supplied text as target.
     void pong(ThreadMessage.Pong, string target)
     {
-        client.conn.sendline("PONG :", target);
+        throttlelineImpl("PONG :", target);
     }
 
     /// Ask plugins to reload.
