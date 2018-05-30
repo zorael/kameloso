@@ -122,6 +122,14 @@ Flag!"quit" checkMessages(ref Client client)
         }
     }
 
+    /// Pass a throttleline message to `throttlelineImpl`.
+    void immediateline(ThreadMessage.Immediateline, string line)
+    {
+        // FIXME: quiet?
+        logger.trace("--> ", line);
+        client.conn.sendline(line);
+    }
+
     /// Echo a line to the terminal and send it to the server.
     void sendline(ThreadMessage.Sendline, string line)
     {
@@ -281,7 +289,7 @@ Flag!"quit" checkMessages(ref Client client)
         receivedSomething = receiveTimeout(instant,
             &sendline,
             &quietline,
-            &throttleline,
+            &immediateline,
             &pong,
             &eventToServer,
             &quitServer,

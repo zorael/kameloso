@@ -95,8 +95,8 @@ struct ThreadMessage
     /// Concurrency message type asking to quietly send a line to the server.
     struct Quietline {}
 
-    /// Concurrency message type asking to verbosely send throttled messages.
-    struct Throttleline {}
+    /// Concurrency message type asking to immediately send a message.
+    struct Immediateline {}
 
     /// Concurrency message type asking to quit the server and the program.
     struct Quit {}
