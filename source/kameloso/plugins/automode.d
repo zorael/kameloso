@@ -171,6 +171,8 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
     foreach (const channel, const channelaccounts; plugin.automodes)
     {
+        if (!plugin.state.bot.homes.canFind(channel)) continue;
+
         const modes = account in channelaccounts;
         if (!modes || !modes.length) continue;
 
