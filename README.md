@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-Features are added as plugins, written as [**D**](https://www.dlang.org) modules. A variety comes bundled and it's very easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas welcome.
+It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's very easy to write your own. Any and all ideas welcome. API documentation is [available online](https://zorael.github.io/kameloso).
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
@@ -14,7 +14,7 @@ It works well with the majority of server networks. IRC is standardised but serv
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
-* user `quotes` service
+* user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
 * Twitch events; simple Twitch chatbot is now easy (see notes on connecting below)
@@ -26,12 +26,12 @@ It works well with the majority of server networks. IRC is standardised but serv
 
 * **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below). Don't trust the **failed/error/failing** build badges.
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
-* some plugins don't yet differentiate between different home channels if there are more than one.
+* some plugins don't yet differentiate between different home channels if there is more than one.
 * quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is mainly done on [freenode](https://freenode.net), so support and coverage is best there.
+Testing is mainly done on [**freenode**](https://freenode.net), so support and coverage is best there.
 
 # Table of contents
 
@@ -64,15 +64,15 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## Prerequisites
 
-You need a **D** compiler and the official [`dub`](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017).
+You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017).
 
-**kameloso** can be built using the reference compiler [`dmd`](https://dlang.org/download.html) and the LLVM-based [`ldc`](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [`gdc`](https://gdcproject.org/downloads) is currently too old to be used.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
-It's *possible* to build it manually without `dub`, but it is non-trivial if you want the web-related plugins to work.
+It's *possible* to build it manually without dub, but it is non-trivial if you want the web-related plugins to work.
 
 ## Downloading
 
-GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use `git` and clone a copy of the source that way.
+GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use **git** and clone a copy of the source that way.
 
 ```bash
 $ git clone https://github.com/zorael/kameloso.git
