@@ -1520,6 +1520,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
+        import std.typecons : Flag, No, Yes;
 
         enum width = 18;
 
@@ -1528,7 +1529,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
         {
             // FIXME: Hardcoded value
-            printObject!width(symbol);
+            printObject!(No.printAll, width)(symbol);
         }
 
         foreach (immutable i, symbol; this.tupleof)
@@ -1537,7 +1538,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 (is(typeof(this.tupleof[i]) == struct)))
             {
                 // FIXME: Hardcoded value
-                printObject!width(symbol);
+                printObject!(No.printAll, width)(symbol);
             }
         }
     }

@@ -254,7 +254,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             // FIXME: Hardcoded width
             enum width = 18;
-            printObjects!width(bot, bot.server, settings);
+            printObjects!(No.printAll, width)(bot, bot.server, settings);
 
             initPlugins(customSettings);
 

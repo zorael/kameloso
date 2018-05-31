@@ -200,7 +200,8 @@ struct CoreSettings
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
-void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
+void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)
+    (Things things) @trusted
 {
     import std.stdio : stdout;
 
@@ -210,18 +211,18 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
     {
         if (settings.monochrome)
         {
-            formatObjectsImpl!(No.coloured, widthArg)
+            formatObjectsImpl!(printAll, No.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsImpl!(Yes.coloured, widthArg)
+            formatObjectsImpl!(printAll, Yes.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsImpl!(No.coloured, widthArg)
+        formatObjectsImpl!(printAll, No.coloured, widthArg)
             (stdout.lockingTextWriter, things);
     }
 
@@ -253,9 +254,10 @@ void printObjects(uint widthArg = 0, Things...)(Things things) @trusted
  +      widthArg = The width with which to pad output columns.
  +      thing = Struct object to enumerate.
  +/
-void printObject(uint widthArg = 0, Thing)(Thing thing)
+void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thing)
+    (Thing thing)
 {
-    printObjects!widthArg(thing);
+    printObjects!(printAll, widthArg)(thing);
 }
 
 
@@ -291,14 +293,15 @@ void printObject(uint widthArg = 0, Thing)(Thing thing)
  +      sink = Output range to write to.
  +      things = Variadic list of structs to enumerate and format.
  +/
-private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
-    uint widthArg = 0, Sink, Things...)
+private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
+    Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @trusted
 {
     import kameloso.string : stripSuffix;
-    import kameloso.traits : isConfigurableVariable, longestMemberName, UnqualArray;
+    import kameloso.traits : isConfigurableVariable, isTrulyString, longestMemberName, UnqualArray;
     import std.format : formattedWrite;
-    import std.traits : Unqual, hasUDA, isType;
+    import std.range.primitives : ElementEncodingType;
+    import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
 
     static if (coloured)
     {
@@ -332,21 +335,26 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
         foreach (immutable i, member; thing.tupleof)
         {
-            static if (!isType!member &&
+            enum shouldNormallyBePrinted = !isType!member &&
                 isConfigurableVariable!member &&
                 !hasUDA!(thing.tupleof[i], Hidden) &&
-                !hasUDA!(thing.tupleof[i], Unconfigurable))
+                !hasUDA!(thing.tupleof[i], Unconfigurable);
+
+            enum shouldMaybeBePrinted = printAll && !hasUDA!(thing.tupleof[i], Hidden);
+
+            static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
             {
                 import std.traits : isArray, isSomeString;
 
                 alias T = Unqual!(typeof(member));
+
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
-                static if (isSomeString!T)
+                static if (isTrulyString!T)
                 {
                     static if (coloured)
                     {
-                        enum stringPattern = `%s%9s %s%-*s %s"%s"%s(%d)` ~ '\n';
+                        enum stringPattern = `%s%14s %s%-*s %s"%s"%s(%d)` ~ '\n';
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
                         immutable lengthColour = bright ? lightgrey : darkgrey;
@@ -359,24 +367,35 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        enum stringPattern = `%9s %-*s "%s"(%d)` ~ '\n';
+                        enum stringPattern = `%14s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, T.stringof,
                             (width + 2), memberstring,
                             member, member.length);
                     }
                 }
-                else static if (isArray!T)
+                else static if (isArray!T || isAssociativeArray!T)
                 {
+                    alias ElemType = Unqual!(ElementEncodingType!T);
+                    enum elemIsCharacter = is(ElemType == char) || is(ElemType == dchar) || is(ElemType == wchar);
+
+                    immutable thisWidth = member.length ? (width + 2) : (width + 4);
+
                     static if (coloured)
                     {
-                        immutable thisWidth = member.length ? (width + 2) : (width + 4);
+                        static if (elemIsCharacter)
+                        {
+                            enum arrayPattern = "%s%14s %s%-*s%s[%(%s, %)]%s(%d)\n";
+                        }
+                        else
+                        {
+                            enum arrayPattern = "%s%14s %s%-*s%s%s%s(%d)\n";
+                        }
 
-                        enum arrayPattern = "%s%9s %s%-*s%s%s%s(%d)\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
-                        sink.formattedWrite(arrayPattern,
+                        sink.formattedWrite!arrayPattern(
                             cyan.colour, UnqualArray!T.stringof,
                             memberColour.colour, thisWidth, memberstring,
                             valueColour.colour, member,
@@ -384,22 +403,49 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        immutable thisWidth = member.length ? (width + 2) : (width + 4);
+                        static if (elemIsCharacter)
+                        {
+                            enum arrayPattern = "%14s %-*s[%(%s, %)](%d)\n";
+                        }
+                        else
+                        {
+                            enum arrayPattern = "%14s %-*s%s(%d)\n";
+                        }
 
-                        enum arrayPattern = "%9s %-*s%s(%d)\n";
-
-                        sink.formattedWrite(arrayPattern,
+                        sink.formattedWrite!arrayPattern(
                             UnqualArray!T.stringof,
                             thisWidth, memberstring,
                             member,
                             member.length);
                     }
                 }
+                else static if (is(T == struct) || is(T == class))
+                {
+                    enum classOrStruct = is(T == struct) ? "struct" : "class";
+
+                    static if (coloured)
+                    {
+                        enum normalPattern = "%s%14s %s%-*s %s<%s>\n";
+                        immutable memberColour = bright ? black : white;
+                        immutable valueColour = bright ? green : lightgreen;
+
+                        sink.formattedWrite(normalPattern,
+                            cyan.colour, T.stringof,
+                            memberColour.colour, (width + 2), memberstring,
+                            valueColour.colour, classOrStruct);
+                    }
+                    else
+                    {
+                        enum normalPattern = "%14s %-*s <%s>\n";
+                        sink.formattedWrite(normalPattern, T.stringof,
+                            (width + 2), memberstring, classOrStruct);
+                    }
+                }
                 else
                 {
                     static if (coloured)
                     {
-                        enum normalPattern = "%s%9s %s%-*s  %s%s\n";
+                        enum normalPattern = "%s%14s %s%-*s  %s%s\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
 
@@ -410,7 +456,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
                     }
                     else
                     {
-                        enum normalPattern = "%9s %-*s  %s\n";
+                        enum normalPattern = "%14s %-*s  %s\n";
                         sink.formattedWrite(normalPattern, T.stringof,
                             (width + 2), memberstring, member);
                     }
@@ -432,40 +478,63 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 {
     import kameloso.string : has;
     import std.array : Appender;
+    import std.format : format;
+    import std.stdio;
+
+    struct Struct
+    {
+        string members;
+        int asdf;
+    }
 
     // Monochrome
 
     struct StructName
     {
+        Struct struct_;
         int i = 12_345;
         string s = "foo";
         bool b = true;
         float f = 3.14f;
         double d = 99.9;
+        const(char)[] c = [ 'a', 'b', 'c' ];
+        const(char)[] emptyC;
+        string[] dynA = [ "foo", "bar", "baz" ];
+        int[] iA = [ 1, 2, 3, 4 ];
+        const(char)[char] cC;
     }
 
     StructName s;
+    s.cC = [ 'a':'a', 'b':'b' ];
+    assert('a' in s.cC);
+    assert('b' in s.cC);
     Appender!(char[]) sink;
 
-    sink.reserve(128);  // ~119
-    sink.formatObjectsImpl!(No.coloured)(s);
+    sink.reserve(512);  // ~323
+    sink.formatObjectsImpl!(No.printAll, No.coloured)(s);
 
     enum structNameSerialised =
 `-- StructName
-      int i    12345
-   string s   "foo"(3)
-     bool b    true
-    float f    3.14
-   double d    99.9
+        Struct struct_   <struct>
+           int i          12345
+        string s         "foo"(3)
+          bool b          true
+         float f          3.14
+        double d          99.9
+        char[] c        ['a', 'b', 'c'](3)
+        char[] emptyC     [](0)
+      string[] dynA     ["foo", "bar", "baz"](3)
+         int[] iA       [1, 2, 3, 4](4)
+    char[char] cC       ['b':'b', 'a':'a'](2)
 
 `;
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
     // Adding Settings does nothing
     alias StructNameSettings = StructName;
-    StructNameSettings so;
+    StructNameSettings so = s;
     sink.clear();
-    sink.formatObjectsImpl!(No.coloured)(so);
+    sink.formatObjectsImpl!(No.printAll, No.coloured)(so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -485,7 +554,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjectsImpl!(Yes.coloured)(s2);
+        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -511,7 +580,7 @@ private void formatObjectsImpl(Flag!"coloured" coloured = Yes.coloured,
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjectsImpl!(Yes.coloured)(s2o);
+        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
 }
