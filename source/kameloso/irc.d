@@ -3055,9 +3055,18 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     immutable modecharIndex = modechars.indexOf(modechar);
                     if (modecharIndex == -1) continue;
 
-                    modechars = cast(char[])modechars
+                    /*modechars = cast(char[])modechars
                         .representation
-                        .remove(modecharIndex);
+                        .remove(modecharIndex);*/
+
+                    if (modecharIndex != (modechars.length-1))
+                    {
+                        modechars = modechars[1..modecharIndex] ~ modechars[modecharIndex+1..$];
+                    }
+                    else
+                    {
+                        modechars = modechars[0..modecharIndex];
+                    }
                 }
             }
             else

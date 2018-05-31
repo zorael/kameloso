@@ -2327,7 +2327,7 @@ struct IRCChannel
     string topic;
 
     /// The current non-`data`-sporting `Mode`s of the channel.
-    char[] modechars;
+    string modechars;
 
     /// Array of all `Mode`s that are not simply represented in `modechars`.
     Mode[] modes;
