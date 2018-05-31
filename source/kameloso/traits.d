@@ -5,7 +5,7 @@ module kameloso.traits;
 
 import kameloso.uda;
 
-import std.traits : Unqual, isType;
+import std.traits : Unqual, isArray, isAssociativeArray, isType;
 
 
 // isConfigurableVariable
@@ -201,7 +201,11 @@ unittest
  +  Given an array of qualified elements, aliases itself to one such of
  +  unqualified elements.
  +/
-alias UnqualArray(QualArray : QualType[], QualType) = Unqual!QualType[];
+template UnqualArray(QualArray : QualType[], QualType)
+if (!isAssociativeArray!QualType)
+{
+    alias UnqualArray = Unqual!QualType[];
+}
 
 ///
 unittest
@@ -217,6 +221,81 @@ unittest
     alias InoutBools = inout(bool)[];
     alias UnqualBools = UnqualArray!InoutBools;
     static assert(is(UnqualBools == bool[]));
+
+    alias ConstChars = const(char)[];
+    alias UnqualChars2 = UnqualArray!ConstChars;
+    static assert(is(UnqualChars2 == char[]));
+}
+
+
+// UnqualArray
+/++
+ +  Given an associative array with elements that have a storage class, aliases
+ +  itself to an associative array with elements without the storage classes.
+ +/
+template UnqualArray(QualArray : QualElem[QualKey], QualElem, QualKey)
+if (!isArray!QualElem)
+{
+    alias UnqualArray = Unqual!QualElem[Unqual!QualKey];
+}
+
+///
+unittest
+{
+    alias ConstStringAA = const(string)[int];
+    alias UnqualStringAA = UnqualArray!ConstStringAA;
+    static assert (is(UnqualStringAA == string[int]));
+
+    alias ImmIntAA = immutable(int)[char];
+    alias UnqualIntAA = UnqualArray!ImmIntAA;
+    static assert(is(UnqualIntAA == int[char]));
+
+    alias InoutBoolAA = inout(bool)[long];
+    alias UnqualBoolAA = UnqualArray!InoutBoolAA;
+    static assert(is(UnqualBoolAA == bool[long]));
+
+    alias ConstCharAA = const(char)[string];
+    alias UnqualCharAA = UnqualArray!ConstCharAA;
+    static assert(is(UnqualCharAA == char[string]));
+}
+
+
+// UnqualArray
+/++
+ +  Given an associative array of arrays with a storage class, aliases itself to
+ +  an associative array with array elements without the storage classes.
+ +/
+template UnqualArray(QualArray : QualElem[QualKey], QualElem, QualKey)
+if (isArray!QualElem)
+{
+    static if (isTrulyString!(Unqual!QualElem))
+    {
+        alias UnqualArray = Unqual!QualElem[Unqual!QualKey];
+    }
+    else
+    {
+        alias UnqualArray = UnqualArray!QualElem[Unqual!QualKey];
+    }
+}
+
+///
+unittest
+{
+    alias ConstStringArrays = const(string[])[int];
+    alias UnqualStringArrays = UnqualArray!ConstStringArrays;
+    static assert (is(UnqualStringArrays == string[][int]));
+
+    alias ImmIntArrays = immutable(int[])[char];
+    alias UnqualIntArrays = UnqualArray!ImmIntArrays;
+    static assert(is(UnqualIntArrays == int[][char]));
+
+    alias InoutBoolArrays = inout(bool)[][long];
+    alias UnqualBoolArrays = UnqualArray!InoutBoolArrays;
+    static assert(is(UnqualBoolArrays == bool[][long]));
+
+    alias ConstCharArrays = const(char)[][string];
+    alias UnqualCharArrays = UnqualArray!ConstCharArrays;
+    static assert(is(UnqualCharArrays == char[][string]));
 }
 
 
