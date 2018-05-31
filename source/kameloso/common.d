@@ -298,7 +298,8 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     (auto ref Sink sink, Things things) @trusted
 {
     import kameloso.string : stripSuffix;
-    import kameloso.traits : isConfigurableVariable, isTrulyString, longestMemberName, UnqualArray;
+    import kameloso.traits : UnqualArray, isConfigurableVariable, isTrulyString,
+        longestMemberName, longestUnconfigurableMemberName;
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
     import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
@@ -311,7 +312,14 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
 
-    enum width = !widthArg ? longestMemberName!Things.length : widthArg;
+    static if (printAll)
+    {
+        enum width = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
+    }
+    else
+    {
+        enum width = !widthArg ? longestMemberName!Things.length : widthArg;
+    }
 
     immutable bright = .settings.brightTerminal;
 
