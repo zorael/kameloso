@@ -176,6 +176,26 @@ unittest
 }
 
 
+// isTrulyString
+/++
+ +  True if a type is `string`, `dstring` or `wstring`; otherwise false.
+ +
+ +  Does not consider e.g. `char[]` a string, as `isSomeString` does.
+ +/
+enum isTrulyString(S) = is(S == string) || is(S == dstring) || is(S == wstring);
+
+///
+unittest
+{
+    assert(isTrulyString!string);
+    assert(isTrulyString!dstring);
+    assert(isTrulyString!wstring);
+    assert(!isTrulyString!(char[]));
+    assert(!isTrulyString!(dchar[]));
+    assert(!isTrulyString!(wchar[]));
+}
+
+
 // UnqualArray
 /++
  +  Given an array of qualified elements, aliases itself to one such of
