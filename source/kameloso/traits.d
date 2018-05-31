@@ -125,6 +125,72 @@ unittest
 }
 
 
+// longestUnconfigurableMemberName
+/++
+ +  Gets the name of the longest member in one or more struct/class objects.
+ +  Includes members annotated `kameloso.uda.Unconfigurable`.
+ +
+ +  This is used for printing structs to screen, so that columns line up.
+ +
+ +  Params:
+ +      Things = Types to examine and count member name lengths of.
+ +/
+template longestUnconfigurableMemberName(Things...)
+if (Things.length > 0)
+{
+    enum longestUnconfigurableMemberName = ()
+    {
+        import std.traits : hasUDA;
+
+        string longest;
+
+        foreach (T; Things)
+        {
+            foreach (name; __traits(allMembers, T))
+            {
+                static if (!isType!(__traits(getMember, T, name)) &&
+                    isConfigurableVariable!(__traits(getMember, T, name)) &&
+                    !hasUDA!(__traits(getMember, T, name), Hidden))
+                {
+                    if (name.length > longest.length)
+                    {
+                        longest = name;
+                    }
+                }
+            }
+        }
+
+        return longest;
+    }();
+}
+
+///
+unittest
+{
+    struct Foo
+    {
+        string veryLongName;
+        int i;
+        @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
+        @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
+    }
+
+    struct Bar
+    {
+        string evenLongerName;
+        float f;
+
+        @Unconfigurable
+        @Hidden
+        long looooooooooooooooooooooong;
+    }
+
+    static assert(longestUnconfigurableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
+    static assert(longestUnconfigurableMemberName!Bar == "evenLongerName");
+    static assert(longestUnconfigurableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
+}
+
+
 // isOfAssignableType
 /++
  +  Eponymous template bool of whether a variable is "assignable"; if it is
