@@ -2693,6 +2693,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                      +/
                     users[nickname] = IRCUser.init;
                     user = nickname in users;
+                    user.nickname = nickname;
                 }
 
                 ++(*user).refcount;
