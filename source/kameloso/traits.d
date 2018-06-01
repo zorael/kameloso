@@ -115,7 +115,7 @@ if (Things.length > 0)
  +  Params:
  +      Things = Types to examine and count member name lengths of.
  +/
-enum longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
+alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 
 ///
 unittest
@@ -155,7 +155,7 @@ unittest
  +  Params:
  +      Things = Types to examine and count member name lengths of.
  +/
-enum longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
+alias longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
 
 ///
 unittest
@@ -250,7 +250,7 @@ if (Things.length > 0)
  +  Params:
  +      Things = Types to examine and count member type name lengths of.
  +/
-enum longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
+alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
 
 ///
 unittest
@@ -277,7 +277,7 @@ unittest
  +  Params:
  +      Things = Types to examine and count member type name lengths of.
  +/
-enum longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
+alias longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
 
 ///
 unittest
