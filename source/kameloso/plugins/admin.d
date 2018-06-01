@@ -753,6 +753,45 @@ void onCommandAuth(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandStatus
+/++
+ +  Dumps information about the current state of the bot to the local terminal.
+ +
+ +  This can be very spammy.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(NickPolicy.required, "status")
+@Description("[debug] Dumps information about the current state of the bot to the local terminal.")
+void onCommandStatus(AdminPlugin plugin)
+{
+    import kameloso.common : printObject, printObjects;
+    import std.stdio : writeln, stdout;
+
+    logger.log("Current state:");
+    printObjects!(Yes.printAll)(plugin.state.bot, plugin.state.bot.server);
+    writeln();
+
+    logger.log("Channels:");
+    foreach (const name, const channel; plugin.state.channels)
+    {
+        writeln(name);
+        printObject(channel);
+    }
+    writeln();
+
+    logger.log("Users:");
+    foreach (const nickname, const user; plugin.state.users)
+    {
+        printObject(user);
+    }
+
+    version(Cygwin_) stdout.flush();
+}
+
+
 // peekPlugins
 /++
  +  Takes a reference to the main `kameloso.common.Client.plugins` array of
