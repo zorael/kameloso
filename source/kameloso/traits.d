@@ -29,7 +29,7 @@ template isConfigurableVariable(alias var)
         enum isConfigurableVariable =
             !isSomeFunction!T &&
             !__traits(isTemplate, T) &&
-            !__traits(isAssociativeArray, T) &&
+            //!__traits(isAssociativeArray, T) &&
             !__traits(isStaticArray, T);
     }
     else
