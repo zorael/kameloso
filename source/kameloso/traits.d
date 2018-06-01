@@ -64,28 +64,32 @@ unittest
 /++
  +  Gets the name of the longest member in one or more struct/class objects.
  +
- +  This is used for formatting configuration files, so that columns line up.
+ +  This is used for formatting terminal output of objects, so that columns line
+ +  up.
  +
  +  Params:
  +      Things = Types to examine and count member name lengths of.
  +/
-template longestMemberName(Things...)
+private template longestMemberNameImpl(Flag!"all" all, Things...)
 if (Things.length > 0)
 {
-    enum longestMemberName = ()
+    enum longestMemberNameImpl = ()
     {
+        import std.meta : Alias;
         import std.traits : hasUDA;
 
         string longest;
 
-        foreach (T; Things)
+        foreach (Thing; Things)
         {
-            foreach (name; __traits(allMembers, T))
+            foreach (immutable name; __traits(allMembers, Thing))
             {
-                static if (!isType!(__traits(getMember, T, name)) &&
-                    isConfigurableVariable!(__traits(getMember, T, name)) &&
-                    !hasUDA!(__traits(getMember, T, name), Hidden) &&
-                    !hasUDA!(__traits(getMember, T, name), Unconfigurable))
+                alias member = Alias!(__traits(getMember, Thing, name));
+
+                static if (!isType!member &&
+                    isConfigurableVariable!member &&
+                    !hasUDA!(member, Hidden) &&
+                    (all || !hasUDA!(member, Unconfigurable)))
                 {
                     if (name.length > longest.length)
                     {
@@ -98,6 +102,20 @@ if (Things.length > 0)
         return longest;
     }();
 }
+
+
+// longestMemberName
+/++
+ +  Gets the name of the longest configurable member in one or more struct/class
+ +  objects.
+ +
+ +  This is used for formatting terminal output of configuration files, so that
+ +  columns line up.
+ +
+ +  Params:
+ +      Things = Types to examine and count member name lengths of.
+ +/
+enum longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 
 ///
 unittest
@@ -128,14 +146,44 @@ unittest
 
 // longestUnconfigurableMemberName
 /++
- +  Gets the name of the longest member in one or more struct/class objects.
- +  Includes members annotated `kameloso.uda.Unconfigurable`.
+ +  Gets the name of the longest member in one or more struct/class objects,
+ +  including `kameloso.uda.Unconfigurable`` ones.
  +
- +  This is used for printing structs to screen, so that columns line up.
+ +  This is used for formatting terminal output of objects, so that columns line
+ +  up.
  +
  +  Params:
  +      Things = Types to examine and count member name lengths of.
  +/
+enum longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
+
+///
+unittest
+{
+    struct Foo
+    {
+        string veryLongName;
+        int i;
+        @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
+        @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
+    }
+
+    struct Bar
+    {
+        string evenLongerName;
+        float f;
+
+        @Unconfigurable
+        @Hidden
+        long looooooooooooooooooooooong;
+    }
+
+    static assert(longestUnconfigurableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
+    static assert(longestUnconfigurableMemberName!Bar == "evenLongerName");
+    static assert(longestUnconfigurableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
+}
+
+
 // longestMemberTypeNameImpl
 /++
  +  Gets the name of the longest type of a member in one or more struct/class
