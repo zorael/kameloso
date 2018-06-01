@@ -6,6 +6,7 @@ module kameloso.traits;
 import kameloso.uda;
 
 import std.traits : Unqual, isArray, isAssociativeArray, isType;
+import std.typecons : Flag, No, Yes;
 
 
 // isConfigurableVariable
@@ -135,26 +136,52 @@ unittest
  +  Params:
  +      Things = Types to examine and count member name lengths of.
  +/
-template longestUnconfigurableMemberName(Things...)
+// longestMemberTypeNameImpl
+/++
+ +  Gets the name of the longest type of a member in one or more struct/class
+ +  objects.
+ +
+ +  This is used for formatting terminal output of objects, so that columns line
+ +  up.
+ +
+ +  Params:
+ +      Things = Types to examine and count member type name lengths of.
+ +/
+private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
 if (Things.length > 0)
 {
-    enum longestUnconfigurableMemberName = ()
+    enum longestMemberTypeNameImpl = ()
     {
+        import std.meta : Alias;
         import std.traits : hasUDA;
 
         string longest;
 
-        foreach (T; Things)
+        foreach (Thing; Things)
         {
-            foreach (name; __traits(allMembers, T))
+            foreach (immutable i, immutable name; __traits(allMembers, Thing))
             {
-                static if (!isType!(__traits(getMember, T, name)) &&
-                    isConfigurableVariable!(__traits(getMember, T, name)) &&
-                    !hasUDA!(__traits(getMember, T, name), Hidden))
+                alias T = typeof(__traits(getMember, Thing, name));
+                alias member = Alias!(__traits(getMember, Thing, name));
+
+                static if (!isType!member &&
+                    isConfigurableVariable!member &&
+                    !hasUDA!(member, Hidden) &&
+                    (all || !hasUDA!(member, Unconfigurable)))
                 {
-                    if (name.length > longest.length)
+                    static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
                     {
-                        longest = name;
+                        enum typestring = UnqualArray!T.stringof;
+                    }
+                    else
+                    {
+                        enum typestring = Unqual!T.stringof;
+                    }
+
+
+                    if (typestring.length > longest.length)
+                    {
+                        longest = typestring;
                     }
                 }
             }
@@ -164,30 +191,58 @@ if (Things.length > 0)
     }();
 }
 
+// longestMemberTypeName
+/++
+ +  Gets the name of the longest type of a member in one or more struct/class
+ +  objects.
+ +
+ +  This is used for formatting terminal output of configuration files, so that
+ +  columns line up.
+ +
+ +  Params:
+ +      Things = Types to examine and count member type name lengths of.
+ +/
+enum longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
+
 ///
 unittest
 {
-    struct Foo
+    struct S1
     {
-        string veryLongName;
-        int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
-        @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
+        string s;
+        char[][string] css;
+        @Unconfigurable string[][string] ss;
     }
 
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
+    enum longestConfigurable = longestMemberTypeName!S1;
+    assert((longestConfigurable == "char[][string]"), longestConfigurable);
+}
 
-        @Unconfigurable
-        @Hidden
-        long looooooooooooooooooooooong;
+// longestUnconfigurableMemberTypeName
+/++
+ +  Gets the name of the longest type of a member in one or more struct/class
+ +  objects.
+ +
+ +  This is used for formatting terminal output of state objects, so that
+ +  columns line up.
+ +
+ +  Params:
+ +      Things = Types to examine and count member type name lengths of.
+ +/
+enum longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
+
+///
+unittest
+{
+    struct S1
+    {
+        string s;
+        char[][string] css;
+        @Unconfigurable string[][string] ss;
     }
 
-    static assert(longestUnconfigurableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
-    static assert(longestUnconfigurableMemberName!Bar == "evenLongerName");
-    static assert(longestUnconfigurableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
+    enum longestUnconfigurable = longestUnconfigurableMemberTypeName!S1;
+    assert((longestUnconfigurable == "string[][string]"), longestUnconfigurable);
 }
 
 
