@@ -209,7 +209,6 @@ if (Things.length > 0)
         {
             foreach (immutable i, immutable name; __traits(allMembers, Thing))
             {
-                alias T = typeof(__traits(getMember, Thing, name));
                 alias member = Alias!(__traits(getMember, Thing, name));
 
                 static if (!isType!member &&
@@ -217,6 +216,8 @@ if (Things.length > 0)
                     !hasUDA!(member, Hidden) &&
                     (all || !hasUDA!(member, Unconfigurable)))
                 {
+                    alias T = typeof(__traits(getMember, Thing, name));
+
                     static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
                     {
                         enum typestring = UnqualArray!T.stringof;
