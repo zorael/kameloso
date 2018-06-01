@@ -298,8 +298,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     (auto ref Sink sink, Things things) @trusted
 {
     import kameloso.string : stripSuffix;
-    import kameloso.traits : UnqualArray, isConfigurableVariable, isTrulyString,
-        longestMemberName, longestUnconfigurableMemberName;
+    import kameloso.traits;
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
     import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
@@ -315,10 +314,12 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     static if (printAll)
     {
         enum width = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
+        enum typewidth = longestUnconfigurableMemberTypeName!Things.length + 1;
     }
     else
     {
         enum width = !widthArg ? longestMemberName!Things.length : widthArg;
+        enum typewidth = longestMemberTypeName!Things.length + 1;
     }
 
     immutable bright = .settings.brightTerminal;
@@ -362,21 +363,21 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                 {
                     static if (coloured)
                     {
-                        enum stringPattern = `%s%14s %s%-*s %s"%s"%s(%d)` ~ '\n';
+                        enum stringPattern = `%s%*s %s%-*s %s"%s"%s(%d)` ~ '\n';
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
                         sink.formattedWrite(stringPattern,
-                            cyan.colour, T.stringof,
+                            cyan.colour, typewidth, T.stringof,
                             memberColour.colour, (width + 2), memberstring,
                             valueColour.colour, member,
                             lengthColour.colour, member.length);
                     }
                     else
                     {
-                        enum stringPattern = `%14s %-*s "%s"(%d)` ~ '\n';
-                        sink.formattedWrite(stringPattern, T.stringof,
+                        enum stringPattern = `%*s %-*s "%s"(%d)` ~ '\n';
+                        sink.formattedWrite(stringPattern, typewidth, T.stringof,
                             (width + 2), memberstring,
                             member, member.length);
                     }
@@ -392,11 +393,11 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                     {
                         static if (elemIsCharacter)
                         {
-                            enum arrayPattern = "%s%14s %s%-*s%s[%(%s, %)]%s(%d)\n";
+                            enum arrayPattern = "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n";
                         }
                         else
                         {
-                            enum arrayPattern = "%s%14s %s%-*s%s%s%s(%d)\n";
+                            enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
                         }
 
                         immutable memberColour = bright ? black : white;
@@ -404,7 +405,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
                         sink.formattedWrite!arrayPattern(
-                            cyan.colour, UnqualArray!T.stringof,
+                            cyan.colour, typewidth, UnqualArray!T.stringof,
                             memberColour.colour, thisWidth, memberstring,
                             valueColour.colour, member,
                             lengthColour.colour, member.length);
@@ -413,15 +414,15 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                     {
                         static if (elemIsCharacter)
                         {
-                            enum arrayPattern = "%14s %-*s[%(%s, %)](%d)\n";
+                            enum arrayPattern = "%*s %-*s[%(%s, %)](%d)\n";
                         }
                         else
                         {
-                            enum arrayPattern = "%14s %-*s%s(%d)\n";
+                            enum arrayPattern = "%*s %-*s%s(%d)\n";
                         }
 
                         sink.formattedWrite!arrayPattern(
-                            UnqualArray!T.stringof,
+                            typewidth, UnqualArray!T.stringof,
                             thisWidth, memberstring,
                             member,
                             member.length);
@@ -433,19 +434,19 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
                     static if (coloured)
                     {
-                        enum normalPattern = "%s%14s %s%-*s %s<%s>\n";
+                        enum normalPattern = "%s%*s %s%-*s %s<%s>\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
 
                         sink.formattedWrite(normalPattern,
-                            cyan.colour, T.stringof,
+                            cyan.colour, typewidth, T.stringof,
                             memberColour.colour, (width + 2), memberstring,
                             valueColour.colour, classOrStruct);
                     }
                     else
                     {
-                        enum normalPattern = "%14s %-*s <%s>\n";
-                        sink.formattedWrite(normalPattern, T.stringof,
+                        enum normalPattern = "%*s %-*s <%s>\n";
+                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
                             (width + 2), memberstring, classOrStruct);
                     }
                 }
@@ -453,19 +454,19 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                 {
                     static if (coloured)
                     {
-                        enum normalPattern = "%s%14s %s%-*s  %s%s\n";
+                        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
 
                         sink.formattedWrite(normalPattern,
-                            cyan.colour, T.stringof,
+                            cyan.colour, typewidth, T.stringof,
                             memberColour.colour, (width + 2), memberstring,
                             valueColour.colour, member);
                     }
                     else
                     {
-                        enum normalPattern = "%14s %-*s  %s\n";
-                        sink.formattedWrite(normalPattern, T.stringof,
+                        enum normalPattern = "%*s %-*s  %s\n";
+                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
                             (width + 2), memberstring, member);
                     }
                 }
