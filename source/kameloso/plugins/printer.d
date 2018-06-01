@@ -600,6 +600,16 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 if (special) sink.put('*');
             }
+
+            if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
+            {
+                // Message sent to bot
+                if (plugin.printerSettings.bellOnMention)
+                {
+                    import kameloso.bash : TerminalToken;
+                    sink.put(TerminalToken.bell);
+                }
+            }
         }
 
         if (channel.length) put(sink, " [", channel, ']');
@@ -608,11 +618,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             if (sender.isServer || nickname.length)
             {
-                with (IRCEvent.Type)
-                switch (type)
+                if (type == IRCEvent.Type.CHAN)
                 {
-                case CHAN:
-                case QUERY:
                     import kameloso.string : has;
 
                     if (content.has!(Yes.decode)(bot.nickname))
@@ -624,12 +631,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             sink.put(TerminalToken.bell);
                         }
                     }
-                    goto default;
-
-                default:
-                    put(sink, `: "`, content, '"');
-                    break;
                 }
+
+                put(sink, `: "`, content, '"');
             }
             else
             {
@@ -885,6 +889,16 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     }
                 }
 
+                if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
+                {
+                    // Message sent to bot
+                    if (plugin.printerSettings.bellOnMention)
+                    {
+                        import kameloso.bash : TerminalToken;
+                        sink.put(TerminalToken.bell);
+                    }
+                }
+
                 if (target.badge.length)
                 {
                     import std.string : toUpper;
@@ -910,11 +924,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 if (sender.isServer || nickname.length)
                 {
-                    with (IRCEvent.Type)
-                    switch (type)
+                    if (type == IRCEvent.Type.CHAN)
                     {
-                    case CHAN:
-                    case QUERY:
                         import kameloso.string : has;
 
                         if (bellOnMention && event.content.has!(Yes.decode)(bot.nickname))
@@ -931,15 +942,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                             put(sink, `: "`, inverted, '"');
                         }
-                        else
-                        {
-                            goto default;
-                        }
-                        break;
-
-                    default:
+                    }
+                    else
+                    {
+                        // Normal channel message
                         put(sink, `: "`, content, '"');
-                        break;
                     }
                 }
                 else
