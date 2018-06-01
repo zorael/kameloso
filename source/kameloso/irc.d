@@ -974,6 +974,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :Miyabro!~Miyabro@DA8192E8:4D54930F:650EE60D:IP CHGHOST ~Miyabro Miyako.is.mai.waifu
         event.sender.ident = slice.nom(' ');
         event.sender.address = slice;
+        event.content = slice;
         break;
 
     case RPL_HELLO: // 020
