@@ -313,6 +313,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     version(LDC) sink.put(string.init);
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
+    enum minimumNameWidth = 18;
 
     static if (printAll)
     {
@@ -325,7 +326,8 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
         enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
 
-    enum width = (typewidth > minimumTypeWidth) ? (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
+    enum compensatedWidth = (typewidth > minimumTypeWidth) ? (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
+    enum width = max(minimumNameWidth, compensatedWidth);
 
     immutable bright = .settings.brightTerminal;
 
