@@ -548,15 +548,18 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
 {
-    with (service.state)
+    with (service.state.bot)
     {
+        import kameloso.common : decode64;
+        import kameloso.string : beginsWith;
         import std.base64 : Base64;
 
-        bot.authentication = Status.started;
-        bot.updated = true;
+        authentication = Status.started;
+        updated = true;
 
-        immutable authLogin = bot.authLogin.length ? bot.authLogin : bot.origNickname;
-        immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', bot.authPassword);
+        immutable authLogin = authLogin.length ? authLogin : origNickname;
+        immutable password = authPassword.beginsWith("base64:") ? decode64(authPassword[7..$]) : authPassword;
+        immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', password);
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
