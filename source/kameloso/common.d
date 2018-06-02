@@ -327,7 +327,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     }
 
     enum compensatedWidth = (typewidth > minimumTypeWidth) ? (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
-    enum width = max(minimumNameWidth, compensatedWidth);
+    enum namewidth = max(minimumNameWidth, compensatedWidth);
 
     immutable bright = .settings.brightTerminal;
 
@@ -377,7 +377,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
                         sink.formattedWrite(stringPattern,
                             cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (width + 2), memberstring,
+                            memberColour.colour, (namewidth + 2), memberstring,
                             valueColour.colour, member,
                             lengthColour.colour, member.length);
                     }
@@ -385,7 +385,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                     {
                         enum stringPattern = `%*s %-*s "%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, typewidth, T.stringof,
-                            (width + 2), memberstring,
+                            (namewidth + 2), memberstring,
                             member, member.length);
                     }
                 }
@@ -394,7 +394,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                     alias ElemType = Unqual!(ElementEncodingType!T);
                     enum elemIsCharacter = is(ElemType == char) || is(ElemType == dchar) || is(ElemType == wchar);
 
-                    immutable thisWidth = member.length ? (width + 2) : (width + 4);
+                    immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
 
                     static if (coloured)
                     {
@@ -447,14 +447,14 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
                         sink.formattedWrite(normalPattern,
                             cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (width + 2), memberstring,
+                            memberColour.colour, (namewidth + 2), memberstring,
                             valueColour.colour, classOrStruct);
                     }
                     else
                     {
                         enum normalPattern = "%*s %-*s <%s>\n";
                         sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (width + 2), memberstring, classOrStruct);
+                            (namewidth + 2), memberstring, classOrStruct);
                     }
                 }
                 else
@@ -467,14 +467,14 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
                         sink.formattedWrite(normalPattern,
                             cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (width + 2), memberstring,
+                            memberColour.colour, (namewidth + 2), memberstring,
                             valueColour.colour, member);
                     }
                     else
                     {
                         enum normalPattern = "%*s %-*s  %s\n";
                         sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (width + 2), memberstring, member);
+                            (namewidth + 2), memberstring, member);
                     }
                 }
             }
