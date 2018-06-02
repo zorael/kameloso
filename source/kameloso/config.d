@@ -802,7 +802,8 @@ string justifiedConfigurationText(const string origLines)
     assert(longestEntryLength);
     assert(unjustified.data.length);
 
-    immutable width = max(12, longestEntryLength.getMultipleOf!(Yes.alwaysOneUp)(4));
+    enum minimumWidth = 24;
+    immutable width = max(minimumWidth, longestEntryLength.getMultipleOf!(Yes.alwaysOneUp)(4));
 
     foreach (line; unjustified.data)
     {
