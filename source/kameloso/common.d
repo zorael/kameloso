@@ -1103,6 +1103,7 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 void writeConfigurationFile(ref Client client, const string filename)
 {
     import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
+    import kameloso.string : beginsWith;
     import std.array : Appender;
 
     Appender!string sink;
@@ -1110,6 +1111,11 @@ void writeConfigurationFile(ref Client client, const string filename)
 
     with (client)
     {
+        if (!bot.authPassword.beginsWith("base64:"))
+        {
+            bot.authPassword = "base64:" ~ encode64(bot.authPassword);
+        }
+
         sink.serialise(bot, bot.server, settings);
 
         foreach (plugin; plugins)
