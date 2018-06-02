@@ -213,6 +213,12 @@ void tryAuth(ConnectService service)
 
     with (service.state)
     {
+        import kameloso.common : decode64;
+        import kameloso.string : beginsWith;
+
+        immutable password = bot.authPassword.beginsWith("base64:") ?
+            decode64(bot.authPassword[7..$]) : bot.authPassword;
+
         // Specialcase networks
         switch (bot.server.network)
         {
@@ -261,7 +267,7 @@ void tryAuth(ConnectService service)
                 return;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s".format(verb, bot.authPassword));
+            service.query!(Yes.quiet)(serviceNick, "%s %s".format(verb, password));
             logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
@@ -279,7 +285,7 @@ void tryAuth(ConnectService service)
                 account = bot.origNickname;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, bot.authPassword));
+            service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, password));
             logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
