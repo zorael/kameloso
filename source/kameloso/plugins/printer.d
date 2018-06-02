@@ -1373,6 +1373,78 @@ unittest
 }
 
 
+// periodically
+/++
+ +  Prints the date in `YYYY-MM-DD` format to the screen and to any active log
+ +  files upon day change.
+ +/
+void periodically(PrinterPlugin plugin, const SysTime now)
+{
+    import std.format : format;
+    import std.stdio : File, writeln;
+
+    immutable line = "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
+    logger.info(line);
+
+    foreach (immutable path, ref buffer; plugin.buffers)
+    {
+        if (plugin.printerSettings.bufferedWrites)
+        {
+            buffer.lines.put(line);
+        }
+        else
+        {
+            auto file = File(path, "a");
+            file.writeln(line);
+        }
+    }
+
+    plugin.setTimestampToNextMidnight(now);
+}
+
+
+// setTimestampToNextMidnight
+/++
+ +  Sets the next timestamp at which to call `periodically` to midnight the next
+ +  day.
+ +
+ +  Params:
+ +      plugin = The current `PrinterPlugin`.
+ +      now = The current time expressed in a `std.datetime.systime.SysTime`.
+ +/
+void setTimestampToNextMidnight(PrinterPlugin plugin, const SysTime now)
+{
+    import core.time : msecs;
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+    import std.datetime.timezone : UTC;
+
+    plugin.nextTimestamp = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), UTC())
+        .roll!"days"(1)
+        .toUnixTime();
+}
+
+///
+unittest
+{
+    import std.datetime : DateTime, UTC;
+    import std.conv : text;
+
+    auto plugin = new PrinterPlugin(IRCPluginState());
+
+    immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), UTC());
+    assert(christmasEve.toUnixTime == 1545654896L, christmasEve.toUnixTime.text);  // from .toUnixTime
+
+    plugin.setTimestampToNextMidnight(christmasEve);
+    immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), UTC());
+    assert(plugin.nextTimestamp == christmasDay.toUnixTime);  // 1545696000L
+}
+
+/// Set the next timestamp to midnight immediately after we have connected.
+alias start = setTimestampToNextMidnight;
+
+
+
 // teardown
 /++
  +  Deinitialises the plugin.
