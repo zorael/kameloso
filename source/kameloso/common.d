@@ -313,7 +313,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     version(LDC) sink.put(string.init);
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
-    enum minimumNameWidth = 18;
+    enum minimumNameWidth = 16;
 
     static if (printAll)
     {
