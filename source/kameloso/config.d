@@ -900,29 +900,29 @@ naN !"#¤%&/
 
     enum justified =
 `[Foo]
-someInt         42
-someString      hello world!
-someBool        true
-someFloat       3.14
-someDouble      99.9
-someBars        oorgle
+someInt                 42
+someString              hello world!
+someBool                true
+someFloat               3.14
+someDouble              99.9
+someBars                oorgle
 #harbl
-intArray        1,2,-3,4,5
-stringArrayy    hello,world,!
-boolArray       true,false,true
-floatArray      0,1.1,-2.2,3.3
-doubleArray     99.9999,0.0001,-1
-barArray        blaawp,oorgle,blaawp
+intArray                1,2,-3,4,5
+stringArrayy            hello,world,!
+boolArray               true,false,true
+floatArray              0,1.1,-2.2,3.3
+doubleArray             99.9999,0.0001,-1
+barArray                blaawp,oorgle,blaawp
 
 [DifferentSection]
-ignored         completely
-because         no DifferentSeection struct was passed
-nil             5
-naN             !"#¤%&/`;
+ignored                 completely
+because                 no DifferentSeection struct was passed
+nil                     5
+naN                     !"#¤%&/`;
 
     sink.serialise(foo, diff);
     assert((sink.data == unjustified), '\n' ~ sink.data);
     immutable configText = justifiedConfigurationText(sink.data);
 
-    assert((configText == justified), configText);
+    assert((configText == justified), '\n' ~ configText);
 }
