@@ -59,6 +59,7 @@ interface IRCPlugin
 {
     import kameloso.common : Labeled;
     import core.thread : Fiber;
+    import std.datetime.systime : Clock, SysTime;
 
     @safe:
 
@@ -124,6 +125,15 @@ interface IRCPlugin
      +  array.
      +/
     ref int rehashCounter() pure nothrow @nogc @property;
+
+    /// Returns the next (Unix time) timestamp at which to call `periodically`.
+    ref long nextTimestamp() pure nothrow @nogc @property;
+
+    /++
+     +  Call a plugin to perform its periodic tasks, iff the time is equal to or
+     +  exceeding `nextTimestamp`.
+     +/
+    void periodically(const SysTime) @system;
 
     /// Reloads the plugin, where such is applicable.
     void reload() @system;
@@ -709,6 +719,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.array : Appender;
+    import std.datetime.systime : SysTime;
+
+    enum hasIRCPluginImpl = true;
 
     @safe:
 
@@ -732,7 +745,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /// Internal counter for when the next scheduled rehash counter should be.
     int privateRehashCounter;
 
-    enum hasIRCPluginImpl = true;
+    /// Internal (Unix time) timestamp for when `periodically` should next fire.
+    long privateNextTimestamp;
+
 
     // onEvent
     /++
@@ -1757,6 +1772,35 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     ref int rehashCounter() pure nothrow @nogc @property
     {
         return privateRehashCounter;
+    }
+
+
+    // nextTimestamp
+    /++
+     +  Returns the private timestamp of when `periodically` should next fire,
+     +  expressed in Unix time.
+     +/
+    ref long nextTimestamp() pure nothrow @nogc @property
+    {
+        return privateNextTimestamp;
+    }
+
+
+    // periodically
+    /++
+     +  Calls `.periodically` on a plugin if the internal private timestamp says
+     +  the interval since the last call has passed, letting the plugin do
+     +  scheduled tasks.
+     +/
+    void periodically(const SysTime now) @system
+    {
+        static if (__traits(compiles, .periodically))
+        {
+            if (now.toUnixTime >= privateNextTimestamp)
+            {
+                .periodically(this, now);
+            }
+        }
     }
 
 

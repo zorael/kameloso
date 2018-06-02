@@ -17,6 +17,7 @@ import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
 
+import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
 
 private:
