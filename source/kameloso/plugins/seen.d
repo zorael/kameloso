@@ -457,7 +457,7 @@ void onPing(SeenPlugin plugin)
     {
         import std.datetime.systime : Clock;
 
-        const now = Clock.currTime;
+        immutable now = Clock.currTime;
 
         /// Once every n hours, save the JSON storage to disk.
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))

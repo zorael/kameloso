@@ -439,7 +439,7 @@ void prune(shared TitleLookup[string] cache)
     foreach (key, entry; cache)
     {
         import std.datetime.systime : Clock;
-        const now = Clock.currTime.toUnixTime;
+        immutable now = Clock.currTime.toUnixTime;
 
         if ((now - entry.when) > expireSeconds)
         {

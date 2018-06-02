@@ -239,7 +239,7 @@ void prune(shared RedditLookup[string] cache)
     foreach (key, entry; cache)
     {
         import std.datetime : Clock;
-        const now = Clock.currTime.toUnixTime;
+        immutable now = Clock.currTime.toUnixTime;
 
         if ((now - entry.when) > expireSeconds)
         {

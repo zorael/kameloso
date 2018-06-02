@@ -93,7 +93,7 @@ Flag!"quit" checkMessages(ref Client client)
 
         with (client.throttling)
         {
-            const now = Clock.currTime;
+            immutable now = Clock.currTime;
             if (t0 == SysTime.init) t0 = now;
 
             double x = (now - t0).total!"msecs"/1000.0;
@@ -440,7 +440,7 @@ Flag!"quit" mainLoop(ref Client client)
                     }
 
                     // Clean up processed Fibers
-                    foreach_reverse (i; toRemove)
+                    foreach_reverse (immutable i; toRemove)
                     {
                         import std.algorithm.mutation : remove;
                         plugin.timedFibers = plugin.timedFibers.remove(i);
@@ -640,7 +640,7 @@ Flag!"quit" mainLoop(ref Client client)
                             }
 
                             // Clean up processed Fibers
-                            foreach_reverse (i; toRemove)
+                            foreach_reverse (immutable i; toRemove)
                             {
                                 import std.algorithm.mutation : remove;
                                 *fibers = (*fibers).remove(i);
@@ -790,7 +790,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
         import core.time : seconds;
 
         const then = key in client.whoisCalls;
-        const now = Clock.currTime.toUnixTime;
+        immutable now = Clock.currTime.toUnixTime;
 
         if (!then || ((now - *then) > Timeout.whois))
         {

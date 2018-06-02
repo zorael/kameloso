@@ -639,8 +639,8 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
-    auto user = event.sender;
-    const now = Clock.currTime.toUnixTime;
+    immutable user = event.sender;
+    immutable now = Clock.currTime.toUnixTime;
 
     immutable timediff = (now - user.lastWhois);
     immutable isAdmin = state.bot.admins.canFind(user.account);
@@ -2057,8 +2057,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 import std.algorithm.searching : canFind;
                 import std.datetime.systime : Clock;
 
-                const now = Clock.currTime.toUnixTime;
-                const then = request.when;
+                immutable now = Clock.currTime.toUnixTime;
+                immutable then = request.when;
 
                 if ((now - then) > Timeout.whois)
                 {
@@ -3032,8 +3032,8 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     import kameloso.constants : Timeout;
     import std.datetime.systime : Clock;
 
-    const user = event.sender;
-    const now = Clock.currTime.toUnixTime;
+    immutable user = event.sender;
+    immutable now = Clock.currTime.toUnixTime;
 
     if ((now - user.lastWhois) < Timeout.whois)
     {
