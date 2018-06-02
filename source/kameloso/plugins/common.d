@@ -1609,9 +1609,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void start() @system
     {
+        import std.meta : AliasSeq, staticMap;
+        import std.traits : Parameters, Unqual;
+
         static if (__traits(compiles, .start))
         {
-            .start(this);
+            import std.datetime.systime : SysTime;
+
+            alias Params = staticMap!(Unqual, Parameters!(.start));
+
+            static if (is(Params : AliasSeq!(typeof(this), SysTime)))
+            {
+                import std.datetime.systime : Clock;
+                .start(this, Clock.currTime);
+            }
+            else
+            {
+                .start(this);
+            }
         }
     }
 
