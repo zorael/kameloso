@@ -31,6 +31,7 @@ private:
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
     import kameloso.meld : meldInto;
+    import std.algorithm.searching : canFind;
     import std.range : only;
     import std.typecons : Flag, No, Yes;
 
@@ -60,6 +61,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 if (const classifier = account in service.userClasses)
                 {
                     class_ = *classifier;
+                }
+                else if (service.state.bot.admins.canFind(account))
+                {
+                    // Admins are (currently) stored in an array IRCBot.admins
+                    class_ = Class.admin;
                 }
                 break;
 
