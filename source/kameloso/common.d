@@ -299,6 +299,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 {
     import kameloso.string : stripSuffix;
     import kameloso.traits;
+    import std.algorithm.comparison : max;
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
     import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
@@ -311,16 +312,20 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     // workaround formattedWrite taking Appender by value
     version(LDC) sink.put(string.init);
 
+    enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
+
     static if (printAll)
     {
-        enum width = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
-        enum typewidth = longestUnconfigurableMemberTypeName!Things.length + 1;
+        enum typewidth = max(minimumTypeWidth, (longestUnconfigurableMemberTypeName!Things.length + 1));
+        enum initialWidth = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
     }
     else
     {
-        enum width = !widthArg ? longestMemberName!Things.length : widthArg;
-        enum typewidth = longestMemberTypeName!Things.length + 1;
+        enum typewidth = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
+        enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
+
+    enum width = (typewidth > minimumTypeWidth) ? (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
 
     immutable bright = .settings.brightTerminal;
 
