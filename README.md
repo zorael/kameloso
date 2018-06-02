@@ -13,7 +13,7 @@ It works well with the majority of server networks. IRC is standardised but serv
 * looking up titles of pasted web URLs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough tutorial and a simple example of how plugins work
+* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
@@ -24,7 +24,7 @@ It works well with the majority of server networks. IRC is standardised but serv
 
 ### Current limitations:
 
-* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below). Don't trust the **failed/error/failing** build badges.
+* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below). Don't believe the **failed/error/failing** build badges.
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
 * some plugins don't yet differentiate between different home channels if there is more than one.
 * quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
@@ -55,7 +55,7 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 * compiler segfaults are back.
 * experimental `automodes` plugin, please test.
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
-* direct **imgur** links are now rewritten to the non-direct HTML page so we can get a meaningful page title, as we do stale YouTube ones.
+* direct **imgur** links are now rewritten to the non-direct HTML pages so we can get a meaningful page title, as we do with stale YouTube ones.
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
 
 # Getting started
@@ -119,7 +119,7 @@ $ dub build -c cygwin
 
 There are a few Windows caveats.
 
-* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections, due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP access should work fine.
+* Web URL lookup, including the web titles and Reddit plugins, may not work out of the box with secure HTTPS connections due to the default installation of `dlang-requests` not finding the correct libraries. Unsure of how to fix this. Normal HTTP access should work fine.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to enable this.
 * Use in Cygwin terminals without compiling the aforementioned `cygwin` build configuration will be unpleasant. Normal `cmd` and Powershell consoles are not affected and can be used with any configuration.
 
@@ -132,6 +132,8 @@ $ ./kameloso --writeconfig
 ```
 
 Open the new `kameloso.conf` in a text editor and fill in the fields. Additional resource files will have been created as well; for instance, see `users.json` for where to enter whitelisted (and blacklisted) account names.
+
+If you enter an authentification password (`authPassword`) and then regenerate the file, the password will be encoded into **Base64** format. Mind that this does not mean it's encrypted! It just makes it less easy to tell what the password is at a mere glance.
 
 Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
@@ -216,7 +218,6 @@ Feel free to copy these and drop them into your own project.
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * set up a real configuration home like `~/.kameloso`? what of Windows?
-* logger timestamps at new day? rethink periodic events?
 * automode channel awareness boost
 
 # Built with
