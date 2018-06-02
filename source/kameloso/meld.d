@@ -107,6 +107,13 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                             member = meldThis.tupleof[i];
                         }
                     }
+                    else static if (is(T == enum))
+                    {
+                        if (meldThis.tupleof[i] > member)
+                        {
+                            member = meldThis.tupleof[i];
+                        }
+                    }
                     else
                     {
                         /+  This is tricksy for bools. A value of false could be
@@ -186,12 +193,14 @@ unittest
 
     struct User
     {
+        enum Class { anyone, blacklist, whitelist, admin }
         string nickname;
         string alias_;
         string ident;
         string address;
         string login;
         bool special;
+        Class class_;
     }
 
     User one;
@@ -201,6 +210,7 @@ unittest
         ident = "NaN";
         address = "herpderp.net";
         special = false;
+        class_ = User.Class.whitelist;
     }
 
     User two;
@@ -211,6 +221,7 @@ unittest
         address = "asdf.org";
         login = "kamelusu";
         special = true;
+        class_ = User.Class.blacklist;
     }
 
     User twoCopy = two;
@@ -224,7 +235,10 @@ unittest
         assert((address == "asdf.org"), address);
         assert((login == "kamelusu"), login);
         assert(special);
+        assert((class_ == User.Class.whitelist), class_.to!string);
     }
+
+    one.class_ = User.Class.blacklist;
 
     one.meldInto!(Yes.overwrite)(twoCopy);
     with (twoCopy)
@@ -235,6 +249,7 @@ unittest
         assert((address == "herpderp.net"), address);
         assert((login == "kamelusu"), login);
         assert(!special);
+        assert((class_ == User.Class.blacklist), class_.to!string);
     }
 
     struct EnumThing
