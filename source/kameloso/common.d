@@ -531,17 +531,17 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
     enum structNameSerialised =
 `-- StructName
-     Struct struct_   <struct>
-        int i          12345
-     string s         "foo"(3)
-       bool b          true
-      float f          3.14
-     double d          99.9
-     char[] c        ['a', 'b', 'c'](3)
-     char[] emptyC     [](0)
-   string[] dynA     ["foo", "bar", "baz"](3)
-      int[] iA       [1, 2, 3, 4](4)
- char[char] cC       ['b':'b', 'a':'a'](2)
+     Struct struct_            <struct>
+        int i                   12345
+     string s                  "foo"(3)
+       bool b                   true
+      float f                   3.14
+     double d                   99.9
+     char[] c                 ['a', 'b', 'c'](3)
+     char[] emptyC              [](0)
+   string[] dynA              ["foo", "bar", "baz"](3)
+      int[] iA                [1, 2, 3, 4](4)
+ char[char] cC                ['b':'b', 'a':'a'](2)
 
 `;
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
