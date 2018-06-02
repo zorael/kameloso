@@ -887,9 +887,6 @@ struct Client
     /// Parser instance.
     IRCParser parser;
 
-    /// Curent day of the month, so we can track changes in day.
-    ubyte today;
-
     /// Values and state needed to throttle sending messages.
     ThrottleValues throttling;
 
@@ -927,8 +924,7 @@ struct Client
         state.bot = bot;
         state.settings = settings;
         state.mainThread = thisTid;
-        const now = Clock.currTime;
-        today = now.day;
+        immutable now = Clock.currTime;
 
         plugins.reserve(EnabledPlugins.length + 4);
 

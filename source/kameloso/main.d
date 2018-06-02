@@ -366,12 +366,12 @@ Flag!"quit" mainLoop(ref Client client)
         }
 
         // See if day broke
-        const now = Clock.currTime;
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
 
-        if (now.day != client.today)
+        foreach (ref plugin; client.plugins)
         {
-            logger.infof("[%d-%02d-%02d]", now.year, cast(int)now.month, now.day);
-            client.today = now.day;
+            plugin.periodically(now);
         }
 
         // Call the generator, query it for event lines
@@ -382,8 +382,6 @@ Flag!"quit" mainLoop(ref Client client)
         {
             // Go through Fibers awaiting a point in time, regardless of whether
             // something was read or not.
-
-            immutable nowInUnix = now.toUnixTime;
 
             /++
              +  At a cadence of once every `checkFiberFibersEveryN`, walk the
