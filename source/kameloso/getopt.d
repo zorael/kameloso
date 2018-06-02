@@ -253,9 +253,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             printVersionInfo(BashForeground.white);
             writeln();
 
-            // FIXME: Hardcoded width
-            enum width = 18;
-            printObjects!(No.printAll, width)(bot, bot.server, settings);
+            printObjects!(No.printAll)(bot, bot.server, settings);
 
             initPlugins(customSettings);
 

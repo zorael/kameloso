@@ -1537,14 +1537,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.traits : getSymbolsByUDA, hasUDA;
         import std.typecons : Flag, No, Yes;
 
-        enum width = 18;
-
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
         foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
         {
-            // FIXME: Hardcoded value
-            printObject!(No.printAll, width)(symbol);
+            printObject!(No.printAll)(symbol);
         }
 
         foreach (immutable i, symbol; this.tupleof)
@@ -1552,8 +1549,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             static if (hasUDA!(this.tupleof[i], Settings) &&
                 (is(typeof(this.tupleof[i]) == struct)))
             {
-                // FIXME: Hardcoded value
-                printObject!(No.printAll, width)(symbol);
+                printObject!(No.printAll)(symbol);
             }
         }
     }
