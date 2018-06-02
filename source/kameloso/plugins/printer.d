@@ -411,6 +411,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
 void commitLogs(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.enabled) return;

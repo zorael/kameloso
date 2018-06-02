@@ -461,6 +461,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
  +  Initialises the Notes plugin. Loads the notes from disk.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(NotesPlugin plugin)
 {
     if (!plugin.notesSettings.enabled) return;

@@ -2823,6 +2823,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFMOTD)
+    @(IRCEvent.Type.ERR_NOMOTD)
     void onChannelAwarenessEndOfMotd(IRCPlugin plugin)
     {
         foreach (homechan; plugin.state.bot.homes)

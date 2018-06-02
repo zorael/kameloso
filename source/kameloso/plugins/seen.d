@@ -798,6 +798,7 @@ void saveSeen(const long[string] seenUsers, const string filename)
  +  details.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(SeenPlugin plugin)
 {
     if (!plugin.seenSettings.enabled) return;

@@ -258,6 +258,7 @@ void onCommandReloadQuotes(QuotesPlugin plugin)
  +  Initialises the passed `QuotesPlugin`. Loads the quotes from disk.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(QuotesPlugin plugin)
 {
     if (!plugin.quotesSettings.enabled) return;
