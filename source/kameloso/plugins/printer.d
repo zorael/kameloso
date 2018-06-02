@@ -100,7 +100,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_ENDOFMOTD:
     case ERR_NOMOTD:
         // Only show these if we're configured to
-        if (!plugin.printerSettings.motd) goto default;
+        if (plugin.printerSettings.motd) goto default;
         break;
 
     case RPL_NAMREPLY:
