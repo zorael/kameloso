@@ -119,6 +119,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
  +  list of channels.
  +/
 @(IRCEvent.Type.SELFPART)
+@(IRCEvent.Type.SELFKICK)
 @(ChannelPolicy.any)
 void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {

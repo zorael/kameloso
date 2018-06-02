@@ -2405,6 +2405,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.SELFPART)
+    @(IRCEvent.Type.SELFKICK)
     @(ChannelPolicy.home)
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
