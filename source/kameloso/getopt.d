@@ -154,6 +154,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "s|server",      "Server address", &bot.server.address,
             "P|port",        "Server port", &bot.server.port,
             "settings",      "Show all plugins' settings", &shouldShowSettings,
+            "show",          &shouldShowSettings,
             "c|config",      "Read configuration from file (default %s)"
                                 .format(CoreSettings.init.configFile), &settings.configFile,
             "w|writeconfig", "Write configuration to file", &shouldWriteConfig,
