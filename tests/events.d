@@ -1772,6 +1772,21 @@ unittest
             assert(!sender.special, sender.special.to!string);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":Iasdf666!~Iasdf666@The.Breakfast.Club PRIVMSG #uk :be more welcoming you negative twazzock");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == CHAN), type.to!string);
+            assert((sender.nickname == "Iasdf666"), sender.nickname);
+            assert((sender.ident == "~Iasdf666"), sender.ident);
+            assert((sender.address == "The.Breakfast.Club"), sender.address);
+            assert((channel == "#uk"), channel);
+            assert((content == "be more welcoming you negative twazzock"), content);
+        }
+    }
 }
 
 unittest

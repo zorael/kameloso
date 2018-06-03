@@ -2262,6 +2262,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
     }
 
     if ((line.length == 2) && (line != "##")) return true;
+    else if (line.length == 3) return ((line[2] != '#') && (line[2] != '&'));
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
@@ -2285,6 +2286,9 @@ unittest
     assert(!"".isValidChannel(s));
     assert(!"##".isValidChannel(s));
     assert("#d".isValidChannel(s));
+    assert("#uk".isValidChannel(s));
+    assert(!"###".isValidChannel(s));
+    assert(!"#a#".isValidChannel(s));
 }
 
 
