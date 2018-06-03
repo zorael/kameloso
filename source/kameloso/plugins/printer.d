@@ -633,6 +633,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             sink.put(TerminalToken.bell);
                         }
                     }
+                    else
+                    {
+                        // Normal non-highlighting channel message
+                        put(sink, `: "`, content, '"');
+                    }
                 }
 
                 put(sink, `: "`, content, '"');
@@ -930,7 +935,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     {
                         import kameloso.string : has;
 
-                        if (bellOnMention && event.content.has!(Yes.decode)(bot.nickname))
+                        if (event.content.has!(Yes.decode)(bot.nickname))
                         {
                             // Nick was mentioned (naïve guess)
                             immutable inverted = content.invert(bot.nickname);
@@ -944,10 +949,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                             put(sink, `: "`, inverted, '"');
                         }
+                        else
+                        {
+                            // Normal non-highlighting channel message
+                            put(sink, `: "`, content, '"');
+                        }
                     }
                     else
                     {
-                        // Normal channel message
                         put(sink, `: "`, content, '"');
                     }
                 }
