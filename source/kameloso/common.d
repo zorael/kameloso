@@ -1113,7 +1113,7 @@ void writeConfigurationFile(ref Client client, const string filename)
 
     with (client)
     {
-        if (!bot.authPassword.beginsWith("base64:"))
+        if (bot.authPassword.length && !bot.authPassword.beginsWith("base64:"))
         {
             bot.authPassword = "base64:" ~ encode64(bot.authPassword);
         }
