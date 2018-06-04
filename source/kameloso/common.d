@@ -411,7 +411,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                         immutable valueColour = bright ? green : lightgreen;
                         immutable lengthColour = bright ? lightgrey : darkgrey;
 
-                        sink.formattedWrite!arrayPattern(
+                        sink.formattedWrite(arrayPattern,
                             cyan.colour, typewidth, UnqualArray!T.stringof,
                             memberColour.colour, thisWidth, memberstring,
                             valueColour.colour, member,
@@ -428,7 +428,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                             enum arrayPattern = "%*s %-*s%s(%d)\n";
                         }
 
-                        sink.formattedWrite!arrayPattern(
+                        sink.formattedWrite(arrayPattern,
                             typewidth, UnqualArray!T.stringof,
                             thisWidth, memberstring,
                             member,
