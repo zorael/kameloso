@@ -1855,6 +1855,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         if (parser.bot.server.daemon != IRCServer.Daemon.init)
         {
             // Daemon was already faked elsewhere (e.g. RusNet); pass through
+            daemon = parser.bot.server.daemon;
         }
         else if (daemonstring_.has("unreal"))
         {
