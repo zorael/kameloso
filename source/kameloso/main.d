@@ -898,14 +898,7 @@ int main(string[] args)
         {
             if (!settings.monochrome)
             {
-                if (settings.brightTerminal)
-                {
-                    tint = BashForeground.black;
-                }
-                else
-                {
-                    tint = BashForeground.white;
-                }
+                tint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
             }
         }
 
