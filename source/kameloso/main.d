@@ -1011,7 +1011,7 @@ int main(string[] args)
                             KamelosoLogger.logcoloursBright[LogLevel.all] :
                             KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                        foreach (const section, const sectionEntries; invalidEntries)
+                        foreach (immutable section, const sectionEntries; invalidEntries)
                         {
                             logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
                                 infotint.colour, section, logtint.colour,
@@ -1024,7 +1024,7 @@ int main(string[] args)
                     }
                     else
                     {
-                        foreach (const section, const sectionEntries; invalidEntries)
+                        foreach (immutable section, const sectionEntries; invalidEntries)
                         {
                             logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
                         }
@@ -1035,7 +1035,7 @@ int main(string[] args)
                 }
                 else
                 {
-                    foreach (const section, const sectionEntries; invalidEntries)
+                    foreach (immutable section, const sectionEntries; invalidEntries)
                     {
                         logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
                     }

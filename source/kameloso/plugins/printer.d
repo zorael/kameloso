@@ -457,7 +457,7 @@ void commitLogs(PrinterPlugin plugin)
 
             auto file = File(buffer.path, "a");
 
-            foreach (const line; buffer.lines.data)
+            foreach (immutable line; buffer.lines.data)
             {
                 file.writeln(line);
             }

@@ -278,10 +278,9 @@ public:
      +  Params:
      +      strings = Variadic list of strings to send.
      +/
-    pragma(inline, true)
     void sendline(Strings...)(const Strings strings)
     {
-        foreach (const string_; strings)
+        foreach (immutable string_; strings)
         {
             import std.algorithm.comparison : min;
             socket.send(string_[0..min(string_.length, 511)]);
@@ -344,7 +343,7 @@ void listenFiber(Connection conn, ref bool abort)
 
     while (!abort)
     {
-        const ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
+        immutable ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
 
         if (!bytesReceived)
         {
@@ -406,7 +405,7 @@ void listenFiber(Connection conn, ref bool abort)
 
         timeLastReceived = Clock.currTime;
 
-        const ptrdiff_t end = (start + bytesReceived);
+        immutable ptrdiff_t end = (start + bytesReceived);
         auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
         size_t pos;
 

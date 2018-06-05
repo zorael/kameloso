@@ -541,7 +541,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
         json["blacklist"].array = null;
     }
 
-    const accountAsJSON = JSONValue(account);
+    immutable accountAsJSON = JSONValue(account);
 
     if (add)
     {
@@ -775,7 +775,7 @@ void onCommandStatus(AdminPlugin plugin)
     writeln();
 
     logger.log("Channels:");
-    foreach (const name, const channel; plugin.state.channels)
+    foreach (immutable name, const channel; plugin.state.channels)
     {
         writeln(name);
         printObject(channel);
@@ -783,7 +783,7 @@ void onCommandStatus(AdminPlugin plugin)
     writeln();
 
     logger.log("Users:");
-    foreach (const nickname, const user; plugin.state.users)
+    foreach (immutable nickname, const user; plugin.state.users)
     {
         printObject(user);
     }

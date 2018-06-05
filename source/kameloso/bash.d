@@ -178,7 +178,7 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
 
     uint numCodes;
 
-    foreach (const code; codes)
+    foreach (immutable code; codes)
     {
         import std.conv : to;
 

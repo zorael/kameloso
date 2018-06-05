@@ -743,16 +743,16 @@ uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(Number num
         }
     }
 
-    const frac = (num / double(n));
-    const floor_ = cast(uint)frac;
+    immutable frac = (num / double(n));
+    immutable floor_ = cast(uint)frac;
 
     static if (oneUp)
     {
-        const mod = (floor_ + 1);
+        immutable mod = (floor_ + 1);
     }
     else
     {
-        const mod = (floor_ == frac) ? floor_ : (floor_ + 1);
+        immutable mod = (floor_ == frac) ? floor_ : (floor_ + 1);
     }
 
     return (mod * n);
@@ -806,7 +806,7 @@ void interruptibleSleep(D)(const D dur, ref bool abort) @system
     import core.thread : Thread, msecs, seconds;
     import std.algorithm.comparison : min;
 
-    const step = 250.msecs;
+    immutable step = 250.msecs;
 
     D left = dur;
 

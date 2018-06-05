@@ -994,7 +994,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                             try
                             {
-                                const hits = thisCommand.matchFirst(regexUDA.engine);
+                                immutable hits = thisCommand.matchFirst(regexUDA.engine);
 
                                 if (!hits.empty)
                                 {
@@ -1397,9 +1397,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
 
             T tempSymbol;
-            const theseInvalidEntries = configFile.readConfigInto(tempSymbol);
+            immutable theseInvalidEntries = configFile.readConfigInto(tempSymbol);
 
-            foreach (const section, const sectionEntries; theseInvalidEntries)
+            foreach (immutable section, const sectionEntries; theseInvalidEntries)
             {
                 invalidEntries[section] ~= sectionEntries;
             }
@@ -1423,7 +1423,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 T tempSymbol;
                 const theseInvalidEntries = configFile.readConfigInto(tempSymbol);
 
-                foreach (const section, const sectionEntries; theseInvalidEntries)
+                foreach (immutable section, const sectionEntries; theseInvalidEntries)
                 {
                     invalidEntries[section] ~= sectionEntries;
                 }
@@ -2286,7 +2286,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
                 immutable ident = slice.nom('@');
                 immutable address = slice;
 
-                const newUser = IRCUser(nickname, ident, address);
+                immutable newUser = IRCUser(nickname, ident, address);
 
                 if (auto user = nickname in users)
                 {
@@ -2340,7 +2340,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         import std.datetime.systime : Clock;
 
-        const hour = Clock.currTime.hour;
+        immutable hour = Clock.currTime.hour;
 
         enum hoursBetweenRehashes = 12;
 

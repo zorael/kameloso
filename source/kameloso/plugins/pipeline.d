@@ -79,7 +79,7 @@ void pipereader(shared IRCPluginState newState)
         eofLoop:
         while (!fifo.eof)
         {
-            foreach (const line; fifo.byLineCopy)
+            foreach (immutable line; fifo.byLineCopy)
             {
                 import kameloso.string : beginsWith;
                 import std.format : format;

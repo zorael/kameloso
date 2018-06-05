@@ -47,9 +47,9 @@ void populateAutomodes(AutomodePlugin plugin)
     automodes.load(plugin.automodeSettings.automodeFile);
     plugin.automodes = typeof(plugin.automodes).init;
 
-    foreach (const channel, const modesigns; automodes.object)
+    foreach (immutable channel, const modesigns; automodes.object)
     {
-        foreach (const account, const modesign; modesigns.object)
+        foreach (immutable account, const modesign; modesigns.object)
         {
             plugin.automodes[channel][account] = modesign.str;
         }
@@ -169,7 +169,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
         }
     }
 
-    foreach (const channel, const channelaccounts; plugin.automodes)
+    foreach (immutable channel, const channelaccounts; plugin.automodes)
     {
         if (!plugin.state.bot.homes.canFind(channel)) continue;
 

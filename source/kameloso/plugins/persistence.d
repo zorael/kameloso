@@ -187,7 +187,7 @@ void rehashUserArray(PersistenceService service)
 {
     import std.datetime.systime : Clock;
 
-    const hour = Clock.currTime.hour;
+    immutable hour = Clock.currTime.hour;
 
     enum hoursBetweenRehashes = 12;  // also see UserAwareness
 

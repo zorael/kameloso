@@ -2339,7 +2339,7 @@ unittest
 
     IRCServer s;
 
-    const validNicknames =
+    immutable validNicknames =
     [
         "kameloso",
         "kameloso^",
@@ -2351,7 +2351,7 @@ unittest
         `\`,
     ];
 
-    const invalidNicknames =
+    immutable invalidNicknames =
     [
         "",
         "X".repeat(s.maxNickLength+1).to!string,
