@@ -232,7 +232,35 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             if (!plugin.naggedAboutDir)
             {
-                logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+                version(Colours)
+                {
+                    if (!plugin.state.settings.monochrome)
+                    {
+                        import kameloso.bash : colour;
+                        import kameloso.logger : KamelosoLogger;
+                        import std.experimental.logger : LogLevel;
+
+                        immutable infotint = plugin.state.settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.info] :
+                            KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                        immutable warningtint = plugin.state.settings.brightTerminal ?
+                            KamelosoLogger.logcoloursBright[LogLevel.warning] :
+                            KamelosoLogger.logcoloursDark[LogLevel.warning];
+
+                        logger.warningf("Specified log directory (%s%s%s) is not a directory.",
+                            infotint.colour, logLocation, warningtint.colour);
+                    }
+                    else
+                    {
+                        logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+                    }
+                }
+                else
+                {
+                    logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+                }
+
                 plugin.naggedAboutDir = true;
             }
             return;
