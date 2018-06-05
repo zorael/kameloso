@@ -182,12 +182,9 @@ File createFIFO(const IRCPluginState state)
     {
         if (!state.settings.monochrome)
         {
-            import kameloso.bash : BashForeground, BashReset, colour;
+            import kameloso.bash : colour;
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
-
-            Appender!string sink;
-            sink.reserve(128);  // ~96
 
             immutable infotint = state.settings.brightTerminal ?
                 KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -197,24 +194,17 @@ File createFIFO(const IRCPluginState state)
                 KamelosoLogger.logcoloursBright[LogLevel.all] :
                 KamelosoLogger.logcoloursDark[LogLevel.all];
 
-            sink.colour(logtint);
-            sink.put("Pipe text to ");
-            sink.colour(infotint);
-            sink.put(filename);
-            sink.colour(logtint);
-            sink.put(" to send raw commands to the server.");
-            sink.colour(BashReset.all);
-
-            logger.trace(sink.data);
+            logger.logf("Pipe text to %s%s%s to send raw commands to the server.",
+                infotint.colour, filename, logtint.colour);
         }
         else
         {
-            logger.infof("Pipe text to [%s] to send raw commands to the server", filename);
+            logger.infof("Pipe text to %s to send raw commands to the server", filename);
         }
     }
     else
     {
-        logger.infof("Pipe text to [%s] to send raw commands to the server", filename);
+        logger.infof("Pipe text to %s to send raw commands to the server", filename);
     }
 
     return File(filename, "r");

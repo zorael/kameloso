@@ -491,12 +491,7 @@ Flag!"quit" mainLoop(ref Client client)
                             {
                                 import kameloso.bash : BashReset, colour;
                                 import kameloso.logger : KamelosoLogger;
-                                import std.array : Appender;
                                 import std.experimental.logger : LogLevel;
-                                import std.format : format;
-
-                                Appender!string sink;
-                                sink.reserve(128);  // ~66
 
                                 immutable infotint = settings.brightTerminal ?
                                     KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -506,14 +501,9 @@ Flag!"quit" mainLoop(ref Client client)
                                     KamelosoLogger.logcoloursBright[LogLevel.all] :
                                     KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                                sink.colour(logtint);
-                                sink.put("Detected daemon: ");
-                                sink.colour(infotint);
-                                sink.put(bot.server.daemon.enumToString);
-                                sink.colour(BashReset.all);
-                                sink.put(" (%s)".format(bot.server.daemonstring));
-
-                                logger.trace(sink.data);
+                                logger.logf("Detected daemon: %s%s%s (%s)",
+                                    infotint.colour, bot.server.daemon.enumToString,
+                                    BashReset.all.colour, bot.server.daemonstring);
                             }
                             else
                             {
@@ -545,13 +535,9 @@ Flag!"quit" mainLoop(ref Client client)
                         {
                             if (!settings.monochrome)
                             {
-                                import kameloso.bash : BashReset, colour;
+                                import kameloso.bash : colour;
                                 import kameloso.logger : KamelosoLogger;
-                                import std.array : Appender;
                                 import std.experimental.logger : LogLevel;
-
-                                Appender!string sink;
-                                sink.reserve(64);  // ~40
 
                                 immutable infotint = settings.brightTerminal ?
                                     KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -561,13 +547,7 @@ Flag!"quit" mainLoop(ref Client client)
                                     KamelosoLogger.logcoloursBright[LogLevel.all] :
                                     KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                                sink.colour(logtint);
-                                sink.put("Detected network: ");
-                                sink.colour(infotint);
-                                sink.put(networkName);
-                                sink.colour(BashReset.all);
-
-                                logger.trace(sink.data);
+                                logger.logf("Detected network: %s%s", infotint.colour, networkName);
                             }
                             else
                             {
@@ -945,14 +925,9 @@ int main(string[] args)
             {
                 if (!settings.monochrome)
                 {
-                    import kameloso.bash : BashReset, colour;
+                    import kameloso.bash : colour;
                     import kameloso.logger : KamelosoLogger;
-                    import std.array : Appender;
                     import std.experimental.logger : LogLevel;
-                    import std.path : baseName;
-
-                    Appender!(char[]) sink;
-                    sink.reserve(96);  // ~79
 
                     immutable infotint = settings.brightTerminal ?
                         KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -962,26 +937,17 @@ int main(string[] args)
                         KamelosoLogger.logcoloursBright[LogLevel.all] :
                         KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                    sink.colour(logtint);
-                    sink.put("Use ");
-                    sink.colour(infotint);
-                    sink.put(args[0].baseName);
-                    sink.put(" --writeconfig");
-                    sink.colour(logtint);
-                    sink.put(" to generate a configuration file.");
-                    sink.colour(BashReset.all);
-                    logger.trace(sink.data);
+                    logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+                        infotint.colour, args[0].baseName, logtint.colour);
                 }
                 else
                 {
-                    logger.logf("Use %s --writeconfig to generate a configuration file.",
-                        args[0].baseName);
+                    logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
                 }
             }
             else
             {
-                logger.logf("Use %s --writeconfig to generate a configuration file.",
-                        args[0].baseName);
+                logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
             }
 
             return 1;
@@ -1033,13 +999,9 @@ int main(string[] args)
                 {
                     if (!settings.monochrome)
                     {
-                        import kameloso.bash : BashReset, colour;
+                        import kameloso.bash : colour;
                         import kameloso.logger : KamelosoLogger;
-                        import std.array : Appender;
                         import std.experimental.logger : LogLevel;
-
-                        Appender!(char[]) sink;
-                        sink.reserve(128);  // ~118
 
                         immutable infotint = settings.brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -1051,29 +1013,14 @@ int main(string[] args)
 
                         foreach (const section, const sectionEntries; invalidEntries)
                         {
-                            import std.format : format;
-
-                            sink.colour(logtint);
-                            sink.put("...under [");
-                            sink.colour(infotint);
-                            sink.put(section);
-                            sink.colour(logtint);
-                            sink.put("]: ");
-                            sink.colour(infotint);
-                            sink.put(`%-("%s"%|, %)`.format(sectionEntries));
-                            sink.colour(BashReset.all);
-                            logger.trace(sink.data);
-                            sink.clear();
+                            logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+                                infotint.colour, section, logtint.colour,
+                                infotint.colour, sectionEntries);
                         }
 
-                        sink.colour(logtint);
-                        sink.put("They are either malformed or no longer in use. Use ");
-                        sink.colour(infotint);
-                        sink.put("--writeconfig");
-                        sink.colour(logtint);
-                        sink.put(" to update your configuration file.");
-                        sink.colour(BashReset.all);
-                        logger.trace(sink.data);
+                        logger.logf("They are either malformed or no longer in use. " ~
+                            "Use %s--writeconfig%s to update your configuration file.",
+                            infotint.colour, logtint.colour);
                     }
                     else
                     {
@@ -1127,14 +1074,9 @@ int main(string[] args)
                     with (settings)
                     with (BashForeground)
                     {
-                        import kameloso.bash : BashReset, colour;
+                        import kameloso.bash : colour;
                         import kameloso.logger : KamelosoLogger;
-                        import std.array : Appender;
-                        import std.conv : to;
                         import std.experimental.logger : LogLevel;
-
-                        Appender!string sink;
-                        sink.reserve(96);  // ~62
 
                         immutable infotint = brightTerminal ?
                             KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -1144,17 +1086,9 @@ int main(string[] args)
                             KamelosoLogger.logcoloursBright[LogLevel.all] :
                             KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                        sink.colour(infotint);
-                        sink.put(bot.server.address);
-                        sink.colour(logtint);
-                        sink.put(" resolved into ");
-                        sink.colour(infotint);
-                        sink.put(conn.ips.length.to!string);
-                        sink.colour(logtint);
-                        sink.put(" IPs.");
-                        sink.colour(BashReset.all);
-
-                        logger.trace(sink.data);
+                        logger.infof("%s%s resolved into %s%s%s IPs.",
+                            bot.server.address, logtint.colour, infotint.colour,
+                            conn.ips.length, logtint.colour);
                     }
                 }
                 else

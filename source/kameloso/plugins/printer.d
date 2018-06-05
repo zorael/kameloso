@@ -253,13 +253,9 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 with (plugin.state.settings)
                 with (BashForeground)
                 {
-                    import kameloso.bash : BashReset, colour;
+                    import kameloso.bash : colour;
                     import kameloso.logger : KamelosoLogger;
-                    import std.array : Appender;
                     import std.experimental.logger : LogLevel;
-
-                    Appender!string sink;
-                    sink.reserve(64);  // Usually <64
 
                     immutable infotint = brightTerminal ?
                         KamelosoLogger.logcoloursBright[LogLevel.info] :
@@ -269,23 +265,17 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                         KamelosoLogger.logcoloursBright[LogLevel.all] :
                         KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                    sink.colour(infotint);
-                    sink.put("Created log directory: ");
-                    sink.colour(logtint);
-                    sink.put(logLocation);
-                    sink.colour(BashReset.all);
-
-                    logger.trace(sink.data);
+                    logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
                 }
             }
             else
             {
-                logger.info("Created log directory: ", logLocation);
+                logger.log("Created log directory: ", logLocation);
             }
         }
         else
         {
-            logger.info("Created log directory: ", logLocation);
+            logger.log("Created log directory: ", logLocation);
         }
     }
 
