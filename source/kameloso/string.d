@@ -507,8 +507,7 @@ void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
 }
 
 /// Ditto
-string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)
-    (const Duration duration)
+string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
     import std.array : Appender;
 
@@ -765,8 +764,7 @@ unittest
  +  Returns:
  +      An integer equalling the value of the passed hexadecimal string.
  +/
-uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
-    (const string hex) pure
+uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(const string hex) pure
 {
     int val = -1;
     int total;

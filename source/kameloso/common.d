@@ -54,8 +54,7 @@ Logger logger;
  +      monochrome = Whether the terminal is set to monochrome or not.
  +      bright = Whether the terminal has a bright background or not.
  +/
-void initLogger(bool monochrome = settings.monochrome,
-    bool bright = settings.brightTerminal)
+void initLogger(bool monochrome = settings.monochrome, bool bright = settings.brightTerminal)
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
@@ -200,8 +199,7 @@ struct CoreSettings
  +      widthArg = The width with which to pad output columns.
  +      things = Variadic list of struct objects to enumerate.
  +/
-void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)
-    (Things things) @trusted
+void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)(Things things) @trusted
 {
     import std.stdio : stdout;
 
@@ -254,8 +252,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
  +      widthArg = The width with which to pad output columns.
  +      thing = Struct object to enumerate.
  +/
-void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thing)
-    (Thing thing)
+void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thing)(Thing thing)
 {
     printObjects!(printAll, widthArg)(thing);
 }

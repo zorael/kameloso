@@ -167,8 +167,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +      cache = Reference to the cache of previous `TitleLookup`s.
  +      titleReq = Current title request.
  +/
-void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
-    TitleRequest titleReq)
+void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, TitleRequest titleReq)
 {
     import kameloso.common;
 

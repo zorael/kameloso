@@ -1320,8 +1320,7 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)
-    (const string line)
+string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)(const string line)
 {
     import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;

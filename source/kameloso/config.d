@@ -340,8 +340,7 @@ pipyon 3
  +  Returns:
  +      `true` if a member was found and set, `false` if not.
  +/
-bool setMemberByName(Thing)(ref Thing thing, const string memberToSet,
-    const string valueToSet)
+bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {
     import kameloso.string : stripped, unquoted;
     import kameloso.traits : isConfigurableVariable;

@@ -361,8 +361,7 @@ unittest
  +      meldThis = Associative array to meld (source).
  +      intoThis = Reference to the associative array to meld (target).
  +/
-void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, AA)
-    (AA meldThis, ref AA intoThis) pure
+void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, AA)(AA meldThis, ref AA intoThis) pure
 if (isAssociativeArray!AA)
 {
     foreach (key, val; meldThis)

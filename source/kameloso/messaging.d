@@ -17,8 +17,7 @@ import std.concurrency : Tid, send;
 /++
  +  Sends a channel message.
  +/
-void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
-    const string content)
+void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string content)
 {
     assert((channel[0] == '#'), "chan was passed invalid channel: " ~ channel);
     IRCEvent event;
@@ -35,8 +34,7 @@ void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
 /++
  +  Sends a private query message to a user.
  +/
-void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname,
-    const string content)
+void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname, const string content)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
@@ -83,8 +81,7 @@ alias throttleline = privmsg;
 /++
  +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
  +/
-void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget,
-    const string content)
+void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget, const string content)
 {
     import kameloso.string : beginsWith;
 
@@ -133,8 +130,7 @@ void mode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
 /++
  +  Sets the topic of a channel.
  +/
-void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
-    const string content)
+void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string content)
 {
     assert((channel[0] == '#'), "topic was passed invalid channel: " ~ channel);
 
@@ -152,8 +148,7 @@ void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
 /++
  +  Invites a user to a channel.
  +/
-void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
-    const string nickname)
+void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string nickname)
 {
     assert((channel[0] == '#'), "invite was passed invalid channel: " ~ channel);
     IRCEvent event;

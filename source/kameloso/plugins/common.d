@@ -1851,8 +1851,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Sends a channel message.
      +/
     pragma(inline)
-    void chan(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string content)
+    void chan(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
     {
         return kameloso.messaging.chan!quiet(state.mainThread, channel, content);
     }
@@ -1863,8 +1862,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Sends a private query message to a user.
      +/
     pragma(inline)
-    void query(Flag!"quiet" quiet = No.quiet)(const string nickname,
-        const string content)
+    void query(Flag!"quiet" quiet = No.quiet)(const string nickname, const string content)
     {
         return kameloso.messaging.query!quiet(state.mainThread, nickname, content);
     }
@@ -1907,8 +1905,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     pragma(inline)
-    void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget,
-        const string content)
+    void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget, const string content)
     {
         return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
     }
@@ -1934,8 +1931,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Sets the topic of a channel.
      +/
     pragma(inline)
-    void topic(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string content)
+    void topic(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
     {
         return kameloso.messaging.topic!quiet(state.mainThread, channel, content);
     }
@@ -1946,8 +1942,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Invites a user to a channel.
      +/
     pragma(inline)
-    void invite(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string nickname)
+    void invite(Flag!"quiet" quiet = No.quiet)(const string channel, const string nickname)
     {
         return kameloso.messaging.invite!quiet(state.mainThread, channel, nickname);
     }
@@ -2836,8 +2831,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const IRCPluginState privateState,
-    const NickPolicy policy, ref IRCEvent mutEvent) @safe
+bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy policy, ref IRCEvent mutEvent) @safe
 {
     import kameloso.string : beginsWith, nom, stripPrefix;
     import std.typecons : Flag, No, Yes;
