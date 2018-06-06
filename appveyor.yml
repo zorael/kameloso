@@ -57,7 +57,7 @@ install:
         }
   - ps: SetUpDCompiler
   - ps: mv "C:\dmd2\windows\bin\dmd.exe" "C:\dmd2\windows\bin\dmd32.exe"
-  - powershell -Command Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/9ktjooijitbdaugh/artifacts/src%%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe"
+  - powershell -Command Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/9ktjooijitbdaugh/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe"
   - powershell -Command Invoke-WebRequest https://code.dlang.org/files/dub-1.8.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
