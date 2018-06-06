@@ -1656,7 +1656,11 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     foreach (value; event.content.splitter(' '))
     {
-        if (!value.has('=')) continue;
+        if (!value.has('='))
+        {
+            // switch on value for things like EXCEPTS, INVEX, CPRIVMSG, etc
+            continue;
+        }
 
         immutable key = value.nom('=');
 
