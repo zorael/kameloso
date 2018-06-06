@@ -12,23 +12,26 @@ install_deps() {
     sudo apt update
     sudo apt install dmd-compiler dub
 
-    sudo apt install ldc
+    #sudo apt install ldc
 }
 
 build() {
-    dub test --compiler="$1" -c vanilla || true
-    dub test --compiler="$1" -c colours+web || true
-
     mkdir -p artifacts
+
     dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    mv kameloso-test-vanilla artifacts/
     dub test --compiler="$1" --build-mode=singleFile -c colours+web
-    mv kameloso-test-colours+web artifacts/
+
+    dub build --compiler="$1" --build-mode=singleFile -b debug -c colours+web || true
+    mv kameloso artifacts/kameloso || true
+
+    dub build --compiler="$1" --build-mode=singleFile -b debug -c vanilla || true
+    mv kameloso artifacts/kameloso-vanilla || true
+
+    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web || true
+    test -e kameloso && mv kameloso artifacts/kameloso-plain || true
 
     dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla || true
-    test -e kameloso-plain-vanilla && mv kameloso artifacts/kameloso-plain-vanilla || true
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web || true
-    test -e kameloso-plain-colours+web && mv kameloso artifacts/kameloso-plain-colours+web || true
+    test -e kameloso && mv kameloso artifacts/kameloso-plain-vanilla || true
 }
 
 # execution start
