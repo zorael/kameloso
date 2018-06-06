@@ -24,7 +24,7 @@ It works well with the majority of server networks. IRC is standardised but serv
 
 ### Current limitations:
 
-* **the dmd and ldc compilers segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below). Don't believe the **failed/error/failing** build badges.
+* **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below).
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
 * some plugins don't yet differentiate between different home channels if there is more than one.
 * quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
@@ -89,7 +89,7 @@ This will compile it in the default `debug` *build type*, which adds some extra 
 
 > You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above will currently not work, as the compiler will crash on anything other than `debug` mode.
+The above may currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
