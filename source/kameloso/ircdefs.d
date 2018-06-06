@@ -982,9 +982,6 @@ struct IRCServer
         strict_rfc1459,
     }
 
-    /// The current case mapping.
-    CaseMapping caseMapping;
-
     /// Server address (or IP).
     string address = "irc.freenode.net";
 
@@ -1037,6 +1034,9 @@ struct IRCServer
         +  the `ISUPPORT` event, before the MOTD.
         +/
         string chantypes = "#";
+
+        /// The current case mapping.
+        CaseMapping caseMapping;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
