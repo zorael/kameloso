@@ -1091,6 +1091,84 @@ struct IRCUser
     /// User classifier.
     Class class_;
 
+    /// Produces the nickname in lowercase as per the server's case mappings.
+    string lowercaseNickname(IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) const
+    {
+        import std.array : Appender;
+        import std.string : representation, toLower;
+
+        Appender!string lowercased;
+        lowercased.reserve(nickname.length);
+
+        foreach (immutable c; nickname.representation)
+        {
+            if ((caseMapping == IRCServer.CaseMapping.rfc1459) ||
+                (caseMapping == IRCServer.CaseMapping.strict_rfc1459))
+            {
+                switch (c)
+                {
+                case '[':
+                    lowercased.put('{');
+                    continue;
+                case ']':
+                    lowercased.put('}');
+                    continue;
+                case '\\':
+                    lowercased.put('|');
+                    continue;
+                default:
+                    break;
+                }
+
+                if (caseMapping == IRCServer.CaseMapping.rfc1459)
+                {
+                    if (c == '^')
+                    {
+                        lowercased.put('~');
+                        continue;
+                    }
+                }
+            }
+
+            lowercased.put(c.toLower);
+        }
+
+        return lowercased.data;
+    }
+
+    ///
+    unittest
+    {
+        IRCServer.CaseMapping m = IRCServer.CaseMapping.rfc1459;
+        IRCUser user;
+
+        user.nickname = "ABCDEF";
+        assert((user.lowercaseNickname(m) == "abcdef"), user.lowercaseNickname);
+
+        user.nickname = "123";
+        assert((user.lowercaseNickname(m) == "123"), user.lowercaseNickname);
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "~{0v0}~"), user.lowercaseNickname);
+
+        user.nickname = `A|\|`;
+        assert((user.lowercaseNickname(m) == `a|||`), user.lowercaseNickname);
+
+        m = IRCServer.CaseMapping.ascii;
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "^[0v0]^"), user.lowercaseNickname);
+
+        user.nickname = `A|\|`;
+        assert((user.lowercaseNickname(m) == `a|\|`), user.lowercaseNickname);
+
+        m = IRCServer.CaseMapping.strict_rfc1459;
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "^{0v0}^"), user.lowercaseNickname);
+    }
+
+
     /++
      +  Flag that the user is "special", which is usually that it is a service
      +  like nickname services, or channel or memo or spam.
