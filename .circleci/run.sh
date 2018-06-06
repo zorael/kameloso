@@ -22,10 +22,10 @@ build() {
     dub test --compiler="$1" --build-mode=singleFile -c colours+web
     mv kameloso-test-colours+web artifacts/
 
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla
-    mv kameloso artifacts/kameloso-plain-vanilla
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web
-    mv kameloso artifacts/kameloso-plain-colours+web
+    dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla || true
+    test -e kameloso-plain-vanilla && mv kameloso artifacts/kameloso-plain-vanilla
+    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web || true
+    test -e kameloso-plain-colours+web && mv kameloso artifacts/kameloso-plain-colours+web
 }
 
 # execution start
