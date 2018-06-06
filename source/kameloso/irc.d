@@ -1763,6 +1763,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             {
                 throw new IRCParseException(e.msg, event, e.file, e.line);
             }
+            break;
 
         default:
             break;
