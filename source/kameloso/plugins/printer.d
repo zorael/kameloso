@@ -487,6 +487,9 @@ void commitLogs(PrinterPlugin plugin)
 /++
  +  Prints information about the current server as we gain details of it from an
  +  `RPL_ISUPPORT` event.
+ +
+ +  Set a flag so we only print this information once; (ISUPPORTS can/do stretch
+ +  across several events.)
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
@@ -494,6 +497,14 @@ void onISUPPORT(PrinterPlugin plugin)
     import kameloso.string : enumToString;
     import std.string : capitalize;
     import std.uni : isLower;
+
+    if (plugin.printedISUPPORT || !plugin.state.bot.server.network.length)
+    {
+        // We already printed this information, or we havent yet seen NETWORK
+        return;
+    }
+
+    plugin.printedISUPPORT = true;
 
     with (plugin.state.bot.server)
     {
@@ -1554,6 +1565,9 @@ final class PrinterPlugin : IRCPlugin
 {
     /// Whether we have nagged about an invalid log directory.
     bool naggedAboutDir;
+
+    /// Whether we have printed daemon-network information.
+    bool printedISUPPORT;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
