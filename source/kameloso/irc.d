@@ -1753,6 +1753,17 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             }
             break;
 
+        case "CASEMAPPING":
+            try
+            {
+                bot.server.caseMapping = value.toEnum!(IRCServer.CaseMapping);
+                bot.updated = true;
+            }
+            catch (const ConvException e)
+            {
+                throw new IRCParseException(e.msg, event, e.file, e.line);
+            }
+
         default:
             break;
         }
