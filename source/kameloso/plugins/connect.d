@@ -659,6 +659,25 @@ void onWelcome(ConnectService service)
 }
 
 
+// onISUPPORT
+/++
+ +  Requests an UTF-8 codepage after we've figured out that the server supports
+ +  changing such.
+ +
+ +  Currenly only RusNet is known to support codepages. If more show up,
+ +  consider creating an `IRCServer.hasCodepages` bool and set it if `CODEPAGES`
+ +  is included in `RPL_MYINFO`.
+ +/
+@(IRCEvent.Type.RPL_ISUPPORT)
+void onISUPPORT(ConnectService service)
+{
+    if (service.state.bot.server.daemon == IRCServer.Daemon.rusnet)
+    {
+        service.raw!(Yes.quiet)("CODEPAGE UTF-8");
+    }
+}
+
+
 // register
 /++
  +  Registers with/logs onto an IRC server.
