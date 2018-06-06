@@ -289,6 +289,12 @@ void tryAuth(ConnectService service)
             logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
+        case rusnet:
+            // Doesn't want a PRIVMSG
+            service.raw!(No.quiet)("NICKSERV IDENTIFY " ~ password);  // FIXME
+            logger.tracef("--> NICKSERV IDENTIFY hunter2");
+            break;
+
         case twitch:
             // No registration available
             bot.authentication = Status.finished;
