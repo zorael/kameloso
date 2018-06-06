@@ -1305,18 +1305,22 @@ struct IRCUser
      +  Returns:
      +      `true` if the `IRCUser`s are deemed to match, `false` if not.
      +/
-    bool matchesByMask(const IRCUser other) pure nothrow const
+    bool matchesByMask(const IRCUser other,
+        IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) pure nothrow const
     {
         import std.path : CaseSensitive, globMatch;
 
         // Change this if we want case-sentivity
         enum caseSetting = CaseSensitive.no;
 
+        immutable ourLower = this.lowercaseNickname(caseMapping);
+        immutable theirLower = other.lowercaseNickname(caseMapping);
+
         // globMatch in both directions
         // If no match and either is empty, that means they're *
-        immutable matchNick = ((this.nickname == other.nickname) ||
-            this.nickname.globMatch!caseSetting(other.nickname) ||
-            other.nickname.globMatch!caseSetting(this.nickname) ||
+        immutable matchNick = ((ourLower == theirLower) ||
+            ourLower.globMatch!caseSetting(theirLower) ||
+            theirLower.globMatch!caseSetting(ourLower) ||
             !this.nickname.length || !other.nickname.length);
         if (!matchNick) return false;
 
