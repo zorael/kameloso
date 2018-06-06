@@ -16,6 +16,9 @@ install_deps() {
 }
 
 build() {
+    dub test --compiler="$1" -c vanilla || true
+    dub test --compiler="$1" -c colours+web || true
+
     mkdir -p artifacts
     dub test --compiler="$1" --build-mode=singleFile -c vanilla
     mv kameloso-test-vanilla artifacts/
