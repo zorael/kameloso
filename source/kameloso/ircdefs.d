@@ -1362,6 +1362,15 @@ struct IRCUser
         assert(second.matchesByMask(first));
         assert(third.matchesByMask(first));
         assert(fourth.matchesByMask(first));
+
+        IRCUser fifth = IRCUser("kameloso!*@*");
+        IRCUser sixth = IRCUser("KAMELOSO!ident@address.com");
+        assert(fifth.matchesByMask(sixth));
+
+        IRCUser seventh = IRCUser("^[0V0]^!ID@ADD");
+        IRCUser eight = IRCUser("~{0v0}~!id@add");
+        assert(seventh.matchesByMask(eight, IRCServer.CaseMapping.rfc1459));
+        assert(!seventh.matchesByMask(eight, IRCServer.CaseMapping.strict_rfc1459));
     }
 }
 
