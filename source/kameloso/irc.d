@@ -2252,7 +2252,21 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    if ((line[0] != '#') && (line[0] != '&')) return false;
+    /// Checks whether passed character is one of those in `CHANTYPES`.
+    bool matchesChansign(const char character)
+    {
+        foreach (immutable chansign; server.chantypes)
+        {
+            if (character == chansign)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (!matchesChansign(line[0])) return false;
 
     if (line.has(' ') ||
         line.has(',') ||
@@ -2262,21 +2276,29 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    if ((line.length == 2) && (line != "##")) return true;
-    else if (line.length == 3) return ((line[2] != '#') && (line[2] != '&'));
+    if (line.length == 2) return !matchesChansign(line[1]);
+    else if (line.length == 3) return !matchesChansign(line[2]);
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
-        return (!line[2..$].has('#')) && (!line[2..$].has('&'));
+        foreach (immutable chansign; server.chantypes)
+        {
+            if (line[2..$].has(chansign)) return false;
+        }
+        return true;
     }
-
-    return false;
+    else
+    {
+        return false;
+    }
 }
 
 ///
 unittest
 {
     IRCServer s;
+    s.chantypes = "#&";
+
     assert("#channelName".isValidChannel(s));
     assert("&otherChannel".isValidChannel(s));
     assert("##freenode".isValidChannel(s));
@@ -2286,10 +2308,14 @@ unittest
     assert(!"#".isValidChannel(s));
     assert(!"".isValidChannel(s));
     assert(!"##".isValidChannel(s));
+    assert(!"&&".isValidChannel(s));
     assert("#d".isValidChannel(s));
     assert("#uk".isValidChannel(s));
     assert(!"###".isValidChannel(s));
     assert(!"#a#".isValidChannel(s));
+    assert(!"a".isValidChannel(s));
+    assert(!" ".isValidChannel(s));
+    assert(!"".isValidChannel(s));
 }
 
 
