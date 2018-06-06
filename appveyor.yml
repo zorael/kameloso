@@ -62,7 +62,9 @@ install:
   - powershell -Command Invoke-WebRequest https://code.dlang.org/files/dub-1.8.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   #- set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
+  - dmd --version
   - set PATH=%CD%;%CD%\%binpath%;%CD%\dub;%PATH%
+  - dmd --version
   - dub --version
 
 before_build:
