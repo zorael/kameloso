@@ -56,9 +56,15 @@ install:
             }
         }
   - ps: SetUpDCompiler
+  - ren c:\\dmd2\\windows\\dmd.exe c:\\dmd2\\windows\\bin\\dmd32.exe
+  - powershell -Command Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/9ktjooijitbdaugh/artifacts/src%2Fdmd.exe" -OutFile "c:\\dmd2\\windows\\bin\\dmd.exe"
+  - powershell -Command Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/9ktjooijitbdaugh/artifacts/src%2Fdmd.exe" -OutFile dmd.exe
   - powershell -Command Invoke-WebRequest https://code.dlang.org/files/dub-1.8.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
-  - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
+  #- set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
+  - dmd --version
+  - set PATH=%CD%;%CD%\%binpath%;%CD%\dub;%PATH%
+  - dmd --version
   - dub --version
 
 before_build:
@@ -89,6 +95,8 @@ test_script:
  - echo %Darch%
  - echo %DC%
  - echo %PATH%
+ - dir
+ - dir /s c:\dmd2
  - '%DC% --version'
  - dub test --arch=%Darch% --compiler=%DC% -c vanilla
  - dub test --arch=%Darch% --compiler=%DC% -c cygwin
