@@ -967,6 +967,24 @@ struct IRCServer
         ithildin,
     }
 
+    /++
+     +  Case mappings used by an IRC server.
+     +
+     +  These decide how case-insensitivity works.
+     +/
+    enum CaseMapping
+    {
+        /// The lowercase of `[A-Z]` is `[a-z]`.
+        ascii,
+        /// `ascii`, plus the lowercase of `[]\^` is `}|~`.
+        rfc1459,
+        /// `rfc1459`, except no `^` for `~`.
+        strict_rfc1459,
+    }
+
+    /// The current case mapping.
+    CaseMapping caseMapping;
+
     /// Server address (or IP).
     string address = "irc.freenode.net";
 
