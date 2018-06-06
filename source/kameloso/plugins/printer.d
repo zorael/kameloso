@@ -211,7 +211,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.enabled) return;
 
     import std.algorithm.searching : canFind;
-    import std.file : FileException, exists, isDir;
+    import std.file : FileException;
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
 
@@ -225,87 +225,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     }
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
-
-    if (logLocation.exists)
-    {
-        if (!logLocation.isDir)
-        {
-            if (!plugin.naggedAboutDir)
-            {
-                version(Colours)
-                {
-                    if (!plugin.state.settings.monochrome)
-                    {
-                        import kameloso.bash : colour;
-                        import kameloso.logger : KamelosoLogger;
-                        import std.experimental.logger : LogLevel;
-
-                        immutable infotint = plugin.state.settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.info] :
-                            KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                        immutable warningtint = plugin.state.settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.warning] :
-                            KamelosoLogger.logcoloursDark[LogLevel.warning];
-
-                        logger.warningf("Specified log directory (%s%s%s) is not a directory.",
-                            infotint.colour, logLocation, warningtint.colour);
-                    }
-                    else
-                    {
-                        logger.warningf("Specified log directory (%s) is not a directory", logLocation);
-                    }
-                }
-                else
-                {
-                    logger.warningf("Specified log directory (%s) is not a directory", logLocation);
-                }
-
-                plugin.naggedAboutDir = true;
-            }
-            return;
-        }
-    }
-    else
-    {
-        // Create missing log directory
-        import std.file : mkdirRecurse;
-        mkdirRecurse(logLocation);
-
-        version(Colours)
-        {
-            if (!plugin.state.settings.monochrome)
-            {
-                import kameloso.bash : BashForeground;
-
-                with (plugin.state.settings)
-                with (BashForeground)
-                {
-                    import kameloso.bash : colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
-
-                    immutable infotint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable logtint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                    logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
-                }
-            }
-            else
-            {
-                logger.log("Created log directory: ", logLocation);
-            }
-        }
-        else
-        {
-            logger.log("Created log directory: ", logLocation);
-        }
-    }
+    if (!plugin.verifyLogLocation(logLocation)) return;
 
     with (plugin)
     {
@@ -412,6 +332,106 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     {
         logger.warning("Unhandled exception caught when writing to log: ", e.msg);
     }
+}
+
+
+// verifyLogLocation
+/++
+ +  Verifies that a log directory exists, complaining if it's invalid, creating
+ +  it if it doesn't exist.
+ +
+ +  Params:
+ +      logLocation = String of the location directory we want to store logs in.
+ +
+ +  Returns:
+ +      A bool whether or not the log location is valid.
+ +/
+bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
+{
+    import std.file : FileException, exists, isDir;
+
+    if (logLocation.exists)
+    {
+        if (logLocation.isDir) return true;
+
+        if (!plugin.naggedAboutDir)
+        {
+            version(Colours)
+            {
+                if (!plugin.state.settings.monochrome)
+                {
+                    import kameloso.bash : colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.experimental.logger : LogLevel;
+
+                    immutable infotint = plugin.state.settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable warningtint = plugin.state.settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.warning] :
+                        KamelosoLogger.logcoloursDark[LogLevel.warning];
+
+                    logger.warningf("Specified log directory (%s%s%s) is not a directory.",
+                        infotint.colour, logLocation, warningtint.colour);
+                }
+                else
+                {
+                    logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+                }
+            }
+            else
+            {
+                logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+            }
+
+            plugin.naggedAboutDir = true;
+        }
+
+        return false;
+    }
+    else
+    {
+        // Create missing log directory
+        import std.file : mkdirRecurse;
+        mkdirRecurse(logLocation);
+
+        version(Colours)
+        {
+            if (!plugin.state.settings.monochrome)
+            {
+                import kameloso.bash : BashForeground;
+
+                with (plugin.state.settings)
+                with (BashForeground)
+                {
+                    import kameloso.bash : colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.experimental.logger : LogLevel;
+
+                    immutable infotint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
+                }
+            }
+            else
+            {
+                logger.log("Created log directory: ", logLocation);
+            }
+        }
+        else
+        {
+            logger.log("Created log directory: ", logLocation);
+        }
+    }
+
+    return true;
 }
 
 
