@@ -483,6 +483,57 @@ void commitLogs(PrinterPlugin plugin)
 }
 
 
+// onISUPPORT
+/++
+ +  Prints information about the current server as we gain details of it from an
+ +  `RPL_ISUPPORT` event.
+ +/
+@(IRCEvent.Type.RPL_ISUPPORT)
+void onISUPPORT(PrinterPlugin plugin)
+{
+    import kameloso.string : enumToString;
+    import std.string : capitalize;
+    import std.uni : isLower;
+
+    with (plugin.state.bot.server)
+    {
+        immutable networkName = network[0].isLower ? network.capitalize() : network;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.bash : BashReset, colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.experimental.logger : LogLevel;
+
+                immutable infotint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                    KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                immutable logtint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.all] :
+                    KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+                    infotint.colour, networkName, logtint.colour,
+                    infotint.colour, daemon.enumToString,
+                    BashReset.all.colour, daemonstring);
+            }
+            else
+            {
+                logger.logf("Detected %s running %s (%s)",
+                    networkName, daemon.enumToString, daemonstring);
+            }
+        }
+        else
+        {
+            logger.logf("Detected %s running %s (%s)",
+                networkName, daemon.enumToString, daemonstring);
+        }
+    }
+}
+
 // put
 /++
  +  Puts a variadic list of values into an output range sink.

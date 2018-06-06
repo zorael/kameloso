@@ -340,10 +340,6 @@ Flag!"quit" mainLoop(ref Client client)
     /// Flag denoting whether we should quit or not.
     Flag!"quit" quit;
 
-    /// Keep track of daemon and network so we know when to report detection.
-    IRCServer.Daemon detectedDaemon = client.bot.server.daemon;
-    string detectedNetwork = client.bot.server.network;
-
     // Instantiate a Generator to read from the socket and yield lines
     auto generator = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
 
@@ -477,88 +473,6 @@ Flag!"quit" mainLoop(ref Client client)
                     parser.bot.updated = false;
                     bot = parser.bot;
                     propagateBot(bot);
-
-                    if ((detectedDaemon == IRCServer.Daemon.init) && (bot.server.daemon != detectedDaemon))
-                    {
-                        import kameloso.string : enumToString;
-
-                        // We know the Daemon
-                        detectedDaemon = bot.server.daemon;
-
-                        version(Colours)
-                        {
-                            if (!settings.monochrome)
-                            {
-                                import kameloso.bash : BashReset, colour;
-                                import kameloso.logger : KamelosoLogger;
-                                import std.experimental.logger : LogLevel;
-
-                                immutable infotint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                                immutable logtint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                                logger.logf("Detected daemon: %s%s%s (%s)",
-                                    infotint.colour, bot.server.daemon.enumToString,
-                                    BashReset.all.colour, bot.server.daemonstring);
-                            }
-                            else
-                            {
-                                logger.logf("Detected daemon: %s (%s)",
-                                    bot.server.daemon.enumToString,
-                                    bot.server.daemonstring);
-                            }
-                        }
-                        else
-                        {
-                            logger.logf("Detected daemon: %s (%s)",
-                                bot.server.daemon.enumToString,
-                                bot.server.daemonstring);
-                        }
-                    }
-
-                    if (!detectedNetwork.length && bot.server.network != detectedNetwork)
-                    {
-                        import std.string : capitalize;
-                        import std.uni : isLower;
-
-                        // We know the network string
-                        detectedNetwork = bot.server.network;
-
-                        immutable networkName = bot.server.network[0].isLower ?
-                            bot.server.network.capitalize() : bot.server.network;
-
-                        version(Colours)
-                        {
-                            if (!settings.monochrome)
-                            {
-                                import kameloso.bash : colour;
-                                import kameloso.logger : KamelosoLogger;
-                                import std.experimental.logger : LogLevel;
-
-                                immutable infotint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                                immutable logtint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                                logger.logf("Detected network: %s%s", infotint.colour, networkName);
-                            }
-                            else
-                            {
-                                logger.log("Detected network: ", networkName);
-                            }
-                        }
-                        else
-                        {
-                            logger.log("Detected network: ", networkName);
-                        }
-                    }
                 }
 
                 foreach (plugin; plugins)
