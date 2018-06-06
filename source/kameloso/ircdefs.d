@@ -1092,15 +1092,14 @@ struct IRCUser
     Class class_;
 
     /// Produces the nickname in lowercase as per the server's case mappings.
-    string lowercaseNickname(IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) const
+    string lowercaseNickname(IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) const nothrow pure
     {
-        import std.array : Appender;
         import std.string : representation, toLower;
 
-        Appender!string lowercased;
-        lowercased.reserve(nickname.length);
+        ubyte[] lowercased;
+        lowercased.length = nickname.length;
 
-        foreach (immutable c; nickname.representation)
+        foreach (immutable i, immutable c; nickname.representation)
         {
             if ((caseMapping == IRCServer.CaseMapping.rfc1459) ||
                 (caseMapping == IRCServer.CaseMapping.strict_rfc1459))
@@ -1108,13 +1107,13 @@ struct IRCUser
                 switch (c)
                 {
                 case '[':
-                    lowercased.put('{');
+                    lowercased[i] = '{';
                     continue;
                 case ']':
-                    lowercased.put('}');
+                    lowercased[i] = '}';
                     continue;
                 case '\\':
-                    lowercased.put('|');
+                    lowercased[i] = '|';
                     continue;
                 default:
                     break;
@@ -1124,16 +1123,16 @@ struct IRCUser
                 {
                     if (c == '^')
                     {
-                        lowercased.put('~');
+                        lowercased[i] = '~';
                         continue;
                     }
                 }
             }
 
-            lowercased.put(c.toLower);
+            lowercased[i] = cast(ubyte)c.toLower;
         }
 
-        return lowercased.data;
+        return cast(string)lowercased.idup;
     }
 
     ///
