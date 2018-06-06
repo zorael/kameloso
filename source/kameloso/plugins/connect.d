@@ -401,6 +401,7 @@ void onNickInUse(ConnectService service)
             {
                 import kameloso.constants : altNickSign;
                 bot.nickname ~= altNickSign;
+                service.renamedDuringRegistration = true;
             }
 
             bot.updated = true;
