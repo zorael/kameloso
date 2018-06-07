@@ -2307,6 +2307,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
+     +
+     +  This reimplements `IRCPlugin.periodically`.
      +/
     @(AwarenessEarly)
     @(Chainable)
@@ -2315,18 +2317,14 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     {
         import std.datetime.systime : Clock;
 
-        immutable hour = Clock.currTime.hour;
-
+        immutable now = Clock.currTime.toUnixTime;
         enum hoursBetweenRehashes = 12;
 
-        with (plugin)
+        if (now >= plugin.nextPeriodical)
         {
             /// Once every few hours, rehash the `users` array.
-            if ((hoursBetweenRehashes > 0) && (hour == rehashCounter))
-            {
-                rehashCounter = (rehashCounter + hoursBetweenRehashes) % 24;
-                state.users.rehash();
-            }
+            plugin.state.users.rehash();
+            plugin.nextPeriodical = now + (hoursBetweenRehashes * 3600);
         }
     }
 }
