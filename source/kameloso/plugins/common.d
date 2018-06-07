@@ -1872,11 +1872,12 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  It sends it in a throttled fashion, usable for long output when the bot
      +  may otherwise get kicked for spamming.
      +/
+    deprecated("throttleline is deprecated, use privmsg instead.")
     pragma(inline)
     void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.throttleline!quiet(state.mainThread, channel, nickname, content);
+        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
     }
 
 
