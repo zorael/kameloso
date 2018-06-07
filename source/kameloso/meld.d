@@ -307,11 +307,25 @@ unittest
  +      intoThis = Reference to the array to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
-    (Array1 meldThis, ref Array2 intoThis) pure nothrow @nogc
+    (Array1 meldThis, ref Array2 intoThis) pure nothrow
 if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     && !is(Array2 == immutable))
 {
-    assert((intoThis.length >= meldThis.length), "Can't meld a larger array into a smaller one");
+    import std.traits : isDynamicArray, isStaticArray;
+
+    static if (isDynamicArray!Array2)
+    {
+        // Ensure there's room for all elements
+        if (meldThis.length > intoThis.length) intoThis.length = meldThis.length;
+    }
+    else static if (isStaticArray!Array2)
+    {
+        assert((intoThis.length >= meldThis.length), "Can't meld a larger array into a smaller static one");
+    }
+    else
+    {
+        static assert(0);
+    }
 
     foreach (immutable i, val; meldThis)
     {
@@ -346,6 +360,15 @@ unittest
     auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
     yarr1.meldInto!(Yes.overwrite)(yarr2);
     assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
+
+    auto harr1 = [ char.init, 'X' ];
+    yarr1.meldInto(harr1);
+    assert((harr1 == [ 'Z', 'X', 'Z', char.init, 'Z' ]), harr1.to!string);
+
+    char[5] harr2 = [ '1', '2', '3', '4', '5' ];
+    char[] harr3;
+    harr2.meldInto(harr3);
+    assert((harr2 == harr3), harr3.to!string);
 }
 
 
