@@ -95,11 +95,15 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     bool shouldShowVersion;
     bool shouldShowSettings;
     bool shouldGenerateAsserts;
+    bool shouldAppendChannels;
 
     bool monochromeFromArgs;
     bool monochromeWasSet;
     bool brightTerminalFromArgs;
     bool brightTerminalWasSet;
+
+    string[] inputChannels;
+    string[] inputHomes;
 
     void boolWrapper(const string setting, const string value)
     {
@@ -137,7 +141,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "i|ident",       "IDENT string", &bot.ident,
             "pass",          "Registration password (not auth or nick services)",
                 &bot.pass,
-            "a|auth",        "Services account login name, if applicable",
+            "auth",          "Services account login name, if applicable",
                 &bot.authLogin,
             "account",       &bot.authLogin,
             "p|authpassword","Services account password", &bot.authPassword,
@@ -150,7 +154,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "H|home",        "Home channels to operate in, comma-separated" ~
                             " (remember to escape or enquote the #s!)", &bot.homes,
             "C|channel",     "Non-home channels to idle in, comma-separated" ~
-                            " (ditto)", &bot.channels,
+                            " (ditto)", &inputChannels,
+            "a",            "Append input homes and channels instead of overriding",
+                            &shouldAppendChannels,
             "s|server",      "Server address", &bot.server.address,
             "P|port",        "Server port", &bot.server.port,
             "settings",      "Show all plugins' settings", &shouldShowSettings,
@@ -171,6 +177,18 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         );
 
         meldSettingsFromFile(bot, settings);
+
+        if (shouldAppendChannels)
+        {
+            if (inputHomes.length) bot.homes ~= inputHomes;
+            if (inputChannels.length) bot.channels ~= inputChannels;
+        }
+        else
+        {
+            if (inputHomes.length) bot.homes = inputHomes;
+            if (inputChannels.length) bot.channels = inputChannels;
+        }
+
         client.parser.bot = bot;
 
         if (monochromeWasSet) settings.monochrome = monochromeFromArgs;
