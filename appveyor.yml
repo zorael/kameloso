@@ -64,26 +64,22 @@ install:
   - dub --version
 
 before_build:
-  - ps: if ($env:arch -eq "x86")
-    {
-      $env:compilersetupargs = "x86";
-      $env:Darch = "x86";
-    }
-    elseif ($env:arch -eq "x64")
-    {
-      $env:compilersetupargs = "amd64";
-      $env:Darch = "x86_64";
-    }
-  - ps: if ($env:DC -eq "dmd")
-    {
-      $env:PATH += ";C:\dmd2\windows\bin;";
-    }
-    elseif ($env:DC -eq "ldc")
-    {
-      $version = $env:DVersion;
-      $env:PATH += ";C:\ldc2-$($version)-windows-x64\bin";
-      $env:DC = "ldc2";
-    }
+  - ps: if($env:arch -eq "x86"){
+            $env:compilersetupargs = "x86";
+            $env:Darch = "x86";
+          }
+        elseif($env:arch -eq "x64"){
+            $env:compilersetupargs = "amd64";
+            $env:Darch = "x86_64";
+        }
+  - ps : if($env:DC -eq "dmd"){
+           $env:PATH += ";C:\dmd2\windows\bin;";
+         }
+         elseif($env:DC -eq "ldc"){
+           $version = $env:DVersion;
+           $env:PATH += ";C:\ldc2-$($version)-windows-x64\bin";
+           $env:DC = "ldc2";
+         }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
   - '"%compilersetup%" %compilersetupargs%'
 
