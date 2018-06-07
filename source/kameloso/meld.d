@@ -42,12 +42,12 @@ import std.traits : isArray, isAssociativeArray;
  +      intoThis = Reference to struct to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
-    (Thing meldThis, ref Thing intoThis) pure nothrow @nogc
+    (Thing meldThis, ref Thing intoThis) pure nothrow
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
     import kameloso.traits : isOfAssignableType;
-    import std.traits : isType;
+    import std.traits : isArray, isSomeString, isType;
 
     if (meldThis == Thing.init)
     {
@@ -113,6 +113,10 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                         {
                             member = meldThis.tupleof[i];
                         }
+                    }
+                    else static if (isArray!T && !isSomeString!T)
+                    {
+                        member ~= meldThis.tupleof[i];
                     }
                     else
                     {
@@ -264,6 +268,17 @@ unittest
     assert((e1.enum_ == EnumThing.Enum.init), e1.enum_.to!string);
     e2.meldInto(e1);
     assert((e1.enum_ == EnumThing.Enum.three), e1.enum_.to!string);
+
+    struct WithArray
+    {
+        string[] arr;
+    }
+
+    WithArray w1, w2;
+    w1.arr = [ "arr", "matey", "I'ma" ];
+    w2.arr = [ "pirate", "stereotype", "unittest" ];
+    w2.meldInto(w1);
+    assert((w1.arr == [ "arr", "matey", "I'ma", "pirate", "stereotype", "unittest" ]), w1.arr.to!string);
 }
 
 
