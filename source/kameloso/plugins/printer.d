@@ -1512,13 +1512,19 @@ void periodically(PrinterPlugin plugin)
     plugin.nextPeriodical = getNextMidnight(now).toUnixTime;
 }
 
+
 // getNextMidnight
 /++
- +  Sets the next timestamp at which to call `periodically` to midnight the next
- +  day.
+ +  Returns a `std.datetime.systime.SysTime` of the following midnight, for use
+ +  with setting the periodical timestamp.
  +
  +  Params:
- +      plugin = The current `PrinterPlugin`.
+ +      now = UNIX timestamp of the base date from which to proceed to the next
+ +          midnight.
+ +
+ +  Returns:
+ +      A `std.datetime.systime.SysTime` of the midnight following the date
+ +      passed as argument.
  +/
 SysTime getNextMidnight(const SysTime now)
 {
@@ -1547,7 +1553,8 @@ unittest
 
 // initialise
 /++
- +  Set the next timestamp to midnight immediately after plugin construction.
+ +  Set the next periodical timestamp to midnight immediately after plugin
+ +  construction.
  +/
 void initialise(PrinterPlugin plugin)
 {
