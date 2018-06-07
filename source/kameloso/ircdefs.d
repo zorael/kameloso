@@ -33,6 +33,7 @@ struct IRCEvent
      +  Some are outright fabrications of ours, like `CHAN` and `QUERY`, to make
      +  things easier for plugins.
      +/
+    pragma(msg, "DustMiteNoRemoveStart");
     enum Type
     {
         UNSET,      /// Invalid `IRCEvent` with no `Type`.
@@ -754,6 +755,7 @@ struct IRCEvent
 
         ERR_NUMERIC_ERR, // = 999
     }
+    pragma(msg, "DustMiteNoRemoveStop");
 
     /*
         /// Run this to generate the Type[n] map.
