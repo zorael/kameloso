@@ -12,16 +12,6 @@ import std.typecons : Flag, No, Yes;
 
 @safe:
 
-version(unittest)
-shared static this()
-{
-    import kameloso.logger : KamelosoLogger;
-
-    // This is technically before settings have been read...
-    logger = new KamelosoLogger;
-}
-
-
 // logger
 /++
  +  Instance of a `kameloso.logger.KamelosoLogger`, providing timestamped and
@@ -126,14 +116,6 @@ struct ThreadMessage
  +  so we do it this way to accomodate for version `Cygwin_` implying both
  +  `Windows` and `Colours`.
  +/
-version(Colours)
-{
-    version = SupportsColours;
-}
-else version (Cygwin_)
-{
-    version = SupportsColours;
-}
 
 
 // CoreSettings
@@ -145,14 +127,7 @@ else version (Cygwin_)
  +/
 struct CoreSettings
 {
-    version(SupportsColours)
-    {
-        bool monochrome = false;  /// Logger monochrome setting.
-    }
-    else
-    {
-        bool monochrome = true;  /// Mainly version Windows.
-    }
+    bool monochrome = true;  /// Mainly version Windows.
 
     /// Flag denoting whether the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
@@ -207,26 +182,10 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
 
     // writeln trusts `lockingTextWriter` so we will too.
 
-    version(Colours)
-    {
-        if (settings.monochrome)
-        {
-            formatObjectsImpl!(printAll, No.coloured, widthArg)
-                (stdout.lockingTextWriter, things);
-        }
-        else
-        {
-            formatObjectsImpl!(printAll, Yes.coloured, widthArg)
-                (stdout.lockingTextWriter, things);
-        }
-    }
-    else
     {
         formatObjectsImpl!(printAll, No.coloured, widthArg)
             (stdout.lockingTextWriter, things);
     }
-
-    version(Cygwin_) stdout.flush();
 }
 
 
@@ -309,8 +268,6 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
         import kameloso.bash : colour;
     }
 
-    // workaround formattedWrite taking Appender by value
-    version(LDC) sink.put(string.init);
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
     enum minimumNameWidth = 16;
@@ -489,119 +446,6 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     }
 }
 
-///
-@system unittest
-{
-    import kameloso.string : has;
-    import std.array : Appender;
-    import std.format : format;
-    import std.stdio;
-
-    struct Struct
-    {
-        string members;
-        int asdf;
-    }
-
-    // Monochrome
-
-    struct StructName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "foo";
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        const(char)[char] cC;
-    }
-
-    StructName s;
-    s.cC = [ 'a':'a', 'b':'b' ];
-    assert('a' in s.cC);
-    assert('b' in s.cC);
-    Appender!(char[]) sink;
-
-    sink.reserve(512);  // ~323
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(s);
-
-    enum structNameSerialised =
-`-- StructName
-     Struct struct_            <struct>
-        int i                   12345
-     string s                  "foo"(3)
-       bool b                   true
-      float f                   3.14
-     double d                   99.9
-     char[] c                 ['a', 'b', 'c'](3)
-     char[] emptyC              [](0)
-   string[] dynA              ["foo", "bar", "baz"](3)
-      int[] iA                [1, 2, 3, 4](4)
- char[char] cC                ['b':'b', 'a':'a'](2)
-
-`;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-    // Adding Settings does nothing
-    alias StructNameSettings = StructName;
-    StructNameSettings so = s;
-    sink.clear();
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(so);
-
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-    // Colour
-    struct StructName2
-    {
-        int int_ = 12_345;
-        string string_ = "foo";
-        bool bool_ = true;
-        float float_ = 3.14f;
-        double double_ = 99.9;
-    }
-
-    version(Colours)
-    {
-        StructName2 s2;
-
-        sink.clear();
-        sink.reserve(256);  // ~239
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2);
-
-        assert((sink.data.length > 12), "Empty sink after coloured fill");
-
-        assert(sink.data.has("-- StructName"));
-        assert(sink.data.has("int_"));
-        assert(sink.data.has("12345"));
-
-        assert(sink.data.has("string_"));
-        assert(sink.data.has(`"foo"`));
-
-        assert(sink.data.has("bool_"));
-        assert(sink.data.has("true"));
-
-        assert(sink.data.has("float_"));
-        assert(sink.data.has("3.14"));
-
-        assert(sink.data.has("double_"));
-        assert(sink.data.has("99.9"));
-
-        // Adding Settings does nothing
-        alias StructName2Settings = StructName2;
-        immutable sinkCopy = sink.data.idup;
-        StructName2Settings s2o;
-
-        sink.clear();
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2o);
-        assert((sink.data == sinkCopy), sink.data);
-    }
-}
-
-
 // scopeguard
 /++
  +  Generates a string mixin of *scopeguards*.
@@ -756,29 +600,6 @@ uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(Number num
     }
 
     return (mod * n);
-}
-
-///
-unittest
-{
-    import std.conv : text;
-
-    immutable n1 = 15.getMultipleOf(4);
-    assert((n1 == 16), n1.text);
-
-    immutable n2 = 16.getMultipleOf!(Yes.alwaysOneUp)(4);
-    assert((n2 == 20), n2.text);
-
-    immutable n3 = 16.getMultipleOf(4);
-    assert((n3 == 16), n3.text);
-    immutable n4 = 0.getMultipleOf(5);
-    assert((n4 == 0), n4.text);
-
-    immutable n5 = 1.getMultipleOf(1);
-    assert((n5 == 1), n5.text);
-
-    immutable n6 = 1.getMultipleOf!(Yes.alwaysOneUp)(1);
-    assert((n6 == 2), n6.text);
 }
 
 
@@ -942,18 +763,6 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
-        version(Web)
-        {
-            plugins ~= new WebtitlesPlugin(state);
-            plugins ~= new RedditPlugin(state);
-            plugins ~= new BashQuotesPlugin(state);
-        }
-
-        version(Posix)
-        {
-            plugins ~= new PipelinePlugin(state);
-        }
-
         string[][string] allInvalidEntries;
 
         foreach (plugin; plugins)
@@ -1067,21 +876,12 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
     string pre;
     string post;
 
-    version(Colours)
-    {
-        import kameloso.bash : colour;
-        pre = colourCode.colour;
-        post = BashForeground.default_.colour;
-    }
-
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         pre,
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.built,
         cast(string)KamelosoInfo.source,
         post);
-
-    version(Cygwin_) stdout.flush();
 }
 
 
@@ -1234,22 +1034,6 @@ public:
     mixin Proxy!thing;
 }
 
-///
-unittest
-{
-    struct Foo {}
-    Foo foo;
-    Foo bar;
-
-    Labeled!(Foo,int)[] arr;
-
-    arr ~= labeled(foo, 1);
-    arr ~= labeled(bar, 2);
-
-    assert(arr[0].id == 1);
-    assert(arr[1].id == 2);
-}
-
 
 // labeled
 /++
@@ -1279,15 +1063,6 @@ auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
     return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
 }
 
-///
-unittest
-{
-    auto foo = labeled("FOO", "foo");
-    assert(is(typeof(foo) == Labeled!(string, string)));
-
-    assert(foo.thing == "FOO");
-    assert(foo.id == "foo");
-}
 
 
 // encode64
@@ -1308,20 +1083,6 @@ string encode64(const string line) @safe pure nothrow
     return Base64.encode(line.representation);
 }
 
-///
-unittest
-{
-    {
-        immutable password = "harbl snarbl 12345";
-        immutable encoded = encode64(password);
-        assert((encoded == "aGFyYmwgc25hcmJsIDEyMzQ1"), encoded);
-    }
-    {
-        immutable string password;
-        immutable encoded = encode64(password);
-        assert(!encoded.length, encoded);
-    }
-}
 
 
 // decode64
@@ -1338,19 +1099,4 @@ string decode64(const string encoded) @safe pure
 {
     import std.base64 : Base64;
     return (cast(char[])Base64.decode(encoded)).idup;
-}
-
-///
-unittest
-{
-    {
-        immutable password = "base64:aGFyYmwgc25hcmJsIDEyMzQ1";
-        immutable decoded = decode64(password[7..$]);
-        assert((decoded == "harbl snarbl 12345"), decoded);
-    }
-    {
-        immutable password = "base64:";
-        immutable decoded = decode64(password[7..$]);
-        assert(!decoded.length, decoded);
-    }
 }

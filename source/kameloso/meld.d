@@ -136,137 +136,6 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     }
 }
 
-///
-unittest
-{
-    import std.conv : to;
-
-    struct Foo
-    {
-        string abc;
-        string def;
-        int i;
-        float f;
-    }
-
-    Foo f1; // = new Foo;
-    f1.abc = "ABC";
-    f1.def = "DEF";
-
-    Foo f2; // = new Foo;
-    f2.abc = "this won't get copied";
-    f2.def = "neither will this";
-    f2.i = 42;
-    f2.f = 3.14f;
-
-    f2.meldInto(f1);
-
-    with (f1)
-    {
-        assert((abc == "ABC"), abc);
-        assert((def == "DEF"), def);
-        assert((i == 42), i.to!string);
-        assert((f == 3.14f), f.to!string);
-    }
-
-    Foo f3; // new Foo;
-    f3.abc = "abc";
-    f3.def = "def";
-    f3.i = 100_135;
-    f3.f = 99.9f;
-
-    Foo f4; // new Foo;
-    f4.abc = "OVERWRITTEN";
-    f4.def = "OVERWRITTEN TOO";
-    f4.i = 0;
-    f4.f = 0.1f;
-
-    f4.meldInto!(Yes.overwrite)(f3);
-
-    with (f3)
-    {
-        assert((abc == "OVERWRITTEN"), abc);
-        assert((def == "OVERWRITTEN TOO"), def);
-        assert((i == 100_135), i.to!string); // 0 is int.init
-        assert((f == 0.1f), f.to!string);
-    }
-
-    struct User
-    {
-        enum Class { anyone, blacklist, whitelist, admin }
-        string nickname;
-        string alias_;
-        string ident;
-        string address;
-        string login;
-        bool special;
-        Class class_;
-    }
-
-    User one;
-    with (one)
-    {
-        nickname = "kameloso";
-        ident = "NaN";
-        address = "herpderp.net";
-        special = false;
-        class_ = User.Class.whitelist;
-    }
-
-    User two;
-    with (two)
-    {
-        nickname = "kameloso^";
-        alias_ = "Kameloso";
-        address = "asdf.org";
-        login = "kamelusu";
-        special = true;
-        class_ = User.Class.blacklist;
-    }
-
-    User twoCopy = two;
-
-    one.meldInto!(No.overwrite)(two);
-    with (two)
-    {
-        assert((nickname == "kameloso^"), nickname);
-        assert((alias_ == "Kameloso"), alias_);
-        assert((ident == "NaN"), ident);
-        assert((address == "asdf.org"), address);
-        assert((login == "kamelusu"), login);
-        assert(special);
-        assert((class_ == User.Class.whitelist), class_.to!string);
-    }
-
-    one.class_ = User.Class.blacklist;
-
-    one.meldInto!(Yes.overwrite)(twoCopy);
-    with (twoCopy)
-    {
-        assert((nickname == "kameloso"), nickname);
-        assert((alias_ == "Kameloso"), alias_);
-        assert((ident == "NaN"), ident);
-        assert((address == "herpderp.net"), address);
-        assert((login == "kamelusu"), login);
-        assert(!special);
-        assert((class_ == User.Class.blacklist), class_.to!string);
-    }
-
-    struct EnumThing
-    {
-        enum Enum { unset, one, two, three }
-        Enum enum_;
-    }
-
-    EnumThing e1;
-    EnumThing e2;
-    e2.enum_ = EnumThing.Enum.three;
-    assert((e1.enum_ == EnumThing.Enum.init), e1.enum_.to!string);
-    e2.meldInto(e1);
-    assert((e1.enum_ == EnumThing.Enum.three), e1.enum_.to!string);
-}
-
-
 // meldInto (array)
 /++
  +  Takes two arrays and melds them together, making a union of the two.
@@ -316,22 +185,6 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     }
 }
 
-///
-unittest
-{
-    import std.conv : to;
-    import std.typecons : Yes, No;
-
-    auto arr1 = [ 123, 0, 789, 0, 456, 0 ];
-    auto arr2 = [ 0, 456, 0, 123, 0, 789 ];
-    arr1.meldInto!(No.overwrite)(arr2);
-    assert((arr2 == [ 123, 456, 789, 123, 456, 789 ]), arr2.to!string);
-
-    auto yarr1 = [ 'Z', char.init, 'Z', char.init, 'Z' ];
-    auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
-    yarr1.meldInto!(Yes.overwrite)(yarr2);
-    assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
-}
 
 
 // meldInto
@@ -381,26 +234,5 @@ if (isAssociativeArray!AA)
     }
 }
 
-///
-unittest
-{
-    bool[string] aa1;
-    bool[string] aa2;
-
-    aa1["a"] = true;
-    aa1["b"] = false;
-    aa2["c"] = true;
-    aa2["d"] = false;
-
-    assert("a" in aa1);
-    assert("b" in aa1);
-    assert("c" in aa2);
-    assert("d" in aa2);
-
-    aa1.meldInto(aa2);
-
-    assert("a" in aa2);
-    assert("b" in aa2);
-}
 
 

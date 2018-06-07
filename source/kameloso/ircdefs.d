@@ -1110,29 +1110,6 @@ struct IRCUser
         if (address == "*") address = string.init;
     }
 
-    ///
-    unittest
-    {
-        {
-            immutable user = IRCUser("nickname!~ident@address");
-            assert((user.nickname == "nickname"), user.nickname);
-            assert((user.ident == "~ident"), user.ident);
-            assert((user.address == "address"), user.address);
-        }
-        {
-            immutable user = IRCUser("*!~ident@address");
-            assert(!user.nickname.length, user.nickname);
-            assert((user.ident == "~ident"), user.ident);
-            assert((user.address == "address"), user.address);
-        }
-        {
-            immutable user = IRCUser("*!*@*");
-            assert(!user.nickname.length, user.nickname);
-            assert(!user.ident.length, user.ident);
-            assert(!user.address.length, user.address);
-        }
-    }
-
     /++
      +  Create a new `IRCUser` inheriting passed `nickname`, `ident`, and
      +  `address` strings.
@@ -1158,22 +1135,6 @@ struct IRCUser
     {
         import std.string : indexOf;
         return !nickname.length && (address.indexOf('.') != -1);
-    }
-
-    ///
-    unittest
-    {
-        IRCUser user;
-
-        user.address = "blah.freenode.net";
-        assert(user.isServer);
-
-        user.nickname = "foo";
-        assert(!user.isServer);
-
-        user.nickname = string.init;
-        user.address = "nodots";
-        assert(!user.isServer);  // unsure what to even make of no-dot addresses
     }
 
 
@@ -1246,24 +1207,7 @@ struct IRCUser
         return matchesByMask(IRCUser(userstring));
     }
 
-    ///
-    unittest
-    {
-        IRCUser first = IRCUser("kameloso!NaN@wopkfoewopk.com");
 
-        IRCUser second = IRCUser("*!*@*");
-        assert(first.matchesByMask(second));
-
-        IRCUser third = IRCUser("kame*!*@*.com");
-        assert(first.matchesByMask(third));
-
-        IRCUser fourth = IRCUser("*loso!*@wop*");
-        assert(first.matchesByMask(fourth));
-
-        assert(second.matchesByMask(first));
-        assert(third.matchesByMask(first));
-        assert(fourth.matchesByMask(first));
-    }
 }
 
 

@@ -88,8 +88,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     import std.getopt;
     import std.stdio : stdout, writeln;
 
-    version(Cygwin_)
-    scope(exit) stdout.flush();
 
     bool shouldWriteConfig;
     bool shouldShowVersion;

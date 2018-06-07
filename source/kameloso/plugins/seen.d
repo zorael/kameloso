@@ -627,7 +627,6 @@ void onCommandPrintSeen(SeenPlugin plugin)
     import std.stdio : stdout, writeln;
 
     writeln(JSONValue(plugin.seenUsers).toPrettyString);
-    version(Cygwin_) stdout.flush();
 }
 
 
@@ -697,45 +696,7 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
 
     scope(exit)
     {
-        version(Colours)
-        {
-            if (!plugin.state.settings.monochrome)
-            {
-                import kameloso.bash : BashForeground;
-
-                import kameloso.bash : BashReset, colour;
-                import kameloso.logger : KamelosoLogger;
-                import std.array : Appender;
-                import std.conv : to;
-                import std.experimental.logger : LogLevel;
-
-                Appender!string sink;
-                sink.reserve(64);  // ~61
-
-                immutable infotint = plugin.state.settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                immutable logtint = plugin.state.settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                sink.colour(logtint);
-                sink.put("Seen users loaded, currently ");
-                sink.colour(infotint);
-                sink.put(aa.length.to!string);
-                sink.colour(logtint);
-                sink.put(" users seen.");
-                sink.colour(BashReset.all);
-
-                logger.trace(sink.data);
-            }
-            else
-            {
-                logger.logf("Seen users loaded, currently %s users seen.", aa.length);
-            }
-        }
-        else
+        
         {
             logger.logf("Seen users loaded, currently %s users seen.", aa.length);
         }

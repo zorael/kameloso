@@ -11,9 +11,9 @@ import std.meta : AliasSeq;
  +  Publically import all plugins so that only `kameloso.plugins` need be
  +  imported.
  +/
-public import kameloso.plugins.admin;
-public import kameloso.plugins.chatbot;
 public import kameloso.plugins.common;
+/*public import kameloso.plugins.admin;
+public import kameloso.plugins.chatbot;
 public import kameloso.plugins.connect;
 public import kameloso.plugins.ctcp;
 public import kameloso.plugins.notes;
@@ -24,21 +24,8 @@ public import kameloso.plugins.seen;
 public import kameloso.plugins.chanqueries;
 public import kameloso.plugins.persistence;
 public import kameloso.plugins.automode;
-public import kameloso.plugins.quotes;
+public import kameloso.plugins.quotes;*/
 
-version(Posix)
-{
-    // Implicitly enabled if imported.
-    public import kameloso.plugins.pipeline;
-}
-
-version(Web)
-{
-    // Implicitly enabled if imported.
-    public import kameloso.plugins.webtitles;
-    public import kameloso.plugins.bashquotes;
-    public import kameloso.plugins.reddit;
-}
 
 /++
  +  List of enabled plugins. Add and remove to enable and disable.
@@ -47,8 +34,8 @@ version(Web)
  +  To completely omit a plugin you will either have to compile the bot
  +  manually, or add an `__EOF__` at the top of the plugin source file.
  +/
-public alias EnabledPlugins = AliasSeq!(
-    TwitchService, // Must be before PersistenceService
+public alias EnabledPlugins = AliasSeq!();
+/*    TwitchService, // Must be before PersistenceService
     PersistenceService, // Should be early
     PrinterPlugin,  // Might as well be early
     ConnectService,
@@ -62,3 +49,4 @@ public alias EnabledPlugins = AliasSeq!(
     AutomodePlugin,
     QuotesPlugin,
 );
+*/

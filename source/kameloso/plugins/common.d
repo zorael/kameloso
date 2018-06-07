@@ -257,67 +257,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     }
 }
 
-unittest
-{
-    WHOISRequest[] queue;
 
-    IRCEvent event;
-    event.target.nickname = "kameloso";
-    event.content = "hirrpp";
-    event.sender.nickname = "zorael";
-    PrivilegeLevel pl = PrivilegeLevel.admin;
-
-    // delegate()
-
-    int i = 5;
-
-    void dg()
-    {
-        ++i;
-    }
-
-    WHOISRequest reqdg = new WHOISRequestImpl!(void delegate())(event, pl, &dg);
-    queue ~= reqdg;
-
-    with (reqdg.event)
-    {
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "hirrpp"), content);
-        assert((sender.nickname == "zorael"), sender.nickname);
-    }
-
-    assert(i == 5);
-    reqdg.trigger();
-    assert(i == 6);
-
-    // function()
-
-    static void fn() { }
-
-    auto reqfn = whoisRequest(event, pl, &fn);
-    queue ~= reqfn;
-
-    // delegate(ref IRCEvent)
-
-    void dg2(ref IRCEvent thisEvent)
-    {
-        thisEvent.content = "blah";
-    }
-
-    auto reqdg2 = whoisRequest(event, pl, &dg2);
-    queue ~= reqdg2;
-
-    assert((reqdg2.event.content == "hirrpp"), event.content);
-    reqdg2.trigger();
-    assert((reqdg2.event.content == "blah"), event.content);
-
-    // function(IRCEvent)
-
-    static void fn2(IRCEvent thisEvent) { }
-
-    auto reqfn2 = whoisRequest(event, pl, &fn2);
-    queue ~= reqfn2;
-}
 
 
 // whoisRequest
@@ -666,45 +606,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     }
 }
 
-///
-unittest
-{
-    import std.conv : text;
-    import std.datetime.systime : Clock;
 
-    IRCPluginState state;
-    IRCEvent event;
-
-    event.type = IRCEvent.Type.CHAN;
-    event.sender.nickname = "zorael";
-
-    immutable res1 = state.filterUser(event);
-    assert((res1 == FilterResult.whois), res1.text);
-
-    event.sender.account = "zorael";
-    state.bot.admins = [ "zorael" ];
-
-    immutable res2 = state.filterUser(event);
-    assert((res2 == FilterResult.pass), res2.text);
-
-    state.bot.admins = [ "harbl" ];
-    event.sender.class_ = IRCUser.Class.whitelist;
-
-    immutable res3 = state.filterUser(event);
-    assert((res3 == FilterResult.pass), res3.text);
-
-    event.sender.class_ = IRCUser.Class.anyone;
-    event.sender.lastWhois = Clock.currTime.toUnixTime;
-
-    immutable res4 = state.filterUser(event);
-    assert((res4 == FilterResult.fail), res4.text);
-
-    event.sender.class_ = IRCUser.Class.blacklist;
-    event.sender.lastWhois = long.init;
-
-    immutable res5 = state.filterUser(event);
-    assert((res5 == FilterResult.fail), res5.text);
-}
 
 
 // IRCPluginImpl
@@ -792,7 +694,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 import kameloso.string : enumToString;
                 import std.stdio : writeln, writefln;
-                version(Cygwin_) import std.stdio : flush;
             }
 
             udaloop:
@@ -828,7 +729,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("-- ", name);
-                    version(Cygwin_) stdout.flush();
                 }
 
                 static if (hasUDA!(fun, ChannelPolicy))
@@ -844,7 +744,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...ChannelPolicy.", policy.enumToString);
-                    version(Cygwin_) stdout.flush();
                 }
 
                 with (ChannelPolicy)
@@ -862,7 +761,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writeln("...ignore invalid channel ", event.channel);
-                            version(Cygwin_) stdout.flush();
                         }
 
                         // channel policy does not match
@@ -895,7 +793,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         static if (verbose)
                         {
                             writefln(`...BotCommand "%s"`, commandUDA.string_);
-                            version(Cygwin_) stdout.flush();
                         }
 
                         // Reset between iterations
@@ -906,7 +803,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writeln("...policy doesn't match; continue next BotCommand");
-                                version(Cygwin_) stdout.flush();
                             }
 
                             continue;  // next BotCommand UDA
@@ -937,7 +833,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writeln("...command matches!");
-                                version(Cygwin_) stdout.flush();
                             }
 
                             mutEvent.aux = thisCommand;
@@ -969,7 +864,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                 static if (verbose)
                                 {
                                     writeln("...policy doesn't match; continue next BotRegex");
-                                    version(Cygwin_) stdout.flush();
                                 }
 
                                 continue;  // next BotRegex UDA
@@ -1018,7 +912,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...neither BotCommand nor BotRegex matched; continue funloop");
-                        version(Cygwin_) stdout.flush();
                     }
 
                     if (!mutEvent.aux.length) return Next.continue_; // next fun
@@ -1077,7 +970,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     static if (verbose)
                     {
                         writeln("...PrivilegeLevel.", privilegeLevel.enumToString);
-                        version(Cygwin_) stdout.flush();
                     }
 
                     with (PrivilegeLevel)
@@ -1102,7 +994,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     writefln("...%s passed privilege check but isn't admin " ~
                                         "when admin is what we want; continue",
                                         mutEvent.sender.nickname);
-                                    version(Cygwin_) stdout.flush();
                                 }
                                 return Next.continue_;
                             }
@@ -1118,7 +1009,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static if (verbose)
                             {
                                 writefln("...%s WHOIS", typeof(this).stringof);
-                                version(Cygwin_) stdout.flush();
                             }
 
                             static if (is(Params : AliasSeq!IRCEvent) ||

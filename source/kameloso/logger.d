@@ -27,10 +27,6 @@ final class KamelosoLogger : Logger
     import std.experimental.logger : LogLevel;
     import std.stdio : stdout;
 
-    version(Colours)
-    {
-        import kameloso.bash : colour;
-    }
 
     /// Logger colours to use with a dark terminal.
     static immutable BashForeground[193] logcoloursDark  =
@@ -79,13 +75,6 @@ final class KamelosoLogger : Logger
 
         sink.put(brightTerminal);
 
-        version(Colours)
-        {
-            if (!monochrome)
-            {
-                sink.colour(brightTerminal ? BashForeground.black : BashForeground.white);
-            }
-        }
 
         sink.put('[');
         sink.put((cast(DateTime)timestamp).timeOfDay.toString());
@@ -93,10 +82,6 @@ final class KamelosoLogger : Logger
 
         if (monochrome) return;
 
-        version(Colours)
-        {
-            sink.colour(brightTerminal ? logcoloursBright[logLevel] : logcoloursDark[logLevel]);
-        }
     }
 
     /// ditto
@@ -125,15 +110,6 @@ final class KamelosoLogger : Logger
     /// Outputs the tail of a logger message.
     protected void finishLogMsg(Sink)(auto ref Sink sink) const
     {
-        version(Colours)
-        {
-            if (!monochrome)
-            {
-                // Reset.blink in case a fatal message was thrown
-                sink.colour(BashForeground.default_, BashReset.blink);
-            }
-        }
-
         static if (__traits(hasMember, Sink, "data"))
         {
             writeln(sink.data);
@@ -149,42 +125,5 @@ final class KamelosoLogger : Logger
     override protected void finishLogMsg() @trusted const
     {
         finishLogMsg(stdout.lockingTextWriter);
-        version(Cygwin_) stdout.flush();
-    }
-}
-
-///
-unittest
-{
-    import std.experimental.logger : LogLevel;
-
-    Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
-
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");  // crashes the program
-    log_.trace("log: trace");
-
-    version (Colours)
-    {
-        log_ = new KamelosoLogger(LogLevel.all, false, true);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
-
-        log_ = new KamelosoLogger(LogLevel.all, false, false);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
     }
 }

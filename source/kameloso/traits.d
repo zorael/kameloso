@@ -39,25 +39,7 @@ template isConfigurableVariable(alias var)
     }
 }
 
-///
-unittest
-{
-    int i;
-    char[] c;
-    char[8] c2;
-    struct S {}
-    class C {}
-    enum E { foo }
-    E e;
 
-    static assert(isConfigurableVariable!i);
-    static assert(isConfigurableVariable!c);
-    static assert(!isConfigurableVariable!c2); // should static arrays pass?
-    static assert(!isConfigurableVariable!S);
-    static assert(!isConfigurableVariable!C);
-    static assert(!isConfigurableVariable!E);
-    static assert(isConfigurableVariable!e);
-}
 
 
 // longestMemberName
@@ -117,31 +99,7 @@ if (Things.length > 0)
  +/
 alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 
-///
-unittest
-{
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsInvalid;
-        @Hidden float likewiseWayLongerButInvalid;
-    }
 
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-
-        @Unconfigurable
-        @Hidden
-        long looooooooooooooooooooooong;
-    }
-
-    static assert(longestMemberName!Foo == "veryLongName");
-    static assert(longestMemberName!Bar == "evenLongerName");
-    static assert(longestMemberName!(Foo, Bar) == "evenLongerName");
-}
 
 
 // longestUnconfigurableMemberName
@@ -157,31 +115,7 @@ unittest
  +/
 alias longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
 
-///
-unittest
-{
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-        @Unconfigurable string veryVeryVeryLongNameThatIsValidNow;
-        @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
-    }
 
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-
-        @Unconfigurable
-        @Hidden
-        long looooooooooooooooooooooong;
-    }
-
-    static assert(longestUnconfigurableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
-    static assert(longestUnconfigurableMemberName!Bar == "evenLongerName");
-    static assert(longestUnconfigurableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
-}
 
 
 // longestMemberTypeNameImpl
@@ -253,19 +187,7 @@ if (Things.length > 0)
  +/
 alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
 
-///
-unittest
-{
-    struct S1
-    {
-        string s;
-        char[][string] css;
-        @Unconfigurable string[][string] ss;
-    }
 
-    enum longestConfigurable = longestMemberTypeName!S1;
-    assert((longestConfigurable == "char[][string]"), longestConfigurable);
-}
 
 // longestUnconfigurableMemberTypeName
 /++
@@ -280,19 +202,6 @@ unittest
  +/
 alias longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
 
-///
-unittest
-{
-    struct S1
-    {
-        string s;
-        char[][string] css;
-        @Unconfigurable string[][string] ss;
-    }
-
-    enum longestUnconfigurable = longestUnconfigurableMemberTypeName!S1;
-    assert((longestUnconfigurable == "string[][string]"), longestUnconfigurable);
-}
 
 
 // isOfAssignableType
@@ -315,35 +224,7 @@ if (isType!T)
 /// Ditto
 enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
 
-///
-unittest
-{
-    struct Foo
-    {
-        string bar, baz;
-    }
 
-    class Bar
-    {
-        int i;
-    }
-
-    void boo(int i) {}
-
-    enum Baz { abc, def, ghi }
-    Baz baz;
-
-    assert(isOfAssignableType!int);
-    assert(!isOfAssignableType!(const int));
-    assert(!isOfAssignableType!(immutable int));
-    assert(isOfAssignableType!(string[]));
-    assert(isOfAssignableType!Foo);
-    assert(isOfAssignableType!Bar);
-    assert(!isOfAssignableType!boo);  // room for improvement: @property
-    assert(isOfAssignableType!Baz);
-    assert(!isOfAssignableType!baz);
-    assert(isOfAssignableType!string);
-}
 
 
 // isTrulyString
@@ -354,16 +235,6 @@ unittest
  +/
 enum isTrulyString(S) = is(S == string) || is(S == dstring) || is(S == wstring);
 
-///
-unittest
-{
-    assert(isTrulyString!string);
-    assert(isTrulyString!dstring);
-    assert(isTrulyString!wstring);
-    assert(!isTrulyString!(char[]));
-    assert(!isTrulyString!(dchar[]));
-    assert(!isTrulyString!(wchar[]));
-}
 
 
 // UnqualArray
@@ -377,25 +248,7 @@ if (!isAssociativeArray!QualType)
     alias UnqualArray = Unqual!QualType[];
 }
 
-///
-unittest
-{
-    alias ConstStrings = const(string)[];
-    alias UnqualStrings = UnqualArray!ConstStrings;
-    static assert(is(UnqualStrings == string[]));
 
-    alias ImmChars = string;
-    alias UnqualChars = UnqualArray!ImmChars;
-    static assert(is(UnqualChars == char[]));
-
-    alias InoutBools = inout(bool)[];
-    alias UnqualBools = UnqualArray!InoutBools;
-    static assert(is(UnqualBools == bool[]));
-
-    alias ConstChars = const(char)[];
-    alias UnqualChars2 = UnqualArray!ConstChars;
-    static assert(is(UnqualChars2 == char[]));
-}
 
 
 // UnqualArray
@@ -409,25 +262,7 @@ if (!isArray!QualElem)
     alias UnqualArray = Unqual!QualElem[Unqual!QualKey];
 }
 
-///
-unittest
-{
-    alias ConstStringAA = const(string)[int];
-    alias UnqualStringAA = UnqualArray!ConstStringAA;
-    static assert (is(UnqualStringAA == string[int]));
 
-    alias ImmIntAA = immutable(int)[char];
-    alias UnqualIntAA = UnqualArray!ImmIntAA;
-    static assert(is(UnqualIntAA == int[char]));
-
-    alias InoutBoolAA = inout(bool)[long];
-    alias UnqualBoolAA = UnqualArray!InoutBoolAA;
-    static assert(is(UnqualBoolAA == bool[long]));
-
-    alias ConstCharAA = const(char)[string];
-    alias UnqualCharAA = UnqualArray!ConstCharAA;
-    static assert(is(UnqualCharAA == char[string]));
-}
 
 
 // UnqualArray
@@ -448,25 +283,7 @@ if (isArray!QualElem)
     }
 }
 
-///
-unittest
-{
-    alias ConstStringArrays = const(string[])[int];
-    alias UnqualStringArrays = UnqualArray!ConstStringArrays;
-    static assert (is(UnqualStringArrays == string[][int]));
 
-    alias ImmIntArrays = immutable(int[])[char];
-    alias UnqualIntArrays = UnqualArray!ImmIntArrays;
-    static assert(is(UnqualIntArrays == int[][char]));
-
-    alias InoutBoolArrays = inout(bool)[][long];
-    alias UnqualBoolArrays = UnqualArray!InoutBoolArrays;
-    static assert(is(UnqualBoolArrays == bool[][long]));
-
-    alias ConstCharArrays = const(char)[][string];
-    alias UnqualCharArrays = UnqualArray!ConstCharArrays;
-    static assert(is(UnqualCharArrays == char[][string]));
-}
 
 
 // isStruct

@@ -1163,86 +1163,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 }
 
 
-// postparseSanityCheck
-/++
- +  Checks for some specific erroneous edge cases in an
- +  `kameloso.ircdefs.IRCEvent`, complains about all of them and corrects some.
- +
- +  This is one of the last remaining uses of `logger` in this module. If we
- +  don't compile this in we're closer to a library.
- +
- +  Params:
- +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
- +          on.
- +/
-version(PostParseSanityCheck)
-void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
-{
-    import kameloso.common : logger, printObject;
-    import kameloso.string : beginsWith;
-    import std.stdio : writeln;
-
-    // Unsure if it's wrong to mark as trusted, but we're only using
-    // stdout.flush, which surely *must* be trusted if writeln to stdout is?
-    version(Cygwin_) import std.stdio : stdout;
-
-    if (event.target.nickname.has(' ') || event.channel.has(' '))
-    {
-        writeln();
-        logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
-        printObject(event);
-        logger.warning("--------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
-    }
-    else if (event.target.nickname.beginsWith('#') &&
-        (event.type != IRCEvent.Type.ERR_NOSUCHNICK) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFWHOIS))
-    {
-        writeln();
-        logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
-        printObject(event);
-        logger.warning("------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
-    }
-    else if (event.channel.length &&
-        !parser.bot.server.chantypes.has(event.channel[0]) &&
-        (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
-        (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFNAMES) &&
-        (event.type != IRCEvent.Type.RPL_LIST)) // Curious
-    {
-        writeln();
-        logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
-        printObject(event);
-        logger.warning("------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
-    }
-
-    if (event.target.nickname == parser.bot.nickname)
-    {
-        with (IRCEvent.Type)
-        switch (event.type)
-        {
-        case MODE:
-        case QUERY:
-        case JOIN:
-        case SELFNICK:
-        case RPL_WHOREPLY:
-        case RPL_LOGGEDIN:
-            break;
-
-        default:
-            event.target.nickname = string.init;
-            break;
-        }
-    }
-}
-
 
 // isSpecial
 /++
@@ -1974,13 +1894,6 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
 
-    version(PostParseSanityCheck)
-    {
-        // Final pass: sanity check. This verifies some fields and gives
-        // meaningful error messages if something doesn't look right.
-        parser.postparseSanityCheck(event);
-    }
-
     return event;
 }
 
@@ -2033,27 +1946,6 @@ string decodeIRCv3String(const string line)
         .replaceAll(slashes, `\`);
 
     return (replaced[$-1] == '\\') ? replaced[0..$-1] : replaced;
-}
-
-///
-unittest
-{
-    immutable s1 = decodeIRCv3String(`kameloso\sjust\ssubscribed\swith\sa\s` ~
-        `$4.99\ssub.\skameloso\ssubscribed\sfor\s40\smonths\sin\sa\srow!`);
-    assert((s1 == "kameloso just subscribed with a $4.99 sub. " ~
-        "kameloso subscribed for 40 months in a row!"), s1);
-
-    immutable s2 = decodeIRCv3String(`stop\sspamming\scaps,\sautomated\sby\sNightbot`);
-    assert((s2 == "stop spamming caps, automated by Nightbot"), s2);
-
-    immutable s3 = decodeIRCv3String(`\:__\:`);
-    assert((s3 == ";__;"), s3);
-
-    immutable s4 = decodeIRCv3String(`\\o/ \\o\\ /o/ ~o~`);
-    assert((s4 == `\o/ \o\ /o/ ~o~`), s4);
-
-    immutable s5 = decodeIRCv3String(`This\sis\sa\stest\`);
-    assert((s5 == "This is a test"), s5);
 }
 
 
@@ -2165,49 +2057,6 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
     }
 }
 
-unittest
-{
-    IRCParser parser;
-
-    IRCEvent e1;
-    with (e1)
-    {
-        raw = ":Q!TheQBot@CServe.quakenet.org NOTICE kameloso :You are now logged in as kameloso.";
-        string slice = raw[1..$];  // mutable
-        parser.parsePrefix(e1, slice);
-        assert(parser.isFromAuthService(e1));
-    }
-
-    IRCEvent e2;
-    with (e2)
-    {
-        raw = ":NickServ!NickServ@services. NOTICE kameloso :This nickname is registered.";
-        string slice = raw[1..$];
-        parser.parsePrefix(e2, slice);
-        assert(parser.isFromAuthService(e2));
-    }
-
-    IRCEvent e3;
-    with (e3)
-    {
-        parser.bot.server.address = "irc.rizon.net";
-        parser.bot.server.resolvedAddress = "irc.uworld.se";
-        raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
-        string slice = raw[1..$];
-        parser.parsePrefix(e3, slice);
-        assert(parser.isFromAuthService(e3));
-    }
-
-    // Enabling this stops us from being alerted of unknown services
-    /*IRCEvent e4;
-    with (e4)
-    {
-        raw = ":zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :sudo privmsg zorael :derp";
-        string slice = raw[1..$];
-        parser.parsePrefix(e4, slice);
-        assert(!parser.isFromAuthService(e4));
-    }*/
-}
 
 
 // isValidChannel
@@ -2273,24 +2122,6 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
     return false;
 }
 
-///
-unittest
-{
-    IRCServer s;
-    assert("#channelName".isValidChannel(s));
-    assert("&otherChannel".isValidChannel(s));
-    assert("##freenode".isValidChannel(s));
-    assert(!"###froonode".isValidChannel(s));
-    assert(!"#not a channel".isValidChannel(s));
-    assert(!"notAChannelEither".isValidChannel(s));
-    assert(!"#".isValidChannel(s));
-    assert(!"".isValidChannel(s));
-    assert(!"##".isValidChannel(s));
-    assert("#d".isValidChannel(s));
-    assert("#uk".isValidChannel(s));
-    assert(!"###".isValidChannel(s));
-    assert(!"#a#".isValidChannel(s));
-}
 
 
 // isValidNickname
@@ -2331,50 +2162,6 @@ bool isValidNickname(const string nickname, const IRCServer server)
     return true;
 }
 
-///
-unittest
-{
-    import std.range : repeat;
-    import std.conv : to;
-
-    IRCServer s;
-
-    const validNicknames =
-    [
-        "kameloso",
-        "kameloso^",
-        "zorael-",
-        "hirr{}",
-        "asdf`",
-        "[afk]me",
-        "a-zA-Z0-9",
-        `\`,
-    ];
-
-    const invalidNicknames =
-    [
-        "",
-        "X".repeat(s.maxNickLength+1).to!string,
-        "åäöÅÄÖ",
-        "\n",
-        "¨",
-        "@pelle",
-        "+calvin",
-        "&hobbes",
-        "#channel",
-        "$deity",
-    ];
-
-    foreach (nickname; validNicknames)
-    {
-        assert(nickname.isValidNickname(s), nickname);
-    }
-
-    foreach (nickname; invalidNicknames)
-    {
-        assert(!nickname.isValidNickname(s), nickname);
-    }
-}
 
 
 // isValidNicknameCharacter
@@ -2431,20 +2218,6 @@ bool isValidNicknameCharacter(const char c)
     }
 }
 
-///
-unittest
-{
-    {
-        immutable line = "abcDEFghi0{}29304_[]`\\^|---";
-        foreach (char c; line)
-        {
-            assert(c.isValidNicknameCharacter, c ~ "");
-        }
-    }
-
-    assert(!(' '.isValidNicknameCharacter));
-}
-
 
 // stripModesign
 /++
@@ -2488,41 +2261,6 @@ string stripModesign(const IRCServer server, const string nickname,
     return nickname[i..$];
 }
 
-///
-unittest
-{
-    IRCServer server;
-    server.prefixchars =
-    [
-        '@' : 'o',
-        '+' : 'v',
-        '%' : 'h',
-    ];
-
-    {
-        immutable signed = "@kameloso";
-        string signs;
-        immutable nickname = server.stripModesign(signed, signs);
-        assert((nickname == "kameloso"), nickname);
-        assert((signs == "@"), signs);
-    }
-
-    {
-        immutable signed = "kameloso";
-        string signs;
-        immutable nickname = server.stripModesign(signed, signs);
-        assert((nickname == "kameloso"), nickname);
-        assert(!signs.length, signs);
-    }
-
-    {
-        immutable signed = "@+kameloso";
-        string signs;
-        immutable nickname = server.stripModesign(signed, signs);
-        assert((nickname == "kameloso"), nickname);
-        assert((signs == "@+"), signs);
-    }
-}
 
 
 // stripModesign
@@ -2545,23 +2283,6 @@ string stripModesign(const IRCServer server, const string nickname) pure nothrow
     return stripModesign(server, nickname, nothing);
 }
 
-///
-unittest
-{
-    IRCServer server;
-    server.prefixchars =
-    [
-        '@' : 'o',
-        '+' : 'v',
-        '%' : 'h',
-    ];
-
-    {
-        immutable signed = "@+kameloso";
-        immutable nickname = server.stripModesign(signed);
-        assert((nickname == "kameloso"), nickname);
-    }
-}
 
 
 // IRCParser
@@ -2761,25 +2482,6 @@ struct IRCParser
             // do nothing...
             break;
         }
-    }
-}
-
-unittest
-{
-    import kameloso.meld : meldInto;
-    import std.typecons : Flag, No, Yes;
-
-    IRCParser parser;
-
-    alias T = IRCEvent.Type;
-
-    with (parser)
-    {
-        typenums = Typenums.base;
-
-        assert(typenums[344] == T.init);
-        Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
-        assert(typenums[344] != T.init);
     }
 }
 
@@ -3089,116 +2791,6 @@ void setMode(ref IRCChannel channel, const string signedModestring,
     }
 }
 
-///
-unittest
-{
-    import std.stdio;
-
-    IRCServer server;
-    // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
-    server.aModes = "eIbq";
-    server.bModes = "k";
-    server.cModes = "flj";
-    server.dModes = "CFLMPQScgimnprstz";
-
-    // SpotChat: PREFIX=(Yqaohv)!~&@%+
-    server.prefixes = "Yqaohv";
-    server.prefixchars =
-    [
-        '!' : 'Y',
-        '~' : 'q',
-        '&' : 'a',
-        '@' : 'o',
-        '%' : 'h',
-        '+' : 'v',
-    ];
-
-    {
-        IRCChannel chan;
-
-        chan.topic = "Huerbla";
-
-        chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org", server);
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert(chan.modes.length == 1);
-
-        chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS", server);
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert(chan.modes.length == 3);
-
-        chan.setMode("-b", "*!*@*", server);
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert(chan.modes.length == 0);
-
-        chan.setMode("+i", string.init, server);
-        assert(chan.modechars == "i", chan.modechars);
-
-        chan.setMode("+v", "harbl", server);
-        assert(chan.modechars == "i", chan.modechars);
-
-        chan.setMode("-i", string.init, server);
-        assert(!chan.modechars.length, chan.modechars);
-
-        chan.setMode("+l", "200", server);
-        IRCChannel.Mode lMode;
-        lMode.modechar = 'l';
-        lMode.data = "200";
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].toString());
-
-        chan.setMode("+l", "100", server);
-        lMode.modechar = 'l';
-        lMode.data = "100";
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].toString());
-    }
-
-    {
-        IRCChannel chan;
-
-        chan.setMode("+CLPcnprtf", "##linux-overflow", server);
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert(chan.modes[0].data == "##linux-overflow");
-        assert(chan.modes.length == 1);
-        assert(chan.modechars.length == 8);
-
-        chan.setMode("+bee", "mynick!myident@myaddress abc!def@ghi jkl!*@*", server);
-        //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        //writeln("-------------------------------------");
-        assert(chan.modes.length == 2);
-        assert(chan.modes[1].exemptions.length == 2);
-    }
-
-    {
-        IRCChannel chan;
-
-        chan.setMode("+ns", string.init, server);
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        assert(chan.modes.length == 0);
-        assert(chan.modechars == "sn", chan.modechars);
-
-        chan.setMode("-sn", string.init, server);
-        foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
-        assert(chan.modes.length == 0);
-        assert(chan.modechars.length == 0);
-    }
-
-    {
-        IRCChannel chan;
-        chan.setMode("+oo", "kameloso zorael", server);
-        assert(chan.mods['o'].length == 2);
-        chan.setMode("-o", "kameloso", server);
-        assert(chan.mods['o'].length == 1);
-        chan.setMode("-o", "zorael", server);
-        assert(!chan.mods['o'].length);
-    }
-}
 
 
 // IRCParseException
@@ -3232,30 +2824,6 @@ final class IRCParseException : Exception
     }
 }
 
-///
-unittest
-{
-    import std.exception : assertThrown;
-
-    IRCEvent event;
-
-    assertThrown!IRCParseException((){ throw new IRCParseException("adf"); }());
-
-    assertThrown!IRCParseException(()
-    {
-        throw new IRCParseException("adf", event);
-    }());
-
-    assertThrown!IRCParseException(()
-    {
-        throw new IRCParseException("adf", event, "somefile.d");
-    }());
-
-    assertThrown!IRCParseException(()
-    {
-        throw new IRCParseException("adf", event, "somefile.d", 9999U);
-    }());
-}
 
 /// Certain characters that signal specific meaning in an IRC context.
 enum IRCControlCharacter

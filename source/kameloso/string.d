@@ -93,117 +93,6 @@ if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncod
     return line[0..index];
 }
 
-///
-unittest
-{
-    import std.conv : to;
-
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(" :");
-        assert(lorem == "Lorem ipsum", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(" :");
-        assert(lorem == "Lorem ipsum", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(':');
-        assert(lorem == "Lorem ipsum ", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(':');
-        assert(lorem == "Lorem ipsum ", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(' ');
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(' ');
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom("");
-        assert(!lorem.length, lorem);
-        assert(line == "Lorem ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)("");
-        assert(!lorem.length, lorem);
-        assert(line == "Lorem ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom("Lorem ipsum");
-        assert(!lorem.length, lorem);
-        assert(line == " :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)("Lorem ipsum");
-        assert(!lorem.length, lorem);
-        assert(line == " :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable dchar dspace = ' ';
-        immutable lorem = line.nom(dspace);
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        dstring dline = "Lorem ipsum :sit amet"d;
-        immutable dspace = " "d;
-        immutable lorem = dline.nom(dspace);
-        assert((lorem == "Lorem"d), lorem.to!string);
-        assert((dline == "ipsum :sit amet"d), dline.to!string);
-    }
-    {
-        dstring dline = "Lorem ipsum :sit amet"d;
-        immutable wchar wspace = ' ';
-        immutable lorem = dline.nom(wspace);
-        assert((lorem == "Lorem"d), lorem.to!string);
-        assert((dline == "ipsum :sit amet"d), dline.to!string);
-    }
-    {
-        wstring wline = "Lorem ipsum :sit amet"w;
-        immutable wchar wspace = ' ';
-        immutable lorem = wline.nom(wspace);
-        assert((lorem == "Lorem"w), lorem.to!string);
-        assert((wline == "ipsum :sit amet"w), wline.to!string);
-    }
-    {
-        wstring wline = "Lorem ipsum :sit amet"w;
-        immutable wspace = " "w;
-        immutable lorem = wline.nom(wspace);
-        assert((lorem == "Lorem"w), lorem.to!string);
-        assert((wline == "ipsum :sit amet"w), wline.to!string);
-    }
-    {
-        string user = "foo!bar@asdf.adsf.com";
-        user = user.nom('!');
-        assert((user == "foo"), user);
-    }
-    {
-        immutable def = "abc def ghi"[4..$].nom(" ");
-        assert((def == "def"), def);
-    }
-}
-
 
 // plurality
 /++
@@ -231,14 +120,6 @@ if (isSomeString!T)
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
 
-///
-unittest
-{
-    assert(10.plurality("one","many") == "many");
-    assert(1.plurality("one", "many") == "one");
-    assert((-1).plurality("one", "many") == "one");
-    assert(0.plurality("one", "many") == "many");
-}
 
 
 // unquoted
@@ -288,17 +169,6 @@ if (isSomeString!T)
     }
 }
 
-///
-unittest
-{
-    assert(`"Lorem ipsum sit amet"`.unquoted == "Lorem ipsum sit amet");
-    assert(`"""""Lorem ipsum sit amet"""""`.unquoted == "Lorem ipsum sit amet");
-    // Unbalanced quotes are left untouched
-    assert(`"Lorem ipsum sit amet`.unquoted == `"Lorem ipsum sit amet`);
-    assert(`"Lorem \"`.unquoted == `"Lorem \"`);
-    assert("\"Lorem \\\"".unquoted == "\"Lorem \\\"");
-    assert(`"\"`.unquoted == `"\"`);
-}
 
 
 // beginsWith
@@ -333,13 +203,6 @@ if (isSomeString!T)
     return (haystack[0..needle.length] == needle);
 }
 
-///
-unittest
-{
-    assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
-    assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
-    assert("Lorem ipsum sit amet".beginsWith(""));
-}
 
 
 /// Ditto
@@ -350,13 +213,6 @@ if (isSomeString!T)
     if (!line.length) return false;
 
     return (line[0] == charcode);
-}
-
-///
-unittest
-{
-    assert(":Lorem ipsum".beginsWith(':'));
-    assert(!":Lorem ipsum".beginsWith(';'));
 }
 
 
@@ -398,24 +254,7 @@ string stripPrefix(const string line, const string prefix)
     return hits[1];
 }
 
-///
-unittest
-{
-    immutable lorem = "say: lorem ipsum".stripPrefix("say");
-    assert((lorem == "lorem ipsum"), lorem);
 
-    immutable notehello = "note!!!! zorael hello".stripPrefix("note");
-    assert((notehello == "zorael hello"), notehello);
-
-    immutable sudoquit = "sudo quit :derp".stripPrefix("sudo");
-    assert((sudoquit == "quit :derp"), sudoquit);
-
-    immutable eightball = "8ball predicate?".stripPrefix("");
-    assert((eightball == "8ball predicate?"), eightball);
-
-    immutable isabot = "kamelosois a bot".stripPrefix("kameloso");
-    assert((isabot == "is a bot"), isabot);
-}
 
 
 // timeSince
@@ -518,78 +357,7 @@ string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)
     return sink.data;
 }
 
-///
-unittest
-{
-    import core.time : msecs, seconds;
 
-    {
-        immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "9 days, 3 hours and 16 minutes"), since);
-        assert((abbrev == "9d 3h 16m"), abbrev);
-    }
-
-    {
-        immutable dur = 3_620.seconds;  // 1 hour and 20 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "1 hour"), since);
-        assert((abbrev == "1h"), abbrev);
-    }
-
-    {
-        immutable dur = 30.seconds;  // 30 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "30 seconds"), since);
-        assert((abbrev == "30s"), abbrev);
-    }
-
-    {
-        immutable dur = 1.seconds;
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "1 second"), since);
-        assert((abbrev == "1s"), abbrev);
-    }
-
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-    sink.reserve(64);  // workaround for LDC
-
-    {
-        immutable dur = 0.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "0 seconds"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "0s"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3_141_519_265.msecs;
-        sink.timeSince(dur);
-        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "36d 8h 38m"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3599.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "59 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "59m"), sink.data);
-        sink.clear();
-    }
-}
 
 
 // toEnum
@@ -639,30 +407,7 @@ if (is(Enum == enum))
     assert(0, "No such member " ~ enumstring);
 }
 
-///
-@system
-unittest
-{
-    import std.conv : ConvException;
-    import std.exception  : assertThrown;
 
-    enum Enum
-    {
-        UNSET,
-        QUERY,
-        PRIVMSG,
-        RPL_ENDOFMOTD
-    }
-
-    with (Enum)
-    {
-        assert("QUERY".toEnum!Enum == QUERY);
-        assert("PRIVMSG".toEnum!Enum == PRIVMSG);
-        assert("RPL_ENDOFMOTD".toEnum!Enum == RPL_ENDOFMOTD);
-        assert("UNSET".toEnum!Enum == UNSET);
-        assertThrown!ConvException("DOESNTEXIST".toEnum!Enum);  // needs @system
-    }
-}
 
 
 // enumToString
@@ -726,25 +471,6 @@ if (is(Enum == enum))
         }
 
         return cast(string) result;
-    }
-}
-
-///
-unittest
-{
-    enum Enum
-    {
-        UNSET,
-        QUERY,
-        PRIVMSG,
-        RPL_ENDOFMOTD
-    }
-
-    with (Enum)
-    {
-        assert(enumToString(QUERY) == "QUERY");
-        assert(enumToString(PRIVMSG) == "PRIVMSG");
-        assert(enumToString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
     }
 }
 
@@ -837,43 +563,7 @@ void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     b = numFromHex!acceptLowercase(hex[4..$]);
 }
 
-///
-unittest
-{
-    import std.conv : text;
-    {
-        int r, g, b;
-        numFromHex("000102", r, g, b);
 
-        assert((r == 0), r.text);
-        assert((g == 1), g.text);
-        assert((b == 2), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex("FFFFFF", r, g, b);
-
-        assert((r == 255), r.text);
-        assert((g == 255), g.text);
-        assert((b == 255), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex("3C507D", r, g, b);
-
-        assert((r == 60), r.text);
-        assert((g == 80), g.text);
-        assert((b == 125), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex!(Yes.acceptLowercase)("9a4B7c", r, g, b);
-
-        assert((r == 154), r.text);
-        assert((g == 75), g.text);
-        assert((b == 124), b.text);
-    }
-}
 
 
 // stripSuffix
@@ -909,17 +599,6 @@ string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     }
 
     return (line[($-suffix.length)..$] == suffix) ? line[0..($-suffix.length)] : line;
-}
-
-///
-unittest
-{
-    immutable line = "harblsnarbl";
-    assert(line.stripSuffix("snarbl") == "harbl");
-    assert(line.stripSuffix("") == "harblsnarbl");
-    assert(line.stripSuffix("INVALID") == "harblsnarbl");
-    assert(!line.stripSuffix!(Yes.allowFullStrip)("harblsnarbl").length);
-    assert(line.stripSuffix("harblsnarbl") == "harblsnarbl");
 }
 
 
@@ -988,36 +667,6 @@ uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
     return dots;
 }
 
-///
-unittest
-{
-    import std.conv : text;
-
-    immutable n1 = sharedDomains("irc.freenode.net", "help.freenode.net");
-    assert((n1 == 2), n1.text);
-
-    immutable n2 = sharedDomains("irc.rizon.net", "services.rizon.net");
-    assert((n2 == 2), n2.text);
-
-    immutable n3 = sharedDomains("www.google.com", "www.yahoo.com");
-    assert((n3 == 1), n3.text);
-
-    immutable n4 = sharedDomains("www.google.se", "www.google.co.uk");
-    assert((n4 == 0), n4.text);
-
-    immutable n5 = sharedDomains("", string.init);
-    assert((n5 == 0), n5.text);
-
-    immutable n6 = sharedDomains("irc.rizon.net", "rizon.net");
-    assert((n6 == 2), n6.text);
-
-    immutable n7 = sharedDomains("rizon.net", "rizon.net");
-    assert((n7 == 2), n7.text);
-
-    immutable n8 = sharedDomains("net", "net");
-    assert((n8 == 1), n8.text);
-}
-
 
 // tabs
 /++
@@ -1046,26 +695,6 @@ string tabs(uint spaces = 4)(int num) pure nothrow
     assert((num >= 0), "Negative amount of tabs");
 
     return tab.repeat.takeExactly(num).join;
-}
-
-///
-@system
-unittest
-{
-    import std.exception : assertThrown;
-    import core.exception : AssertError;
-
-    immutable one = 1.tabs!4;
-    immutable two = 2.tabs!3;
-    immutable three = 3.tabs!2;
-    immutable zero = 0.tabs;
-
-    assert((one == "    "), one ~ '$');
-    assert((two == "      "), two ~ '$');
-    assert((three == "      "), three ~ '$');
-    assert((zero == string.init), zero ~ '$');
-
-    assertThrown!AssertError((-1).tabs);
 }
 
 
@@ -1121,16 +750,6 @@ if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     }
 }
 
-///
-unittest
-{
-    assert("Lorem ipsum sit amet".has("sit"));
-    assert("".has(""));
-    assert(!"Lorem ipsum".has("sit amet"));
-    assert("Lorem ipsum".has(' '));
-    assert(!"Lorem ipsum".has('!'));
-    assert("Lorem ipsum"d.has("m"d));
-}
 
 
 // strippedRight
@@ -1170,36 +789,7 @@ string strippedRight(const string line) pure nothrow @nogc @safe @property
     return line[0..pos];
 }
 
-///
-@safe
-unittest
-{
-    {
-        immutable trailing = "abc  ";
-        immutable stripped = trailing.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable trailing = "  ";
-        immutable stripped = trailing.strippedRight;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable empty = "";
-        immutable stripped = empty.strippedRight;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable noTrailing = "abc";
-        immutable stripped = noTrailing.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable linebreak = "abc\r\n  \r\n";
-        immutable stripped = linebreak.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-}
+
 
 
 // strippedLeft
@@ -1239,36 +829,7 @@ string strippedLeft(const string line) pure nothrow @nogc @safe @property
     return line[pos..$];
 }
 
-///
-@safe
-unittest
-{
-    {
-        immutable preceded = "   abc";
-        immutable stripped = preceded.strippedLeft;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable preceded = "   ";
-        immutable stripped = preceded.strippedLeft;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable empty = "";
-        immutable stripped = empty.strippedLeft;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable noPreceded = "abc";
-        immutable stripped = noPreceded.strippedLeft;
-        assert((stripped == noPreceded), stripped);
-    }
-    {
-        immutable linebreak  = "\r\n\r\n  abc";
-        immutable stripped = linebreak.strippedLeft;
-        assert((stripped == "abc"), stripped);
-    }
-}
+
 
 
 // stripped
@@ -1289,33 +850,3 @@ string stripped(const string line) pure nothrow @nogc @safe @property
     return line.strippedLeft.strippedRight;
 }
 
-///
-@safe
-unittest
-{
-    {
-        immutable line = "   abc   ";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-    {
-        immutable line = "   ";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == ""), stripped_);
-    }
-    {
-        immutable line = "";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == ""), stripped_);
-    }
-    {
-        immutable line = "abc";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-    {
-        immutable line = " \r\n  abc\r\n\r\n";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-}

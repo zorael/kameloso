@@ -10,16 +10,6 @@ import kameloso.ircdefs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
-version(Windows)
-shared static this()
-{
-    import core.sys.windows.windows : SetConsoleCP, SetConsoleOutputCP, CP_UTF8;
-
-    // If we don't set the right codepage, the normal Windows cmd terminal won't
-    // display international characters like åäö.
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
-}
 
 private:
 
@@ -485,44 +475,6 @@ Flag!"quit" mainLoop(ref Client client)
                         // We know the Daemon
                         detectedDaemon = bot.server.daemon;
 
-                        version(Colours)
-                        {
-                            if (!settings.monochrome)
-                            {
-                                import kameloso.bash : BashReset, colour;
-                                import kameloso.logger : KamelosoLogger;
-                                import std.array : Appender;
-                                import std.experimental.logger : LogLevel;
-                                import std.format : format;
-
-                                Appender!string sink;
-                                sink.reserve(128);  // ~66
-
-                                immutable infotint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                                immutable logtint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                                sink.colour(logtint);
-                                sink.put("Detected daemon: ");
-                                sink.colour(infotint);
-                                sink.put(bot.server.daemon.enumToString);
-                                sink.colour(BashReset.all);
-                                sink.put(" (%s)".format(bot.server.daemonstring));
-
-                                logger.trace(sink.data);
-                            }
-                            else
-                            {
-                                logger.logf("Detected daemon: %s (%s)",
-                                    bot.server.daemon.enumToString,
-                                    bot.server.daemonstring);
-                            }
-                        }
-                        else
                         {
                             logger.logf("Detected daemon: %s (%s)",
                                 bot.server.daemon.enumToString,
@@ -541,40 +493,6 @@ Flag!"quit" mainLoop(ref Client client)
                         immutable networkName = bot.server.network[0].isLower ?
                             bot.server.network.capitalize() : bot.server.network;
 
-                        version(Colours)
-                        {
-                            if (!settings.monochrome)
-                            {
-                                import kameloso.bash : BashReset, colour;
-                                import kameloso.logger : KamelosoLogger;
-                                import std.array : Appender;
-                                import std.experimental.logger : LogLevel;
-
-                                Appender!string sink;
-                                sink.reserve(64);  // ~40
-
-                                immutable infotint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                                immutable logtint = settings.brightTerminal ?
-                                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                                sink.colour(logtint);
-                                sink.put("Detected network: ");
-                                sink.colour(infotint);
-                                sink.put(networkName);
-                                sink.colour(BashReset.all);
-
-                                logger.trace(sink.data);
-                            }
-                            else
-                            {
-                                logger.log("Detected network: ", networkName);
-                            }
-                        }
-                        else
                         {
                             logger.log("Detected network: ", networkName);
                         }
@@ -816,12 +734,6 @@ void setupSignals() nothrow @nogc
     import core.stdc.signal : signal, SIGINT;
 
     signal(SIGINT, &signalHandler);
-
-    version(Posix)
-    {
-        import core.sys.posix.signal : SIGHUP;
-        signal(SIGHUP, &signalHandler);
-    }
 }
 
 
@@ -835,28 +747,12 @@ void resetSignals() nothrow @nogc
 
     signal(SIGINT, SIG_DFL);
 
-    version(Posix)
-    {
-        import core.sys.posix.signal : SIGHUP;
-        signal(SIGHUP, SIG_DFL);
-    }
 }
 
 
 public:
 
-version(unittest)
-/++
- +  Unittesting main; does nothing.
- +/
-void main()
-{
-    // Compiled with -b unittest, so run the tests and exit.
-    // Logger is initialised in a module constructor, don't reinit here.
-    logger.info("All tests passed successfully!");
-    // No need to Cygwin-flush; the logger did that already
-}
-else
+
 /++
  +  Entry point of the program.
  +/
@@ -914,20 +810,6 @@ int main(string[] args)
 
         BashForeground tint = BashForeground.default_;
 
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                if (settings.brightTerminal)
-                {
-                    tint = BashForeground.black;
-                }
-                else
-                {
-                    tint = BashForeground.white;
-                }
-            }
-        }
 
         printVersionInfo(tint);
         writeln();
@@ -941,44 +823,6 @@ int main(string[] args)
 
             logger.error("No administrators nor channels configured!");
 
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : BashReset, colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.array : Appender;
-                    import std.experimental.logger : LogLevel;
-                    import std.path : baseName;
-
-                    Appender!(char[]) sink;
-                    sink.reserve(96);  // ~79
-
-                    immutable infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                    sink.colour(logtint);
-                    sink.put("Use ");
-                    sink.colour(infotint);
-                    sink.put(args[0].baseName);
-                    sink.put(" --writeconfig");
-                    sink.colour(logtint);
-                    sink.put(" to generate a configuration file.");
-                    sink.colour(BashReset.all);
-                    logger.trace(sink.data);
-                }
-                else
-                {
-                    logger.logf("Use %s --writeconfig to generate a configuration file.",
-                        args[0].baseName);
-                }
-            }
-            else
             {
                 logger.logf("Use %s --writeconfig to generate a configuration file.",
                         args[0].baseName);
@@ -1029,64 +873,6 @@ int main(string[] args)
             {
                 logger.log("Found invalid configuration entries:");
 
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.bash : BashReset, colour;
-                        import kameloso.logger : KamelosoLogger;
-                        import std.array : Appender;
-                        import std.experimental.logger : LogLevel;
-
-                        Appender!(char[]) sink;
-                        sink.reserve(128);  // ~118
-
-                        immutable infotint = settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.info] :
-                            KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                        immutable logtint = settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.all] :
-                            KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                        foreach (const section, const sectionEntries; invalidEntries)
-                        {
-                            import std.format : format;
-
-                            sink.colour(logtint);
-                            sink.put("...under [");
-                            sink.colour(infotint);
-                            sink.put(section);
-                            sink.colour(logtint);
-                            sink.put("]: ");
-                            sink.colour(infotint);
-                            sink.put(`%-("%s"%|, %)`.format(sectionEntries));
-                            sink.colour(BashReset.all);
-                            logger.trace(sink.data);
-                            sink.clear();
-                        }
-
-                        sink.colour(logtint);
-                        sink.put("They are either malformed or no longer in use. Use ");
-                        sink.colour(infotint);
-                        sink.put("--writeconfig");
-                        sink.colour(logtint);
-                        sink.put(" to update your configuration file.");
-                        sink.colour(BashReset.all);
-                        logger.trace(sink.data);
-                    }
-                    else
-                    {
-                        foreach (const section, const sectionEntries; invalidEntries)
-                        {
-                            logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-                        }
-
-                        logger.log("They are either malformed or no longer in use. " ~
-                            "Use --writeconfig to update your configuration file.");
-                    }
-                }
-                else
                 {
                     foreach (const section, const sectionEntries; invalidEntries)
                     {
@@ -1118,51 +904,6 @@ int main(string[] args)
                 return 1;
             }
 
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : BashForeground;
-
-                    with (settings)
-                    with (BashForeground)
-                    {
-                        import kameloso.bash : BashReset, colour;
-                        import kameloso.logger : KamelosoLogger;
-                        import std.array : Appender;
-                        import std.conv : to;
-                        import std.experimental.logger : LogLevel;
-
-                        Appender!string sink;
-                        sink.reserve(96);  // ~62
-
-                        immutable infotint = brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.info] :
-                            KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                        immutable logtint = brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.all] :
-                            KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                        sink.colour(infotint);
-                        sink.put(bot.server.address);
-                        sink.colour(logtint);
-                        sink.put(" resolved into ");
-                        sink.colour(infotint);
-                        sink.put(conn.ips.length.to!string);
-                        sink.colour(logtint);
-                        sink.put(" IPs.");
-                        sink.colour(BashReset.all);
-
-                        logger.trace(sink.data);
-                    }
-                }
-                else
-                {
-                    logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
-                }
-            }
-            else
             {
                 logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
             }
