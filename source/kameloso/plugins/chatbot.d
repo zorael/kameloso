@@ -188,20 +188,19 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
 
                     if (auto description = specifiedCommand in p.commands)
                     {
-                        throttleline(channel, sender.nickname,
-                            "[%s] %s: %s".format(p.name, specifiedCommand, *description));
+                        query(sender.nickname, "[%s] %s: %s"
+                            .format(p.name, specifiedCommand, *description));
                         return;
                     }
                     else
                     {
-                        throttleline(channel, sender.nickname,
-                            "No help available for command %s of plugin %s"
+                        query(sender.nickname, "No help available for command %s of plugin %s"
                             .format(specifiedCommand, specifiedPlugin));
                         return;
                     }
                 }
 
-                throttleline(channel, sender.nickname, "No such plugin: " ~ specifiedPlugin);
+                query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
                 return;
             }
             else
@@ -212,12 +211,12 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
 
                     enum width = 11;
 
-                    throttleline(channel, sender.nickname, "* %-*s %-([%s]%| %)"
+                    query(sender.nickname, "* %-*s %-([%s]%| %)"
                         .format(width, p.name, p.commands.keys.sort()));
                     return;
                 }
 
-                throttleline(channel, sender.nickname, "No such plugin: " ~ content);
+                query(sender.nickname, "No such plugin: " ~ content);
             }
         }
         else
@@ -226,8 +225,8 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
                 .format(cast(string)KamelosoInfo.version_,
                 cast(string)KamelosoInfo.built);
 
-            throttleline(channel, sender.nickname, banner);
-            throttleline(channel, sender.nickname, "Available bot commands per plugin:");
+            query(sender.nickname, banner);
+            query(sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -235,14 +234,12 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
 
                 enum width = 11;
 
-                throttleline(channel, sender.nickname, "* %-*s %-([%s]%| %)"
+                query(sender.nickname, "* %-*s %-([%s]%| %)"
                     .format(width, p.name, p.commands.keys.sort()));
             }
 
-            throttleline(channel, sender.nickname,
-                "Use help [plugin] [command] for information about a command.");
-            throttleline(channel, sender.nickname,
-                "Additional unlisted regex commands may be available.");
+            query(sender.nickname, "Use help [plugin] [command] for information about a command.");
+            query(sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 }
