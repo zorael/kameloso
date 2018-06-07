@@ -1494,7 +1494,8 @@ void periodically(PrinterPlugin plugin)
     import std.datetime.systime : Clock;
 
     immutable now = Clock.currTime;
-    logger.infof("-- [%d-%02d-%02d]", now.year, cast(int)now.month, now.day);
+    immutable line = "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
+    logger.info(line);
 
     foreach (immutable path, ref buffer; plugin.buffers)
     {
