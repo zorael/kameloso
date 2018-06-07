@@ -135,6 +135,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     {
         auto results = args.getopt(
             config.caseSensitive,
+            config.bundling,
             "n|nickname",    "Bot nickname", &bot.nickname,
             "u|user",        "Username when registering onto server (not nickname)",
                 &bot.user,
