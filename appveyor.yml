@@ -22,14 +22,11 @@ artifacts:
 install:
   - ps: function SetUpDCompiler
     {
-      if ($env:DC -eq "dmd")
-      {
-        if ($env:arch -eq "x86")
-        {
+      if ($env:DC -eq "dmd"){
+        if ($env:arch -eq "x86"){
           $env:DConf = "m32";
         }
-        elseif ($env:arch -eq "x64")
-        {
+        elseif ($env:arch -eq "x64"){
           $env:DConf = "m64";
         }
         echo "downloading ...";
@@ -41,15 +38,12 @@ install:
         7z x dmd.7z > $null;
         popd;
       }
-      elseif ($env:DC -eq "ldc")
-      {
+      elseif ($env:DC -eq "ldc"){
         echo "downloading ...";
-        if ($env:arch -eq "x86")
-        {
+        if ($env:arch -eq "x86"){
           $env:DConf = "m32";
         }
-        elseif ($env:arch -eq "x64")
-        {
+        elseif ($env:arch -eq "x64"){
           $env:DConf = "m64";
         }
         $env:toolchain = "msvc";
