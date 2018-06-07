@@ -1855,6 +1855,9 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +
      +  This reflects how channel messages and private messages are both the
      +  underlying same type; `PRIVMSG`.
+     +
+     +  It sends it in a throttled fashion, usable for long output when the bot
+     +  may otherwise get kicked for spamming.
      +/
     pragma(inline)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
@@ -1863,22 +1866,8 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
     }
 
-
-    // throttleline
-    /++
-     +  Sends either a channel message or a private query message depending on
-     +  the arguments passed to it.
-     +
-     +  It sends it in a throttled fashion, usable for long output when the bot
-     +  may otherwise get kicked for spamming.
-     +/
-    deprecated("throttleline is deprecated, use privmsg instead.")
-    pragma(inline)
-    void throttleline(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string nickname, const string content)
-    {
-        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
-    }
+    deprecated("All outgoing messages are now throttled. Use privmsg instead.")
+    alias throttleline = privmsg;
 
 
     // emote
