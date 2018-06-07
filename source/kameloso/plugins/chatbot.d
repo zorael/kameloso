@@ -140,9 +140,10 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +  which we remember since we saved the original `kameloso.ircdefs.IRCEvent`.
  +/
 @(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "help")
-@Description("Shows the command list.")
+@Description("Shows a list of all available commands.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.common : ThreadMessage;
