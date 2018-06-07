@@ -148,25 +148,6 @@ void onEndOfMotd(PersistenceService service)
 }
 
 
-// onPing
-/++
- +  Rehashes the internal `users` associative array of the current
- +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` once every
- +  `hoursBetweenRehashes` hours.
- +
- +  We ride the periodicity of `PING` to get a natural cadence without
- +  having to resort to timed `core.thread.Fiber`s.
- +
- +  The number of hours is so far hardcoded but can be made configurable if
- +  there's a use-case for it.
- +/
-@(IRCEvent.Type.PING)
-void onPing(PersistenceService service)
-{
-    service.rehashUserArray();
-}
-
-
 // reload
 /++
  +  Reloads the plugin, rehashing the user array and loading
@@ -174,32 +155,27 @@ void onPing(PersistenceService service)
  +/
 void reload(PersistenceService service)
 {
-    service.rehashUserArray();
+    service.state.users.rehash();
     service.reloadClassifiersFromDisk();
 }
 
 
-// rehashUserArray
+// periodically
 /++
- +  Rehashes the user array, allowing for optimised access.
+ +  Periodically rehashes the user array, allowing for optimised access.
+ +
+ +  This is normally done as part of user-awareness, but we're not mixing that
+ +  in so we have to reinvent it.
  +/
-void rehashUserArray(PersistenceService service)
+void periodically(PersistenceService service)
 {
     import std.datetime.systime : Clock;
 
-    immutable hour = Clock.currTime.hour;
+    immutable now = Clock.currTime.toUnixTime;
+    enum hoursBetweenRehashes = 3;
 
-    enum hoursBetweenRehashes = 12;  // also see UserAwareness
-
-    with (service)
-    {
-        /// Once every few hours, rehash the `users` array.
-        if ((hoursBetweenRehashes > 0) && (hour == rehashCounter))
-        {
-            rehashCounter = (rehashCounter + hoursBetweenRehashes) % 24;
-            state.users.rehash();
-        }
-    }
+    service.state.users.rehash();
+    service.nextPeriodical = now + (hoursBetweenRehashes * 3600);
 }
 
 
