@@ -928,7 +928,7 @@ struct Client
         state.bot = bot;
         state.settings = settings;
         state.mainThread = thisTid;
-        immutable now = Clock.currTime;
+        immutable now = Clock.currTime.toUnixTime;
 
         plugins.reserve(EnabledPlugins.length + 4);
 
@@ -963,7 +963,12 @@ struct Client
                 theseInvalidEntries.meldInto(allInvalidEntries);
             }
 
-            plugin.rehashCounter = now.hour + 1;  // rehash next hour
+            if (plugin.nextPeriodical == 0)
+            {
+                // Schedule first periodical in an hour for plugins that don't
+                // set a timestamp themselves in `initialise`
+                plugin.nextPeriodical = now + 3600;
+            }
         }
 
         plugins.applyCustomSettings(customSettings);

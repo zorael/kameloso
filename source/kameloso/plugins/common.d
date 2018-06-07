@@ -120,20 +120,14 @@ interface IRCPlugin
      +/
     ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property;
 
-    /++
-     +  Returns a counter for which hour the plugin should rehash its user
-     +  array.
-     +/
-    ref int rehashCounter() pure nothrow @nogc @property;
-
     /// Returns the next (Unix time) timestamp at which to call `periodically`.
-    ref long nextTimestamp() pure nothrow @nogc @property;
+    ref long nextPeriodical() pure nothrow @nogc @property;
 
     /++
      +  Call a plugin to perform its periodic tasks, iff the time is equal to or
-     +  exceeding `nextTimestamp`.
+     +  exceeding `nextPeriodical`.
      +/
-    void periodically(const SysTime) @system;
+    void periodically(const long) @system;
 
     /// Reloads the plugin, where such is applicable.
     void reload() @system;
@@ -742,11 +736,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     Labeled!(Fiber, long)[] privateTimedFibers;
 
-    /// Internal counter for when the next scheduled rehash counter should be.
-    int privateRehashCounter;
-
     /// Internal (Unix time) timestamp for when `periodically` should next fire.
-    long privateNextTimestamp;
+    long privateNextPeriodical;
 
 
     // onEvent
@@ -1773,27 +1764,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // counter
-    /++
-     +  Returns the private `counter` number, used by plugins to schedule
-     +  rehashes of their internal arrays of `kameloso.ircdefs.IRCUser`s.
-     +
-     +  This is a hack.
-     +/
-    ref int rehashCounter() pure nothrow @nogc @property
-    {
-        return privateRehashCounter;
-    }
-
-
-    // nextTimestamp
+    // nextPeriodical
     /++
      +  Returns the private timestamp of when `periodically` should next fire,
      +  expressed in Unix time.
      +/
-    ref long nextTimestamp() pure nothrow @nogc @property
+    ref long nextPeriodical() pure nothrow @nogc @property
     {
-        return privateNextTimestamp;
+        return privateNextPeriodical;
     }
 
 
@@ -1803,13 +1781,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  the interval since the last call has passed, letting the plugin do
      +  scheduled tasks.
      +/
-    void periodically(const SysTime now) @system
+    void periodically(const long now) @system
     {
         static if (__traits(compiles, .periodically))
         {
-            if (now.toUnixTime >= privateNextTimestamp)
+            import std.datetime.systime : Clock;
+
+            if (now >= privateNextPeriodical)
             {
-                .periodically(this, now);
+                .periodically(this);
             }
         }
     }

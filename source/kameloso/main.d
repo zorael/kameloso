@@ -361,13 +361,11 @@ Flag!"quit" mainLoop(ref Client client)
             return No.quit;
         }
 
-        // See if day broke
-        immutable now = Clock.currTime;
-        immutable nowInUnix = now.toUnixTime;
+        immutable nowInUnix = Clock.currTime.toUnixTime;
 
         foreach (ref plugin; client.plugins)
         {
-            plugin.periodically(now);
+            plugin.periodically(nowInUnix);
         }
 
         // Call the generator, query it for event lines
