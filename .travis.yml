@@ -17,27 +17,5 @@ addons:
       - libevent-dev
 
 script:
-  - dub test --compiler=${DC} -c vanilla
-  - dub test --compiler=${DC} -c colours+web
-  - dub build -b plain --compiler=${DC} -c vanilla
-  - dub build -b plain --compiler=${DC} -c colours+web
-  - echo DC == ${DC}
-  - test ${DC} = ldc2 || dub build -b ddox --compiler=${DC} -c colours+web
-
-before_deploy:
-  - cp -rv .circleci docs/
-
-deploy:
-  provider: pages
-  local_dir: docs
-  skip_cleanup: true
-  github_token: $GH_REPO_TOKEN
-  on:
-    branch: master
-    condition:
-      - ${DC} = dmd
-      - ${TRAVIS_OS_NAME} = linux
-  cache:
-    directories:
-      - $HOME/.dub
-  verbose: true
+  - dub build -b debug --compiler=${DC}
+  - dub build -b plain --compiler=${DC}

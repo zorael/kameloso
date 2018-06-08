@@ -17,6 +17,4 @@ jobs:
       - run:
           name: Build (dub)
           command: ./.circleci/run.sh build
-      - store_artifacts:
-          path: ./artifacts
 

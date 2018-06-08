@@ -16,16 +16,8 @@ install_deps() {
 }
 
 build() {
-    mkdir -p artifacts
-    dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    mv kameloso-test-vanilla artifacts/
-    dub test --compiler="$1" --build-mode=singleFile -c colours+web
-    mv kameloso-test-colours+web artifacts/
-
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c vanilla
-    mv kameloso artifacts/kameloso-plain-vanilla
-    dub build --compiler="$1" --build-mode=singleFile -b plain -c colours+web
-    mv kameloso artifacts/kameloso-plain-colours+web
+    dub build -b debug --compiler="$1"
+    dub build -b plain --compiler="$1"
 }
 
 # execution start
@@ -36,7 +28,7 @@ case "$1" in
         ;;
     build)
         build dmd;
-        #build ldc2;  # doesn't support single build mode
+        build ldc2;  # doesn't support single build mode
         ;;
     *)
         echo "Unknown command: $1";
