@@ -4,63 +4,8 @@
     "authors": [ "JR" ],
     "copyright": "Copyright © 2018, JR",
     "license": "MIT",
-    "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
     "sourcePaths": [ "source" ],
     "importPaths": [ "source" ],
-    "libs-posix": [ "phobos2" ],
-    "-ddoxFilterArgs":
-    [
-        "--unittest-examples",
-        "--ex", "arsd."
-    ],
-    "-ddoxTool" : "scod",
-    "versions": [ "PostParseSanityCheck" ],
-    "configurations":
-    [
-        {
-            "name": "posix",
-            "platforms": [ "posix" ],
-            "versions": [ "Web", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.7.0" }
-        },
-        {
-            "name": "windows",
-            "platforms": [ "windows" ],
-            "versions": [ "Web" ],
-            "dependencies-windows": { "requests": "~>0.7.0" }
-        },
-        {
-            "name": "cygwin",
-            "platforms": [ "windows", "cygwin" ],
-            "versions": [ "Cygwin_", "Web", "Colours" ],
-            "dependencies-windows": { "requests": "~>0.7.0" }
-        },
-        {
-            "name": "vanilla"
-        },
-        {
-            "name": "colours",
-            "versions": [ "Colours" ]
-        },
-        {
-            "name": "web",
-            "versions": [ "Web" ],
-            "dependencies": { "requests": "~>0.7.0" }
-        },
-        {
-            "name": "colours+web",
-            "versions": [ "Colours", "Web" ],
-            "dependencies": { "requests": "~>0.7.0" }
-        },
-
-        {
-            "name": "unittest",
-            "buildType": "unittest",
-            "versions": [ "Web", "Colours" ],
-            "sourcePaths": [ "tests" ],
-            "importPaths": [ "tests" ],
-            "dependencies": { "requests": "~>0.7.0" }
-        }
-    ]
+    "libs-posix": [ "phobos2" ]
 }
