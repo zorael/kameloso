@@ -1,18 +1,8 @@
-
 module kameloso.common;
 
-import std.experimental.logger ;
+import std.experimental.logger;
+
 struct ThreadMessage
 {
-    
     struct PeekPlugins {}
-
 }
-
-
-
-
-
-
-
-

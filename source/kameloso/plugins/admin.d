@@ -1,20 +1,17 @@
-import kameloso.common ;
+import kameloso.common;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
 @(IRCEvent.Type)
 @(PrivilegeLevel.admin)
-onSetCommand(AdminPlugin plugin)
+void onSetCommand(AdminPlugin plugin)
 {
-    import std.concurrency ;
+    import std.concurrency;
 
-    IRCEvent mutEvent ;
+    IRCEvent mutEvent;
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin, mutEvent);
+        cast(shared IRCPlugin) plugin, mutEvent);
 }
-
-
-
 
 class AdminPlugin : IRCPlugin
 {

@@ -1,27 +1,22 @@
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+
 void joinChannels(ConnectService service)
 {
     with (service)
     {
         import std.algorithm;
-        import std.conv ;
-        import std.range ;
+        import std.conv;
+        import std.range;
 
-        
-        
-        immutable chanlist = chain(bot.homes)
-            .joiner            .array
-            .to!string;
+        immutable chanlist = chain(bot.homes).joiner.array.to!string;
 
-join(chanlist);
+        join(chanlist);
     }
 }
 
-
-
-
-class ConnectService {
+class ConnectService
+{
     mixin IRCPluginImpl;
     mixin MessagingProxy;
 }
