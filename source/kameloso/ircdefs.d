@@ -1091,8 +1091,25 @@ struct IRCUser
     /// User classifier.
     Class class_;
 
-    /// Produces the nickname in lowercase as per the server's case mappings.
+    /++
+     +  Produces this user's nickname in lowercase as per the supplied case
+     +  mappings.
+     +
+     +  Member function to work on `this`. Wraps to the static function below.
+     +/
     string lowercaseNickname(IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) const nothrow pure
+    {
+        return lowercaseNickname(nickname, caseMapping);
+    }
+
+    /++
+     +  Produces the passed nickname in lowercase as per the supplied case
+     +  mappings.
+     +
+     +  Static version to work on passed strings.
+     +/
+    static string lowercaseNickname(const string nickname,
+        IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) nothrow pure
     {
         import std.string : representation, toLower;
 

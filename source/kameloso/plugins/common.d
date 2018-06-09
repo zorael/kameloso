@@ -10,8 +10,6 @@ module kameloso.plugins.common;
 import kameloso.ircdefs;
 
 import core.thread : Fiber;
-import std.array : Appender;
-import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
 
 
@@ -58,8 +56,7 @@ static if (__VERSION__ == 2079)
  +/
 interface IRCPlugin
 {
-    import kameloso.common : Labeled;
-    import core.thread : Fiber;
+    import std.array : Appender;
 
     @safe:
 
@@ -1659,8 +1656,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .periodically))
         {
-            import std.datetime.systime : Clock;
-
             if (now >= state.nextPeriodical)
             {
                 .periodically(this);
