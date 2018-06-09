@@ -48,11 +48,9 @@ static if (__VERSION__ == 2079)
 /++
  +  Interface that all `IRCPlugin`s must adhere to.
  +
- +  There will obviously be more functions but only these are absolutely needed.
- +  It is neccessary so that all plugins may be kept in one array, and foreached
- +  through when new events have been generated.
+ +  Plugins may implement it manually, or mix in `IRCPluginImpl`.
  +
- +  TODO: Revisit this list and remove those that aren't being used.
+ +  This is currently shared with all `service`-class "plugins".
  +/
 interface IRCPlugin
 {
@@ -1456,8 +1454,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  It both prints module-level structs as well as structs in the
      +  `kameloso.ircdefs.IRCPlugin` (subtype) itself.
-     +
-     +  Update the width as longer `Settings` members are added.
      +/
     void printSettings() const
     {
