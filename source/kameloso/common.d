@@ -963,11 +963,11 @@ struct Client
                 theseInvalidEntries.meldInto(allInvalidEntries);
             }
 
-            if (plugin.nextPeriodical == 0)
+            if (plugin.state.nextPeriodical == 0)
             {
                 // Schedule first periodical in an hour for plugins that don't
                 // set a timestamp themselves in `initialise`
-                plugin.nextPeriodical = now + 3600;
+                plugin.state.nextPeriodical = now + 3600;
             }
         }
 

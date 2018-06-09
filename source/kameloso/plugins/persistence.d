@@ -175,7 +175,7 @@ void periodically(PersistenceService service)
     enum hoursBetweenRehashes = 3;
 
     service.state.users.rehash();
-    service.nextPeriodical = now + (hoursBetweenRehashes * 3600);
+    service.state.nextPeriodical = now + (hoursBetweenRehashes * 3600);
 }
 
 

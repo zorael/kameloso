@@ -1510,7 +1510,8 @@ void periodically(PrinterPlugin plugin)
         }
     }
 
-    plugin.nextPeriodical = getNextMidnight(now).toUnixTime;
+    // Schedule the next run for the following midnight.
+    plugin.state.nextPeriodical = getNextMidnight(now).toUnixTime;
 }
 
 
@@ -1561,7 +1562,7 @@ void initialise(PrinterPlugin plugin)
 {
     import std.datetime.systime : Clock;
 
-    plugin.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
+    plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
 }
 
 

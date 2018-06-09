@@ -389,11 +389,11 @@ Flag!"quit" mainLoop(ref Client client)
 
                 foreach (plugin; plugins)
                 {
-                    if (!plugin.timedFibers.length) continue;
+                    if (!plugin.state.timedFibers.length) continue;
 
                     size_t[] toRemove;
 
-                    foreach (immutable i, ref fiber; plugin.timedFibers)
+                    foreach (immutable i, ref fiber; plugin.state.timedFibers)
                     {
                         if (fiber.id > nowInUnix)
                         {
@@ -437,7 +437,7 @@ Flag!"quit" mainLoop(ref Client client)
                     foreach_reverse (immutable i; toRemove)
                     {
                         import std.algorithm.mutation : remove;
-                        plugin.timedFibers = plugin.timedFibers.remove(i);
+                        plugin.state.timedFibers = plugin.state.timedFibers.remove(i);
                     }
                 }
             }
@@ -497,7 +497,7 @@ Flag!"quit" mainLoop(ref Client client)
                         plugin.onEvent(event);
 
                         // Go through Fibers awaiting IRCEvent.Types
-                        if (auto fibers = event.type in plugin.awaitingFibers)
+                        if (auto fibers = event.type in plugin.state.awaitingFibers)
                         {
                             size_t[] toRemove;
 
@@ -541,7 +541,7 @@ Flag!"quit" mainLoop(ref Client client)
                             // If no more Fibers left, remove the Type entry in the AA
                             if (!(*fibers).length)
                             {
-                                plugin.awaitingFibers.remove(event.type);
+                                plugin.state.awaitingFibers.remove(event.type);
                             }
                         }
 

@@ -86,7 +86,7 @@ void onPing(ChanQueriesService service)
     fiber = new Fiber(&fiberFn);
 
     with (IRCEvent.Type)
-    with (service)
+    with (service.state)
     {
         awaitingFibers[RPL_ENDOFWHO] ~= fiber;
         awaitingFibers[RPL_TOPIC] ~= fiber;
