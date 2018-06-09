@@ -395,7 +395,7 @@ void onNickInUse(ConnectService service)
                 import std.conv : text;
                 import std.random : uniform;
 
-                bot.nickname ~= uniform(0, 1000).text;
+                bot.nickname ~= uniform(0, 10).text;
             }
             else
             {
