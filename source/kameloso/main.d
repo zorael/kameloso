@@ -546,7 +546,7 @@ Flag!"quit" mainLoop(ref Client client)
                         }
 
                         // Fetch any queued `WHOIS` requests and handle
-                        client.handleWHOISQueue(plugin.whoisQueue);
+                        client.handleWHOISQueue(plugin.state.whoisQueue);
 
                         if (plugin.state.bot.updated)
                         {

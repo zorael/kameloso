@@ -59,12 +59,11 @@ interface IRCPlugin
 {
     import kameloso.common : Labeled;
     import core.thread : Fiber;
-    import std.datetime.systime : Clock, SysTime;
 
     @safe:
 
-    /// Executed to get a list of nicknames a plugin wants `WHOIS`ed.
-    ref WHOISRequest[string] whoisQueue() pure nothrow @nogc @property;
+    /// Returns a reference to the current `IRCPluginState` of the plugin.
+    ref IRCPluginState state() pure nothrow @nogc @property;
 
     /// Executed to let plugins modify an event mid-parse.
     void postprocess(ref IRCEvent) @system;
@@ -101,24 +100,6 @@ interface IRCPlugin
 
     /// Returns an array of the descriptions of the commands a plugin offers.
     string[string] commands() pure nothrow @property const;
-
-    /// Returns a reference to the current `IRCPluginState`.
-    ref IRCPluginState state() pure nothrow @nogc @property;
-
-    /++
-     +  Returns a reference to the list of awaiting `core.thread.Fiber`s, keyed
-     +  by `kameloso.ircdefs.IRCEvent.Type`.
-     +/
-    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property;
-
-    /++
-     +  Returns a reference to the list of timed `core.thread.Fiber`s, labeled
-     +  by UNIX time.
-     +/
-    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property;
-
-    /// Returns the next (Unix time) timestamp at which to call `periodically`.
-    ref long nextPeriodical() pure nothrow @nogc @property;
 
     /++
      +  Call a plugin to perform its periodic tasks, iff the time is equal to or
@@ -368,7 +349,8 @@ WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn
  +/
 struct IRCPluginState
 {
-    import kameloso.common : CoreSettings;
+    import kameloso.common : CoreSettings, Labeled;
+    import core.thread : Fiber;
     import std.concurrency : Tid;
 
     /++
@@ -392,9 +374,27 @@ struct IRCPluginState
     /++
      +  Queued `WHOIS` requests and pertaining `kameloso.ircdefs.IRCEvent`s to
      +  replay.
+     +
+     +  The main loop iterates this after processing all on-event functions so
+     +  as to know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
+     +  response returns, the event bundled with the `WHOISRequest` will be
+     +  replayed.
      +/
     WHOISRequest[string] whoisQueue;
+
+    /++
+     +  The list of awaiting `core.thread.Fiber`s, keyed by
+     +  `kameloso.ircdefs.IRCEvent.Type`.
+     +/
+    Fiber[][IRCEvent.Type] awaitingFibers;
+
+    /// The list of timed `core.thread.Fiber`s, labeled by UNIX time.
+    Labeled!(Fiber, long)[] timedFibers;
+
+    /// The next (Unix time) timestamp at which to call `periodically`.
+    long nextPeriodical;
 }
+
 
 /++
  +  The tristate results from comparing a username with the admin or whitelist
@@ -710,7 +710,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import kameloso.common : Labeled;
     import core.thread : Fiber;
     import std.array : Appender;
-    import std.datetime.systime : SysTime;
 
     enum hasIRCPluginImpl = true;
 
@@ -718,24 +717,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     /// This plugin's `IRCPluginState` structure.
     IRCPluginState privateState;
-
-    /++
-     +  Associative array of arrays of `core.thread.Fiber`s, keyed by
-     +  `kameloso.ircdefs.IRCEvent.Type`. These will be called when the next
-     +  event of the matching type comes along.
-     +/
-    Fiber[][IRCEvent.Type] privateAwaitingFibers;
-
-    /++
-     +  Array of `Labeled` `core.thread.Fiber`s, identified by a UNIX timestamp
-     +  `long`. These will be called when the UNIX time is equal to or above
-     +  the identifying number.
-     +/
-    Labeled!(Fiber, long)[] privateTimedFibers;
-
-    /// Internal (Unix time) timestamp for when `periodically` should next fire.
-    long privateNextPeriodical;
-
 
     // onEvent
     /++
@@ -1288,24 +1269,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // bot
-    /++
-     +  Yields a reference of the current `kameloso.ircdefs.IRCBot` to the
-     +  caller.
-     +
-     +  This is used to let the main loop examine and update the otherwise
-     +  inaccessible `privateState.bot`.
-     +
-     +  Returns:
-     +      Reference to the `kameloso.ircdefs.IRCBot` of the current
-     +      `IRCPlugin`'s `IRCPluginState`.
-     +/
-    ref IRCBot bot() pure nothrow @nogc @property
-    {
-        return privateState.bot;
-    }
-
-
     // postprocess
     /++
      +  Lets a plugin modify an `kameloso.ircdefs.IRCEvent` while it's begin
@@ -1317,24 +1280,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             .postprocess(this, event);
         }
-    }
-
-
-    // whoisQueue
-    /++
-     +  Yields a reference to the `WHOIS` request queue.
-     +
-     +  The main loop does this after processing all on-event functions so as to
-     +  know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
-     +  response returns, the event bundled with the `WHOISRequest` will be
-     +  replayed.
-     +
-     +  Returns:
-     +      Reference to the local `WHOIS` request queue.
-     +/
-    ref WHOISRequest[string] whoisQueue() pure nothrow @nogc @property
-    {
-        return privateState.whoisQueue;
     }
 
 
@@ -1703,45 +1648,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // awaitingFibers
-    /++
-     +  Returns a reference to a plugin's list of `core.thread.Fiber`s awaiting
-     +  *events*.
-     +
-     +  These are callback `core.thread.Fiber`s, registered when a plugin wants
-     +  an action performed and then to react to the server's response to it.
-     +
-     +  Returns:
-     +      Associative array of `core.thread.Fiber` arrays, one or more, keyed
-     +      by `kameloso.ircdefs.IRCEvent` types.
-     +/
-    pragma(inline)
-    ref Fiber[][IRCEvent.Type] awaitingFibers() pure nothrow @nogc @property
-    {
-        return this.privateAwaitingFibers;
-    }
-
-
-    // timedFibers
-    /++
-     +  Returns a reference to a plugin's list of `core.thread.Fiber`s awaiting
-     +  execution *by time*.
-     +
-     +  Like `awaitingFibers` these are callback `core.thread.Fiber`s,
-     +  registered when a plugin wants an action performed, though at a certain
-     +  point in time.
-     +
-     +  Returns:
-     +      An array of `kameloso.common.Labeled` `core.thread.Fiber`s,
-     +      identified by UNIX timestamp `long`s.
-     +/
-    pragma(inline)
-    ref Labeled!(Fiber, long)[] timedFibers() pure nothrow @nogc @property
-    {
-        return this.privateTimedFibers;
-    }
-
-
     // delayFiber
     /++
      +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
@@ -1757,18 +1663,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.datetime.systime : Clock;
 
         immutable time = Clock.currTime.toUnixTime + secs;
-        privateTimedFibers ~= labeled(fiber, time);
-    }
-
-
-    // nextPeriodical
-    /++
-     +  Returns the private timestamp of when `periodically` should next fire,
-     +  expressed in Unix time.
-     +/
-    ref long nextPeriodical() pure nothrow @nogc @property
-    {
-        return privateNextPeriodical;
+        state.timedFibers ~= labeled(fiber, time);
     }
 
 
@@ -1784,7 +1679,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             import std.datetime.systime : Clock;
 
-            if (now >= privateNextPeriodical)
+            if (now >= state.nextPeriodical)
             {
                 .periodically(this);
             }
@@ -2307,11 +2202,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
         immutable now = Clock.currTime.toUnixTime;
         enum hoursBetweenRehashes = 12;
 
-        if (now >= plugin.nextPeriodical)
+        if (now >= plugin.state.nextPeriodical)
         {
             /// Once every few hours, rehash the `users` array.
             plugin.state.users.rehash();
-            plugin.nextPeriodical = now + (hoursBetweenRehashes * 3600);
+            plugin.state.nextPeriodical = now + (hoursBetweenRehashes * 3600);
         }
     }
 }
