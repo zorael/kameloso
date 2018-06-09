@@ -63,9 +63,6 @@ interface IRCPlugin
 
     @safe:
 
-    /// Executed to return a reference to the current `kameloso.ircdefs.IRCBot`.
-    ref IRCBot bot() pure nothrow @nogc @property;
-
     /// Executed to get a list of nicknames a plugin wants `WHOIS`ed.
     ref WHOISRequest[string] whoisQueue() pure nothrow @nogc @property;
 
