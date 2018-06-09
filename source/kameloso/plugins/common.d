@@ -9,6 +9,7 @@ module kameloso.plugins.common;
 
 import kameloso.ircdefs;
 
+import core.thread : Fiber;
 import std.array : Appender;
 import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
@@ -1648,25 +1649,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // delayFiber
-    /++
-     +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
-     +  appending it to `timedFibers`.
-     +
-     +  It only supports a precision of a *worst* case of
-     +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
-     +  than that. See the main loop for more information.
-     +/
-    void delayFiber(Fiber fiber, const long secs)
-    {
-        import kameloso.common : labeled;
-        import std.datetime.systime : Clock;
-
-        immutable time = Clock.currTime.toUnixTime + secs;
-        state.timedFibers ~= labeled(fiber, time);
-    }
-
-
     // periodically
     /++
      +  Calls `.periodically` on a plugin if the internal private timestamp says
@@ -3010,4 +2992,23 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
         logger.warning("Invalid plugin: ", pluginstring);
     }
+}
+
+
+// delayFiber
+/++
+    +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
+    +  appending it to `timedFibers`.
+    +
+    +  It only supports a precision of a *worst* case of
+    +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
+    +  than that. See the main loop for more information.
+    +/
+void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
+{
+    import kameloso.common : labeled;
+    import std.datetime.systime : Clock;
+
+    immutable time = Clock.currTime.toUnixTime + secs;
+    plugin.state.timedFibers ~= labeled(fiber, time);
 }
