@@ -27,7 +27,8 @@ It works well with the majority of server networks. IRC is standardised but serv
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below).
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
 * some plugins don't yet differentiate between different home channels if there is more than one.
-* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong values.
+* nicknames are not yet case-insensitive. The `lowercaseNickname` function is in place; it's just not yet being used.
+* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong or no values.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
@@ -55,7 +56,6 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 * compiler segfaults are back.
 * experimental `automodes` plugin, please test.
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
-* direct **imgur** links are now rewritten to the non-direct HTML pages so we can get a meaningful page title, as we do with stale YouTube ones.
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
 
 # Getting started
