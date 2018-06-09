@@ -477,10 +477,10 @@ Flag!"quit" mainLoop(ref Client client)
                 {
                     plugin.postprocess(mutEvent);
 
-                    if (plugin.bot.updated)
+                    if (plugin.state.bot.updated)
                     {
                         // Postprocessing changed the bot; propagate
-                        bot = plugin.bot;
+                        bot = plugin.state.bot;
                         bot.updated = false;
                         parser.bot = bot;
                         propagateBot(bot);
@@ -548,7 +548,7 @@ Flag!"quit" mainLoop(ref Client client)
                         // Fetch any queued `WHOIS` requests and handle
                         client.handleWHOISQueue(plugin.whoisQueue);
 
-                        if (plugin.bot.updated)
+                        if (plugin.state.bot.updated)
                         {
                             /*  Plugin `onEvent` or `WHOIS` reaction updated the
                                 bot. There's no need to check for both
@@ -556,7 +556,7 @@ Flag!"quit" mainLoop(ref Client client)
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            bot = plugin.bot;
+                            bot = plugin.state.bot;
                             bot.updated = false;
                             parser.bot = bot;
                             propagateBot(bot);

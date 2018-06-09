@@ -1015,7 +1015,7 @@ struct Client
         foreach (plugin; plugins)
         {
             plugin.start();
-            auto pluginBot = plugin.bot;
+            auto pluginBot = plugin.state.bot;
 
             if (pluginBot.updated)
             {
@@ -1042,7 +1042,7 @@ struct Client
     {
         foreach (plugin; plugins)
         {
-            plugin.bot = bot;
+            plugin.state.bot = bot;
         }
     }
 }
