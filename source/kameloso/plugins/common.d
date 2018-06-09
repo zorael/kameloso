@@ -1633,7 +1633,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         return descriptions;
     }
 
-
     // state
     /++
      +  Accessor and mutator, returns a reference to the current private

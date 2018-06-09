@@ -261,7 +261,7 @@ public:
  +  send to the server.
  +
  +  It is for debugging purposes until such time we figure out a way to properly
- +  2input lines via the terminal.
+ +  input lines via the terminal.
  +/
 final class PipelinePlugin : IRCPlugin
 {
