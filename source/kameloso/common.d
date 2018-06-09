@@ -955,7 +955,7 @@ struct Client
 
         foreach (plugin; plugins)
         {
-            auto theseInvalidEntries = plugin.loadConfig(state.settings.configFile);
+            auto theseInvalidEntries = plugin.deserialiseConfigFrom(state.settings.configFile);
 
             if (theseInvalidEntries.length)
             {
@@ -1125,7 +1125,7 @@ void writeConfigurationFile(ref Client client, const string filename)
         foreach (plugin; plugins)
         {
             plugin.initResources();  // This is sort of out of place
-            plugin.addToConfig(sink);
+            plugin.serialiseConfigInto(sink);
         }
 
         immutable justified = sink.data.justifiedConfigurationText;

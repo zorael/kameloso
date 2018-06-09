@@ -75,10 +75,10 @@ interface IRCPlugin
     void initResources() @system;
 
     /// Executed during setup to let plugins read settings from disk.
-    string[][string] loadConfig(const string);
+    string[][string] deserialiseConfigFrom(const string);
 
     /// Executed when gathering things to put in the configuration file.
-    void addToConfig(ref Appender!string) const;
+    void serialiseConfigInto(ref Appender!string) const;
 
     /// Executed during start if we want to change a setting by its string name.
     void setSettingByName(const string, const string);
@@ -1297,14 +1297,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // loadConfig
+    // deserialiseConfigFrom
     /++
      +  Loads configuration from disk.
      +
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
      +/
-    string[][string] loadConfig(const string configFile)
+    string[][string] deserialiseConfigFrom(const string configFile)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
@@ -1489,7 +1489,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
-    // addToConfig
+    // serialiseConfigInto
     /++
      +  Gathers the configuration text the plugin wants to contribute to the
      +  configuration file.
@@ -1498,14 +1498,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  ------------
      +  Appender!string sink;
      +  sink.reserve(128);  // LDC fix
-     +  addToConfig(sink);
+     +  serialiseConfigInto(sink);
      +  ------------
      +
      +  Params:
      +      sink = Reference `std.array.Appender` to fill with plugin-specific
      +          settings text.
      +/
-    void addToConfig(ref Appender!string sink) const
+    void serialiseConfigInto(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
