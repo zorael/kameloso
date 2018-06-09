@@ -1145,6 +1145,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 static if (verbose)
                 {
                     writeln("...calling!");
+                    version(Cygwin_) stdout.flush();
                 }
 
                 static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
@@ -2742,6 +2743,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
             {
                 writeln(name, "but it is a query, " ~
                     "consider optional");
+                version(Cygwin_) stdout.flush();
             }*/
             goto case optional;
         }
