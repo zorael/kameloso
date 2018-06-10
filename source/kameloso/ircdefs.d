@@ -879,8 +879,8 @@ struct IRCBot
         string[] channels;
     }
 
-    /// Status of a process.
-    enum Status
+    /// Progress of a process.
+    enum Progress
     {
         unset,
         notStarted,
@@ -896,11 +896,11 @@ struct IRCBot
         /// The original bot nickname before connecting, in case it changed.
         string origNickname;
 
-        /// Status of authentication process (SASL, NickServ).
-        Status authentication;
+        /// Progress of authentication process (SASL, NickServ).
+        Progress authentication;
 
-        /// Status of registration process (logon).
-        Status registration;
+        /// Progress of registration process (logon).
+        Progress registration;
 
         /// Whether or not the bot was altered.
         bool updated;
