@@ -1091,22 +1091,75 @@ struct IRCUser
     /// User classifier.
     Class class_;
 
+
+    // lowercaseNickname
     /++
      +  Produces this user's nickname in lowercase as per the supplied case
      +  mappings.
      +
-     +  Member function to work on `this`. Wraps to the static function below.
+     +  Member function to work on `this`. Wraps to the static function.
+     +
+     +  Params:
+     +      caseMapping = Server case mapping; maps uppercase to lowercase
+     +          characters.
+     +
+     +  Returns:
+     +      The passed nickname string with uppercase characters replaced as per
+     +      the case mappings.
      +/
     string lowercaseNickname(IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) const nothrow pure
     {
         return lowercaseNickname(nickname, caseMapping);
     }
 
+    ///
+    unittest
+    {
+        IRCServer.CaseMapping m = IRCServer.CaseMapping.rfc1459;
+        IRCUser user;
+
+        user.nickname = "ABCDEF";
+        assert((user.lowercaseNickname(m) == "abcdef"), user.lowercaseNickname);
+
+        user.nickname = "123";
+        assert((user.lowercaseNickname(m) == "123"), user.lowercaseNickname);
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "~{0v0}~"), user.lowercaseNickname);
+
+        user.nickname = `A|\|`;
+        assert((user.lowercaseNickname(m) == `a|||`), user.lowercaseNickname);
+
+        m = IRCServer.CaseMapping.ascii;
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "^[0v0]^"), user.lowercaseNickname);
+
+        user.nickname = `A|\|`;
+        assert((user.lowercaseNickname(m) == `a|\|`), user.lowercaseNickname);
+
+        m = IRCServer.CaseMapping.strict_rfc1459;
+
+        user.nickname = "^[0v0]^";
+        assert((user.lowercaseNickname(m) == "^{0v0}^"), user.lowercaseNickname);
+    }
+
+
+    // lowercaseNickname
     /++
      +  Produces the passed nickname in lowercase as per the supplied case
      +  mappings.
      +
      +  Static version to work on passed strings.
+     +
+     +  Params:
+     +      nickname = String nickname to parse into lowercase.
+     +      caseMapping = Server case mapping; maps uppercase to lowercase
+     +          characters.
+     +
+     +  Returns:
+     +      The passed nickname string with uppercase characters replaced as per
+     +      the case mappings.
      +/
     static string lowercaseNickname(const string nickname,
         IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) nothrow pure
@@ -1156,32 +1209,41 @@ struct IRCUser
     unittest
     {
         IRCServer.CaseMapping m = IRCServer.CaseMapping.rfc1459;
-        IRCUser user;
 
-        user.nickname = "ABCDEF";
-        assert((user.lowercaseNickname(m) == "abcdef"), user.lowercaseNickname);
+        {
+            immutable lowercase = lowercaseNickname("ABCDEF", m);
+            assert((lowercase == "abcdef"), lowercase);
+        }
+        {
+            immutable lowercase = lowercaseNickname("123", m);
+            assert((lowercase == "123"), lowercase);
+        }
+        {
+            immutable lowercase = lowercaseNickname("^[0v0]^", m);
+            assert((lowercase == "~{0v0}~"), lowercase);
+        }
+        {
+            immutable lowercase = lowercaseNickname(`A|\|`, m);
+            assert((lowercase == "a|||"), lowercase);
+        }
 
-        user.nickname = "123";
-        assert((user.lowercaseNickname(m) == "123"), user.lowercaseNickname);
+        m = IRCServer.caseMapping.ascii;
 
-        user.nickname = "^[0v0]^";
-        assert((user.lowercaseNickname(m) == "~{0v0}~"), user.lowercaseNickname);
-
-        user.nickname = `A|\|`;
-        assert((user.lowercaseNickname(m) == `a|||`), user.lowercaseNickname);
-
-        m = IRCServer.CaseMapping.ascii;
-
-        user.nickname = "^[0v0]^";
-        assert((user.lowercaseNickname(m) == "^[0v0]^"), user.lowercaseNickname);
-
-        user.nickname = `A|\|`;
-        assert((user.lowercaseNickname(m) == `a|\|`), user.lowercaseNickname);
+        {
+            immutable lowercase = lowercaseNickname("^[0v0]^", m);
+            assert((lowercase == "^[0v0]^"), lowercase);
+        }
+        {
+            immutable lowercase = lowercaseNickname(`A|\|`, m);
+            assert((lowercase == `a|\|`), lowercase);
+        }
 
         m = IRCServer.CaseMapping.strict_rfc1459;
 
-        user.nickname = "^[0v0]^";
-        assert((user.lowercaseNickname(m) == "^{0v0}^"), user.lowercaseNickname);
+        {
+            immutable lowercase = lowercaseNickname("^[0v0]^", m);
+            assert((lowercase == "^{0v0}^"), lowercase);
+        }
     }
 
 
