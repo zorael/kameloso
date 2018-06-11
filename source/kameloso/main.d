@@ -877,8 +877,8 @@ int main(string[] args)
             import kameloso.ircdefs : IRCBot;  // fix visibility warning
             import kameloso.irc : IRCParser;
 
-            bot.registration = IRCBot.Status.notStarted;
-            bot.authentication = IRCBot.Status.notStarted;
+            bot.registration = IRCBot.Progress.notStarted;
+            bot.authentication = IRCBot.Progress.notStarted;
 
             /+
              +  If we're reconnecting we're connecting to the same server, so we

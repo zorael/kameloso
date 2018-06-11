@@ -15,7 +15,7 @@
         "--ex", "arsd."
     ],
     "-ddoxTool" : "scod",
-    "versions": [ "PostParseSanityCheck" ],
+    "versions": [ "AsAnApplicatiozn" ],
     "configurations":
     [
         {

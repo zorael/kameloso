@@ -44,8 +44,8 @@ struct ConnectSettings
 }
 
 
-/// Shorthand alias to `kameloso.ircdefs.IRCBot.Status`.
-alias Status = IRCBot.Status;
+/// Shorthand alias to `kameloso.ircdefs.IRCBot.Progress`.
+alias Progress = IRCBot.Progress;
 
 
 // onSelfpart
@@ -188,10 +188,10 @@ void onPing(ConnectService service, const IRCEvent event)
     {
         mainThread.prioritySend(ThreadMessage.Pong(), target);
 
-        if (bot.authentication == Status.started)
+        if (bot.authentication == Progress.started)
         {
             logger.log("Auth timed out. Joining channels ...");
-            bot.authentication = Status.finished;
+            bot.authentication = Progress.finished;
             bot.updated = true;
             service.joinChannels();
         }
@@ -232,7 +232,7 @@ void tryAuth(ConnectService service)
 
         case "EFNet":
             // No registration available
-            bot.authentication = Status.finished;
+            bot.authentication = Progress.finished;
             bot.updated = true;
             return;
 
@@ -245,7 +245,7 @@ void tryAuth(ConnectService service)
             break;
         }
 
-        bot.authentication = Status.started;
+        bot.authentication = Progress.started;
         bot.updated = true;
 
         with (IRCServer.Daemon)
@@ -261,7 +261,7 @@ void tryAuth(ConnectService service)
                 logger.warningf("Cannot auth when you have changed your nickname " ~
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
-                bot.authentication = Status.finished;
+                bot.authentication = Progress.finished;
                 bot.updated = true;
                 service.joinChannels();
                 return;
@@ -297,7 +297,7 @@ void tryAuth(ConnectService service)
 
         case twitch:
             // No registration available
-            bot.authentication = Status.finished;
+            bot.authentication = Progress.finished;
             bot.updated = true;
             return;
 
@@ -326,12 +326,12 @@ void onEndOfMotd(ConnectService service)
 {
     with (service.state)
     {
-        if (bot.authPassword.length && (bot.authentication == Status.notStarted))
+        if (bot.authPassword.length && (bot.authentication == Progress.notStarted))
         {
             service.tryAuth();
         }
 
-        if ((bot.authentication == Status.finished) ||
+        if ((bot.authentication == Progress.finished) ||
             !bot.authPassword.length ||
             (bot.server.daemon == IRCServer.Daemon.twitch))
         {
@@ -365,12 +365,12 @@ void onAuthEnd(ConnectService service)
 {
     with (service.state)
     {
-        bot.authentication = Status.finished;
+        bot.authentication = Progress.finished;
         bot.updated = true;
 
         // This can be before registration ends in case of SASL
         // return if still registering
-        if (bot.registration == Status.started) return;
+        if (bot.registration == Progress.started) return;
 
         logger.log("Joining channels ...");
         service.joinChannels();
@@ -388,7 +388,7 @@ void onNickInUse(ConnectService service)
 {
     with (service.state)
     {
-        if (service.state.bot.registration == IRCBot.Status.started)
+        if (service.state.bot.registration == Progress.started)
         {
             if (service.renamedDuringRegistration)
             {
@@ -419,7 +419,7 @@ void onNickInUse(ConnectService service)
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
 {
-    if (service.state.bot.registration == IRCBot.Status.started)
+    if (service.state.bot.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters");
@@ -567,7 +567,7 @@ void onSASLAuthenticate(ConnectService service)
         import kameloso.string : beginsWith;
         import std.base64 : Base64;
 
-        authentication = Status.started;
+        authentication = Progress.started;
         updated = true;
 
         immutable authLogin = authLogin.length ? authLogin : origNickname;
@@ -595,7 +595,7 @@ void onSASLSuccess(ConnectService service)
 {
     with (service.state)
     {
-        bot.authentication = Status.finished;
+        bot.authentication = Progress.finished;
         bot.updated = true;
 
         /++
@@ -636,7 +636,7 @@ void onSASLFailure(ConnectService service)
 
         // Auth failed and will fail even if we try NickServ, so flag as
         // finished auth and invoke `CAP END`
-        bot.authentication = Status.finished;
+        bot.authentication = Progress.finished;
         bot.updated = true;
 
         // See `onSASLSuccess` for info on `CAP END`
@@ -654,7 +654,7 @@ void onWelcome(ConnectService service)
 {
     with (service.state)
     {
-        bot.registration = IRCBot.Status.finished;
+        bot.registration = Progress.finished;
         bot.updated = true;
     }
 }
@@ -687,7 +687,7 @@ void register(ConnectService service)
 {
     with (service.state)
     {
-        bot.registration = Status.started;
+        bot.registration = Progress.started;
         bot.updated = true;
 
         service.raw!(Yes.quiet)("CAP LS 302");

@@ -12,6 +12,24 @@ import kameloso.string : has, nom;
 
 private:
 
+version(AsAnApplication)
+{
+    /+
+        As an application; log sanity check failures to screen. Parsing proceeds
+        and plugins are processed.
+     +/
+    version = PrintSanityFailures;
+}
+else
+{
+    /+
+        As a library; throw an exception on sanity check failures. Parsing halts
+        and the event dies mid-flight. However, no Logger will be imported,
+        leaving the library headless.
+     +/
+    version = ThrowSanityFailures;
+}
+
 
 // parseBasic
 /++
@@ -936,6 +954,13 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_LIST: // 322
         // :irc.RomaniaChat.eu 322 kameloso #GameOfThrones 1 :[+ntTGfB]
         // :irc.RomaniaChat.eu 322 kameloso #radioclick 63 :[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro
+        // :eggbert.ca.na.irchighway.net 322 kameloso * 3 :
+        /*
+            (asterisk channels)
+            milky | channel isn't public nor are you a member
+            milky | Unreal inserts that instead of not sending the result
+            milky | Other IRCd may do same because they are all derivatives
+         */
         slice.nom(' '); // bot nickname
         event.channel = slice.nom(' ');
         event.aux = slice.nom(" :");
@@ -1168,59 +1193,47 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +  Checks for some specific erroneous edge cases in an
  +  `kameloso.ircdefs.IRCEvent`, complains about all of them and corrects some.
  +
- +  This is one of the last remaining uses of `logger` in this module. If we
- +  don't compile this in we're closer to a library.
+ +  If version `PrintSanityFailures` it will print warning messages to the
+ +  screen. If version `ThrowSanityFailures` it will throw an
+ +  `IRCParseException` instead.
+ +
+ +  Unsure if it's wrong to mark as trusted, but we're only using
+ +  `stdout.flush`, which surely *must* be trusted if `writeln` to `stdout` is?
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +/
-version(PostParseSanityCheck)
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
-    import kameloso.common : logger, printObject;
     import kameloso.string : beginsWith;
-    import std.stdio : writeln;
 
-    // Unsure if it's wrong to mark as trusted, but we're only using
-    // stdout.flush, which surely *must* be trusted if writeln to stdout is?
-    version(Cygwin_) import std.stdio : stdout;
+    import std.array : Appender;
+    Appender!string sink;
+    //sink.reserve(128);
 
     if (event.target.nickname.has(' ') || event.channel.has(' '))
     {
-        writeln();
-        logger.warning("-- SPACES IN NICK/CHAN, NEEDS REVISION");
-        printObject(event);
-        logger.warning("--------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
+        sink.put("Spaces in target nickname or channel");
     }
-    else if (event.target.nickname.beginsWith('#') &&
-        (event.type != IRCEvent.Type.ERR_NOSUCHNICK) &&
-        (event.type != IRCEvent.Type.RPL_ENDOFWHOIS))
+
+    if (event.target.nickname.length && parser.bot.server.chantypes.has(event.target.nickname[0]))
     {
-        writeln();
-        logger.warning("------ TARGET NICKNAME IS A CHANNEL?");
-        printObject(event);
-        logger.warning("------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
+        if (sink.data.length) sink.put(". ");
+        sink.put("Target nickname is a channel");
     }
-    else if (event.channel.length &&
+
+    if (event.channel.length &&
         !parser.bot.server.chantypes.has(event.channel[0]) &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
         (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
         (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
         (event.type != IRCEvent.Type.RPL_ENDOFNAMES) &&
-        (event.type != IRCEvent.Type.RPL_LIST)) // Curious
+        (event.type != IRCEvent.Type.RPL_LIST))  // Some channels can be asterisks if they aren't public
     {
-        writeln();
-        logger.warning("---------- CHANNEL IS NOT A CHANNEL?");
-        printObject(event);
-        logger.warning("------------------------------------");
-        writeln();
-        version(Cygwin_) stdout.flush();
+        if (sink.data.length) sink.put(". ");
+        sink.put("Channel is not a channel");
     }
 
     if (event.target.nickname == parser.bot.nickname)
@@ -1240,6 +1253,26 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
             event.target.nickname = string.init;
             break;
         }
+    }
+
+    if (!sink.data.length) return;
+
+    version(PrintSanityFailures)
+    {
+        import kameloso.common : logger, printObject;
+        import std.stdio : writeln;
+        version(Cygwin_) import std.stdio : stdout;
+
+        writeln();
+        logger.warning(sink.data);
+        printObject(event);
+        writeln();
+
+        version(Cygwin_) stdout.flush();
+    }
+    else version(ThrowSanityFailures)
+    {
+        throw new IRCParseException(sink.data, event);
     }
 }
 
@@ -1991,12 +2024,9 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
 
-    version(PostParseSanityCheck)
-    {
-        // Final pass: sanity check. This verifies some fields and gives
-        // meaningful error messages if something doesn't look right.
-        parser.postparseSanityCheck(event);
-    }
+    // Final pass: sanity check. This verifies some fields and gives
+    // meaningful error messages if something doesn't look right.
+    parser.postparseSanityCheck(event);
 
     return event;
 }
