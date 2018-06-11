@@ -84,7 +84,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     {
         import std.string : representation;
 
-        foreach (i, c; event.content.representation)
+        foreach (immutable i, immutable c; event.content.representation)
         {
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }

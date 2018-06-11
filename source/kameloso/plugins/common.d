@@ -2446,6 +2446,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.algorithm.searching : canFind;
+        import std.string : representation;
 
         // User awareness bits add the IRCUser
         with (plugin.state)
@@ -2456,7 +2457,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 // Can be more than one if multi-prefix capability is enabled
                 // Server-sent string, can assume ASCII (@,%,+...) and go char
                 // by char
-                foreach (immutable modesign; event.aux)
+                foreach (immutable modesign; event.aux.representation)
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
@@ -2514,6 +2515,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         import kameloso.string : has, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
+        import std.string : representation;
 
         if (!event.content.length) return;
 
@@ -2544,7 +2546,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 // Can be more than one if multi-prefix capability is enabled
                 // Server-sent string, can assume ASCII (@,%,+...) and go char
                 // by char
-                foreach (immutable modesign; modesigns)
+                foreach (immutable modesign; modesigns.representation)
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {

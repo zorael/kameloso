@@ -2283,6 +2283,8 @@ unittest
  +/
 bool isValidChannel(const string line, const IRCServer server) pure @nogc
 {
+    import std.string : representation;
+
     /++
      +  Channels names are strings (beginning with a '&' or '#' character) of
      +  length up to 200 characters.  Apart from the the requirement that the
@@ -2302,7 +2304,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
     /// Checks whether passed character is one of those in `CHANTYPES`.
     bool matchesChansign(const char character)
     {
-        foreach (immutable chansign; server.chantypes)
+        foreach (immutable chansign; server.chantypes.representation)
         {
             if (character == chansign)
             {
@@ -2328,7 +2330,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
-        foreach (immutable chansign; server.chantypes)
+        foreach (immutable chansign; server.chantypes.representation)
         {
             if (line[2..$].has(chansign)) return false;
         }
@@ -2391,12 +2393,14 @@ unittest
  +/
 bool isValidNickname(const string nickname, const IRCServer server)
 {
+    import std.string : representation;
+
     if (!nickname.length || (nickname.length > server.maxNickLength))
     {
         return false;
     }
 
-    foreach (immutable c; nickname)
+    foreach (immutable c; nickname.representation)
     {
         if (!c.isValidNicknameCharacter) return false;
     }
@@ -2507,9 +2511,11 @@ bool isValidNicknameCharacter(const char c)
 ///
 unittest
 {
+    import std.string : representation;
+
     {
         immutable line = "abcDEFghi0{}29304_[]`\\^|---";
-        foreach (char c; line)
+        foreach (char c; line.representation)
         {
             assert(c.isValidNicknameCharacter, c ~ "");
         }
