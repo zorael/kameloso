@@ -127,7 +127,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         {
             // Not an extended join
             import kameloso.messaging : raw;
-            plugin.state.mainThread.raw("WHOIS " ~ nickname);
+            plugin.state.mainThread.raw("WHOIS " ~ sender.nickname);
             return;
         }
         goto case ACCOUNT;
