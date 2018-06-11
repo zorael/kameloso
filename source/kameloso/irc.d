@@ -954,6 +954,13 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_LIST: // 322
         // :irc.RomaniaChat.eu 322 kameloso #GameOfThrones 1 :[+ntTGfB]
         // :irc.RomaniaChat.eu 322 kameloso #radioclick 63 :[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro
+        // :eggbert.ca.na.irchighway.net 322 kameloso * 3 :
+        /*
+            (asterisk channels)
+            milky | channel isn't public nor are you a member
+            milky | Unreal inserts that instead of not sending the result
+            milky | Other IRCd may do same because they are all derivatives
+         */
         slice.nom(' '); // bot nickname
         event.channel = slice.nom(' ');
         event.aux = slice.nom(" :");
