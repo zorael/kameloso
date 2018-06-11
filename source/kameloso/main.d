@@ -422,7 +422,7 @@ Flag!"quit" mainLoop(ref Client client)
                         }
                         catch (const IRCParseException e)
                         {
-                            logger.warningf("IRCParseException %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
+                            logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
                             printObject(e.event);
                             toRemove ~= i;
                         }
@@ -517,7 +517,7 @@ Flag!"quit" mainLoop(ref Client client)
                                 }
                                 catch (const IRCParseException e)
                                 {
-                                    logger.warningf("IRCParseException %s.awaitingFibers[%d]: %s",
+                                    logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s",
                                         plugin.name, i, e.msg);
                                     printObject(e.event);
                                     toRemove ~= i;
@@ -575,7 +575,7 @@ Flag!"quit" mainLoop(ref Client client)
             }
             catch (const IRCParseException e)
             {
-                logger.warningf("IRCParseException at %s:%d: %s", e.file, e.line, e.msg);
+                logger.warningf("IRC Parse Exception at %s:%d: %s", e.file, e.line, e.msg);
                 printObject(e.event);
             }
             catch (const UTFException e)
