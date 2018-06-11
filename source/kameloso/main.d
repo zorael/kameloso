@@ -686,8 +686,8 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 
         if (!then || ((now - *then) > Timeout.whois))
         {
-            logger.trace("--> WHOIS :", key);
-            client.conn.sendline("WHOIS :", key);
+            logger.trace("--> WHOIS ", key);
+            client.conn.sendline("WHOIS ", key);
             client.whoisCalls[key] = Clock.currTime.toUnixTime;
         }
         else
