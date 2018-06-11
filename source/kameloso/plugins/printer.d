@@ -413,10 +413,6 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
                         KamelosoLogger.logcoloursBright[LogLevel.info] :
                         KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                    immutable logtint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
                     logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
                 }
             }
@@ -706,7 +702,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
             {
                 // Message sent to bot
-                if (plugin.printerSettings.bellOnMention)
+                if (bellOnMention)
                 {
                     import kameloso.bash : TerminalToken;
                     sink.put(TerminalToken.bell);
@@ -727,7 +723,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     if (content.has!(Yes.decode)(bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
-                        if (plugin.printerSettings.bellOnMention)
+                        if (bellOnMention)
                         {
                             import kameloso.bash : TerminalToken;
                             sink.put(TerminalToken.bell);
@@ -999,7 +995,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
                 {
                     // Message sent to bot
-                    if (plugin.printerSettings.bellOnMention)
+                    if (bellOnMention)
                     {
                         import kameloso.bash : TerminalToken;
                         sink.put(TerminalToken.bell);
@@ -1040,7 +1036,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             // Nick was mentioned (naïve guess)
                             immutable inverted = content.invert(bot.nickname);
 
-                            if ((content != inverted) && plugin.printerSettings.bellOnMention)
+                            if ((content != inverted) && bellOnMention)
                             {
                                 // Nick was indeed mentioned, or so the regex says
                                 import kameloso.bash : TerminalToken;
@@ -1091,8 +1087,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         else
         {
             settings.monochrome = true;
-            return plugin.formatMessage(sink, event, settings.monochrome,
-                plugin.printerSettings.bellOnMention);
+            return plugin.formatMessage(sink, event, settings.monochrome, bellOnMention);
         }
     }
 }

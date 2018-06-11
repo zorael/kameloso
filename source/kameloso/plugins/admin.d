@@ -846,6 +846,7 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
+    /// The kind of peek that we know the incoming `peekPlugins` will be of.
     enum PeekType
     {
         unset,
