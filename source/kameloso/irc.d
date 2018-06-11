@@ -2017,12 +2017,9 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
 
-    version(PostParseSanityCheck)
-    {
-        // Final pass: sanity check. This verifies some fields and gives
-        // meaningful error messages if something doesn't look right.
-        parser.postparseSanityCheck(event);
-    }
+    // Final pass: sanity check. This verifies some fields and gives
+    // meaningful error messages if something doesn't look right.
+    parser.postparseSanityCheck(event);
 
     return event;
 }
