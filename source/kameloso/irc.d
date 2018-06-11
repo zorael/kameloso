@@ -12,6 +12,24 @@ import kameloso.string : has, nom;
 
 private:
 
+version(AsAnApplication)
+{
+    /+
+        As an application; log sanity check failures to screen. Parsing proceeds
+        and plugins are processed.
+     +/
+    version = PrintSanityFailures;
+}
+else
+{
+    /+
+        As a library; throw an exception on sanity check failures. Parsing halts
+        and the event dies mid-flight. However, no Logger will be imported,
+        leaving the library headless.
+     +/
+    version = ThrowSanityFailures;
+}
+
 
 // parseBasic
 /++
