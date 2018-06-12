@@ -483,7 +483,12 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(default_.colour);
         }
+    }
 
+    static if (!__traits(hasMember, Sink, "data"))
+    {
+        // Not an Appender, make sure it has a final linebreak to be consistent
+        // with Appender writeln
         sink.put('\n');
     }
 }
