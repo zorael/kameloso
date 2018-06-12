@@ -326,6 +326,44 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             plugin.formatMessage(File(path, "a").lockingTextWriter, event, true, false);
         }
+
+        if (event.errors.length && plugin.printerSettings.saveErrors)
+        {
+            import kameloso.common : formatObjects;
+
+            immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
+
+            if (errPath !in plugin.buffers) plugin.buffers[errPath] = LogLineBuffer(errPath);
+
+            if (plugin.printerSettings.bufferedWrites)
+            {
+                plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
+
+                if (event.sender != IRCUser.init)
+                {
+                    plugin.buffers[errPath].lines ~=formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                }
+
+                if (event.target != IRCUser.init)
+                {
+                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
+                }
+            }
+            else
+            {
+                File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event);
+
+                if (event.sender != IRCUser.init)
+                {
+                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                }
+
+                if (event.target != IRCUser.init)
+                {
+                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.target);
+                }
+            }
+        }
     }
     catch (const FileException e)
     {
