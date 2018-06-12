@@ -65,6 +65,9 @@ struct PrinterSettings
     /// Whether to log raw events.
     bool saveRaw = false;
 
+    /// Whether to log errors.
+    bool saveErrors = true;
+
     /// Whether to buffer writes.
     bool bufferedWrites = true;
 
