@@ -830,6 +830,9 @@ struct IRCEvent
 
     /// A timestamp of when the event transpired.
     long time;
+
+    /// What errors occured during parsing, if any.
+    string errors;
 }
 
 
