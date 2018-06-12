@@ -8,6 +8,7 @@ import kameloso.bash : BashForeground;
 import kameloso.uda;
 
 import std.experimental.logger : Logger;
+import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -293,6 +294,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @trusted
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : stripSuffix;
     import kameloso.traits;
