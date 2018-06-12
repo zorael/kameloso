@@ -546,7 +546,6 @@ if (isOutputRange!(Sink, char[]))
    string[] dynA              ["foo", "bar", "baz"](3)
       int[] iA                [1, 2, 3, 4](4)
  char[char] cC                ['b':'b', 'a':'a'](2)
-
 `;
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
