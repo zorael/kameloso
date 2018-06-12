@@ -209,18 +209,18 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     {
         if (settings.monochrome)
         {
-            formatObjectsImpl!(printAll, No.coloured, widthArg)
+            formatObjects!(printAll, No.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsImpl!(printAll, Yes.coloured, widthArg)
+            formatObjects!(printAll, Yes.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsImpl!(printAll, No.coloured, widthArg)
+        formatObjects!(printAll, No.coloured, widthArg)
             (stdout.lockingTextWriter, things);
     }
 
@@ -258,7 +258,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
 }
 
 
-// formatObjectsImpl
+// formatObjects
 /++
  +  Formats a struct object, with all its printable members with all their
  +  printable values.
@@ -279,8 +279,8 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +  Foo foo, bar;
  +  Appender!string sink;
  +
- +  sink.formatObjectsImpl!(Yes.coloured)(foo);
- +  sink.formatObjectsImpl!(No.coloured)(bar);
+ +  sink.formatObjects!(Yes.coloured)(foo);
+ +  sink.formatObjects!(No.coloured)(bar);
  +  writeln(sink.data);
  +  ------------
  +
@@ -290,7 +290,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +      sink = Output range to write to.
  +      things = Variadic list of structs to enumerate and format.
  +/
-private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
+void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @trusted
 {
@@ -524,7 +524,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     Appender!(char[]) sink;
 
     sink.reserve(512);  // ~323
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(s);
+    sink.formatObjects!(No.printAll, No.coloured)(s);
 
     enum structNameSerialised =
 `-- StructName
@@ -547,7 +547,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     alias StructNameSettings = StructName;
     StructNameSettings so = s;
     sink.clear();
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(so);
+    sink.formatObjects!(No.printAll, No.coloured)(so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -567,7 +567,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2);
+        sink.formatObjects!(No.printAll, Yes.coloured)(s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -593,7 +593,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2o);
+        sink.formatObjects!(No.printAll, Yes.coloured)(s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
 }
