@@ -331,7 +331,7 @@ if (isOutputRange!(Sink, char[]))
     immutable bright = .settings.brightTerminal;
 
     with (BashForeground)
-    foreach (thing; things)
+    foreach (immutable n, thing; things)
     {
         alias Thing = Unqual!(typeof(thing));
         static if (coloured)
@@ -483,13 +483,13 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(default_.colour);
         }
-    }
 
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        // Not an Appender, make sure it has a final linebreak to be consistent
-        // with Appender writeln
-        sink.put('\n');
+        static if ((n < things.length-1) || !__traits(hasMember, Sink, "data"))
+        {
+            // Not an Appender, make sure it has a final linebreak to be consistent
+            // with Appender writeln
+            sink.put('\n');
+        }
     }
 }
 
@@ -556,6 +556,40 @@ if (isOutputRange!(Sink, char[]))
     sink.formatObjects!(No.printAll, No.coloured)(so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
+    // Two at a time
+    struct Struct1
+    {
+        string members;
+        int asdf;
+    }
+
+    struct Struct2
+    {
+        string mumburs;
+        int fdsa;
+    }
+
+    Struct1 st1;
+    Struct2 st2;
+
+    st1.members = "harbl";
+    st1.asdf = 42;
+    st2.mumburs = "hirrs";
+    st2.fdsa = -1;
+
+    sink.clear();
+    sink.formatObjects!(No.printAll, No.coloured)(st1, st2);
+    enum st1st2Formatted =
+`-- Struct1
+   string members            "harbl"(5)
+      int asdf                42
+
+-- Struct2
+   string mumburs            "hirrs"(5)
+      int fdsa                -1
+`;
+    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
 
     // Colour
     struct StructName2
