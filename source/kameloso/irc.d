@@ -1265,6 +1265,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
         writeln();
         logger.warning(sink.data);
+        event.errors = sink.data;
         printObject(event);
         writeln();
 
@@ -1272,6 +1273,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
     }
     else version(ThrowSanityFailures)
     {
+        event.errors = sink.data;
         throw new IRCParseException(sink.data, event);
     }
 }
