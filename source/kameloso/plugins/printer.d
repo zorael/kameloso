@@ -56,6 +56,9 @@ struct PrinterSettings
      +/
     bool bellOnMention = true;
 
+    /// Whether to bell on parsing errors.
+    bool bellOnErrors = true;
+
     /// Whether to have the type names be in capital letters.
     bool typesInCaps = true;
 
