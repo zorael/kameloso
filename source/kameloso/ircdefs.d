@@ -875,9 +875,6 @@ struct IRCBot
         /// List of homes, where the bot should be active.
         string[] homes;
 
-        /// Whitelist of services accounts that may trigger the bot.
-        //string[] whitelist;
-
         /// Currently inhabited channels (though not neccessarily homes).
         string[] channels;
     }
