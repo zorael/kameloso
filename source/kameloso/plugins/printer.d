@@ -668,6 +668,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     string typestring = plugin.printerSettings.typesInCaps ?
         enumToString(event.type) : enumToString(event.type).toLower;
 
+    bool shouldBell;
+
     with (BashForeground)
     with (plugin.state)
     with (event)
@@ -746,11 +748,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
             {
                 // Message sent to bot
-                if (bellOnMention)
-                {
-                    import kameloso.bash : TerminalToken;
-                    sink.put(TerminalToken.bell);
-                }
+                shouldBell = bellOnMention;
             }
         }
 
@@ -767,11 +765,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     if (content.has!(Yes.decode)(bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
-                        if (bellOnMention)
-                        {
-                            import kameloso.bash : TerminalToken;
-                            sink.put(TerminalToken.bell);
-                        }
+                        shouldBell = bellOnMention;
                     }
                     else
                     {
@@ -795,6 +789,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             import std.format : formattedWrite;
             sink.formattedWrite(" (#%03d)", num);
+        }
+
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+        {
+            import kameloso.bash : TerminalToken;
+            sink.put(TerminalToken.bell);
         }
 
         static if (!__traits(hasMember, Sink, "data"))
@@ -1039,11 +1039,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
                 {
                     // Message sent to bot
-                    if (bellOnMention)
-                    {
-                        import kameloso.bash : TerminalToken;
-                        sink.put(TerminalToken.bell);
-                    }
+                    shouldBell = bellOnMention;
                 }
 
                 if (target.badge.length)
@@ -1083,8 +1079,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             if ((content != inverted) && bellOnMention)
                             {
                                 // Nick was indeed mentioned, or so the regex says
-                                import kameloso.bash : TerminalToken;
-                                sink.put(TerminalToken.bell);
+                                shouldBell = bellOnMention;
                             }
 
                             put(sink, `: "`, inverted, '"');
@@ -1122,6 +1117,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             }
 
             sink.colour(default_);  // same for bright and dark
+
+            if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+            {
+                import kameloso.bash : TerminalToken;
+                sink.put(TerminalToken.bell);
+            }
 
             static if (!__traits(hasMember, Sink, "data"))
             {
