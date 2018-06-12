@@ -605,6 +605,73 @@ if (isOutputRange!(Sink, char[]))
 }
 
 
+// formatObjects
+/++
+ +  A `string`-returning variant of `formatObjects` that doesn't take an
+ +  input range.
+ +
+ +  This is useful when you just want the object(s) formatted without having to
+ +  pass it a sink.
+ +
+ +  Example:
+ +  ------------
+ +  struct Foo
+ +  {
+ +      int foo = 42;
+ +      string bar = "arr matey";
+ +      float f = 3.14f;
+ +      double d = 9.99;
+ +  }
+ +
+ +  Foo foo, bar;
+ +
+ +  writeln(formatObjects!(Yes.coloured)(foo));
+ +  writeln(formatObjects!(No.coloured)(bar));
+ +
+ +  Params:
+ +      coloured = Whether to display in colours or not.
+ +      widthArg = The width with which to pad output columns.
+ +      things = Variadic list of structs to enumerate and format.
+ +/
+string formatObjects(Flag!"printAll" printAll = No.printAll,
+    Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
+    (Things things) @trusted
+if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(1024);
+
+    sink.formatObjects!(printAll, coloured, widthArg)(things);
+    return sink.data;
+}
+
+///
+unittest
+{
+    import std.stdio;
+    // Rely on the main unittests of the output range version of formatObjects
+
+    struct Struct
+    {
+        string members;
+        int asdf;
+    }
+
+    Struct s;
+    s.members = "foo";
+    s.asdf = 42;
+
+    immutable formatted = formatObjects!(No.printAll, No.coloured)(s);
+    assert((formatted ==
+`-- Struct
+   string members            "foo"(3)
+      int asdf                42
+`), '\n' ~ formatted);
+}
+
+
 // scopeguard
 /++
  +  Generates a string mixin of *scopeguards*.
