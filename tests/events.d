@@ -1602,6 +1602,7 @@ unittest
     }
 
     {
+        parser.bot.nickname = "kameloso";
         immutable event = parser.toIRCEvent(":kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521");
         with (IRCEvent.Type)
         with (event)
@@ -1609,7 +1610,7 @@ unittest
             assert((type == RPL_BANLIST), type.to!string);
             assert((sender.address == "kornbluth.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert((channel == "#flerrp"), channel);
+            assert((channel == "#flerrp"), "channel is " ~ channel);
             assert((content == "harbl!harbl@snarbl.com"), content);
             assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1513899521"), aux);
             assert((num == 367), num.to!string);
@@ -1625,7 +1626,7 @@ unittest
             assert((sender.address == "lamia.ca.SpotChat.org"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((channel == "#garderoben"), channel);
-            assert((target.nickname == "kameloso"), target.nickname);
+            //assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "End of channel spamfilter list"), content);
             assert((num == 940), num.to!string);
         }
@@ -1680,7 +1681,7 @@ unittest
             assert((sender.address == "irc.oftc.net"), sender.address);
             assert(sender.special, sender.special.to!string);
             assert((channel == "#garderoben"), channel);
-            assert((target.nickname == "kameloso"), target.nickname);
+            //assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "End of Channel Quiet List"), content);
             assert((num == 345), num.to!string);
         }
@@ -1731,6 +1732,7 @@ unittest
     }
 
     {
+        parser.bot.nickname = "kameloso^";
         immutable event = parser.toIRCEvent(":niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089");
         with (IRCEvent.Type)
         with (event)
