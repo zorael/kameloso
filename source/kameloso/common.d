@@ -334,18 +334,15 @@ if (isOutputRange!(Sink, char[]))
     foreach (immutable n, thing; things)
     {
         alias Thing = Unqual!(typeof(thing));
+
         static if (coloured)
         {
             immutable titleColour = bright ? black : white;
-            sink.formattedWrite("%s-- %s\n", titleColour.colour, Unqual!Thing
-                .stringof
-                .stripSuffix("Settings"));
+            sink.formattedWrite("%s-- %s\n", titleColour.colour, Thing.stringof.stripSuffix("Settings"));
         }
         else
         {
-            sink.formattedWrite("-- %s\n", Unqual!Thing
-                .stringof
-                .stripSuffix("Settings"));
+            sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
         }
 
         foreach (immutable i, member; thing.tupleof)
