@@ -63,22 +63,22 @@ struct PrinterSettings
     bool typesInCaps = true;
 
     /// Whether to log events.
-    bool saveLogs = false;
-
-    /// Whether to log raw events.
-    bool saveRaw = false;
-
-    /// Whether to log errors.
-    bool saveErrors = true;
-
-    /// Whether to buffer writes.
-    bool bufferedWrites = true;
+    bool logs = false;
 
     /// Whether to log non-home channels.
     bool logAllChannels = false;
 
+    /// Whether to log errors.
+    bool logErrors = true;
+
+    /// Whether to log raw events.
+    bool logRaw = false;
+
     /// Where to save logs (absolute or relative path).
     string logLocation = "kameloso.logs";
+
+    /// Whether to buffer writes.
+    bool bufferedWrites = true;
 }
 
 
@@ -221,7 +221,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
 
-    if (!plugin.printerSettings.saveLogs) return;
+    if (!plugin.printerSettings.logs) return;
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
@@ -229,7 +229,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     // Save raws first
     with (plugin)
     {
-        if (printerSettings.saveRaw)
+        if (printerSettings.logRaw)
         {
             try
             {
@@ -331,7 +331,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             plugin.formatMessage(File(path, "a").lockingTextWriter, event, true, false);
         }
 
-        if (event.errors.length && plugin.printerSettings.saveErrors)
+        if (event.errors.length && plugin.printerSettings.logErrors)
         {
             import kameloso.common : formatObjects;
 
