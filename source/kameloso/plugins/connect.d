@@ -30,11 +30,11 @@ struct ConnectSettings
 {
     import kameloso.uda : Separator;
 
-    /// Whether to use SASL authentication or not.
-    bool sasl = true;
-
     /// Whether to join channels upon being invited to them.
     bool joinOnInvite = false;
+
+    /// Whether to use SASL authentication or not.
+    bool sasl = true;
 
     /// Whether to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
