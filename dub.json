@@ -6,6 +6,5 @@
     "license": "MIT",
     "targetType": "executable",
     "sourcePaths": [ "source" ],
-    "importPaths": [ "source" ],
-    "libs-posix": [ "phobos2" ]
+    "importPaths": [ "source" ]
 }
