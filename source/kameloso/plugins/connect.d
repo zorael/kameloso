@@ -130,10 +130,9 @@ void joinChannels(ConnectService service)
             return;
         }
 
-        import std.algorithm.iteration : joiner, uniq;
+        import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
-        import std.array : array;
-        import std.conv : to;
+        import std.array : array, join;
         import std.range : chain;
 
         // FIXME: line should split if it reaches 512 characters
@@ -142,9 +141,7 @@ void joinChannels(ConnectService service)
             .array
             .sort()
             .uniq
-            .joiner(",")
-            .array
-            .to!string;
+            .join(",");
 
         service.join(chanlist);
     }
