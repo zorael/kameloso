@@ -1263,11 +1263,9 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         import std.stdio : writeln;
         version(Cygwin_) import std.stdio : stdout;
 
-        writeln();
         logger.warning(sink.data);
         event.errors = sink.data;
         printObject(event);
-        writeln();
 
         version(Cygwin_) stdout.flush();
     }
