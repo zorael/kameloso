@@ -348,6 +348,8 @@ struct IRCEvent
         RPL_INVITING, // = 341,         // "<channel> <nick>"
         RPL_SUMMONING, // = 342,        // "<user> :Summoning user to IRC"
         RPL_WHOISKILL, // = 343,
+        RPL_REOPLIST, // = 344,         // "<channel> <mask>"
+        RPL_ENDOFREOPLIST, // = 345,    // CONFLICT
         RPL_INVITED, // = 345,
         //RPL_INVITELIST, // = 346,
         //RPL_ENDOFINVITELIST, // = 347,
