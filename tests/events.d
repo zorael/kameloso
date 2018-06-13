@@ -1787,6 +1787,20 @@ unittest
             assert((content == "be more welcoming you negative twazzock"), content);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":gallon!~MO.11063@482c29a5.e510bf75.97653814.IP4 PART :#cncnet-yr");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == PART), type.to!string);
+            assert((sender.nickname == "gallon"), sender.nickname);
+            assert((sender.ident == "~MO.11063"), sender.ident);
+            assert((sender.address == "482c29a5.e510bf75.97653814.IP4"), sender.address);
+            assert((channel == "#cncnet-yr"), channel);
+        }
+    }
 }
 
 unittest
