@@ -223,16 +223,10 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     if (!plugin.printerSettings.saveLogs) return;
 
-    if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && plugin.state.bot.homes.canFind(event.channel))
-    {
-        // Not logging all channels and this is not a home.
-        return;
-    }
-
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
 
+    // Save raws first
     with (plugin)
     {
         if (printerSettings.saveRaw)
@@ -263,6 +257,13 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 logger.warning(e.msg);
             }
         }
+    }
+
+    if (!plugin.printerSettings.logAllChannels &&
+        event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
+    {
+        // Not logging all channels and this is not a home.
+        return;
     }
 
     // Some events are tricky to attribute to a channel. Ignore them for now as
