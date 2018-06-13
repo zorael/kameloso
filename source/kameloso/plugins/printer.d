@@ -275,6 +275,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     case NICK:
     case ACCOUNT:
     case SASL_AUTHENTICATE:
+    case PING:
         return;
 
     default:
