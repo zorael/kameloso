@@ -8,6 +8,7 @@ import kameloso.bash : BashForeground;
 import kameloso.uda;
 
 import std.experimental.logger : Logger;
+import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -46,9 +47,9 @@ Logger logger;
  +  It needs to be separately instantiated per thread.
  +
  +  Example:
- +  ------------
+ +  ---
  +  initLogger(settings.monochrome, settings.brightTerminal);
- +  ------------
+ +  ---
  +
  +  Params:
  +      monochrome = Whether the terminal is set to monochrome or not.
@@ -182,7 +183,7 @@ struct CoreSettings
  +  current settings and state, where such is kept in structs.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo;
@@ -193,7 +194,7 @@ struct CoreSettings
  +
  +  Foo foo, bar;
  +  printObjects(foo, bar);
- +  ------------
+ +  ---
  +
  +  Params:
  +      widthArg = The width with which to pad output columns.
@@ -209,18 +210,18 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     {
         if (settings.monochrome)
         {
-            formatObjectsImpl!(printAll, No.coloured, widthArg)
+            formatObjects!(printAll, No.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjectsImpl!(printAll, Yes.coloured, widthArg)
+            formatObjects!(printAll, Yes.coloured, widthArg)
                 (stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjectsImpl!(printAll, No.coloured, widthArg)
+        formatObjects!(printAll, No.coloured, widthArg)
             (stdout.lockingTextWriter, things);
     }
 
@@ -235,7 +236,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
  +  A shorthand "alias" for when there is only one object to print.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo;
@@ -246,7 +247,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
  +
  +  Foo foo;
  +  printObject(foo);
- +  ------------
+ +  ---
  +
  +  Params:
  +      widthArg = The width with which to pad output columns.
@@ -258,7 +259,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
 }
 
 
-// formatObjectsImpl
+// formatObjects
 /++
  +  Formats a struct object, with all its printable members with all their
  +  printable values.
@@ -267,7 +268,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +  instead use `printObject` and `printObjects`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo = 42;
@@ -279,10 +280,10 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +  Foo foo, bar;
  +  Appender!string sink;
  +
- +  sink.formatObjectsImpl!(Yes.coloured)(foo);
- +  sink.formatObjectsImpl!(No.coloured)(bar);
+ +  sink.formatObjects!(Yes.coloured)(foo);
+ +  sink.formatObjects!(No.coloured)(bar);
  +  writeln(sink.data);
- +  ------------
+ +  ---
  +
  +  Params:
  +      coloured = Whether to display in colours or not.
@@ -290,9 +291,10 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +      sink = Output range to write to.
  +      things = Variadic list of structs to enumerate and format.
  +/
-private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
+void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
     (auto ref Sink sink, Things things) @trusted
+if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : stripSuffix;
     import kameloso.traits;
@@ -329,21 +331,18 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     immutable bright = .settings.brightTerminal;
 
     with (BashForeground)
-    foreach (thing; things)
+    foreach (immutable n, thing; things)
     {
         alias Thing = Unqual!(typeof(thing));
+
         static if (coloured)
         {
             immutable titleColour = bright ? black : white;
-            sink.formattedWrite("%s-- %s\n", titleColour.colour, Unqual!Thing
-                .stringof
-                .stripSuffix("Settings"));
+            sink.formattedWrite("%s-- %s\n", titleColour.colour, Thing.stringof.stripSuffix("Settings"));
         }
         else
         {
-            sink.formattedWrite("-- %s\n", Unqual!Thing
-                .stringof
-                .stripSuffix("Settings"));
+            sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
         }
 
         foreach (immutable i, member; thing.tupleof)
@@ -436,22 +435,24 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
                 {
                     enum classOrStruct = is(T == struct) ? "struct" : "class";
 
+                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ? " (init)" : string.init;
+
                     static if (coloured)
                     {
-                        enum normalPattern = "%s%*s %s%-*s %s<%s>\n";
+                        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
 
                         sink.formattedWrite(normalPattern,
                             cyan.colour, typewidth, T.stringof,
                             memberColour.colour, (namewidth + 2), memberstring,
-                            valueColour.colour, classOrStruct);
+                            valueColour.colour, classOrStruct, initText);
                     }
                     else
                     {
-                        enum normalPattern = "%*s %-*s <%s>\n";
+                        enum normalPattern = "%*s %-*s <%s>%s\n";
                         sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, classOrStruct);
+                            (namewidth + 2), memberstring, classOrStruct, initText);
                     }
                 }
                 else
@@ -482,7 +483,12 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
             sink.put(default_.colour);
         }
 
-        sink.put('\n');
+        static if ((n+1 < things.length) || !__traits(hasMember, Sink, "data"))
+        {
+            // Not an Appender, make sure it has a final linebreak to be consistent
+            // with Appender writeln
+            sink.put('\n');
+        }
     }
 }
 
@@ -524,11 +530,11 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     Appender!(char[]) sink;
 
     sink.reserve(512);  // ~323
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(s);
+    sink.formatObjects!(No.printAll, No.coloured)(s);
 
     enum structNameSerialised =
 `-- StructName
-     Struct struct_            <struct>
+     Struct struct_            <struct> (init)
         int i                   12345
      string s                  "foo"(3)
        bool b                   true
@@ -539,7 +545,6 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
    string[] dynA              ["foo", "bar", "baz"](3)
       int[] iA                [1, 2, 3, 4](4)
  char[char] cC                ['b':'b', 'a':'a'](2)
-
 `;
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -547,9 +552,43 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
     alias StructNameSettings = StructName;
     StructNameSettings so = s;
     sink.clear();
-    sink.formatObjectsImpl!(No.printAll, No.coloured)(so);
+    sink.formatObjects!(No.printAll, No.coloured)(so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+
+    // Two at a time
+    struct Struct1
+    {
+        string members;
+        int asdf;
+    }
+
+    struct Struct2
+    {
+        string mumburs;
+        int fdsa;
+    }
+
+    Struct1 st1;
+    Struct2 st2;
+
+    st1.members = "harbl";
+    st1.asdf = 42;
+    st2.mumburs = "hirrs";
+    st2.fdsa = -1;
+
+    sink.clear();
+    sink.formatObjects!(No.printAll, No.coloured)(st1, st2);
+    enum st1st2Formatted =
+`-- Struct1
+   string members            "harbl"(5)
+      int asdf                42
+
+-- Struct2
+   string mumburs            "hirrs"(5)
+      int fdsa                -1
+`;
+    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
 
     // Colour
     struct StructName2
@@ -567,7 +606,7 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2);
+        sink.formatObjects!(No.printAll, Yes.coloured)(s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -593,9 +632,77 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjectsImpl!(No.printAll, Yes.coloured)(s2o);
+        sink.formatObjects!(No.printAll, Yes.coloured)(s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
+}
+
+
+// formatObjects
+/++
+ +  A `string`-returning variant of `formatObjects` that doesn't take an
+ +  input range.
+ +
+ +  This is useful when you just want the object(s) formatted without having to
+ +  pass it a sink.
+ +
+ +  Example:
+ +  ---
+ +  struct Foo
+ +  {
+ +      int foo = 42;
+ +      string bar = "arr matey";
+ +      float f = 3.14f;
+ +      double d = 9.99;
+ +  }
+ +
+ +  Foo foo, bar;
+ +
+ +  writeln(formatObjects!(Yes.coloured)(foo));
+ +  writeln(formatObjects!(No.coloured)(bar));
+ +  ---
+ +
+ +  Params:
+ +      coloured = Whether to display in colours or not.
+ +      widthArg = The width with which to pad output columns.
+ +      things = Variadic list of structs to enumerate and format.
+ +/
+string formatObjects(Flag!"printAll" printAll = No.printAll,
+    Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
+    (Things things) @trusted
+if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(1024);
+
+    sink.formatObjects!(printAll, coloured, widthArg)(things);
+    return sink.data;
+}
+
+///
+unittest
+{
+    import std.stdio;
+    // Rely on the main unittests of the output range version of formatObjects
+
+    struct Struct
+    {
+        string members;
+        int asdf;
+    }
+
+    Struct s;
+    s.members = "foo";
+    s.asdf = 42;
+
+    immutable formatted = formatObjects!(No.printAll, No.coloured)(s);
+    assert((formatted ==
+`-- Struct
+   string members            "foo"(3)
+      int asdf                42
+`), '\n' ~ formatted);
 }
 
 
@@ -608,9 +715,9 @@ private void formatObjectsImpl(Flag!"printAll" printAll = No.printAll,
  +  Which scope to guard is passed by ORing the states.
  +
  +  Example:
- +  ------------
+ +  ---
  +  mixin(scopeguard(entry|exit));
- +  ------------
+ +  ---
  +
  +  Params:
  +      states = Bitmask of which states to guard.
@@ -709,12 +816,12 @@ enum : ubyte
  +  This is good for when calculating format pattern widths.
  +
  +  Example:
- +  ------------
+ +  ---
  +  immutable width = 16.getMultipleOf(4);
  +  assert(width == 16);
  +  immutable width2 = 16.getMultipleOf!(Yes.oneUp)(4);
  +  assert(width2 == 20);
- +  ------------
+ +  ---
  +
  +  Params:
  +      oneUp = Whether to always overshoot.
@@ -789,9 +896,9 @@ unittest
  +  signal handler one.
  +
  +  Example:
- +  ------------
+ +  ---
  +  interruptibleSleep(1.seconds, abort);
- +  ------------
+ +  ---
  +
  +  Params:
  +      dur = Duration to sleep for.
@@ -1054,9 +1161,9 @@ struct Client
  +  passed colouring.
  +
  +  Example:
- +  ------------
+ +  ---
  +  printVersionInfo(BashForeground.white);
- +  ------------
+ +  ---
  +
  +  Params:
  +      colourCode = Bash foreground colour to display the text in.
@@ -1095,10 +1202,10 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  nice columns, then writes it all in one go.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Client client;
  +  client.writeConfigurationFile(client.settings.configFile);
- +  ------------
+ +  ---
  +
  +  Params:
  +      client = Refrence to the current `Client`, with all its settings.
@@ -1144,7 +1251,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  length of the array itself.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      string asdf = "qwertyuiopasdfghjklxcvbnm";
@@ -1154,7 +1261,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +
  +  Foo foo;
  +  writeln(foo.deepSizeof);
- +  ------------
+ +  ---
  +
  +  Params:
  +      thing = Object to enumerate and add up the members of.
@@ -1259,13 +1366,13 @@ unittest
  +  template parameters from the runtime arguments.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Foo foo;
  +  auto namedFoo = labeled(foo, "hello world");
  +
  +  Foo bar;
  +  auto numberedBar = labeled(bar, 42);
- +  ------------
+ +  ---
  +
  +  Params:
  +      thing = Object to wrap.

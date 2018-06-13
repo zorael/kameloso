@@ -17,14 +17,14 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
  +  This should not be used directly, instead use `formatEventAssertBlock`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCEvent event;
  +  Appender!string sink;
  +  sink.formatAssertStatementLines(event);
  +
  +  IRCBot bot;
  +  sink.formatAssertStatementLines(bot, "bot", 1);  // indented once
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Output buffer to write the assert statements into.
@@ -130,12 +130,12 @@ unittest
  +  `kameloso.ircdefs.IRCBot`, including instantiating a fresh one.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCCBot bot;
  +  Appender!string sink;
  +
  +  sink.formatBotAssignment(bot);
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Output buffer to write to.
@@ -220,11 +220,11 @@ with (parser.bot)
  +  `kameloso.ircdefs.IRCEvent`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCEvent event;
  +  Appender!string sink;
  +  sink.formatEventAssertBlock(event);
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Output buffer to write to.
@@ -304,10 +304,10 @@ unittest
  +  error -11.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Client client;
  +  client.generateAsserts();
- +  ------------
+ +  ---
  +
  +  Params:
  +      client = Reference to the current Client, with all its settings.

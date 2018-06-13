@@ -830,6 +830,9 @@ struct IRCEvent
 
     /// A timestamp of when the event transpired.
     long time;
+
+    /// What errors occured during parsing, if any.
+    string errors;
 }
 
 
@@ -871,9 +874,6 @@ struct IRCBot
 
         /// List of homes, where the bot should be active.
         string[] homes;
-
-        /// Whitelist of services accounts that may trigger the bot.
-        //string[] whitelist;
 
         /// Currently inhabited channels (though not neccessarily homes).
         string[] channels;
@@ -1357,7 +1357,7 @@ struct IRCUser
      +  asterisks as glob wildcards, mimicking `*!*@*` mask matching.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  IRCUser u1;
      +  with (u1)
      +  {
@@ -1376,7 +1376,7 @@ struct IRCUser
      +
      +  assert(u1.matchesByMask(u2));
      +  assert(u1.matchesByMask("f*!NaN@*.com"));
-     +  ------------
+     +  ---
      +
      +  Params:
      +      other = `IRCUser` to compare this one with.

@@ -56,23 +56,29 @@ struct PrinterSettings
      +/
     bool bellOnMention = true;
 
+    /// Whether to bell on parsing errors.
+    bool bellOnErrors = true;
+
     /// Whether to have the type names be in capital letters.
     bool typesInCaps = true;
 
     /// Whether to log events.
-    bool saveLogs = false;
-
-    /// Whether to log raw events.
-    bool saveRaw = false;
-
-    /// Whether to buffer writes.
-    bool bufferedWrites = true;
+    bool logs = false;
 
     /// Whether to log non-home channels.
     bool logAllChannels = false;
 
+    /// Whether to log errors.
+    bool logErrors = true;
+
+    /// Whether to log raw events.
+    bool logRaw = false;
+
     /// Where to save logs (absolute or relative path).
     string logLocation = "kameloso.logs";
+
+    /// Whether to buffer writes.
+    bool bufferedWrites = true;
 }
 
 
@@ -215,21 +221,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
 
-    if (!plugin.printerSettings.saveLogs) return;
-
-    if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && plugin.state.bot.homes.canFind(event.channel))
-    {
-        // Not logging all channels and this is not a home.
-        return;
-    }
+    if (!plugin.printerSettings.logs) return;
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
 
+    // Save raws first
     with (plugin)
     {
-        if (printerSettings.saveRaw)
+        if (printerSettings.logRaw)
         {
             try
             {
@@ -257,6 +257,13 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 logger.warning(e.msg);
             }
         }
+    }
+
+    if (!plugin.printerSettings.logAllChannels &&
+        event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
+    {
+        // Not logging all channels and this is not a home.
+        return;
     }
 
     // Some events are tricky to attribute to a channel. Ignore them for now as
@@ -322,6 +329,44 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         else
         {
             plugin.formatMessage(File(path, "a").lockingTextWriter, event, true, false);
+        }
+
+        if (event.errors.length && plugin.printerSettings.logErrors)
+        {
+            import kameloso.common : formatObjects;
+
+            immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
+
+            if (errPath !in plugin.buffers) plugin.buffers[errPath] = LogLineBuffer(errPath);
+
+            if (plugin.printerSettings.bufferedWrites)
+            {
+                plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
+
+                if (event.sender != IRCUser.init)
+                {
+                    plugin.buffers[errPath].lines ~=formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                }
+
+                if (event.target != IRCUser.init)
+                {
+                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
+                }
+            }
+            else
+            {
+                File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event);
+
+                if (event.sender != IRCUser.init)
+                {
+                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                }
+
+                if (event.target != IRCUser.init)
+                {
+                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.target);
+                }
+            }
         }
     }
     catch (const FileException e)
@@ -624,6 +669,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     string typestring = plugin.printerSettings.typesInCaps ?
         enumToString(event.type) : enumToString(event.type).toLower;
 
+    bool shouldBell;
+
     with (BashForeground)
     with (plugin.state)
     with (event)
@@ -702,11 +749,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
             {
                 // Message sent to bot
-                if (bellOnMention)
-                {
-                    import kameloso.bash : TerminalToken;
-                    sink.put(TerminalToken.bell);
-                }
+                shouldBell = bellOnMention;
             }
         }
 
@@ -723,11 +766,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     if (content.has!(Yes.decode)(bot.nickname))
                     {
                         // Nick was mentioned (VERY naïve guess)
-                        if (bellOnMention)
-                        {
-                            import kameloso.bash : TerminalToken;
-                            sink.put(TerminalToken.bell);
-                        }
+                        shouldBell = bellOnMention;
                     }
                     else
                     {
@@ -751,6 +790,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             import std.format : formattedWrite;
             sink.formattedWrite(" (#%03d)", num);
+        }
+
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+        {
+            import kameloso.bash : TerminalToken;
+            sink.put(TerminalToken.bell);
         }
 
         static if (!__traits(hasMember, Sink, "data"))
@@ -995,11 +1040,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
                 {
                     // Message sent to bot
-                    if (bellOnMention)
-                    {
-                        import kameloso.bash : TerminalToken;
-                        sink.put(TerminalToken.bell);
-                    }
+                    shouldBell = bellOnMention;
                 }
 
                 if (target.badge.length)
@@ -1039,8 +1080,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             if ((content != inverted) && bellOnMention)
                             {
                                 // Nick was indeed mentioned, or so the regex says
-                                import kameloso.bash : TerminalToken;
-                                sink.put(TerminalToken.bell);
+                                shouldBell = bellOnMention;
                             }
 
                             put(sink, `: "`, inverted, '"');
@@ -1078,6 +1118,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             }
 
             sink.colour(default_);  // same for bright and dark
+
+            if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+            {
+                import kameloso.bash : TerminalToken;
+                sink.put(TerminalToken.bell);
+            }
 
             static if (!__traits(hasMember, Sink, "data"))
             {

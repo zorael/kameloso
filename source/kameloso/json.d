@@ -13,7 +13,7 @@ module kameloso.json;
  +
  +  This deduplicates some code currently present in more than one plugin.
  +
- +  ------------
+ +  ---
  +  JSONStorage s;
  +  s.reset();  // not always neccessary
  +  s.storage["foo"] = null;  // JSONValue quirk
@@ -22,7 +22,7 @@ module kameloso.json;
  +  s.storage["foo"]["ghi"] = JSONValue([ "bar", "baz", "qux" ]);
  +  s.storage["bar"] = JSONValue("asdf");
  +  assert(s.storage.length == 2);
- +  ------------
+ +  ---
  +/
 struct JSONStorage
 {
