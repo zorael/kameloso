@@ -2600,6 +2600,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
     @(IRCEvent.Type.RPL_INVITELIST)
+    @(IRCEvent.Type.RPL_REOPLIST)
     @(ChannelPolicy.home)
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
@@ -2612,16 +2613,17 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         with (IRCEvent.Type)
         with (plugin.state)
         {
-            string mode;
+            static immutable string[599] modecharsByType =
+            [
+                RPL_BANLIST : "+b",
+                RPL_EXCEPTLIST : "+e",
+                RPL_QUIETLIST : "+q",
+                RPL_INVITELIST : "+I",
+                RPL_REOPLIST : "+R",
+            ];
 
-            if (event.type == RPL_BANLIST) mode = "+b";
-            else if (event.type == RPL_QUIETLIST) mode = "+q";
-            else if (event.type == RPL_INVITELIST) mode = "+I";
-            else
-            {
-                assert(0);
-            }
-
+            immutable mode = modecharsByType[event.type];
+            assert(mode.length);
             channels[event.channel].setMode(mode, event.content, plugin.state.bot.server);
         }
     }
