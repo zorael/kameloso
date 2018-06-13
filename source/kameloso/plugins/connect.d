@@ -381,15 +381,17 @@ void onAuthEnd(ConnectService service)
 
 // onNickInUse
 /++
- +  Appends a single character to the end of the bot's nickname and flags the
- +  bot as updated, so as to propagate the change to all other plugins.
+ +  Modifies the nickname by appending characters to the end of it.
+ +
+ +  Flags the bot as updated, so as to propagate the change to all other
+ +  plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
 {
     with (service.state)
     {
-        if (service.state.bot.registration == Progress.started)
+        if (bot.registration == Progress.started)
         {
             if (service.renamedDuringRegistration)
             {
