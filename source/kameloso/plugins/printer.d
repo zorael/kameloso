@@ -304,10 +304,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         }
         else
         {
-            // Don't know what to do; bail
-            import kameloso.common : printObject;
-            logger.warning("Unsure how to log that event");
-            printObject(event);
+            // Don't know where to log this event; bail
             return;
         }
     }
