@@ -1,6 +1,7 @@
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
- +  as well as managing authentication to services.
+ +  as well as managing authentication to services. It also manages responding
+ +  to `PING`.
  +
  +  It has no commands; everything in it is reactionary, with no special
  +  awareness mixed in.
@@ -23,7 +24,7 @@ private:
 
 // ConnectSettings
 /++
- +  ConnectService settings.
+ +  Settings for a `ConnectService`.
  +/
 struct ConnectSettings
 {
@@ -152,8 +153,8 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
- +  Responds to `ERR_BADPING` events by sending the text (supplied as content in
- +  the `kameloso.ircdefs.IRCEvent`) to the server.
+ +  Responds to `ERR_BADPING` events by sending the text supplied as content in
+ +  the `kameloso.ircdefs.IRCEvent` to the server.
  +
  +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
  +  however it's not used in Unreal (and might not be used in Ultimate either)."
@@ -174,7 +175,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
  +  Pongs the server upon `PING`.
  +
  +  We make sure to ping with the sender as target, and not the neccessarily
- +  the server as saved in the `kameloso.ircdefs.IRCServer`` struct. For
+ +  the server as saved in the `kameloso.ircdefs.IRCServer` struct. For
  +  example, `ERR_BADPING` (or is it `ERR_NEEDPONG`?) generally wants you to
  +  ping a random number or string.
  +/
@@ -317,8 +318,11 @@ void tryAuth(ConnectService service)
 
 // onEndOfMotd
 /++
- +  Joins channels at the end of the `MOTD`, and tries to authenticate with
- +  services if applicable.
+ +  Joins channels at the end of the message of the day (`MOTD`), and tries to
+ +  authenticate with services if applicable.
+ +
+ +  Some servers don't have a `MOTD`, so act on `IRCEvent.Type.ERR_NOMOTD` as
+ +  well.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -739,7 +743,8 @@ public:
 
 // ConnectService
 /++
- +  A collection of functions and state needed to connect to an IRC server.
+ +  A collection of functions and state needed to connect and stay connected to
+ +  an IRC server, as well as authenticate with services.
  +
  +  This is mostly a matter of sending `USER` and `NICK` during registration,
  +  but also incorporates logic to authenticate with services.
@@ -752,9 +757,10 @@ final class ConnectService : IRCPlugin
     /// Whether the server has sent at least one `PING`.
     bool serverPinged;
 
-    /// Whether or not the bot has renamed itself during registration
+    /// Whether or not the bot has renamed itself during registration.
     bool renamedDuringRegistration;
 
+    /// An alias to let other plugins call `.tryAuth` from outside the module.
     alias auth = .tryAuth;
 
     mixin IRCPluginImpl;
