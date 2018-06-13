@@ -1375,7 +1375,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  setting by only knowing its name.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  struct FooSettings
      +  {
      +      int bar;
@@ -1385,7 +1385,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  setSettingByName("bar", 42);
      +  assert(settings.bar == 42);
-     +  ------------
+     +  ---
      +
      +  Params:
      +      setting = String name of the struct member to set.
@@ -1489,11 +1489,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  configuration file.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  Appender!string sink;
      +  sink.reserve(128);  // LDC fix
      +  serialiseConfigInto(sink);
-     +  ------------
+     +  ---
      +
      +  Params:
      +      sink = Reference `std.array.Appender` to fill with plugin-specific

@@ -3,10 +3,10 @@
  +  replacemnt/substitution of text. It does not require the tool itself though,
  +  and will work on Windows builds too.
  +
- +  ------------
+ +  ---
  +  $ echo "foo bar baz" | sed "s/bar/qux/"
  +  foo qux baz
- +  ------------
+ +  ---
  +
  +  It has no bot commands, as everything is done by scanning messages for signs
  +  of `s/this/that/` patterns.
@@ -14,11 +14,11 @@
  +  It supports a delimiteter of `/`, `#` and `|`. You can also end it with a
  +  `g` to set the global flag, to have more than one match substituted.
  +
- +  ------------
+ +  ---
  +  $ echo "foo bar baz" | sed "s/bar/qux/g"
  +  $ echo "foo bar baz" | sed "s#bar#qux#g"
  +  $ echo "foo bar baz" | sed "s|bar|qux|g"
- +  ------------
+ +  ---
  +
  +  It is very optional.
  +/

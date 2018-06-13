@@ -122,13 +122,13 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +  value of the output range version of `colour`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string blinkOn = colour(BashForeground.white, BashBackground.yellow,
  +      BashEffect.blink);
  +  string blinkOff = colour(BashForeground.default_, BashBackground.default_,
  +      BashReset.blink);
  +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
- +  ------------
+ +  ---
  +
  +  Params:
  +      codes = Variadic list of Bash format codes.
@@ -158,12 +158,12 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +  This is the composing function that fills its result into an output range.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +  sink.colour(BashForeground.red, BashEffect.bold);
  +  sink.put("Foo");
  +  sink.colour(BashForeground.default_, BashReset.bold);
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Output range to write output to.
@@ -197,9 +197,9 @@ if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Co
  +  buffer to fill into.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string foo = "Foo Bar".colour(BashForeground.bold, BashEffect.reverse);
- +  ------------
+ +  ---
  +
  +  Params:
  +      text = Text to format.
@@ -230,7 +230,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +  background, makes it darker.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int r = 255;
  +  int g = 128;
  +  int b = 100;
@@ -238,7 +238,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +  assert(r != 255);
  +  assert(g != 128);
  +  assert(b != 100);
- +  ------------
+ +  ---
  +
  +  Params:
  +      r = Reference to a red value.
@@ -302,7 +302,7 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
  +  background, makes it brighter.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int r = 255;
  +  int g = 128;
  +  int b = 100;
@@ -310,7 +310,7 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
  +  assert(r != 255);
  +  assert(g != 128);
  +  assert(b != 100);
- +  ------------
+ +  ---
  +
  +  Params:
  +      r = Reference to a red value.
@@ -475,7 +475,7 @@ unittest
  +  red, green and blue.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +  int r, g, b;
  +  numFromHex("3C507D", r, g, b);
@@ -483,7 +483,7 @@ unittest
  +  sink.put("Foo");
  +  sink.colour(BashReset.all);
  +  writeln(sink);  // "Foo" in #3C507D
- +  ------------
+ +  ---
  +
  +  Params:
  +      normalise = Whether to normalise colours so that they aren't too dark.
@@ -527,13 +527,13 @@ if (isOutputRange!(Sink,string))
  +  output sink to fill into.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string foo = "Foo Bar".truecolour(172, 172, 255);
  +
  +  int r, g, b;
  +  numFromHex("003388", r, g, b);
  +  string bar = "Bar Foo".truecolour(r, g, b);
- +  ------------
+ +  ---
  +
  +  Params:
  +      normalise = Whether to normalise colours so that they aren't too dark.
@@ -583,10 +583,10 @@ unittest
  +  Bash-inverts the colours of a piece of text in a string.
  +
  +  Example:
- +  ------------
+ +  ---
  +  immutable line = "This is an example!";
  +  writeln(line.invert("example"));  // "example" substring visually inverted
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = Line to examine and invert a substring of.

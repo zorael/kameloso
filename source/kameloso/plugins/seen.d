@@ -66,7 +66,7 @@ public:
  +  us to send messages to the server. We don't define it here; we mix it in
  +  later with the `kameloso.plugins.common.IRCPluginImpl` mixin.
  +
- +  --------------
+ +  ---
  +  struct IRCPluginState
  +  {
  +      IRCBot bot;
@@ -76,7 +76,7 @@ public:
  +      IRCChannel[string] channels;
  +      WHOISRequest[string] whoisQueue;
  +  }
- +  --------------
+ +  ---
  +
  +  * `bot` houses information about the bot itself, and the server you're
  +     connected to.
@@ -139,11 +139,11 @@ final class SeenPlugin : IRCPlugin
      +  users' nicknames and with values that are UNIX timetamps, denoting when
      +  that user was last *seen* online.
      +
-     +  --------------
+     +  ---
      +  seenUsers["joe"] = Clock.currTime.toUnixTime;
      +  auto now = Clock.currTime.toUnixTime;
      +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
-     +  --------------
+     +  ---
      +/
     long[string] seenUsers;
 
@@ -172,7 +172,7 @@ final class SeenPlugin : IRCPlugin
      +  `kameloso.messaging` functions, *curried* with the main thread ID, so
      +  they can easily be called with knowledge only of the plugin symbol.
      +
-     +  ------------
+     +  ---
      +  plugin.chan("#d", "Hello world!");
      +  plugin.query("kameloso", "Hello you!");
      +
@@ -181,7 +181,7 @@ final class SeenPlugin : IRCPlugin
      +      chan("#d", "This is convenient");
      +      query("kameloso", "No need to specify plugin.state.mainThread");
      +  }
-     +  ------------
+     +  ---
      +/
     mixin MessagingProxy;
 }
@@ -423,7 +423,7 @@ void onEndOfList(SeenPlugin plugin)
  +  only run once, like `start`, or at the end of the message of the day (event
  +  type `RPL_ENDOFMOTD`).
  +
- +  ------------
+ +  ---
  +  // The Fiber delegate must re-add its own Fiber
  +  // Declare it here before so it's visible from inide it
  +  Fiber fiber;
@@ -442,7 +442,7 @@ void onEndOfList(SeenPlugin plugin)
  +
  +  fiber = new Fiber(&foo);
  +  fiber.call();  // trigger once immediately and let it queue itelf
- +  ------------
+ +  ---
  +
  +  Mind that this approach is more expensive than relying on `PING`, as it
  +  incurs lots of array lookups. "Expensive" in a micro-optimising sense; it's
@@ -503,14 +503,14 @@ void onPing(SeenPlugin plugin)
  +  As a result, the `kameloso.ircdefs.IRCEvent` `event` would look something
  +  like this:
  +
- +  --------------
+ +  ---
  +  event.type = IRCEvent.Type.CHAN;
  +  event.sender.nickname = "foo";
  +  event.sender.ident = "~bar";
  +  event.sender.address = "baz.foo.bar.org";
  +  event.channel = "#bar";
  +  event.content = "Joe";
- +  --------------
+ +  ---
  +
  +  Lastly, the `Description` annotation merely defines how this function will
  +  be listed in the "online help" list, shown by sending "`help`" to the bot in
@@ -546,7 +546,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
      +
      +  You can therefore use them as such:
      +
-     +  ------------
+     +  ---
      +  with (plugin)  // <-- neccessary for the short-shorthand
      +  {
      +      chan("#d", "Hello world!");
@@ -556,7 +556,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
      +      part("#flerrp");
      +      topic("#flerrp", "This is a new topic");
      +  }
-     +  ------------
+     +  ---
      +
      +  `privmsg` will either send a channel message or a personal query message
      +  depending on the arguments passed to it. If the first `channel` argument

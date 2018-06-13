@@ -1357,7 +1357,7 @@ struct IRCUser
      +  asterisks as glob wildcards, mimicking `*!*@*` mask matching.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  IRCUser u1;
      +  with (u1)
      +  {
@@ -1376,7 +1376,7 @@ struct IRCUser
      +
      +  assert(u1.matchesByMask(u2));
      +  assert(u1.matchesByMask("f*!NaN@*.com"));
-     +  ------------
+     +  ---
      +
      +  Params:
      +      other = `IRCUser` to compare this one with.

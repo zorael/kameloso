@@ -18,12 +18,12 @@ import std.typecons : Flag, No, Yes;
  +  Optionally add the `kameloso` version banner at the head of it.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +  sink.serialise(bot, bot.server, settings);
  +  immutable configText = sink.data.justifiedConfigurationText;
  +  writeToDisk!(Yes.addBanner)("kameloso.conf", configText);
- +  ------------
+ +  ---
  +
  +  Params:
  +      banner = Whether to add the "*kameloso bot*" banner at the head of the
@@ -58,9 +58,9 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
  +  Reads configuration file into a string.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string configText = configReader("kameloso.conf");
- +  ------------
+ +  ---
  +
  +  Params:
  +      configFile = Filename of file to read from.
@@ -95,12 +95,12 @@ string configReader(const string configFile)
  +  settings will be silently ignored with no errors.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCBot bot;
  +  IRCServer server;
  +
  +  "kameloso.conf".readConfigInto(bot, server);
- +  ------------
+ +  ---
  +
  +  Params:
  +      configFile = Filename of file to read from.
@@ -129,13 +129,13 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
  +  Convenience method to call serialise on several objects.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +  IRCBot bot;
  +  IRCServer server;
  +  sink.serialise(bot, server);
  +  assert(!sink.data.empty);
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Reference output range to write the serialised objects to (in
@@ -160,13 +160,13 @@ if (Things.length > 1)
  +  and it doesn't recurse into other structs or classes.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +  IRCBot bot;
  +
  +  sink.serialise(bot);
  +  assert(!sink.data.empty);
- +  ------------
+ +  ---
  +
  +  Params:
  +      sink = Reference output range to write to, usually an `Appender!string`.
@@ -319,7 +319,7 @@ pipyon 3
  +  It does not currently recurse into other struct/class members.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCBot bot;
  +
  +  bot.setMemberByName("nickname", "kameloso");
@@ -329,7 +329,7 @@ pipyon 3
  +  assert(bot.nickname == "kameloso");
  +  assert(bot.address == "blarbh.hlrehg.org");
  +  assert(!bot.special);
- +  ------------
+ +  ---
  +
  +  Params:
  +      thing = Reference object whose members to set.
@@ -505,7 +505,7 @@ unittest
  +  therein to one or more passed struct/class objects.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCBot bot;
  +  IRCServer server;
  +
@@ -513,7 +513,7 @@ unittest
  +      .configReader
  +      .splitter("\n")
  +      .applyConfiguration(bot, server);
- +  ------------
+ +  ---
  +
  +  Params:
  +      range = Input range from which to read the configuration text.
@@ -727,14 +727,14 @@ naN     !"#¤%&/`;
  +  entry names, then another to format it and eventually return a flat string.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCBot bot;
  +  IRCServer server;
  +  Appender!string sink;
  +
  +  sink.serialise(bot, server);
  +  immutable justified = sink.data.justifiedConfigurationText;
- +  ------------
+ +  ---
  +
  +  Params:
  +      origLines = Unjustified raw configuration text.

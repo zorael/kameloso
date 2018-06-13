@@ -43,11 +43,11 @@ struct QuotesSettings
  +  Fetches a quote for the specified nickname from the in-memory JSON array.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string quote = plugin.getQuote(event.sender.nickame);
  +  if (!quote.length) return;
  +  // ...
- +  ------------
+ +  ---
  +
  +  Params:
  +      plugin = Current `QuotesPlugin`.

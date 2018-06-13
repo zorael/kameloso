@@ -19,12 +19,12 @@ private:
  +  command-line arguments will have been applied.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCBot bot;
  +  CoreSettings settings;
  +
  +  meldSettingsFromFile(bot, settings);
- +  ------------
+ +  ---
  +
  +  Params:
  +      bot = Reference `kameloso.ircdefs.IRCBot` to apply changes to.
@@ -62,13 +62,13 @@ public:
  +  defaults.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Client client;
  +  Flag!"quit" quit = client.handleGetopt(args);
  +
  +  if (quit) return 0;
  +  // ...
- +  ------------
+ +  ---
  +
  +  Params:
  +      client = Reference to the current `kameloso.common.Client`.

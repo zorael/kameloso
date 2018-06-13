@@ -19,7 +19,7 @@ import std.traits : isArray, isAssociativeArray;
     except if the melding struct's member is `typeof(member).init`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      string abc;
@@ -33,7 +33,7 @@ import std.traits : isArray, isAssociativeArray;
  +
  +  assert(bar.abc == "from foo");
  +  assert(bar.def == 42);
- +  ------------
+ +  ---
  +
  +  Params:
  +      overwrite = Whether the source object should overwrite set (non-`init`)
@@ -292,13 +292,13 @@ unittest
  +  array's field is not `T.init`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int[] arr1 = [ 1, 2, 3, 0, 0, 0 ];
  +  int[] arr2 = [ 0, 0, 0, 4, 5, 6 ];
  +  arr1.meldInto!(No.overwrite)(arr2);
  +
  +  assert(arr2 == [ 1, 2, 3, 4, 5, 6 ]);
- +  ------------
+ +  ---
  +
  +  Params:
  +      overwrite = Whether the source array should overwrite set (non-`init`)
@@ -382,7 +382,7 @@ unittest
  +  separate.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int[string] aa1 = [ "abc" : 42, "def" : -1 ];
  +  int[string] aa2 = [ "ghi" : 10, "jkl" : 7 ];
  +  arr1.meldInto(arr2);
@@ -391,7 +391,7 @@ unittest
  +  assert("def" in aa2);
  +  assert("ghi" in aa2);
  +  assert("jkl" in aa2);
- +  ------------
+ +  ---
  +
  +  Params:
  +      overwrite = Whether the source associative array should overwrite set

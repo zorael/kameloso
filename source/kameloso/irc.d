@@ -2044,11 +2044,11 @@ public:
  +  string are encoded into `\:`, and literal backslashes `\\`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string encoded = `This\sline\sis\sencoded\:\swith\s\\s`;
  +  string decoded = decodeIRCv3String(encoded);
  +  assert(decoded == "This line is encoded; with \\s");
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = Original line to decode.
@@ -2109,13 +2109,13 @@ unittest
  +  Looks at an  and decides whether it is from nickname services.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCEvent event;
  +  if (parser.isFromAuthService(event))
  +  {
  +      // ...
  +  }
- +  ------------
+ +  ---
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
@@ -2266,13 +2266,13 @@ unittest
  +  `kameloso.ircdefs.IRCServer` parameter to be an `uint`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCServer server;
  +  assert("#channel".isValidChannel(server));
  +  assert("##channel".isValidChannel(server));
  +  assert(!"!channel".isValidChannel(server));
  +  assert(!"#ch#annel".isValidChannel(server));
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = String of a potential channel name.
@@ -2375,13 +2375,13 @@ unittest
  +  It only looks for invalid characters in the name as well as it length.
  +
  +  Example:
- +  ------------
+ +  ---
  +  assert("kameloso".isValidNickname);
  +  assert("kameloso^".isValidNickname);
  +  assert("kamelåså".isValidNickname);
  +  assert(!"#kameloso".isValidNickname);
  +  assert(!"k&&me##so".isValidNickname);
- +  ------------
+ +  ---
  +
  +  Params:
  +      nickname = String nickname.
@@ -2464,12 +2464,12 @@ unittest
  +  `[a-z] [A-Z] [0-9] _-\[]{}^`|`
  +
  +  Example:
- +  ------------
+ +  ---
  +  assert('a'.isValidNicknameCharacter);
  +  assert('9'.isValidNicknameCharacter);
  +  assert('`'.isValidNicknameCharacter);
  +  assert(!(' '.isValidNicknameCharacter));
- +  ------------
+ +  ---
  +
  +  Params:
  +      c = Character to compare with the list of accepted characters in a
@@ -2531,14 +2531,14 @@ unittest
  +  `@nickname`. Saves the stripped signs in the ref string `modesigns`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCServer server;
  +  immutable signed = "@+kameloso";
  +  string signs;
  +  immutable nickname = server.stripModeSign(signed, signs);
  +  assert((nickname == "kameloso"), nickname);
  +  assert((signs == "@+"), signs);
- +  ------------
+ +  ---
  +
  +  Params:
  +      server = `kameloso.ircdefs.IRCServer`, with all its settings.
@@ -2610,13 +2610,13 @@ unittest
  +  parameter to store the stripped modesign characters in.
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCServer server;
  +  immutable signed = "@+kameloso";
  +  immutable nickname = server.stripModeSign(signed);
  +  assert((nickname == "kameloso"), nickname);
  +  assert((signs == "@+"), signs);
- +  ------------
+ +  ---
  +/
 string stripModesign(const IRCServer server, const string nickname) pure nothrow @nogc
 {
@@ -2690,10 +2690,10 @@ struct IRCParser
     /++
      +  Sets the server daemon and melds together the needed typenums.
      +
-     +  ------------
+     +  ---
      +  IRCParser parser;
      +  parser.setDaemon(IRCServer.Daemon.unreal, daemonstring);
-     +  ------------
+     +  ---
      +/
     void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
@@ -2877,7 +2877,7 @@ unittest
  +  `data`-taking modes are at the end of the string).
  +
  +  Example:
- +  ------------
+ +  ---
  +  IRCChannel channel;
  +  channel.setMode("+oo zorael!NaN@* kameloso!*@*")
  +  assert(channel.modes.length == 2);
@@ -2885,7 +2885,7 @@ unittest
  +  assert(channel.modes.length == 1);
  +  channel.setMode("-o *!*@*");
  +  assert(!channel.modes.length);
- +  ------------
+ +  ---
  +
  +  Params:
  +      channel = `kameloso.ircdefs.IRCChannel` whose modes are being set.

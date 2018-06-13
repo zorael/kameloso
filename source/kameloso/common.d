@@ -47,9 +47,9 @@ Logger logger;
  +  It needs to be separately instantiated per thread.
  +
  +  Example:
- +  ------------
+ +  ---
  +  initLogger(settings.monochrome, settings.brightTerminal);
- +  ------------
+ +  ---
  +
  +  Params:
  +      monochrome = Whether the terminal is set to monochrome or not.
@@ -183,7 +183,7 @@ struct CoreSettings
  +  current settings and state, where such is kept in structs.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo;
@@ -194,7 +194,7 @@ struct CoreSettings
  +
  +  Foo foo, bar;
  +  printObjects(foo, bar);
- +  ------------
+ +  ---
  +
  +  Params:
  +      widthArg = The width with which to pad output columns.
@@ -236,7 +236,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
  +  A shorthand "alias" for when there is only one object to print.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo;
@@ -247,7 +247,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
  +
  +  Foo foo;
  +  printObject(foo);
- +  ------------
+ +  ---
  +
  +  Params:
  +      widthArg = The width with which to pad output columns.
@@ -268,7 +268,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +  instead use `printObject` and `printObjects`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo = 42;
@@ -283,7 +283,7 @@ void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thin
  +  sink.formatObjects!(Yes.coloured)(foo);
  +  sink.formatObjects!(No.coloured)(bar);
  +  writeln(sink.data);
- +  ------------
+ +  ---
  +
  +  Params:
  +      coloured = Whether to display in colours or not.
@@ -647,7 +647,7 @@ if (isOutputRange!(Sink, char[]))
  +  pass it a sink.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      int foo = 42;
@@ -660,6 +660,7 @@ if (isOutputRange!(Sink, char[]))
  +
  +  writeln(formatObjects!(Yes.coloured)(foo));
  +  writeln(formatObjects!(No.coloured)(bar));
+ +  ---
  +
  +  Params:
  +      coloured = Whether to display in colours or not.
@@ -714,9 +715,9 @@ unittest
  +  Which scope to guard is passed by ORing the states.
  +
  +  Example:
- +  ------------
+ +  ---
  +  mixin(scopeguard(entry|exit));
- +  ------------
+ +  ---
  +
  +  Params:
  +      states = Bitmask of which states to guard.
@@ -815,12 +816,12 @@ enum : ubyte
  +  This is good for when calculating format pattern widths.
  +
  +  Example:
- +  ------------
+ +  ---
  +  immutable width = 16.getMultipleOf(4);
  +  assert(width == 16);
  +  immutable width2 = 16.getMultipleOf!(Yes.oneUp)(4);
  +  assert(width2 == 20);
- +  ------------
+ +  ---
  +
  +  Params:
  +      oneUp = Whether to always overshoot.
@@ -895,9 +896,9 @@ unittest
  +  signal handler one.
  +
  +  Example:
- +  ------------
+ +  ---
  +  interruptibleSleep(1.seconds, abort);
- +  ------------
+ +  ---
  +
  +  Params:
  +      dur = Duration to sleep for.
@@ -1160,9 +1161,9 @@ struct Client
  +  passed colouring.
  +
  +  Example:
- +  ------------
+ +  ---
  +  printVersionInfo(BashForeground.white);
- +  ------------
+ +  ---
  +
  +  Params:
  +      colourCode = Bash foreground colour to display the text in.
@@ -1201,10 +1202,10 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +  nice columns, then writes it all in one go.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Client client;
  +  client.writeConfigurationFile(client.settings.configFile);
- +  ------------
+ +  ---
  +
  +  Params:
  +      client = Refrence to the current `Client`, with all its settings.
@@ -1250,7 +1251,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +  length of the array itself.
  +
  +  Example:
- +  ------------
+ +  ---
  +  struct Foo
  +  {
  +      string asdf = "qwertyuiopasdfghjklxcvbnm";
@@ -1260,7 +1261,7 @@ void writeConfigurationFile(ref Client client, const string filename)
  +
  +  Foo foo;
  +  writeln(foo.deepSizeof);
- +  ------------
+ +  ---
  +
  +  Params:
  +      thing = Object to enumerate and add up the members of.
@@ -1365,13 +1366,13 @@ unittest
  +  template parameters from the runtime arguments.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Foo foo;
  +  auto namedFoo = labeled(foo, "hello world");
  +
  +  Foo bar;
  +  auto numberedBar = labeled(bar, 42);
- +  ------------
+ +  ---
  +
  +  Params:
  +      thing = Object to wrap.

@@ -92,10 +92,10 @@ public:
      +  Given an address and a port, builds an array of `Address`es into IPs.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  Connection conn;
      +  conn.resolve("irc.freenode.net", 6667, abort);
-     +  ------------
+     +  ---
      +
      +  Params:
      +      address = String address to look up.
@@ -158,7 +158,7 @@ public:
      +  the attempt, and is kept track of with the connected boolean.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  Connection conn;
      +
      +  conn.resolve("irc.freenode.net", 6667, abort);
@@ -169,7 +169,7 @@ public:
      +      writeln("Connection failed!");
      +      return 1;
      +  }
-     +  ------------
+     +  ---
      +
      +  Params:
      +      abort = Reference bool which, if set, should make us abort and
@@ -270,10 +270,10 @@ public:
      +  condition.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  conn.sendline("NICK kameloso");
      +  conn.sendline("PRIVMSG #channel :text");
-     +  ------------
+     +  ---
      +
      +  Params:
      +      strings = Variadic list of strings to send.
@@ -303,7 +303,7 @@ public:
  +  its turn to read from the server again. The buffer logic is complex.
  +
  +  Example:
- +  ------------
+ +  ---
  +  import std.concurrency : Generator;
  +
  +  auto generator = new Generator!string(() => listenFiber(conn, abort));
@@ -313,7 +313,7 @@ public:
  +  {
  +      // line is a yielded string
  +  }
- +  ------------
+ +  ---
  +
  +  Params:
  +      conn = `Connection` whose `std.socket.Socket` it reads from the server
