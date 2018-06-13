@@ -537,7 +537,7 @@ if (isOutputRange!(Sink, char[]))
 
     enum structNameSerialised =
 `-- StructName
-     Struct struct_            <struct>
+     Struct struct_            <struct> (init)
         int i                   12345
      string s                  "foo"(3)
        bool b                   true
