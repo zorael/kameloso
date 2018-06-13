@@ -26,6 +26,9 @@ else
         As a library; throw an exception on sanity check failures. Parsing halts
         and the event dies mid-flight. However, no Logger will be imported,
         leaving the library headless.
+
+        Comment this if you want parsing sanity check failures to be silently
+        ignored, with the errors stored in `IRCEvent.errors`.
      +/
     version = ThrowSanityFailures;
 }
@@ -1233,7 +1236,8 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +
  +  If version `PrintSanityFailures` it will print warning messages to the
  +  screen. If version `ThrowSanityFailures` it will throw an
- +  `IRCParseException` instead.
+ +  `IRCParseException` instead. If neither versions it will silently let the
+ +  event pass on.
  +
  +  Unsure if it's wrong to mark as trusted, but we're only using
  +  `stdout.flush`, which surely *must* be trusted if `writeln` to `stdout` is?
@@ -1311,6 +1315,11 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
     {
         event.errors = sink.data;
         throw new IRCParseException(sink.data, event);
+    }
+    else
+    {
+        // Silently let pass
+        event.errors = sink.data;
     }
 }
 
