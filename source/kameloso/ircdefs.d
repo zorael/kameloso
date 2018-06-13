@@ -1039,6 +1039,12 @@ struct IRCServer
 
         /// The current case mapping.
         CaseMapping caseMapping;
+
+        /// `EXTBAN` prefix character.
+        string extbanPrefix = "$";
+
+        /// `EXTBAN` types.
+        string extbanTypes;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
