@@ -1829,3 +1829,38 @@ unittest
         }
     }
 }
+
+unittest
+{
+    IRCParser parser;
+    parser.setDaemon(IRCServer.Daemon.ircnet, "IRCnet");
+
+    {
+        immutable event = parser.toIRCEvent(":irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_REOPLIST), type.to!string);
+            assert((sender.address == "irc.atw-inter.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((channel == "#debian.de"), channel);
+            assert((content == "towo!towo@littlelamb.szaf.org"), content);
+            assert((num == 344), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":irc.atw-inter.net 345 kameloso #debian.de :End of Channel Reop List");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_ENDOFREOPLIST), type.to!string);
+            assert((sender.address == "irc.atw-inter.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((channel == "#debian.de"), channel);
+            assert((content == "End of Channel Reop List"), content);
+            assert((num == 345), num.to!string);
+        }
+    }
+}
