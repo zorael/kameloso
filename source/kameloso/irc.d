@@ -599,28 +599,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.aux = slice;
         break;
 
-    case RPL_TOPICWHOTIME: // 333
-    case RPL_BANLIST: // 367
-    case RPL_INVITELIST: // 336,346
-        // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
-        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
-        // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
-        // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
-        slice.nom(' ');  // bot nickname
-        event.channel = slice.nom(' ');
-
-        if (slice.has(' '))
-        {
-            event.content = slice.nom(' ');
-            event.aux = slice;
-        }
-        else
-        {
-            // RusNet-like
-            event.content = slice;
-        }
-        break;
-
     case RPL_WHOISHOST: // 378
         // :wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62
         // TRIED TO NOM TOO MUCH:'kameloso :is connecting from NaN@194.117.188.126 194.117.188.126' with ' :is connecting from *@'
@@ -1182,7 +1160,11 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     if ((target == parser.bot.nickname) && slice.has(' '))
                     {
                         // First target is bot, and there is more
-                        // :irc.atw-inter.net 344 kameloso #debian.de ij*!ij@windfluechter.net
+                        // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
+                        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+                        // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
+                        // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
+                        // :irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org
 
                         if (slice.beginsWith('#') && slice.has(' '))
                         {
