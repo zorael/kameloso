@@ -1153,9 +1153,37 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 {
                     // More than one target, first is not a channel
                     // Assume first is nickname and second is aux
-                    // :port80b.se.quakenet.org 221 kameloso +i
                     event.target.nickname = target;
-                    event.aux = slice;
+
+                    if ((event.target.nickname == parser.bot.nickname) && slice.has(' '))
+                    {
+                        // :irc.atw-inter.net 344 kameloso #debian.de ij*!ij@windfluechter.net
+
+                        if (slice.beginsWith('#') && slice.has(' '))
+                        {
+                            event.channel = slice.nom(' ');
+
+                            if (slice.has(' '))
+                            {
+                                event.content = slice.nom(' ');
+                                event.aux = slice;
+                            }
+                            else
+                            {
+                                event.content = slice;
+                            }
+                        }
+                        else
+                        {
+                            // When does this happen?
+                            event.content = slice;
+                        }
+                    }
+                    else
+                    {
+                        // :port80b.se.quakenet.org 221 kameloso +i
+                        event.aux = slice;
+                    }
                 }
             }
             else
