@@ -438,22 +438,24 @@ if (isOutputRange!(Sink, char[]))
                 {
                     enum classOrStruct = is(T == struct) ? "struct" : "class";
 
+                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ? " (init)" : string.init;
+
                     static if (coloured)
                     {
-                        enum normalPattern = "%s%*s %s%-*s %s<%s>\n";
+                        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
                         immutable memberColour = bright ? black : white;
                         immutable valueColour = bright ? green : lightgreen;
 
                         sink.formattedWrite(normalPattern,
                             cyan.colour, typewidth, T.stringof,
                             memberColour.colour, (namewidth + 2), memberstring,
-                            valueColour.colour, classOrStruct);
+                            valueColour.colour, classOrStruct, initText);
                     }
                     else
                     {
-                        enum normalPattern = "%*s %-*s <%s>\n";
+                        enum normalPattern = "%*s %-*s <%s>%s\n";
                         sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, classOrStruct);
+                            (namewidth + 2), memberstring, classOrStruct, initText);
                     }
                 }
                 else
