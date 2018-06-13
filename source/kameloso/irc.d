@@ -2032,6 +2032,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
+    import kameloso.string : strippedRight;
     import std.datetime.systime : Clock;
 
     if (!raw.length) throw new IRCParseException("Tried to parse empty string");
@@ -2079,6 +2080,9 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     // Third pass: specialcases. This splits up the remaining bits into
     // useful strings, like sender, target and content
     parser.parseSpecialcases(event, slice);
+
+    // Final cosmetic touches
+    event.content = event.content.strippedRight;
 
     // Final pass: sanity check. This verifies some fields and gives
     // meaningful error messages if something doesn't look right.
