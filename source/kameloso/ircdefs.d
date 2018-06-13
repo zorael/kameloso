@@ -2309,6 +2309,8 @@ struct Typenums
         245 : Type.RPL_STATSSLINE,
         248 : Type.RPL_STATSDEFINE,
         274 : Type.RPL_STATSDELTA,
+        344 : Type.RPL_REOPLIST,
+        345 : Type.RPL_ENDOFREOPLIST,
         438 : Type.ERR_DEAD,
         487 : Type.ERR_CHANTOORECENT,
         488 : Type.ERR_TSLESSCHAN,
