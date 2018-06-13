@@ -1023,8 +1023,34 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             throw new IRCParseException("Uncaught NUMERIC or UNSET", event);
         }
 
-        // Generic heuristics to catch most cases
+        parser.parseGeneralCases(event, slice);
+    }
+}
 
+
+// parseGeneralCases
+/++
+ +  Takes a slice of a raw IRC string and continues parsing it into an
+ +  `kameloso.ircdefs.IRCEvent` struct.
+ +
+ +  This function only focuses on applying general heuristics to the remaining
+ +  line, dividing it into fields like `target`, `channel`, `content`, etc; not
+ +  based by its type but rather by how the string looks.
+ +
+ +  The `kameloso.ircdefs.IRCEvent` is finished at the end of this function.
+ +
+ +  Params:
+ +      parser = Reference to the current `IRCParser`.
+ +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +          on.
+ +      slice = Reference to the slice of the raw IRC string.
+ +/
+void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
+{
+    import kameloso.string;
+
+    with (parser)
+    {
         if (slice.has(" :"))
         {
             // Has colon-content
@@ -1033,7 +1059,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             if (targets.has(' '))
             {
                 // More than one target
-
                 immutable firstTarget = targets.nom(' ');
 
                 if ((firstTarget == bot.nickname) || (firstTarget == "*"))
@@ -1136,7 +1161,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         else
         {
             // Does not have colon-content
-
             if (slice.has(' '))
             {
                 // More than one target
@@ -1155,32 +1179,39 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     // Assume first is nickname and second is aux
                     event.target.nickname = target;
 
-                    if ((event.target.nickname == parser.bot.nickname) && slice.has(' '))
+                    if ((target == parser.bot.nickname) && slice.has(' '))
                     {
+                        // First target is bot, and there is more
                         // :irc.atw-inter.net 344 kameloso #debian.de ij*!ij@windfluechter.net
 
                         if (slice.beginsWith('#') && slice.has(' '))
                         {
+                            // Second target is channel
                             event.channel = slice.nom(' ');
 
                             if (slice.has(' '))
                             {
+                                // Remaining slice has at least two fields;
+                                // separate into content and aux
                                 event.content = slice.nom(' ');
                                 event.aux = slice;
                             }
                             else
                             {
+                                // Remaining slice is one bit of text
                                 event.content = slice;
                             }
                         }
                         else
                         {
+                            // No-channel second target
                             // When does this happen?
                             event.content = slice;
                         }
                     }
                     else
                     {
+                        // No second target
                         // :port80b.se.quakenet.org 221 kameloso +i
                         event.aux = slice;
                     }
@@ -1209,10 +1240,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.content = slice;
         }
-        break;
     }
-
-    event.content = event.content.strippedRight;
 }
 
 
