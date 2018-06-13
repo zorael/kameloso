@@ -1812,7 +1812,13 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 // RusNet servers do not advertise an easily-identifiable
                 // daemonstring like "1.5.24/uk_UA.KOI8-U", so fake the daemon
                 // here.
-                parser.setDaemon(IRCServer.Daemon.rusnet, "RusNet");
+                parser.setDaemon(IRCServer.Daemon.rusnet, value);
+            }
+            else if (value == "IRCnet")
+            {
+                // Likewise IRCnet only advertises the daemon version and not
+                // the daemon name.
+                parser.setDaemon(IRCServer.Daemon.ircnet, value);
             }
 
             bot.updated = true;
