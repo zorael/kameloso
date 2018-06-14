@@ -2613,7 +2613,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         with (IRCEvent.Type)
         with (plugin.state)
         {
-            static immutable string[599] modecharsByType =
+            static immutable string[601] modecharsByType =
             [
                 RPL_BANLIST : "+b",
                 RPL_EXCEPTLIST : "+e",
