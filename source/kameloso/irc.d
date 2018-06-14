@@ -455,10 +455,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             event.content = slice;
             event.content = event.content.unquoted;
         }
-        else if (slice.beginsWith(':'))
+        else
         {
             // Seen on GameSurge
-            slice = slice[1..$];
+            if (slice.beginsWith(':')) slice = slice[1..$];
+
             event.channel = slice;
         }
         break;
