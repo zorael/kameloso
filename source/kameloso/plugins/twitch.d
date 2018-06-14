@@ -218,6 +218,18 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.type = Type.SUBGIFT;
                 break;
 
+            case "ritual":
+                // unhandled message: ritual
+                event.type = Type.RITUAL;
+                break;
+
+            case "rewardgift":
+                //msg-param-bits-amount = '199'
+                //msg-param-min-cheer-amount = '150'
+                //msg-param-selected-count = '60'
+                event.type = Type.REWARDGIFT;
+                break;
+
             default:
                 logger.warning("unhandled message: ", value);
                 break;
@@ -277,6 +289,23 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.type = Type.BITS;
             event.aux = value;
             break;
+
+        case "msg-param-ritual-name":
+            // msg-param-ritual-name = 'new_chatter'
+            event.content = value;
+            break;
+
+        case "msg-param-bits-amount":
+            //msg-param-bits-amount = '199'
+            event.aux = value;
+            break;
+
+        case "msg-param-min-cheer-amount":
+            // REWARDGIFT; of interest?
+            // msg-param-min-cheer-amount = '150'
+        case "msg-param-selected-count":
+            // REWARDGIFT; of interest?
+            //msg-param-selected-count = '60'
 
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
