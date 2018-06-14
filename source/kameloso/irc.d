@@ -3012,7 +3012,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             Mode newMode;
             newMode.modechar = modechar.to!char;
 
-            if (modechar == server.exceptsChar)
+            if ((modechar == server.exceptsChar) || (modechar == server.invexChar))
             {
                 // Exemption, carry it to the next aMode
                 carriedExemptions ~= IRCUser(datastring);
