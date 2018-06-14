@@ -90,6 +90,8 @@ struct IRCEvent
         PERMBAN,    /// Twitch permanent ban.
         SUBGIFT,    /// Twitch subscription gift event.
         BITS,       /// Twitch "bits" donation.
+        RITUAL,     /// Twitch Ritual event.
+        REWARDGIFT, /// Twitch "reward gift".
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
         AUTH_CHALLENGE,/// Authentication challenge.
