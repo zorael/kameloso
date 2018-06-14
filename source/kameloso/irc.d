@@ -3013,7 +3013,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 // Looks like a user and not an extban
                 newMode.user = IRCUser(datastring);
             }
-            else if (datastring.has(server.extbanPrefix))
+            else if (datastring.beginsWith(server.extbanPrefix))
             {
                 // extban; https://freenode.net/kb/answer/extbans
                 // Does not support a mix of normal and second form bans
