@@ -1851,8 +1851,15 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             break;
 
         case "EXTBAN":
-            bot.server.extbanPrefix = value.nom(',');
-            bot.server.extbanTypes = value;
+            try
+            {
+                bot.server.extbanPrefix = value.nom(',').to!char;
+                bot.server.extbanTypes = value;
+            }
+            catch (const ConvException e)
+            {
+                throw new IRCParseException(e.msg, event, e.file, e.line);
+            }
             break;
 
         case "EXCEPTS":

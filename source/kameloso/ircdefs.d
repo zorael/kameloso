@@ -1041,7 +1041,7 @@ struct IRCServer
         CaseMapping caseMapping;
 
         /// `EXTBAN` prefix character.
-        string extbanPrefix = "$";
+        char extbanPrefix = '$';
 
         /// `EXTBAN` types.
         string extbanTypes;
