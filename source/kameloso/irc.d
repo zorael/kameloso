@@ -1733,174 +1733,124 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         event.content = slice.nom(" :");
     }
 
-    foreach (value; event.content.splitter(' '))
+    try
     {
-        if (!value.has('='))
+        foreach (value; event.content.splitter(' '))
         {
-            // switch on value for things like EXCEPTS, INVEX, CPRIVMSG, etc
-            continue;
-        }
-
-        immutable key = value.nom('=');
-
-        /// http://www.irc.org/tech_docs/005.html
-
-        with (parser)
-        switch (key)
-        {
-        case "PREFIX":
-            // PREFIX=(Yqaohv)!~&@%+
-            import std.format : formattedRead;
-
-            string modes;
-            string prefixes;
-            value.formattedRead("(%s)%s", modes, prefixes);
-
-            foreach (immutable i; 0..modes.length)
+            if (!value.has('='))
             {
-                bot.server.prefixchars[prefixes[i]] = modes[i];
-                bot.server.prefixes ~= modes[i];
+                // switch on value for things like EXCEPTS, INVEX, CPRIVMSG, etc
+                continue;
             }
 
-            break;
+            immutable key = value.nom('=');
 
-        case "CHANTYPES":
-            // CHANTYPES=#
-            // ...meaning which characters may prefix channel names.
-            parser.bot.server.chantypes = value;
-            break;
+            /// http://www.irc.org/tech_docs/005.html
 
-        case "CHANMODES":
-            /++
-             +  This is a list of channel modes according to 4 types.
-             +
-             +  A = Mode that adds or removes a nick or address to a list.
-             +      Always has a parameter.
-             +  B = Mode that changes a setting and always has a parameter.
-             +  C = Mode that changes a setting and only has a parameter when
-             +      set.
-             +  D = Mode that changes a setting and never has a parameter.
-             +
-             +  Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
-             +/
-             with (bot.server)
-             {
+            with (parser.bot.server)
+            switch (key)
+            {
+            case "PREFIX":
+                // PREFIX=(Yqaohv)!~&@%+
+                import std.format : formattedRead;
+
+                string modes;
+                string prefixes;
+                value.formattedRead("(%s)%s", modes, prefixes);
+
+                foreach (immutable i; 0..modes.length)
+                {
+                    prefixchars[prefixes[i]] = modes[i];
+                    prefixes ~= modes[i];
+                }
+                break;
+
+            case "CHANTYPES":
+                // CHANTYPES=#
+                // ...meaning which characters may prefix channel names.
+                chantypes = value;
+                break;
+
+            case "CHANMODES":
+                /++
+                +  This is a list of channel modes according to 4 types.
+                +
+                +  A = Mode that adds or removes a nick or address to a list.
+                +      Always has a parameter.
+                +  B = Mode that changes a setting and always has a parameter.
+                +  C = Mode that changes a setting and only has a parameter when
+                +      set.
+                +  D = Mode that changes a setting and never has a parameter.
+                +
+                +  Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
+                +/
                 string modeslice = value;
                 aModes = modeslice.nom(',');
                 bModes = modeslice.nom(',');
                 cModes = modeslice.nom(',');
                 dModes = modeslice;
                 assert(!dModes.has(','), "Bad chanmodes; dModes has comma");
-             }
-             break;
+                break;
 
-        case "NETWORK":
-            bot.server.network = value;
+            case "NETWORK":
+                import std.algorithm.searching : endsWith;
 
-            if (value == "RusNet")
-            {
-                // RusNet servers do not advertise an easily-identifiable
-                // daemonstring like "1.5.24/uk_UA.KOI8-U", so fake the daemon
-                // here.
-                parser.setDaemon(IRCServer.Daemon.rusnet, value);
-            }
-            else if (value == "IRCnet")
-            {
-                // Likewise IRCnet only advertises the daemon version and not
-                // the daemon name.
-                parser.setDaemon(IRCServer.Daemon.ircnet, value);
-            }
+                network = value;
 
-            bot.updated = true;
-            break;
+                if (value == "RusNet")
+                {
+                    // RusNet servers do not advertise an easily-identifiable
+                    // daemonstring like "1.5.24/uk_UA.KOI8-U", so fake the daemon
+                    // here.
+                    parser.setDaemon(IRCServer.Daemon.rusnet, value);
+                }
+                else if (value == "IRCnet")
+                {
+                    // Likewise IRCnet only advertises the daemon version and not
+                    // the daemon name.
+                    parser.setDaemon(IRCServer.Daemon.ircnet, value);
+                }
+                break;
 
-        case "NICKLEN":
-            try
-            {
-                bot.server.maxNickLength = value.to!uint;
-                bot.updated = true;
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "NICKLEN":
+                maxNickLength = value.to!uint;
+                break;
 
-        case "CHANNELLEN":
-            try
-            {
-                bot.server.maxChannelLength = value.to!uint;
-                bot.updated = true;
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "CHANNELLEN":
+                maxChannelLength = value.to!uint;
+                break;
 
-        case "CASEMAPPING":
-            try
-            {
-                bot.server.caseMapping = value.toEnum!(IRCServer.CaseMapping);
-                bot.updated = true;
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "CASEMAPPING":
+                caseMapping = value.toEnum!(IRCServer.CaseMapping);
+                break;
 
-        case "EXTBAN":
-            try
-            {
-                bot.server.extbanPrefix = value.nom(',').to!char;
-                bot.server.extbanTypes = value;
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "EXTBAN":
+                extbanPrefix = value.nom(',').to!char;
+                extbanTypes = value;
+                break;
 
-        case "EXCEPTS":
-            try
-            {
-                bot.server.exceptsChar = value.length ? value.to!char : 'e';
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "EXCEPTS":
+                exceptsChar = value.length ? value.to!char : 'e';
+                break;
 
-        case "INVEX":
-            try
-            {
-                bot.server.invexChar = value.length ? value.to!char : 'I';
-            }
-            catch (const ConvException e)
-            {
-                throw new IRCParseException(e.msg, event, e.file, e.line);
-            }
-            break;
+            case "INVEX":
+                invexChar = value.length ? value.to!char : 'I';
+                break;
 
-        default:
-            break;
+            default:
+                break;
+            }
         }
+
+        parser.bot.updated = true;
     }
-
-    with (parser.bot.server)
+    catch (const ConvException e)
     {
-        if (!network.length)
-        {
-            import std.algorithm.searching : endsWith;
-
-            if (address.endsWith(".twitch.tv"))
-            {
-                network = "Twitch";
-                parser.bot.updated = true;
-            }
-        }
+        throw new IRCParseException(e.msg, event, e.file, e.line);
+    }
+    catch (const Exception e)
+    {
+        throw new IRCParseException(e.msg, event, e.file, e.line);
     }
 }
 
