@@ -1048,6 +1048,9 @@ struct IRCServer
 
         /// The modechar for mode exceptions.
         char exceptsChar = 'e';
+
+        /// The modechar for invite exceptions.
+        char invexChar = 'I';
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
