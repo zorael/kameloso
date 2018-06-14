@@ -1047,7 +1047,7 @@ struct IRCServer
         string extbanTypes;
 
         /// The modechar for mode exceptions.
-        char exceptsChar;
+        char exceptsChar = 'e';
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
