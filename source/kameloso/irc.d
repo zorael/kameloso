@@ -1873,6 +1873,17 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             }
             break;
 
+        case "INVEX":
+            try
+            {
+                bot.server.invexChar = value.length ? value.to!char : 'I';
+            }
+            catch (const ConvException e)
+            {
+                throw new IRCParseException(e.msg, event, e.file, e.line);
+            }
+            break;
+
         default:
             break;
         }
