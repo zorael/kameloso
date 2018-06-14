@@ -2977,7 +2977,7 @@ unittest
 void setMode(ref IRCChannel channel, const string signedModestring,
     const string data, IRCServer server) pure
 {
-    import kameloso.string : has, nom;
+    import kameloso.string : beginsWith, has, nom;
     import std.array : array;
     import std.algorithm.iteration : splitter;
     import std.algorithm.mutation : remove;
@@ -3001,19 +3001,19 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             Mode newMode;
             newMode.modechar = modechar.to!char;
 
-            if (modechar == 'e')
+            if (modechar == server.exceptsChar)
             {
                 // Exemption, carry it to the next aMode
                 carriedExemptions ~= IRCUser(datastring);
                 continue;
             }
 
-            if (!datastring.has('$') && datastring.has('!') && datastring.has('@'))
+            if (!datastring.beginsWith(server.extbanPrefix) && datastring.has('!') && datastring.has('@'))
             {
-                // Looks like a user
+                // Looks like a user and not an extban
                 newMode.user = IRCUser(datastring);
             }
-            else if (datastring.has('$'))
+            else if (datastring.has(server.extbanPrefix))
             {
                 // extban; https://freenode.net/kb/answer/extbans
                 // Does not support a mix of normal and second form bans
