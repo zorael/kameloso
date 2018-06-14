@@ -771,7 +771,8 @@ int main(string[] args)
 
     scope(failure)
     {
-        logger.error("We just crashed!");
+        import kameloso.bash : TerminalToken;
+        logger.error("We just crashed!", cast(char)TerminalToken.bell);
         client.teardownPlugins();
         resetSignals();
     }
