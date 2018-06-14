@@ -2999,9 +2999,11 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     slice = slice[1..$];
                 }
 
-                if (slice[0] == 'a')
+                switch (slice[0])
                 {
-                    // Account extban
+                case 'a':
+                case 'R':
+                    // Match account
                     if (slice.has(':'))
                     {
                         // More than one field
@@ -3022,6 +3024,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     else
                     {
                         // "$~a"
+                        // "$R"
                         // FIXME: Figure out how to express this.
                         if (slice.length)
                         {
@@ -3032,11 +3035,29 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                             newMode.data = datastring;
                         }
                     }
-                }
-                else
-                {
+                    break;
+
+                case 'j':
+                //case 'c':  // Conflicts with colour ban
+                    // Match channel
+                    slice.nom(':');
+                    newMode.channel = slice;
+                    break;
+
+                /*case 'r':
+                    // GECOS/Real name, which we aren't saving currently.
+                    // Can be done if there's a use-case for it.
+                    break;*/
+
+                /*case 's':
+                    // Which server the user(s) the mode refers to are connected to
+                    // which we aren't saving either. Can also be fixed.
+                    break;*/
+
+                default:
                     // Unhandled extban mode
                     newMode.data = datastring;
+                    break;
                 }
             }
             else
