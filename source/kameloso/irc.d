@@ -3233,6 +3233,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 unittest
 {
     import std.stdio;
+    import std.conv;
 
     IRCServer server;
     // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
@@ -3242,7 +3243,7 @@ unittest
     server.dModes = "CFLMPQScgimnprstz";
 
     // SpotChat: PREFIX=(Yqaohv)!~&@%+
-    server.prefixes = "Yqaohv";
+    server.prefixes = "Yaohv";
     server.prefixchars =
     [
         '!' : 'Y',
@@ -3337,6 +3338,32 @@ unittest
         assert(chan.mods['o'].length == 1);
         chan.setMode("-o", "zorael", server);
         assert(!chan.mods['o'].length);
+    }
+
+    {
+        IRCChannel chan;
+        server.extbanPrefix = '$';
+
+        chan.setMode("+b", "$a:hirrsteff", server);
+        assert(chan.modes.length);
+        with (chan.modes[0])
+        {
+            assert((modechar == 'b'), modechar.text);
+            assert((user.account == "hirrsteff"), user.account);
+        }
+
+        chan.setMode("+q", "$~a:blarf", server);
+        assert((chan.modes.length == 2), chan.modes.length.text);
+        with (chan.modes[1])
+        {
+            assert((modechar == 'q'), modechar.text);
+            assert((user.account == "blarf"), user.account);
+            assert(negated);
+            IRCUser blarf;
+            blarf.nickname = "blarf";
+            blarf.account = "blarf";
+            assert(blarf.matchesByMask(user));
+        }
     }
 }
 
