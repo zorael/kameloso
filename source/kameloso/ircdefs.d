@@ -2492,6 +2492,9 @@ struct IRCChannel
         /// The user associated with the `Mode`, when it is not just `data`.
         IRCUser user;
 
+        /// The channel this mode refers to, where applicable.
+        string channel;
+
         /// Users that are explicitly exempt from the `Mode`.
         IRCUser[] exemptions;
 
@@ -2508,8 +2511,9 @@ struct IRCChannel
             immutable charMatch = (modechar == other.modechar);
             immutable dataMatch = (data == other.data);
             immutable userMatch = user.matchesByMask(other.user);
+            immutable chanMatch = (channel == other.channel);
 
-            immutable match = (charMatch && dataMatch && userMatch);
+            immutable match = (charMatch && dataMatch && userMatch && chanMatch);
             return negated ? !match : match;
         }
 
