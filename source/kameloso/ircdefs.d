@@ -908,6 +908,9 @@ struct IRCBot
 
         /// Whether or not the bot was altered.
         bool updated;
+
+        /// The current modechars active on the bot (e.g. "ix");
+        string modes;
     }
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
