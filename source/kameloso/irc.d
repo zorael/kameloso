@@ -1693,14 +1693,101 @@ void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pu
     }
     else
     {
+        import kameloso.string : beginsWith;
+        import std.algorithm.iteration : filter, uniq;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+        import std.string : representation;
+
         // :kameloso^ MODE kameloso^ :+i
         // :<something> MODE kameloso :ix
-        // Does not always have the plus sign
+        // Does not always have the plus sign. Strip it if it's there.
+
         event.type = IRCEvent.Type.SELFMODE;
-        event.aux = slice[1..$];
+        if (slice.beginsWith(':')) slice = slice[1..$];
+
+        bool subtractive;
+        string modechange = slice;
+
+        if (!slice.length) return;  // Just to safeguard before indexing [0]
+
+        switch (slice[0])
+        {
+        case '-':
+            subtractive = true;
+            goto case '+';
+
+        case '+':
+            slice = slice[1..$];
+            break;
+
+        default:
+            // No sign, implicitly additive
+            modechange = '+' ~ slice;
+        }
+
+        event.aux = modechange;
+
+        if (subtractive)
+        {
+            // Remove the mode from bot.modes
+            foreach (immutable c; slice.representation)
+            {
+                parser.bot.modes = cast(string)parser.bot.modes
+                    .representation
+                    .filter!((a) => a != c)
+                    .array
+                    .idup;
+            }
+        }
+        else
+        {
+            // Add the new mode to bot.modes
+            auto modes = parser.bot.modes.dup.representation;
+            modes ~= slice;
+            parser.bot.modes = cast(string)modes
+                .sort()
+                .uniq
+                .array
+                .idup;
+        }
+
+        parser.bot.updated = true;
     }
 }
 
+///
+unittest
+{
+    IRCParser parser;
+    parser.bot.nickname = "kameloso^";
+    parser.bot.modes = "x";
+
+    {
+        IRCEvent event;
+        string slice = /*":kameloso^ MODE */"kameloso^ :+i";
+        parser.onMode(event, slice);
+        assert((parser.bot.modes == "ix"), parser.bot.modes);
+    }
+    {
+        IRCEvent event;
+        string slice = /*":kameloso^ MODE */"kameloso^ :-i";
+        parser.onMode(event, slice);
+        assert((parser.bot.modes == "x"), parser.bot.modes);
+    }
+    {
+        IRCEvent event;
+        string slice = /*":kameloso^ MODE */"kameloso^ :+abc";
+        parser.onMode(event, slice);
+        assert((parser.bot.modes == "abcx"), parser.bot.modes);
+    }
+    {
+        IRCEvent event;
+        string slice = /*":kameloso^ MODE */"kameloso^ :-bx";
+        parser.onMode(event, slice);
+        assert((parser.bot.modes == "ac"), parser.bot.modes);
+    }
+}
 
 // onISUPPORT
 /++
