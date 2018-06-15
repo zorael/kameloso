@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ldc -d-debug kameloso/*.d kameloso/plugins/*.d || exit 1
+gdb -ex 'set confirm off' -ex run -ex quit --args ldc kameloso/*.d kameloso/plugins/*.d | grep "TemplateInstance::needsCodegen"
