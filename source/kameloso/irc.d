@@ -1668,7 +1668,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
-void onMode(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
+void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     immutable target = slice.nom(' ');
 
