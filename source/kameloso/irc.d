@@ -3032,8 +3032,23 @@ void setMode(ref IRCChannel channel, const string signedModestring,
     import std.conv : to;
     import std.range : StoppingPolicy, retro, zip;
 
-    immutable sign = signedModestring[0];
-    immutable modestring = signedModestring[1..$];
+    if (!signedModestring.length) return;
+
+    char sign = signedModestring[0];
+    string modestring;
+
+    if ((sign == '+') || (sign == '-'))
+    {
+        // Explicitly plus or minus
+        sign = signedModestring[0];
+        modestring = signedModestring[1..$];
+    }
+    else
+    {
+        // No sign, implicitly plus (and don't slice it away)
+        sign = '+';
+        modestring = signedModestring;
+    }
 
     with (channel)
     {
