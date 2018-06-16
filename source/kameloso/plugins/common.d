@@ -1,28 +1,18 @@
-
 module kameloso.plugins.common;
 
 struct IRCPluginState
 {
-    import std.concurrency ;
+    import std.concurrency;
 
-    
     Tid mainThread;
-
 }
-
 
 template IRCPluginImpl()
 {
-    
     IRCPluginState privateState;
 
-    ref state()     {
+    ref state()
+    {
         return this.privateState;
     }
-
-
 }
-
-
-
-

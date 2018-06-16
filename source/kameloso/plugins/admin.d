@@ -3,17 +3,14 @@ import kameloso.ircdefs;
 
 void onSetCommand(AdminPlugin plugin)
 {
-    import kameloso.common ;
-    import std.concurrency ;
+    import kameloso.common;
+    import std.concurrency;
 
-    IRCEvent mutEvent ;
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-mutEvent);
+    IRCEvent mutEvent;
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), mutEvent);
 }
 
-
-
-
-class AdminPlugin {
+class AdminPlugin
+{
     mixin IRCPluginImpl;
 }
