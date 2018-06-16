@@ -230,6 +230,17 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.type = Type.TWITCH_REWARDGIFT;
                 break;
 
+            case "purchase":
+                //msg-param-asin = 'B07DBTZZTH'
+                //msg-param-channelID = '17337557'
+                //msg-param-crateCount = '0'
+                //msg-param-imageURL = 'https://images-na.ssl-images-amazon.com/images/I/31PzvL+AidL.jpg'
+                //msg-param-title = 'Speed\s&\sMomentum\sCrate\s(Steam\sVersion)'
+                //msg-param-userID = '182815893'
+                //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
+                event.type = Type.TWITCH_PURCHASE;
+                break;
+
             default:
                 logger.warning("unhandled message: ", value);
                 break;
