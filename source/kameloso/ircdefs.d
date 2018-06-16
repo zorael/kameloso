@@ -84,14 +84,15 @@ struct IRCEvent
         HOSTTARGET, /// Twitch channel hosting target.
         HOSTSTART,  /// Twitch channel hosting start.
         HOSTEND,    /// Twitch channel hosting end.
-        SUB,        /// Twitch subscription event.
-        RESUB,      /// Twitch resub event.
-        TEMPBAN,    /// Twitch temporary ban (seconds in `aux`).
-        PERMBAN,    /// Twitch permanent ban.
-        SUBGIFT,    /// Twitch subscription gift event.
-        BITS,       /// Twitch "bits" donation.
-        RITUAL,     /// Twitch Ritual event.
-        REWARDGIFT, /// Twitch "reward gift".
+        TWITCH_SUB,       /// Twitch subscription event.
+        TWITCH_RESUB,     /// Twitch resub event.
+        TWITCH_TEMPBAN,   /// Twitch temporary ban (seconds in `aux`).
+        TWITCH_PERMBAN,   /// Twitch permanent ban.
+        TWITCH_SUBGIFT,   /// Twitch subscription gift event.
+        TWITCH_BITS,      /// Twitch "bits" donation.
+        TWITCH_RITUAL,    /// Twitch Ritual event.
+        TWITCH_REWARDGIFT,/// Twitch "reward gift".
+        TWITCH_PURCHASE,  /// Twitch purchase(?).
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
         AUTH_CHALLENGE,/// Authentication challenge.
