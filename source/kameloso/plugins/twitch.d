@@ -56,7 +56,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
         if (event.type == IRCEvent.Type.CLEARCHAT)
         {
             event.type = event.aux.length ?
-                IRCEvent.Type.TEMPBAN : IRCEvent.Type.PERMBAN;
+                IRCEvent.Type.TWITCH_TEMPBAN : IRCEvent.Type.TWITCH_PERMBAN;
         }
     }
 }
@@ -203,31 +203,31 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             case "sub":
-                event.type = Type.SUB;
+                event.type = Type.TWITCH_SUB;
                 event.num = 1;  // "one-month resub"
                 break;
 
             case "resub":
-                event.type = Type.RESUB;
+                event.type = Type.TWITCH_RESUB;
                 break;
 
             case "subgift":
                 // [21:33:48] msg-param-recipient-display-name = 'emilypiee'
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
-                event.type = Type.SUBGIFT;
+                event.type = Type.TWITCH_SUBGIFT;
                 break;
 
             case "ritual":
                 // unhandled message: ritual
-                event.type = Type.RITUAL;
+                event.type = Type.TWITCH_RITUAL;
                 break;
 
             case "rewardgift":
                 //msg-param-bits-amount = '199'
                 //msg-param-min-cheer-amount = '150'
                 //msg-param-selected-count = '60'
-                event.type = Type.REWARDGIFT;
+                event.type = Type.TWITCH_REWARDGIFT;
                 break;
 
             default:
@@ -286,7 +286,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                   1000-4999, purple for 100-999, gray for 1-99
                 * size – A digit between 1 and 4
             */
-            event.type = Type.BITS;
+            event.type = Type.TWITCH_BITS;
             event.aux = value;
             break;
 
