@@ -2598,13 +2598,16 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_BANLIST)
-    @(IRCEvent.Type.RPL_QUIETLIST)
+    @(IRCEvent.Type.RPL_EXCEPTLIST)
     @(IRCEvent.Type.RPL_INVITELIST)
     @(IRCEvent.Type.RPL_REOPLIST)
+    @(IRCEvent.Type.RPL_QUIETLIST)
     @(ChannelPolicy.home)
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
+        import std.conv : to;
+
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
         // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
@@ -2613,18 +2616,18 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
         with (IRCEvent.Type)
         with (plugin.state)
         {
-            static immutable string[601] modecharsByType =
+            // Map known list types to their modechars
+            immutable ubyte[IRCEvent.Type.RPL_QUIETLIST+1] modecharsByType =
             [
-                RPL_BANLIST : "+b",
-                RPL_EXCEPTLIST : "+e",
-                RPL_QUIETLIST : "+q",
-                RPL_INVITELIST : "+I",
-                RPL_REOPLIST : "+R",
+                RPL_BANLIST : 'b',
+                RPL_EXCEPTLIST : plugin.state.bot.server.exceptsChar,
+                RPL_INVITELIST : plugin.state.bot.server.invexChar,
+                RPL_REOPLIST : 'R',
+                RPL_QUIETLIST : 'q',
             ];
 
-            immutable mode = modecharsByType[event.type];
-            assert(mode.length);
-            channels[event.channel].setMode(mode, event.content, plugin.state.bot.server);
+            channels[event.channel].setMode((cast(char)modecharsByType[event.type]).to!string,
+                event.content, plugin.state.bot.server);
         }
     }
 
