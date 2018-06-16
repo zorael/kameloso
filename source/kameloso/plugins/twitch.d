@@ -394,6 +394,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "target-msg-id":
             // banphrase
 
+        case "msg-param-sender-count":
+            // Number of gift subs a user has given in the channel, on a SUBGIFT event
+
             // Ignore these events.
             break;
 
