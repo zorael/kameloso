@@ -664,8 +664,23 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .timeOfDay
         .toString();
 
-    string typestring = plugin.printerSettings.typesInCaps ?
-        enumToString(event.type) : enumToString(event.type).toLower;
+    immutable rawTypestring = enumToString(event.type);
+    string typestring;
+
+    if (rawTypestring.beginsWith("RPL_") || rawTypestring.beginsWith("ERR_"))
+    {
+        typestring = rawTypestring[4..$];
+    }
+    else if (typestring.beginsWith("TWITCH_"))
+    {
+        typestring = rawTypestring[7..$];
+    }
+    else
+    {
+        typestring = rawTypestring;
+    }
+
+    typestring = plugin.printerSettings.typesInCaps ? typestring : typestring.toLower;
 
     bool shouldBell;
 
@@ -677,15 +692,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     {
         event.stripEffects();
 
-        put(sink, '[', timestamp, "] ");
-
-        if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_") ||
-            typestring.beginsWith("ERR_") || typestring.beginsWith("err_"))
-        {
-            typestring = typestring[4..$];
-        }
-
-        put(sink, '[', typestring, "] ");
+        put(sink, '[', timestamp, "] [", typestring, "] ");
 
         if (sender.isServer)
         {
@@ -922,14 +929,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
             put(sink, '[', timestamp, "] ");
 
-            if (typestring.beginsWith("RPL_") || typestring.beginsWith("rpl_"))
+            if (rawTypestring.beginsWith("ERR_"))
             {
-                typestring = typestring[4..$];
-                sink.colour(typeColour);
-            }
-            else if (typestring.beginsWith("ERR_") || typestring.beginsWith("err_"))
-            {
-                typestring = typestring[4..$];
                 sink.colour(bright ? DefaultBright.error : DefaultDark.error);
             }
             else
