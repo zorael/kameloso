@@ -14,6 +14,8 @@
  +/
 module kameloso.plugins.twitch;
 
+version(TwitchSupport):
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 

@@ -811,35 +811,38 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             goto case HOSTSTART;
         }
 
-    case HOSTSTART:
-        // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
-        // :tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
-        event.channel = slice.nom(" :");
-        event.content = slice.nom(' ');
-        event.aux = (slice == "-") ? string.init : slice;
-        break;
-
-    case HOSTEND:
-        // :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
-        event.channel = slice.nom(" :- ");
-        event.aux = slice;
-        break;
-
-    case CLEARCHAT:
-        // :tmi.twitch.tv CLEARCHAT #zorael
-        // :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-        if (slice.has(" :"))
-        {
-            // Banned
-            // Whether it's a tempban or a permban is decided in the Twitch plugin
+    version(TwitchSupport)
+    {
+        case HOSTSTART:
+            // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
+            // :tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
             event.channel = slice.nom(" :");
-            event.target.nickname = slice;
-        }
-        else
-        {
-            event.channel = slice;
-        }
-        break;
+            event.content = slice.nom(' ');
+            event.aux = (slice == "-") ? string.init : slice;
+            break;
+
+        case HOSTEND:
+            // :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
+            event.channel = slice.nom(" :- ");
+            event.aux = slice;
+            break;
+
+        case CLEARCHAT:
+            // :tmi.twitch.tv CLEARCHAT #zorael
+            // :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            if (slice.has(" :"))
+            {
+                // Banned
+                // Whether it's a tempban or a permban is decided in the Twitch plugin
+                event.channel = slice.nom(" :");
+                event.target.nickname = slice;
+            }
+            else
+            {
+                event.channel = slice;
+            }
+            break;
+    }
 
     case RPL_LOGGEDIN: // 900
         // :weber.freenode.net 900 kameloso kameloso!NaN@194.117.188.126 kameloso :You are now logged in as kameloso.
@@ -2004,12 +2007,15 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     slice.nom(' ');  // nickname
 
-    if ((slice == ":-") && (parser.bot.server.address.has(".twitch.tv")))
+    version(TwitchSupport)
     {
-        parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
-        parser.bot.server.network = "Twitch";
-        parser.bot.updated = true;
-        return;
+        if ((slice == ":-") && (parser.bot.server.address.has(".twitch.tv")))
+        {
+            parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
+            parser.bot.server.network = "Twitch";
+            parser.bot.updated = true;
+            return;
+        }
     }
 
     slice.nom(' ');  // server address

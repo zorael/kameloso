@@ -665,19 +665,21 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .toString();
 
     immutable rawTypestring = enumToString(event.type);
-    string typestring;
+    string typestring = rawTypestring;
 
     if (rawTypestring.beginsWith("RPL_") || rawTypestring.beginsWith("ERR_"))
     {
         typestring = rawTypestring[4..$];
     }
-    else if (rawTypestring.beginsWith("TWITCH_"))
-    {
-        typestring = rawTypestring[7..$];
-    }
     else
     {
-        typestring = rawTypestring;
+        version(TwitchSupport)
+        {
+            if (rawTypestring.beginsWith("TWITCH_"))
+            {
+                typestring = rawTypestring[7..$];
+            }
+        }
     }
 
     typestring = plugin.printerSettings.typesInCaps ? typestring : typestring.toLower;

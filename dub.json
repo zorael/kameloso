@@ -15,7 +15,7 @@
         "--ex", "arsd."
     ],
     "-ddoxTool" : "scod",
-    "versions": [ "AsAnApplicatiozn" ],
+    "versions": [ "AsAnApplication", "TwitchSupport" ],
     "configurations":
     [
         {
