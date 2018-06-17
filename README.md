@@ -206,6 +206,7 @@ The IRC event parsing bits are largely decoupled from the rest of the program, n
 * [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
 * [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
 * [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
+* [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
 Feel free to copy these and drop them into your own project.
 
