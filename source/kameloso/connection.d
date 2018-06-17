@@ -181,6 +181,9 @@ public:
 
         assert((ips.length > 0), "Tried to connect to an unresolved connection");
 
+        uint incrementedDelay = Timeout.retry;
+        enum incrementMultiplier = 1.5;
+
         iploop:
         foreach (immutable i, ip; ips)
         {
@@ -219,6 +222,7 @@ public:
                     // If we're here no exception was thrown, so we're connected
                     connected = true;
                     logger.log("Connected!");
+                    incrementedDelay = Timeout.retry;
                     return;
                 }
                 catch (const SocketException e)
@@ -238,7 +242,8 @@ public:
                         if (retry < (connectionRetries - 1))
                         {
                             logger.logf("Retrying same IP in %d seconds", Timeout.retry);
-                            interruptibleSleep(Timeout.retry.seconds, abort);
+                            interruptibleSleep(incrementedDelay.seconds, abort);
+                            incrementedDelay = cast(uint)(incrementedDelay * incrementMultiplier);
                         }
                         break;
                     }
@@ -249,7 +254,8 @@ public:
             if (i < ips.length)
             {
                 logger.logf("Trying next IP in %d seconds", Timeout.retry);
-                interruptibleSleep(Timeout.retry.seconds, abort);
+                interruptibleSleep(incrementedDelay.seconds, abort);
+                incrementedDelay = cast(uint)(incrementedDelay * incrementMultiplier);
             }
         }
 
