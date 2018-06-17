@@ -671,7 +671,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     {
         typestring = rawTypestring[4..$];
     }
-    else if (typestring.beginsWith("TWITCH_"))
+    else if (rawTypestring.beginsWith("TWITCH_"))
     {
         typestring = rawTypestring[7..$];
     }
