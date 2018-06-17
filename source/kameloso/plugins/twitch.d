@@ -303,7 +303,8 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
         case "msg-param-ritual-name":
             // msg-param-ritual-name = 'new_chatter'
-            event.content = value;
+            // [ritual] tmi.twitch.tv [#couragejd]: "@callmejosh15 is new here. Say hello!"
+            event.aux = value;
             break;
 
         case "msg-param-bits-amount":
@@ -311,13 +312,33 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.aux = value;
             break;
 
+        case "msg-param-title":
+            //msg-param-title = 'Speed\s&\sMomentum\sCrate\s(Steam\sVersion)'
+            event.aux = decodeIRCv3String(value);
+            break;
+
+        case "msg-param-crateCount":
+            import std.conv : to;
+            // PURCHASE
+            //msg-param-crateCount = '0'
+            event.num = value.to!uint;
+            break;
+
+        case "msg-param-asin":
+            // PURCHASE
+            //msg-param-asin = 'B07DBTZZTH'
+        case "msg-param-channelID":
+            // PURCHASE
+            //msg-param-channelID = '17337557'
+        case "msg-param-imageURL":
+            // PURCHASE
+            //msg-param-imageURL = 'https://images-na.ssl-images-amazon.com/images/I/31PzvL+AidL.jpg'
         case "msg-param-min-cheer-amount":
             // REWARDGIFT; of interest?
             // msg-param-min-cheer-amount = '150'
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
             //msg-param-selected-count = '60'
-
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
             // name or one created by the channel owner.
@@ -369,6 +390,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "user":
             // The name of the user who sent the notice.
         case "user-id":
+        case "user-ID":
             // The user’s ID.
         case "login":
             // user login? what?
