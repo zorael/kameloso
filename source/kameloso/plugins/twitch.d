@@ -244,6 +244,8 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "ban_success":
             case "timeout_success":
             case "unban_success":
+            case "hosts_remaining":
+            case "msg_channel_suspended":
                 // Generic Twitch server reply.
                 event.type = Type.TWITCH_REPLY;
                 event.aux = value;
@@ -254,10 +256,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "already_emote_only_off":
             case "already_r9k_on":
             case "already_r9k_off":
+            case "already_subs_on":
+            case "already_subs_off":
             case "bad_unban_no_ban":
             case "unrecognized_cmd":
             case "unsupported_chatrooms_cmd":
-            case "msg_channel_suspended":
             case "msg_room_not_found":
             case "no_permission":
                 // Generic Twitch error.
