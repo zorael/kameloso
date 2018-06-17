@@ -2185,7 +2185,8 @@ public:
  +/
 string decodeIRCv3String(const string line)
 {
-    import std.regex : regex, replaceAll;
+    import std.array : Appender;
+    import std.string : representation;
 
     /++
      +  http://ircv3.net/specs/core/message-tags-3.2.html
@@ -2197,16 +2198,56 @@ string decodeIRCv3String(const string line)
 
     if (!line.length) return string.init;
 
-    auto spaces = `\\s`.regex;
-    auto colons = `\\:`.regex;
-    auto slashes = `\\\\`.regex;
+    Appender!string sink;
+    bool escaping;
 
-    immutable replaced = line
-        .replaceAll(spaces, " ")
-        .replaceAll(colons, ";")
-        .replaceAll(slashes, `\`);
+    foreach (immutable c; line.representation)
+    {
+        switch (c)
+        {
+        case '\\':
+            if (escaping)
+            {
+                sink.put('\\');
+                escaping = false;
+            }
+            else
+            {
+                escaping = true;
+                continue;
+            }
+            break;
 
-    return (replaced[$-1] == '\\') ? replaced[0..$-1] : replaced;
+        case ':':
+            if (escaping)
+            {
+                sink.put(';');
+                escaping = false;
+            }
+            else
+            {
+                sink.put(':');
+            }
+            break;
+
+        case 's':
+            if (escaping)
+            {
+                sink.put(' ');
+                escaping = false;
+            }
+            else
+            {
+                sink.put('s');
+            }
+            break;
+
+        default:
+            sink.put(c);
+        }
+    }
+
+    return sink.data;
 }
 
 ///
