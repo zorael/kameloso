@@ -799,20 +799,20 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.content = slice;
         break;
 
-    case HOSTTARGET:
-        if (slice.has(" :-"))
-        {
-            event.type = HOSTEND;
-            goto case HOSTEND;
-        }
-        else
-        {
-            event.type = HOSTSTART;
-            goto case HOSTSTART;
-        }
-
     version(TwitchSupport)
     {
+        case HOSTTARGET:
+            if (slice.has(" :-"))
+            {
+                event.type = HOSTEND;
+                goto case HOSTEND;
+            }
+            else
+            {
+                event.type = HOSTSTART;
+                goto case HOSTSTART;
+            }
+
         case HOSTSTART:
             // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
             // :tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
