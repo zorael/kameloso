@@ -1234,6 +1234,7 @@ unittest
 
 
     {
+        parser.setDaemon(IRCServer.Daemon.u2, "GameSurge");
         immutable event = parser.toIRCEvent(":TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host");
         with (IRCEvent.Type)
         with (event)
