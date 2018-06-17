@@ -233,42 +233,45 @@ unittest
         assert((content == "123 test test content"), content);
     }
 
-    /+
-    :tmi.twitch.tv HOSTTARGET #lirik :h1z1 -
-    +/
-    immutable e18 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -");
-    with (e18)
+    version(TwitchSupport)
     {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
-        assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
-        assert((channel == "#lirik"), channel);
-        assert((content == "h1z1"), content);
-        assert((!aux.length), aux);
-    }
+        /+
+        :tmi.twitch.tv HOSTTARGET #lirik :h1z1 -
+        +/
+        immutable e18 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :h1z1 -");
+        with (e18)
+        {
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+            assert((channel == "#lirik"), channel);
+            assert((content == "h1z1"), content);
+            assert((!aux.length), aux);
+        }
 
-    /+
-    :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
-    +/
-    immutable e19 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :- 178");
-    with (e19)
-    {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
-        assert((type == IRCEvent.Type.HOSTEND), type.to!string);
-        assert((channel == "#lirik"), channel);
-        assert((aux == "178"), aux);
-    }
+        /+
+        :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
+        +/
+        immutable e19 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :- 178");
+        with (e19)
+        {
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((type == IRCEvent.Type.HOSTEND), type.to!string);
+            assert((channel == "#lirik"), channel);
+            assert((aux == "178"), aux);
+        }
 
-    /+
-    :tmi.twitch.tv HOSTTARGET #lirik chu8 270
-    +/
-    immutable e20 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :chu8 270");
-    with (e20)
-    {
-        assert((sender.address == "tmi.twitch.tv"), sender.address);
-        assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
-        assert((channel == "#lirik"), channel);
-        assert((content == "chu8"), content);
-        assert((aux == "270"), aux);
+        /+
+        :tmi.twitch.tv HOSTTARGET #lirik chu8 270
+        +/
+        immutable e20 = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #lirik :chu8 270");
+        with (e20)
+        {
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+            assert((channel == "#lirik"), channel);
+            assert((content == "chu8"), content);
+            assert((aux == "270"), aux);
+        }
     }
 
     immutable e21 = parser.toIRCEvent(":kameloso_!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso__");
@@ -593,20 +596,24 @@ unittest
         assert(parser.bot.server.daemon == IRCServer.daemon.ircdseven);
     }
 
+    version(TwitchSupport)
     {
-        parser.bot.server.address = "tmi.twitch.tv";
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 zorael :-");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == RPL_MYINFO), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((num == 4), num.to!string);
+            parser.bot.server.address = "tmi.twitch.tv";
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 zorael :-");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == RPL_MYINFO), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert((num == 4), num.to!string);
+            }
+            assert((parser.bot.server.network == "Twitch"), parser.bot.server.network);
+            assert(parser.bot.server.daemon == IRCServer.daemon.twitch);
         }
-        assert((parser.bot.server.network == "Twitch"), parser.bot.server.network);
-        assert(parser.bot.server.daemon == IRCServer.daemon.twitch);
     }
+
 
     {
         immutable event = parser.toIRCEvent(":asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377");
@@ -1099,80 +1106,83 @@ unittest
         }
     }
 
+    version(TwitchSupport)
     {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv USERSTATE #zorael");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == USERSTATE), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert(!content.length, content);
-            assert((channel == "#zorael"), channel);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv USERSTATE #zorael");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == USERSTATE), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert(!content.length, content);
+                assert((channel == "#zorael"), channel);
+            }
         }
-    }
 
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv ROOMSTATE #zorael");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == ROOMSTATE), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert(!content.length, content);
-            assert((channel == "#zorael"), channel);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv ROOMSTATE #zorael");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == ROOMSTATE), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert(!content.length, content);
+                assert((channel == "#zorael"), channel);
+            }
         }
-    }
 
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == HOSTSTART), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((channel == "#andymilonakis"), channel);
-            assert((content == "zombie_barricades"), content);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == HOSTSTART), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert((channel == "#andymilonakis"), channel);
+                assert((content == "zombie_barricades"), content);
+            }
         }
-    }
 
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv USERNOTICE #drdisrespectlive :ooooo weee, it's a meeeee, Moweee!");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == USERNOTICE), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((channel == "#drdisrespectlive"), channel);
-            assert((content == "ooooo weee, it's a meeeee, Moweee!"), content);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv USERNOTICE #drdisrespectlive :ooooo weee, it's a meeeee, Moweee!");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == USERNOTICE), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert((channel == "#drdisrespectlive"), channel);
+                assert((content == "ooooo weee, it's a meeeee, Moweee!"), content);
+            }
         }
-    }
 
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv USERNOTICE #lirik");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == USERNOTICE), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((channel == "#lirik"), channel);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv USERNOTICE #lirik");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == USERNOTICE), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert((channel == "#lirik"), channel);
+            }
         }
-    }
 
-    {
-        immutable event = parser.toIRCEvent(":tmi.twitch.tv CLEARCHAT #channel :user");
-        with (IRCEvent.Type)
-        with (event)
         {
-            assert((type == CLEARCHAT), type.to!string);
-            assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
-            assert((channel == "#channel"), channel);
-            assert((target.nickname == "user"), target.nickname);
+            immutable event = parser.toIRCEvent(":tmi.twitch.tv CLEARCHAT #channel :user");
+            with (IRCEvent.Type)
+            with (event)
+            {
+                assert((type == CLEARCHAT), type.to!string);
+                assert((sender.address == "tmi.twitch.tv"), sender.address);
+                assert(sender.special, sender.special.to!string);
+                assert((channel == "#channel"), channel);
+                assert((target.nickname == "user"), target.nickname);
+            }
         }
     }
 
