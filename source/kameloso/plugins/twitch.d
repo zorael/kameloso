@@ -241,6 +241,45 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.type = Type.TWITCH_PURCHASE;
                 break;
 
+            case "ban_success":
+            case "timeout_success":
+            case "unban_success":
+                // Generic Twitch server reply.
+                event.type = Type.TWITCH_REPLY;
+                event.aux = value;
+                break;
+
+            case "already_banned":
+            case "already_emote_only_on":
+            case "already_emote_only_off":
+            case "already_r9k_on":
+            case "already_r9k_off":
+            case "bad_unban_no_ban":
+            case "unrecognized_cmd":
+            case "unsupported_chatrooms_cmd":
+            case "msg_channel_suspended":
+            case "msg_room_not_found":
+            case "no_permission":
+                // Generic Twitch error.
+                event.type = Type.TWITCH_ERROR;
+                event.aux = value;
+                break;
+
+            case "emote_only_on":
+            case "emote_only_off":
+            case "r9k_on":
+            case "r9k_off":
+            case "slow_on":
+            case "slow_off":
+            case "subs_on":
+            case "subs_off":
+            case "followers_on":
+            case "followers_off":
+                // Generic Twitch settings change
+                event.type = Type.TWITCH_SETTING;
+                event.aux = value;
+                break;
+
             default:
                 logger.warning("unhandled message: ", value);
                 break;
