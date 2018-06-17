@@ -40,6 +40,15 @@ version(Web)
     public import kameloso.plugins.reddit;
 }
 
+version(TwitchSupport)
+{
+    // TwitchService is defined, do nothing
+}
+else
+{
+    alias TwitchService = AliasSeq!();
+}
+
 /++
  +  List of enabled plugins. Add and remove to enable and disable.
  +
