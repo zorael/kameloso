@@ -428,6 +428,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // ?
         case "user":
             // The name of the user who sent the notice.
+        case "msg-param-user-ID":
         case "user-id":
         case "user-ID":
             // The user’s ID.
