@@ -93,6 +93,9 @@ struct IRCEvent
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
         TWITCH_PURCHASE,  /// Twitch purchase(?).
+        TWITCH_REPLY,     /// Twitch generic server reply, see `event.aux`.
+        TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
+        TWITCH_SETTING,   /// Twitch settings change.
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
         AUTH_CHALLENGE,/// Authentication challenge.
