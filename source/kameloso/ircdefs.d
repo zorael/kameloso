@@ -97,6 +97,7 @@ struct IRCEvent
         TWITCH_REPLY,     /// Twitch generic server reply, see `event.aux`.
         TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
         TWITCH_SETTING,   /// Twitch settings change.
+        TWITCH_RAID,      /// Twitch raid.
 
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
