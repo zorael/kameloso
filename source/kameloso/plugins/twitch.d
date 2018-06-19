@@ -80,6 +80,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
     import kameloso.common : logger;
     import kameloso.irc : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
+    import std.conv : to;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
 
@@ -314,7 +315,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-months":
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
-            import std.conv : to;
             event.num = value.to!uint;
             break;
 
@@ -374,7 +374,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "msg-param-crateCount":
-            import std.conv : to;
             // PURCHASE
             //msg-param-crateCount = '0'
             event.num = value.to!uint;
