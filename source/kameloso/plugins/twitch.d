@@ -299,7 +299,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             default:
-                logger.warning("unhandled message: ", value);
+                logger.warning("Unknown Twitch msg-id: ", value);
                 break;
             }
             break;
@@ -495,7 +495,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // (Optional) Number of viewers watching the host.
         default:
             // Verbosely
-            logger.trace(key, " = '", value, "'");
+            logger.warningf("Unknown Twitch tag: %s = %s", key, value);
             break;
         }
     }
