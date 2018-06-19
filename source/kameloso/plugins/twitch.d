@@ -313,6 +313,16 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.target.nickname = value;
             break;
 
+        case "msg-param-displayName":
+            // RAID; sender alias
+            event.sender.alias_ = value;
+            break;
+
+        case "msg-param-login":
+            // RAID; real sender nickname
+            event.sender.nickname = value;
+            break;
+
         case "msg-param-months":
             // The number of consecutive months the user has subscribed for,
             // in a resub notice.
