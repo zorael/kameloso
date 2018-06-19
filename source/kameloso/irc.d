@@ -3345,14 +3345,10 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 else /*if (server.dModes.has(modechar))*/
                 {
                     // Some clients assume that any mode not listed is of type D
-                    import std.string : indexOf, representation;
+                    import std.string : indexOf;
 
                     immutable modecharIndex = modechars.indexOf(modechar);
                     if (modecharIndex == -1) continue;
-
-                    /*modechars = cast(char[])modechars
-                        .representation
-                        .remove(modecharIndex);*/
 
                     if (modecharIndex != (modechars.length-1))
                     {
