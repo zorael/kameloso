@@ -75,7 +75,7 @@ if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncod
     if (index == -1)
     {
         import std.format : format;
-        throw new Exception(`Tried to nom too much: "%s with "%s"`
+        throw new Exception(`Tried to nom too much: "%s" with "%s"`
             .format(line, separator), callingFile, callingLine);
     }
 
