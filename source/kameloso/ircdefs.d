@@ -919,10 +919,9 @@ struct IRCBot
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
-        import std.format : format;
-
-        sink("%s:%s!~%s | homes:%s | chans:%s | server:%s"
-             .format(nickname, authLogin, ident, homes, channels, server));
+        import std.format : formattedWrite;
+        sink.formattedWrite("%s:%s!~%s | homes:%s | chans:%s | server:%s",
+             nickname, authLogin, ident, homes, channels, server);
     }
 }
 
@@ -1064,9 +1063,8 @@ struct IRCServer
 
     void toString(scope void delegate(const(char)[]) @safe sink) const
     {
-        import std.format : format;
-
-        sink("[Daemon.%s@%s] %s:%d (%s)".format(daemon, network, address, port,resolvedAddress));
+        import std.format : formattedWrite;
+        sink.formattedWrite("[Daemon.%s@%s] %s:%d (%s)", daemon, network, address, port,resolvedAddress);
     }
 }
 
