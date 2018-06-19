@@ -192,7 +192,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 timeout_success         <user> has been timed out for <duration> seconds.
                 unban_success           <user> is no longer banned from this chat room.
                 unrecognized_cmd        Unrecognized command: <command>
-                raid                    ?
+                raid                    Raiders from <other channel> have joined!\n
             */
             switch (value)
             {
@@ -242,6 +242,17 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-userID = '182815893'
                 //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
                 event.type = Type.TWITCH_PURCHASE;
+                break;
+
+            case "raid":
+                //display-name=VHSGlitch
+                //login=vhsglitch
+                //msg-id=raid
+                //msg-param-displayName=VHSGlitch
+                //msg-param-login=vhsglitch
+                //msg-param-viewerCount=9
+                //system-msg=9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!
+                event.type = Type.TWITCH_RAID;
                 break;
 
             case "ban_success":
@@ -458,14 +469,25 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
              +/
         case "msg-param-recipient-id":
             // sub gifts
-
         case "target-msg-id":
             // banphrase
-
         case "msg-param-sender-count":
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
+        case "msg-param-profileImageURL":
+            // URL link to profile picture.
 
             // Ignore these events.
+            break;
+
+        case "msg-param-viewerCount":
+            // RAID; viewer count of raiding channel
+            // msg-param-viewerCount = '9'
+            event.num = value.to!uint;
+            break;
+
+        case "msg-param-displayName":
+            // RAID; raiding channel
+            event.aux = value;
             break;
 
         case "message":
