@@ -164,6 +164,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // Can be used for i18ln. Valid values: see
             // Msg-id Tags for the NOTICE Commands Capability.
             // https://dev.twitch.tv/docs/irc#msg-id-tags-for-the-notice-commands-capability
+            // https://swiftyspiffy.com/TwitchLib/Client/_msg_ids_8cs_source.html
 
             /*
                 sub
@@ -260,8 +261,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "ban_success":
             case "timeout_success":
             case "unban_success":
-            case "hosts_remaining":
-            case "msg_channel_suspended":
                 // Generic Twitch server reply.
                 event.type = Type.TWITCH_REPLY;
                 event.aux = value;
@@ -274,11 +273,13 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "already_r9k_off":
             case "already_subs_on":
             case "already_subs_off":
+            case "bad_host_hosting":
             case "bad_unban_no_ban":
             case "unrecognized_cmd":
             case "unsupported_chatrooms_cmd":
             case "msg_room_not_found":
             case "no_permission":
+            case "raid_error_self":
                 // Generic Twitch error.
                 event.type = Type.TWITCH_ERROR;
                 event.aux = value;
@@ -297,6 +298,15 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "followers_on_zero":
                 // Generic Twitch settings change
                 event.type = Type.TWITCH_SETTING;
+                event.aux = value;
+                break;
+
+            case "hosts_remaining":
+            case "msg_channel_suspended":
+            case "color_changed":
+            case "room_mods":
+            case "raid_notice_mature":
+                // Twitch notices; what type should they be?
                 event.aux = value;
                 break;
 
