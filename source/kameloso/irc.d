@@ -2210,47 +2210,56 @@ string decodeIRCv3String(const string line)
 
     foreach (immutable c; line.representation)
     {
-        switch (c)
+        if (escaping)
         {
-        case '\\':
-            if (escaping)
+            switch (c)
             {
+            case '\\':
                 sink.put('\\');
-                escaping = false;
-            }
-            else
-            {
-                escaping = true;
-                continue;
-            }
-            break;
+                break;
 
-        case ':':
-            if (escaping)
-            {
+            case ':':
                 sink.put(';');
-                escaping = false;
-            }
-            else
-            {
-                sink.put(':');
-            }
-            break;
+                break;
 
-        case 's':
-            if (escaping)
-            {
+            case 's':
                 sink.put(' ');
-                escaping = false;
-            }
-            else
-            {
-                sink.put('s');
-            }
-            break;
+                break;
 
-        default:
-            sink.put(c);
+            case 'n':
+                sink.put('\n');
+                break;
+
+            case 't':
+                sink.put('\t');
+                break;
+
+            case 'r':
+                sink.put('\r');
+                break;
+
+            case '0':
+                sink.put('\0');
+                break;
+
+            default:
+                // Unknown escape
+                sink.put(c);
+            }
+
+            escaping = false;
+        }
+        else
+        {
+            switch (c)
+            {
+            case '\\':
+                escaping = true;
+                break;
+
+            default:
+                sink.put(c);
+            }
         }
     }
 
@@ -2276,6 +2285,9 @@ unittest
 
     immutable s5 = decodeIRCv3String(`This\sis\sa\stest\`);
     assert((s5 == "This is a test"), s5);
+
+    immutable s6 = decodeIRCv3String(`9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!`);
+    assert((s6 == "9 raiders from VHSGlitch have joined\n!"), s6);
 }
 
 
