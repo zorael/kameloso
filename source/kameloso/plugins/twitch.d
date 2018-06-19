@@ -314,12 +314,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "msg-param-displayName":
-            // RAID; sender alias
+            // RAID; sender alias and thus raiding channel cased
             event.sender.alias_ = value;
             break;
 
         case "msg-param-login":
-            // RAID; real sender nickname
+            // RAID; real sender nickname and thus raiding channel lowercased
             event.sender.nickname = value;
             break;
 
@@ -493,11 +493,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // RAID; viewer count of raiding channel
             // msg-param-viewerCount = '9'
             event.num = value.to!uint;
-            break;
-
-        case "msg-param-displayName":
-            // RAID; raiding channel
-            event.aux = value;
             break;
 
         case "message":
