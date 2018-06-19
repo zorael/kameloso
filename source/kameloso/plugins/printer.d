@@ -919,13 +919,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             if (bright)
             {
-                typeColour = (type == IRCEvent.Type.QUERY) ?
-                    green : DefaultBright.type;
+                typeColour = (type == IRCEvent.Type.QUERY) ? green : DefaultBright.type;
             }
             else
             {
-                typeColour = (type == IRCEvent.Type.QUERY) ?
-                    lightgreen : DefaultDark.type;
+                typeColour = (type == IRCEvent.Type.QUERY) ? lightgreen : DefaultDark.type;
             }
 
             sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
@@ -987,8 +985,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                    immutable badgestring = plugin.printerSettings.badgesInCaps ?
-                        badge.toUpper : badge;
+                    immutable badgestring = plugin.printerSettings.badgesInCaps ? badge.toUpper : badge;
 
                     put(sink, " [", badgestring, ']');
                 }

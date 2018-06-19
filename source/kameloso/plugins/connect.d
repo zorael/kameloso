@@ -82,8 +82,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
             }
             else
             {
-                logger.error("Tried to remove a channel that wasn't there: ",
-                    event.channel);
+                logger.error("Tried to remove a channel that wasn't there: ", event.channel);
             }
         }
     }
