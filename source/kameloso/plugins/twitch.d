@@ -319,7 +319,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "msg-param-login":
+        case "login":
             // RAID; real sender nickname and thus raiding channel lowercased
+            // also PURCHASE. The sender's user login (real nickname)
             event.sender.nickname = value;
             break;
 
@@ -459,8 +461,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "user-id":
         case "user-ID":
             // The user’s ID.
-        case "login":
-            // The sender's user login (real nickname)
         case "target-user-id":
             // The target's user ID
         case "rituals":
