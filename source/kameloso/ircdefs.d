@@ -76,6 +76,7 @@ struct IRCEvent
         CTCP_LAG,   /// Something requested LAG info?
         CTCP_AVATAR,/// Someone requested an avatar image.
         CTCP_SLOTS, /// Someone broadcasted their file transfer slots.
+
         USERSTATE,  /// Twitch user information.
         ROOMSTATE,  /// Twitch channel information.
         GLOBALUSERSTATE,/// Twitch information about self upon login.
@@ -96,6 +97,7 @@ struct IRCEvent
         TWITCH_REPLY,     /// Twitch generic server reply, see `event.aux`.
         TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
         TWITCH_SETTING,   /// Twitch settings change.
+
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
         AUTH_CHALLENGE,/// Authentication challenge.

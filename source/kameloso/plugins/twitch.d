@@ -192,6 +192,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 timeout_success         <user> has been timed out for <duration> seconds.
                 unban_success           <user> is no longer banned from this chat room.
                 unrecognized_cmd        Unrecognized command: <command>
+                raid                    ?
             */
             switch (value)
             {
@@ -438,7 +439,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "user-ID":
             // The user’s ID.
         case "login":
-            // user login? what?
+            // The sender's user login (real nickname)
         case "target-user-id":
             // The target's user ID
         case "rituals":

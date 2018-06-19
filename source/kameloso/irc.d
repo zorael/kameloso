@@ -1915,6 +1915,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 break;
 
             case "EXTBAN":
+                // EXTBAN=$,ajrxz
                 extbanPrefix = value.nom(',').to!char;
                 extbanTypes = value;
                 break;
@@ -3126,6 +3127,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             else if (datastring.beginsWith(server.extbanPrefix))
             {
                 // extban; https://freenode.net/kb/answer/extbans
+                // https://defs.ircdocs.horse/defs/extbans.html
                 // Does not support a mix of normal and second form bans
                 // e.g. *!*@*$#channel
 

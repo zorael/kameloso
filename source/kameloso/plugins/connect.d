@@ -577,7 +577,6 @@ void onSASLAuthenticate(ConnectService service)
         immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', password);
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
-        //mainThread.send(ThreadMessage.Quietline(), "AUTHENTICATE " ~ encoded);
         service.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
         logger.trace("--> AUTHENTICATE hunter2");
     }

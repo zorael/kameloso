@@ -1039,7 +1039,7 @@ string tabs(uint spaces = 4)(int num) pure nothrow
     import std.range : repeat, takeExactly;
     import std.array : array, join;
 
-    enum tab =  ' '.repeat.takeExactly(spaces).array;
+    enum tab = ' '.repeat.takeExactly(spaces).array;
 
     assert((num >= 0), "Negative amount of tabs");
 
