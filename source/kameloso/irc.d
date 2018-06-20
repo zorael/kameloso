@@ -2490,21 +2490,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    /// Checks whether passed character is one of those in `CHANTYPES`.
-    bool matchesChansign(const char character)
-    {
-        foreach (immutable chansign; server.chantypes.representation)
-        {
-            if (character == chansign)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    if (!matchesChansign(line[0])) return false;
+    if (!line[0].matchesChantypes(server)) return false;
 
     if (line.has(' ') ||
         line.has(',') ||
@@ -2514,8 +2500,8 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    if (line.length == 2) return !matchesChansign(line[1]);
-    else if (line.length == 3) return !matchesChansign(line[2]);
+    if (line.length == 2) return !line[1].matchesChantypes(server);
+    else if (line.length == 3) return !line[2].matchesChantypes(server);
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
@@ -2554,6 +2540,44 @@ unittest
     assert(!"a".isValidChannel(s));
     assert(!" ".isValidChannel(s));
     assert(!"".isValidChannel(s));
+}
+
+
+// matchesChantypes
+/++
+ +  Checks whether passed character is one of those in `CHANTYPES`.
+ +
+ +  Params:
+ +      character = Character to evaluate whether or not it is a chantype
+ +          character.
+ +
+ +  Returns:
+ +      True if it is, false if it isn't.
+ +/
+bool matchesChantypes(const char character, const IRCServer server) pure nothrow @safe @nogc
+{
+    import std.string : representation;
+
+    foreach (immutable chansign; server.chantypes.representation)
+    {
+        if (character == chansign)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+///
+unittest
+{
+    IRCServer server;
+    server.chantypes = "#%+";
+
+    assert("#channel"[0].matchesChantypes(server));
+    assert('%'.matchesChantypes(server));
+    assert(!'~'.matchesChantypes(server));
 }
 
 
