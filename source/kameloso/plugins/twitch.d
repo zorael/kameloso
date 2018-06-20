@@ -216,6 +216,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             case "host_off":
+                event.type = Type.HOSTEND;
+                // Is the value zero or empty if there are no viewers left?
+                if (value.length) event.num = value.to!uint;
+                break;
+
             case "host_target_went_offline":
                 event.type = Type.HOSTEND;
                 break;
