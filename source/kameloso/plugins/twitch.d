@@ -412,13 +412,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "msg-param-crateCount":
-            // PURCHASE
-            //msg-param-crateCount = '0'
-            event.num = value.to!uint;
-            break;
-
+            // PURCHASE, no idea
         case "msg-param-sender-count":
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
+        case "msg-param-selected-count":
+            // REWARDGIFT; of interest?
             event.num = value.to!uint;
             break;
 
@@ -434,9 +432,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-min-cheer-amount":
             // REWARDGIFT; of interest?
             // msg-param-min-cheer-amount = '150'
-        case "msg-param-selected-count":
-            // REWARDGIFT; of interest?
-            //msg-param-selected-count = '60'
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
             // name or one created by the channel owner.
