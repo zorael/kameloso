@@ -51,6 +51,15 @@ void postprocess(TwitchService service, ref IRCEvent event)
 
     service.parseTwitchTags(event);
 
+    with (event.sender)
+    {
+        if (nickname.length && !ident.length)
+        {
+            ident = nickname;
+            class_ = IRCUser.Class.anyone;
+        }
+    }
+
     if (event.sender.isServer)
     {
         event.sender.badge = "server";
