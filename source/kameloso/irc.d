@@ -1451,7 +1451,9 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
     // :tolkien.freenode.net NOTICE * :*** Checking Ident
 
-    slice.nom(" :");
+    // At least Twitch sends NOTICEs to channels, maybe other daemons do too
+    immutable channelOrNickname = slice.nom(" :");
+    if (channelOrNickname.beginsWith('#')) event.channel = channelOrNickname;
     event.content = slice;
 
     with (parser)
