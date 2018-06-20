@@ -47,25 +47,27 @@ struct TwitchSettings
  +/
 void postprocess(TwitchService service, ref IRCEvent event)
 {
-    if (!service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.bot.server.daemon != IRCServer.Daemon.twitch) return;
 
     service.parseTwitchTags(event);
 
-    if (event.type == IRCEvent.Type.TWITCH_PURCHASE)
+    with (IRCEvent.Type)
     {
-        // We invent a sender on PURCHASE events, which otherwise originate from
-        // the server. So change class from server to anyone.
-        event.sender.class_ = IRCUser.Class.anyone;
-    }
-
-    if (event.sender.isServer)
-    {
-        event.sender.badge = "server";
-
-        if (event.type == IRCEvent.Type.CLEARCHAT)
+        if ((event.type == TWITCH_PURCHASE) || (event.type == TWITCH_RITUAL))
         {
-            event.type = event.aux.length ?
-                IRCEvent.Type.TWITCH_TEMPBAN : IRCEvent.Type.TWITCH_PERMBAN;
+            // We invent a sender on PURCHASE and RITUAL events, which otherwise
+            // originate from the server. So change class from server to anyone.
+            event.sender.class_ = IRCUser.Class.anyone;
+        }
+
+        if (event.sender.isServer)
+        {
+            event.sender.badge = "server";
+
+            if (event.type == CLEARCHAT)
+            {
+                event.type = event.aux.length ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
+            }
         }
     }
 }
