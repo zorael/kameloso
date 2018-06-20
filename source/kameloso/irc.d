@@ -2556,6 +2556,7 @@ unittest
  +  Params:
  +      character = Character to evaluate whether or not it is a chantype
  +          character.
+ +      server = The current IRCServer, from which we fetch the chantypes.
  +
  +  Returns:
  +      True if it is, false if it isn't.
