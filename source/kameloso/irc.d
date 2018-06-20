@@ -1453,8 +1453,12 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     // At least Twitch sends NOTICEs to channels, maybe other daemons do too
     immutable channelOrNickname = slice.nom(" :");
-    if (channelOrNickname.beginsWith('#')) event.channel = channelOrNickname;
     event.content = slice;
+
+    if (channelOrNickname.length && channelOrNickname[0].matchesChantypes(parser.bot.server))
+    {
+        event.channel = channelOrNickname;
+    }
 
     with (parser)
     {
