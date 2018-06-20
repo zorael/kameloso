@@ -216,9 +216,10 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             case "host_off":
+                // :tmi.twitch.tv NOTICE #chocotaco :Exited host mode."
+                // @msg-id=host_off
                 event.type = Type.HOSTEND;
-                // Is the value zero or empty if there are no viewers left?
-                if (value.length) event.num = value.to!uint;
+                event.aux = value;
                 break;
 
             case "host_target_went_offline":
