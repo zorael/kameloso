@@ -196,8 +196,6 @@ port                6667
 
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
-Mind that a full Twitch bot cannot be implemented as an IRC client. It needs **Nightbot** or similar to be able to *see* events like subscriptions, donations, cheers and other Twitch-specifics.
-
 ## Use as a library
 
 The IRC event parsing bits are largely decoupled from the rest of the program, needing only some helper modules.
