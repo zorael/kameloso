@@ -391,7 +391,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                   1000-4999, purple for 100-999, gray for 1-99
                 * size – A digit between 1 and 4
             */
-            event.type = Type.TWITCH_BITS;
+            event.type = Type.TWITCH_CHEER;
             event.aux = value;
             break;
 

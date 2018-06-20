@@ -90,7 +90,7 @@ struct IRCEvent
         TWITCH_TEMPBAN,   /// Twitch temporary ban (seconds in `aux`).
         TWITCH_PERMBAN,   /// Twitch permanent ban.
         TWITCH_SUBGIFT,   /// Twitch subscription gift event.
-        TWITCH_BITS,      /// Twitch "bits" donation.
+        TWITCH_CHEER,     /// Twitch "bits" donation.
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
         TWITCH_PURCHASE,  /// Twitch purchase(?).
