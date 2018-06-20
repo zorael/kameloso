@@ -223,6 +223,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
             case "host_target_went_offline":
                 event.type = Type.HOSTEND;
+                event.aux = value;
                 break;
 
             case "sub":
