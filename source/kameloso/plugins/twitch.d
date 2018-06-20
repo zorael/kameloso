@@ -417,6 +417,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.num = value.to!uint;
             break;
 
+        case "msg-param-sender-count":
+            // Number of gift subs a user has given in the channel, on a SUBGIFT event
+            event.num = value.to!uint;
+            break;
+
         case "msg-param-asin":
             // PURCHASE
             //msg-param-asin = 'B07DBTZZTH'
@@ -506,8 +511,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // sub gifts
         case "target-msg-id":
             // banphrase
-        case "msg-param-sender-count":
-            // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-profileImageURL":
             // URL link to profile picture.
 
