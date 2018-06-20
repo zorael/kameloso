@@ -51,13 +51,11 @@ void postprocess(TwitchService service, ref IRCEvent event)
 
     service.parseTwitchTags(event);
 
-    with (event.sender)
+    if (event.type == IRCEvent.Type.TWITCH_PURCHASE)
     {
-        if (nickname.length && !ident.length)
-        {
-            ident = nickname;
-            class_ = IRCUser.Class.anyone;
-        }
+        // We invent a sender on PURCHASE events, which otherwise originate from
+        // the server. So change class from server to anyone.
+        event.sender.class_ = IRCUser.Class.anyone;
     }
 
     if (event.sender.isServer)
