@@ -229,10 +229,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "sub":
                 event.type = Type.TWITCH_SUB;
                 event.num = 1;  // "one-month resub"
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "resub":
                 event.type = Type.TWITCH_RESUB;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "subgift":
@@ -240,11 +242,13 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
                 event.type = Type.TWITCH_SUBGIFT;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "ritual":
                 // unhandled message: ritual
                 event.type = Type.TWITCH_RITUAL;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "rewardgift":
@@ -252,6 +256,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-min-cheer-amount = '150'
                 //msg-param-selected-count = '60'
                 event.type = Type.TWITCH_REWARDGIFT;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "purchase":
@@ -263,6 +268,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-userID = '182815893'
                 //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
                 event.type = Type.TWITCH_PURCHASE;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "raid":
@@ -274,6 +280,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-viewerCount=9
                 //system-msg=9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!
                 event.type = Type.TWITCH_RAID;
+                event.sender.address = string.init;  // Clear server address
                 break;
 
             case "ban_success":
