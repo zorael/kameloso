@@ -21,21 +21,6 @@ import kameloso.ircdefs;
 
 private:
 
-
-// TwitchSettings
-/++
- +  Twitch-specific settings, gathered in a struct.
- +/
-struct TwitchSettings
-{
-    /++
-     +  Whether to store the display name colour of users that the server sends,
-     +  for use in the `kameloso.plugins.printer.PrinterPlugin` plugin.
-     +/
-    bool twitchColours = true;
-}
-
-
 // postprocess
 /++
  +  Handle Twitch specifics, modifying the `kameloso.ircdefs.IRCEvent` to add
@@ -370,10 +355,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
         case "color":
             // Hexadecimal RGB colour code. This is empty if it is never set.
-            if (service.twitchSettings.twitchColours && value.length)
-            {
-                event.sender.colour = value[1..$];
-            }
+            if (value.length) event.sender.colour = value[1..$];
             break;
 
         case "bits":
@@ -550,8 +532,5 @@ public:
  +/
 final class TwitchService : IRCPlugin
 {
-    /// All Twitch service options gathered.
-    @Settings TwitchSettings twitchSettings;
-
     mixin IRCPluginImpl;
 }
