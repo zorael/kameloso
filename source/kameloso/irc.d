@@ -806,16 +806,16 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         case HOSTTARGET:
             if (slice.has(" :-"))
             {
-                event.type = HOSTEND;
-                goto case HOSTEND;
+                event.type = TWITCH_HOSTEND;
+                goto case TWITCH_HOSTEND;
             }
             else
             {
-                event.type = HOSTSTART;
-                goto case HOSTSTART;
+                event.type = TWITCH_HOSTSTART;
+                goto case TWITCH_HOSTSTART;
             }
 
-        case HOSTSTART:
+        case TWITCH_HOSTSTART:
             // :tmi.twitch.tv HOSTTARGET #hosting_channel <channel> [<number-of-viewers>]
             // :tmi.twitch.tv HOSTTARGET #andymilonakis :zombie_barricades -
             event.channel = slice.nom(" :");
@@ -823,7 +823,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             event.num = (slice == "-") ? 0 : slice.to!uint;
             break;
 
-        case HOSTEND:
+        case TWITCH_HOSTEND:
             // :tmi.twitch.tv HOSTTARGET #hosting_channel :- [<number-of-viewers>]
             event.channel = slice.nom(" :- ");
             event.num = slice.to!uint;
