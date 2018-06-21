@@ -213,22 +213,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             */
             switch (value)
             {
-            case "host_on":
-                event.type = Type.HOSTSTART;
-                break;
-
-            case "host_off":
-                // :tmi.twitch.tv NOTICE #chocotaco :Exited host mode."
-                // @msg-id=host_off
-                event.type = Type.HOSTEND;
-                event.aux = value;
-                break;
-
-            case "host_target_went_offline":
-                event.type = Type.HOSTEND;
-                event.aux = value;
-                break;
-
             case "sub":
                 event.type = Type.TWITCH_SUB;
                 event.num = 1;  // "one-month resub"
@@ -329,6 +313,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.aux = value;
                 break;
 
+
+            case "host_on":
+            case "host_target_went_offline":
+            case "host_off":
+                // :tmi.twitch.tv NOTICE #chocotaco :Exited host mode."
             case "hosts_remaining":
             case "msg_channel_suspended":
             case "color_changed":
