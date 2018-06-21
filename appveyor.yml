@@ -3,7 +3,9 @@ platform: x64
 environment:
   matrix:
     - DC: dmd
-      DVersion: 2.081.0-beta.1
+      DReleaseType: pre-releases
+      DVersion: 2.081.0
+      DSubversion: -beta.1
       arch: x64
     - DC: ldc
       DVersion: 1.10.0
@@ -31,8 +33,10 @@ install:
               }
               echo "downloading ...";
               $env:toolchain = "msvc";
+              $releasetype = $env:DReleaseType;
               $version = $env:DVersion;
-              Invoke-WebRequest "http://downloads.dlang.org/releases/2.x/$($version)/dmd.$($version).windows.7z" -OutFile "c:\dmd.7z";
+              $subversion = $env:DSubversion;
+              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
               echo "finished.";
               pushd c:\\;
               7z x dmd.7z > $null;
