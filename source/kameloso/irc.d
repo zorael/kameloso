@@ -2550,45 +2550,6 @@ unittest
 }
 
 
-// matchesChantypes
-/++
- +  Checks whether passed character is one of those in `CHANTYPES`.
- +
- +  Params:
- +      character = Character to evaluate whether or not it is a chantype
- +          character.
- +      server = The current IRCServer, from which we fetch the chantypes.
- +
- +  Returns:
- +      True if it is, false if it isn't.
- +/
-bool matchesChantypes(const char character, const IRCServer server) pure nothrow @safe @nogc
-{
-    import std.string : representation;
-
-    foreach (immutable chansign; server.chantypes.representation)
-    {
-        if (character == chansign)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-///
-unittest
-{
-    IRCServer server;
-    server.chantypes = "#%+";
-
-    assert("#channel"[0].matchesChantypes(server));
-    assert('%'.matchesChantypes(server));
-    assert(!'~'.matchesChantypes(server));
-}
-
-
 // isValidNickname
 /++
  +  Checks if a string *looks* like a nickname.
