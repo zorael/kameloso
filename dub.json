@@ -4,7 +4,6 @@
     "authors": [ "JR" ],
     "copyright": "Copyright © 2018, JR",
     "license": "MIT",
-    "mainSourceFile": "source/kameloso/main.d",
     "targetType": "executable",
     "sourcePaths": [ "source" ],
     "importPaths": [ "source" ],
