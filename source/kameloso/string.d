@@ -360,6 +360,69 @@ unittest
 }
 
 
+// beginsWithOneOf
+/++
+ +  Checks whether or not the first letter of a string begins with any of the
+ +  passed string of characters.
+ +
+ +  Merely a wrapper of `has`.
+ +
+ +  Params:
+ +      haystack = String line to check the beginning of.
+ +      needles = String of characters to test and see if `line` begins with
+ +          any of them.
+ +
+ +  Returns:
+ +      True if the first character of `line` is also in `characters`, false if
+ +      not.
+ +/
+pragma(inline)
+bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @safe @nogc
+{
+    import std.string : representation;
+
+    // All strings begin with an empty string
+    if (!needles.length) return true;
+
+    // An empty line begins with nothing
+    if (!haystack.length) return false;
+
+    return needles.has(haystack[0]);
+}
+
+///
+unittest
+{
+    assert("#channel".beginsWithOneOf("#%+"));
+    assert(!"#channel".beginsWithOneOf("~%+"));
+    assert("".beginsWithOneOf(""));
+    assert("abc".beginsWithOneOf(string.init));
+    assert(!"".beginsWithOneOf("abc"));
+}
+
+
+/// Ditto
+pragma(inline)
+bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @safe @nogc
+{
+    import std.string : representation;
+
+    // All strings begin with an empty string, even if we're only looking at one character
+    if (!needles.length) return true;
+
+    return needles.has(haystraw);
+}
+
+///
+unittest
+{
+    assert('#'.beginsWithOneOf("#%+"));
+    assert(!'#'.beginsWithOneOf("~%+"));
+    assert('a'.beginsWithOneOf(string.init));
+    assert(!'d'.beginsWithOneOf("abc"));
+}
+
+
 // stripPrefix
 /++
  +  Strips a prefix word from a string, also stripping away some non-word
