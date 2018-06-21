@@ -312,7 +312,7 @@ if (isOutputRange!(Sink, char[]))
     version(LDC) sink.put(string.init);
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
-    enum minimumNameWidth = 16;
+    enum minimumNameWidth = 20;
 
     static if (printAll)
     {
