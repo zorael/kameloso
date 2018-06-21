@@ -1051,7 +1051,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     // More than one target, first is bot
                     // Can't use isChan here since targets may contain spaces
 
-                    if (targets.beginsWith('#'))
+                    if (targets.beginsWithOneOf(parser.bot.server.chantypes))
                     {
                         // More than one target, first is bot
                         // Second target is/begins with a channel
@@ -1069,7 +1069,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                             // More than one target, first is bot
                             // Only one second
 
-                            if (targets.beginsWith('#'))
+                            if (targets.beginsWithOneOf(parser.bot.server.chantypes))
                             {
                                 // First is bot, second is chanenl
                                 event.channel = targets;
@@ -1099,7 +1099,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         {
                             // Only one second target
 
-                            if (targets.beginsWith('#'))
+                            if (targets.beginsWithOneOf(parser.bot.server.chantypes))
                             {
                                 // Second is a channel
                                 event.channel = targets;
@@ -1116,7 +1116,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 {
                     // More than one target, first is not bot
 
-                    if (firstTarget.beginsWith('#'))
+                    if (firstTarget.beginsWithOneOf(parser.bot.server.chantypes))
                     {
                         // First target is a channel
                         // Assume second is a nickname
@@ -1132,7 +1132,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     }
                 }
             }
-            else if (targets.beginsWith('#'))
+            else if (targets.beginsWithOneOf(parser.bot.server.chantypes))
             {
                 // Only one target, it is a channel
                 event.channel = targets;
@@ -1151,7 +1151,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 // More than one target
                 immutable target = slice.nom(' ');
 
-                if (target.beginsWith('#'))
+                if (target.beginsWithOneOf(parser.bot.server.chantypes))
                 {
                     // More than one target, first is a channel
                     // Assume second is content
@@ -1173,7 +1173,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
                         // :irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org
 
-                        if (slice.beginsWith('#') && slice.has(' '))
+                        if (slice.beginsWithOneOf(parser.bot.server.chantypes) && slice.has(' '))
                         {
                             // Second target is channel
                             event.channel = slice.nom(' ');
@@ -1210,7 +1210,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
             {
                 // Only one target
 
-                if (slice.beginsWith('#'))
+                if (slice.beginsWithOneOf(parser.bot.server.chantypes))
                 {
                     // Target is a channel
                     event.channel = slice;
@@ -1447,7 +1447,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
  +/
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWith, sharedDomains;
+    import kameloso.string : beginsWith, beginsWithOneOf, sharedDomains;
     import std.string : toLower;
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
@@ -1457,7 +1457,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     immutable channelOrNickname = slice.nom(" :");
     event.content = slice;
 
-    if (channelOrNickname.length && channelOrNickname[0].matchesChantypes(parser.bot.server))
+    if (channelOrNickname.length && channelOrNickname.beginsWithOneOf(parser.bot.server.chantypes))
     {
         event.channel = channelOrNickname;
     }
@@ -2478,6 +2478,7 @@ unittest
  +/
 bool isValidChannel(const string line, const IRCServer server) pure @nogc
 {
+    import kameloso.string : beginsWithOneOf;
     import std.string : representation;
 
     /++
@@ -2496,7 +2497,7 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    if (!line[0].matchesChantypes(server)) return false;
+    if (!line.beginsWithOneOf(server.chantypes)) return false;
 
     if (line.has(' ') ||
         line.has(',') ||
@@ -2506,8 +2507,8 @@ bool isValidChannel(const string line, const IRCServer server) pure @nogc
         return false;
     }
 
-    if (line.length == 2) return !line[1].matchesChantypes(server);
-    else if (line.length == 3) return !line[2].matchesChantypes(server);
+    if (line.length == 2) return !line[1].beginsWithOneOf(server.chantypes);
+    else if (line.length == 3) return !line[2].beginsWithOneOf(server.chantypes);
     else if (line.length > 3)
     {
         // Allow for two ##s (or &&s) in the name but no more
