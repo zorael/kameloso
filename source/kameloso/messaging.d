@@ -8,6 +8,8 @@
 module kameloso.messaging;
 
 import kameloso.ircdefs;
+import kameloso.plugins.common : IRCPluginState;
+import kameloso.string : beginsWithOneOf;
 
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
@@ -17,16 +19,17 @@ import std.concurrency : Tid, send;
 /++
  +  Sends a channel message.
  +/
-void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string content)
+void chan(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string content)
 {
-    assert((channel[0] == '#'), "chan was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "chan was passed invalid channel: " ~ channel);
+
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
     event.target.special = quiet;
     event.channel = channel;
     event.content = content;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -34,7 +37,7 @@ void chan(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const st
 /++
  +  Sends a private query message to a user.
  +/
-void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname, const string content)
+void query(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string nickname, const string content)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
@@ -42,7 +45,7 @@ void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname, const 
     event.target.nickname = nickname;
     event.content = content;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -54,18 +57,20 @@ void query(Flag!"quiet" quiet = No.quiet)(Tid tid, const string nickname, const 
  +  This reflects how channel messages and private messages are both the
  +  underlying same type; `PRIVMSG`.
  +/
-void privmsg(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
     const string nickname, const string content)
 {
     if (channel.length)
     {
-        assert((channel[0] == '#'), "privmsg was passed invalid channel: " ~ channel);
-        return chan!quiet(tid, channel, content);
+        assert(channel.beginsWithOneOf(state.bot.server.chantypes),
+            "privmsg was passed invalid channel: " ~ channel);
+        return chan!quiet(state, channel, content);
     }
     else if (nickname.length)
     {
-        assert((nickname[0] != '#'), "privmsg was passed a channel for nick: " ~ channel);
-        return query!quiet(tid, nickname, content);
+        assert(channel.beginsWithOneOf(state.bot.server.chantypes),
+            "privmsg was passed a channel for nick: " ~ channel);
+        return query!quiet(state, nickname, content);
     }
     else
     {
@@ -81,16 +86,14 @@ alias throttleline = privmsg;
 /++
  +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
  +/
-void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget, const string content)
+void emote(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string emoteTarget, const string content)
 {
-    import kameloso.string : beginsWith;
-
     IRCEvent event;
     event.type = IRCEvent.Type.EMOTE;
     event.target.special = quiet;
     event.content = content;
 
-    if (emoteTarget.beginsWith('#'))
+    if (emoteTarget.beginsWithOneOf(state.bot.server.chantypes))
     {
         event.channel = emoteTarget;
     }
@@ -99,7 +102,7 @@ void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget, con
         event.target.nickname = emoteTarget;
     }
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -110,10 +113,10 @@ void emote(Flag!"quiet" quiet = No.quiet)(Tid tid, const string emoteTarget, con
  +  This includes modes that pertain to a user in the context of a channel,
  +  like bans.
  +/
-void mode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+void mode(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
     const string modes, const string content = string.init)
 {
-    assert((channel[0] == '#'), "mode was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "mode was passed invalid channel: " ~ channel);
 
     IRCEvent event;
     event.type = IRCEvent.Type.MODE;
@@ -122,7 +125,7 @@ void mode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     event.aux = modes;
     event.content = content;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -130,9 +133,9 @@ void mode(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
 /++
  +  Sets the topic of a channel.
  +/
-void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string content)
+void topic(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string content)
 {
-    assert((channel[0] == '#'), "topic was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "topic was passed invalid channel: " ~ channel);
 
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
@@ -140,7 +143,7 @@ void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const s
     event.channel = channel;
     event.content = content;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -148,16 +151,17 @@ void topic(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const s
 /++
  +  Invites a user to a channel.
  +/
-void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const string nickname)
+void invite(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string nickname)
 {
-    assert((channel[0] == '#'), "invite was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "invite was passed invalid channel: " ~ channel);
+
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
     event.target.special = quiet;
     event.channel = channel;
     event.target.nickname = nickname;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -165,15 +169,16 @@ void invite(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel, const 
 /++
  +  Joins a channel.
  +/
-void join(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
+void join(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel)
 {
-    assert((channel[0] == '#'), "join was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "join was passed invalid channel: " ~ channel);
+
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
     event.target.special = quiet;
     event.channel = channel;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -181,11 +186,14 @@ void join(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 /++
  +  Kicks a user from a channel.
  +/
-void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
+void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
     const string nickname, const string reason = string.init)
 {
-    assert((channel[0] == '#'), "kick was passed invalid channel: " ~ channel);
-    assert((nickname[0] != '#'), "kick was passed channel as nickname: " ~ nickname);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes),
+        "kick was passed invalid channel: " ~ channel);
+    assert(nicikname.beginsWithOneOf(state.bot.server.chantypes),
+        "kick was passed channel as nickname: " ~ nickname);
+
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
     event.target.special = quiet;
@@ -193,7 +201,7 @@ void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
     event.target.nickname = nickname;
     event.content = reason;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -201,15 +209,16 @@ void kick(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel,
 /++
  +  Leaves a channel.
  +/
-void part(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
+void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel)
 {
-    assert((channel[0] == '#'), "part was passed invalid channel: " ~ channel);
+    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "part was passed invalid channel: " ~ channel);
+
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
     event.target.special = quiet;
     event.channel = channel;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -217,14 +226,14 @@ void part(Flag!"quiet" quiet = No.quiet)(Tid tid, const string channel)
 /++
  +  Disconnects from the server, optionally with a quit reason.
  +/
-void quit(Flag!"quiet" quiet = No.quiet)(Tid tid, const string reason = string.init)
+void quit(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string reason = string.init)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUIT;
     event.target.special = quiet;
     event.content = reason;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
 
 
@@ -235,12 +244,12 @@ void quit(Flag!"quiet" quiet = No.quiet)(Tid tid, const string reason = string.i
  +  This is used to send messages of types for which there exist no helper
  +  functions.
  +/
-void raw(Flag!"quiet" quiet = No.quiet)(Tid tid, const string line)
+void raw(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string line)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
     event.target.special = quiet;
     event.content = line;
 
-    tid.send(event);
+    state.mainThread.send(event);
 }
