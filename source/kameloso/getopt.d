@@ -139,8 +139,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "n|nickname",   "Bot nickname", &bot.nickname,
             "s|server",     "Server address", &bot.server.address,
             "P|port",       "Server port", &bot.server.port,
-            "u|user",       "Username when registering onto server (not nickname)", &bot.user,
-            "i|ident",      "IDENT string", &bot.ident,
             "A|account",    "Services account login name, if applicable", &bot.authLogin,
             "auth",         &bot.authLogin,
             "p|password",   "Services account password", &bot.authPassword,
