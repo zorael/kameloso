@@ -242,7 +242,7 @@ unittest
         with (e18)
         {
             assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+            assert((type == IRCEvent.Type.TWITCH_HOSTSTART), type.to!string);
             assert((channel == "#lirik"), channel);
             assert((content == "h1z1"), content);
             assert(!num, num.to!string);
@@ -255,7 +255,7 @@ unittest
         with (e19)
         {
             assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert((type == IRCEvent.Type.HOSTEND), type.to!string);
+            assert((type == IRCEvent.Type.TWITCH_HOSTEND), type.to!string);
             assert((channel == "#lirik"), channel);
             assert((num == 178), num.to!string);
         }
@@ -267,7 +267,7 @@ unittest
         with (e20)
         {
             assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert((type == IRCEvent.Type.HOSTSTART), type.to!string);
+            assert((type == IRCEvent.Type.TWITCH_HOSTSTART), type.to!string);
             assert((channel == "#lirik"), channel);
             assert((content == "chu8"), content);
             assert((num == 270), num.to!string);
@@ -1139,7 +1139,7 @@ unittest
             with (IRCEvent.Type)
             with (event)
             {
-                assert((type == HOSTSTART), type.to!string);
+                assert((type == TWITCH_HOSTSTART), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
                 assert(sender.special, sender.special.to!string);
                 assert((channel == "#andymilonakis"), channel);
