@@ -47,9 +47,6 @@ struct PrinterSettings
     /// Whether to filter away most uninteresting events.
     bool filterVerbose = true;
 
-    /// Whether to print the badge field in caps (as they used to be earlier).
-    bool badgesInCaps = false;
-
     /++
      +  Whether or not to send a terminal bell signal when the bot is mentioned
      +  in chat.
@@ -59,7 +56,7 @@ struct PrinterSettings
     /// Whether to bell on parsing errors.
     bool bellOnErrors = true;
 
-    /// Whether to have the type names be in capital letters.
+    /// Whether to have the type (and bagde) names be in capital letters.
     bool typesInCaps = true;
 
     /// Whether to log events.
@@ -724,7 +721,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 import std.string : toUpper;
 
-                immutable badgestring = plugin.printerSettings.badgesInCaps ?
+                immutable badgestring = plugin.printerSettings.typesInCaps ?
                     badge.toUpper : badge;
 
                 put(sink, " [", badgestring, ']');
@@ -985,7 +982,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                    immutable badgestring = plugin.printerSettings.badgesInCaps ? badge.toUpper : badge;
+                    immutable badgestring = plugin.printerSettings.typesInCaps ? badge.toUpper : badge;
 
                     put(sink, " [", badgestring, ']');
                 }
@@ -1047,7 +1044,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                    immutable badgestring = plugin.printerSettings.badgesInCaps ?
+                    immutable badgestring = plugin.printerSettings.typesInCaps ?
                         target.badge.toUpper : target.badge;
 
                     put(sink, " [", badgestring, ']');
