@@ -1698,7 +1698,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void chan(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
     {
-        return kameloso.messaging.chan!quiet(state.mainThread, channel, content);
+        return kameloso.messaging.chan!quiet(state, channel, content);
     }
 
 
@@ -1709,7 +1709,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void query(Flag!"quiet" quiet = No.quiet)(const string nickname, const string content)
     {
-        return kameloso.messaging.query!quiet(state.mainThread, nickname, content);
+        return kameloso.messaging.query!quiet(state, nickname, content);
     }
 
 
@@ -1728,7 +1728,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string content)
     {
-        return kameloso.messaging.privmsg!quiet(state.mainThread, channel, nickname, content);
+        return kameloso.messaging.privmsg!quiet(state, channel, nickname, content);
     }
 
     deprecated("All outgoing messages are now throttled. Use privmsg instead.")
@@ -1742,7 +1742,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget, const string content)
     {
-        return kameloso.messaging.emote!quiet(state.mainThread, emoteTarget, content);
+        return kameloso.messaging.emote!quiet(state, emoteTarget, content);
     }
 
 
@@ -1757,7 +1757,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void mode(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string modes, const string content = string.init)
     {
-        return kameloso.messaging.mode!quiet(state.mainThread, channel, modes, content);
+        return kameloso.messaging.mode!quiet(state, channel, modes, content);
     }
 
 
@@ -1768,7 +1768,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void topic(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
     {
-        return kameloso.messaging.topic!quiet(state.mainThread, channel, content);
+        return kameloso.messaging.topic!quiet(state, channel, content);
     }
 
 
@@ -1779,7 +1779,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void invite(Flag!"quiet" quiet = No.quiet)(const string channel, const string nickname)
     {
-        return kameloso.messaging.invite!quiet(state.mainThread, channel, nickname);
+        return kameloso.messaging.invite!quiet(state, channel, nickname);
     }
 
 
@@ -1790,7 +1790,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void join(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
-        return kameloso.messaging.join!quiet(state.mainThread, channel);
+        return kameloso.messaging.join!quiet(state, channel);
     }
 
 
@@ -1801,7 +1801,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     void kick(Flag!"quiet" quiet = No.quiet)(const string channel,
         const string nickname, const string reason = string.init)
     {
-        return kameloso.messaging.kick!quiet(state.mainThread, channel, nickname, reason);
+        return kameloso.messaging.kick!quiet(state, channel, nickname, reason);
     }
 
 
@@ -1812,7 +1812,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void part(Flag!"quiet" quiet = No.quiet)(const string channel)
     {
-        return kameloso.messaging.part!quiet(state.mainThread, channel);
+        return kameloso.messaging.part!quiet(state, channel);
     }
 
 
@@ -1823,7 +1823,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
-        return kameloso.messaging.quit!quiet(state.mainThread, reason);
+        return kameloso.messaging.quit!quiet(state, reason);
     }
 
 
@@ -1837,7 +1837,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     pragma(inline)
     void raw(Flag!"quiet" quiet = No.quiet)(const string line)
     {
-        return kameloso.messaging.raw!quiet(state.mainThread, line);
+        return kameloso.messaging.raw!quiet(state, line);
     }
 }
 
