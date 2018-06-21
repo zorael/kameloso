@@ -91,18 +91,18 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
                     {
-                        mainThread.quit(line[6..$]);
+                        state.quit(line[6..$]);
                     }
                     else
                     {
-                        mainThread.quit();
+                        state.quit();
                     }
 
                     break eofLoop;
                 }
                 else
                 {
-                    mainThread.raw(line);
+                    state.raw(line);
                 }
             }
         }

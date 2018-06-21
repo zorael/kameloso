@@ -93,7 +93,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
         < Timeout.titleCache))
     {
         logger.log("Found Reddit lookup in cache");
-        plugin.state.mainThread.reportReddit(cachedLookup.url, event);
+        plugin.state.reportReddit(cachedLookup.url, event);
         return;
     }
 
@@ -136,7 +136,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     try
     {
         immutable redditURL = lookupReddit(url);
-        state.mainThread.reportReddit(redditURL, event);
+        state.reportReddit(redditURL, event);
 
         RedditLookup lookup;
         lookup.url = redditURL;
@@ -199,23 +199,23 @@ string lookupReddit(const string url)
  +  Reports the result of a Reddit lookup to a channel or in a private message.
  +
  +  Params:
- +      tid = Thread ID of the original thread, to which we should send the
- +          final reporting message.
+ +      state = The current IRC plugin state, which includes the thread ID of
+ +          the main thread to send the report to, to pass onto the server.
  +      reddit = URL of the Reddit post.
  +      event = `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
-void reportReddit(Tid tid, const string reddit, const IRCEvent event)
+void reportReddit(IRCPluginState state, const string reddit, const IRCEvent event)
 {
     import kameloso.messaging : privmsg;
 
     if (reddit.length)
     {
-        tid.privmsg(event.channel, event.sender.nickname,
+        state.privmsg(event.channel, event.sender.nickname,
             "Reddit post: " ~ reddit);
     }
     else
     {
-        tid.privmsg(event.channel, event.sender.nickname,
+        state.privmsg(event.channel, event.sender.nickname,
             "No corresponding Reddit post found.");
     }
 

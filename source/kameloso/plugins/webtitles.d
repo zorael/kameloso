@@ -137,7 +137,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
         {
             logger.log("Found title lookup in cache");
-            plugin.state.mainThread.reportURL(*cachedLookup, event);
+            plugin.state.reportURL(*cachedLookup, event);
             continue;
         }
 
@@ -202,7 +202,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
         }
 
         auto lookup = lookupTitle(titleReq.url);
-        state.mainThread.reportURL(lookup, titleReq.event);
+        state.reportURL(lookup, titleReq.event);
         cache[originalURL] = lookup;
     }
     catch (const Exception e)
@@ -222,7 +222,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
-void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
+void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event)
 {
     import kameloso.messaging : privmsg;
     import std.format : format;
@@ -238,7 +238,7 @@ void reportURL(Tid tid, const TitleLookup lookup, const IRCEvent event)
         line = lookup.title;
     }
 
-    tid.privmsg(event.channel, event.sender.nickname, line);
+    state.privmsg(event.channel, event.sender.nickname, line);
 }
 
 

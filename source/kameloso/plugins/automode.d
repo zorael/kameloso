@@ -127,7 +127,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         {
             // Not an extended join
             import kameloso.messaging : raw;
-            plugin.state.mainThread.raw("WHOIS " ~ sender.nickname);
+            plugin.state.raw("WHOIS " ~ sender.nickname);
             return;
         }
         goto case ACCOUNT;
@@ -184,7 +184,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
             continue;
         }
 
-        plugin.state.mainThread.raw!(No.quiet)("MODE %s %s%s %s".format(channel,
+        plugin.state.raw!(No.quiet)("MODE %s %s%s %s".format(channel,
             "+".repeat((*modes).length).join, *modes, nickname));
         plugin.appliedAutomodes[channel][account] = true;
     }
