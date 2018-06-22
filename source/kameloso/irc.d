@@ -16,21 +16,15 @@ version(AsAnApplication)
 {
     /+
         As an application; log sanity check failures to screen. Parsing proceeds
-        and plugins are processed.
+        and plugins are processed after some verbose debug output. The error
+        text will be stored in `IRCEvent.errors`.
+
+        The alternative (!AsAnApplication) is as-a-library; silently let errors
+        pass, only storing them in the `IRCEvent.errors` field. No Logger will
+        be imported, giving no debug output to the screen and leaving the
+        library headless.
      +/
     version = PrintSanityFailures;
-}
-else
-{
-    /+
-        As a library; throw an exception on sanity check failures. Parsing halts
-        and the event dies mid-flight. However, no Logger will be imported,
-        leaving the library headless.
-
-        Comment this if you want parsing sanity check failures to be silently
-        ignored, with the errors stored in `IRCEvent.errors`.
-     +/
-    version = ThrowSanityFailures;
 }
 
 
@@ -1314,11 +1308,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         printObject(event);
 
         version(Cygwin_) stdout.flush();
-    }
-    else version(ThrowSanityFailures)
-    {
-        event.errors = sink.data;
-        throw new IRCParseException(sink.data, event);
     }
     else
     {
