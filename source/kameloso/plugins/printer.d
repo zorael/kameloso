@@ -656,6 +656,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     import std.algorithm : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
+    import std.format : formattedWrite;
     import std.string : toLower;
     import std.uni : asLowerCase;
 
@@ -795,11 +796,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         if (aux.length) put(sink, " <", aux, '>');
 
-        if (num > 0)
+        if (errors.length && !plugin.printerSettings.silentErrors)
         {
-            import std.format : formattedWrite;
-            sink.formattedWrite(" (#%03d)", num);
+            put(sink, " !", errors, '!');
         }
+
+        if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
         {
@@ -1120,6 +1122,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 sink.colour(bright ? DefaultBright.num : DefaultDark.num);
                 sink.formattedWrite(" (#%03d)", num);
+            }
+
+            if (errors.length && !plugin.printerSettings.silentErrors)
+            {
+                sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+                put(sink, " !", errors, '!');
             }
 
             sink.colour(default_);  // same for bright and dark
