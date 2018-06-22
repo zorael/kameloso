@@ -259,7 +259,6 @@ void tryAuth(ConnectService service)
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
                 bot.authentication = Progress.finished;
-                bot.updated = true;
                 service.joinChannels();
                 return;
             }
@@ -273,7 +272,6 @@ void tryAuth(ConnectService service)
         case u2:
             // Accepts auth login
             // GameSurge is AuthServ
-
             string account = bot.authLogin;
 
             if (!bot.authLogin.length)
@@ -288,19 +286,18 @@ void tryAuth(ConnectService service)
 
         case rusnet:
             // Doesn't want a PRIVMSG
-            service.raw!(No.quiet)("NICKSERV IDENTIFY " ~ password);  // FIXME
-            logger.tracef("--> NICKSERV IDENTIFY hunter2");
+            service.raw!(No.quiet)("NICKSERV IDENTIFY " ~ password);
+            logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
         case twitch:
             // No registration available
             bot.authentication = Progress.finished;
-            bot.updated = true;
-            return;
+            break;
 
         default:
             logger.warning("Unsure of what AUTH approach to use.");
-            logger.log("Need information about what approach succeeded!");
+            logger.info("Need information about what approach succeeded!");
 
             if (bot.authLogin.length) goto case ircdseven;
             else
