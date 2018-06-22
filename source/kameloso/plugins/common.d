@@ -1687,6 +1687,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 {
     static import kameloso.messaging;
+    import std.functional : partial;
     import std.typecons : Flag, No, Yes;
 
     enum hasMessagingProxy = true;
@@ -1696,22 +1697,14 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Sends a channel message.
      +/
     pragma(inline)
-    void chan(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
-    {
-        return kameloso.messaging.chan!quiet(state, channel, content);
-    }
-
+    alias chan(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.chan!quiet, privateState);
 
     // query
     /++
      +  Sends a private query message to a user.
      +/
     pragma(inline)
-    void query(Flag!"quiet" quiet = No.quiet)(const string nickname, const string content)
-    {
-        return kameloso.messaging.query!quiet(state, nickname, content);
-    }
-
+    alias query(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.query!quiet, privateState);
 
     // privmsg
     /++
@@ -1725,26 +1718,17 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  may otherwise get kicked for spamming.
      +/
     pragma(inline)
-    void privmsg(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string nickname, const string content)
-    {
-        return kameloso.messaging.privmsg!quiet(state, channel, nickname, content);
-    }
+    alias privmsg(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.privmsg!quiet, privateState);
 
     deprecated("All outgoing messages are now throttled. Use privmsg instead.")
     alias throttleline = privmsg;
-
 
     // emote
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     pragma(inline)
-    void emote(Flag!"quiet" quiet = No.quiet)(const string emoteTarget, const string content)
-    {
-        return kameloso.messaging.emote!quiet(state, emoteTarget, content);
-    }
-
+    alias emote(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.emote!quiet, privateState);
 
     // mode
     /++
@@ -1754,78 +1738,56 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  like bans.
      +/
     pragma(inline)
-    void mode(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string modes, const string content = string.init)
-    {
-        return kameloso.messaging.mode!quiet(state, channel, modes, content);
-    }
-
+    alias mode(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.mode!quiet, privateState);
 
     // topic
     /++
      +  Sets the topic of a channel.
      +/
     pragma(inline)
-    void topic(Flag!"quiet" quiet = No.quiet)(const string channel, const string content)
-    {
-        return kameloso.messaging.topic!quiet(state, channel, content);
-    }
-
+    alias topic(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.topic!quiet, privateState);
 
     // invite
     /++
      +  Invites a user to a channel.
      +/
     pragma(inline)
-    void invite(Flag!"quiet" quiet = No.quiet)(const string channel, const string nickname)
-    {
-        return kameloso.messaging.invite!quiet(state, channel, nickname);
-    }
-
+    alias invite(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.invite!quiet, privateState);
 
     // join
     /++
      +  Joins a channel.
      +/
     pragma(inline)
-    void join(Flag!"quiet" quiet = No.quiet)(const string channel)
-    {
-        return kameloso.messaging.join!quiet(state, channel);
-    }
-
+    alias join(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.join!quiet, privateState);
 
     // kick
     /++
      +  Kicks a user from a channel.
      +/
-    void kick(Flag!"quiet" quiet = No.quiet)(const string channel,
-        const string nickname, const string reason = string.init)
-    {
-        return kameloso.messaging.kick!quiet(state, channel, nickname, reason);
-    }
-
+    pragma(inline)
+    alias kick(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.kick!quiet, privateState);
 
     // part
     /++
      +  Leaves a channel.
      +/
     pragma(inline)
-    void part(Flag!"quiet" quiet = No.quiet)(const string channel)
-    {
-        return kameloso.messaging.part!quiet(state, channel);
-    }
-
+    alias part(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.part!quiet, privateState);
 
     // quit
     /++
      +  Disconnects from the server, optionally with a quit reason.
+     +
+     +  Cannot seemingly be wrapped using `std.functional.partial` due to the
+     +  default `= string.init` parameter.
      +/
     pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
+        //alias quit(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.quit!quiet, privateState);
         return kameloso.messaging.quit!quiet(state, reason);
     }
-
 
     // raw
     /++
@@ -1835,10 +1797,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  functions.
      +/
     pragma(inline)
-    void raw(Flag!"quiet" quiet = No.quiet)(const string line)
-    {
-        return kameloso.messaging.raw!quiet(state, line);
-    }
+    alias raw(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.raw!quiet, privateState);
 }
 
 
