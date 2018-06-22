@@ -967,7 +967,7 @@ int main(string[] args)
             if (!resolved)
             {
                 teardownPlugins();
-                logger.error("Exiting...");
+                logger.info("Exiting...");
                 return 1;
             }
 
@@ -1018,7 +1018,7 @@ int main(string[] args)
                 }
 
                 teardownPlugins();
-                logger.error("Exiting...");
+                logger.info("Exiting...");
                 return 1;
             }
 

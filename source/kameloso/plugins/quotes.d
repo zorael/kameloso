@@ -130,7 +130,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!nickname.isValidNickname(plugin.state.bot.server))
     {
-        logger.errorf("Invalid nickname: '%s'", nickname);
+        logger.warningf("Invalid nickname: '%s'", nickname);
         return;
     }
 
@@ -188,7 +188,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!nickname.isValidNickname(plugin.state.bot.server))
     {
-        logger.errorf("Invalid nickname: '%s'", nickname);
+        logger.warningf("Invalid nickname: '%s'", nickname);
         return;
     }
 

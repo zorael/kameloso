@@ -423,7 +423,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 
     if (!line.length)
     {
-        logger.error("No message to create note from");
+        logger.warning("No message to create note from");
         return;
     }
 

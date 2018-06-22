@@ -824,7 +824,7 @@ void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
         break;
 
     case unset:
-        logger.error("Admin peekPlugins type of peek was unset!");
+        logger.warning("Admin peekPlugins type of peek was unset!");
         break;
     }
 

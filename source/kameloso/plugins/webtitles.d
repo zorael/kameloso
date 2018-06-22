@@ -353,7 +353,7 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
 
     if (!onRepeatLookup.title.has(" - ListenOnRepeat"))
     {
-        logger.error("Failed to ListenOnRepeatify YouTube title");
+        logger.warning("Failed to ListenOnRepeatify YouTube title");
         return;
     }
 

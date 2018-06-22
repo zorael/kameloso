@@ -82,7 +82,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
             }
             else
             {
-                logger.error("Tried to remove a channel that wasn't there: ", event.channel);
+                logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
             }
         }
     }
@@ -125,7 +125,7 @@ void joinChannels(ConnectService service)
     {
         if (!bot.homes.length && !bot.channels.length)
         {
-            logger.error("No channels, no purpose...");
+            logger.warning("No channels, no purpose...");
             return;
         }
 
