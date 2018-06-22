@@ -861,18 +861,20 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     import std.traits : EnumMembers;
 
-                    static immutable BashForeground[17] fg = [ EnumMembers!BashForeground ];
+                    alias foregroundMembers = EnumMembers!BashForeground;
+                    enum lastIndex = (foregroundMembers.length - 1);
+                    static immutable BashForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
-                    auto colourIndex = hashOf(nickname) % 16;
+                    auto colourIndex = hashOf(nickname) % lastIndex;
 
                     // Map black to white on dark terminals, reverse on bright
                     if (bright)
                     {
-                        if (colourIndex == 16) colourIndex = 1;
+                        if (colourIndex == lastIndex) colourIndex = 1;
                     }
                     else
                     {
-                        if (colourIndex == 1) colourIndex = 16;
+                        if (colourIndex == 1) colourIndex = lastIndex;
                     }
 
                     return fg[colourIndex];
