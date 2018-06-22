@@ -5,6 +5,7 @@
     "copyright": "Copyright © 2018, JR",
     "license": "MIT",
     "targetType": "executable",
+    "mainSourceFile": "source/kameloso/main.d",
     "sourcePaths": [ "source" ],
     "importPaths": [ "source" ],
     "libs-posix": [ "phobos2" ],
