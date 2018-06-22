@@ -51,7 +51,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
 
             if (event.type == CLEARCHAT)
             {
-                event.type = event.aux.length ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
+                event.type = (event.num > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
             }
         }
     }
@@ -89,75 +89,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
         switch (key)
         {
-        case "display-name":
-            // The user’s display name, escaped as described in the IRCv3 spec.
-            // This is empty if it is never set.
-            if (event.type != Type.USERSTATE)
-            {
-                // USERSTATE events are server-sent events that include display-name
-                // Exempt them so that the entry for tmi.twitch.tv won't have an alias.
-                import kameloso.string : strippedRight;
-                event.sender.alias_ = value.has('\\') ? decodeIRCv3String(value).strippedRight : value;
-            }
-            break;
-
-        case "badges":
-            // Comma-separated list of chat badges and the version of each
-            // badge (each in the format <badge>/<version>, such as admin/1).
-            // Valid badge values: admin, bits, broadcaster, global_mod,
-            // moderator, subscriber, staff, turbo.
-            if (!value.length) break;
-
-            // Assume the first badge is the most prominent one.
-            // Seems to be the case
-            string slice = value;
-            event.sender.badge = slice.nom('/');
-            break;
-
-        case "mod":
-        case "subscriber":
-        case "turbo":
-            // 1 if the user has a (moderator|subscriber|turbo) badge;
-            // otherwise, 0.
-            if (value == "0") break;
-
-            if (!event.sender.badge.length)
-            {
-                logger.errorf("PANIC! %s yet no previous badge!", key);
-            }
-            break;
-
-        case "ban-duration":
-            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-            // (Optional) Duration of the timeout, in seconds. If omitted,
-            // the ban is permanent.
-            event.aux = value;
-            break;
-
-        case "user-type":
-            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
-            // The broadcaster can have any of these.
-            if (!value.length) break;
-            if (!event.sender.badge.length)
-            {
-                logger.errorf("PANIC! %s yet no previous badge!", value);
-            }
-            break;
-
-        case "system-msg":
-        case "ban-reason":
-            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
-            // The moderator’s reason for the timeout or ban.
-            // system-msg: The message printed in chat along with this notice.
-            import kameloso.string : strippedRight;
-            if (!event.content.length) event.content = decodeIRCv3String(value).strippedRight;
-            break;
-
-        case "emote-only":
-            if (value == "0") break;
-            if (event.type == Type.CHAN) event.type = Type.EMOTE;
-            break;
-
         case "msg-id":
             // The type of notice (not the ID) / A message ID string.
             // Can be used for i18ln. Valid values: see
@@ -298,7 +229,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.aux = value;
                 break;
 
-
             case "host_on":
             case "host_target_went_offline":
             case "host_off":
@@ -316,6 +246,61 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 logger.warning("Unknown Twitch msg-id: ", value);
                 break;
             }
+            break;
+
+         case "display-name":
+            // The user’s display name, escaped as described in the IRCv3 spec.
+            // This is empty if it is never set.
+            if (event.type != Type.USERSTATE)
+            {
+                // USERSTATE events are server-sent events that include display-name
+                // Exempt them so that the entry for tmi.twitch.tv won't have an alias.
+                import kameloso.string : strippedRight;
+                event.sender.alias_ = value.has('\\') ? decodeIRCv3String(value).strippedRight : value;
+            }
+            break;
+
+        case "badges":
+            // Comma-separated list of chat badges and the version of each
+            // badge (each in the format <badge>/<version>, such as admin/1).
+            // Valid badge values: admin, bits, broadcaster, global_mod,
+            // moderator, subscriber, staff, turbo.
+            if (!value.length) break;
+
+            // Assume the first badge is the most prominent one.
+            // Seems to be the case
+            string slice = value;
+            event.sender.badge = slice.nom('/');
+            break;
+
+        case "mod":
+        case "subscriber":
+        case "turbo":
+            // 1 if the user has a (moderator|subscriber|turbo) badge;
+            // otherwise, 0.
+            // Not of interest currently; we just listen to the first badge.
+            //if (value == "0") break;
+            break;
+
+        case "user-type":
+            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
+            // The broadcaster can have any of these.
+            // Not of interst currently either.
+            //if (!value.length) break;
+            break;
+
+        case "system-msg":
+        case "ban-reason":
+            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            // The moderator’s reason for the timeout or ban.
+            // system-msg: The message printed in chat along with this notice.
+            import kameloso.string : strippedRight;
+            if (!event.content.length) event.content = decodeIRCv3String(value).strippedRight;
+            break;
+
+        case "emote-only":
+            if (value == "0") break;
+            if (event.type == Type.CHAN) event.type = Type.EMOTE;
             break;
 
         case "msg-param-recipient-display-name":
@@ -336,21 +321,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // RAID; real sender nickname and thus raiding channel lowercased
             // also PURCHASE. The sender's user login (real nickname)
             event.sender.nickname = value;
-            break;
-
-        case "msg-param-months":
-            // The number of consecutive months the user has subscribed for,
-            // in a resub notice.
-            event.num = value.to!uint;
-            break;
-
-        case "msg-param-sub-plan":
-            // The type of subscription plan being used.
-            // Valid values: Prime, 1000, 2000, 3000.
-            // 1000, 2000, and 3000 refer to the first, second, and third
-            // levels of paid subscriptions, respectively (currently $4.99,
-            // $9.99, and $24.99).
-            event.aux = value;
             break;
 
         case "color":
@@ -380,14 +350,15 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.aux = value;
             break;
 
+        case "msg-param-sub-plan":
+            // The type of subscription plan being used.
+            // Valid values: Prime, 1000, 2000, 3000.
+            // 1000, 2000, and 3000 refer to the first, second, and third
+            // levels of paid subscriptions, respectively (currently $4.99,
+            // $9.99, and $24.99).
         case "msg-param-ritual-name":
             // msg-param-ritual-name = 'new_chatter'
             // [ritual] tmi.twitch.tv [#couragejd]: "@callmejosh15 is new here. Say hello!"
-            event.aux = value;
-            break;
-
-        case "msg-param-bits-amount":
-            //msg-param-bits-amount = '199'
             event.aux = value;
             break;
 
@@ -396,6 +367,18 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.aux = decodeIRCv3String(value);
             break;
 
+        case "ban-duration":
+            // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
+            // (Optional) Duration of the timeout, in seconds. If omitted,
+            // the ban is permanent.
+        case "msg-param-viewerCount":
+            // RAID; viewer count of raiding channel
+            // msg-param-viewerCount = '9'
+        case "msg-param-months":
+            // The number of consecutive months the user has subscribed for,
+            // in a resub notice.
+        case "msg-param-bits-amount":
+            //msg-param-bits-amount = '199'
         case "msg-param-crateCount":
             // PURCHASE, no idea
         case "msg-param-sender-count":
@@ -495,12 +478,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // URL link to profile picture.
 
             // Ignore these events.
-            break;
-
-        case "msg-param-viewerCount":
-            // RAID; viewer count of raiding channel
-            // msg-param-viewerCount = '9'
-            event.num = value.to!uint;
             break;
 
         case "message":
