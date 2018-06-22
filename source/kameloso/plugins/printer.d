@@ -723,7 +723,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             if (badge.length)
             {
-                import kameloso : has, nom;
+                import kameloso.string : has, nom;
                 import std.string : toUpper;
 
                 immutable mostImportantBadge = badge.has('/') ? badge.nom('/') : badge;
