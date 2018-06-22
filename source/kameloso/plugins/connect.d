@@ -430,6 +430,20 @@ void onBadNick(ConnectService service)
 }
 
 
+// onBanned
+/++
+ +  Quits the program if we're banned.
+ +
+ +  There's no point in reconnecting.
+ +/
+@(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
+void onBanned(ConnectService service)
+{
+    logger.error("You are banned!");
+    service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Banned");
+}
+
+
 // onInvite
 /++
  +  Upon being invited to a channel, joins it if the settings say we should.
