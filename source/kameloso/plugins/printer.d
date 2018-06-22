@@ -56,6 +56,9 @@ struct PrinterSettings
     /// Whether to bell on parsing errors.
     bool bellOnErrors = true;
 
+    /// Whether to be silent and not print error messages in the event output.
+    bool silentErrors = false;
+
     /// Whether to have the type (and bagde) names be in capital letters.
     bool typesInCaps = true;
 
