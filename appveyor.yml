@@ -39,11 +39,11 @@ install:
               $subversion = $env:DSubversion;
               $buildjob = $env:DAppVeyorBuildJob;
               Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
-              Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/$($buildjob)/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe";
               echo "finished.";
               pushd c:\\;
               7z x dmd.7z > $null;
               popd;
+              Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/$($buildjob)/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe";
             }
             elseif($env:DC -eq "ldc"){
               echo "downloading ...";
