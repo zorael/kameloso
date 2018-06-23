@@ -771,11 +771,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 if (type == IRCEvent.Type.CHAN)
                 {
-                    import kameloso.string : has;
+                    import kameloso.irc : containsNickname;
 
-                    if (content.has!(Yes.decode)(bot.nickname))
+                    if (content.containsNickname(bot.nickname))
                     {
-                        // Nick was mentioned (VERY naïve guess)
+                        // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
                     }
                     else
@@ -1077,11 +1077,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     if (type == IRCEvent.Type.CHAN)
                     {
-                        import kameloso.string : has;
+                        import kameloso.irc : containsNickname;
 
-                        if (event.content.has!(Yes.decode)(bot.nickname))
+                        if (content.containsNickname(bot.nickname))
                         {
-                            // Nick was mentioned (naïve guess)
+                            // Nick was mentioned (certain)
                             immutable inverted = content.invert(bot.nickname);
 
                             if ((content != inverted) && bellOnMention)
