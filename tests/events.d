@@ -666,8 +666,8 @@ unittest
             assert((type == ERR_UNKNOWNCOMMAND), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert((content == "sudo"), content);
-            assert((aux == "Unknown command"), aux);
+            assert((aux == "sudo"), aux);
+            assert((content == "Unknown command"), content);
             assert((num == 421), num.to!string);
         }
     }
