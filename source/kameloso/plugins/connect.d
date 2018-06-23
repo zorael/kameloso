@@ -473,6 +473,13 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
     /// http://ircv3.net/irc
     /// https://blog.irccloud.com/ircv3
 
+    if (service.state.bot.registration == Progress.finished)
+    {
+        // It's possible to call CAP LS after registration, and that would start
+        // this whole process anew. So stop if we have registered.
+        return;
+    }
+
     with (service.state)
     switch (event.aux)
     {
