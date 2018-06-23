@@ -1323,7 +1323,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
         logger.warning(sink.data);
         event.errors = sink.data;
-        printObjects(event, event.sender);
+        printObjects(event, event.sender, event.target);
 
         version(Cygwin_) stdout.flush();
     }
