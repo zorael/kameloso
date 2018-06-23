@@ -917,7 +917,7 @@ unittest
             assert((type == ERR_NOSUCHNICK), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
             assert(sender.special, sender.special.to!string);
-            assert((target.nickname == "cherryh.freenode.net"), target.nickname);
+            assert((aux == "cherryh.freenode.net"), aux);
             assert((content == "No such nick/channel"), content);
             assert((num == 401), num.to!string);
         }
