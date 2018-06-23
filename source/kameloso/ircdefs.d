@@ -225,8 +225,8 @@ struct IRCEvent
         RPL_ADMINLOC2, // = 258,        // ":<admin info>"
         RPL_ADMINEMAIL, // = 259,       // ":<admin info>"
         RPL_TRACELOG, // = 261,         // "File <logfile> <debug level>"
-        RPL_TRACEEND, // = 262,         // CONFLICT "<server_name> <version>[.<debug_level>] :<info>"
-        RPL_TRACEPING, // = 262,
+        RPL_TRACEPING, // = 262,        // CONFLICT
+        RPL_TRACEEND, // = 262,         // "<server_name> <version>[.<debug_level>] :<info>"
         RPL_TRYAGAIN, // = 263,         // "<command> :<info>"
         RPL_USINGSSL, // = 264,
         RPL_LOCALUSERS, // = 265,       // Also known as RPL_CURRENT_LOCAL
@@ -1578,7 +1578,7 @@ struct Typenums
         258 : Type.RPL_ADMINLOC2,
         259 : Type.RPL_ADMINEMAIL,
         261 : Type.RPL_TRACELOG,
-        262 : Type.RPL_TRACEPING,
+        262 : Type.RPL_TRACEEND,
         263 : Type.RPL_TRYAGAIN,
         264 : Type.RPL_USINGSSL,
         265 : Type.RPL_LOCALUSERS,
