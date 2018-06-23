@@ -6,6 +6,7 @@ environment:
       DReleaseType: pre-releases
       DVersion: 2.081.0
       DSubversion: -beta.1
+      DAppVeyorBuildJob: ck4u5ymflxl5ybvy
       arch: x64
     - DC: ldc
       DVersion: 1.10.0
@@ -36,7 +37,9 @@ install:
               $releasetype = $env:DReleaseType;
               $version = $env:DVersion;
               $subversion = $env:DSubversion;
+              $buildjob = $env:DAppVeyorBuildJob;
               Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\dmd.7z";
+              Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/$($buildjob)/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe";
               echo "finished.";
               pushd c:\\;
               7z x dmd.7z > $null;
@@ -60,7 +63,6 @@ install:
             }
         }
   - ps: SetUpDCompiler
-  - ps: Invoke-WebRequest "https://ci.appveyor.com/api/buildjobs/ck4u5ymflxl5ybvy/artifacts/src%2Fdmd.exe" -OutFile "C:\dmd2\windows\bin\dmd.exe"
   - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.9.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
