@@ -1891,3 +1891,109 @@ unittest
         }
     }
 }
+
+unittest
+{
+    IRCParser parser;
+    parser.bot.nickname = "kameloso";
+    parser.setDaemon(IRCServer.Daemon.ircdseven, "freenode");
+
+    {
+        immutable event = parser.toIRCEvent(":livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_STATSDEBUG), type.to!string);
+            assert((sender.address == "livingstone.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "dax (dax@freenode/staff/dax)"), content);
+            assert((aux == "p"), aux);
+            assert((num == 249), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":livingstone.freenode.net 219 kameloso p :End of /STATS report");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_ENDOFSTATS), type.to!string);
+            assert((sender.address == "livingstone.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "End of /STATS report"), content);
+            assert((aux == "p"), aux);
+            assert((num == 219), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_STATSLINKINFO), type.to!string);
+            assert((sender.address == "verne.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "40 0 -"), content);
+            assert((aux == "kameloso^[~NaN@194.117.188.126] 0 109 8 15 0"), aux);
+            assert((num == 211), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":verne.freenode.net 263 kameloso^ STATS :This command could not be completed because it has been used recently, and is rate-limited");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_TRYAGAIN), type.to!string);
+            assert((sender.address == "verne.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "This command could not be completed because it has been used recently, and is rate-limited"), content);
+            assert((aux == "STATS"), aux);
+            assert((num == 263), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":verne.freenode.net 262 kameloso^ verne.freenode.net :End of TRACE");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_TRACEEND), type.to!string);
+            assert((sender.address == "verne.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "End of TRACE"), content);
+            assert((aux == "verne.freenode.net"), aux);
+            assert((num == 262), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_TRACEUSER), type.to!string);
+            assert((sender.address == "wolfe.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "536"), content);
+            assert((aux == "User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16"), aux);
+            assert((num == 205), num.to!string);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":irc.run.net 222 kameloso KOI8-U :is your charset now");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_CODEPAGE), type.to!string);
+            assert((sender.address == "irc.run.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "is your charset now"), content);
+            assert((aux == "KOI8-U"), aux);
+            assert((num == 222), num.to!string);
+        }
+    }
+}
