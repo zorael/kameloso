@@ -297,11 +297,8 @@ unittest
 
 // generateAsserts
 /++
- +  Reads raw server strings from `stdin`, parses them to
+ +  Reads raw server strings from `stdin`, parses them into
  +  `kameloso.ircdefs.IRCEvent`s and constructs assert blocks of their contents.
- +
- +  We can't use an `std.array.Appender` or dmd will hit a stack overflow,
- +  error -11.
  +
  +  Example:
  +  ---
@@ -314,18 +311,46 @@ unittest
  +/
 void generateAsserts(ref Client client) @system
 {
-    import kameloso.common : printObject;
+    import kameloso.common : logger, printObjects;
     import kameloso.debugging : formatEventAssertBlock;
-    //import std.array : Appender;
-    import std.stdio : stdout, readln, writeln;
-
-    //Appender!(char[]) sink;
-    //sink.reserve(768);
+    import kameloso.ircdefs : IRCServer;
+    import std.conv : ConvException;
+    import std.stdio : stdout, readln, write, writeln;
+    import std.traits : EnumMembers;
+    import std.typecons : Flag, No, Yes;
 
     with (client)
     {
-        printObject(parser.bot);
-        writeln("Paste raw event strings and hit enter to generate an assert block.");
+        logger.info("Available daemons: ", [ EnumMembers!(IRCServer.Daemon) ]);
+        writeln();
+
+        write("Enter daemon: ");
+        immutable daemon = readln();
+
+        write("Enter network: ");
+        immutable network = readln();
+
+        if (daemon.length /* && network.length */)
+        {
+            try
+            {
+                import kameloso.string : stripped, toEnum;
+                parser.setDaemon(daemon.stripped.toEnum!(IRCServer.Daemon), network.stripped);
+            }
+            catch (const ConvException e)
+            {
+                logger.error(e.msg);
+                return;
+            }
+        }
+        else
+        {
+            writeln("Going with unset daemon/network.");
+        }
+
+        writeln();
+        printObjects!(Yes.printAll)(parser.bot, parser.bot.server);
+        writeln("Paste raw event strings and hit Enter to generate an assert block.");
         writeln();
 
         string input;
@@ -339,12 +364,10 @@ void generateAsserts(ref Client client) @system
             if (!hits[1].length) break;
 
             immutable event = parser.toIRCEvent(hits[1]);
-            //sink.formatEventAssertBlock(event);
             writeln();
+
             stdout.lockingTextWriter.formatEventAssertBlock(event);
             version(Cygwin_) stdout.flush();
-            //writeln(sink.data);
-            //sink.clear();
         }
     }
 }
