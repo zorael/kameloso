@@ -98,7 +98,7 @@ test_script:
  - echo %PATH%
  - '%DC% --version'
  - dub test --arch=%Darch% --compiler=%DC% -c vanilla
- - dub test --arch=%Darch% --compiler=%DC% -c cygwin
- - dub build --arch=%Darch% --compiler=%DC% -b plain -c vanilla || true
- - dub build --arch=%Darch% --compiler=%DC% -b plain -c cygwin || true
- - dub build --arch=%Darch% --compiler=%DC% -c cygwin
+ - dub test --nodeps --arch=%Darch% --compiler=%DC% -c cygwin
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c cygwin || true
+ - dub build --nodeps --arch=%Darch% --compiler=%DC% -c cygwin
