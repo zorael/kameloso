@@ -358,9 +358,9 @@ void listenFiber(Connection conn, ref bool abort)
             switch (lastSocketError)
             {
             // case "Resource temporarily unavailable":
-            case "Success":
-                logger.info("benign.");
-                break;
+            // case "Success":
+            //    logger.info("benign.");
+            //    break;
 
             default:
                 logger.error("assuming dead and returning");
