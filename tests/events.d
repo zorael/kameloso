@@ -1982,6 +1982,20 @@ unittest
             assert((num == 205), num.to!string);
         }
     }
+    {
+        immutable event = parser.toIRCEvent(":rajaniemi.freenode.net 364 kameloso^ rajaniemi.freenode.net rajaniemi.freenode.net :0 Helsinki, FI, EU");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_LINKS), type.to!string);
+            assert((sender.address == "rajaniemi.freenode.net"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "0 Helsinki, FI, EU"), content);
+            assert((aux == "rajaniemi.freenode.net rajaniemi.freenode.net"), aux);
+            assert((num == 364), num.to!string);
+        }
+    }
 }
 
 unittest

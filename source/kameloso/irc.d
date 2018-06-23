@@ -754,6 +754,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
+    case RPL_LINKS: // 364
     case RPL_TRACEUSER: // 205
     case RPL_TRACEEND: // 262
     case RPL_TRYAGAIN: // 263
@@ -775,6 +776,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :verne.freenode.net 263 kameloso^ STATS :This command could not be completed because it has been used recently, and is rate-limited
         // :verne.freenode.net 262 kameloso^ verne.freenode.net :End of TRACE
         // :wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536
+        // :rajaniemi.freenode.net 364 kameloso^ rajaniemi.freenode.net rajaniemi.freenode.net :0 Helsinki, FI, EU
         slice.nom(' '); // bot nickname
         event.aux = slice.nom(" :");
         event.content = slice;
