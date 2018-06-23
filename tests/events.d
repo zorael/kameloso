@@ -189,8 +189,8 @@ unittest
     {
         assert((sender.address == "asimov.freenode.net"), sender.address);
         assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
-        assert((content == "sudo"), content);
-        assert((aux == "Unknown command"), aux);
+        assert((content == "Unknown command"), content);
+        assert((aux == "sudo"), aux);
     }
 
     /+

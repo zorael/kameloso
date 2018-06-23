@@ -608,12 +608,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case ERR_UNKNOWNCOMMAND: // 421
         slice.nom(' ');  // bot nickname
-
         if (slice.has(':'))
         {
             // :asimov.freenode.net 421 kameloso^ sudo :Unknown command
-            event.content = slice.nom(" :");
-            event.aux = slice;
+            event.aux = slice.nom(" :");
+            event.content = slice;
         }
         else
         {
