@@ -755,6 +755,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
+    case RPL_STATSDEBUG: // 249
+    case RPL_ENDOFSTATS: // 219
     case RPL_HELPSTART: // 704
     case RPL_HELPTXT: // 705
     case RPL_ENDOFHELP: // 706
@@ -763,6 +765,9 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :leguin.freenode.net 704 kameloso^ index :Help topics available to users:
         // :leguin.freenode.net 705 kameloso^ index :ACCEPT\tADMIN\tAWAY\tCHALLENGE
         // :leguin.freenode.net 706 kameloso^ index :End of /HELP.
+        // :livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)
+        // :livingstone.freenode.net 249 kameloso p :1 staff members
+        // :livingstone.freenode.net 219 kameloso p :End of /STATS report
         slice.nom(' '); // bot nickname
         event.aux = slice.nom(" :");
         event.content = slice;
