@@ -1103,6 +1103,11 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                                 // Second is a channel
                                 event.channel = targets;
                             }
+                            else if (targets == event.sender.address)
+                            {
+                                // Second is sender's address, probably server
+                                event.aux = targets;
+                            }
                             else
                             {
                                 // Second is not a channel
