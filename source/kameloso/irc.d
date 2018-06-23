@@ -755,6 +755,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
+    case RPL_TRACEUSER: // 205
+    case RPL_TRACEEND: // 262
+    case RPL_TRYAGAIN: // 263
+    case RPL_STATSLINKINFO: // 211
     case RPL_STATSDEBUG: // 249
     case RPL_ENDOFSTATS: // 219
     case RPL_HELPSTART: // 704
@@ -768,6 +772,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)
         // :livingstone.freenode.net 249 kameloso p :1 staff members
         // :livingstone.freenode.net 219 kameloso p :End of /STATS report
+        // :verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -
+        // :verne.freenode.net 263 kameloso^ STATS :This command could not be completed because it has been used recently, and is rate-limited
+        // :verne.freenode.net 262 kameloso^ verne.freenode.net :End of TRACE
+        // :wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536
         slice.nom(' '); // bot nickname
         event.aux = slice.nom(" :");
         event.content = slice;
