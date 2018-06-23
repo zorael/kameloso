@@ -59,7 +59,7 @@ struct PrinterSettings
     /// Whether to be silent and not print error messages in the event output.
     bool silentErrors = false;
 
-    /// Whether to have the type (and bagde) names be in capital letters.
+    /// Whether to have the type (and badge) names be in capital letters.
     bool typesInCaps = true;
 
     /// Whether to log events.
@@ -1003,7 +1003,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if (target.nickname.length)
             {
                 // No need to check isServer; target is never server
-
                 sink.colour(default_);
                 sink.put(" (");
                 colourUserTruecolour(sink, event.target);
@@ -1053,7 +1052,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if (target.badge.length)
                 {
                     import std.string : toUpper;
-
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
                     immutable badgestring = plugin.printerSettings.typesInCaps ?
@@ -1118,8 +1116,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             if (num > 0)
             {
-                import std.format : formattedWrite;
-
                 sink.colour(bright ? DefaultBright.num : DefaultDark.num);
                 sink.formattedWrite(" (#%03d)", num);
             }
@@ -1362,7 +1358,6 @@ unittest
         immutable mapped = mapColours(line);
         assert((mapped == "This is \033[91mall red!\033[0m while this is not.\033[0m"), mapped);
     }
-
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
         immutable mapped = mapColours(line);
@@ -1584,10 +1579,8 @@ void periodically(PrinterPlugin plugin)
  +/
 SysTime getNextMidnight(const SysTime now)
 {
-    import core.time : msecs;
     import std.datetime : DateTime;
-    import std.datetime.systime : Clock, SysTime;
-    import std.datetime.timezone : LocalTime;
+    import std.datetime.systime : SysTime;
 
     return SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
         .roll!"days"(1);
@@ -1598,7 +1591,7 @@ unittest
 {
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
-    import std.datetime.timezone : LocalTime, UTC;
+    import std.datetime.timezone : UTC;
 
     immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), UTC());
     immutable nextDay = getNextMidnight(christmasEve);
@@ -1615,7 +1608,6 @@ unittest
 void initialise(PrinterPlugin plugin)
 {
     import std.datetime.systime : Clock;
-
     plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
 }
 

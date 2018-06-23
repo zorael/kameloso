@@ -1804,8 +1804,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 // MinimalAuthenticator
 /++
  +  Implements triggering of queued events in a plugin module.
- +
- +
  +/
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
