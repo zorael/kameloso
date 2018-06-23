@@ -1299,13 +1299,13 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
     version(PrintSanityFailures)
     {
-        import kameloso.common : logger, printObject;
+        import kameloso.common : logger, printObjects;
         import std.stdio : writeln;
         version(Cygwin_) import std.stdio : stdout;
 
         logger.warning(sink.data);
         event.errors = sink.data;
-        printObject(event);
+        printObjects(event, event.sender);
 
         version(Cygwin_) stdout.flush();
     }
