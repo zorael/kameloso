@@ -1982,6 +1982,13 @@ unittest
             assert((num == 205), num.to!string);
         }
     }
+}
+
+unittest
+{
+    IRCParser parser;
+    parser.setDaemon(IRCServer.Daemon.rusnet, "RusNet");
+
     {
         immutable event = parser.toIRCEvent(":irc.run.net 222 kameloso KOI8-U :is your charset now");
         with (IRCEvent.Type)
