@@ -1,4 +1,4 @@
-# kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/zorael/kameloso/master.svg?maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX](https://img.shields.io/travis/zorael/kameloso.svg?logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![GitHub tag](https://img.shields.io/github/tag/zorael/kameloso.svg?maxAge=3600&logo=github)](#)
+# kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/zorael/kameloso/master.svg?maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX](https://img.shields.io/travis/zorael/kameloso.svg?logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 34](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg)](https://github.com/zorael/kameloso/issues/46) [![GitHub tag](https://img.shields.io/github/tag/zorael/kameloso.svg?maxAge=3600&logo=github)](#)
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
@@ -27,8 +27,8 @@ It works well with the majority of server networks. IRC is standardised but serv
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build modes below).
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
 * some plugins don't yet differentiate between different home channels if there is more than one.
-* nicknames are not yet case-insensitive. The `lowercaseNickname` function is in place; it's just not yet being used.
-* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages or fields silently having wrong or no values.
+* nicknames are not yet case-insensitive. The `lowercaseNickname` function is in place; it's just not yet seeing wide use.
+* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages, or fields silently having wrong or no values.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
