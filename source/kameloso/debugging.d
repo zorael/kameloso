@@ -314,39 +314,39 @@ void generateAsserts(ref Client client) @system
     import kameloso.common : logger, printObjects;
     import kameloso.debugging : formatEventAssertBlock;
     import kameloso.ircdefs : IRCServer;
+    import kameloso.string : has, nom, stripped, toEnum;
     import std.conv : ConvException;
     import std.stdio : stdout, readln, write, writeln;
     import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
+    with (IRCServer)
     with (client)
     {
-        logger.info("Available daemons: ", [ EnumMembers!(IRCServer.Daemon) ]);
+        logger.info("Available daemons: ", [ EnumMembers!Daemon ]);
         writeln();
 
-        write("Enter daemon: ");
-        immutable daemon = readln();
+        write("Enter daemon (ircdseven): ");
+        string slice = readln().stripped;
 
-        write("Enter network: ");
-        immutable network = readln();
+        immutable daemonstring = slice.has(" ") ? slice.nom(" ") : slice;
+        immutable version_ = slice;
 
-        if (daemon.length /* && network.length */)
+        try
         {
-            try
-            {
-                import kameloso.string : stripped, toEnum;
-                parser.setDaemon(daemon.stripped.toEnum!(IRCServer.Daemon), network.stripped);
-            }
-            catch (const ConvException e)
-            {
-                logger.error(e.msg);
-                return;
-            }
+            immutable daemon = daemonstring.length ? daemonstring.toEnum!Daemon : Daemon.ircdseven;
+            parser.setDaemon(daemon, version_);
         }
-        else
+        catch (const ConvException e)
         {
-            writeln("Going with unset daemon/network.");
+            logger.error(e.msg);
+            return;
         }
+
+        write("Enter network (freenode): ");
+        immutable network = readln().stripped;
+
+        parser.bot.server.network = network.length ? network : "freenode";
 
         writeln();
         printObjects!(Yes.printAll)(parser.bot, parser.bot.server);
@@ -367,6 +367,7 @@ void generateAsserts(ref Client client) @system
             writeln();
 
             stdout.lockingTextWriter.formatEventAssertBlock(event);
+            writeln();
             version(Cygwin_) stdout.flush();
         }
     }
