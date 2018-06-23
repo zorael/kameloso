@@ -1316,22 +1316,25 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
     if (!sink.data.length) return;
 
+    event.errors = sink.data;
+
     version(PrintSanityFailures)
     {
-        import kameloso.common : logger, printObjects;
+        import kameloso.common : logger, printObject;
         import std.stdio : writeln;
         version(Cygwin_) import std.stdio : stdout;
 
         logger.warning(sink.data);
-        event.errors = sink.data;
-        printObjects(event, event.sender, event.target);
+        printObject(event);
+
+        with (parser.bot.server)
+        {
+            import kameloso.string : enumToString;
+            logger.warningf("daemon:%s (%s), network:%s",
+                daemon.enumToString, daemonstring, network);
+        }
 
         version(Cygwin_) stdout.flush();
-    }
-    else
-    {
-        // Silently let pass
-        event.errors = sink.data;
     }
 }
 
