@@ -832,12 +832,11 @@ struct IRCEvent
     /// IRCv3 message tags attached to this event.
     string tags;
 
-    /++
-     +  With a numeric event, the number of the event type, alternatively some
-     +  other kind of arbitrary numeral associated with the event (such a Twitch
-     +  resub number of months).
-     +/
+    /// With a numeric event, the number of the event type.
     uint num;
+
+    /// A count, an amount or "times" modifier, where such are applicable.
+    int count;
 
     /// A timestamp of when the event transpired.
     long time;
