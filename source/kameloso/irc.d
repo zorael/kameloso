@@ -3189,7 +3189,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
         auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
 
         Mode[] newModes;
-        IRCUser[] carriedExemptions;
+        IRCUser[] carriedExceptions;
 
         foreach (modechar, datastring; ziprange)
         {
@@ -3198,8 +3198,8 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 
             if ((modechar == server.exceptsChar) || (modechar == server.invexChar))
             {
-                // Exemption, carry it to the next aMode
-                carriedExemptions ~= IRCUser(datastring);
+                // Exception, carry it to the next aMode
+                carriedExceptions ~= IRCUser(datastring);
                 continue;
             }
 
@@ -3326,19 +3326,19 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                      +/
 
                     // STACKS.
-                    // If an identical Mode exists, add exemptions and skip
+                    // If an identical Mode exists, add exceptions and skip
                     foreach (mode; modes)
                     {
                         if (mode == newMode)
                         {
-                            mode.exemptions ~= carriedExemptions;
-                            carriedExemptions.length = 0;
+                            mode.exceptions ~= carriedExceptions;
+                            carriedExceptions.length = 0;
                             continue;
                         }
                     }
 
-                    newMode.exemptions ~= carriedExemptions;
-                    carriedExemptions.length = 0;
+                    newMode.exceptions ~= carriedExceptions;
+                    carriedExceptions.length = 0;
                 }
                 else if (server.bModes.has(modechar) || server.cModes.has(modechar))
                 {
@@ -3544,7 +3544,7 @@ unittest
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
         assert(chan.modes.length == 2);
-        assert(chan.modes[1].exemptions.length == 2);
+        assert(chan.modes[1].exceptions.length == 2);
     }
 
     {

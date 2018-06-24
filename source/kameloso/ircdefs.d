@@ -2506,7 +2506,7 @@ struct IRCChannel
         string channel;
 
         /// Users that are explicitly exempt from the `Mode`.
-        IRCUser[] exemptions;
+        IRCUser[] exceptions;
 
         /// Whether this `Mode` should be considered to be its own antithesis.
         bool negated;
@@ -2530,13 +2530,13 @@ struct IRCChannel
         void toString(scope void delegate(const(char)[]) @safe sink) const
         {
             import std.format : formattedWrite;
-            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user, exemptions);
+            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user, exceptions);
         }
 
         string toString() const
         {
             import std.format : format;
-            return "+%c (%s@%s) <%s>".format(modechar, data, user, exemptions);
+            return "+%c (%s@%s) <%s>".format(modechar, data, user, exceptions);
         }
     }
 
