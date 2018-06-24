@@ -715,8 +715,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     put(sink, " <", nickname, '>');
                 }
             }
-            else
+            else if (nickname.length)
             {
+                // Can be no-nick special: [PING] *2716423853
                 sink.put(nickname);
                 if (special) sink.put('*');
             }
@@ -976,8 +977,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         sink.put('>');
                     }
                 }
-                else
+                else if (nickname.length)
                 {
+                    // Can be no-nick special: [PING] *2716423853
                     sink.put(nickname);
 
                     if (special)
