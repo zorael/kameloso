@@ -708,8 +708,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if (alias_.length)
             {
                 sink.put(alias_);
-
-                if (special && nickname.length) sink.put('*');
+                if (special) sink.put('*');
 
                 if (!alias_.asLowerCase.equal(nickname))
                 {
@@ -719,17 +718,13 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             else
             {
                 sink.put(nickname);
-
-                if (special && nickname.length) sink.put('*');
+                if (special) sink.put('*');
             }
 
             if (badge.length)
             {
                 import kameloso.string : has, nom;
-                import std.string : toUpper;
-
                 immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
-
                 put(sink, " [");
 
                 if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
@@ -747,7 +742,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 put(sink, target.alias_, ')');
 
-                if (special && nickname.length) sink.put('*');
+                if (special) sink.put('*');
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
@@ -757,16 +752,13 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             else
             {
                 put(sink, target.nickname, ')');
-                if (special && nickname.length) sink.put('*');
+                if (special) sink.put('*');
             }
 
             if (target.badge.length)
             {
                 import kameloso.string : has, nom;
-                import std.string : toUpper;
-
                 immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
-
                 put(sink, " [");
 
                 if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
@@ -964,7 +956,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     sink.put(alias_);
 
-                    if (special && nickname.length)
+                    if (special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
@@ -984,7 +976,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     sink.put(nickname);
 
-                    if (special && nickname.length)  // !isServer != nickname.length
+                    if (special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
@@ -994,11 +986,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if (badge.length)
                 {
                     import kameloso.string : has, nom;
-                    import std.string : toUpper;
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
                     immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
-
                     put(sink, " [");
 
                     if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
@@ -1054,12 +1044,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if (target.badge.length)
                 {
                     import kameloso.string : has, nom;
-                    import std.string : toUpper;
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-
                     immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
-
                     put(sink, " [");
 
                     if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
