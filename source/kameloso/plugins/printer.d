@@ -153,7 +153,6 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     default:
         import std.stdio : stdout;
-
         plugin.formatMessage(stdout.lockingTextWriter, mutEvent, state.settings.monochrome,
             printerSettings.bellOnMention);
         version(Cygwin_) stdout.flush();

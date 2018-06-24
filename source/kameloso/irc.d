@@ -1148,7 +1148,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     else
                     {
                         // First target is not channel, assume nick
-                        // Assume secod is channel
+                        // Assume second is channel
                         event.target.nickname = firstTarget;
                         event.channel = targets;
                     }

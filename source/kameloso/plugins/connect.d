@@ -179,7 +179,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 void onPing(ConnectService service, const IRCEvent event)
 {
     service.serverPinged = true;
-    immutable target = (event.content.length) ? event.content : event.sender.address;
+    immutable target = event.content.length ? event.content : event.sender.address;
 
     with (service.state)
     {
