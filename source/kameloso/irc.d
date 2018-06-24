@@ -755,10 +755,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_LINKS: // 364
-    case RPL_TRACEUSER: // 205
+    //case RPL_TRACEUSER: // 205
     case RPL_TRACEEND: // 262
     case RPL_TRYAGAIN: // 263
-    case RPL_STATSLINKINFO: // 211
+    //case RPL_STATSLINKINFO: // 211
     case RPL_STATSDEBUG: // 249
     case RPL_ENDOFSTATS: // 219
     case RPL_HELPSTART: // 704
@@ -1098,10 +1098,19 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         if (targets.has(' '))
                         {
                             // More than one target, first is bot
-                            // Second target is more than one
-                            // Assume third is channel
-                            event.target.nickname = targets.nom(' ');
-                            event.channel = targets;
+                            import std.algorithm.searching : count;
+
+                            if (targets.count(' ') == 1)
+                            {
+                                // Two extra targets; assume nickname and channel
+                                event.target.nickname = targets.nom(' ');
+                                event.channel = targets;
+                            }
+                            else
+                            {
+                                // A lot of spaces; cannot say for sure what is what
+                                event.aux = targets;
+                            }
                         }
                         else
                         {
