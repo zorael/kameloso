@@ -798,6 +798,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             put(sink, " !", errors, '!');
         }
 
+        if (count > 0) sink.formattedWrite(" {%d}", count);
+
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors) ||
@@ -826,6 +828,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 channel = yellow,
                 content = default_,
                 aux     = white,
+                count  = green,
                 num     = darkgrey,
                 badge   = white,
             }
@@ -841,6 +844,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 channel = yellow,
                 content = default_,
                 aux     = black,
+                count  = lightgreen,
                 num     = lightgrey,
                 badge   = black,
             }
@@ -1093,6 +1097,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
                 put(sink, " <", aux, '>');
+            }
+
+            if (count > 0)
+            {
+                sink.colour(bright ? DefaultBright.count : DefaultDark.count);
+                sink.formattedWrite(" {%d}", count);
             }
 
             if (num > 0)
