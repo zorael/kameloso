@@ -228,35 +228,7 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     version(Cygwin_) stdout.flush();
 }
 
-
-// printObject
-/++
- +  Single-object `printObjects`.
- +
- +  A shorthand "alias" for when there is only one object to print.
- +
- +  Example:
- +  ---
- +  struct Foo
- +  {
- +      int foo;
- +      string bar;
- +      float f;
- +      double d;
- +  }
- +
- +  Foo foo;
- +  printObject(foo);
- +  ---
- +
- +  Params:
- +      widthArg = The width with which to pad output columns.
- +      thing = Struct object to enumerate.
- +/
-void printObject(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thing)(Thing thing)
-{
-    printObjects!(printAll, widthArg)(thing);
-}
+alias printObject = printObjects;
 
 
 // formatObjects
