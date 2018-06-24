@@ -245,6 +245,7 @@ unittest
             assert((type == IRCEvent.Type.TWITCH_HOSTSTART), type.to!string);
             assert((channel == "#lirik"), channel);
             assert((content == "h1z1"), content);
+            assert(!count, count.to!string);
             assert(!num, num.to!string);
         }
 
@@ -257,7 +258,8 @@ unittest
             assert((sender.address == "tmi.twitch.tv"), sender.address);
             assert((type == IRCEvent.Type.TWITCH_HOSTEND), type.to!string);
             assert((channel == "#lirik"), channel);
-            assert((num == 178), num.to!string);
+            assert((count == 178), count.to!string);
+            assert(!num, num.to!string);
         }
 
         /+
@@ -270,7 +272,8 @@ unittest
             assert((type == IRCEvent.Type.TWITCH_HOSTSTART), type.to!string);
             assert((channel == "#lirik"), channel);
             assert((content == "chu8"), content);
-            assert((num == 270), num.to!string);
+            assert((count == 270), count.to!string);
+            assert(!num, num.to!string);
         }
     }
 

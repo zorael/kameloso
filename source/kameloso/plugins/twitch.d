@@ -40,7 +40,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
     {
         if (event.sender.isServer && (event.type == CLEARCHAT))
         {
-            event.type = (event.num > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
+            event.type = (event.count > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
         }
     }
 }
@@ -382,7 +382,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
-            event.num = value.to!uint;
+            event.count = value.to!int;
             break;
 
         case "msg-param-asin":
