@@ -1926,6 +1926,9 @@ unittest
             assert((num == 219), num.to!string);
         }
     }
+
+    parser.bot.nickname = "kameloso^";
+
     {
         immutable event = parser.toIRCEvent(":verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -");
         with (IRCEvent.Type)
