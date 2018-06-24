@@ -742,7 +742,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 put(sink, target.alias_, ')');
 
-                if (special) sink.put('*');
+                if (special && nickname.length) sink.put('*');
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
@@ -752,8 +752,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             else
             {
                 put(sink, target.nickname, ')');
-
-                if (special) sink.put('*');
+                if (special && nickname.length) sink.put('*');
             }
 
             if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
@@ -958,7 +957,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     sink.put(alias_);
 
-                    if (special)
+                    if (special && nickname.length)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
