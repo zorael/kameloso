@@ -813,11 +813,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
         }
-
-        static if (!__traits(hasMember, Sink, "data"))
-        {
-            sink.put('\n');
-        }
     }
     else
     {
@@ -1141,17 +1136,17 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 import kameloso.bash : TerminalToken;
                 sink.put(TerminalToken.bell);
             }
-
-            static if (!__traits(hasMember, Sink, "data"))
-            {
-                sink.put('\n');
-            }
         }
         else
         {
             settings.monochrome = true;
             return plugin.formatMessage(sink, event, settings.monochrome, bellOnMention);
         }
+    }
+
+    static if (!__traits(hasMember, Sink, "data"))
+    {
+        sink.put('\n');
     }
 }
 
