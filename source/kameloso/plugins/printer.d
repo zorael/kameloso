@@ -791,7 +791,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             }
         }
 
-        if (aux.length) put(sink, " <", aux, '>');
+        if (aux.length) put(sink, " (", aux, ')');
 
         if (errors.length && !plugin.printerSettings.silentErrors)
         {
@@ -1097,7 +1097,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if (aux.length)
             {
                 sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
-                put(sink, " <", aux, '>');
+                put(sink, " (", aux, ')');
             }
 
             if (count > 0)
