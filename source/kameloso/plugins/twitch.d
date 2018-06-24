@@ -38,21 +38,9 @@ void postprocess(TwitchService service, ref IRCEvent event)
 
     with (IRCEvent.Type)
     {
-        if ((event.type == TWITCH_PURCHASE) || (event.type == TWITCH_RITUAL))
+        if (event.sender.isServer && (event.type == CLEARCHAT))
         {
-            // We invent a sender on PURCHASE and RITUAL events, which otherwise
-            // originate from the server. So change class from server to anyone.
-            event.sender.class_ = IRCUser.Class.anyone;
-        }
-
-        if (event.sender.isServer)
-        {
-            event.sender.badge = "server";
-
-            if (event.type == CLEARCHAT)
-            {
-                event.type = (event.num > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
-            }
+            event.type = (event.num > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
         }
     }
 }
@@ -79,6 +67,20 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
 
     if (!event.tags.length) return;
+
+    /++
+     +  Clears a user's address and class.
+     +
+     +  We invent users on some events, like (re-)subs, where there before were
+     +  only the server announcing some event originating from that user. When
+     +  we rewrite it, the server's address and its classification as special
+     +  remain. Reset those.
+     +/
+    static void resetUser(ref IRCUser user)
+    {
+        user.address = string.init;  // Clear server address
+        user.class_ = IRCUser.Class.anyone;
+    }
 
     with (IRCEvent)
     foreach (tag; event.tags.splitter(";"))
@@ -131,13 +133,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             {
             case "sub":
                 event.type = Type.TWITCH_SUB;
-                event.num = 1;  // "one-month resub"
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "resub":
                 event.type = Type.TWITCH_RESUB;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "subgift":
@@ -145,13 +146,13 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
                 event.type = Type.TWITCH_SUBGIFT;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "ritual":
                 // unhandled message: ritual
                 event.type = Type.TWITCH_RITUAL;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "rewardgift":
@@ -159,7 +160,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-min-cheer-amount = '150'
                 //msg-param-selected-count = '60'
                 event.type = Type.TWITCH_REWARDGIFT;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "purchase":
@@ -171,7 +172,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-userID = '182815893'
                 //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
                 event.type = Type.TWITCH_PURCHASE;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "raid":
@@ -183,7 +184,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-viewerCount=9
                 //system-msg=9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!
                 event.type = Type.TWITCH_RAID;
-                event.sender.address = string.init;  // Clear server address
+                resetUser(event.sender);
                 break;
 
             case "ban_success":
