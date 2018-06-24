@@ -18,19 +18,24 @@ install_deps() {
 build() {
     mkdir -p artifacts
 
-    dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    dub test --nodeps --compiler="$1" --build-mode=singleFile -c colours+web
+    # try first without singleFile, watch it crash and burn
+    dub test --compiler="$1" -c vanilla || true
+    dub build --nodeps --compiler="$1" -b debug -c vanilla || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c colours+web || true
-    mv kameloso artifacts/kameloso || true
+    # do the rest with singleFile
+    dub test --compiler="$1" --build-mode=singleFile --parallel -c vanilla
+    dub test --nodeps --compiler="$1" --build-mode=singleFile --parallel -c colours+web
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c vanilla || true
-    mv kameloso artifacts/kameloso-vanilla || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile --parallel -b debug -c colours+web
+    mv kameloso artifacts/kameloso
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c colours+web || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile --parallel -b debug -c vanilla
+    mv kameloso artifacts/kameloso-vanilla
+
+    dub build --nodeps --compiler="$1" --build-mode=singleFile --parallel -b plain -c colours+web || true
     test -e kameloso && mv kameloso artifacts/kameloso-plain || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c vanilla || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile --parallel -b plain -c vanilla || true
     test -e kameloso && mv kameloso artifacts/kameloso-plain-vanilla || true
 }
 
