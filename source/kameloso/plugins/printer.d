@@ -657,8 +657,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
-    import std.string : toLower;
-    import std.uni : asLowerCase;
+    import std.uni : asLowerCase, asUpperCase;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -683,8 +682,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         }
     }
 
-    typestring = plugin.printerSettings.typesInCaps ? typestring : typestring.toLower;
-
     bool shouldBell;
 
     with (BashForeground)
@@ -695,7 +692,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     {
         event.stripEffects();
 
-        put(sink, '[', timestamp, "] [", typestring, "] ");
+        put(sink, '[', timestamp, "] [");
+
+        if (plugin.printerSettings.typesInCaps) put(sink, typestring);
+        else put(sink, typestring.asLowerCase);
+
+        put(sink, "] ");
 
         if (sender.isServer)
         {
@@ -726,11 +728,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 import kameloso.string : has, nom;
                 import std.string : toUpper;
 
-                immutable mostImportantBadge = badge.has('/') ? badge.nom('/') : badge;
-                immutable badgestring = plugin.printerSettings.typesInCaps ?
-                    mostImportantBadge.toUpper : mostImportantBadge;
+                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
 
-                put(sink, " [", badgestring, ']');
+                put(sink, " [");
+
+                if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                else put(sink, badgefront);
+
+                put(sink, ']');
             }
         }
 
@@ -760,11 +765,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 import kameloso.string : has, nom;
                 import std.string : toUpper;
 
-                immutable mostImportantBadge = badge.has('/') ? badge.nom('/') : badge;
-                immutable badgestring = plugin.printerSettings.typesInCaps ?
-                    mostImportantBadge.toUpper : mostImportantBadge;
+                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
 
-                put(sink, " [", badgestring, ']');
+                put(sink, " [");
+
+                if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                else put(sink, badgefront);
+
+                put(sink, ']');
             }
         }
 
@@ -937,7 +945,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 sink.colour(typeColour);
             }
 
-            put(sink, '[', typestring, "] ");
+            put(sink, '[');
+
+            if (plugin.printerSettings.typesInCaps) put(sink, typestring);
+            else put(sink, typestring.asLowerCase);
+
+            put(sink, "] ");
 
             colourUserTruecolour(sink, event.sender);
 
@@ -984,12 +997,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     import std.string : toUpper;
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                    immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
 
-                    immutable mostImportantBadge = badge.has('/') ? badge.nom('/') : badge;
-                    immutable badgestring = plugin.printerSettings.typesInCaps ?
-                        mostImportantBadge.toUpper : mostImportantBadge;
+                    put(sink, " [");
 
-                    put(sink, " [", badgestring, ']');
+                    if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                    else put(sink, badgefront);
+
+                    put(sink, ']');
                 }
             }
 
@@ -1043,11 +1058,14 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
-                    immutable mostImportantBadge = badge.has('/') ? badge.nom('/') : badge;
-                    immutable badgestring = plugin.printerSettings.typesInCaps ?
-                        mostImportantBadge.toUpper : mostImportantBadge;
+                    immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
 
-                    put(sink, " [", badgestring, ']');
+                    put(sink, " [");
+
+                    if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                    else put(sink, badgefront);
+
+                    put(sink, ']');
                 }
             }
 
