@@ -774,20 +774,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             if (sender.isServer || nickname.length)
             {
-                if (type == IRCEvent.Type.CHAN)
-                {
-                    import kameloso.irc : containsNickname;
+                import kameloso.irc : containsNickname;
 
-                    if (content.containsNickname(bot.nickname))
-                    {
-                        // Nick was mentioned (certain)
-                        shouldBell = bellOnMention;
-                    }
-                    else
-                    {
-                        // Normal non-highlighting channel message
-                        put(sink, `: "`, content, '"');
-                    }
+                if ((type == IRCEvent.Type.CHAN) && content.containsNickname(bot.nickname))
+                {
+                    // Nick was mentioned (certain)
+                    shouldBell = bellOnMention;
                 }
 
                 put(sink, `: "`, content, '"');
@@ -808,7 +800,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors) ||
+            (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1043,12 +1036,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     }
                 }
 
-                if ((type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
-                {
-                    // Message sent to bot
-                    shouldBell = bellOnMention;
-                }
-
                 if (target.badge.length)
                 {
                     import kameloso.string : has, nom;
@@ -1076,31 +1063,17 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
                 if (sender.isServer || nickname.length)
                 {
-                    if (type == IRCEvent.Type.CHAN)
+                    import kameloso.irc : containsNickname;
+
+                    if ((type == IRCEvent.Type.CHAN) && content.containsNickname(bot.nickname))
                     {
-                        import kameloso.irc : containsNickname;
-
-                        if (content.containsNickname(bot.nickname))
-                        {
-                            // Nick was mentioned (certain)
-                            immutable inverted = content.invert(bot.nickname);
-
-                            if ((content != inverted) && bellOnMention)
-                            {
-                                // Nick was indeed mentioned, or so the regex says
-                                shouldBell = bellOnMention;
-                            }
-
-                            put(sink, `: "`, inverted, '"');
-                        }
-                        else
-                        {
-                            // Normal non-highlighting channel message
-                            put(sink, `: "`, content, '"');
-                        }
+                        // Nick was mentioned (certain)
+                        shouldBell = bellOnMention;
+                        put(sink, `: "`, content.invert(bot.nickname), '"');
                     }
                     else
                     {
+                        // Normal non-highlighting channel message
                         put(sink, `: "`, content, '"');
                     }
                 }
@@ -1131,7 +1104,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             sink.colour(default_);  // same for bright and dark
 
-            if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors))
+            if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors) ||
+                (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
             {
                 import kameloso.bash : TerminalToken;
                 sink.put(TerminalToken.bell);
