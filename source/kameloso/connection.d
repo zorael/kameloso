@@ -339,6 +339,7 @@ void listenFiber(Connection conn, ref bool abort)
 
     ubyte[BufferSize.socketReceive*2] buffer;
     SysTime timeLastReceived = Clock.currTime;
+    bool pingingToTestConnection;
     size_t start;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -371,12 +372,19 @@ void listenFiber(Connection conn, ref bool abort)
         {
             auto elapsed = (Clock.currTime - timeLastReceived);
 
-            if (elapsed > Timeout.keepalive.seconds)
+            if (!pingingToTestConnection && (elapsed > Timeout.keepalive.seconds))
+            {
+                conn.send("PING :hello");
+                pingingToTestConnection = true;
+                continue;
+            }
+
+            if (elapsed > Timeout.connectionLost.seconds)
             {
                 import kameloso.string : timeSince;
                 // Too much time has passed; we can reasonably assume the socket is disconnected
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                    elapsed.timeSince, Timeout.keepalive.seconds);
+                    elapsed.timeSince, Timeout.connectionLost.seconds);
                 return;
             }
 
@@ -410,6 +418,7 @@ void listenFiber(Connection conn, ref bool abort)
         }
 
         timeLastReceived = Clock.currTime;
+        pingingToTestConnection = false;
 
         immutable ptrdiff_t end = (start + bytesReceived);
         auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
