@@ -43,7 +43,6 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
     settings.configFile.readConfigInto(tempBot, tempBot.server, tempSettings);
 
     bot.meldInto!(Yes.overwrite)(tempBot);
-    bot.server.meldInto!(Yes.overwrite)(tempBot.server);
     settings.meldInto!(Yes.overwrite)(tempSettings);
 
     bot = tempBot;
