@@ -147,7 +147,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "pass",         "Registration password (not auth or services)", &bot.pass,
             "admins",       "Services accounts of the bot's administrators", &bot.admins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
-                            "(remember to escape or enquote the octothorpe #s!)", &bot.homes,
+                            "(remember to escape or enquote the octothorpe #s!)", &inputHomes,
             "C|channels",   "Non-home channels to idle in, comma-separated (ditto)", &inputChannels,
             "a",            "Append input homes and channels instead of overriding", &shouldAppendChannels,
             "settings",     "Show all plugins' settings", &shouldShowSettings,
