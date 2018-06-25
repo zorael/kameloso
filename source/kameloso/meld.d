@@ -46,16 +46,15 @@ void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
-    import kameloso.traits : isOfAssignableType;
+    import kameloso.traits : hasElaborateInit, isOfAssignableType;
     import std.traits : isArray, isSomeString, isType;
 
-    if (meldThis == Thing.init)
+    static if (!hasElaborateInit!Thing && !overwrite)
     {
-        // We're merging an .init with something
-
-        static if (!overwrite)
+        if (meldThis == Thing.init)
         {
-            // No value will get melded at all, so just return
+            // We're merging an .init with something, and .init does not have
+            // any special default values. Nothing would get melded, so exit early.
             return;
         }
     }
