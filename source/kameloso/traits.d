@@ -476,3 +476,65 @@ unittest
  +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
  +/
 enum isStruct(T) = is(T == struct);
+
+
+// hasElaborateInit
+/++
+ +  Eponymous template that is true if the passed type has default values to
+ +  any of its fields.
+ +/
+template hasElaborateInit(QualT)
+if (is(QualT == struct))
+{
+    alias T = Unqual!QualT;
+
+	enum hasElaborateInit = ()
+    {
+        bool match;
+
+        foreach (memberstring; __traits(allMembers, T))
+        {
+            import std.meta : Alias;
+            import std.traits : isSomeFunction, isType;
+
+            alias member = Alias!(__traits(getMember, T.init, memberstring));
+            static if (!isType!member && !isSomeFunction!member)
+            {
+                alias memberType = typeof(member);
+
+                static if (!is(memberType == float) && (member != memberType.init))
+                {
+                    // Comparing float.nan doesn't work out well; default to it being false
+                    match = true;
+                }
+
+                if (match) break;
+            }
+        }
+
+        return match;
+    }();
+}
+
+///
+unittest
+{
+        struct NoDefaultValues
+    {
+        string s;
+        int i;
+        bool b;
+        float f;
+    }
+
+    struct HasDefaultValues
+    {
+        string s;
+        int i = 42;
+        bool b;
+        float f;
+    }
+
+    static assert(!hasElaborateInit!NoDefaultValues);
+    static assert(hasElaborateInit!HasDefaultValues);
+}
