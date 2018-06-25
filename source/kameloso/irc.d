@@ -997,8 +997,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
     case RPL_HELLO: // 020
         // :irc.run.net 020 irc.run.net :*** You are connected to RusNet. Please wait...
+        // :irc.portlane.se 020 * :Please wait while we process your connection.
         slice.nom(" :");
         event.content = slice;
+        parser.bot.server.resolvedAddress = event.sender.address;
+        parser.bot.updated = true;
         break;
 
     case SPAMFILTERLIST: // 941

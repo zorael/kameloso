@@ -2024,3 +2024,28 @@ unittest
         }
     }
 }
+
+unittest
+{
+    IRCParser parser;
+
+    {
+        immutable event = parser.toIRCEvent(":irc.portlane.se 020 * :Please wait while we process your connection.");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_HELLO), type.to!string);
+            assert((sender.address == "irc.portlane.se"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "Please wait while we process your connection."), content);
+            assert((num == 20), num.to!string);
+        }
+    }
+
+    with (parser.bot)
+    {
+        assert(updated);
+        assert((server.resolvedAddress == "irc.portlane.se"), server.resolvedAddress);
+    }
+}
