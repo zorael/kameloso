@@ -1371,6 +1371,11 @@ struct IRCUser
         user.nickname = string.init;
         user.address = "nodots";
         assert(!user.isServer);  // unsure what to even make of no-dot addresses
+
+        // :kameloso MODE kameloso :+i
+        user.nickname = "kameloso";
+        user.address = string.init;
+        assert(!user.isServer);
     }
 
 

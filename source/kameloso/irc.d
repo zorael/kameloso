@@ -1369,9 +1369,10 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
     with (event)
     with (parser)
     {
-        if (sender.isServer || (sender.address == bot.server.address) ||
+        if (sender.isServer || (sender.address.length &&
+            ((sender.address == bot.server.address) ||
             (sender.address == bot.server.resolvedAddress) ||
-            (sender.address == "services."))
+            (sender.address == "services."))))
         {
             return true;
         }
