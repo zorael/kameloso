@@ -69,7 +69,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
             static if (is(T == struct) || is(T == class))
             {
                 // Recurse
-                meldThis.tupleof[i].meldInto(member);
+                meldThis.tupleof[i].meldInto!overwrite(member);
             }
             else static if (isOfAssignableType!T)
             {
@@ -279,6 +279,34 @@ unittest
     w2.arr = [ "pirate", "stereotype", "unittest" ];
     w2.meldInto(w1);
     assert((w1.arr == [ "arr", "matey", "I'ma", "pirate", "stereotype", "unittest" ]), w1.arr.to!string);
+
+    struct Server
+    {
+        string address;
+    }
+
+    struct Bot
+    {
+        string nickname;
+        Server server;
+    }
+
+    Bot b1, b2;
+    b1.nickname = "kameloso";
+    b1.server.address = "freenode.net";
+
+    assert(!b2.nickname.length, b2.nickname);
+    assert(!b2.server.address.length, b2.nickname);
+    b1.meldInto(b2);
+    assert((b2.nickname == "kameloso"), b2.nickname);
+    assert((b2.server.address == "freenode.net"), b2.server.address);
+
+    b2.nickname = "harbl";
+    b2.server.address = "rizon.net";
+
+    b2.meldInto!(Yes.overwrite)(b1);
+    assert((b1.nickname == "harbl"), b1.nickname);
+    assert((b1.server.address == "rizon.net"), b1.server.address);
 }
 
 
