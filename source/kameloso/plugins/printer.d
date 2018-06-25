@@ -60,7 +60,7 @@ struct PrinterSettings
     bool silentErrors = false;
 
     /// Whether to have the type (and badge) names be in capital letters.
-    bool typesInCaps = true;
+    bool uppercaseTypes = true;
 
     /// Whether to log events.
     bool logs = false;
@@ -693,7 +693,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         put(sink, '[', timestamp, "] [");
 
-        if (plugin.printerSettings.typesInCaps) put(sink, typestring);
+        if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
         else put(sink, typestring.asLowerCase);
 
         put(sink, "] ");
@@ -727,7 +727,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
                 put(sink, " [");
 
-                if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
                 else put(sink, badgefront);
 
                 put(sink, ']');
@@ -761,7 +761,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
                 put(sink, " [");
 
-                if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
                 else put(sink, badgefront);
 
                 put(sink, ']');
@@ -943,7 +943,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             put(sink, '[');
 
-            if (plugin.printerSettings.typesInCaps) put(sink, typestring);
+            if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
             else put(sink, typestring.asLowerCase);
 
             put(sink, "] ");
@@ -996,7 +996,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
                     put(sink, " [");
 
-                    if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
                     else put(sink, badgefront);
 
                     put(sink, ']');
@@ -1054,7 +1054,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
                     put(sink, " [");
 
-                    if (plugin.printerSettings.typesInCaps) put(sink, badgefront.asUpperCase);
+                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
                     else put(sink, badgefront);
 
                     put(sink, ']');
