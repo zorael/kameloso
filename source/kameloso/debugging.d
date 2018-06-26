@@ -203,6 +203,8 @@ with (parser.bot)
  +  Params:
  +      sink = Output buffer to write to.
  +      thing = Struct object to examine and produce a delta for.
+ +      indents = The number of tabs to indent the lines with.
+ +      submember = The string name of a recursing symbol, if applicable.
  +/
 void formatAssignment(Sink, QualThing)(auto ref Sink sink, QualThing thing,
     const uint indents = 0, const string submember = string.init)
