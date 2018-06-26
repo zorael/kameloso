@@ -466,6 +466,7 @@ void generateAsserts(ref Client client) @system
         writeln();
 
         string input;
+        IRCBot old = parser.bot;
 
         while ((input = readln()) !is null)
         {
@@ -480,6 +481,17 @@ void generateAsserts(ref Client client) @system
 
             stdout.lockingTextWriter.formatEventAssertBlock(event);
             writeln();
+
+            if (parser.bot.updated)
+            {
+                parser.bot.updated = false;
+
+                stdout.lockingTextWriter.formatDelta(old, parser.bot, 0, "bot");
+                writeln();
+
+                old = parser.bot;
+            }
+
             version(Cygwin_) stdout.flush();
         }
     }
