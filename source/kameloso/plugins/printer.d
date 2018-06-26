@@ -758,7 +758,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if (target.badge.length)
             {
                 import kameloso.string : has, nom;
-                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
+                immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -1051,7 +1051,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     import kameloso.string : has, nom;
 
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                    immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
+                    immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
                     put(sink, " [");
 
                     if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
