@@ -10,11 +10,16 @@ import std.traits : isArray, isAssociativeArray;
 
 // meldInto
 /++
- +  Takes two structs and melds them together, making the members a union of
- +  the two.
+ +  Takes two structs or classes of the same type and melds them together,
+ +  making the members a union of the two.
  +
- +  It only overwrites members in `intoThis` that are `typeof(member).init`, so
- +  only unset members get their values overwritten by the melding struct.
+ +  In the case of classes it only overwrites members in `intoThis` that are
+ +  `typeof(member).init`, so only unset members get their values overwritten by
+ +  the melding class. It also does not work with static members.
+ +
+ +  In the case of structs it also overwrites members that still have their
+ +  default values, in cases where such is applicable.
+ +
  +  Supply a template parameter `Yes.overwrite` to make it always overwrite,
     except if the melding struct's member is `typeof(member).init`.
  +
@@ -24,15 +29,18 @@ import std.traits : isArray, isAssociativeArray;
  +  {
  +      string abc;
  +      int def;
+ +      bool b = true;
  +  }
  +
  +  Foo foo, bar;
  +  foo.abc = "from foo"
+ +  foo.b = false;
  +  bar.def = 42;
  +  foo.meldInto(bar);
  +
  +  assert(bar.abc == "from foo");
  +  assert(bar.def == 42);
+ +  assert(!bar.b);  // false overwrote default value true
  +  ---
  +
  +  Params:
@@ -42,14 +50,14 @@ import std.traits : isArray, isAssociativeArray;
  +      intoThis = Reference to struct to meld (target).
  +/
 void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
-    (Thing meldThis, ref Thing intoThis) pure nothrow
+    (Thing meldThis, ref Thing intoThis)
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
 {
     import kameloso.traits : hasElaborateInit, isOfAssignableType;
     import std.traits : isArray, isSomeString, isType;
 
-    static if (!hasElaborateInit!Thing && !overwrite)
+    static if (is(Thing == struct) && !hasElaborateInit!Thing && !overwrite)
     {
         if (meldThis == Thing.init)
         {
@@ -89,9 +97,16 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                     }
                     else
                     {
-                        if (meldThis.tupleof[i] != Thing.init.tupleof[i])
+                        static if (is(Thing == class))
                         {
                             member = meldThis.tupleof[i];
+                        }
+                        else
+                        {
+                            if (meldThis.tupleof[i] != Thing.init.tupleof[i])
+                            {
+                                member = meldThis.tupleof[i];
+                            }
                         }
                     }
                 }
@@ -123,10 +138,20 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                             false, or merely unset. If we're not overwriting,
                             let whichever side is true win out? +/
 
-                        if ((member == T.init) ||
-                            (member == Thing.init.tupleof[i]))
+                        static if (is(Thing == class))
                         {
-                            member = meldThis.tupleof[i];
+                            if (member == T.init)
+                            {
+                                member = meldThis.tupleof[i];
+                            }
+                        }
+                        else
+                        {
+                            if ((member == T.init) ||
+                                (member == Thing.init.tupleof[i]))
+                            {
+                                member = meldThis.tupleof[i];
+                            }
                         }
                     }
                 }
@@ -306,6 +331,29 @@ unittest
     b2.meldInto!(Yes.overwrite)(b1);
     assert((b1.nickname == "harbl"), b1.nickname);
     assert((b1.server.address == "rizon.net"), b1.server.address);
+
+    class Class
+    {
+        static int i;
+        string s;
+        bool b;
+    }
+
+    Class abc = new Class;
+    abc.i = 42;
+    abc.s = "some string";
+    abc.b = true;
+
+    Class def = new Class;
+    def.s = "other string";
+    abc.meldInto(def);
+
+    assert((def.i == 42), def.i.to!string);
+    assert((def.s == "other string"), def.s);
+    assert(def.b);
+
+    abc.meldInto!(Yes.overwrite)(def);
+    assert((def.s == "some string"), def.s);
 }
 
 
