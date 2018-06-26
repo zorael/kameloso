@@ -897,7 +897,7 @@ int main(string[] args)
 
             string[][string] invalidEntries = initPlugins(customSettings);
 
-            if (invalidEntries.length)
+            if (invalidEntries.length && firstConnect)
             {
                 logger.log("Found invalid configuration entries:");
 
