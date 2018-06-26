@@ -106,8 +106,7 @@ if (Things.length > 0)
 
 // longestMemberName
 /++
- +  Gets the name of the longest configurable member in one or more struct/class
- +  objects.
+ +  Gets the name of the longest configurable member in one or more structs.
  +
  +  This is used for formatting terminal output of configuration files, so that
  +  columns line up.
@@ -146,8 +145,8 @@ unittest
 
 // longestUnconfigurableMemberName
 /++
- +  Gets the name of the longest member in one or more struct/class objects,
- +  including `kameloso.uda.Unconfigurable`` ones.
+ +  Gets the name of the longest member in one or more structs, including
+ +  `kameloso.uda.Unconfigurable` ones.
  +
  +  This is used for formatting terminal output of objects, so that columns line
  +  up.
@@ -186,8 +185,7 @@ unittest
 
 // longestMemberTypeNameImpl
 /++
- +  Gets the name of the longest type of a member in one or more struct/class
- +  objects.
+ +  Gets the name of the longest type of a member in one or more structs.
  +
  +  This is used for formatting terminal output of objects, so that columns line
  +  up.
@@ -242,8 +240,7 @@ if (Things.length > 0)
 
 // longestMemberTypeName
 /++
- +  Gets the name of the longest type of a member in one or more struct/class
- +  objects.
+ +  Gets the name of the longest type of a member in one or more structs.
  +
  +  This is used for formatting terminal output of configuration files, so that
  +  columns line up.
@@ -269,8 +266,7 @@ unittest
 
 // longestUnconfigurableMemberTypeName
 /++
- +  Gets the name of the longest type of a member in one or more struct/class
- +  objects.
+ +  Gets the name of the longest type of a member in one or more structs.
  +
  +  This is used for formatting terminal output of state objects, so that
  +  columns line up.
