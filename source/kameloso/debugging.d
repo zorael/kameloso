@@ -38,11 +38,11 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
 private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
     Thing thing, const string prefix = string.init, uint indents = 0)
 {
-    foreach (immutable i, value; thing.tupleof)
+    foreach (immutable i, member; thing.tupleof)
     {
         import std.traits : Unqual;
 
-        alias T = Unqual!(typeof(value));
+        alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, thing.tupleof[i]);
 
         // IRCEvent.target.special is at present never true
@@ -67,7 +67,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
             {
                 enum pattern = "%sassert(%s%s%s, %s%s.to!string);\n";
                 sink.formattedWrite(pattern, indents.tabs,
-                    !value ? "!" : string.init,
+                    !member ? "!" : string.init,
                     prefix.length ? prefix ~ '.' : string.init,
                     memberstring,
                     prefix.length ? prefix ~ '.' : string.init,
@@ -75,7 +75,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
             }
             else
             {
-                if (value != Thing.init.tupleof[i])
+                if (member != Thing.init.tupleof[i])
                 {
                     import std.traits : isSomeString;
 
@@ -83,6 +83,11 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
                     {
                         enum pattern = "%sassert((%s%s == \"%s\"), %s%s);\n";
                     }
+                    /*else static if (is(T == enum))
+                    {
+                        // We can live with .to!string in unittest mode.
+                        enum pattern = "%sassert((%s%s == %s), %s%s.enumToString);\n";
+                    }*/
                     else
                     {
                         enum pattern = "%sassert((%s%s == %s), %s%s.to!string);\n";
@@ -90,7 +95,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
 
                     sink.formattedWrite(pattern, indents.tabs,
                         prefix.length ? prefix ~ '.' : string.init,
-                        memberstring, value,
+                        memberstring, member,
                         prefix.length ? prefix ~ '.' : string.init,
                         memberstring);
                 }
