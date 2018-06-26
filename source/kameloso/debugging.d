@@ -452,11 +452,16 @@ void generateAsserts(ref Client client) @system
 
         write("Enter network (freenode): ");
         immutable network = readln().stripped;
-
         parser.bot.server.network = network.length ? network : "freenode";
 
         writeln();
         printObjects!(Yes.printAll)(parser.bot, parser.bot.server);
+        writeln();
+
+        parser.bot.updated = false;
+        stdout.lockingTextWriter.formatBotAssignment(parser.bot);
+
+        writeln();
         writeln("Paste raw event strings and hit Enter to generate an assert block.");
         writeln();
 
