@@ -948,9 +948,6 @@ struct Client
         @disable this(this);
     }
 
-    /// Nickname and other IRC variables for the bot.
-    IRCBot bot;
-
     /// Runtime settings for bot behaviour.
     //CoreSettings settings;
 
@@ -1004,7 +1001,7 @@ struct Client
         teardownPlugins();
 
         IRCPluginState state;
-        state.bot = bot;
+        state.bot = parser.bot;
         state.settings = settings;
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
@@ -1099,9 +1096,8 @@ struct Client
             if (pluginBot.updated)
             {
                 // start changed the bot; propagate
-                bot = pluginBot;
-                parser.bot = bot;
-                propagateBot(bot);
+                parser.bot = pluginBot;
+                propagateBot(parser.bot);
             }
         }
     }
@@ -1193,6 +1189,7 @@ void writeConfigurationFile(ref Client client, const string filename)
     sink.reserve(1536);  // ~1097
 
     with (client)
+    with (client.parser)
     {
         if (bot.authPassword.length && !bot.authPassword.beginsWith("base64:"))
         {

@@ -132,6 +132,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     arraySep = ",";
 
     with (client)
+    with (client.parser)
     {
         auto results = args.getopt(
             config.caseSensitive,

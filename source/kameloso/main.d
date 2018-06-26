@@ -163,7 +163,7 @@ Flag!"quit" checkMessages(ref Client client)
     {
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
-        immutable reason = givenReason.length ? givenReason : client.bot.quitReason;
+        immutable reason = givenReason.length ? givenReason : client.parser.bot.quitReason;
         logger.tracef(`--> QUIT :"%s"`, reason);
         client.conn.sendline("QUIT :\"", reason, "\"");
         quit = Yes.quit;
@@ -372,6 +372,7 @@ Flag!"quit" mainLoop(ref Client client)
         generator.call();
 
         with (client)
+        with (client.parser)
         foreach (immutable line; generator)
         {
             // Go through Fibers awaiting a point in time, regardless of whether
@@ -465,11 +466,10 @@ Flag!"quit" mainLoop(ref Client client)
                     mutEvent = parser.toIRCEvent(sanitize(line));
                 }
 
-                if (parser.bot.updated)
+                if (bot.updated)
                 {
                     // Parsing changed the bot; propagate
-                    parser.bot.updated = false;
-                    bot = parser.bot;
+                    bot.updated = false;
                     propagateBot(bot);
                 }
 
@@ -482,7 +482,6 @@ Flag!"quit" mainLoop(ref Client client)
                         // Postprocessing changed the bot; propagate
                         bot = plugin.state.bot;
                         bot.updated = false;
-                        parser.bot = bot;
                         propagateBot(bot);
                     }
                 }
@@ -802,6 +801,7 @@ int main(string[] args)
     }
 
     with (client)
+    with (client.parser)
     {
         import kameloso.bash : BashForeground;
 
