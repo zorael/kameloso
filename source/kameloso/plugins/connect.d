@@ -185,12 +185,13 @@ void onPing(ConnectService service, const IRCEvent event)
     {
         mainThread.prioritySend(ThreadMessage.Pong(), target);
 
-        if (bot.authentication == Progress.started)
+        if (!service.joinedChannels && (bot.authentication == Progress.started))
         {
             logger.log("Auth timed out. Joining channels ...");
             bot.authentication = Progress.finished;
             bot.updated = true;
             service.joinChannels();
+            service.joinedChannels = true;
         }
     }
 }
@@ -259,7 +260,13 @@ void tryAuth(ConnectService service)
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
                 bot.authentication = Progress.finished;
-                service.joinChannels();
+
+                if (!service.joinedChannels)
+                {
+                    logger.log("Joining channels ...");
+                    service.joinChannels();
+                    service.joinedChannels = true;
+                }
                 return;
             }
 
@@ -328,15 +335,16 @@ void onEndOfMotd(ConnectService service)
             service.tryAuth();
         }
 
-        if ((bot.authentication == Progress.finished) ||
-            !bot.authPassword.length ||
-            (bot.server.daemon == IRCServer.Daemon.twitch))
+        if (!service.joinedChannels && ((bot.authentication == Progress.finished) ||
+            !bot.authPassword.length || (bot.server.daemon == IRCServer.Daemon.twitch)))
         {
             // tryAuth finished early with an unsuccessful login, else
             // `bot.authentication` would be set much later.
             // Twitch servers can't auth so join immediately
+            // but don't do anything if we already joined channels.
             logger.log("Joining channels ...");
             service.joinChannels();
+            service.joinedChannels = true;
         }
 
         // Run commands defined in the settings
@@ -369,8 +377,12 @@ void onAuthEnd(ConnectService service)
         // return if still registering
         if (bot.registration == Progress.started) return;
 
-        logger.log("Joining channels ...");
-        service.joinChannels();
+        if (!service.joinedChannels)
+        {
+            logger.log("Joining channels ...");
+            service.joinChannels();
+            service.joinedChannels = true;
+        }
     }
 }
 
@@ -774,6 +786,9 @@ final class ConnectService : IRCPlugin
 
     /// Whether or not the bot has renamed itself during registration.
     bool renamedDuringRegistration;
+
+    /// Whether or not the bot has joined its channels at least once.
+    bool joinedChannels;
 
     /// An alias to let other plugins call `.tryAuth` from outside the module.
     alias auth = .tryAuth;
