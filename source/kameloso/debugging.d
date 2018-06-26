@@ -148,7 +148,7 @@ void formatBotAssignment(Sink)(auto ref Sink sink, IRCBot bot)
     sink.put("IRCParser parser;\n");
     sink.put("with (parser.bot)\n");
     sink.put("{\n");
-    sink.formatAssignment(bot, 1);
+    sink.formatDelta(IRCBot.init, bot, 1);
     sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -193,17 +193,19 @@ with (parser.bot)
 }
 
 
-// formatAssignment
+// formatDelta
 /++
- +  Constructs statement lines for each changed field of a passed struct.
+ +  Constructs statement lines for each changed field (or the delta) between two
+ +  instances of a struct.
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      thing = Struct object to examine and produce a delta for.
+ +      before = Original struct object.
+ +      after = Changed struct object.
  +      indents = The number of tabs to indent the lines with.
  +      submember = The string name of a recursing symbol, if applicable.
  +/
-void formatAssignment(Sink, QualThing)(auto ref Sink sink, QualThing thing,
+void formatDelta(Sink, QualThing)(auto ref Sink sink, QualThing before, QualThing after,
     const uint indents = 0, const string submember = string.init)
 if (is(QualThing == struct))
 {
@@ -215,18 +217,18 @@ if (is(QualThing == struct))
 
     immutable prefix = submember.length ? submember ~ '.' : string.init;
 
-    foreach (immutable i, ref member; thing.tupleof)
+    foreach (immutable i, ref member; after.tupleof)
     {
         alias T = Unqual!(typeof(member));
-        enum memberstring = __traits(identifier, thing.tupleof[i]);
+        enum memberstring = __traits(identifier, before.tupleof[i]);
 
         static if (is(T == struct))
         {
-            sink.formatAssignment(member, indents, memberstring);
+            sink.formatDelta(before.tupleof[i], member, indents, prefix ~ memberstring);
         }
         else static if (!isType!member && !isSomeFunction!member)
         {
-            if (thing.tupleof[i] != Thing.init.tupleof[i])
+            if (after.tupleof[i] != before.tupleof[i])
             {
                 static if (isSomeString!T)
                 {
@@ -253,7 +255,7 @@ if (is(QualThing == struct))
         }
         else
         {
-            static assert(0, "Trying to format assignment of a %s, which can't be done".format(Thing.stringof));
+            static assert(0, "Trying to format assignment delta of a %s, which can't be done".format(Thing.stringof));
         }
     }
 }
@@ -278,7 +280,7 @@ unittest
         server.aModes = string.init;
     }
 
-    sink.formatAssignment(bot);
+    sink.formatDelta(IRCBot.init, bot);
 
     assert(sink.data ==
 `nickname = "NICKNAME";
