@@ -89,7 +89,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                     }
                     else
                     {
-                        if (meldThis.tupleof[i] != T.init)
+                        if (meldThis.tupleof[i] != Thing.init.tupleof[i])
                         {
                             member = meldThis.tupleof[i];
                         }
