@@ -426,6 +426,10 @@ void generateAsserts(ref Client client) @system
     with (IRCServer)
     with (client)
     {
+        import kameloso.irc : IRCParser;
+
+        parser = IRCParser.init;
+
         logger.info("Available daemons: ", [ EnumMembers!Daemon ]);
         writeln();
 
