@@ -355,22 +355,12 @@ void listenFiber(Connection conn, ref bool abort)
         if (!bytesReceived)
         {
             logger.errorf("ZERO RECEIVED! last error: '%s'", lastSocketError);
-
-            switch (lastSocketError)
-            {
-            // case "Resource temporarily unavailable":
-            // case "Success":
-            //    logger.info("benign.");
-            //    break;
-
-            default:
-                logger.error("assuming dead and returning");
-                return;
-            }
+            logger.error("assuming dead and returning.");
+            return;
         }
         else if (bytesReceived == Socket.ERROR)
         {
-            auto elapsed = (Clock.currTime - timeLastReceived);
+            immutable elapsed = (Clock.currTime - timeLastReceived);
 
             if (!pingingToTestConnection && (elapsed > Timeout.keepalive.seconds))
             {

@@ -863,6 +863,9 @@ int main(string[] args)
         // It will change later and knowing this is useful when authenticating
         bot.origNickname = bot.nickname;
 
+        // Save a backup snapshot of the bot, for restoring upon reconnections
+        IRCBot backupBot = bot;
+
         /// Flag denoting that we should quit the program.
         Flag!"quit" quit;
 
@@ -874,24 +877,17 @@ int main(string[] args)
 
         do
         {
-            // Reset fields in the bot that should not survive a reconnect
             import kameloso.ircdefs : IRCBot;  // fix visibility warning
             import kameloso.irc : IRCParser;
 
-            bot.registration = IRCBot.Progress.notStarted;
-            bot.authentication = IRCBot.Progress.notStarted;
-
-            /+
-             +  If we're reconnecting we're connecting to the same server, so we
-             +  can likely assume the daemon, daemonstring and network stay the
-             +  unchanged. Not so for the resolvedAddress, as we're likely
-             +  connecting to a server that redirects by round-robin to other
-             +  servers.
-             +/
-            /*bot.server.daemon = IRCServer.Daemon.init;
-            bot.server.daemontring = string.init;
-            bot.server.network = string.init;*/
-            bot.server.resolvedAddress = string.init;
+            if (!firstConnect)
+            {
+                // Carry some values but otherwise restore the pristine bot backup
+                backupBot.nickname = bot.nickname;
+                backupBot.homes = bot.homes;
+                backupBot.channels = bot.channels;
+                bot = backupBot;
+            }
 
             parser = IRCParser(bot);
 
