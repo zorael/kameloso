@@ -146,46 +146,13 @@ unittest
  +      sink = Output buffer to write to.
  +      bot = `kameloso.ircdefs.IRCBot` to simulate the assignment of.
  +/
-void formatBotAssignment(Sink)(auto ref Sink sink, const IRCBot bot)
+void formatBotAssignment(Sink)(auto ref Sink sink, IRCBot bot)
 {
     sink.put("IRCParser parser;\n");
     sink.put("with (parser.bot)\n");
     sink.put("{\n");
-
-    foreach (immutable i, value; bot.tupleof)
-    {
-        import kameloso.string : tabs;
-        import std.format : formattedWrite;
-        import std.traits : isSomeString;
-
-        alias T = typeof(value);
-        enum memberstring = __traits(identifier, bot.tupleof[i]);
-
-        static if (is(T == struct) || is(T == class))
-        {
-            // Can't recurse for now, future improvement
-            continue;
-        }
-        else
-        {
-            if (value != IRCBot.init.tupleof[i])
-            {
-                static if (isSomeString!T)
-                {
-                    enum pattern = "%s%s = \"%s\";\n";
-                }
-                else
-                {
-                    enum pattern = "%s%s = %s;\n";
-                }
-
-                sink.formattedWrite(pattern, 1.tabs, memberstring, value);
-            }
-        }
-
-    }
-
-    sink.put("}");
+    sink.formatAssignment(bot, 1);
+    sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
     {
@@ -193,8 +160,10 @@ void formatBotAssignment(Sink)(auto ref Sink sink, const IRCBot bot)
     }
 }
 
+///
 unittest
 {
+    import kameloso.ircdefs : IRCBot, IRCServer;
     import std.array : Appender;
 
     Appender!string sink;
@@ -205,6 +174,10 @@ unittest
     {
         nickname = "NICKNAME";
         user = "UUUUUSER";
+        server.address = "something.freenode.net";
+        server.port = 0;
+        server.daemon = IRCServer.Daemon.unreal;
+        server.aModes = string.init;
     }
 
     sink.formatBotAssignment(bot);
@@ -215,7 +188,107 @@ with (parser.bot)
 {
     nickname = "NICKNAME";
     user = "UUUUUSER";
+    server.address = "something.freenode.net";
+    server.port = 0;
+    server.daemon = IRCServer.Daemon.unreal;
+    server.aModes = "";
 }`, '\n' ~ sink.data);
+}
+
+
+// formatAssignment
+/++
+ +  Constructs statement lines for each changed field of a passed struct.
+ +
+ +  Params:
+ +      sink = Output buffer to write to.
+ +      thing = Struct object to examine and produce a delta for.
+ +/
+void formatAssignment(Sink, QualThing)(auto ref Sink sink, QualThing thing,
+    const uint indents = 0, const string submember = string.init)
+if (is(QualThing == struct))
+{
+    import kameloso.string : tabs;
+    import std.format : formattedWrite;
+    import std.traits : isSomeFunction, isSomeString, isType, Unqual;
+
+    alias Thing = Unqual!QualThing;
+
+    immutable prefix = submember.length ? submember ~ '.' : string.init;
+
+    foreach (immutable i, ref member; thing.tupleof)
+    {
+        alias T = Unqual!(typeof(member));
+        enum memberstring = __traits(identifier, thing.tupleof[i]);
+
+        static if (is(T == struct))
+        {
+            sink.formatAssignment(member, indents, memberstring);
+        }
+        else static if (!isType!member && !isSomeFunction!member)
+        {
+            if (thing.tupleof[i] != Thing.init.tupleof[i])
+            {
+                static if (isSomeString!T)
+                {
+                    enum pattern = "%s%s%s = \"%s\";\n";
+                }
+                else static if (is(T == enum))
+                {
+                    import kameloso.string : nom;
+                    import std.algorithm.searching : count;
+                    import std.traits : fullyQualifiedName;
+
+                    string typename = fullyQualifiedName!T;
+                    while (typename.count('.') > 1) typename.nom('.');
+
+                    immutable pattern = "%s%s%s = " ~ typename ~ ".%s;\n";
+                }
+                else
+                {
+                    enum pattern = "%s%s%s = %s;\n";
+                }
+
+                sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
+            }
+        }
+        else
+        {
+            static assert(0, "Trying to format assignment of a %s, which can't be done".format(Thing.stringof));
+        }
+    }
+}
+
+///
+unittest
+{
+    import kameloso.ircdefs : IRCBot, IRCServer;
+    import std.array : Appender;
+
+    Appender!string sink;
+    sink.reserve(128);
+
+    IRCBot bot;
+    with (bot)
+    {
+        nickname = "NICKNAME";
+        user = "UUUUUSER";
+        server.address = "something.freenode.net";
+        server.port = 0;
+        server.daemon = IRCServer.Daemon.unreal;
+        server.aModes = string.init;
+    }
+
+    sink.formatAssignment(bot);
+
+    assert(sink.data ==
+`nickname = "NICKNAME";
+user = "UUUUUSER";
+server.address = "something.freenode.net";
+server.port = 0;
+server.daemon = IRCServer.Daemon.unreal;
+server.aModes = "";
+`, '\n' ~ sink.data);
 }
 
 
