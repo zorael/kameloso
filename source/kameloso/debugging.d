@@ -290,6 +290,30 @@ server.port = 0;
 server.daemon = IRCServer.Daemon.unreal;
 server.aModes = "";
 `, '\n' ~ sink.data);
+
+    struct Foo
+    {
+        string s;
+        int i;
+        bool b;
+    }
+
+    Foo f1;
+    f1.s = "string";
+    f1.i = 42;
+    f1.b = true;
+
+    Foo f2 = f1;
+    f2.s = "yarn";
+    f2.b = false;
+
+    sink = typeof(sink).init;
+
+    sink.formatDelta(f1, f2);
+    assert(sink.data ==
+`s = "yarn";
+b = false;
+`, '\n' ~ sink.data);
 }
 
 
