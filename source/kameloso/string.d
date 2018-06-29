@@ -708,8 +708,6 @@ if (is(Enum == enum))
     }();
 
     mixin(enumSwitch);
-
-    assert(0, "No such member " ~ enumstring);
 }
 
 ///
