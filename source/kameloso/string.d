@@ -445,20 +445,28 @@ unittest
  +  Returns:
  +      The passed line with the `prefix` sliced away.
  +/
-string stripPrefix(const string line, const string prefix)
+string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
+    (const string line, const string prefix) pure
 {
-    import kameloso.string : strippedLeft;
-    import std.regex : matchFirst, regex;
-
-    string slice = line.strippedLeft;
+    string slice = line.strippedLeft;  // mutable
 
     // the onus is on the caller that slice begins with prefix
     slice.nom!(Yes.decode)(prefix);
 
-    enum pattern = "[:?! ]*(.+)";
-    auto engine = pattern.regex;
-    auto hits = slice.matchFirst(engine);
-    return hits[1];
+    static if (demandSeparatingChars)
+    {
+        // Return the whole lin, a non-match, if there are no separating characters
+        // (at least one of [:?! ])
+        if (!slice.beginsWithOneOf(":?! ")) return line;
+        slice = slice[1..$];
+    }
+
+    while (slice.length && slice.beginsWithOneOf(":?! "))
+    {
+        slice = slice[1..$];
+    }
+
+    return slice;
 }
 
 ///
@@ -476,7 +484,10 @@ unittest
     immutable eightball = "8ball predicate?".stripPrefix("");
     assert((eightball == "8ball predicate?"), eightball);
 
-    immutable isabot = "kamelosois a bot".stripPrefix("kameloso");
+    immutable isnotabot = "kamelosois a bot".stripPrefix("kameloso");
+    assert((isnotabot == "kamelosois a bot"), isnotabot);
+
+    immutable isabot = "kamelosois a bot".stripPrefix!(No.demandSeparatingChars)("kameloso");
     assert((isabot == "is a bot"), isabot);
 }
 
