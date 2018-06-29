@@ -6,7 +6,7 @@
 module kameloso.string;
 
 import core.time : Duration;
-import std.range.primitives : ElementEncodingType, ElementType;
+import std.range.primitives : ElementEncodingType, ElementType, isOutputRange;
 import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
@@ -522,6 +522,7 @@ unittest
  +/
 void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     (auto ref Sink sink, const Duration duration) pure
+if (isOutputRange!(Sink, string))
 {
     import std.format : formattedWrite;
 
