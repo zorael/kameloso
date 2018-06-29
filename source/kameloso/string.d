@@ -377,7 +377,8 @@ unittest
  +      not.
  +/
 pragma(inline)
-bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @safe @nogc
+bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @nogc
+if (isSomeString!T)
 {
     import std.string : representation;
 
@@ -403,7 +404,8 @@ unittest
 
 /// Ditto
 pragma(inline)
-bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @safe @nogc
+bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @nogc
+if (isSomeString!T)
 {
     import std.string : representation;
 
@@ -1227,7 +1229,7 @@ unittest
  +  Returns:
  +      The passed line without any trailing whitespace or linebreaks.
  +/
-string strippedRight(const string line) pure nothrow @nogc @safe @property
+string strippedRight(const string line) pure nothrow @nogc @property
 {
     if (!line.length) return line;
 
@@ -1254,7 +1256,6 @@ string strippedRight(const string line) pure nothrow @nogc @safe @property
 }
 
 ///
-@safe
 unittest
 {
     {
@@ -1296,7 +1297,7 @@ unittest
  +  Returns:
  +      The passed line without any preceding whitespace or linebreaks.
  +/
-string strippedLeft(const string line) pure nothrow @nogc @safe @property
+string strippedLeft(const string line) pure nothrow @nogc @property
 {
     if (!line.length) return line;
 
@@ -1323,7 +1324,6 @@ string strippedLeft(const string line) pure nothrow @nogc @safe @property
 }
 
 ///
-@safe
 unittest
 {
     {
@@ -1367,13 +1367,12 @@ unittest
  +  Returns:
  +      The passed line, stripped.
  +/
-string stripped(const string line) pure nothrow @nogc @safe @property
+string stripped(const string line) pure nothrow @nogc @property
 {
     return line.strippedLeft.strippedRight;
 }
 
 ///
-@safe
 unittest
 {
     {

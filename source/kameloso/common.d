@@ -841,6 +841,9 @@ unittest
 }
 
 
+@system:
+
+
 // interruptibleSleep
 /++
  +  Sleep in small periods, checking the passed `abort` bool inbetween to see
@@ -883,9 +886,6 @@ void interruptibleSleep(D)(const D dur, const ref bool abort)
         left -= step;
     }
 }
-
-
-@system:
 
 
 // Client
