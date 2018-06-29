@@ -285,14 +285,6 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
     if (r > 255) r = 255;
     if (g > 255) g = 255;
     if (b > 255) b = 255;
-
-    if (r < 0) r = 0;
-    if (g < 0) g = 0;
-    if (b < 0) b = 0;
-
-    assert(r >= 0 && r <= 255);
-    assert(g >= 0 && g <= 255);
-    assert(b >= 0 && b <= 255);
 }
 
 
@@ -363,14 +355,6 @@ void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
     if (r > 255) r = 255;
     if (g > 255) g = 255;
     if (b > 255) b = 255;
-
-    if (r < 0) r = 0;
-    if (g < 0) g = 0;
-    if (b < 0) b = 0;
-
-    assert(r >= 0 && r <= 255);
-    assert(g >= 0 && g <= 255);
-    assert(b >= 0 && b <= 255);
 }
 
 version(none)
