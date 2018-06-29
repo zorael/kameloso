@@ -1108,36 +1108,45 @@ unittest
  +  Returns:
  +      Whitespace equalling (`num` ' `spaces`) spaces.
  +/
-string tabs(uint spaces = 4)(int num) pure nothrow
+auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc @property
 {
     import std.range : repeat, takeExactly;
-    import std.array : array, join;
+    import std.algorithm.iteration : joiner;
+    import std.array : array;
 
-    enum tab = ' '.repeat.takeExactly(spaces).array;
+    assert((num >= 0), "Negative number of tabs");
 
-    assert((num >= 0), "Negative amount of tabs");
+    enum char[spaces] tab = ' '.repeat.takeExactly(spaces).array;
 
-    return tab.repeat.takeExactly(num).join;
+    return tab[].repeat.takeExactly(num).joiner;
 }
 
 ///
 @system
 unittest
 {
+    import std.array : Appender;
+    import std.conv : to;
     import std.exception : assertThrown;
+    import std.format : formattedWrite;
+    import std.algorithm.comparison : equal;
     import core.exception : AssertError;
 
-    immutable one = 1.tabs!4;
-    immutable two = 2.tabs!3;
-    immutable three = 3.tabs!2;
-    immutable zero = 0.tabs;
+    auto one = 1.tabs!4;
+    auto two = 2.tabs!3;
+    auto three = 3.tabs!2;
+    auto zero = 0.tabs;
 
-    assert((one == "    "), one ~ '$');
-    assert((two == "      "), two ~ '$');
-    assert((three == "      "), three ~ '$');
-    assert((zero == string.init), zero ~ '$');
+    assert(one.equal("    "), one.to!string);
+    assert(two.equal("      "), two.to!string);
+    assert(three.equal("      "), three.to!string);
+    assert(zero.equal(string.init), zero.to!string);
 
     assertThrown!AssertError((-1).tabs);
+
+    Appender!string sink;
+    sink.formattedWrite("%sHello world", 2.tabs!2);
+    assert((sink.data == "    Hello world"), sink.data);
 }
 
 
