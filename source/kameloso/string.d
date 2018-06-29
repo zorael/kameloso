@@ -1209,6 +1209,10 @@ unittest
     assert("Lorem ipsum".has(' '));
     assert(!"Lorem ipsum".has('!'));
     assert("Lorem ipsum"d.has("m"d));
+    assert("Lorem ipsum".has(['p', 's', 'u', 'm' ]));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].has([ 'L' ]));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].has("Lor"));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].has(cast(char[])[]));
 }
 
 
