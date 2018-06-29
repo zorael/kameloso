@@ -1092,6 +1092,9 @@ unittest
 
     immutable n8 = sharedDomains("net", "net");
     assert((n8 == 1), n8.text);
+
+    immutable n9 = sharedDomains("forum.dlang.org", "...");
+    assert((n9 == 0), n8.text);
 }
 
 
