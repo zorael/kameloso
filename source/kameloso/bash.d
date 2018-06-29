@@ -171,7 +171,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +/
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
-if (isOutputRange!(Sink,string) && Codes.length && allSatisfy!(isAColourCode, Codes))
+if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     sink.put(TerminalToken.bashFormat);
     sink.put('[');

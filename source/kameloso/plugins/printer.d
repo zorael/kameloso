@@ -342,7 +342,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (event.sender != IRCUser.init)
                 {
-                    plugin.buffers[errPath].lines ~=formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
                 }
 
                 if (event.target != IRCUser.init)

@@ -526,8 +526,7 @@ void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     import std.format : formattedWrite;
 
     int days, hours, minutes, seconds;
-    duration.split!("days", "hours", "minutes", "seconds")
-        (days, hours, minutes, seconds);
+    duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
 
     if (days)
     {

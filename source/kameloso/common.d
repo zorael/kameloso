@@ -193,19 +193,16 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
     {
         if (settings.monochrome)
         {
-            formatObjects!(printAll, No.coloured, widthArg)
-                (stdout.lockingTextWriter, things);
+            formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
         }
         else
         {
-            formatObjects!(printAll, Yes.coloured, widthArg)
-                (stdout.lockingTextWriter, things);
+            formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter, things);
         }
     }
     else
     {
-        formatObjects!(printAll, No.coloured, widthArg)
-            (stdout.lockingTextWriter, things);
+        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
     }
 
     version(Cygwin_) stdout.flush();
