@@ -153,7 +153,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 // colour
 /++
  +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset`` and composes them into a colour code token.
+ +  a `BashReset` and composes them into a colour code token.
  +
  +  This is the composing function that fills its result into an output range.
  +

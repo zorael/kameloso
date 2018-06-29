@@ -207,7 +207,7 @@ unittest
 
 // plurality
 /++
- +  Get the correct singular or plural form of a word depending on the
+ +  Selects the correct singular or plural form of a word depending on the
  +  numerical count of it.
  +
  +  Example:
@@ -245,9 +245,11 @@ unittest
 /++
  +  Removes paired preceding and trailing double quotes, unquoting a word.
  +
+ +  Does not decode the string and may thus give weird results on weird inputs.
+ +
  +  Example:
  +  ------------
- +  string quoted= `"This is a quote"`;
+ +  string quoted = `"This is a quote"`;
  +  string unquotes = quoted.unquoted;
  +  assert((unquoted == "This is a quote"), unquoted);
  +  ------------
@@ -305,6 +307,8 @@ unittest
 /++
  +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
  +  such a hotspot.
+ +
+ +  Does not decode the string and may thus give weird results on weird inputs.
  +
  +  Example:
  +  ------------
