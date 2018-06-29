@@ -17,7 +17,7 @@ It works well with the majority of server networks. IRC is standardised but serv
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch events; simple Twitch chatbot is now easy (see notes on connecting below)
+* Twitch support; Twitch bot is now easy (see notes on connecting below)
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
@@ -45,6 +45,7 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 * [How to use](#how-to-use)
     * [Twitch](#twitch)
     * [Use as a library](#use-as-a-library)
+* [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
     * [License](#license)
@@ -58,6 +59,7 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
 * `IRCEvent` now has a new field; `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of listing numerics.
+* `--asserts` vastly improved.
 
 # Getting started
 
@@ -208,6 +210,12 @@ The IRC event parsing bits are largely decoupled from the rest of the program, n
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
 Feel free to copy these and drop them into your own project.
+
+# Debugging and generating unit tests
+
+Writing an IRC bot when servers all behave differently is a game of whack-a-mole. As such, you may/will come across unexpected events for which there are no rules on how to parse. It may be some events silently have weird values in the wrong fields (e.g. nickname where channel should go), or more likely there will be an error message. If the error message contains the raw server string, file an issue with it.
+
+If you're working on developing the bot yourself, you can generate unit test assert blocks for the event by passing `--asserts`, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate. If more state is neccessary to replicate the environment, such as needing things from `RPL_ISUPPORT`, paste the raw line for that first and it will inherit the implied changes for any following lines.
 
 # Roadmap
 
