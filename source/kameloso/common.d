@@ -55,7 +55,8 @@ Logger logger;
  +      monochrome = Whether the terminal is set to monochrome or not.
  +      bright = Whether the terminal has a bright background or not.
  +/
-void initLogger(bool monochrome = settings.monochrome, bool bright = settings.brightTerminal)
+void initLogger(const bool monochrome = settings.monochrome,
+    const bool bright = settings.brightTerminal)
 {
     import kameloso.logger : KamelosoLogger;
     import std.experimental.logger : LogLevel;
@@ -681,7 +682,7 @@ unittest
  +  Returns:
  +      One or more scopeguards in string form. Mix them in to use.
  +/
-string scopeguard(ubyte states = exit, string scopeName = string.init)
+string scopeguard(const ubyte states = exit, const string scopeName = string.init)
 {
     import std.array : Appender;
     Appender!string app;
@@ -785,7 +786,7 @@ enum : ubyte
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
-uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(Number num, int n)
+uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(const Number num, const int n)
 {
     assert((n > 0), "Cannot get multiple of 0 or negatives");
     assert((num >= 0), "Cannot get multiples for a negative number");
@@ -859,7 +860,7 @@ unittest
  +      abort = Reference to the bool flag which, if set, means we should
  +          interrupt and return early.
  +/
-void interruptibleSleep(D)(const D dur, ref bool abort) @system
+void interruptibleSleep(D)(const D dur, const ref bool abort)
 {
     import core.thread : Thread, msecs, seconds;
     import std.algorithm.comparison : min;

@@ -36,7 +36,7 @@ import kameloso.ircdefs : IRCBot, IRCEvent;
  +          `formatAssertStatementLines` recurses on structs.
  +/
 private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
-    Thing thing, const string prefix = string.init, uint indents = 0)
+    Thing thing, const string prefix = string.init, const uint indents = 0)
 {
     foreach (immutable i, member; thing.tupleof)
     {

@@ -479,8 +479,8 @@ unittest
  +/
 version(Colours)
 void truecolour(Flag!"normalise" normalise = Yes.normalise, Sink)
-    (auto ref Sink sink, uint r, uint g, uint b, bool bright = false)
-if (isOutputRange!(Sink,string))
+    (auto ref Sink sink, uint r, uint g, uint b, const bool bright = false)
+if (isOutputRange!(Sink, string))
 {
     import std.format : formattedWrite;
 
@@ -532,7 +532,7 @@ if (isOutputRange!(Sink,string))
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
-    (const string word, uint r, uint g, uint b, bool bright = false)
+    (const string word, const uint r, const uint g, const uint b, const bool bright = false)
 {
     import std.array : Appender;
 
