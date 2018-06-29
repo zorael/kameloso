@@ -118,24 +118,6 @@ struct ThreadMessage
 }
 
 
-// SupportColours
-/++
- +  Set version `SupportsColours` depending on the build configuration.
- +
- +  We can't do "version(blah) || version(bluh)" because of design decisions,
- +  so we do it this way to accomodate for version `Cygwin_` implying both
- +  `Windows` and `Colours`.
- +/
-version(Colours)
-{
-    version = SupportsColours;
-}
-else version (Cygwin_)
-{
-    version = SupportsColours;
-}
-
-
 // CoreSettings
 /++
  +  Aggregate struct containing runtime bot setting variables.
@@ -145,7 +127,7 @@ else version (Cygwin_)
  +/
 struct CoreSettings
 {
-    version(SupportsColours)
+    version(Colours)
     {
         bool monochrome = false;  /// Logger monochrome setting.
     }
