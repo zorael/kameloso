@@ -419,7 +419,8 @@ void generateAsserts(ref Client client) @system
     import kameloso.ircdefs : IRCServer;
     import kameloso.string : has, nom, stripped, toEnum;
     import std.conv : ConvException;
-    import std.stdio : stdout, readln, write, writeln;
+    import std.range : chunks, only;
+    import std.stdio : stdout, readln, write, writeln, writefln;
     import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
@@ -430,7 +431,8 @@ void generateAsserts(ref Client client) @system
 
         parser = IRCParser.init;
 
-        logger.info("Available daemons: ", [ EnumMembers!Daemon ]);
+        logger.info("Available daemons:");
+        writefln("%(%(%-14s%)\n%)", EnumMembers!(IRCServer.Daemon).only.chunks(3));
         writeln();
 
         write("Enter daemon (ircdseven): ");
