@@ -213,9 +213,9 @@ Feel free to copy these and drop them into your own project.
 
 # Debugging and generating unit tests
 
-Writing an IRC bot when servers all behave differently is a game of whack-a-mole. As such, you may/will come across unexpected events for which there are no rules on how to parse. It may be some events silently have weird values in the wrong fields (e.g. nickname where channel should go), or more likely there will be an error message. If the error message contains the raw server string, file an issue with it.
+Writing an IRC bot when servers all behave differently is a game of whack-a-mole. As such, you may/will come across unexpected events for which there are no rules on how to parse. It may be some events silently have weird or no values in the wrong fields (e.g. nickname where channel should go), or more likely there will be an error message. If the error message contains the raw server string, file an issue with it.
 
-If you're working on developing the bot yourself, you can generate unit test assert blocks for the event by passing `--asserts`, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate. If more state is neccessary to replicate the environment, such as needing things from `RPL_ISUPPORT`, paste the raw line for that first and it will inherit the implied changes for any following lines.
+If you're working on developing the bot yourself, you can generate unit test assert blocks for events by passing the `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate. If more state is neccessary to replicate the environment, such as needing things from `RPL_ISUPPORT`, paste the raw line for that first and it will inherit the implied changes for any following lines throughout the session.
 
 # Roadmap
 
