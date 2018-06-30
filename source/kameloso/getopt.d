@@ -179,6 +179,10 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
+        // Clear entries that are dashes.
+        import kameloso.common : zeroMembers;
+        zeroMembers!"-"(bot);
+
         client.parser.bot = bot;
 
         if (monochromeWasSet) settings.monochrome = monochromeFromArgs;
