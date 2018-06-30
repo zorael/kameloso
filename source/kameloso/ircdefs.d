@@ -1269,27 +1269,6 @@ struct IRCUser
         }
     }
 
-
-    /++
-     +  Flag that the user is "special", which is usually that it is a service
-     +  like nickname services, or channel or memo or spam.
-     +
-     +  Now implemented as a `Class.special` classifier.
-     +/
-    pragma(inline)
-    bool special() const @property pure nothrow
-    {
-        return (class_ == Class.special);
-    }
-
-    /// Modify the user's specialness.
-    pragma(inline)
-    void special(const bool setting) @property pure nothrow
-    {
-        if (setting) class_ = Class.special;
-        else class_ = Class.anyone;  // What should be the fallback classifier?
-    }
-
     /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
     long lastWhois;
 
