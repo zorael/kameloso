@@ -867,6 +867,63 @@ int main(string[] args)
             return 1;
         }
 
+        // Initialise plugins outside the loop once, for the error messages
+        string[][string] invalidEntries = initPlugins(customSettings);
+
+        if (invalidEntries.length)
+        {
+            logger.log("Found invalid configuration entries:");
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.bash : colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.experimental.logger : LogLevel;
+
+                    immutable infotint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
+
+                    immutable logtint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
+
+                    foreach (immutable section, const sectionEntries; invalidEntries)
+                    {
+                        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+                            infotint.colour, section, logtint.colour,
+                            infotint.colour, sectionEntries);
+                    }
+
+                    logger.logf("They are either malformed or no longer in use. " ~
+                        "Use %s--writeconfig%s to update your configuration file.",
+                        infotint.colour, logtint.colour);
+                }
+                else
+                {
+                    foreach (immutable section, const sectionEntries; invalidEntries)
+                    {
+                        logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
+                    }
+
+                    logger.log("They are either malformed or no longer in use. " ~
+                        "Use --writeconfig to update your configuration file.");
+                }
+            }
+            else
+            {
+                foreach (immutable section, const sectionEntries; invalidEntries)
+                {
+                    logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
+                }
+
+                logger.log("They are either malformed or no longer in use. " ~
+                    "Use --writeconfig to update your configuration file.");
+            }
+        }
+
         // Save the original nickname *once*, outside the connection loop.
         // It will change later and knowing this is useful when authenticating
         bot.origNickname = bot.nickname;
@@ -890,82 +947,23 @@ int main(string[] args)
 
             if (!firstConnect)
             {
+                import kameloso.constants : Timeout;
+                import core.time : seconds;
+
                 // Carry some values but otherwise restore the pristine bot backup
                 backupBot.nickname = bot.nickname;
                 backupBot.homes = bot.homes;
                 backupBot.channels = bot.channels;
                 bot = backupBot;
-            }
-
-            parser = IRCParser(bot);
-
-            string[][string] invalidEntries = initPlugins(customSettings);
-
-            if (invalidEntries.length && firstConnect)
-            {
-                logger.log("Found invalid configuration entries:");
-
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.bash : colour;
-                        import kameloso.logger : KamelosoLogger;
-                        import std.experimental.logger : LogLevel;
-
-                        immutable infotint = settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.info] :
-                            KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                        immutable logtint = settings.brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.all] :
-                            KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                        foreach (immutable section, const sectionEntries; invalidEntries)
-                        {
-                            logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
-                                infotint.colour, section, logtint.colour,
-                                infotint.colour, sectionEntries);
-                        }
-
-                        logger.logf("They are either malformed or no longer in use. " ~
-                            "Use %s--writeconfig%s to update your configuration file.",
-                            infotint.colour, logtint.colour);
-                    }
-                    else
-                    {
-                        foreach (immutable section, const sectionEntries; invalidEntries)
-                        {
-                            logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-                        }
-
-                        logger.log("They are either malformed or no longer in use. " ~
-                            "Use --writeconfig to update your configuration file.");
-                    }
-                }
-                else
-                {
-                    foreach (immutable section, const sectionEntries; invalidEntries)
-                    {
-                        logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-                    }
-
-                    logger.log("They are either malformed or no longer in use. " ~
-                        "Use --writeconfig to update your configuration file.");
-                }
-            }
-
-            if (!firstConnect)
-            {
-                import kameloso.constants : Timeout;
-                import core.time : seconds;
 
                 logger.log("Please wait a few seconds...");
                 interruptibleSleep(Timeout.retry.seconds, *abort);
+
+                // Reinit plugins here so it isn't done on the first connect attempt
+                initPlugins(customSettings);
             }
 
             conn.reset();
-
             immutable resolved = conn.resolve(bot.server.address, bot.server.port, *abort);
 
             if (!resolved)
@@ -1026,6 +1024,7 @@ int main(string[] args)
                 return 1;
             }
 
+            parser = IRCParser(bot);
             startPlugins();
 
             // Start the main loop
