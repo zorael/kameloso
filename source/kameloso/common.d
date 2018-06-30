@@ -1428,12 +1428,10 @@ void zeroMembers(string emptyToken = "-", Thing)(ref Thing thing)
 if (is(Thing == struct))
 {
     import std.traits : isArray, isSomeString;
-    import std.stdio;
 
     foreach (immutable i, ref member; thing.tupleof)
     {
         alias T = typeof(member);
-        enum memberstring = __traits(identifier, thing.tupleof[i]);
 
         static if (is(T == struct))
         {
