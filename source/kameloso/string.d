@@ -241,6 +241,46 @@ unittest
 }
 
 
+// unenclosed
+/++
+ +  Removes paired preceding and trailing tokens around a string line.
+ +
+ +  You should not need to use this directly; rather see `unquoted` and
+ +  `unsinglequoted`.
+ +
+ +  Params:
+ +      token = Token character to strip away.
+ +  	line = String line to remove any enclosing tokens from.
+ +
+ +  Returns:
+ +      A slice of the passed string line without enclosing tokens.
+ +/
+private T unenclosed(char token = '"', T)(const T line) pure nothrow @nogc @property
+if (isSomeString!T)
+{
+    enum escaped = "\\" ~ token;
+
+    if (line.length < 2)
+    {
+        return line;
+    }
+    else if ((line[0] == token) && (line[$-1] == token))
+    {
+        if ((line.length >= 3) && (line[$-2..$] == escaped))
+        {
+            // End quote is escaped
+            return line;
+        }
+
+        return line[1..$-1].unenclosed!token;
+    }
+    else
+    {
+        return line;
+    }
+}
+
+
 // unquoted
 /++
  +  Removes paired preceding and trailing double quotes, unquoting a word.
@@ -250,8 +290,8 @@ unittest
  +  Example:
  +  ------------
  +  string quoted = `"This is a quote"`;
- +  string unquotes = quoted.unquoted;
- +  assert((unquoted == "This is a quote"), unquoted);
+ +  string unquotedLine = quoted.unquoted;
+ +  assert((unquotedLine == "This is a quote"), unquotedLine);
  +  ------------
  +
  +  Params:
@@ -260,34 +300,10 @@ unittest
  +  Returns:
  +      A slice of the line argument that excludes the quotes.
  +/
-T unquoted(Flag!"recurse" recurse = Yes.recurse, T)(const T line) pure nothrow @property
-if (isSomeString!T)
+pragma(inline)
+T unquoted(T)(const T line) pure nothrow @nogc @property
 {
-    if (line.length < 2)
-    {
-        return line;
-    }
-    else if ((line[0] == '"') && (line[$-1] == '"'))
-    {
-        if ((line.length >= 3) && (line[$-2..$] == `\"`))
-        {
-            // End quote is escaped
-            return line;
-        }
-
-        static if (recurse)
-        {
-            return line[1..$-1].unquoted;
-        }
-        else
-        {
-            return line[1..$-1];
-        }
-    }
-    else
-    {
-        return line;
-    }
+    return unenclosed!'"'(line);
 }
 
 ///
@@ -300,6 +316,44 @@ unittest
     assert(`"Lorem \"`.unquoted == `"Lorem \"`);
     assert("\"Lorem \\\"".unquoted == "\"Lorem \\\"");
     assert(`"\"`.unquoted == `"\"`);
+}
+
+
+// unsinglequoted
+/++
+ +  Removes paired preceding and trailing single quotes around a line.
+ +
+ +  Does not decode the string and may thus give weird results on weird inputs.
+ +
+ +  Example:
+ +  ------------
+ +  string quoted = `'This is single-quoted'`;
+ +  string unquotedLine = quoted.unsinglequoted;
+ +  assert((unquotedLine == "This is single-quoted"), unquotedLine);
+ +  ------------
+ +
+ +  Params:
+ +      line = The (potentially) single-quoted string.
+ +
+ +  Returns:
+ +      A slice of the line argument that excludes the single-quotes.
+ +/
+pragma(inline)
+T unsinglequoted(T)(const T line) pure nothrow @nogc @property
+{
+    return unenclosed!'\''(line);
+}
+
+///
+unittest
+{
+    assert(`'Lorem ipsum sit amet'`.unsinglequoted == "Lorem ipsum sit amet");
+    assert(`''''Lorem ipsum sit amet''''`.unsinglequoted == "Lorem ipsum sit amet");
+    // Unbalanced quotes are left untouched
+    assert(`'Lorem ipsum sit amet`.unsinglequoted == `'Lorem ipsum sit amet`);
+    assert(`'Lorem \'`.unsinglequoted == `'Lorem \'`);
+    assert("'Lorem \\'".unsinglequoted == "'Lorem \\'");
+    assert(`"\"`.unsinglequoted == `"\"`);
 }
 
 
