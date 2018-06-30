@@ -215,7 +215,7 @@ Feel free to copy these and drop them into your own project.
 
 Writing an IRC bot when servers all behave differently is a game of whack-a-mole. As such, you may/will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't -- or more likely there will be an error message. Please file an issue.
 
-If you're working on developing the bot yourself, you can generate unit test assert blocks for new events by passing the `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
+If you're working on developing the bot yourself, you can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
 
 If more state is neccessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/fake the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes for easier construction of unit tests, so you'll know if you suceeded.
 
