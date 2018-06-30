@@ -1347,7 +1347,7 @@ struct IRCUser
         import std.format : formattedWrite;
         sink.formattedWrite("%s!%s@%s#%s%s @%d [%d]",
             nickname, ident, address, account,
-            special ? " *" : string.init, lastWhois, refcount);
+            (class_ == Class.special) ? " *" : string.init, lastWhois, refcount);
     }
 
     /// Guesses that a sender is a server.

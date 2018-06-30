@@ -25,7 +25,7 @@ void chan(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.content = content;
 
@@ -41,7 +41,7 @@ void query(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string nic
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.target.nickname = nickname;
     event.content = content;
 
@@ -90,7 +90,7 @@ void emote(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string emo
 {
     IRCEvent event;
     event.type = IRCEvent.Type.EMOTE;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = content;
 
     if (emoteTarget.beginsWithOneOf(state.bot.server.chantypes))
@@ -120,7 +120,7 @@ void mode(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 
     IRCEvent event;
     event.type = IRCEvent.Type.MODE;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.aux = modes;
     event.content = content;
@@ -139,7 +139,7 @@ void topic(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string cha
 
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.content = content;
 
@@ -157,7 +157,7 @@ void invite(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string ch
 
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.target.nickname = nickname;
 
@@ -175,7 +175,7 @@ void join(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
 
     state.mainThread.send(event);
@@ -196,7 +196,7 @@ void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
@@ -215,7 +215,7 @@ void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
 
     state.mainThread.send(event);
@@ -230,7 +230,7 @@ void quit(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string reas
 {
     IRCEvent event;
     event.type = IRCEvent.Type.QUIT;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = reason;
 
     state.mainThread.send(event);
@@ -248,7 +248,7 @@ void raw(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string line)
 {
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
-    event.target.special = quiet;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = line;
 
     state.mainThread.send(event);

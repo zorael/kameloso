@@ -337,7 +337,7 @@ unittest
         with (event)
         {
             assert((type == ERROR), type.to!string);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
         }
     }
@@ -351,7 +351,7 @@ unittest
             assert((sender.nickname == "asdcsa"), sender.nickname);
             assert((sender.ident == "asdcss"), sender.ident);
             assert((sender.address == "asdcsd.tmi.twitch.tv"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#lirik"), channel);
             assert((content == "lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL"), content);
             assert((tags == "badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type="), tags);
@@ -364,7 +364,7 @@ unittest
         with (event)
         {
             assert((type == NOTICE), type.to!string);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "*** If you are having problems connecting due to ping timeouts, please type /notice F94828E6 nospoof now."), content);
         }
     }
@@ -376,7 +376,7 @@ unittest
         {
             assert((type == ROOMSTATE), type.to!string);
             assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#zorael"), channel);
             assert((tags == "broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0"), tags);
         }
@@ -389,7 +389,7 @@ unittest
         {
             assert((type == RPL_NAMREPLY), type.to!string);
             assert((sender.address == "port80b.se.quakenet.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "@kameloso"), content);
             assert((num == 353), num.to!string);
@@ -402,7 +402,7 @@ unittest
         {
             assert((type == ERR_NOSUCHCHANNEL), type.to!string);
             assert((sender.address == "moon.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "archlinux"), channel);
             assert((content == "No such channel"), content);
             assert((num == 403), num.to!string);
@@ -416,7 +416,7 @@ unittest
         {
             assert((type == RPL_TOPIC), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "Are you employed, sir?"), content);
             assert((num == 332), num.to!string);
@@ -430,7 +430,7 @@ unittest
         {
             assert((type == RPL_ENDOFNAMES), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "End of /NAMES list."), content);
             assert((num == 366), num.to!string);
@@ -444,7 +444,7 @@ unittest
         {
             assert((type == RPL_CHANNEL_URL), type.to!string);
             assert((sender.address == "services."), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#ubuntu"), channel);
             assert((content == "http://www.ubuntu.com"), content);
             assert((num == 328), num.to!string);
@@ -458,7 +458,7 @@ unittest
         {
             assert((type == ERR_NEEDREGGEDNICK), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#archlinux"), channel);
             assert((content == "Cannot join channel (+r) - you need to be identified with services"), content);
             assert((num == 477), num.to!string);
@@ -472,7 +472,7 @@ unittest
         {
             assert((type == RPL_NAMREPLY), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "kameloso^ ombudsman +kameloso @zorael @maku @klarrt"), content);
             assert((num == 353), num.to!string);
@@ -486,7 +486,7 @@ unittest
         {
             assert((type == RPL_WHOREPLY), type.to!string);
             assert((sender.address == "moon.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "##linux"), channel);
             assert((target.nickname == "Fieldy"), target.nickname);
             assert((target.address == "gentoo/contributor/Fieldy"), target.address);
@@ -502,7 +502,7 @@ unittest
         {
             assert((type == RPL_WHOREPLY), type.to!string);
             assert((sender.address == "moon.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "##linux"), channel);
             assert((target.nickname == "Axton"), target.nickname);
             assert((target.ident == "~rahlff"), target.ident);
@@ -519,7 +519,7 @@ unittest
         {
             assert((type == RPL_WHOREPLY), type.to!string);
             assert((sender.address == "irc.rizon.no"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "kameloso^^"), target.nickname);
             assert((target.ident == "~NaN"), target.ident);
             assert((target.address == "C2802314.E23AD7D8.E9841504.IP"), target.address);
@@ -535,7 +535,7 @@ unittest
         {
             assert((type == RPL_ENDOFWHO), type.to!string);
             assert((sender.address == "tolkien.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "##linux"), channel);
             assert((content == "End of /WHO list."), content);
             assert((num == 315), num.to!string);
@@ -550,7 +550,7 @@ unittest
         {
             assert((type == RPL_AWAY), type.to!string);
             assert((sender.address == "tolkien.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "jcjordyn120"), target.nickname);
             assert((content == "Idle"), content);
             assert((num == 301), num.to!string);
@@ -564,7 +564,7 @@ unittest
         {
             assert((type == RPL_MOTD), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "- In particular we would like to thank the sponsor"), content);
             assert((num == 372), num.to!string);
         }
@@ -577,7 +577,7 @@ unittest
         {
             assert((type == RPL_ISUPPORT), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "EXCEPTS INVEX MODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459"), content);
             assert((num == 5), num.to!string);
         }
@@ -591,7 +591,7 @@ unittest
         {
             assert((type == RPL_MYINFO), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "DOQRSZaghilopswz CFILMPQSbcefgijklmnopqrstvz bkloveqjfI"), content);
             assert((aux == "ircd-seven-1.1.4"), aux);
             assert((num == 4), num.to!string);
@@ -609,7 +609,7 @@ unittest
             {
                 assert((type == RPL_MYINFO), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert((num == 4), num.to!string);
             }
             assert((parser.bot.server.network == "Twitch"), parser.bot.server.network);
@@ -625,7 +625,7 @@ unittest
         {
             assert((type == RPL_TOPICWHOTIME), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com"), content);
             assert((aux == "1476294377"), aux);
@@ -641,7 +641,7 @@ unittest
         {
             assert((type == RPL_WHOISHOST), type.to!string);
             assert((sender.address == "wilhelm.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "81-233-105-62-no80.tbcn.telia.com"), content);
             assert((aux == "81.233.105.62"), aux);
             assert((num == 378), num.to!string);
@@ -655,7 +655,7 @@ unittest
         {
             assert((type == ERR_UNKNOWNCOMMAND), type.to!string);
             assert((sender.address == "karatkievich.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "systemd,#kde,#kubuntu,..."), content);
             assert((num == 421), num.to!string);
         }
@@ -668,7 +668,7 @@ unittest
         {
             assert((type == ERR_UNKNOWNCOMMAND), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "sudo"), aux);
             assert((content == "Unknown command"), content);
             assert((num == 421), num.to!string);
@@ -682,7 +682,7 @@ unittest
         {
             assert((type == RPL_WHOISIDLE), type.to!string);
             assert((sender.address == "rajaniemi.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "zorael"), target.nickname);
             assert((content == "0"), content);
             assert((aux == "1510219961"), aux);
@@ -697,7 +697,7 @@ unittest
         {
             assert((type == RPL_LUSEROP), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "IRC Operators online"), content);
             assert((aux == "31"), aux);
             assert((num == 252), num.to!string);
@@ -711,7 +711,7 @@ unittest
         {
             assert((type == RPL_LUSERUNKNOWN), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "unknown connection(s)"), content);
             assert((aux == "13"), aux);
             assert((num == 253), num.to!string);
@@ -725,7 +725,7 @@ unittest
         {
             assert((type == RPL_LUSERCHANNELS), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "channels formed"), content);
             assert((aux == "54541"), aux);
             assert((num == 254), num.to!string);
@@ -739,7 +739,7 @@ unittest
         {
             assert((type == ERR_ERRONEOUSNICKNAME), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Erroneous Nickname"), content);
             assert((aux == "@nickname"), aux);
             assert((num == 432), num.to!string);
@@ -753,7 +753,7 @@ unittest
         {
             assert((type == ERR_NEEDMOREPARAMS), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Not enough parameters"), content);
             assert((aux == "JOIN"), aux);
             assert((num == 461), num.to!string);
@@ -767,7 +767,7 @@ unittest
         {
             assert((type == RPL_LOCALUSERS), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current local users 6500, max 11061"), content);
             assert((aux == "6500 11061"), aux);
             assert((num == 265), num.to!string);
@@ -781,7 +781,7 @@ unittest
         {
             assert((type == RPL_GLOBALUSERS), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current global users 85267, max 92341"), content);
             assert((aux == "85267 92341"), aux);
             assert((num == 266), num.to!string);
@@ -795,7 +795,7 @@ unittest
         {
             assert((type == RPL_LOCALUSERS), type.to!string);
             assert((sender.address == "irc.uworld.se"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current local users: 14552  Max: 19744"), content);
             assert((num == 265), num.to!string);
         }
@@ -808,7 +808,7 @@ unittest
         {
             assert((type == RPL_GLOBALUSERS), type.to!string);
             assert((sender.address == "irc.uworld.se"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current global users: 14552  Max: 19744"), content);
             assert((num == 266), num.to!string);
         }
@@ -821,7 +821,7 @@ unittest
         {
             assert((type == RPL_LOCALUSERS), type.to!string);
             assert((sender.address == "weber.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current local users 3385, max 6820"), content);
             assert((aux == "3385 6820"), aux);
             assert((num == 265), num.to!string);
@@ -835,7 +835,7 @@ unittest
         {
             assert((type == RPL_GLOBALUSERS), type.to!string);
             assert((sender.address == "weber.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current global users 87056, max 93012"), content);
             assert((aux == "87056 93012"), aux);
             assert((num == 266), num.to!string);
@@ -849,7 +849,7 @@ unittest
         {
             assert((type == RPL_LOCALUSERS), type.to!string);
             assert((sender.address == "irc.rizon.no"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Current local users: 16115  Max: 17360"), content);
             assert((num == 265), num.to!string);
         }
@@ -862,7 +862,7 @@ unittest
         {
             assert((type == RPL_WHOISUSER), type.to!string);
             assert((sender.address == "orwell.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.ident == "~NaN"), target.ident);
             assert((target.address == "ns3363704.ip-94-23-253.eu"), target.address);
             assert((content == "kameloso"), content);
@@ -877,7 +877,7 @@ unittest
         {
             assert((type == RPL_WHOISSECURE), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "zorael"), target.nickname);
             assert((content == "is using a secure connection"), content);
             assert((num == 671), num.to!string);
@@ -891,7 +891,7 @@ unittest
         {
             assert((type == RPL_ENDOFWHOIS), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "zorael"), target.nickname);
             assert((content == "End of /WHOIS list."), content);
             assert((num == 318), num.to!string);
@@ -906,7 +906,7 @@ unittest
         {
             assert((type == ERR_NICKNAMEINUSE), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Nickname is already in use."), content);
             assert((num == 433), num.to!string);
         }
@@ -919,7 +919,7 @@ unittest
         {
             assert((type == ERR_NOSUCHNICK), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "cherryh.freenode.net"), aux);
             assert((content == "No such nick/channel"), content);
             assert((num == 401), num.to!string);
@@ -934,7 +934,7 @@ unittest
         {
             assert((type == RPL_WHOISOPERATOR), type.to!string);
             assert((sender.address == "lightning.ircstorm.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "NickServ"), target.nickname);
             assert((content == "is a Network Service"), content);
             assert((num == 313), num.to!string);
@@ -948,7 +948,7 @@ unittest
         {
             assert((type == RPL_WHOISACCOUNT), type.to!string);
             assert((sender.address == "asimov.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "xurael"), target.nickname);
             assert((target.account == "zorael"), target.account);
             assert((content == "zorael"), content);
@@ -963,7 +963,7 @@ unittest
         {
             assert((type == RPL_WHOISREGNICK), type.to!string);
             assert((sender.address == "irc.x2x.cc"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "py-ctcp"), target.nickname);
             assert((content == "py-ctcp"), content);
             assert((num == 307), num.to!string);
@@ -977,7 +977,7 @@ unittest
         {
             assert((type == RPL_WHOISREGNICK), type.to!string);
             assert((sender.address == "irc.x2x.cc"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "wob^2"), target.nickname);
             assert((content == "wob^2"), content);
             assert((num == 307), num.to!string);
@@ -991,7 +991,7 @@ unittest
         {
             assert((type == RPL_WELCOME), type.to!string);
             assert((sender.address == "adams.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Welcome to the freenode Internet Relay Chat Network kameloso^"), content);
             assert((num == 1), num.to!string);
         }
@@ -1004,7 +1004,7 @@ unittest
         {
             assert((type == ERR_BADPING), type.to!string);
             assert((sender.address == "irc.uworld.se"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "PONG 3705964477"), content);
             assert((num == 513), num.to!string);
@@ -1018,7 +1018,7 @@ unittest
         {
             assert((type == RPL_HELPSTART), type.to!string);
             assert((sender.address == "leguin.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Help topics available to users:"), content);
             assert((aux == "index"), aux);
             assert((num == 704), num.to!string);
@@ -1032,7 +1032,7 @@ unittest
         {
             assert((type == RPL_HELPTXT), type.to!string);
             assert((sender.address == "leguin.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "ACCEPT\tADMIN\tAWAY\tCHALLENGE"), content);
             assert((aux == "index"), aux);
             assert((num == 705), num.to!string);
@@ -1046,7 +1046,7 @@ unittest
         {
             assert((type == RPL_ENDOFHELP), type.to!string);
             assert((sender.address == "leguin.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "End of /HELP.// :leguin.freenode.net 706 kameloso^ index :End of /HELP."), content);
             assert((aux == "index"), aux);
             assert((num == 706), num.to!string);
@@ -1060,7 +1060,7 @@ unittest
         {
             assert((type == ERR_BANONCHAN), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#d3d9"), channel);
             assert((content == "Cannot change nickname while banned on channel"), content);
             assert((aux == "kameloso^^"), aux);
@@ -1075,7 +1075,7 @@ unittest
         {
             assert((type == CAP), type.to!string);
             assert((sender.address == "tmi.twitch.tv"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "twitch.tv/tags twitch.tv/commands twitch.tv/membership"), content);
             assert((aux == "LS"), aux);
         }
@@ -1088,7 +1088,7 @@ unittest
         {
             assert((type == CAP), type.to!string);
             assert((sender.address == "genesis.ks.us.irchighway.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "away-notify extended-join account-notify multi-prefix sasl tls userhost-in-names"), content);
             assert((aux == "LS"), aux);
         }
@@ -1103,7 +1103,7 @@ unittest
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "en greps av hybris, sen var de bara fyra"), content);
         }
@@ -1118,7 +1118,7 @@ unittest
             {
                 assert((type == USERSTATE), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert(!content.length, content);
                 assert((channel == "#zorael"), channel);
             }
@@ -1131,7 +1131,7 @@ unittest
             {
                 assert((type == ROOMSTATE), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert(!content.length, content);
                 assert((channel == "#zorael"), channel);
             }
@@ -1144,7 +1144,7 @@ unittest
             {
                 assert((type == TWITCH_HOSTSTART), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert((channel == "#andymilonakis"), channel);
                 assert((content == "zombie_barricades"), content);
             }
@@ -1157,7 +1157,7 @@ unittest
             {
                 assert((type == USERNOTICE), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert((channel == "#drdisrespectlive"), channel);
                 assert((content == "ooooo weee, it's a meeeee, Moweee!"), content);
             }
@@ -1170,7 +1170,7 @@ unittest
             {
                 assert((type == USERNOTICE), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert((channel == "#lirik"), channel);
             }
         }
@@ -1182,7 +1182,7 @@ unittest
             {
                 assert((type == CLEARCHAT), type.to!string);
                 assert((sender.address == "tmi.twitch.tv"), sender.address);
-                assert(sender.special, sender.special.to!string);
+                assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
                 assert((channel == "#channel"), channel);
                 assert((target.nickname == "user"), target.nickname);
             }
@@ -1196,7 +1196,7 @@ unittest
         {
             assert((type == RPL_LOGGEDIN), type.to!string);
             assert((sender.address == "weber.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((target.ident == "NaN"), target.ident);
             assert((target.address == "194.117.188.126"), target.address);
@@ -1216,7 +1216,7 @@ unittest
             assert((sender.ident == "~quassel"), sender.ident);
             assert((sender.address == "ip5b435007.dynamic.kabel-deutschland.de"), sender.address);
             assert((sender.account == "ski7777"), sender.account);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((content == "ski7777"), content);
         }
     }
@@ -1228,7 +1228,7 @@ unittest
         {
             assert((type == RPL_VERSION), type.to!string);
             assert((sender.address == "irc.rizon.no"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "plexus-4(hybrid-8.1.20)(20170821_0-607). irc.rizon.no"), content);
             assert((aux == "TS6ow"), aux);
             assert((num == 351), num.to!string);
@@ -1244,7 +1244,7 @@ unittest
         {
             assert((type == RPL_HOSTHIDDEN), type.to!string);
             assert((sender.address == "TAL.DE.EU.GameSurge.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4"), content);
             assert((aux == "is now your hidden host"), aux);
             assert((num == 396), num.to!string);
@@ -1258,7 +1258,7 @@ unittest
         {
             assert((type == RPL_YOURID), type.to!string);
             assert((sender.address == "caliburn.pa.us.irchighway.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "your unique ID"), content);
             assert((aux == "132AAMJT5"), aux);
             assert((num == 42), num.to!string);
@@ -1272,7 +1272,7 @@ unittest
         {
             assert((type == ERR_HELPNOTFOUND), type.to!string);
             assert((sender.address == "irc.rizon.no"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "Help not found"), content);
             assert((aux == "502"), aux);
             assert((num == 524), num.to!string);
@@ -1286,7 +1286,7 @@ unittest
         {
             assert((type == ERR_UNKNOWNMODE), type.to!string);
             assert((sender.address == "irc.rizon.no"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "is unknown mode char to me"), content);
             assert((aux == "X"), aux);
             assert((num == 472), num.to!string);
@@ -1300,7 +1300,7 @@ unittest
         {
             assert((type == ERR_YOUREBANNEDCREEP), type.to!string);
             assert((sender.address == "miranda.chathispano.com"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100)."), content);
             assert((aux == "1511086908"), aux);
             assert((num == 465), num.to!string);
@@ -1314,7 +1314,7 @@ unittest
         {
             assert((type == RPL_LIST), type.to!string);
             assert((sender.address == "irc.RomaniaChat.eu"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#GameOfThrones"), channel);
             assert((content == "[+ntTGfB]"), content);
             assert((aux == "1"), aux);
@@ -1329,7 +1329,7 @@ unittest
         {
             assert((type == RPL_LIST), type.to!string);
             assert((sender.address == "irc.RomaniaChat.eu"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#radioclick"), channel);
             assert((content == "[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro"), content);
             assert((aux == "63"), aux);
@@ -1344,7 +1344,7 @@ unittest
         {
             assert((type == RPL_LISTSTART), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((num == 321), num.to!string);
         }
     }
@@ -1357,7 +1357,7 @@ unittest
         {
             assert((type == ERR_LINKCHANNEL), type.to!string);
             assert((sender.address == "wolfe.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#linux"), channel);
             assert((content == "##linux"), content);
             assert((num == 470), num.to!string);
@@ -1371,7 +1371,7 @@ unittest
         {
             assert((type == RPL_WHOISMODES), type.to!string);
             assert((sender.address == "cadance.canternet.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "+ix"), aux);
             assert((num == 379), num.to!string);
         }
@@ -1384,7 +1384,7 @@ unittest
         {
             assert((type == RPL_WHOWASUSER), type.to!string);
             assert((sender.address == "irc.uworld.se"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "~NaN C2802314.E23AD7D8.E9841504.IP *"), content);
             assert((aux == "kameloso!"), aux);
             assert((num == 314), num.to!string);
@@ -1399,7 +1399,7 @@ unittest
         {
             assert((type == ERR_USERONCHANNEL), type.to!string);
             assert((sender.address == "orwell.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "is already on channel"), content);
             assert((num == 443), num.to!string);
@@ -1413,7 +1413,7 @@ unittest
         {
             assert((type == RPL_UMODEIS), type.to!string);
             assert((sender.address == "port80b.se.quakenet.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "+i"), aux);
             assert((num == 221), num.to!string);
         }
@@ -1428,7 +1428,7 @@ unittest
             assert((sender.nickname == "ChanServ"), sender.nickname);
             assert((sender.ident == "ChanServ"), sender.ident);
             assert((sender.address == "services."), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "[##linux-overflohomeOnlyw] Make sure your nick is registered, then please try again to join ##linux."), content);
         }
     }
@@ -1442,7 +1442,7 @@ unittest
             assert((sender.nickname == "ChanServ"), sender.nickname);
             assert((sender.ident == "ChanServ"), sender.ident);
             assert((sender.address == "services."), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "[#ubuntu] Welcome to #ubuntu! Please read the channel topic."), content);
         }
     }
@@ -1454,7 +1454,7 @@ unittest
         {
             assert((type == NOTICE), type.to!string);
             assert((sender.address == "tolkien.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "*** Checking Ident"), content);
         }
     }
@@ -1468,7 +1468,7 @@ unittest
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "test test content"), content);
         }
@@ -1483,7 +1483,7 @@ unittest
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "kameloso^"), target.nickname);
             assert((content == "test test content"), content);
         }
@@ -1498,7 +1498,7 @@ unittest
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "kameloso^"), content);
             assert((aux == "+v"), aux);
@@ -1515,7 +1515,7 @@ unittest
             assert((sender.nickname == "zorael"), sender.nickname);
             assert((sender.ident == "~NaN"), sender.ident);
             assert((sender.address == "ns3363704.ip-94-23-253.eu"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((aux == "+i"), aux);
         }
@@ -1528,11 +1528,13 @@ unittest
         {
             assert((type == MODE), type.to!string);
             assert((sender.address == "niven.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#sklabjoier"), channel);
             assert((aux == "+ns"), aux);
         }
     }
+
+    parser.bot.nickname = "kameloso^";
 
     {
         immutable event = parser.toIRCEvent(":kameloso^ MODE kameloso^ :+i");
@@ -1541,7 +1543,7 @@ unittest
         {
             assert((type == SELFMODE), type.to!string);
             assert((sender.nickname == "kameloso^"), sender.nickname);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "+i"), aux);
         }
     }
@@ -1553,7 +1555,7 @@ unittest
         {
             assert((type == RPL_ISUPPORT), type.to!string);
             assert((sender.address == "cherryh.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "NICKLEN=16 CHANNELLEN=50 TOPICLEN=390 DEAF=D FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,ajrxz CLIENTVER=3.0 CPRIVMSG CNOTICE SAFELIST"), content);
             assert((num == 5), num.to!string);
         }
@@ -1566,7 +1568,7 @@ unittest
         {
             assert((type == ERR_YOUREBANNEDCREEP), type.to!string);
             assert((sender.address == "server.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "You are banned from this server- Your irc client seems broken and is flooding lots of channels. Banned for 240 min, if in error, please contact kline@freenode.net. (2017/12/1 21.08)"), content);
             assert((num == 465), num.to!string);
         }
@@ -1581,7 +1583,7 @@ unittest
             assert((sender.nickname == "ASDphBa|zzZ"), sender.nickname);
             assert((sender.ident == "~ASDphBa"), sender.ident);
             assert((sender.address == "a.asdphs-tech.com"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#d"), channel);
             assert((content == "does anyone know how the unittest stuff is working with cmake-d?"), content);
         }
@@ -1594,7 +1596,7 @@ unittest
         {
             assert((type == RPL_CHANNELMODEIS), type.to!string);
             assert((sender.address == "kornbluth.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((aux == "+ns"), aux);
             assert((num == 324), num.to!string);
@@ -1608,7 +1610,7 @@ unittest
         {
             assert((type == RPL_CREATIONTIME), type.to!string);
             assert((sender.address == "kornbluth.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((aux == "1512995737"), aux);
             assert((num == 329), num.to!string);
@@ -1623,7 +1625,7 @@ unittest
         {
             assert((type == RPL_BANLIST), type.to!string);
             assert((sender.address == "kornbluth.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), "channel is " ~ channel);
             assert((content == "harbl!harbl@snarbl.com"), content);
             assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1513899521"), aux);
@@ -1638,7 +1640,7 @@ unittest
         {
             assert((type == ENDOFSPAMFILTERLIST), type.to!string);
             assert((sender.address == "lamia.ca.SpotChat.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             //assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "End of channel spamfilter list"), content);
@@ -1653,7 +1655,7 @@ unittest
         {
             assert((type == RPL_UMODEIS), type.to!string);
             assert((sender.address == "lamia.ca.SpotChat.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((aux == "+ix"), aux);
             assert((num == 221), num.to!string);
         }
@@ -1668,7 +1670,7 @@ unittest
             assert((sender.nickname == "Halcy0n"), sender.nickname);
             assert((sender.ident == "~Halcy0n"), sender.ident);
             assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
             assert((content == "I'm busy"), content);
         }
     }
@@ -1682,7 +1684,7 @@ unittest
             assert((sender.nickname == "Halcy0n"), sender.nickname);
             assert((sender.ident == "~Halcy0n"), sender.ident);
             assert((sender.address == "SpotChat-rauo6p.dyn.suddenlink.net"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
         }
     }
 
@@ -1693,7 +1695,7 @@ unittest
         {
             assert((type == RPL_INVITED), type.to!string);
             assert((sender.address == "irc.oftc.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             //assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "End of Channel Quiet List"), content);
@@ -1708,7 +1710,7 @@ unittest
         {
             assert((type == RPL_CHANNELMODEIS), type.to!string);
             assert((sender.address == "niven.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "##linux"), channel);
             assert((content == "##linux-overflow"), content);
             assert((aux == "+CLPcnprtf"), aux);
@@ -1723,7 +1725,7 @@ unittest
         {
             assert((type == RPL_YOURID), type.to!string);
             assert((sender.address == "caliburn.pa.us.irchighway.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((content == "your unique ID"), content);
             assert((aux == "132AAMJT5"), aux);
             assert((num == 42), num.to!string);
@@ -1737,7 +1739,7 @@ unittest
         {
             assert((type == RPL_WHOISACTUALLY), type.to!string);
             assert((sender.address == "kinetic.oftc.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((target.nickname == "wh00nix"), target.nickname);
             assert((target.address == "255.255.255.255"), target.address);
             assert((content == "actually using host"), content);
@@ -1753,7 +1755,7 @@ unittest
         {
             assert((type == RPL_INVITELIST), type.to!string);
             assert((sender.address == "niven.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "asdf!fdas@asdf.net"), content);
             assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405089"), aux);
@@ -1768,7 +1770,7 @@ unittest
         {
             assert((type == RPL_QUIETLIST), type.to!string);
             assert((sender.address == "niven.freenode.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "qqqq!*@asdf.net"), content);
             assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405101"), aux);
@@ -1785,7 +1787,7 @@ unittest
             assert((sender.nickname == "Miyabro"), sender.nickname);
             assert((sender.ident == "~Miyabro"), sender.ident);
             assert((sender.address == "Miyako.is.mai.waifu"), sender.address);
-            assert(!sender.special, sender.special.to!string);
+            assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
         }
     }
 
@@ -1831,7 +1833,7 @@ unittest
         {
             assert((type == RPL_QUIETLIST), type.to!string);
             assert((sender.address == "irc.oftc.net"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#garderoben"), channel);
             assert((content == "harbl!snarbl@*"), content);
             assert((aux == "kameloso!~NaN@194.117.188.126 1515418362"), aux);
@@ -1852,7 +1854,7 @@ unittest
         {
             assert((type == ENDOFEXEMPTOPSLIST), type.to!string);
             assert((sender.address == "cadance.canternet.org"), sender.address);
-            assert(sender.special, sender.special.to!string);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
             assert((channel == "#flerrp"), channel);
             assert((content == "End of channel exemptchanops list"), content);
              assert((num == 953), num.to!string);

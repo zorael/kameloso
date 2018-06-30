@@ -707,7 +707,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             if (alias_.length)
             {
                 sink.put(alias_);
-                if (special) sink.put('*');
+                if (class_ == IRCUser.Class.special) sink.put('*');
 
                 if (!alias_.asLowerCase.equal(nickname))
                 {
@@ -718,7 +718,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 // Can be no-nick special: [PING] *2716423853
                 sink.put(nickname);
-                if (special) sink.put('*');
+                if (class_ == IRCUser.Class.special) sink.put('*');
             }
 
             if (badge.length)
@@ -742,7 +742,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 put(sink, target.alias_, ')');
 
-                if (special) sink.put('*');
+                if (target.class_ == IRCUser.Class.special) sink.put('*');
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
@@ -752,7 +752,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             else
             {
                 put(sink, target.nickname, ')');
-                if (special) sink.put('*');
+                if (target.class_ == IRCUser.Class.special) sink.put('*');
             }
 
             if (target.badge.length)
@@ -960,7 +960,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     sink.put(alias_);
 
-                    if (special)
+                    if (class_ == IRCUser.Class.special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
@@ -981,7 +981,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     // Can be no-nick special: [PING] *2716423853
                     sink.put(nickname);
 
-                    if (special)
+                    if (class_ == IRCUser.Class.special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
@@ -1017,7 +1017,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     sink.colour(default_);
                     sink.put(')');
 
-                    if (target.special)
+                    if (target.class_ == IRCUser.Class.special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');
@@ -1039,7 +1039,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     sink.colour(default_);
                     sink.put(')');
 
-                    if (target.special)
+                    if (target.class_ == IRCUser.Class.special)
                     {
                         sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                         sink.put('*');

@@ -129,7 +129,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         }
     }
 
-    event.sender.special = true;
+    event.sender.class_ = IRCUser.Class.special;
 }
 
 unittest
@@ -212,7 +212,7 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pur
         }
     }
 
-    event.sender.special = parser.isSpecial(event);
+    if (parser.isSpecial(event)) event.sender.class_ = IRCUser.Class.special;
 }
 
 unittest
@@ -231,7 +231,7 @@ unittest
         assert((nickname == "zorael"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "some.address.org"), address);
-        assert(!special);
+        assert((class_ != IRCUser.Class.special), class_.to!string);
     }
 
     IRCEvent e2;
@@ -244,7 +244,7 @@ unittest
         assert((nickname == "NickServ"), nickname);
         assert((ident == "NickServ"), ident);
         assert((address == "services."), address);
-        assert(special);
+        assert((class_ == IRCUser.Class.special), class_.to!string);
     }
 
     IRCEvent e3;
@@ -257,7 +257,7 @@ unittest
         assert((nickname == "kameloso^^"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
-        assert(!special);
+        assert((class_ != IRCUser.Class.special), class_.to!string);
     }
 
     IRCEvent e4;
@@ -271,7 +271,7 @@ unittest
         assert((nickname == "Q"), nickname);
         assert((ident == "TheQBot"), ident);
         assert((address == "CServe.quakenet.org"), address);
-        assert(special);
+        assert((class_ == IRCUser.Class.special), class_.to!string);
     }
 }
 
@@ -1488,7 +1488,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     with (parser)
     {
-        event.sender.special = parser.isSpecial(event);
+        if (parser.isSpecial(event)) event.sender.class_ = IRCUser.Class.special;
 
         if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
@@ -1500,7 +1500,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
         {
-            //event.sender.special = true; // by definition
+            //event.sender.class_ = IRCUser.Class.special; // by definition
 
             if (event.content.toLower.has("/msg nickserv identify"))
             {

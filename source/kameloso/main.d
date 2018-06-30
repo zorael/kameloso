@@ -268,7 +268,7 @@ Flag!"quit" checkMessages(ref Client client)
             break;
         }
 
-        if (event.target.special)
+        if (event.target.class_ == IRCUser.Class.special)
         {
             quietline(ThreadMessage.Quietline(), line);
         }
