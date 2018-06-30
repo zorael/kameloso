@@ -111,7 +111,9 @@ public:
         import core.thread : Thread;
         import std.socket : getAddress, SocketException;
 
-        enum resolveAttempts = 20;
+        enum resolveAttempts = 15;
+        uint incrementedDelay = Timeout.resolve;
+        enum incrementMultiplier = 1.5;
 
         foreach (immutable i; 0..resolveAttempts)
         {
@@ -131,8 +133,9 @@ public:
                     // Assume net down, wait and try again
                     logger.warning("Socket exception: ", e.msg);
                     logger.logf("Network down? Retrying in %d seconds (attempt %d)",
-                        Timeout.resolve, i+1);
-                    interruptibleSleep(Timeout.resolve.seconds, abort);
+                        incrementedDelay, i+1);
+                    interruptibleSleep(incrementedDelay.seconds, abort);
+                    incrementedDelay = cast(uint)(incrementedDelay * incrementMultiplier);
                     continue;
 
                 default:
