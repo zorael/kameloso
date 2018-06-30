@@ -1412,3 +1412,79 @@ unittest
         assert(!decoded.length, decoded);
     }
 }
+
+
+// zeroMembers
+/++
+ +  Zeroes out members of a passed struct that only contain the value of the
+ +  passed `emptyToken`. If a string then its contents are thus, if an array
+ +  with only one element then if that is thus.
+ +
+ +  Params:
+ +      emptyToken = What string to look for when zeroing out members.
+ +      thing = Reference to a struct whose members to iterate over, zeroing.
+ +/
+void zeroMembers(string emptyToken = "-", Thing)(ref Thing thing)
+if (is(Thing == struct))
+{
+    import std.traits : isArray, isSomeString;
+    import std.stdio;
+
+    foreach (immutable i, ref member; thing.tupleof)
+    {
+        alias T = typeof(member);
+        enum memberstring = __traits(identifier, thing.tupleof[i]);
+
+        static if (is(T == struct))
+        {
+            zeroMembers!emptyToken(member);
+        }
+        else static if (isSomeString!T)
+        {
+            if (member == emptyToken)
+            {
+                member = string.init;
+            }
+        }
+        else static if (isArray!T)
+        {
+            if ((member.length == 1) && (member[0] == emptyToken))
+            {
+                member.length = 0;
+            }
+        }
+    }
+}
+
+///
+unittest
+{
+    struct Bar
+    {
+        string s = "content";
+    }
+
+    struct Foo
+    {
+        Bar b;
+        string s = "more content";
+    }
+
+    Foo foo1, foo2;
+    zeroMembers(foo1);
+    assert(foo1 == foo2);
+
+    foo2.s = "-";
+    zeroMembers(foo2);
+    assert(!foo2.s.length);
+    foo2.b.s = "-";
+    zeroMembers(foo2);
+    assert(!foo2.b.s.length);
+
+    Foo foo3;
+    foo3.s = "---";
+    foo3.b.s = "---";
+    zeroMembers!"---"(foo3);
+    assert(!foo3.s.length);
+    assert(!foo3.b.s.length);
+}
