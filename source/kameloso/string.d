@@ -353,7 +353,7 @@ unittest
     assert(`'Lorem ipsum sit amet`.unsinglequoted == `'Lorem ipsum sit amet`);
     assert(`'Lorem \'`.unsinglequoted == `'Lorem \'`);
     assert("'Lorem \\'".unsinglequoted == "'Lorem \\'");
-    assert(`"\"`.unsinglequoted == `"\"`);
+    assert(`'`.unsinglequoted == `'`);
 }
 
 
