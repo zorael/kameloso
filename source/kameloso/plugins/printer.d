@@ -1575,8 +1575,26 @@ SysTime getNextMidnight(const SysTime now)
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
 
-    return SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
+    /+
+        The difference between rolling and adding is that rolling does not affect
+        larger units. For instance, rolling a SysTime one year's worth of days
+        gets the exact same SysTime.
+     +/
+
+    auto next = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
         .roll!"days"(1);
+
+    if (next.day == 1)
+    {
+        next.add!"months"(1);
+
+        if (next.month == 12)
+        {
+            next.add!"years"(1);
+        }
+    }
+
+    return next;
 }
 
 ///
@@ -1589,7 +1607,22 @@ unittest
     immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), UTC());
     immutable nextDay = getNextMidnight(christmasEve);
     immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), UTC());
-    assert(nextDay.toUnixTime == christmasDay.toUnixTime);  // 1545696000L
+    assert(nextDay.toUnixTime == christmasDay.toUnixTime);
+
+    immutable someDay = SysTime(DateTime(2018, 6, 30, 12, 27, 56), UTC());
+    immutable afterSomeDay = getNextMidnight(someDay);
+    immutable afterSomeDayToo = SysTime(DateTime(2018, 7, 1, 0, 0, 0), UTC());
+    assert(afterSomeDay == afterSomeDayToo);
+
+    immutable newyearsEve = SysTime(DateTime(2018, 12, 31, 0, 0, 0), UTC());
+    immutable newyearsDay = getNextMidnight(newyearsEve);
+    immutable alsoNewyearsDay = SysTime(DateTime(2019, 1, 1, 0, 0, 0), UTC());
+    assert(newyearsDay == alsoNewyearsDay);
+
+    immutable troubleDay = SysTime(DateTime(2018, 6, 30, 19, 14, 51), UTC());
+    immutable afterTrouble = getNextMidnight(troubleDay);
+    immutable alsoAfterTrouble = SysTime(DateTime(2018, 7, 1, 0, 0, 0), UTC());
+    assert(afterTrouble == alsoAfterTrouble);
 }
 
 
