@@ -56,6 +56,54 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
+// throttleline
+/++
+ +  Echo a line to the terminal and send it to the server.
+ +
+ +  Params:
+ +      client = Reference to the current `kameloso.common.Client`.
+ +      strings = Variadic list of strings to send.
+ +/
+void throttleline(Strings...)(ref Client client, const Strings strings)
+{
+    import core.thread : Thread;
+    import core.time : seconds, msecs;
+    import std.datetime.systime : Clock, SysTime;
+
+    if (*(client.abort)) return;
+
+    with (client.throttling)
+    {
+        immutable now = Clock.currTime;
+        if (t0 == SysTime.init) t0 = now;
+
+        double x = (now - t0).total!"msecs"/1000.0;
+        auto y = k * x + m;
+
+        if (y < 0)
+        {
+            t0 = now;
+            m = 0;
+            x = 0;
+            y = 0;
+        }
+
+        while (y >= burst)
+        {
+            x = (Clock.currTime - t0).total!"msecs"/1000.0;
+            y = k*x + m;
+            interruptibleSleep(100.msecs, *(client.abort));
+            if (*(client.abort)) return;
+        }
+
+        client.conn.sendline(strings);
+
+        m = y + increment;
+        t0 = Clock.currTime;
+    }
+}
+
+
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was
@@ -82,47 +130,7 @@ Flag!"quit" checkMessages(ref Client client)
 
     Flag!"quit" quit;
 
-    /// Echo a line to the terminal and send it to the server.
-    void throttlelineImpl(Strings...)(const Strings strings)
-    {
-        import core.thread : Thread;
-        import core.time : seconds, msecs;
-        import std.datetime.systime : Clock, SysTime;
-
-        if (*(client.abort)) return;
-
-        with (client.throttling)
-        {
-            immutable now = Clock.currTime;
-            if (t0 == SysTime.init) t0 = now;
-
-            double x = (now - t0).total!"msecs"/1000.0;
-            auto y = k * x + m;
-
-            if (y < 0)
-            {
-                t0 = now;
-                m = 0;
-                x = 0;
-                y = 0;
-            }
-
-            while (y >= burst)
-            {
-                x = (Clock.currTime - t0).total!"msecs"/1000.0;
-                y = k*x + m;
-                interruptibleSleep(100.msecs, *(client.abort));
-                if (*(client.abort)) return;
-            }
-
-            client.conn.sendline(strings);
-
-            m = y + increment;
-            t0 = Clock.currTime;
-        }
-    }
-
-    /// Pass a throttleline message to `throttlelineImpl`.
+    /// Send a message to the server bypassing throttling.
     void immediateline(ThreadMessage.Immediateline, string line)
     {
         // FIXME: quiet?
@@ -134,19 +142,19 @@ Flag!"quit" checkMessages(ref Client client)
     void sendline(ThreadMessage.Sendline, string line)
     {
         logger.trace("--> ", line);
-        throttlelineImpl(line);
+        client.throttleline(line);
     }
 
     /// Send a line to the server without echoing it.
     void quietline(ThreadMessage.Quietline, string line)
     {
-        throttlelineImpl(line);
+        client.throttleline(line);
     }
 
     /// Respond to `PING` with `PONG` to the supplied text as target.
     void pong(ThreadMessage.Pong, string target)
     {
-        throttlelineImpl("PONG :", target);
+        client.throttleline("PONG :", target);
     }
 
     /// Ask plugins to reload.
@@ -665,7 +673,7 @@ void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibe
  +
  +  Params:
  +      client = Reference to the current `kameloso.common.Client`.
- +      reqs = Refernce to an associative array of `WHOISRequest`s.
+ +      reqs = Reference to an associative array of `WHOISRequest`s.
  +/
 void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 {
@@ -686,7 +694,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
         if (!then || ((now - *then) > Timeout.whois))
         {
             logger.trace("--> WHOIS ", key);
-            client.conn.sendline("WHOIS ", key);
+            client.throttleline("WHOIS ", key);
             client.whoisCalls[key] = Clock.currTime.toUnixTime;
         }
         else
