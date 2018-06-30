@@ -77,8 +77,6 @@ final class KamelosoLogger : Logger
     {
         import std.datetime : DateTime;
 
-        sink.put(brightTerminal);
-
         version(Colours)
         {
             if (!monochrome)
