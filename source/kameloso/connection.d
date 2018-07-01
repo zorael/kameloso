@@ -131,17 +131,20 @@ public:
                 case "getaddrinfo error: Name or service not known":
                 case "getaddrinfo error: Temporary failure in name resolution":
                     // Assume net down, wait and try again
-                    logger.warning("Socket exception: ", e.msg);
-                    logger.logf("Network down? Retrying in %d seconds (attempt %d)",
-                        incrementedDelay, i+1);
-                    interruptibleSleep(incrementedDelay.seconds, abort);
-                    incrementedDelay = cast(uint)(incrementedDelay * incrementMultiplier);
-                    continue;
+                    logger.warning(e.msg);
+
+                    if (i+1 < resolveAttempts)
+                    {
+                        logger.log("Network down? Retrying in ", incrementedDelay.seconds);
+                        interruptibleSleep(incrementedDelay.seconds, abort);
+                        incrementedDelay = cast(uint)(incrementedDelay * incrementMultiplier);
+                        continue;
+                    }
+                    break;
 
                 default:
                     logger.error(e.msg);
-                    logger.log("Could not resolve address to IPs. " ~
-                        "Verify your server address.");
+                    logger.log("Could not resolve address to IPs. Verify your server address.");
                     return false;
                 }
             }
