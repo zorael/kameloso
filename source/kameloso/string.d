@@ -1240,7 +1240,8 @@ if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
 {
     static if (is(C : T)) if (haystack == needle) return true;
 
-    static if (decode || is(T : dstring) || is(T : wstring))
+    static if (decode || is(T : dstring) || is(T : wstring) ||
+        is(C : ElementType!T) || is(C : ElementEncodingType!T))
     {
         import std.string : indexOf;
         // dstring and wstring only work with indexOf, not countUntil
