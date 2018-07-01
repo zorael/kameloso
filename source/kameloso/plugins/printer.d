@@ -16,6 +16,7 @@ module kameloso.plugins.printer;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
+import kameloso.bash : BashForeground;
 
 import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
@@ -1521,6 +1522,123 @@ unittest
     event.content = line1;
     event.mapEffects();
     assert((event.content == line2), event.content);
+}
+
+// highlightTwitchEmotes
+/++
+ +  Highlights Twitch emotes in the chat by tinting them a different colour.
+ +
+ +  Params:
+ +      line = Content line whose containing emotes should be highlit.
+ +      sink = Output range to put the results into.
+ +      emotes = The list of emotes and their positions as divined from the
+ +          IRCv3 tags of an event.
+ +      pre = Bash foreground tint to colour the emotes with.
+ +      post = Bash foreground tint to reset to after colouring an emote.
+ +/
+version(TwitchSupport)
+void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
+    const string emotes, const BashForeground pre, const BashForeground post)
+{
+    import kameloso.bash : colour;
+    import std.algorithm.iteration : splitter;
+    import std.algorithm.sorting : sort;
+    import std.conv : to;
+    import std.string : indexOf;
+
+    struct Highlight
+    {
+        size_t start;
+        size_t end;
+    }
+
+    // max encountered emotes so far: 35
+    // Severely pathological let's-crash-the-bot case: max possible ~161 emotes
+    // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
+    // Highlight[162].sizeof == 2592, manageable stack size.
+    enum maxHighlights = 162;
+
+    Highlight[maxHighlights] highlights;
+
+    size_t numHighlights;
+    size_t pos;
+
+    foreach (emote; emotes.splitter("/"))
+    {
+        immutable colonPos = emote.indexOf(':');
+        emote = emote[colonPos+1..$];  // mutable...
+
+        foreach (location; emote.splitter(","))
+        {
+            if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
+
+            immutable dashPos = location.indexOf('-');
+            immutable start = location[0..dashPos].to!size_t;
+            immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
+
+            highlights[numHighlights++] = Highlight(start, end);
+        }
+    }
+
+    highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
+
+    foreach (immutable i; 0..numHighlights)
+    {
+        immutable start = highlights[i].start;
+        immutable end = highlights[i].end;
+
+        sink.put(line[pos..start]);
+        sink.colour(pre);
+        sink.put(line[start..end]);
+        sink.colour(post);
+
+        pos = end;
+    }
+}
+
+///
+version(TwitchSupport)
+version(Colours)
+unittest
+{
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    {
+        immutable emotes = "212612:14-22/75828:24-29";
+        immutable line = "Moody the god pownyFine pownyL";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "25:41-45";
+        immutable line = "whoever plays nintendo switch whisper me Kappa";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "877671:8-17,19-28,30-39";
+        immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "822112:0-6,8-14,16-22";
+        immutable line = "FortOne FortOne FortOne";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m \033[97mFortOne\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "141844:17-24,26-33,35-42/141073:9-15";
+        immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
+    }
 }
 
 
