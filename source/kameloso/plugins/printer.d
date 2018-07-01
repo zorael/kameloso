@@ -1072,6 +1072,38 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 sink.colour(bright ? DefaultBright.content : DefaultDark.content);
 
+                version(TwitchSupport)
+                version(Colours)
+                {
+                    if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
+                        ((event.type == IRCEvent.Type.CHAN) ||
+                        (event.type == IRCEvent.Type.EMOTE)) && aux.length)
+                    {
+                        import std.array : Appender;
+
+                        Appender!string highlightSink;
+                        highlightSink.reserve(content.length + 50);  // guesstimate
+
+                        immutable BashForeground pre = bright ? DefaultBright.aux : DefaultDark.aux;
+                        immutable BashForeground post = bright ? DefaultBright.content : DefaultDark.content;
+
+                        if (event.type == IRCEvent.Type.CHAN)
+                        {
+                            content.highlightTwitchEmotes(highlightSink, aux, pre, post);
+                        }
+                        else if (event.type == IRCEvent.Type.EMOTE)
+                        {
+                            // Just highlight the whole line
+                            highlightSink.colour(pre);
+                            highlightSink.put(content);
+                            highlightSink.colour(post);
+                        }
+
+                        content = highlightSink.data;  // mutable...
+                        aux = string.init;
+                    }
+                }
+
                 if (sender.isServer || nickname.length)
                 {
                     import kameloso.irc : containsNickname;
