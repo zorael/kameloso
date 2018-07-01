@@ -385,6 +385,25 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.count = value.to!int;
             break;
 
+        case "emotes":
+            /++ Information to replace text in the message with emote images.
+                This can be empty. Syntax:
+
+                <emote ID>:<first index>-<last index>,
+                <another first index>-<another last index>/
+                <another emote ID>:<first index>-<last index>...
+
+                * emote ID – The number to use in this URL:
+                      http://static-cdn.jtvnw.net/emoticons/v1/:<emote ID>/:<size>
+                  (size is 1.0, 2.0 or 3.0.)
+                * first index, last index – Character indexes. \001ACTION does
+                  not count. Indexing starts from the first character that is
+                  part of the user’s actual message. See the example (normal
+                  message) below.
+            +/
+            event.aux = value;
+            break;
+
         case "msg-param-asin":
             // PURCHASE
             //msg-param-asin = 'B07DBTZZTH'
@@ -410,22 +429,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "r9k":
             // R9K mode. If enabled, messages with more than 9 characters must
             // be unique. Valid values: 0 (disabled) or 1 (enabled).
-        case "emotes":
-            /++ Information to replace text in the message with emote images.
-                This can be empty. Syntax:
-
-                <emote ID>:<first index>-<last index>,
-                <another first index>-<another last index>/
-                <another emote ID>:<first index>-<last index>...
-
-                * emote ID – The number to use in this URL:
-                      http://static-cdn.jtvnw.net/emoticons/v1/:<emote ID>/:<size>
-                  (size is 1.0, 2.0 or 3.0.)
-                * first index, last index – Character indexes. \001ACTION does
-                  not count. Indexing starts from the first character that is
-                  part of the user’s actual message. See the example (normal
-                  message) below.
-            +/
         case "emote-sets":
             // A comma-separated list of emotes, belonging to one or more emote
             // sets. This always contains at least 0. Get Chat Emoticons by Set
