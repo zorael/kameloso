@@ -798,7 +798,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             put(sink, " !", errors, '!');
         }
 
-        if (count > 0) sink.formattedWrite(" {%d}", count);
+        if (count != 0) sink.formattedWrite(" {%d}", count);
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
@@ -1100,7 +1100,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 put(sink, " (", aux, ')');
             }
 
-            if (count > 0)
+            if (count != 0)
             {
                 sink.colour(bright ? DefaultBright.count : DefaultDark.count);
                 sink.formattedWrite(" {%d}", count);
