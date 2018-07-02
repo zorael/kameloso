@@ -1632,8 +1632,6 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
     import std.algorithm.iteration : splitter;
     import std.algorithm.sorting : sort;
     import std.conv : to;
-    import std.string : indexOf;
-    import std.stdio;
 
     struct Highlight
     {
@@ -1651,72 +1649,47 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     size_t numHighlights;
     size_t pos;
-    ptrdiff_t offset;
 
     foreach (emote; emotes.splitter("/"))
     {
-        immutable colonPos = emote.indexOf(':');
-        emote = emote[colonPos+1..$];  // mutable...
+        import kameloso.string : nom;
+        emote.nom(':');
 
         foreach (location; emote.splitter(","))
         {
+            import std.string : indexOf;
+
             if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
 
             immutable dashPos = location.indexOf('-');
             immutable start = location[0..dashPos].to!size_t;
             immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
 
-            import kameloso.string : has;
-            if (line[start..end].has(' '))
-            {
-                import std.string : representation;
-
-                // Unicode offset the positions
-                foreach(immutable i, c; line[end..$].representation)
-                {
-                    ++offset;
-                    if (c == ' ')
-                    {
-                        //writeln("found space at ", i);
-                        break;
-                    }
-                }
-
-                //immutable spacePos = end-line[end..$].indexOf(' ');
-                //if (spacePos != -1) offset += spacePos;
-            }
-
-            highlights[numHighlights++] = Highlight(start+offset, end+offset);
+            highlights[numHighlights++] = Highlight(start, end);
         }
     }
 
     highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
+
+    // We need a dstring since we're slicing something that isn't neccessarily ASCII
+    // Without this highlights become offset a few characters depnding on the text
+    immutable dline = line.to!dstring;
 
     foreach (immutable i; 0..numHighlights)
     {
         immutable start = highlights[i].start;
         immutable end = highlights[i].end;
 
-        sink.put(line[pos..start]);
+        sink.put(dline[pos..start]);
         sink.colour(pre);
-        sink.put(line[start..end]);
+        sink.put(dline[start..end]);
         sink.colour(post);
 
         pos = end;
     }
 
     // Add the remaining tail from after the last emote
-    sink.put(line[pos..$]);
-
-    if ((offset > 0) && (numHighlights > 1))
-    {
-        writeln();
-        writeln("---------------------");
-        writeln("emotes:", emotes);
-        writeln("line:", line);
-        writeln("offset:", offset);
-        writeln("---------------------");
-    }
+    sink.put(dline[pos..$]);
 }
 
 ///
@@ -1782,6 +1755,14 @@ unittest
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "425618:6-8,16-18/1:20-21";
+        immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
+            "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
     }
 }
 
