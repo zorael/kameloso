@@ -1194,6 +1194,10 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 }
             }
 
+            // Reset the background to ward off bad backgrounds bleeding out
+            import kameloso.bash : BashBackground;
+            sink.colour(BashBackground.default_);
+
             if (aux.length)
             {
                 sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
