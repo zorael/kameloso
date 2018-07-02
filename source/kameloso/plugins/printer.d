@@ -1089,7 +1089,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
                         ((event.type == IRCEvent.Type.CHAN) ||
                         (event.type == IRCEvent.Type.EMOTE) ||
-                        (event.type == IRCEvent.Type.TWITCH_CHEER)) && aux.length)
+                        (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+                        (event.type == IRCEvent.Type.SELFCHAN) ||
+                        (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
                     {
                         import std.array : Appender;
 
@@ -1121,7 +1123,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                                 content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
                             }
                         }
-                        else if (event.type == IRCEvent.Type.CHAN)
+                        else
                         {
                             immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
                             immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
