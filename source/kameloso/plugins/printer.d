@@ -829,9 +829,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 channel = yellow,
                 content = default_,
                 aux     = white,
-                count  = green,
+                count   = green,
                 num     = darkgrey,
                 badge   = white,
+                emote   = cyan,
+                highlight = white,
             }
 
             enum DefaultBright : BashForeground
@@ -845,9 +847,11 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 channel = yellow,
                 content = default_,
                 aux     = black,
-                count  = lightgreen,
+                count   = lightgreen,
                 num     = lightgrey,
                 badge   = black,
+                emote   = lightcyan,
+                highlight = black,
             }
 
             immutable bright = settings.brightTerminal;
