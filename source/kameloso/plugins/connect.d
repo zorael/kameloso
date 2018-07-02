@@ -260,13 +260,6 @@ void tryAuth(ConnectService service)
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
                 bot.authentication = Progress.finished;
-
-                if (!service.joinedChannels)
-                {
-                    logger.log("Joining channels ...");
-                    service.joinChannels();
-                    service.joinedChannels = true;
-                }
                 return;
             }
 
