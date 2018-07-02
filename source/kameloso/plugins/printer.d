@@ -1319,7 +1319,7 @@ void stripEffects(ref IRCEvent event)
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-string mapColours(const string line, uint resetCode)
+string mapColours(const string line, const uint resetCode)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
@@ -1434,13 +1434,13 @@ unittest
 
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
-        immutable mapped = mapColours(line);
-        assert((mapped == "This is \033[91mall red!\033[0m while this is not.\033[0m"), mapped);
+        immutable mapped = mapColours(line, 0);
+        assert((mapped == "This is \033[91mall red!\033[0m while this is not."), mapped);
     }
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-        immutable mapped = mapColours(line);
-        assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[0m"), mapped);
+        immutable mapped = mapColours(line, 0);
+        assert((mapped == "This time there's\033[35m no ending token, only magenta."), mapped);
     }
 }
 
