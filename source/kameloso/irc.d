@@ -2760,8 +2760,7 @@ bool containsNickname(const string haystack, const string needle) pure
     immutable pos = haystack.indexOf(needle);
     if (pos == -1) return false;
 
-    if ((pos > 0) && haystack[pos-1].isValidNicknameCharacter &&
-        (haystack[pos-1] != 'm')) return false;  // Workaround for a coloured nick
+    if ((pos > 0) && (haystack[pos-1].isValidNicknameCharacter)) return false;
 
     immutable end = pos + needle.length;
 
@@ -2786,7 +2785,6 @@ unittest
     assert(!"kameloso^".containsNickname("kameloso"));
     assert(!string.init.containsNickname("kameloso"));
     assert(!"kameloso".containsNickname(""));  // For now let this be false.
-    assert("\033[97mkameloso\033[36m".containsNickname("kameloso"));
 }
 
 
