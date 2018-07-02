@@ -1078,14 +1078,15 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
                         ((event.type == IRCEvent.Type.CHAN) ||
-                        (event.type == IRCEvent.Type.EMOTE)) && aux.length)
+                        (event.type == IRCEvent.Type.EMOTE) ||
+                        (event.type == IRCEvent.Type.TWITCH_CHEER)) && aux.length)
                     {
                         import std.array : Appender;
 
                         Appender!string highlightSink;
                         highlightSink.reserve(content.length + 60);  // mostly +10
 
-                        if (event.type == IRCEvent.Type.EMOTE)
+                        if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                         {
                             import kameloso.string : has;
 
