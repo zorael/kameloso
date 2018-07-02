@@ -1744,6 +1744,13 @@ unittest
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == highlitLine), sink.data);
     }
+    /*{
+        sink.clear();
+        immutable emotes = "25:32-36";
+        immutable line = "@kiwiskool but you’re a sub too Kappa";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
+    }*/
 }
 
 
