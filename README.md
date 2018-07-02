@@ -58,8 +58,9 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 * experimental `automodes` plugin, please test.
 * the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
-* `IRCEvent` now has a new field; `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of listing numerics.
+* `IRCEvent` now has a new field; `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of specifying numerics.
 * `--asserts` vastly improved.
+* Twitch emote highlighting; does not have 100% accuracy as Twitch offsets the emote locations unpredictably when there are international or unicode characters in the message. We would need something that looked behind the marker, walked until it found a space and recorded the offset.
 
 # Getting started
 
