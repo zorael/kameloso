@@ -867,6 +867,10 @@ int main(string[] args)
             return 1;
         }
 
+        // Save the original nickname *once*, outside the connection loop.
+        // It will change later and knowing this is useful when authenticating
+        bot.origNickname = bot.nickname;
+
         // Initialise plugins outside the loop once, for the error messages
         string[][string] invalidEntries = initPlugins(customSettings);
 
@@ -923,10 +927,6 @@ int main(string[] args)
                     "Use --writeconfig to update your configuration file.");
             }
         }
-
-        // Save the original nickname *once*, outside the connection loop.
-        // It will change later and knowing this is useful when authenticating
-        bot.origNickname = bot.nickname;
 
         // Save a backup snapshot of the bot, for restoring upon reconnections
         IRCBot backupBot = bot;
