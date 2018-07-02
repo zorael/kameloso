@@ -1638,7 +1638,7 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
         size_t end;
     }
 
-    // max encountered emotes so far: 35
+    // max encountered emotes so far: 46
     // Severely pathological let's-crash-the-bot case: max possible ~161 emotes
     // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
     // Highlight[162].sizeof == 2592, manageable stack size.
@@ -1680,6 +1680,9 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
         pos = end;
     }
+
+    // Add the remaining tail from after the last emote
+    sink.put(line[pos..$]);
 }
 
 ///
@@ -1724,6 +1727,20 @@ unittest
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
+    }
+    {
+        sink.clear();
+        immutable emotes = "12345:81-91,93-103";
+        immutable line = "Link Amazon Prime to your Twitch account and get a " ~
+            "FREE SUBSCRIPTION every month courageHYPE courageHYPE " ~
+            "twitch.amazon.com/prime | Click subscribe now to check if a " ~
+            "free prime sub is available to use!";
+        immutable highlitLine = "Link Amazon Prime to your Twitch account and get a " ~
+            "FREE SUBSCRIPTION every month \033[97mcourageHYPE\033[39m \033[97mcourageHYPE\033[39m " ~
+            "twitch.amazon.com/prime | Click subscribe now to check if a " ~
+            "free prime sub is available to use!";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == highlitLine), sink.data);
     }
 }
 
