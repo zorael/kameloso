@@ -347,11 +347,16 @@ void onEndOfMotd(ConnectService service)
             service.joinedChannels = true;
         }
 
-        // Run commands defined in the settings
-        foreach (immutable line; service.connectSettings.sendAfterConnect)
+        if (!service.sentAfterConnect)
         {
-            import kameloso.string : stripped;
-            service.raw(line.stripped);
+            // Run commands defined in the settings
+            foreach (immutable line; service.connectSettings.sendAfterConnect)
+            {
+                import kameloso.string : stripped;
+                service.raw(line.stripped);
+            }
+
+            service.sentAfterConnect = true;
         }
     }
 }
@@ -789,6 +794,9 @@ final class ConnectService : IRCPlugin
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
+
+    /// Whether or not the bot has sent configured commands after connect.
+    bool sentAfterConnect;
 
     /// An alias to let other plugins call `.tryAuth` from outside the module.
     alias auth = .tryAuth;
