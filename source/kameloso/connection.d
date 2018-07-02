@@ -338,10 +338,10 @@ public:
 void listenFiber(Connection conn, ref bool abort)
 {
     import core.time : seconds;
-    import std.algorithm.searching : countUntil;
     import std.concurrency : yield;
     import std.datetime.systime : Clock, SysTime;
     import std.socket : Socket, lastSocketError;
+    import std.string : indexOf;
 
     ubyte[BufferSize.socketReceive*2] buffer;
     SysTime timeLastReceived = Clock.currTime;
@@ -417,14 +417,14 @@ void listenFiber(Connection conn, ref bool abort)
         pingingToTestConnection = false;
 
         immutable ptrdiff_t end = (start + bytesReceived);
-        auto newline = buffer[0..end].countUntil(cast(ubyte)'\n');
+        auto newline = (cast(char[])buffer[0..end]).indexOf('\n');
         size_t pos;
 
         while (newline != -1)
         {
             yield((cast(char[])buffer[pos..pos+newline-1]).idup);
             pos += (newline + 1); // eat remaining newline
-            newline = buffer[pos..end].countUntil(cast(ubyte)'\n');
+            newline = (cast(char[])buffer[pos..end]).indexOf('\n');
         }
 
         yield(string.init);
