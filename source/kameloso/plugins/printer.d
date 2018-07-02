@@ -1186,7 +1186,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-void mapEffects(ref IRCEvent event)
+void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.default_)
 {
     import kameloso.bash : B = BashEffect;
     import kameloso.irc : I = IRCControlCharacter;
@@ -1197,7 +1197,7 @@ void mapEffects(ref IRCEvent event)
         if (content.has(I.colour))
         {
             // Colour is mIRC 3
-            content = mapColours(content);
+            content = mapColours(content, resetCode);
         }
 
         if (content.has(I.bold))
@@ -1271,7 +1271,7 @@ void stripEffects(ref IRCEvent event)
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-string mapColours(const string line)
+string mapColours(const string line, uint resetCode)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
@@ -1367,11 +1367,12 @@ string mapColours(const string line)
 
     if (colouredSomething)
     {
+        import std.format : format;
+
         enum endPattern = I.colour ~ ""; // ~ "([0-9])?";
         auto endEngine = endPattern.regex;
 
-        slice = slice.replaceAll(endEngine, TerminalToken.bashFormat ~ "[0m"); //$1");
-        slice ~= BashReset.all.colour;
+        slice = slice.replaceAll(endEngine, "%s[%dm".format(TerminalToken.bashFormat ~ "", resetCode));
     }
 
     return slice;
