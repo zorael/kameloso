@@ -1098,6 +1098,12 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         Appender!string highlightSink;
                         highlightSink.reserve(content.length + 60);  // mostly +10
 
+                        immutable BashForeground contentHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground contentReset = bright ? DefaultBright.content : DefaultDark.content;
+
+                        immutable BashForeground emoteHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground emoteReset = bright ? DefaultBright.emote : DefaultDark.emote;
+
                         if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                         {
                             import kameloso.string : has;
@@ -1105,31 +1111,26 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             if (event.tags.has("emote-only=1"))
                             {
                                 // Just highlight the whole line, make it appear as normal content
-                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                                immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
-                                event.mapEffects(reset);
-                                sink.colour(reset);
-                                highlightSink.colour(highlight);
+                                event.mapEffects(contentReset);
+                                sink.colour(contentReset);
+                                highlightSink.colour(contentHighlight);
                                 highlightSink.put(content);
-                                highlightSink.colour(reset);
+                                highlightSink.colour(contentReset);
                             }
                             else
                             {
                                 // Emote but mixed text and emotes
-                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                                immutable BashForeground reset = bright ? DefaultBright.emote : DefaultDark.emote;
-                                event.mapEffects(reset);
-                                sink.colour(reset);
-                                content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
+                                event.mapEffects(emoteReset);
+                                sink.colour(emoteReset);
+                                content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteReset);
                             }
                         }
                         else
                         {
-                            immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                            immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
-                            sink.colour(reset);
-                            event.mapEffects(reset);
-                            content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
+                            // Normal content, normal text, normal emotes
+                            sink.colour(contentReset);
+                            event.mapEffects(contentReset);
+                            content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentReset);
                         }
 
                         content = highlightSink.data;  // mutable...
@@ -1137,16 +1138,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     }
                     else
                     {
-                        BashForeground tint;
-
-                        if (event.type == IRCEvent.Type.EMOTE)
-                        {
-                            tint = bright ? DefaultBright.emote : DefaultDark.emote;
-                        }
-                        else
-                        {
-                            tint = bright ? DefaultBright.content : DefaultDark.content;
-                        }
+                        immutable BashForeground tint = (event.type == IRCEvent.Type.EMOTE) ?
+                            (bright ? DefaultBright.emote : DefaultDark.emote) :
+                            (bright ? DefaultBright.content : DefaultDark.content);
 
                         sink.colour(tint);
                         event.mapEffects(tint);
