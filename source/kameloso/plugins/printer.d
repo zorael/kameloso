@@ -1177,6 +1177,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             // Nick was mentioned (certain)
                             shouldBell = bellOnMention;
                             put(sink, `: "`, content.invert(bot.nickname), '"');
+                            break;
                         }
                         else goto default;
 
