@@ -779,7 +779,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 import kameloso.irc : containsNickname;
 
-                if ((type == IRCEvent.Type.CHAN) && content.containsNickname(bot.nickname))
+                if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
+                    content.containsNickname(bot.nickname))
                 {
                     // Nick was mentioned (certain)
                     shouldBell = bellOnMention;
@@ -1161,7 +1162,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     import kameloso.irc : containsNickname;
 
-                    if ((type == IRCEvent.Type.CHAN) && content.containsNickname(bot.nickname))
+                    if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
+                        content.containsNickname(bot.nickname))
                     {
                         // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
