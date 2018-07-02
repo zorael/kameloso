@@ -893,7 +893,6 @@ struct IRCBot
     /// Progress of a process.
     enum Progress
     {
-        unset,
         notStarted,
         started,
         finished,
