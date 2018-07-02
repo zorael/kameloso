@@ -144,6 +144,8 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     case CAP:
     case ERR_CHANOPRIVSNEEDED:
+    case USERSTATE:
+    case ROOMSTATE:
         // These event types are spammy; ignore if we're configured to
         if (!printerSettings.filterVerbose) goto default;
         break;
@@ -816,8 +818,6 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         {
             import kameloso.bash : colour, invert;
 
-            event.mapEffects();
-
             enum DefaultDark : BashForeground
             {
                 timestamp = white,
@@ -1074,10 +1074,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
             if (content.length)
             {
-                sink.colour(bright ? DefaultBright.content : DefaultDark.content);
-
                 version(TwitchSupport)
-                version(Colours)
                 {
                     if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
                         ((event.type == IRCEvent.Type.CHAN) ||
@@ -1088,24 +1085,75 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         Appender!string highlightSink;
                         highlightSink.reserve(content.length + 50);  // guesstimate
 
-                        immutable BashForeground pre = bright ? DefaultBright.aux : DefaultDark.aux;
-                        immutable BashForeground post = bright ? DefaultBright.content : DefaultDark.content;
+                        if (event.type == IRCEvent.Type.EMOTE)
+                        {
+                            import kameloso.string : has;
 
-                        if (event.type == IRCEvent.Type.CHAN)
-                        {
-                            content.highlightTwitchEmotes(highlightSink, aux, pre, post);
+                            if (event.tags.has("emote-only=1"))
+                            {
+                                // Just highlight the whole line, make it appear as normal content
+                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                                immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
+                                event.mapEffects(reset);
+                                sink.colour(reset);
+                                highlightSink.colour(highlight);
+                                highlightSink.put(content);
+                                highlightSink.colour(reset);
+                            }
+                            else
+                            {
+                                // Emote but mixed text and emotes
+                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                                immutable BashForeground reset = bright ? DefaultBright.emote : DefaultDark.emote;
+                                event.mapEffects(reset);
+                                sink.colour(reset);
+                                content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
+                            }
                         }
-                        else if (event.type == IRCEvent.Type.EMOTE)
+                        else if (event.type == IRCEvent.Type.CHAN)
                         {
-                            // Just highlight the whole line
-                            highlightSink.colour(pre);
-                            highlightSink.put(content);
-                            highlightSink.colour(post);
+                            immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                            immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
+                            sink.colour(reset);
+                            event.mapEffects(reset);
+                            content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
                         }
 
                         content = highlightSink.data;  // mutable...
                         aux = string.init;
                     }
+                    else
+                    {
+                        BashForeground tint;
+
+                        if (event.type == IRCEvent.Type.EMOTE)
+                        {
+                            tint = bright ? DefaultBright.emote : DefaultDark.emote;
+                        }
+                        else
+                        {
+                            tint = bright ? DefaultBright.content : DefaultDark.content;
+                        }
+
+                        sink.colour(tint);
+                        event.mapEffects(tint);
+                    }
+                }
+                else
+                {
+                    BashForeground tint;
+
+                    if (event.type == IRCEvent.Type.EMOTE)
+                    {
+                        tint = bright ? DefaultBright.emote : DefaultDark.emote;
+                    }
+                    else
+                    {
+                        tint = bright ? DefaultBright.content : DefaultDark.content;
+                    }
+
+                    sink.colour(tint);
+                    event.mapEffects(tint);
                 }
 
                 if (sender.isServer || nickname.length)
