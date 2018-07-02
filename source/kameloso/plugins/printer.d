@@ -779,11 +779,20 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 import kameloso.irc : containsNickname;
 
-                if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
-                    content.containsNickname(bot.nickname))
+                with (IRCEvent.Type)
+                switch (event.type)
                 {
-                    // Nick was mentioned (certain)
-                    shouldBell = bellOnMention;
+                case CHAN:
+                case EMOTE:
+                    if (content.containsNickname(bot.nickname))
+                    {
+                        // Nick was mentioned (certain)
+                        shouldBell = bellOnMention;
+                    }
+                    break;
+
+                default:
+                    break;
                 }
 
                 put(sink, `: "`, content, '"');
@@ -1162,17 +1171,23 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     import kameloso.irc : containsNickname;
 
-                    if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
-                        content.containsNickname(bot.nickname))
+                    with (IRCEvent.Type)
+                    switch (event.type)
                     {
-                        // Nick was mentioned (certain)
-                        shouldBell = bellOnMention;
-                        put(sink, `: "`, content.invert(bot.nickname), '"');
-                    }
-                    else
-                    {
+                    case CHAN:
+                    case EMOTE:
+                        if (content.containsNickname(bot.nickname))
+                        {
+                            // Nick was mentioned (certain)
+                            shouldBell = bellOnMention;
+                            put(sink, `: "`, content.invert(bot.nickname), '"');
+                        }
+                        else goto default;
+
+                    default:
                         // Normal non-highlighting channel message
                         put(sink, `: "`, content, '"');
+                        break;
                     }
                 }
                 else
