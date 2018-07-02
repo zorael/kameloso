@@ -1633,6 +1633,7 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
     import std.algorithm.sorting : sort;
     import std.conv : to;
     import std.string : indexOf;
+    import std.stdio;
 
     struct Highlight
     {
@@ -1706,6 +1707,16 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     // Add the remaining tail from after the last emote
     sink.put(line[pos..$]);
+
+    if ((offset > 0) && (numHighlights > 1))
+    {
+        writeln();
+        writeln("---------------------");
+        writeln("emotes:", emotes);
+        writeln("line:", line);
+        writeln("offset:", offset);
+        writeln("---------------------");
+    }
 }
 
 ///
