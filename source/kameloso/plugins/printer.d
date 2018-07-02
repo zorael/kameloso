@@ -1083,7 +1083,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         import std.array : Appender;
 
                         Appender!string highlightSink;
-                        highlightSink.reserve(content.length + 50);  // guesstimate
+                        highlightSink.reserve(content.length + 60);  // mostly +10
 
                         if (event.type == IRCEvent.Type.EMOTE)
                         {
