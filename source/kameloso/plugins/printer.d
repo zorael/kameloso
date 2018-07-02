@@ -1650,6 +1650,7 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     size_t numHighlights;
     size_t pos;
+    ptrdiff_t offset;
 
     foreach (emote; emotes.splitter("/"))
     {
@@ -1664,7 +1665,27 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
             immutable start = location[0..dashPos].to!size_t;
             immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
 
-            highlights[numHighlights++] = Highlight(start, end);
+            import kameloso.string : has;
+            if (line[start..end].has(' '))
+            {
+                import std.string : representation;
+
+                // Unicode offset the positions
+                foreach(immutable i, c; line[end..$].representation)
+                {
+                    ++offset;
+                    if (c == ' ')
+                    {
+                        //writeln("found space at ", i);
+                        break;
+                    }
+                }
+
+                //immutable spacePos = end-line[end..$].indexOf(' ');
+                //if (spacePos != -1) offset += spacePos;
+            }
+
+            highlights[numHighlights++] = Highlight(start+offset, end+offset);
         }
     }
 
@@ -1744,13 +1765,13 @@ unittest
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == highlitLine), sink.data);
     }
-    /*{
+    {
         sink.clear();
         immutable emotes = "25:32-36";
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
-    }*/
+    }
 }
 
 
