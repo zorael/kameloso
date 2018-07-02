@@ -1668,7 +1668,8 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         case "ACTION":
             // We already sliced away the control characters and nommed the
             // "ACTION" ctcpEvent string, so just set the type and break.
-            event.type = IRCEvent.Type.EMOTE;
+            event.type = (event.sender.nickname == parser.bot.nickname) ?
+                IRCEvent.Type.SELFEMOTE : IRCEvent.Type.EMOTE;
             break;
 
         foreach (immutable type; EnumMembers!(IRCEvent.Type))
