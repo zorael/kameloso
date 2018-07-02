@@ -779,11 +779,20 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
             {
                 import kameloso.irc : containsNickname;
 
-                if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
-                    content.containsNickname(bot.nickname))
+                with (IRCEvent.Type)
+                switch (event.type)
                 {
-                    // Nick was mentioned (certain)
-                    shouldBell = bellOnMention;
+                case CHAN:
+                case EMOTE:
+                    if (content.containsNickname(bot.nickname))
+                    {
+                        // Nick was mentioned (certain)
+                        shouldBell = bellOnMention;
+                    }
+                    break;
+
+                default:
+                    break;
                 }
 
                 put(sink, `: "`, content, '"');
@@ -1080,12 +1089,20 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
                         ((event.type == IRCEvent.Type.CHAN) ||
                         (event.type == IRCEvent.Type.EMOTE) ||
-                        (event.type == IRCEvent.Type.TWITCH_CHEER)) && aux.length)
+                        (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+                        (event.type == IRCEvent.Type.SELFCHAN) ||
+                        (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
                     {
                         import std.array : Appender;
 
                         Appender!string highlightSink;
                         highlightSink.reserve(content.length + 60);  // mostly +10
+
+                        immutable BashForeground contentHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground contentReset = bright ? DefaultBright.content : DefaultDark.content;
+
+                        immutable BashForeground emoteHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground emoteReset = bright ? DefaultBright.emote : DefaultDark.emote;
 
                         if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                         {
@@ -1094,31 +1111,26 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                             if (event.tags.has("emote-only=1"))
                             {
                                 // Just highlight the whole line, make it appear as normal content
-                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                                immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
-                                event.mapEffects(reset);
-                                sink.colour(reset);
-                                highlightSink.colour(highlight);
+                                event.mapEffects(contentReset);
+                                sink.colour(contentReset);
+                                highlightSink.colour(contentHighlight);
                                 highlightSink.put(content);
-                                highlightSink.colour(reset);
+                                highlightSink.colour(contentReset);
                             }
                             else
                             {
                                 // Emote but mixed text and emotes
-                                immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                                immutable BashForeground reset = bright ? DefaultBright.emote : DefaultDark.emote;
-                                event.mapEffects(reset);
-                                sink.colour(reset);
-                                content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
+                                event.mapEffects(emoteReset);
+                                sink.colour(emoteReset);
+                                content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteReset);
                             }
                         }
-                        else if (event.type == IRCEvent.Type.CHAN)
+                        else
                         {
-                            immutable BashForeground highlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                            immutable BashForeground reset = bright ? DefaultBright.content : DefaultDark.content;
-                            sink.colour(reset);
-                            event.mapEffects(reset);
-                            content.highlightTwitchEmotes(highlightSink, aux, highlight, reset);
+                            // Normal content, normal text, normal emotes
+                            sink.colour(contentReset);
+                            event.mapEffects(contentReset);
+                            content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentReset);
                         }
 
                         content = highlightSink.data;  // mutable...
@@ -1126,16 +1138,9 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                     }
                     else
                     {
-                        BashForeground tint;
-
-                        if (event.type == IRCEvent.Type.EMOTE)
-                        {
-                            tint = bright ? DefaultBright.emote : DefaultDark.emote;
-                        }
-                        else
-                        {
-                            tint = bright ? DefaultBright.content : DefaultDark.content;
-                        }
+                        immutable BashForeground tint = (event.type == IRCEvent.Type.EMOTE) ?
+                            (bright ? DefaultBright.emote : DefaultDark.emote) :
+                            (bright ? DefaultBright.content : DefaultDark.content);
 
                         sink.colour(tint);
                         event.mapEffects(tint);
@@ -1162,17 +1167,24 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 {
                     import kameloso.irc : containsNickname;
 
-                    if (((type == IRCEvent.Type.CHAN) || (type == IRCEvent.Type.EMOTE)) &&
-                        content.containsNickname(bot.nickname))
+                    with (IRCEvent.Type)
+                    switch (event.type)
                     {
-                        // Nick was mentioned (certain)
-                        shouldBell = bellOnMention;
-                        put(sink, `: "`, content.invert(bot.nickname), '"');
-                    }
-                    else
-                    {
+                    case CHAN:
+                    case EMOTE:
+                        if (content.containsNickname(bot.nickname))
+                        {
+                            // Nick was mentioned (certain)
+                            shouldBell = bellOnMention;
+                            put(sink, `: "`, content.invert(bot.nickname), '"');
+                            break;
+                        }
+                        else goto default;
+
+                    default:
                         // Normal non-highlighting channel message
                         put(sink, `: "`, content, '"');
+                        break;
                     }
                 }
                 else
@@ -1632,7 +1644,6 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
     import std.algorithm.iteration : splitter;
     import std.algorithm.sorting : sort;
     import std.conv : to;
-    import std.string : indexOf;
 
     struct Highlight
     {
@@ -1653,11 +1664,13 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     foreach (emote; emotes.splitter("/"))
     {
-        immutable colonPos = emote.indexOf(':');
-        emote = emote[colonPos+1..$];  // mutable...
+        import kameloso.string : nom;
+        emote.nom(':');
 
         foreach (location; emote.splitter(","))
         {
+            import std.string : indexOf;
+
             if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
 
             immutable dashPos = location.indexOf('-');
@@ -1670,21 +1683,25 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
 
+    // We need a dstring since we're slicing something that isn't neccessarily ASCII
+    // Without this highlights become offset a few characters depnding on the text
+    immutable dline = line.to!dstring;
+
     foreach (immutable i; 0..numHighlights)
     {
         immutable start = highlights[i].start;
         immutable end = highlights[i].end;
 
-        sink.put(line[pos..start]);
+        sink.put(dline[pos..start]);
         sink.colour(pre);
-        sink.put(line[start..end]);
+        sink.put(dline[start..end]);
         sink.colour(post);
 
         pos = end;
     }
 
     // Add the remaining tail from after the last emote
-    sink.put(line[pos..$]);
+    sink.put(dline[pos..$]);
 }
 
 ///
@@ -1744,13 +1761,21 @@ unittest
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == highlitLine), sink.data);
     }
-    /*{
+    {
         sink.clear();
         immutable emotes = "25:32-36";
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
-    }*/
+    }
+    {
+        sink.clear();
+        immutable emotes = "425618:6-8,16-18/1:20-21";
+        immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
+        line.highlightTwitchEmotes(sink, emotes, BashForeground.white, BashForeground.default_);
+        assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
+            "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
+    }
 }
 
 

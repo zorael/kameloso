@@ -45,6 +45,7 @@ struct IRCEvent
         EMOTE,      /// CTCP **ACTION**; `/me slaps Foo with a large trout`.
         SELFQUERY,  /// A message from you in a query (CAP `znc.in/self-message`).
         SELFCHAN,   /// A message from you in a channel (CAP `znc.in/self-message`).
+        SELFEMOTE,  /// A CTCP ACTION from you. (Twitch etc)
         AWAY,       /// Someone flagged themselves as away (from keyboard).
         BACK,       /// Someone returned from `AWAY`.
         JOIN,       /// Someone joined a channel.
