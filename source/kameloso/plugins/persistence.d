@@ -117,6 +117,7 @@ void onQuit(PersistenceService service, const IRCEvent event)
  +  Removes the old entry.
  +/
 @(IRCEvent.Type.NICK)
+@(IRCEvent.Type.SELFNICK)
 void onNick(PersistenceService service, const IRCEvent event)
 {
     with (service.state)
