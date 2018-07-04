@@ -1162,7 +1162,7 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 void writeConfigurationFile(ref Client client, const string filename)
 {
     import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
-    import kameloso.string : beginsWith;
+    import kameloso.string : beginsWith, encode64;
     import std.array : Appender;
 
     Appender!string sink;

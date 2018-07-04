@@ -211,8 +211,7 @@ void tryAuth(ConnectService service)
 
     with (service.state)
     {
-        import kameloso.common : decode64;
-        import kameloso.string : beginsWith;
+        import kameloso.string : beginsWith, decode64;
 
         immutable password = bot.authPassword.beginsWith("base64:") ?
             decode64(bot.authPassword[7..$]) : bot.authPassword;
@@ -593,8 +592,7 @@ void onSASLAuthenticate(ConnectService service)
 {
     with (service.state.bot)
     {
-        import kameloso.common : decode64;
-        import kameloso.string : beginsWith;
+        import kameloso.string : beginsWith, decode64;
         import std.base64 : Base64;
 
         authentication = Progress.started;
