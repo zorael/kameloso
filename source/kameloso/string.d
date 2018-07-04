@@ -1463,3 +1463,69 @@ unittest
         assert((stripped_ == "abc"), stripped_);
     }
 }
+
+
+// encode64
+/++
+ +  Base64-encodes a string.
+ +
+ +  Params:
+ +      line = String line to encode.
+ +
+ +  Returns:
+ +      An encoded Base64 string.
+ +/
+string encode64(const string line) @safe pure nothrow
+{
+    import std.base64 : Base64;
+    import std.string : representation;
+
+    return Base64.encode(line.representation);
+}
+
+///
+unittest
+{
+    {
+        immutable password = "harbl snarbl 12345";
+        immutable encoded = encode64(password);
+        assert((encoded == "aGFyYmwgc25hcmJsIDEyMzQ1"), encoded);
+    }
+    {
+        immutable string password;
+        immutable encoded = encode64(password);
+        assert(!encoded.length, encoded);
+    }
+}
+
+
+// decode64
+/++
+ +  Base64-decodes a string.
+ +
+ +  Params:
+ +      encoded = Encoded string to decode.
+ +
+ +  Returns:
+ +      A decoded normal string.
+ +/
+string decode64(const string encoded) @safe pure
+{
+    import std.base64 : Base64;
+    return (cast(char[])Base64.decode(encoded)).idup;
+}
+
+///
+unittest
+{
+    {
+        immutable password = "base64:aGFyYmwgc25hcmJsIDEyMzQ1";
+        immutable decoded = decode64(password[7..$]);
+        assert((decoded == "harbl snarbl 12345"), decoded);
+    }
+    {
+        immutable password = "base64:";
+        immutable decoded = decode64(password[7..$]);
+        assert(!decoded.length, decoded);
+    }
+}
