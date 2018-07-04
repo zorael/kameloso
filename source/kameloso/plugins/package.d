@@ -19,7 +19,6 @@ public import kameloso.plugins.ctcp;
 public import kameloso.plugins.notes;
 public import kameloso.plugins.printer;
 public import kameloso.plugins.sedreplace;
-public import kameloso.plugins.twitch;
 public import kameloso.plugins.seen;
 public import kameloso.plugins.chanqueries;
 public import kameloso.plugins.persistence;
@@ -42,7 +41,8 @@ version(Web)
 
 version(TwitchSupport)
 {
-    // TwitchService is defined, do nothing
+    // Import real TwitchService
+    public import kameloso.plugins.twitch;
 }
 else
 {
