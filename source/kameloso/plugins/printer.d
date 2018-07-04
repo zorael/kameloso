@@ -1641,6 +1641,7 @@ unittest
  +      post = Bash foreground tint to reset to after colouring an emote.
  +/
 version(TwitchSupport)
+version(Colours)
 void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
     const string emotes, const BashForeground pre, const BashForeground post)
 {
