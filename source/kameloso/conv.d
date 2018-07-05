@@ -4,6 +4,9 @@
  +/
 module kameloso.conv;
 
+import std.typecons : Flag, No, Yes;
+
+@safe:
 
 // Enum
 /++
