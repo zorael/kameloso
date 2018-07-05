@@ -94,6 +94,9 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
     import std.regex : matchAll;
     import std.typecons : No, Yes;
 
+    // Early abort so we don't use the regex as much.
+    if (!event.content.has!(Yes.decode)("http")) return;
+
     /// Regex pattern to match a URL, to see if one was pasted.
     enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
 
@@ -104,12 +107,10 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
     if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
         (event.content[prefix.length] != ' '))
     {
-        // Message started with a prefix followed by a space --> ignore
+        // Message started with a prefix followed by a run-on word
+        // Ignore as it is probably a command.
         return;
     }
-
-    // Early abort so we don't use the regex as much.
-    if (!event.content.has!(Yes.decode)("http")) return;
 
     auto matches = event.content.matchAll(urlRegex);
 
