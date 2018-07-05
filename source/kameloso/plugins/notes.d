@@ -61,7 +61,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    import kameloso.string : timeSince;
+    import kameloso.common : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;

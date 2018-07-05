@@ -556,7 +556,7 @@ void commitLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.string : Enum;
+    import kameloso.conv : Enum;
     import std.string : capitalize;
     import std.uni : isLower;
 
@@ -654,7 +654,8 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     bool monochrome, bool bellOnMention)
 {
     import kameloso.bash : BashForeground;
-    import kameloso.string : Enum, beginsWith;
+    import kameloso.conv : Enum;
+    import kameloso.string : beginsWith;
     import std.algorithm : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -913,7 +914,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                 if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
                 {
                     import kameloso.bash : truecolour;
-                    import kameloso.string : numFromHex;
+                    import kameloso.conv : numFromHex;
 
                     int r, g, b;
                     user.colour.numFromHex(r, g, b);

@@ -415,9 +415,10 @@ unittest
 void generateAsserts(ref Client client) @system
 {
     import kameloso.common : logger, printObjects;
+    import kameloso.conv : Enum;
     import kameloso.debugging : formatEventAssertBlock;
     import kameloso.ircdefs : IRCServer;
-    import kameloso.string : Enum, has, nom, stripped;
+    import kameloso.string : has, nom, stripped;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;

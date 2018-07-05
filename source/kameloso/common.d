@@ -1448,6 +1448,7 @@ void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     (auto ref Sink sink, const Duration duration) pure
 if (isOutputRange!(Sink, string))
 {
+    import kameloso.string : plurality;
     import std.format : formattedWrite;
 
     int days, hours, minutes, seconds;

@@ -184,7 +184,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
         break;
 
     default:
-        import kameloso.string : Enum;
+        import kameloso.conv : Enum;
         assert(0, "Missing CTCP_ case entry for " ~ Enum!(IRCEvent.Type).toString(event.type));
     }
 

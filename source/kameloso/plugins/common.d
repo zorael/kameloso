@@ -755,7 +755,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import kameloso.string : Enum;
+                import kameloso.conv : Enum;
                 import std.stdio : writeln, writefln;
                 version(Cygwin_) import std.stdio : flush;
             }
@@ -765,7 +765,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 enum name = ()
                 {
-                    import kameloso.string : Enum, nom;
+                    import kameloso.conv : Enum;
+                    import kameloso.string : nom;
                     import std.format : format;
 
                     string pluginName = module_;
@@ -994,7 +995,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
-                    import kameloso.string : Enum;
+                    import kameloso.conv : Enum;
                     import std.format : format;
 
                     enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
@@ -1006,7 +1007,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     with (IRCEvent.Type)
                     {
-                        import kameloso.string : Enum;
+                        import kameloso.conv : Enum;
 
                         alias U = eventTypeUDA;
 

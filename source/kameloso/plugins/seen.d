@@ -527,9 +527,10 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
 
+    import kameloso.common : timeSince;
     import kameloso.irc : isValidNickname;
-    import kameloso.string : has, timeSince;
-    import std.algorithm : canFind;
+    import kameloso.string : has;
+    import std.algorithm.searching : canFind;
     import std.datetime.systime; //: Clock, SysTime;
     import std.format : format;
 

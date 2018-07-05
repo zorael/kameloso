@@ -377,10 +377,10 @@ void listenFiber(Connection conn, ref bool abort)
 
             if (elapsed > Timeout.connectionLost.seconds)
             {
-                import kameloso.string : timeSince;
+                import kameloso.common : timeSince;
                 // Too much time has passed; we can reasonably assume the socket is disconnected
                 logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                    elapsed.timeSince, Timeout.connectionLost.seconds);
+                    timeSince(elapsed), Timeout.connectionLost.seconds);
                 return;
             }
 
