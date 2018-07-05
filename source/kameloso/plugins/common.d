@@ -755,7 +755,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
             static if (verbose)
             {
-                import kameloso.string : enumToString;
+                import kameloso.string : Enum;
                 import std.stdio : writeln, writefln;
                 version(Cygwin_) import std.stdio : flush;
             }
@@ -765,7 +765,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             {
                 enum name = ()
                 {
-                    import kameloso.string : enumToString, nom;
+                    import kameloso.string : Enum, nom;
                     import std.format : format;
 
                     string pluginName = module_;
@@ -773,7 +773,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     pluginName.nom('.');
                     pluginName.nom('.');
 
-                    return "[%s] %s (%s)".format(pluginName, __traits(identifier, fun), eventTypeUDA.enumToString);
+                    return "[%s] %s (%s)".format(pluginName,__traits(identifier, fun),
+                        Enum!(IRCEvent.Type).toString(eventTypeUDA));
                 }();
 
                 static if (eventTypeUDA == IRCEvent.Type.ANY)
@@ -808,7 +809,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                 static if (verbose)
                 {
-                    writeln("...ChannelPolicy.", policy.enumToString);
+                    writeln("...ChannelPolicy.", Enum!ChannelPolicy.toString(policy));
                     version(Cygwin_) stdout.flush();
                 }
 
@@ -993,10 +994,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     ((eventTypeUDA == IRCEvent.Type.CHAN) ||
                     (eventTypeUDA == IRCEvent.Type.QUERY)))
                 {
-                    import kameloso.string : enumToString;
+                    import kameloso.string : Enum;
                     import std.format : format;
 
-                    enum typestring = eventTypeUDA.enumToString;
+                    enum typestring = Enum!(IRCEvent.Type).toString(eventTypeUDA);
                     pragma(msg, "Note: %s is a wildcard %s event but is not Chainable nor Terminating"
                         .format(name, typestring));
                 }
@@ -1005,13 +1006,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     with (IRCEvent.Type)
                     {
-                        import kameloso.string : enumToString;
+                        import kameloso.string : Enum;
 
                         alias U = eventTypeUDA;
 
                         enum message = module_ ~ '.' ~ __traits(identifier, fun) ~
                             " is annotated with user-facing IRCEvent.Type." ~
-                            U.enumToString ~ " but is missing a PrivilegeLevel.";
+                            Enum!(IRCEvent.Type).toString(U) ~ " but is missing a PrivilegeLevel.";
 
                         static assert(!((U == CHAN) ||
                             (U == QUERY) ||
@@ -1041,7 +1042,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                     static if (verbose)
                     {
-                        writeln("...PrivilegeLevel.", privilegeLevel.enumToString);
+                        writeln("...PrivilegeLevel.", Enum!PrivilegeLevel.toString(privilegeLevel));
                         version(Cygwin_) stdout.flush();
                     }
 

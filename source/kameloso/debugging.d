@@ -83,7 +83,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
                     /*else static if (is(T == enum))
                     {
                         // We can live with .to!string in unittest mode.
-                        enum pattern = "%sassert((%s%s == %s), %s%s.enumToString);\n";
+                        enum pattern = "%sassert((%s%s == %s), Enum!(typeof(%s%s)).toString(%5$s%6$s);\n";
                     }*/
                     else
                     {
@@ -417,7 +417,7 @@ void generateAsserts(ref Client client) @system
     import kameloso.common : logger, printObjects;
     import kameloso.debugging : formatEventAssertBlock;
     import kameloso.ircdefs : IRCServer;
-    import kameloso.string : has, nom, stripped, toEnum;
+    import kameloso.string : Enum, has, nom, stripped;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -443,7 +443,7 @@ void generateAsserts(ref Client client) @system
 
         try
         {
-            immutable daemon = daemonstring.length ? daemonstring.toEnum!Daemon : Daemon.ircdseven;
+            immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.setDaemon(daemon, version_);
         }
         catch (const ConvException e)

@@ -555,7 +555,7 @@ void commitLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.string : enumToString;
+    import kameloso.string : Enum;
     import std.string : capitalize;
     import std.uni : isLower;
 
@@ -589,19 +589,19 @@ void onISUPPORT(PrinterPlugin plugin)
 
                 logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
                     infotint.colour, networkName, logtint.colour,
-                    infotint.colour, daemon.enumToString,
+                    infotint.colour, Enum!(IRCServer.Daemon).toString(daemon),
                     BashReset.all.colour, daemonstring);
             }
             else
             {
                 logger.logf("Detected %s running %s (%s)",
-                    networkName, daemon.enumToString, daemonstring);
+                    networkName, Enum!(IRCServer.Daemon).toString(daemon), daemonstring);
             }
         }
         else
         {
             logger.logf("Detected %s running %s (%s)",
-                networkName, daemon.enumToString, daemonstring);
+                networkName, Enum!(IRCServer.Daemon).toString(daemon), daemonstring);
         }
     }
 }
@@ -654,7 +654,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     bool monochrome, bool bellOnMention)
 {
     import kameloso.bash : BashForeground;
-    import kameloso.string : enumToString, beginsWith;
+    import kameloso.string : Enum, beginsWith;
     import std.algorithm : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -666,7 +666,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .timeOfDay
         .toString();
 
-    immutable rawTypestring = enumToString(event.type);
+    immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
     string typestring = rawTypestring;
 
     if (rawTypestring.beginsWith("RPL_") || rawTypestring.beginsWith("ERR_"))

@@ -295,7 +295,7 @@ unittest
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : toEnum;
+    import kameloso.string : Enum;
     import std.conv : ConvException, to;
 
     string typestring;
@@ -329,7 +329,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     }
     else
     {
-        try event.type = typestring.toEnum!(IRCEvent.Type);
+        try event.type = Enum!(IRCEvent.Type).fromString(typestring);
         catch (const ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
@@ -1341,9 +1341,9 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
         with (parser.bot.server)
         {
-            import kameloso.string : enumToString;
+            import kameloso.string : Enum;
             logger.warningf("daemon:%s (%s), network:%s",
-                daemon.enumToString, daemonstring, network);
+                Enum!(IRCServer.Daemon).toString(daemon), daemonstring, network);
         }
 
         version(Cygwin_) stdout.flush();
@@ -1842,7 +1842,7 @@ unittest
  +/
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : toEnum;
+    import kameloso.string : Enum;
     import std.algorithm.iteration : splitter;
     import std.conv : ConvException, to;
     import std.string : toLower;
@@ -1944,7 +1944,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 break;
 
             case "CASEMAPPING":
-                caseMapping = value.toEnum!(IRCServer.CaseMapping);
+                caseMapping = Enum!(IRCServer.CaseMapping).fromString(value);
                 break;
 
             case "EXTBAN":
