@@ -7,6 +7,8 @@ module kameloso.common;
 import kameloso.bash : BashForeground;
 import kameloso.uda;
 
+import core.time : Duration;
+
 import std.experimental.logger : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -860,14 +862,14 @@ unittest
  +      abort = Reference to the bool flag which, if set, means we should
  +          interrupt and return early.
  +/
-void interruptibleSleep(D)(const D dur, const ref bool abort)
+void interruptibleSleep(const Duration dur, const ref bool abort)
 {
     import core.thread : Thread, msecs, seconds;
     import std.algorithm.comparison : min;
 
     immutable step = 250.msecs;
 
-    D left = dur;
+    Duration left = dur;
 
     static immutable nothing = 0.seconds;
 
