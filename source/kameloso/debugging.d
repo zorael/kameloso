@@ -472,29 +472,53 @@ void generateAsserts(ref Client client) @system
 
         while ((input = readln()) !is null)
         {
-            import std.regex : matchFirst, regex;
+            import kameloso.irc : IRCParseException;
+            import kameloso.string : beginsWithOneOf;
+
             if (*abort) return;
 
-            auto hits = input[0..$-1].matchFirst("^[ /]*(.+)".regex);
-            if (!hits[1].length) break;
+            scope(exit) version(Cygwin_) stdout.flush();
 
-            immutable event = parser.toIRCEvent(hits[1]);
-            writeln();
-
-            stdout.lockingTextWriter.formatEventAssertBlock(event);
-            writeln();
-
-            if (parser.bot.updated)
+            string raw = input[0..$-1];  // mutable, slice away linebreak
+            while (raw.beginsWithOneOf(" /"))
             {
-                parser.bot.updated = false;
-
-                stdout.lockingTextWriter.formatDelta(old, parser.bot, 0, "bot");
-                writeln();
-
-                old = parser.bot;
+                // Indented or commented; slice away and try again
+                raw = raw[1..$];
             }
 
-            version(Cygwin_) stdout.flush();
+            if (!raw.length)
+            {
+                writeln("... empty line. (Ctrl+C to exit)");
+                continue;
+            }
+
+            try
+            {
+                immutable event = parser.toIRCEvent(raw);
+                writeln();
+
+                stdout.lockingTextWriter.formatEventAssertBlock(event);
+                writeln();
+
+                if (parser.bot.updated)
+                {
+                    parser.bot.updated = false;
+
+                    stdout.lockingTextWriter.formatDelta(old, parser.bot, 0, "bot");
+                    writeln();
+
+                    old = parser.bot;
+                }
+            }
+            catch (const IRCParseException e)
+            {
+                logger.warning("IRC Parse Exception: ", e.msg);
+                printObjects(e.event);
+            }
+            catch (const Exception e)
+            {
+                logger.warning("Exception: ", e.msg);
+            }
         }
     }
 }
