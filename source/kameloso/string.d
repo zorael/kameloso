@@ -725,49 +725,114 @@ unittest
 }
 
 
-// toEnum
-/++
- +  Takes the member of an enum by string and returns that enum member.
- +
- +  It lowers to a big switch of the enum member strings. It is faster than
- +  `std.conv.to` and generates less template bloat.
- +
- +  Example:
- +  ------------
- +  enum SomeEnum { one, two, three };
- +
- +  SomeEnum foo = "one".toEnum!someEnum;
- +  SomeEnum bar = "three".toEnum!someEnum;
- +  ------------
- +
- +  Params:
- +      enumstring = the string name of an enum member.
- +
- +  Returns:
- +      The enum member whose name matches the enumstring string.
- +/
-pragma(inline)
-Enum toEnum(Enum)(const string enumstring) pure
-if (is(Enum == enum))
+template Enum(E)
+if (is(E == enum))
 {
-    enum enumSwitch = ()
+    // fromString
+    /++
+     +  Takes the member of an enum by string and returns that enum member.
+     +
+     +  It lowers to a big switch of the enum member strings. It is faster than
+     +  `std.conv.to` and generates less template bloat.
+     +
+     +  Example:
+     +  ------------
+     +  enum SomeEnum { one, two, three };
+     +
+     +  SomeEnum foo = Enum!someEnum.fromString("one");
+     +  SomeEnum bar = Enum!someEnum.fromString("three");
+     +  ------------
+     +
+     +  Params:
+     +      enumstring = the string name of an enum member.
+     +
+     +  Returns:
+     +      The enum member whose name matches the enumstring string.
+     +/
+    E fromString(const string enumstring) pure
     {
-        string enumSwitch = "import std.conv : ConvException;\n";
-        enumSwitch ~= "with (Enum) switch (enumstring)\n{\n";
-
-        foreach (memberstring; __traits(allMembers, Enum))
+        enum enumSwitch = ()
         {
-            enumSwitch ~= `case "` ~ memberstring ~ `":`;
-            enumSwitch ~= "return " ~ memberstring ~ ";\n";
+            string enumSwitch = "import std.conv : ConvException;\n";
+            enumSwitch ~= "with (E) switch (enumstring)\n{\n";
+
+            foreach (memberstring; __traits(allMembers, E))
+            {
+                enumSwitch ~= `case "` ~ memberstring ~ `":`;
+                enumSwitch ~= "return " ~ memberstring ~ ";\n";
+            }
+
+            enumSwitch ~= `default: throw new ConvException("No such " ~
+                E.stringof ~ ": " ~ enumstring);}`;
+
+            return enumSwitch;
+        }();
+
+        mixin(enumSwitch);
+    }
+
+
+    // toString
+    /++
+     +  The inverse of `fromString`, this function takes an enum member value
+     +  and returns its string identifier.
+     +
+     +  It lowers to a big switch of the enum members. It is faster than
+     +  `std.conv.to` and generates less template bloat.
+     +
+     +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+     +
+     +  Example:
+     +  ------------
+     +  enum SomeEnum { one, two, three };
+     +
+     +  string foo = Enum!SomeEnum.toString(one);
+     +  assert((foo == "one"), foo);
+     +  ------------
+     +
+     +  Params:
+     +      value = Enum member whose string name we want.
+     +
+     +  Returns:
+     +      The string name of the passed enum member.
+     +/
+    string toString(E value) pure nothrow
+    {
+        switch (value)
+        {
+
+        foreach (m; __traits(allMembers, E))
+        {
+            case mixin("E." ~ m) : return m;
         }
 
-        enumSwitch ~= `default: throw new ConvException("No such " ~
-            Enum.stringof ~ ": " ~ enumstring);}`;
+        default:
+            string result = "cast(" ~ E.stringof ~ ")";
+            uint val = value;
+            enum headLength = E.stringof.length + "cast()".length;
 
-        return enumSwitch;
-    }();
+            immutable log10Val =
+                (val < 10) ? 0 :
+                (val < 100) ? 1 :
+                (val < 1_000) ? 2 :
+                (val < 10_000) ? 3 :
+                (val < 100_000) ? 4 :
+                (val < 1_000_000) ? 5 :
+                (val < 10_000_000) ? 6 :
+                (val < 100_000_000) ? 7 :
+                (val < 1_000_000_000) ? 8 : 9;
 
-    mixin(enumSwitch);
+            result.length += log10Val + 1;
+
+            for (uint i; i != log10Val + 1; ++i)
+            {
+                cast(char)result[headLength + log10Val - i] = cast(char)('0' + (val % 10));
+                val /= 10;
+            }
+
+            return cast(string) result;
+        }
+    }
 }
 
 ///
@@ -777,7 +842,7 @@ unittest
     import std.conv : ConvException;
     import std.exception  : assertThrown;
 
-    enum Enum
+    enum T
     {
         UNSET,
         QUERY,
@@ -785,97 +850,20 @@ unittest
         RPL_ENDOFMOTD
     }
 
-    with (Enum)
+    with (T)
     {
-        assert("QUERY".toEnum!Enum == QUERY);
-        assert("PRIVMSG".toEnum!Enum == PRIVMSG);
-        assert("RPL_ENDOFMOTD".toEnum!Enum == RPL_ENDOFMOTD);
-        assert("UNSET".toEnum!Enum == UNSET);
-        assertThrown!ConvException("DOESNTEXIST".toEnum!Enum);  // needs @system
-    }
-}
-
-
-// enumToString
-/++
- +  The inverse of `toEnum`, this function takes an enum member value and
- +  returns its string identifier.
- +
- +  It lowers to a big switch of the enum members. It is faster than
- +  `std.conv.to` and generates less template bloat.
- +
- +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
- +
- +  Example:
- +  ------------
- +  enum SomeEnum { one, two, three };
- +
- +  string foo = SomeEnum.one.enumToString;
- +  assert((foo == "one"), foo);
- +  ------------
- +
- +  Params:
- +      value = Enum member whose string name we want.
- +
- +  Returns:
- +      The string name of the passed enum member.
- +/
-pragma(inline)
-string enumToString(Enum)(Enum value) pure nothrow
-if (is(Enum == enum))
-{
-    switch (value)
-    {
-
-    foreach (m; __traits(allMembers, Enum))
-    {
-        case mixin("Enum." ~ m) : return m;
+        assert(Enum!T.fromString("QUERY") == QUERY);
+        assert(Enum!T.fromString("PRIVMSG") == PRIVMSG);
+        assert(Enum!T.fromString("RPL_ENDOFMOTD") == RPL_ENDOFMOTD);
+        assert(Enum!T.fromString("UNSET") == UNSET);
+        assertThrown!ConvException(Enum!T.fromString("DOESNTEXIST"));  // needs @system
     }
 
-    default:
-        string result = "cast(" ~ Enum.stringof ~ ")";
-        uint val = value;
-        enum headLength = Enum.stringof.length + "cast()".length;
-
-        immutable log10Val =
-            (val < 10) ? 0 :
-            (val < 100) ? 1 :
-            (val < 1_000) ? 2 :
-            (val < 10_000) ? 3 :
-            (val < 100_000) ? 4 :
-            (val < 1_000_000) ? 5 :
-            (val < 10_000_000) ? 6 :
-            (val < 100_000_000) ? 7 :
-            (val < 1_000_000_000) ? 8 : 9;
-
-        result.length += log10Val + 1;
-
-        for (uint i; i != log10Val + 1; ++i)
-        {
-            cast(char)result[headLength + log10Val - i] = cast(char)('0' + (val % 10));
-            val /= 10;
-        }
-
-        return cast(string) result;
-    }
-}
-
-///
-unittest
-{
-    enum Enum
+    with (T)
     {
-        UNSET,
-        QUERY,
-        PRIVMSG,
-        RPL_ENDOFMOTD
-    }
-
-    with (Enum)
-    {
-        assert(enumToString(QUERY) == "QUERY");
-        assert(enumToString(PRIVMSG) == "PRIVMSG");
-        assert(enumToString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
+        assert(Enum!T.toString(QUERY) == "QUERY");
+        assert(Enum!T.toString(PRIVMSG) == "PRIVMSG");
+        assert(Enum!T.toString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
     }
 }
 
