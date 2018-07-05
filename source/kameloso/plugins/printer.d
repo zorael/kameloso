@@ -401,6 +401,8 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
+            bool printed;
+
             version(Colours)
             {
                 if (!plugin.state.settings.monochrome)
@@ -419,13 +421,12 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
                     logger.warningf("Specified log directory (%s%s%s) is not a directory.",
                         infotint.colour, logLocation, warningtint.colour);
-                }
-                else
-                {
-                    logger.warningf("Specified log directory (%s) is not a directory", logLocation);
+
+                    printed = true;
                 }
             }
-            else
+
+            if (!printed)
             {
                 logger.warningf("Specified log directory (%s) is not a directory", logLocation);
             }
@@ -440,6 +441,8 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
         // Create missing log directory
         import std.file : mkdirRecurse;
         mkdirRecurse(logLocation);
+
+        bool printed;
 
         version(Colours)
         {
@@ -459,14 +462,12 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
                         KamelosoLogger.logcoloursDark[LogLevel.info];
 
                     logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
+                    printed = true;
                 }
             }
-            else
-            {
-                logger.log("Created log directory: ", logLocation);
-            }
         }
-        else
+
+        if (!printed)
         {
             logger.log("Created log directory: ", logLocation);
         }
@@ -570,6 +571,7 @@ void onISUPPORT(PrinterPlugin plugin)
     with (plugin.state.bot.server)
     {
         immutable networkName = network[0].isLower ? network.capitalize() : network;
+        bool printed;
 
         version(Colours)
         {
@@ -591,14 +593,12 @@ void onISUPPORT(PrinterPlugin plugin)
                     infotint.colour, networkName, logtint.colour,
                     infotint.colour, Enum!(IRCServer.Daemon).toString(daemon),
                     BashReset.all.colour, daemonstring);
-            }
-            else
-            {
-                logger.logf("Detected %s running %s (%s)",
-                    networkName, Enum!(IRCServer.Daemon).toString(daemon), daemonstring);
+
+                printed = true;
             }
         }
-        else
+
+        if (!printed)
         {
             logger.logf("Detected %s running %s (%s)",
                 networkName, Enum!(IRCServer.Daemon).toString(daemon), daemonstring);

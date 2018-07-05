@@ -178,6 +178,8 @@ File createFIFO(const IRCPluginState state)
             "exists with the same name".format(filename));
     }
 
+    bool printed;
+
     version(Colours)
     {
         if (!state.settings.monochrome)
@@ -196,13 +198,12 @@ File createFIFO(const IRCPluginState state)
 
             logger.logf("Pipe text to %s%s%s to send raw commands to the server.",
                 infotint.colour, filename, logtint.colour);
-        }
-        else
-        {
-            logger.infof("Pipe text to %s to send raw commands to the server", filename);
+
+            printed = true;
         }
     }
-    else
+
+    if (!printed)
     {
         logger.infof("Pipe text to %s to send raw commands to the server", filename);
     }

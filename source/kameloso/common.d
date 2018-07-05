@@ -189,18 +189,18 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
 
     // writeln trusts `lockingTextWriter` so we will too.
 
+    bool printed;
+
     version(Colours)
     {
-        if (settings.monochrome)
-        {
-            formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
-        }
-        else
+        if (!settings.monochrome)
         {
             formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter, things);
+            printed = true;
         }
     }
-    else
+
+    if (!printed)
     {
         formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
     }

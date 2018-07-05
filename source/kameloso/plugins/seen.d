@@ -697,6 +697,8 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
 
     scope(exit)
     {
+        bool printed;
+
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
@@ -715,13 +717,12 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
 
                 logger.logf("Seen users loaded, currently %s%d%s users seen.",
                     infotint.colour, aa.length, logtint.colour);
-            }
-            else
-            {
-                logger.logf("Seen users loaded, currently %d users seen.", aa.length);
+
+                printed = true;
             }
         }
-        else
+
+        if (!printed)
         {
             logger.logf("Seen users loaded, currently %d users seen.", aa.length);
         }

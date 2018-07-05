@@ -835,6 +835,8 @@ int main(string[] args)
 
             logger.error("No administrators nor channels configured!");
 
+            bool printed;
+
             version(Colours)
             {
                 if (!settings.monochrome)
@@ -853,13 +855,12 @@ int main(string[] args)
 
                     logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
                         infotint.colour, args[0].baseName, logtint.colour);
-                }
-                else
-                {
-                    logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
+
+                    printed = true;
                 }
             }
-            else
+
+            if (!printed)
             {
                 logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
             }
@@ -877,6 +878,8 @@ int main(string[] args)
         if (invalidEntries.length)
         {
             logger.log("Found invalid configuration entries:");
+
+            bool printed;
 
             version(Colours)
             {
@@ -904,19 +907,12 @@ int main(string[] args)
                     logger.logf("They are either malformed or no longer in use. " ~
                         "Use %s--writeconfig%s to update your configuration file.",
                         infotint.colour, logtint.colour);
-                }
-                else
-                {
-                    foreach (immutable section, const sectionEntries; invalidEntries)
-                    {
-                        logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-                    }
 
-                    logger.log("They are either malformed or no longer in use. " ~
-                        "Use --writeconfig to update your configuration file.");
+                    printed = true;
                 }
             }
-            else
+
+            if (!printed)
             {
                 foreach (immutable section, const sectionEntries; invalidEntries)
                 {
@@ -973,6 +969,8 @@ int main(string[] args)
                 return 1;
             }
 
+            bool printed;
+
             version(Colours)
             {
                 if (!settings.monochrome)
@@ -997,14 +995,13 @@ int main(string[] args)
                         logger.infof("%s%s resolved into %s%s%s IPs.",
                             bot.server.address, logtint.colour, infotint.colour,
                             conn.ips.length, logtint.colour);
+
+                        printed = true;
                     }
                 }
-                else
-                {
-                    logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
-                }
             }
-            else
+
+            if (!printed)
             {
                 logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
             }
