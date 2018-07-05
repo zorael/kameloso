@@ -1404,7 +1404,7 @@ string mapColours(const string line, const uint resetCode)
 
         if (fgIndex > 15)
         {
-            logger.warning("mIRC foreground colour code out of bounds: ", fgIndex);
+            //logger.warning("mIRC foreground colour code out of bounds: ", fgIndex);
             continue;
         }
 
@@ -1419,7 +1419,7 @@ string mapColours(const string line, const uint resetCode)
 
             if (bgIndex > 15)
             {
-                logger.warning("mIRC background colour code out of bounds: ", bgIndex);
+                //logger.warning("mIRC background colour code out of bounds: ", bgIndex);
                 continue;
             }
 
