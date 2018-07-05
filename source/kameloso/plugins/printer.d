@@ -656,7 +656,7 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
     import kameloso.bash : BashForeground;
     import kameloso.conv : Enum;
     import kameloso.string : beginsWith;
-    import std.algorithm : equal;
+    import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;

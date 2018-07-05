@@ -365,7 +365,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
-    import std.algorithm : countUntil, remove;
+    import std.algorithm.searching : countUntil;
+    import std.algorithm.mutation : remove;
 
     immutable channel = event.content.stripped;
 
