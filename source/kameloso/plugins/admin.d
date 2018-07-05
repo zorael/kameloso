@@ -740,7 +740,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "auth")
 @Description("(Re-)authenticates with services. Useful if the server has forcefully logged us out.")
-void onCommandAuth(AdminPlugin plugin, const IRCEvent event)
+void onCommandAuth(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
