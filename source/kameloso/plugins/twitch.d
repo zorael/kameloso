@@ -34,7 +34,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
 {
     if (service.state.bot.server.daemon != IRCServer.Daemon.twitch) return;
 
-    service.parseTwitchTags(event);
+    parseTwitchTags(event);
 
     with (IRCEvent.Type)
     {
@@ -57,7 +57,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` whose tags should
  +          be parsed.
  +/
-void parseTwitchTags(TwitchService service, ref IRCEvent event)
+void parseTwitchTags(ref IRCEvent event)
 {
     import kameloso.common : logger;
     import kameloso.irc : decodeIRCv3String;
