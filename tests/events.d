@@ -2051,3 +2051,51 @@ unittest
         assert((server.resolvedAddress == "irc.portlane.se"), server.resolvedAddress);
     }
 }
+
+unittest
+{
+    IRCParser parser;
+
+    with (parser.bot)
+    {
+        server.daemon = IRCServer.Daemon.inspircd;
+        server.network = "SpotChat";
+        server.daemonstring = "inspircd";
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":medusa.us.SpotChat.org 005 kameloso AWAYLEN=200 CALLERID=g CASEMAPPING=rfc1459 CHANMODES=Ibeg,k,Jl,ACKMNOPQRSTcimnprstz CHANNELLEN=64 CHANTYPES=# CHARSET=ascii ELIST=MU EXCEPTS=e EXTBAN=,ACNOQRSTUcmz FNC INVEX=I KICKLEN=255 :are supported by this server");
+        with (IRCEvent.Type)
+        with (IRCUser.Class)
+        with (event)
+        {
+            assert((type == RPL_ISUPPORT), type.to!string);
+            assert((sender.address == "medusa.us.SpotChat.org"), sender.address);
+            assert((sender.class_ == special), sender.class_.to!string);
+            assert((content == "AWAYLEN=200 CALLERID=g CASEMAPPING=rfc1459 CHANMODES=Ibeg,k,Jl,ACKMNOPQRSTcimnprstz CHANNELLEN=64 CHANTYPES=# CHARSET=ascii ELIST=MU EXCEPTS=e EXTBAN=,ACNOQRSTUcmz FNC INVEX=I KICKLEN=255"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    /*
+    with (parser.bot)
+    {
+        server.maxChannelLength = 64;
+        server.aModes = "Ibeg";
+        server.cModes = "Jl";
+        server.dModes = "ACKMNOPQRSTcimnprstz";
+        server.caseMapping = IRCServer.CaseMapping.rfc1459;
+        server.extbanTypes = "ACNOQRSTUcmz";
+    }
+    */
+
+    with (parser.bot)
+    {
+        assert((server.maxChannelLength == 64), server.maxChannelLength.to!string);
+        assert((server.aModes == "Ibeg"), server.aModes);
+        assert((server.cModes == "Jl"), server.cModes);
+        assert((server.dModes == "ACKMNOPQRSTcimnprstz"), server.dModes);
+        assert((server.caseMapping == IRCServer.CaseMapping.rfc1459), server.caseMapping.to!string);
+        assert((server.extbanTypes == "ACNOQRSTUcmz"), server.extbanTypes);
+    }
+}
