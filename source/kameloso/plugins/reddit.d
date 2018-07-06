@@ -82,8 +82,6 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
         return;
     }
 
-    immutable target = event.channel.length ? event.channel : event.sender.nickname;
-
     // Garbage-collect entries too old to use
     plugin.cache.prune();
 

@@ -83,9 +83,6 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;
 
-    immutable target = event.channel.length ?
-        event.channel : event.sender.nickname;
-
     auto qtEngine = `<p class="qt">`.regex;
     auto pEngine = `</p>`.regex;
     auto brEngine = `<br />`.regex;
