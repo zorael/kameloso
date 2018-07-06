@@ -515,7 +515,7 @@ if (is(QualT == struct))
 ///
 unittest
 {
-        struct NoDefaultValues
+    struct NoDefaultValues
     {
         string s;
         int i;

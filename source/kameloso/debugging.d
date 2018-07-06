@@ -101,6 +101,7 @@ private void formatAssertStatementLines(Sink, Thing)(auto ref Sink sink,
     }
 }
 
+///
 unittest
 {
     import kameloso.irc : IRCParser;
