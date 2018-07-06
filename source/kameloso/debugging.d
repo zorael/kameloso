@@ -7,6 +7,8 @@ module kameloso.debugging;
 import kameloso.common : Client;
 import kameloso.ircdefs : IRCBot, IRCEvent;
 
+import std.typecons : Flag, No, Yes;
+
 @safe:
 
 
@@ -199,14 +201,18 @@ with (parser.bot)
  +  Constructs statement lines for each changed field (or the delta) between two
  +  instances of a struct.
  +
+ +  TODO: Merge with `formatAssertStatementLines`.
+ +
  +  Params:
+ +      asserts = Whether to build assert statements or assign statements.
  +      sink = Output buffer to write to.
  +      before = Original struct object.
  +      after = Changed struct object.
  +      indents = The number of tabs to indent the lines with.
  +      submember = The string name of a recursing symbol, if applicable.
  +/
-void formatDelta(Sink, QualThing)(auto ref Sink sink, QualThing before, QualThing after,
+void formatDelta(Flag!"asserts" asserts = No.asserts, Sink, QualThing)
+    (auto ref Sink sink, QualThing before, QualThing after,
     const uint indents = 0, const string submember = string.init)
 if (is(QualThing == struct))
 {
@@ -225,7 +231,7 @@ if (is(QualThing == struct))
 
         static if (is(T == struct))
         {
-            sink.formatDelta(before.tupleof[i], member, indents, prefix ~ memberstring);
+            sink.formatDelta!asserts(before.tupleof[i], member, indents, prefix ~ memberstring);
         }
         else static if (!isType!member && !isSomeFunction!member)
         {
@@ -233,7 +239,14 @@ if (is(QualThing == struct))
             {
                 static if (isSomeString!T)
                 {
-                    enum pattern = "%s%s%s = \"%s\";\n";
+                    static if (asserts)
+                    {
+                        enum pattern = "%sassert((%s%s == \"%s\"), %2$s%3$s);\n";
+                    }
+                    else
+                    {
+                        enum pattern = "%s%s%s = \"%s\";\n";
+                    }
                 }
                 else static if (is(T == enum))
                 {
@@ -244,11 +257,38 @@ if (is(QualThing == struct))
                     string typename = fullyQualifiedName!T;
                     while (typename.count('.') > 1) typename.nom('.');
 
-                    immutable pattern = "%s%s%s = " ~ typename ~ ".%s;\n";
+                    static if (asserts)
+                    {
+                        immutable pattern = "%sassert((%s%s == " ~ typename ~ ".%s), %2$s%3$s.to!string);\n";
+                    }
+                    else
+                    {
+                        immutable pattern = "%s%s%s = " ~ typename ~ ".%s;\n";
+                    }
+                }
+                else static if (is(T == bool))
+                {
+                    static if (asserts)
+                    {
+                        immutable pattern = member ?
+                            "%sassert(%s%s);\n" :
+                            "%sassert(!%s%s);\n";
+                    }
+                    else
+                    {
+                        enum pattern = "%s%s%s = %s;\n";
+                    }
                 }
                 else
                 {
-                    enum pattern = "%s%s%s = %s;\n";
+                    static if (asserts)
+                    {
+                        enum pattern = "%sassert((%s%s == %s), %2$s%3$s.to!string);\n";
+                    }
+                    else
+                    {
+                        enum pattern = "%s%s%s = %s;\n";
+                    }
                 }
 
                 sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
@@ -292,6 +332,19 @@ server.daemon = IRCServer.Daemon.unreal;
 server.aModes = "";
 `, '\n' ~ sink.data);
 
+    sink = typeof(sink).init;
+
+    sink.formatDelta!(Yes.asserts)(IRCBot.init, bot);
+
+assert(sink.data ==
+`assert((nickname == "NICKNAME"), nickname);
+assert((user == "UUUUUSER"), user);
+assert((server.address == "something.freenode.net"), server.address);
+assert((server.port == 0), server.port.to!string);
+assert((server.daemon == IRCServer.Daemon.unreal), server.daemon.to!string);
+assert((server.aModes == ""), server.aModes);
+`, '\n' ~ sink.data);
+
     struct Foo
     {
         string s;
@@ -314,6 +367,14 @@ server.aModes = "";
     assert(sink.data ==
 `s = "yarn";
 b = false;
+`, '\n' ~ sink.data);
+
+    sink = typeof(sink).init;
+
+    sink.formatDelta!(Yes.asserts)(f1, f2);
+    assert(sink.data ==
+`assert((s == "yarn"), s);
+assert(!b);
 `, '\n' ~ sink.data);
 }
 
