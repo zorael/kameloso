@@ -567,8 +567,19 @@ void generateAsserts(ref Client client) @system
                 {
                     parser.bot.updated = false;
 
-                    stdout.lockingTextWriter.formatDelta(old, parser.bot, 0, "bot");
+                    writeln("/*");
+                    writeln("with (parser.bot)");
+                    writeln("{");
+                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.bot, 1);
+                    writeln("}");
+                    writeln("*/");
                     writeln();
+
+                    writeln("with (parser.bot)");
+                    writeln("{");
+
+                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(old, parser.bot, 1);
+                    writeln("}\n");
 
                     old = parser.bot;
                 }
