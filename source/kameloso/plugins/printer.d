@@ -1099,11 +1099,15 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
                         Appender!string highlightSink;
                         highlightSink.reserve(content.length + 60);  // mostly +10
 
-                        immutable BashForeground contentHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                        immutable BashForeground contentReset = bright ? DefaultBright.content : DefaultDark.content;
+                        immutable BashForeground contentHighlight = bright ?
+                            DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground contentReset = bright ?
+                            DefaultBright.content : DefaultDark.content;
 
-                        immutable BashForeground emoteHighlight = bright ? DefaultBright.highlight : DefaultDark.highlight;
-                        immutable BashForeground emoteReset = bright ? DefaultBright.emote : DefaultDark.emote;
+                        immutable BashForeground emoteHighlight = bright ?
+                            DefaultBright.highlight : DefaultDark.highlight;
+                        immutable BashForeground emoteReset = bright ?
+                            DefaultBright.emote : DefaultDark.emote;
 
                         if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                         {

@@ -123,10 +123,8 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +
  +  Example:
  +  ---
- +  string blinkOn = colour(BashForeground.white, BashBackground.yellow,
- +      BashEffect.blink);
- +  string blinkOff = colour(BashForeground.default_, BashBackground.default_,
- +      BashReset.blink);
+ +  string blinkOn = colour(BashForeground.white, BashBackground.yellow, BashEffect.blink);
+ +  string blinkOff = colour(BashForeground.default_, BashBackground.default_, BashReset.blink);
  +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
  +  ---
  +

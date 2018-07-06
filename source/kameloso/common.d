@@ -279,7 +279,8 @@ if (isOutputRange!(Sink, char[]))
         enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
 
-    enum compensatedWidth = (typewidth > minimumTypeWidth) ? (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
+    enum compensatedWidth = (typewidth > minimumTypeWidth) ?
+        (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
     enum namewidth = max(minimumNameWidth, compensatedWidth);
 
     immutable bright = .settings.brightTerminal;
