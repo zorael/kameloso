@@ -1949,7 +1949,10 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
             case "EXTBAN":
                 // EXTBAN=$,ajrxz
-                extbanPrefix = value.nom(',').to!char;
+                // ETBAN=
+                // no character means implicitly $, I believe?
+                immutable prefix = value.nom(',');
+                extbanPrefix = prefix.length ? prefix.to!char : '$';
                 extbanTypes = value;
                 break;
 
