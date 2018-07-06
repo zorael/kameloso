@@ -216,7 +216,7 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(con
         }
     }
 
-    assert(total < 16^^hex.length);
+    assert((total < 16^^hex.length), "numFromHex output is too large!");
 
     return total;
 }

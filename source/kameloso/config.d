@@ -798,8 +798,8 @@ string justifiedConfigurationText(const string origLines)
     Appender!string justified;
     justified.reserve(128);
 
-    assert(longestEntryLength);
-    assert(unjustified.data.length);
+    assert((longestEntryLength > 0), "No longest entry; is the struct empty?");
+    assert((unjustified.data.length > 0), "Unjustified data is empty");
 
     enum minimumWidth = 24;
     immutable width = max(minimumWidth, longestEntryLength.getMultipleOf!(Yes.alwaysOneUp)(4));

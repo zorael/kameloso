@@ -1493,7 +1493,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
             // This is where we catch the resolved address
-            assert(!event.sender.nickname.length, event.sender.nickname);
+            assert(!event.sender.nickname.length, "Unexpected nickname: " ~ event.sender.nickname);
             bot.server.resolvedAddress = event.sender.address;
             bot.updated = true;
         }
@@ -1912,7 +1912,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 bModes = modeslice.nom(',');
                 cModes = modeslice.nom(',');
                 dModes = modeslice;
-                assert(!dModes.has(','), "Bad chanmodes; dModes has comma");
+                assert(!dModes.has(','), "Bad chanmodes; dModes has comma: " ~ dModes);
                 break;
 
             case "NETWORK":
