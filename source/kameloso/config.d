@@ -593,7 +593,19 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                 enum memberstring = __traits(identifier, Things[i].tupleof[n]);
 
                                 case memberstring:
-                                    things[i].setMemberByName(entry, hits["value"]);
+                                    static if (hasUDA!(Things[i].tupleof[n], CannotContainComments))
+                                    {
+                                        things[i].setMemberByName(entry, hits["value"]);
+                                    }
+                                    else
+                                    {
+                                        import kameloso.string : has, nom;
+                                        // Slice away any comments
+                                        string value = hits["value"];
+                                        value = value.has('#') ? value.nom('#') : value;
+                                        value = value.has(';') ? value.nom(';') : value;
+                                        things[i].setMemberByName(entry, value);
+                                    }
                                     continue thingloop;
                             }
                         }}
