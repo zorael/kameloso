@@ -371,7 +371,8 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     }
                     else static if (!isSomeString!T && isArray!T)
                     {
-                        import std.algorithm.iteration : splitter;
+                        import std.algorithm.iteration : map, splitter;
+                        import std.array : replace;
                         import std.format : format;
 
                         thing.tupleof[i].length = 0;
@@ -381,8 +382,15 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             .format(memberstring));
 
                         enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
+                        enum escaped = '\\' ~ separator;
+                        enum placeholder = "\0\0";  // anything really
 
-                        foreach (immutable entry; valueToSet.splitter(separator))
+                        auto values = valueToSet
+                            .replace(escaped, placeholder)
+                            .splitter(separator)
+                            .map!(a => a.replace(placeholder, separator));
+
+                        foreach (immutable entry; values)
                         {
                             try
                             {
