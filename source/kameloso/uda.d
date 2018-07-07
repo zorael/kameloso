@@ -18,3 +18,9 @@ struct Separator
  +  be printed in clear text; e.g. passwords.
  +/
 struct Hidden {}
+
+/++
+ +  UDA conveying that a string contains characters that could otherwise
+ +  indicate a comment.
+ +/
+struct CannotContainComments {}
