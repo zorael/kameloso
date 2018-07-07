@@ -4,7 +4,7 @@
  +/
 module kameloso.ircdefs;
 
-import kameloso.uda : Hidden, Separator, Unconfigurable;
+import kameloso.uda;
 
 final:
 @safe:
@@ -884,9 +884,11 @@ struct IRCBot
         string[] admins;
 
         /// List of homes, where the bot should be active.
+        @CannotContainComments
         string[] homes;
 
         /// Currently inhabited channels (though not neccessarily homes).
+        @CannotContainComments
         string[] channels;
     }
 

@@ -28,7 +28,7 @@ private:
  +/
 struct ConnectSettings
 {
-    import kameloso.uda : Separator;
+    import kameloso.uda : CannotContainComments, Separator;
 
     /// Whether to join channels upon being invited to them.
     bool joinOnInvite = false;
@@ -41,6 +41,7 @@ struct ConnectSettings
 
     /// Lines to send after successfully connecting and registering.
     @Separator(";")
+    @CannotContainComments
     string[] sendAfterConnect;
 }
 
