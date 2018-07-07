@@ -405,7 +405,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     }
                     else static if (is(T : string))
                     {
-                        thing.tupleof[i] = valueToSet.unquoted;
+                        thing.tupleof[i] = valueToSet.stripped.unquoted;
                         success = true;
                     }
                     else static if (isAssociativeArray!T)
@@ -418,7 +418,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         {
                             /*writefln("%s.%s = %s.to!%s", Thing.stringof,
                                 memberstring, valueToSet, T.stringof);*/
-                            thing.tupleof[i] = valueToSet.unquoted.to!T;
+                            thing.tupleof[i] = valueToSet.stripped.unquoted.to!T;
                             success = true;
                         }
                         catch (const ConvException e)
