@@ -8,6 +8,8 @@ import kameloso.uda;
 
 public import kameloso.meld;
 
+@safe:
+
 
 // setMemberByName
 /++
