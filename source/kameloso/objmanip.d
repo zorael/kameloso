@@ -4,6 +4,8 @@
  +/
 module kameloso.objmanip;
 
+import kameloso.uda;
+
 public import kameloso.meld;
 
 
@@ -41,7 +43,6 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
     import kameloso.common : logger;
     import kameloso.string : stripped, stripSuffix, unquoted;
     import kameloso.traits : isConfigurableVariable;
-    import kameloso.uda;
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
         isSomeString, isType;
