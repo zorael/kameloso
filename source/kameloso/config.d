@@ -553,6 +553,22 @@ unittest
     success = foo.setMemberByName("matey", "hirr steff\\ stuff staff\\|stirf hooo");
     assert(success);
     assert((foo.matey == [ "hirr", "steff\\ stuff", "staff\\|stirf", "hooo" ]), foo.matey.to!string);
+
+    class C
+    {
+        string abc;
+        int def;
+    }
+
+    C c = new C;
+
+    success = c.setMemberByName("abc", "this is abc");
+    assert(success);
+    assert((c.abc == "this is abc"), c.abc);
+
+    success = c.setMemberByName("def", "42");
+    assert(success);
+    assert((c.def == 42), c.def.to!string);
 }
 
 
