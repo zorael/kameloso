@@ -342,7 +342,7 @@ pipyon 3
  +/
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {
-    import kameloso.string : stripped, unquoted;
+    import kameloso.string : stripped, stripSuffix, unquoted;
     import kameloso.traits : isConfigurableVariable;
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
@@ -404,8 +404,9 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             }
                             catch (const ConvException e)
                             {
-                                logger.warningf("Can't convert array '%s' into '%s': %s",
-                                    entry, T.stringof, e.msg);
+                                logger.warningf(`Could not convert %s.%s array entry "%s" into %s (%s)`,
+                                    Thing.stringof.stripSuffix("Settings"),
+                                    memberToSet, entry, T.stringof, e.msg);
                                 break top;
                             }
                         }
@@ -430,8 +431,9 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         }
                         catch (const ConvException e)
                         {
-                            logger.warningf("Can't convert value '%s' into '%s': %s",
-                                valueToSet, T.stringof, e.msg);
+                            logger.warningf(`Invalid value for setting %s.%s: could not convert "%s" to %s (%s)`,
+                                Thing.stringof.stripSuffix("Settings"),
+                                memberToSet, valueToSet, T.stringof, e.msg);
                         }
                     }
                     break top;
