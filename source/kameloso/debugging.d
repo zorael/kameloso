@@ -191,7 +191,8 @@ if (is(QualThing == struct))
 ///
 unittest
 {
-    import kameloso.ircdefs : IRCBot, IRCServer;
+    import kameloso.irc : IRCParser;
+    import kameloso.ircdefs : IRCBot, IRCServer, IRCUser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -262,6 +263,23 @@ b = false;
     assert(sink.data ==
 `assert((s == "yarn"), s);
 assert(!b);
+`, '\n' ~ sink.data);
+
+    sink = typeof(sink).init;
+    auto parser = IRCParser(bot);
+
+    auto event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
+    event.sender.class_ = IRCUser.Class.special;
+    sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
+
+    assert(sink.data ==
+`        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((sender.nickname == "zorael"), sender.nickname);
+        assert((sender.ident == "~NaN"), sender.ident);
+        assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
+        assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
+        assert((channel == "#flerrp"), channel);
+        assert((content == "kameloso: 8ball"), content);
 `, '\n' ~ sink.data);
 }
 
