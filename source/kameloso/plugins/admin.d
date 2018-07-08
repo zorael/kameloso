@@ -227,7 +227,8 @@ void onCommandShowUsers(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : deepSizeof, printObject;
+    import kameloso.common : printObject;
+    import kameloso.objmanip : deepSizeof;
 
     logger.trace("Printing Admin's users");
 

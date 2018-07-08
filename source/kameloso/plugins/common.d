@@ -1399,7 +1399,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.common : logger;
-        import kameloso.config : setMemberByName;
+        import kameloso.objmanip : setMemberByName;
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
@@ -2920,7 +2920,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         if (pluginstring == "core")
         {
             import kameloso.common : initLogger, settings;
-            import kameloso.config : setMemberByName;
+            import kameloso.objmanip : setMemberByName;
 
             settings.setMemberByName(setting, value);
 

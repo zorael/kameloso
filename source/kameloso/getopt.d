@@ -180,7 +180,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         }
 
         // Clear entries that are dashes.
-        import kameloso.common : zeroMembers;
+        import kameloso.objmanip : zeroMembers;
         zeroMembers!"-"(bot);
 
         client.parser.bot = bot;
