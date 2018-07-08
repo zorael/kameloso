@@ -350,7 +350,7 @@ unittest
     immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
     with (event)
     {
-        assert((type == CHAN), type.to!string);
+        assert((type == IRCEvent.Type.CHAN), type.to!string);
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
