@@ -229,7 +229,11 @@ if (is(QualThing == struct))
         alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, before.tupleof[i]);
 
-        static if (is(T == struct))
+        static if ((memberstring == "raw") || (memberstring == "time"))
+        {
+            continue;
+        }
+        else static if (is(T == struct))
         {
             sink.formatDelta!asserts(before.tupleof[i], member, indents, prefix ~ memberstring);
         }
