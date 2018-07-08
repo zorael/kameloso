@@ -84,8 +84,6 @@ with (parser.bot)
  +  Constructs statement lines for each changed field (or the delta) between two
  +  instances of a struct.
  +
- +  TODO: Merge with `formatAssertStatementLines`.
- +
  +  Params:
  +      asserts = Whether to build assert statements or assign statements.
  +      sink = Output buffer to write to.
