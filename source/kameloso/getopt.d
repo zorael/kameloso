@@ -253,9 +253,14 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             // If we don't initialise the plugins there'll be no plugins array
             initPlugins(customSettings);
 
+            client.writeConfigurationFile(settings.configFile);
+
+            bot = typeof(bot).init;
+            settings = typeof(settings).init;
+            meldSettingsFromFile(bot, settings);
+
             printObjects(bot, bot.server, settings);
 
-            client.writeConfigurationFile(settings.configFile);
             return Yes.quit;
         }
 
