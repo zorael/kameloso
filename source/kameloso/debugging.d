@@ -409,11 +409,9 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 
     sink.put("{\n");
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, raw);
-    sink.formattedWrite("%swith (IRCEvent.Type)\n", 1.tabs);
-    sink.formattedWrite("%swith (IRCUser.Class)\n", 1.tabs);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatAssertStatementLines(event, string.init, 2);
+    sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
     sink.formattedWrite("%s}\n", 1.tabs);
     sink.put("}");
 
@@ -444,7 +442,7 @@ unittest
     sink.formattedWrite("%simmutable event = parser.toIRCEvent(\"%s\");\n", 1.tabs, event.raw);
     sink.formattedWrite("%swith (event)\n", 1.tabs);
     sink.formattedWrite("%s{\n", 1.tabs);
-    sink.formatAssertStatementLines(event, string.init, 2);
+    sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
     sink.formattedWrite("%s}\n", 1.tabs);
     sink.put("}");
 
