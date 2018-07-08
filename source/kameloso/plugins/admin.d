@@ -51,8 +51,31 @@ private:
  +/
 struct AdminSettings
 {
+    import kameloso.uda : Unconfigurable;
+
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
+
+    @Unconfigurable
+    {
+        /++
+        +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
+        +  events.
+        +/
+        bool printAll;
+
+        /++
+        +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
+        +  of events.
+        +/
+        bool printBytes;
+
+        /++
+        +  Toggles whether `onAnyEvent` prints assert statements for incoming
+        +  events.
+        +/
+        bool printAsserts;
+    }
 }
 
 
@@ -78,9 +101,9 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    if (plugin.printAll) writeln(event.raw, '$');
+    if (plugin.adminSettings.printAll) writeln(event.raw, '$');
 
-    if (plugin.printBytes)
+    if (plugin.adminSettings.printBytes)
     {
         import std.string : representation;
 
@@ -92,7 +115,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         version(Cygwin_) stdout.flush();
     }
 
-    if (plugin.printAsserts)
+    if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
         import std.algorithm.searching : canFind;
@@ -613,8 +636,8 @@ void onCommandPrintAll(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    plugin.printAll = !plugin.printAll;
-    logger.info("Printing all: ", plugin.printAll);
+    plugin.adminSettings.printAll = !plugin.adminSettings.printAll;
+    logger.info("Printing all: ", plugin.adminSettings.printAll);
 }
 
 
@@ -634,8 +657,8 @@ void onCommandPrintBytes(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    plugin.printBytes = !plugin.printBytes;
-    logger.info("Printing bytes: ", plugin.printBytes);
+    plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+    logger.info("Printing bytes: ", plugin.adminSettings.printBytes);
 }
 
 
@@ -657,8 +680,8 @@ void onCommandAsserts(AdminPlugin plugin)
 
     import kameloso.debugging : formatBotAssignment;
 
-    plugin.printAsserts = !plugin.printAsserts;
-    logger.info("Printing asserts: ", plugin.printAsserts);
+    plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+    logger.info("Printing asserts: ", plugin.adminSettings.printAsserts);
     formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
     version(Cygwin_) stdout.flush();
 }
@@ -854,26 +877,9 @@ final class AdminPlugin : IRCPlugin
         set,
         auth,
     }
+
     /// FIXME: File with user definitions. Must be the same as in persistence.d.
     enum usersFile = "users.json";
-
-    /++
-     +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
-     +  events.
-     +/
-    bool printAll;
-
-    /++
-     +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents* of
-     +  events.
-     +/
-    bool printBytes;
-
-    /++
-     +  Toggles whether `onAnyEvent` prints assert statements for incoming
-     +  events.
-     +/
-    bool printAsserts;
 
     /// Which sort of peek is currently in flight; see `peekPlugins`.
     PeekType currentPeekType;
