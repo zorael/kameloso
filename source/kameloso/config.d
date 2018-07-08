@@ -426,9 +426,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                                 .replace(placeholder, escaped);
                         }
 
-                        auto range = values
-                            .replace(ephemeralSeparator, trueSeparator)
-                            .splitter(trueSeparator);
+                        auto range = values.splitter(ephemeralSeparator);
 
                         foreach (immutable entry; range)
                         {
