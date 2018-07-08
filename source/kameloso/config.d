@@ -684,7 +684,7 @@ bara    blaawp,oorgle,blaawp
 ignored completely
 because no DifferentSection struct was passed
 nil     5
-naN     !"#¤%&/`;
+naN     !"¤%&/`;
 
     Foo foo;
     configurationFileContents
@@ -733,7 +733,7 @@ naN     !"#¤%&/`;
         assert((ignored == "completely"), ignored);
         assert((because == "no DifferentSection struct was passed"), because);
         assert((nil == 5), nil.text);
-        assert((naN == `!"#¤%&/`), naN);
+        assert((naN == `!"¤%&/`), naN);
     }
 }
 
