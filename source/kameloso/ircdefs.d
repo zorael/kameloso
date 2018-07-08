@@ -879,6 +879,7 @@ struct IRCBot
     }
 
     @Separator(",")
+    @Separator(" ")
     {
         /// The nickname services accounts of the bot's *administrators*.
         string[] admins;
