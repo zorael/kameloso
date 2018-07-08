@@ -220,10 +220,17 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 enum arrayPattern = "%-(%s" ~ separator ~ "%)";
                 enum placeholder = "\0\0";  // anything really
 
-                auto separatedElements = member.map!(a => a.replace(separator, placeholder));
-                string value = arrayPattern
+                static if (is(typeof(member == string[])))
+                {
+                    auto separatedElements = member.map!(a => a.replace(separator, placeholder));
+                    string value = arrayPattern
                     .format(separatedElements)
                     .replace(placeholder, escaped);
+                }
+                else
+                {
+                    string value = arrayPattern.format(member);
+                }
 
                 static if (separators.length > 1)
                 {
