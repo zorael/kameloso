@@ -498,6 +498,7 @@ unittest
         int baz;
 
         @Separator("|")
+        @Separator(" ")
         {
             string[] arr;
             string[] matey;
@@ -525,6 +526,10 @@ unittest
     assert(success);
     assert((foo.arr == [ "herp", "derp", "dirp", "darp"]), foo.arr.to!string);
 
+    success = foo.setMemberByName("arr", "herp derp dirp|darp");
+    assert(success);
+    assert((foo.arr == [ "herp", "derp", "dirp", "darp"]), foo.arr.to!string);
+
     success = foo.setMemberByName("matey", "this,should,not,be,separated");
     assert(success);
     assert((foo.matey == [ "this,should,not,be,separated" ]), foo.matey.to!string);
@@ -544,6 +549,10 @@ unittest
 
     success = foo.setMemberByName("", "true");
     assert(!success);
+
+    success = foo.setMemberByName("matey", "hirr steff\\ stuff staff\\|stirf hooo");
+    assert(success);
+    assert((foo.matey == [ "hirr", "steff\\ stuff", "staff\\|stirf", "hooo" ]), foo.matey.to!string);
 }
 
 
