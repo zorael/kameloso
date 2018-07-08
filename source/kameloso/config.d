@@ -358,8 +358,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
             alias T = Unqual!(typeof(thing.tupleof[i]));
 
             static if (!isType!(thing.tupleof[i]) &&
-                isConfigurableVariable!(thing.tupleof[i]) &&
-                !hasUDA!(thing.tupleof[i], Unconfigurable))
+                isConfigurableVariable!(thing.tupleof[i]))
             {
                 enum memberstring = __traits(identifier, thing.tupleof[i]);
 
