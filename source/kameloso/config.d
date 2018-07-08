@@ -203,16 +203,39 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
         {
             static if (!isSomeString!T && isArray!T)
             {
+                import std.algorithm.iteration : map;
+                import std.array : replace;
+
                 // array, join it together
                 static assert (hasUDA!(thing.tupleof[i], Separator),
                     "%s.%s is not annotated with a Separator"
                     .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
 
-                enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
-                static assert(separator.length, "Invalid separator (empty)");
+                alias separators = getUDAs!(thing.tupleof[i], Separator);
+                enum separator = separators[0].token;
+                static assert(separator.length, "%s.%s has invalid Separator (empty)"
+                    .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
 
+                enum escaped = '\\' ~ separator;
                 enum arrayPattern = "%-(%s" ~ separator ~ "%)";
-                immutable value = arrayPattern.format(member);
+                enum placeholder = "\0\0";  // anything really
+
+                auto separatedElements = member.map!(a => a.replace(separator, placeholder));
+                string value = arrayPattern
+                    .format(separatedElements)
+                    .replace(placeholder, escaped);
+
+                static if (separators.length > 1)
+                {
+                    foreach (furtherSeparator; separators[1..$])
+                    {
+                        enum furtherEscaped = '\\' ~ furtherSeparator.token;
+                        value = value
+                            .replace(furtherEscaped, placeholder)
+                            .replace(furtherSeparator.token, separator)
+                            .replace(placeholder, furtherEscaped);
+                    }
+                }
             }
             else static if (is(T == enum))
             {
@@ -370,7 +393,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     }
                     else static if (!isSomeString!T && isArray!T)
                     {
-                        import std.algorithm.iteration : map, splitter;
+                        import std.algorithm.iteration : splitter;
                         import std.array : replace;
                         import std.format : format;
 
@@ -380,16 +403,27 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             "Field %s is missing a Separator annotation"
                             .format(memberstring));
 
-                        enum separator = getUDAs!(thing.tupleof[i], Separator)[0].token;
-                        enum escaped = '\\' ~ separator;
+                        alias separators = getUDAs!(thing.tupleof[i], Separator);
+                        enum trueSeparator = separators[0].token;
                         enum placeholder = "\0\0";  // anything really
+                        enum ephemeralSeparator = "\1\1";  // ditto
 
-                        auto values = valueToSet
-                            .replace(escaped, placeholder)
-                            .splitter(separator)
-                            .map!(a => a.replace(placeholder, separator));
+                        string values = valueToSet;
 
-                        foreach (immutable entry; values)
+                        foreach (separator; separators)
+                        {
+                            enum escaped = '\\' ~ separator.token;
+                            values = values
+                                .replace(escaped, placeholder)
+                                .replace(separator.token, ephemeralSeparator)
+                                .replace(placeholder, escaped);
+                        }
+
+                        auto range = values
+                            .replace(ephemeralSeparator, trueSeparator)
+                            .splitter(trueSeparator);
+
+                        foreach (immutable entry; range)
                         {
                             try
                             {
