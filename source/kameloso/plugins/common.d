@@ -1773,9 +1773,16 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     // part
     /++
      +  Leaves a channel.
+     +
+     +  Cannot seemingly be wrapped using `std.functional.partial` due to the
+     +  default `= string.init` parameter.
      +/
     pragma(inline)
-    alias part(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.part!quiet, privateState);
+    void part(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
+    {
+        //alias part(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.part!quiet, privateState);
+        return kameloso.messaging.quit!quiet(state, reason);
+    }
 
     // quit
     /++

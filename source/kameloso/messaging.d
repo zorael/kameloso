@@ -204,12 +204,31 @@ void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.kick("#channel", "kameloso", "content");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.KICK), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((target.nickname == "kameloso"), target.nickname);
+    }
+}
+
 
 // part
 /++
  +  Leaves a channel.
  +/
-void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel)
+void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state,
+    const string channel, const string reason = string.init)
 {
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "part was passed invalid channel: " ~ channel);
 
@@ -217,6 +236,7 @@ void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
     event.type = IRCEvent.Type.PART;
     if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
+    event.content = reason;
 
     state.mainThread.send(event);
 }
