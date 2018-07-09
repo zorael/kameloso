@@ -55,7 +55,7 @@ struct PrinterSettings
     bool bellOnMention = true;
 
     /// Whether to bell on parsing errors.
-    bool bellOnErrors = true;
+    bool bellOnError = true;
 
     /// Whether to be silent and not print error messages in the event output.
     bool silentErrors = false;
