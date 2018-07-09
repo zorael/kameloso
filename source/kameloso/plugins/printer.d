@@ -631,27 +631,23 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
 }
 
 
-// formatMessage
+// formatMessageMonochrome
 /++
- +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink.
+ +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink, in
+ +  monochrome.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
- +  By default output is in colours, unless on Windows. The behaviour is stored
- +  and read from the `PrinterPlugin.printerSettings` struct.
- +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
  +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` that is being
- +          formatted.
+ +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
  +      monochrome = Whether to print text monochrome or coloured.
  +/
-void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent event,
-    bool monochrome, bool bellOnMention)
+void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
+    IRCEvent event, const bool bellOnMention)
 {
-    import kameloso.bash : BashForeground;
     import kameloso.conv : Enum;
     import kameloso.string : beginsWith;
     import std.algorithm.comparison : equal;
@@ -665,31 +661,13 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
         .timeOfDay
         .toString();
 
-    immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
-    string typestring = rawTypestring;
-
-    if (rawTypestring.beginsWith("RPL_") || rawTypestring.beginsWith("ERR_"))
-    {
-        typestring = rawTypestring[4..$];
-    }
-    else
-    {
-        version(TwitchSupport)
-        {
-            if (rawTypestring.beginsWith("TWITCH_"))
-            {
-                typestring = rawTypestring[7..$];
-            }
-        }
-    }
+    immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
 
     bool shouldBell;
 
-    with (BashForeground)
     with (plugin.state)
     with (event)
     with (event.sender)
-    if (monochrome)
     {
         event.stripEffects();
 
@@ -814,430 +792,468 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
-        if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors) ||
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
             (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
         }
     }
-    else
+
+    static if (!__traits(hasMember, Sink, "data"))
     {
-        version(Colours)
+        sink.put('\n');
+    }
+}
+
+
+// formatMessageColoured
+/++
+ +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink, coloured.
+ +
+ +  It formats the timestamp, the type of the event, the sender or sender alias,
+ +  the channel or target, the content body, as well as auxiliary information.
+ +
+ +  Params:
+ +      plugin = Current `PrinterPlugin`.
+ +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
+ +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
+ +/
+version(Colours)
+void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
+    IRCEvent event, const bool bellOnMention)
+{
+    import kameloso.bash : BashForeground, colour, invert;
+    import kameloso.conv : Enum;
+    import kameloso.string : beginsWith;
+    import std.algorithm.comparison : equal;
+    import std.datetime : DateTime;
+    import std.datetime.systime : SysTime;
+    import std.format : formattedWrite;
+    import std.uni : asLowerCase, asUpperCase;
+
+    immutable timestamp = (cast(DateTime)SysTime
+        .fromUnixTime(event.time))
+        .timeOfDay
+        .toString();
+
+    immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
+    immutable typestring = rawTypestring.withoutTypePrefix;
+
+    bool shouldBell;
+
+    alias BF = BashForeground;
+
+    enum DefaultDark : BashForeground
+    {
+        timestamp = BF.white,
+        type    = BF.lightblue,
+        error   = BF.lightred,
+        sender  = BF.lightgreen,
+        special = BF.lightyellow,
+        target  = BF.cyan,
+        channel = BF.yellow,
+        content = BF.default_,
+        aux     = BF.white,
+        count   = BF.green,
+        num     = BF.darkgrey,
+        badge   = BF.white,
+        emote   = BF.cyan,
+        highlight = BF.white,
+        query   = BF.lightgreen,
+    }
+
+    enum DefaultBright : BashForeground
+    {
+        timestamp = BF.black,
+        type    = BF.blue,
+        error   = BF.red,
+        sender  = BF.green,
+        special = BF.yellow,
+        target  = BF.cyan,
+        channel = BF.yellow,
+        content = BF.default_,
+        aux     = BF.black,
+        count   = BF.lightgreen,
+        num     = BF.lightgrey,
+        badge   = BF.black,
+        emote   = BF.lightcyan,
+        highlight = BF.black,
+        query   = BF.green,
+    }
+
+    immutable bright = settings.brightTerminal;
+
+    /++
+     +  Outputs a Bash ANSI colour token based on the hash of the passed
+     +  nickname.
+     +
+     +  It gives each user a random yet consistent colour to their name.
+     +/
+    BashForeground colourByHash(const string nickname)
+    {
+        if (plugin.printerSettings.randomNickColours)
         {
-            import kameloso.bash : colour, invert;
+            import std.traits : EnumMembers;
 
-            enum DefaultDark : BashForeground
-            {
-                timestamp = white,
-                type    = lightblue,
-                error   = lightred,
-                sender  = lightgreen,
-                special = lightyellow,
-                target  = cyan,
-                channel = yellow,
-                content = default_,
-                aux     = white,
-                count   = green,
-                num     = darkgrey,
-                badge   = white,
-                emote   = cyan,
-                highlight = white,
-            }
+            alias foregroundMembers = EnumMembers!BashForeground;
+            enum lastIndex = (foregroundMembers.length - 1);
+            static immutable BashForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
-            enum DefaultBright : BashForeground
-            {
-                timestamp = black,
-                type    = blue,
-                error   = red,
-                sender  = green,
-                special = yellow,
-                target  = cyan,
-                channel = yellow,
-                content = default_,
-                aux     = black,
-                count   = lightgreen,
-                num     = lightgrey,
-                badge   = black,
-                emote   = lightcyan,
-                highlight = black,
-            }
+            auto colourIndex = hashOf(nickname) % lastIndex;
 
-            immutable bright = settings.brightTerminal;
-
-            /++
-             +  Outputs a Bash ANSI colour token based on the hash of the passed
-             +  nickname.
-             +
-             +  It gives each user a random yet consistent colour to their name.
-             +/
-            BashForeground colourByHash(const string nickname)
-            {
-                if (plugin.printerSettings.randomNickColours)
-                {
-                    import std.traits : EnumMembers;
-
-                    alias foregroundMembers = EnumMembers!BashForeground;
-                    enum lastIndex = (foregroundMembers.length - 1);
-                    static immutable BashForeground[foregroundMembers.length] fg = [ foregroundMembers ];
-
-                    auto colourIndex = hashOf(nickname) % lastIndex;
-
-                    // Map black to white on dark terminals, reverse on bright
-                    if (bright)
-                    {
-                        if (colourIndex == lastIndex) colourIndex = 1;
-                    }
-                    else
-                    {
-                        if (colourIndex == 1) colourIndex = lastIndex;
-                    }
-
-                    return fg[colourIndex];
-                }
-
-                return bright ? DefaultBright.sender : DefaultDark.sender;
-            }
-
-            /++
-             +  Outputs a Bash truecolour token based on the #RRGGBB value
-             +  stored in `event.colour`.
-             +
-             +  This is for Twitch servers that assign such values to users'
-             +  messages. By catching it we can honour the setting by tinting
-             +  users accordingly.
-             +/
-            void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
-            {
-                if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
-                {
-                    import kameloso.bash : truecolour;
-                    import kameloso.conv : numFromHex;
-
-                    int r, g, b;
-                    user.colour.numFromHex(r, g, b);
-
-                    if (plugin.printerSettings.normaliseTruecolour)
-                    {
-                        sink.truecolour!(Yes.normalise)(r, g, b, settings.brightTerminal);
-                    }
-                    else
-                    {
-                        sink.truecolour!(No.normalise)(r, g, b, settings.brightTerminal);
-                    }
-                }
-                else
-                {
-                    sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
-                }
-            }
-
-            BashForeground typeColour;
-
+            // Map black to white on dark terminals, reverse on bright
             if (bright)
             {
-                typeColour = (type == IRCEvent.Type.QUERY) ? green : DefaultBright.type;
+                if (colourIndex == lastIndex) colourIndex = 1;
             }
             else
             {
-                typeColour = (type == IRCEvent.Type.QUERY) ? lightgreen : DefaultDark.type;
+                if (colourIndex == 1) colourIndex = lastIndex;
             }
 
-            sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
-            put(sink, '[', timestamp, "] ");
+            return fg[colourIndex];
+        }
 
-            if (rawTypestring.beginsWith("ERR_"))
+        return bright ? DefaultBright.sender : DefaultDark.sender;
+    }
+
+    /++
+     +  Outputs a Bash truecolour token based on the #RRGGBB value stored in
+     +  `user.colour`.
+     +
+     +  This is for Twitch servers that assign such values to users' messages.
+     +  By catching it we can honour the setting by tinting users accordingly.
+     +/
+    void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
+    {
+        if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
+        {
+            import kameloso.bash : truecolour;
+            import kameloso.conv : numFromHex;
+
+            int r, g, b;
+            user.colour.numFromHex(r, g, b);
+
+            if (plugin.printerSettings.normaliseTruecolour)
             {
-                sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+                sink.truecolour!(Yes.normalise)(r, g, b, settings.brightTerminal);
             }
             else
             {
-                sink.colour(typeColour);
-            }
-
-            put(sink, '[');
-
-            if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
-            else put(sink, typestring.asLowerCase);
-
-            put(sink, "] ");
-
-            colourUserTruecolour(sink, event.sender);
-
-            if (sender.isServer)
-            {
-                sink.put(address);
-            }
-            else
-            {
-                if (alias_.length)
-                {
-                    sink.put(alias_);
-
-                    if (class_ == IRCUser.Class.special)
-                    {
-                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
-                    }
-
-                    if (!alias_.asLowerCase.equal(nickname))
-                    {
-                        sink.colour(default_);
-                        sink.put(" <");
-                        colourUserTruecolour(sink, event.sender);
-                        sink.put(nickname);
-                        sink.colour(default_);
-                        sink.put('>');
-                    }
-                }
-                else if (nickname.length)
-                {
-                    // Can be no-nick special: [PING] *2716423853
-                    sink.put(nickname);
-
-                    if (class_ == IRCUser.Class.special)
-                    {
-                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
-                    }
-                }
-
-                if (badge.length)
-                {
-                    import kameloso.string : has, nom;
-
-                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                    immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
-                    put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                    else put(sink, badgefront);
-
-                    put(sink, ']');
-                }
-            }
-
-            if (target.nickname.length)
-            {
-                // No need to check isServer; target is never server
-                sink.colour(default_);
-                sink.put(" (");
-                colourUserTruecolour(sink, event.target);
-
-                if (target.alias_.length)
-                {
-                    //put(sink, target.alias_, ')');
-                    sink.put(target.alias_);
-                    sink.colour(default_);
-                    sink.put(')');
-
-                    if (target.class_ == IRCUser.Class.special)
-                    {
-                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
-                    }
-
-                    if (!target.alias_.asLowerCase.equal(target.nickname))
-                    {
-                        //sink.colour(default_);
-                        sink.put(" <");
-                        colourUserTruecolour(sink, event.target);
-                        sink.put(target.nickname);
-                        sink.colour(default_);
-                        sink.put('>');
-                    }
-                }
-                else
-                {
-                    sink.put(target.nickname);
-                    sink.colour(default_);
-                    sink.put(')');
-
-                    if (target.class_ == IRCUser.Class.special)
-                    {
-                        sink.colour(bright ? DefaultBright.special : DefaultDark.special);
-                        sink.put('*');
-                    }
-                }
-
-                if (target.badge.length)
-                {
-                    import kameloso.string : has, nom;
-
-                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                    immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
-                    put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                    else put(sink, badgefront);
-
-                    put(sink, ']');
-                }
-            }
-
-            if (channel.length)
-            {
-                sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
-                put(sink, " [", channel, ']');
-            }
-
-            if (content.length)
-            {
-                version(TwitchSupport)
-                {
-                    if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
-                        ((event.type == IRCEvent.Type.CHAN) ||
-                        (event.type == IRCEvent.Type.EMOTE) ||
-                        (event.type == IRCEvent.Type.TWITCH_CHEER) ||
-                        (event.type == IRCEvent.Type.SELFCHAN) ||
-                        (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
-                    {
-                        import std.array : Appender;
-
-                        Appender!string highlightSink;
-                        highlightSink.reserve(content.length + 60);  // mostly +10
-
-                        immutable BashForeground contentHighlight = bright ?
-                            DefaultBright.highlight : DefaultDark.highlight;
-                        immutable BashForeground contentReset = bright ?
-                            DefaultBright.content : DefaultDark.content;
-
-                        immutable BashForeground emoteHighlight = bright ?
-                            DefaultBright.highlight : DefaultDark.highlight;
-                        immutable BashForeground emoteReset = bright ?
-                            DefaultBright.emote : DefaultDark.emote;
-
-                        if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
-                        {
-                            import kameloso.string : has;
-
-                            if (event.tags.has("emote-only=1"))
-                            {
-                                // Just highlight the whole line, make it appear as normal content
-                                event.mapEffects(contentReset);
-                                sink.colour(contentReset);
-                                highlightSink.colour(contentHighlight);
-                                highlightSink.put(content);
-                                highlightSink.colour(contentReset);
-                            }
-                            else
-                            {
-                                // Emote but mixed text and emotes
-                                event.mapEffects(emoteReset);
-                                sink.colour(emoteReset);
-                                content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteReset);
-                            }
-                        }
-                        else
-                        {
-                            // Normal content, normal text, normal emotes
-                            sink.colour(contentReset);
-                            event.mapEffects(contentReset);
-                            content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentReset);
-                        }
-
-                        content = highlightSink.data;  // mutable...
-                        aux = string.init;
-                    }
-                    else
-                    {
-                        immutable BashForeground tint = (event.type == IRCEvent.Type.EMOTE) ?
-                            (bright ? DefaultBright.emote : DefaultDark.emote) :
-                            (bright ? DefaultBright.content : DefaultDark.content);
-
-                        sink.colour(tint);
-                        event.mapEffects(tint);
-                    }
-                }
-                else
-                {
-                    BashForeground tint;
-
-                    if (event.type == IRCEvent.Type.EMOTE)
-                    {
-                        tint = bright ? DefaultBright.emote : DefaultDark.emote;
-                    }
-                    else
-                    {
-                        tint = bright ? DefaultBright.content : DefaultDark.content;
-                    }
-
-                    sink.colour(tint);
-                    event.mapEffects(tint);
-                }
-
-                if (sender.isServer || nickname.length)
-                {
-                    import kameloso.irc : containsNickname;
-
-                    with (IRCEvent.Type)
-                    switch (event.type)
-                    {
-                    case CHAN:
-                    case EMOTE:
-                        if (content.containsNickname(bot.nickname))
-                        {
-                            // Nick was mentioned (certain)
-                            shouldBell = bellOnMention;
-                            put(sink, `: "`, content.invert(bot.nickname), '"');
-                            break;
-                        }
-                        else goto default;
-
-                    default:
-                        // Normal non-highlighting channel message
-                        put(sink, `: "`, content, '"');
-                        break;
-                    }
-                }
-                else
-                {
-                    // PING or ERROR likely
-                    put(sink, content);
-                }
-            }
-
-            // Reset the background to ward off bad backgrounds bleeding out
-            import kameloso.bash : BashBackground;
-            sink.colour(BashBackground.default_);
-
-            if (aux.length)
-            {
-                sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
-                put(sink, " (", aux, ')');
-            }
-
-            if (count != 0)
-            {
-                sink.colour(bright ? DefaultBright.count : DefaultDark.count);
-                sink.formattedWrite(" {%d}", count);
-            }
-
-            if (num > 0)
-            {
-                sink.colour(bright ? DefaultBright.num : DefaultDark.num);
-                sink.formattedWrite(" (#%03d)", num);
-            }
-
-            if (errors.length && !plugin.printerSettings.silentErrors)
-            {
-                sink.colour(bright ? DefaultBright.error : DefaultDark.error);
-                put(sink, " !", errors, '!');
-            }
-
-            sink.colour(default_);  // same for bright and dark
-
-            if (shouldBell || (errors.length && plugin.printerSettings.bellOnErrors) ||
-                (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
-            {
-                import kameloso.bash : TerminalToken;
-                sink.put(TerminalToken.bell);
+                sink.truecolour!(No.normalise)(r, g, b, settings.brightTerminal);
             }
         }
         else
         {
-            settings.monochrome = true;
-            return plugin.formatMessage(sink, event, settings.monochrome, bellOnMention);
+            sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
+        }
+    }
+
+    with (plugin.state)
+    with (event)
+    with (event.sender)
+    {
+        sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
+        put(sink, '[', timestamp, "] ");
+
+        if (rawTypestring.beginsWith("ERR_"))
+        {
+            sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+        }
+        else
+        {
+            BashForeground typeColour;
+
+            if (bright)
+            {
+                typeColour = (type == IRCEvent.Type.QUERY) ? DefaultBright.query : DefaultBright.type;
+            }
+            else
+            {
+                typeColour = (type == IRCEvent.Type.QUERY) ? DefaultBright.query : DefaultDark.type;
+            }
+
+            sink.colour(typeColour);
+        }
+
+        put(sink, '[');
+
+        if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
+        else put(sink, typestring.asLowerCase);
+
+        put(sink, "] ");
+
+        colourUserTruecolour(sink, event.sender);
+
+        if (sender.isServer)
+        {
+            sink.put(address);
+        }
+        else
+        {
+            if (alias_.length)
+            {
+                sink.put(alias_);
+
+                if (class_ == IRCUser.Class.special)
+                {
+                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.put('*');
+                }
+
+                if (!alias_.asLowerCase.equal(nickname))
+                {
+                    sink.colour(BashForeground.default_);
+                    sink.put(" <");
+                    colourUserTruecolour(sink, event.sender);
+                    sink.put(nickname);
+                    sink.colour(BashForeground.default_);
+                    sink.put('>');
+                }
+            }
+            else if (nickname.length)
+            {
+                // Can be no-nick special: [PING] *2716423853
+                sink.put(nickname);
+
+                if (class_ == IRCUser.Class.special)
+                {
+                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.put('*');
+                }
+            }
+
+            if (badge.length)
+            {
+                import kameloso.string : has, nom;
+
+                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
+                put(sink, " [");
+
+                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
+                else put(sink, badgefront);
+
+                put(sink, ']');
+            }
+        }
+
+        if (target.nickname.length)
+        {
+            // No need to check isServer; target is never server
+            sink.colour(BashForeground.default_);
+            sink.put(" (");
+            colourUserTruecolour(sink, event.target);
+
+            if (target.alias_.length)
+            {
+                //put(sink, target.alias_, ')');
+                sink.put(target.alias_);
+                sink.colour(BashForeground.default_);
+                sink.put(')');
+
+                if (target.class_ == IRCUser.Class.special)
+                {
+                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.put('*');
+                }
+
+                if (!target.alias_.asLowerCase.equal(target.nickname))
+                {
+                    //sink.colour(BashForeground.default_);
+                    sink.put(" <");
+                    colourUserTruecolour(sink, event.target);
+                    sink.put(target.nickname);
+                    sink.colour(BashForeground.default_);
+                    sink.put('>');
+                }
+            }
+            else
+            {
+                sink.put(target.nickname);
+                sink.colour(BashForeground.default_);
+                sink.put(')');
+
+                if (target.class_ == IRCUser.Class.special)
+                {
+                    sink.colour(bright ? DefaultBright.special : DefaultDark.special);
+                    sink.put('*');
+                }
+            }
+
+            if (target.badge.length)
+            {
+                import kameloso.string : has, nom;
+
+                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
+                put(sink, " [");
+
+                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
+                else put(sink, badgefront);
+
+                put(sink, ']');
+            }
+        }
+
+        if (channel.length)
+        {
+            sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
+            put(sink, " [", channel, ']');
+        }
+
+        if (content.length)
+        {
+            version(TwitchSupport)
+            {
+                if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
+                    ((event.type == IRCEvent.Type.CHAN) ||
+                    (event.type == IRCEvent.Type.EMOTE) ||
+                    (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+                    (event.type == IRCEvent.Type.SELFCHAN) ||
+                    (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
+                {
+                    import std.array : Appender;
+
+                    Appender!string highlightSink;
+                    highlightSink.reserve(content.length + 60);  // mostly +10
+
+                    immutable BashForeground contentHighlight = bright ?
+                        DefaultBright.highlight : DefaultDark.highlight;
+                    immutable BashForeground contentReset = bright ?
+                        DefaultBright.content : DefaultDark.content;
+
+                    immutable BashForeground emoteHighlight = bright ?
+                        DefaultBright.highlight : DefaultDark.highlight;
+                    immutable BashForeground emoteReset = bright ?
+                        DefaultBright.emote : DefaultDark.emote;
+
+                    if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
+                    {
+                        import kameloso.string : has;
+
+                        if (event.tags.has("emote-only=1"))
+                        {
+                            // Just highlight the whole line, make it appear as normal content
+                            event.mapEffects(contentReset);
+                            sink.colour(contentReset);
+                            highlightSink.colour(contentHighlight);
+                            highlightSink.put(content);
+                            highlightSink.colour(contentReset);
+                        }
+                        else
+                        {
+                            // Emote but mixed text and emotes
+                            event.mapEffects(emoteReset);
+                            sink.colour(emoteReset);
+                            content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteReset);
+                        }
+                    }
+                    else
+                    {
+                        // Normal content, normal text, normal emotes
+                        sink.colour(contentReset);
+                        event.mapEffects(contentReset);
+                        content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentReset);
+                    }
+
+                    content = highlightSink.data;  // mutable...
+                    aux = string.init;
+                }
+                else
+                {
+                    immutable BashForeground tint = (event.type == IRCEvent.Type.EMOTE) ?
+                        (bright ? DefaultBright.emote : DefaultDark.emote) :
+                        (bright ? DefaultBright.content : DefaultDark.content);
+
+                    sink.colour(tint);
+                    event.mapEffects(tint);
+                }
+            }
+            else
+            {
+                BashForeground tint;
+
+                if (event.type == IRCEvent.Type.EMOTE)
+                {
+                    tint = bright ? DefaultBright.emote : DefaultDark.emote;
+                }
+                else
+                {
+                    tint = bright ? DefaultBright.content : DefaultDark.content;
+                }
+
+                sink.colour(tint);
+                event.mapEffects(tint);
+            }
+
+            if (sender.isServer || nickname.length)
+            {
+                import kameloso.irc : containsNickname;
+
+                with (IRCEvent.Type)
+                switch (event.type)
+                {
+                case CHAN:
+                case EMOTE:
+                    if (content.containsNickname(bot.nickname))
+                    {
+                        // Nick was mentioned (certain)
+                        shouldBell = bellOnMention;
+                        put(sink, `: "`, content.invert(bot.nickname), '"');
+                        break;
+                    }
+                    else goto default;
+
+                default:
+                    // Normal non-highlighting channel message
+                    put(sink, `: "`, content, '"');
+                    break;
+                }
+            }
+            else
+            {
+                // PING or ERROR likely
+                put(sink, content);
+            }
+        }
+
+        // Reset the background to ward off bad backgrounds bleeding out
+        import kameloso.bash : BashBackground;
+        sink.colour(BashBackground.default_);
+
+        if (aux.length)
+        {
+            sink.colour(bright ? DefaultBright.aux : DefaultDark.aux);
+            put(sink, " (", aux, ')');
+        }
+
+        if (count != 0)
+        {
+            sink.colour(bright ? DefaultBright.count : DefaultDark.count);
+            sink.formattedWrite(" {%d}", count);
+        }
+
+        if (num > 0)
+        {
+            sink.colour(bright ? DefaultBright.num : DefaultDark.num);
+            sink.formattedWrite(" (#%03d)", num);
+        }
+
+        if (errors.length && !plugin.printerSettings.silentErrors)
+        {
+            sink.colour(bright ? DefaultBright.error : DefaultDark.error);
+            put(sink, " !", errors, '!');
+        }
+
+        sink.colour(BashForeground.default_);  // same for bright and dark
+
+        if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
+            (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
+        {
+            import kameloso.bash : TerminalToken;
+            sink.put(TerminalToken.bell);
         }
     }
 
