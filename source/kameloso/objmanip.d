@@ -228,7 +228,11 @@ unittest
 
     success = foo.setMemberByName("matey", "hirr steff\\ stuff staff\\|stirf hooo");
     assert(success);
-    assert((foo.matey == [ "hirr", "steff\\ stuff", "staff\\|stirf", "hooo" ]), foo.matey.to!string);
+    assert((foo.matey == [ "hirr", "steff stuff", "staff|stirf", "hooo" ]), foo.matey.to!string);
+
+    success = foo.setMemberByName("matey", "hirr steff\\\\ stuff staff\\\\|stirf hooo");
+    assert(success);
+    assert((foo.matey == [ "hirr", "steff\\", "stuff", "staff\\", "stirf", "hooo" ]), foo.matey.to!string);
 
     class C
     {
