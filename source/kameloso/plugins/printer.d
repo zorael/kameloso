@@ -1248,6 +1248,81 @@ void formatMessage(Sink)(PrinterPlugin plugin, auto ref Sink sink, IRCEvent even
 }
 
 
+// withoutTypePrefix
+/++
+ +  Slices away any type prefixes from the string of a
+ +  `kameloso.ircdefs.IRCEvent.Type`.
+ +
+ +  Only for shared use in `formatMessageMonochrome` and
+ +  `formatMessageColoured`.
+ +
+ +  Example:
+ +  ---
+ +  immutable typestring1 = "PRIVMSG".withoutTypePrefix;
+ +  assert((typestring1 == "PRIVMSG"), typestring1);  // passed through
+ +
+ +  immutable typestring2 = "ERR_NOSUCHNICK".withoutTypePrefix;
+ +  assert((typestring2 == "NOSUCHNICK"), typestring2);
+ +
+ +  immutable typestring3 = "RPL_LIST".withoutTypePrefix;
+ +  assert((typestring3 == "LIST"), typestring3);
+ +  ---
+ +
+ +  Params:
+ +      typestring = The string form of a `kameloso.ircdefs.IRCEvent.Type`.
+ +
+ +  Returns:
+ +      A slice of the passed `typestring`, excluding any prefixes if present.
+ +/
+string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
+{
+    import kameloso.string : beginsWith;
+
+    if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
+    {
+        return typestring[4..$];
+    }
+    else
+    {
+        version(TwitchSupport)
+        {
+            if (typestring.beginsWith("TWITCH_"))
+            {
+                return typestring[7..$];
+            }
+        }
+    }
+
+    return typestring;  // as is
+}
+
+///
+unittest
+{
+    {
+        immutable typestring = "RPL_ENDOFMOTD";
+        immutable without = typestring.withoutTypePrefix;
+        assert((without == "ENDOFMOTD"), without);
+    }
+    {
+        immutable typestring = "ERR_CHANOPRIVSNEEDED";
+        immutable without = typestring.withoutTypePrefix;
+        assert((without == "CHANOPRIVSNEEDED"), without);
+    }
+    version(TwitchSupport)
+    {{
+        immutable typestring = "TWITCH_USERSTATE";
+        immutable without = typestring.withoutTypePrefix;
+        assert((without == "USERSTATE"), without);
+    }}
+    {
+        immutable typestring = "PRIVMSG";
+        immutable without = typestring.withoutTypePrefix;
+        assert((without == "PRIVMSG"), without);
+    }
+}
+
+
 // mapEffects
 /++
  +  Maps mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
