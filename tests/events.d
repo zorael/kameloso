@@ -2099,3 +2099,25 @@ unittest
         assert((server.extbanTypes == "ACNOQRSTUcmz"), server.extbanTypes);
     }
 }
+
+version(TwitchSupport)
+unittest
+{
+    IRCParser parser;
+    with (parser.bot)
+    {
+        server.daemon = IRCServer.Daemon.twitch;
+        server.network = "Twitch";
+        server.daemonstring = "twitch";
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":tmi.twitch.tv RECONNECT");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RECONNECT), type.to!string);
+            assert((sender.address == "tmi.twitch.tv"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
+        }
+    }
+}

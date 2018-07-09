@@ -84,6 +84,7 @@ struct IRCEvent
         CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user.
         USERNOTICE, /// Twitch subscription or resubscription event.
         HOSTTARGET, /// Twitch channel hosting target.
+        RECONNECT,  /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
         TWITCH_SUB,       /// Twitch subscription event.
