@@ -1429,6 +1429,33 @@ string stripEffects(const string content)
         .replace(underlinedCode, string.init);
 }
 
+///
+unittest
+{
+    import kameloso.irc : I = IRCControlCharacter;
+
+    enum boldCode = "" ~ I.bold;
+    enum italicsCode = "" ~ I.italics;
+    enum underlinedCode = "" ~ I.underlined;
+
+    {
+        immutable withTags = "This is " ~ boldCode ~ "riddled" ~ boldCode ~ " with " ~
+            italicsCode ~ "tags" ~ italicsCode;
+        immutable without = stripEffects(withTags);
+        assert((without == "This is riddled with tags"), without);
+    }
+    {
+        immutable withTags = "This line has no tags.";
+        immutable without = stripEffects(withTags);
+        assert((without == withTags), without);
+    }
+    {
+        string withTags;
+        immutable without = stripEffects(withTags);
+        assert(!without.length, without);
+    }
+}
+
 
 // mapColours
 /++
