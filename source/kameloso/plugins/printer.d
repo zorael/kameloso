@@ -216,14 +216,12 @@ struct LogLineBuffer
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.printerSettings.enabled) return;
+    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
 
     import std.algorithm.searching : canFind;
     import std.file : FileException;
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
-
-    if (!plugin.printerSettings.logs) return;
 
     immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
@@ -494,7 +492,7 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 @(IRCEvent.Type.ERR_NOMOTD)
 void commitLogs(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.enabled) return;
+    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
 
     import std.file : FileException;
 
