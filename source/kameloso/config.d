@@ -216,32 +216,35 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                 static assert(separator.length, "%s.%s has invalid Separator (empty)"
                     .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
 
-                enum escaped = '\\' ~ separator;
                 enum arrayPattern = "%-(%s" ~ separator ~ "%)";
-                enum placeholder = "\0\0";  // anything really
 
-                static if (is(typeof(member == string[])))
+                static if (is(typeof(member) == string[]))
                 {
+                    if (!member.length) continue;
+
+                    enum escaped = '\\' ~ separator;
+                    enum placeholder = "\0\0";  // anything really
+
+                    // Replace separators with a placeholder and flatten with format
+
                     auto separatedElements = member.map!(a => a.replace(separator, placeholder));
                     string value = arrayPattern
-                    .format(separatedElements)
-                    .replace(placeholder, escaped);
+                        .format(separatedElements)
+                        .replace(placeholder, escaped);
+
+                    static if (separators.length > 1)
+                    {
+                        foreach (furtherSeparator; separators[1..$])
+                        {
+                            // We're serialising; escape any other separators
+                            enum furtherEscaped = '\\' ~ furtherSeparator.token;
+                            value = value.replace(furtherSeparator.token, furtherEscaped);
+                        }
+                    }
                 }
                 else
                 {
-                    string value = arrayPattern.format(member);
-                }
-
-                static if (separators.length > 1)
-                {
-                    foreach (furtherSeparator; separators[1..$])
-                    {
-                        enum furtherEscaped = '\\' ~ furtherSeparator.token;
-                        value = value
-                            .replace(furtherEscaped, placeholder)
-                            .replace(furtherSeparator.token, separator)
-                            .replace(placeholder, furtherEscaped);
-                    }
+                    immutable value = arrayPattern.format(member);
                 }
             }
             else static if (is(T == enum))

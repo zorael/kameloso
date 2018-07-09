@@ -82,20 +82,25 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             .format(memberstring));
 
                         alias separators = getUDAs!(thing.tupleof[i], Separator);
-                        enum trueSeparator = separators[0].token;
-                        enum placeholder = "\0\0";  // anything really
+                        enum escapedPlaceholder = "\0\0";  // anything really
                         enum ephemeralSeparator = "\1\1";  // ditto
+                        enum doubleEphemeral = ephemeralSeparator ~ ephemeralSeparator;
+                        enum doubleEscapePlaceholder = "\2\2";
 
-                        string values = valueToSet;
+                        string values = valueToSet.replace("\\\\", doubleEscapePlaceholder);
 
                         foreach (separator; separators)
                         {
                             enum escaped = '\\' ~ separator.token;
                             values = values
-                                .replace(escaped, placeholder)
+                                .replace(escaped, escapedPlaceholder)
                                 .replace(separator.token, ephemeralSeparator)
-                                .replace(placeholder, escaped);
+                                .replace(escapedPlaceholder, separator.token)
+                                .replace(doubleEphemeral, ephemeralSeparator)
+                                .replace(doubleEphemeral, ephemeralSeparator);
                         }
+
+                        values = values.replace(doubleEscapePlaceholder, "\\");
 
                         auto range = values.splitter(ephemeralSeparator);
 
