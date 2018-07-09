@@ -255,8 +255,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             client.writeConfigurationFile(settings.configFile);
 
-            bot = typeof(bot).init;
-            settings = typeof(settings).init;
+            // Reload saved file
             meldSettingsFromFile(bot, settings);
 
             printObjects(bot, bot.server, settings);
