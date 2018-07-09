@@ -68,7 +68,7 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string c
     }
     else if (nickname.length)
     {
-        assert(channel.beginsWithOneOf(state.bot.server.chantypes),
+        assert(!nickname.beginsWithOneOf(state.bot.server.chantypes),
             "privmsg was passed a channel for nick: " ~ channel);
         return query!quiet(state, nickname, content);
     }
@@ -191,7 +191,7 @@ void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 {
     assert(channel.beginsWithOneOf(state.bot.server.chantypes),
         "kick was passed invalid channel: " ~ channel);
-    assert(nicikname.beginsWithOneOf(state.bot.server.chantypes),
+    assert(!nickname.beginsWithOneOf(state.bot.server.chantypes),
         "kick was passed channel as nickname: " ~ nickname);
 
     IRCEvent event;
