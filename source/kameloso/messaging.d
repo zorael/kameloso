@@ -14,6 +14,12 @@ import kameloso.string : beginsWithOneOf;
 import std.typecons : Flag, No, Yes;
 import std.concurrency : Tid, send;
 
+version(unittest)
+{
+    import std.concurrency : receiveOnly, thisTid;
+    import std.conv : to;
+}
+
 
 // chan
 /++
@@ -32,6 +38,23 @@ void chan(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.chan("#channel", "content");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+    }
+}
+
 
 // query
 /++
@@ -46,6 +69,23 @@ void query(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string nic
     event.content = content;
 
     state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.query("kameloso", "content");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.QUERY), type.to!string);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "content"), content);
+    }
 }
 
 
@@ -81,6 +121,35 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string c
 deprecated("throttleline is deprecated, use privmsg instead.")
 alias throttleline = privmsg;
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.privmsg("#channel", string.init, "content");
+
+    immutable event1 = receiveOnly!IRCEvent;
+    with (event1)
+    {
+        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert(!target.nickname.length, target.nickname);
+    }
+
+    state.privmsg(string.init, "kameloso", "content");
+
+    immutable event2 = receiveOnly!IRCEvent;
+    with (event2)
+    {
+        assert((type == IRCEvent.Type.QUERY), type.to!string);
+        assert(!channel.length, channel);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "content"), content);
+    }
+}
+
 
 // emote
 /++
@@ -105,6 +174,36 @@ void emote(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string emo
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.emote("#channel", "content");
+
+    immutable event1 = receiveOnly!IRCEvent;
+    with (event1)
+    {
+        assert((type == IRCEvent.Type.EMOTE), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert(!target.nickname.length, target.nickname);
+    }
+
+    state.emote("kameloso", "content");
+
+    immutable event2 = receiveOnly!IRCEvent;
+    with (event2)
+    {
+        assert((type == IRCEvent.Type.EMOTE), type.to!string);
+        assert(!channel.length, channel);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "content"), content);
+    }
+}
+
+
 
 // mode
 /++
@@ -128,6 +227,24 @@ void mode(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.mode("#channel", "+o", "content");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.MODE), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((aux == "+o"), aux);
+    }
+}
+
 
 // topic
 /++
@@ -144,6 +261,23 @@ void topic(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string cha
     event.content = content;
 
     state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.topic("#channel", "content");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.TOPIC), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+    }
 }
 
 
@@ -164,6 +298,23 @@ void invite(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string ch
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.invite("#channel", "kameloso");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.INVITE), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((target.nickname == "kameloso"), target.nickname);
+    }
+}
+
 
 // join
 /++
@@ -179,6 +330,22 @@ void join(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
     event.channel = channel;
 
     state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.join("#channel");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.JOIN), type.to!string);
+        assert((channel == "#channel"), channel);
+    }
 }
 
 
@@ -241,6 +408,23 @@ void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state,
     state.mainThread.send(event);
 }
 
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.part("#channel", "reason");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.PART), type.to!string);
+        assert((channel == "#channel"), channel);
+        assert((content == "reason"), content);
+    }
+}
+
 
 // quit
 /++
@@ -254,6 +438,22 @@ void quit(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string reas
     event.content = reason;
 
     state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.quit("reason");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.QUIT), type.to!string);
+        assert((content == "reason"), content);
+    }
 }
 
 
@@ -272,4 +472,20 @@ void raw(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string line)
     event.content = line;
 
     state.mainThread.send(event);
+}
+
+///
+unittest
+{
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.raw("commands");
+
+    immutable event = receiveOnly!IRCEvent;
+    with (event)
+    {
+        assert((type == IRCEvent.Type.UNSET), type.to!string);
+        assert((content == "commands"), content);
+    }
 }
