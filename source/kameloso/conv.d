@@ -53,8 +53,9 @@ if (is(E == enum))
                 enumSwitch ~= "return " ~ memberstring ~ ";\n";
             }
 
-            enumSwitch ~= `default: throw new ConvException("No such " ~
-                E.stringof ~ ": " ~ enumstring);}`;
+            enumSwitch ~= "default:\n" ~
+                "import std.traits : fullyQualifiedName;\n" ~
+                `throw new ConvException("No such " ~ fullyQualifiedName!E ~ ": " ~ enumstring);}`;
 
             return enumSwitch;
         }();
