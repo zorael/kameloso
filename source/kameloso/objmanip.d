@@ -95,12 +95,13 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             values = values
                                 .replace(escaped, escapedPlaceholder)
                                 .replace(separator.token, ephemeralSeparator)
-                                .replace(escapedPlaceholder, separator.token)
-                                .replace(doubleEphemeral, ephemeralSeparator)
-                                .replace(doubleEphemeral, ephemeralSeparator);
+                                .replace(escapedPlaceholder, separator.token);
                         }
 
-                        values = values.replace(doubleEscapePlaceholder, "\\");
+                        values = values
+                            .replace(doubleEscapePlaceholder, "\\")
+                            .replace(doubleEphemeral, ephemeralSeparator)
+                            .replace(doubleEphemeral, ephemeralSeparator);
 
                         auto range = values.splitter(ephemeralSeparator);
 
