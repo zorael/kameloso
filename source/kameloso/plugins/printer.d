@@ -769,6 +769,21 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length)
         {
+            version(TwitchSupport)
+            {
+                if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
+                    ((event.type == IRCEvent.Type.CHAN) ||
+                    (event.type == IRCEvent.Type.EMOTE) ||
+                    (event.type == IRCEvent.Type.TWITCH_CHEER) ||
+                    (event.type == IRCEvent.Type.SELFCHAN) ||
+                    (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
+                {
+                    // Here we would normally highlight emotes, but we're monochrome
+                    // clear aux though; it may contain emote positions.
+                    aux = string.init;
+                }
+            }
+
             if (sender.isServer || nickname.length)
             {
                 import kameloso.irc : containsNickname;
