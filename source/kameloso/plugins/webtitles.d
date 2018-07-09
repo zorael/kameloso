@@ -380,19 +380,11 @@ string decodeTitle(const string title)
 {
     import kameloso.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
-    import std.regex : regex, replaceAll;
-
-    enum rPattern = "\r";
-    enum nPattern = "\n";
-    auto rEngine = rPattern.regex;
-    auto nEngine = nPattern.regex;
-
-    // replaceAll takes about 4.48x as long as removechars does
-    // but that's micro-optimising; we're still in the µsec range
+    import std.array : replace;
 
     return title
-        .replaceAll(rEngine, string.init)
-        .replaceAll(nEngine, " ")
+        .replace("\r", string.init)
+        .replace("\n", " ")
         .stripped
         .htmlEntitiesDecode();
 }
