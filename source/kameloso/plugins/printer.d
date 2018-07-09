@@ -686,7 +686,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     with (event)
     with (event.sender)
     {
-        event.stripEffects();
+        event.content = stripEffects(event.content);
 
         put(sink, '[', timestamp, "] [");
 
