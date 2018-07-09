@@ -156,8 +156,25 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     default:
         import std.stdio : stdout;
-        plugin.formatMessage(stdout.lockingTextWriter, mutEvent, state.settings.monochrome,
-            printerSettings.bellOnMention);
+
+        bool printed;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
+                    printerSettings.bellOnMention);
+                printed = true;
+            }
+        }
+
+        if (!printed)
+        {
+            plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
+                printerSettings.bellOnMention);
+        }
+
         version(Cygwin_) stdout.flush();
         break;
     }
@@ -321,12 +338,12 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
             Appender!string sink;
             sink.reserve(512);
-            plugin.formatMessage(sink, event, true, false);
+            plugin.formatMessageMonochrome(sink, event, false);
             plugin.buffers[path].lines ~= sink.data;
         }
         else
         {
-            plugin.formatMessage(File(path, "a").lockingTextWriter, event, true, false);
+            plugin.formatMessageMonochrome(File(path, "a").lockingTextWriter, event, false);
         }
 
         if (event.errors.length && plugin.printerSettings.logErrors)
