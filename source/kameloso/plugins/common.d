@@ -2513,8 +2513,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     }
                     else
                     {
-                        logger.warning("Invalid modesign in RPL_NAMREPLY: ",
-                            modesign);
+                        logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
                     }
                 }
 
@@ -2648,8 +2647,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
         {
             /*static if (verbose)
             {
-                writefln("starts with prefix (%s)",
-                    settings.prefix);
+                writefln("starts with prefix (%s)", settings.prefix);
             }*/
 
             content.nom!(Yes.decode)(settings.prefix);
@@ -2679,8 +2677,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
         {
             /*static if (verbose)
             {
-                writeln(name, "but it is a query, " ~
-                    "consider optional");
+                writeln(name, "but it is a query, consider optional");
                 version(Cygwin_) stdout.flush();
             }*/
             goto case optional;
@@ -2697,8 +2694,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
         {
             /*static if (verbose)
             {
-                writefln("%s trailing character '%s'",
-                    name, content[bot.nickname.length]);
+                writefln("%s trailing character '%s'", name, content[bot.nickname.length]);
             }*/
 
             switch (content[bot.nickname.length])

@@ -46,8 +46,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
     import kameloso.string : has, stripped, stripSuffix, unquoted;
     import kameloso.traits : isConfigurableVariable;
     import std.conv : ConvException, to;
-    import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray,
-        isSomeString, isType;
+    import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray, isSomeString, isType;
 
     bool success;
 
@@ -144,7 +143,10 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         {
                             /*writefln("%s.%s = %s.to!%s", Thing.stringof,
                                 memberstring, valueToSet, T.stringof);*/
-                            thing.tupleof[i] = valueToSet.stripped.unquoted.to!T;
+                            thing.tupleof[i] = valueToSet
+                                .stripped
+                                .unquoted
+                                .to!T;
                             success = true;
                         }
                         catch (const ConvException e)

@@ -400,8 +400,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             }
             catch (const Exception e)
             {
-                logger.warningf(`Malformed configuration line "%s": %s`,
-                    line, e.msg);
+                logger.warningf(`Malformed configuration line "%s": %s`, line, e.msg);
             }
             break;
 

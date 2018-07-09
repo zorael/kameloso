@@ -208,8 +208,7 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
 
     if (reddit.length)
     {
-        state.privmsg(event.channel, event.sender.nickname,
-            "Reddit post: " ~ reddit);
+        state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
     }
     else
     {
