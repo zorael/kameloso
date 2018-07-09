@@ -1405,39 +1405,28 @@ void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.de
  +  from an `kameloso.ircdefs.IRCEvent`.
  +
  +  Params:
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
+ +      content = String to strip effects from.
+ +
+ +  Returns:
+ +      A string devoid of effects.
  +/
-void stripEffects(ref IRCEvent event)
+string stripEffects(const string content)
 {
     import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : has;
-    import std.regex : regex, replaceAll;
+    import std.array : replace;
 
-    with (event)
-    {
-        if (content.has(cast(ubyte)I.colour))
-        {
-            content = stripColours(content);
-        }
+    enum boldCode = "" ~ I.bold;
+    enum italicsCode = "" ~ I.italics;
+    enum underlinedCode = "" ~ I.underlined;
 
-        if (content.has(cast(ubyte)I.bold))
-        {
-            auto rBold = (""~I.bold).regex;
-            content = content.replaceAll(rBold, string.init);
-        }
+    if (!content.length) return string.init;
 
-        if (content.has(cast(ubyte)I.italics))
-        {
-            auto rItalics = (""~I.italics).regex;
-            content = content.replaceAll(rItalics, string.init);
-        }
-
-        if (content.has(cast(ubyte)I.underlined))
-        {
-            auto rUnderlined = (""~I.underlined).regex;
-            content = content.replaceAll(rUnderlined, string.init);
-        }
-    }
+    return content
+        .stripColours
+        .replace(boldCode, string.init)
+        .replace(italicsCode, string.init)
+        .replace(underlinedCode, string.init);
 }
 
 
