@@ -27,12 +27,12 @@ if (is(E == enum))
      +  `std.conv.to` and generates less template bloat.
      +
      +  Example:
-     +  ------------
+     +  ---
      +  enum SomeEnum { one, two, three };
      +
      +  SomeEnum foo = Enum!someEnum.fromString("one");
      +  SomeEnum bar = Enum!someEnum.fromString("three");
-     +  ------------
+     +  ---
      +
      +  Params:
      +      enumstring = the string name of an enum member.
@@ -75,12 +75,12 @@ if (is(E == enum))
      +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
      +
      +  Example:
-     +  ------------
+     +  ---
      +  enum SomeEnum { one, two, three };
      +
      +  string foo = Enum!SomeEnum.toString(one);
      +  assert((foo == "one"), foo);
-     +  ------------
+     +  ---
      +
      +  Params:
      +      value = Enum member whose string name we want.
@@ -165,10 +165,10 @@ unittest
  +  Returns the decimal value of a hex number in string form.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int fifteen = numFromHex("F");
  +  int twofiftyfive = numFromHex("FF");
- +  ------------
+ +  ---
  +
  +  Params:
  +      hex = Hexadecimal number in string form.

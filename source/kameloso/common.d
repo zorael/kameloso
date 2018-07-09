@@ -1293,7 +1293,7 @@ unittest
  +  Write the result to a passed output range `sink`.
  +
  +  Example:
- +  ------------
+ +  ---
  +  Appender!string sink;
  +
  +  const then = Clock.currTime;
@@ -1302,7 +1302,7 @@ unittest
  +
  +  const duration = (now - then);
  +  immutable inEnglish = sink.timeSince(duration);
- +  ------------
+ +  ---
  +
  +  Params:
  +      duration = A period of time.

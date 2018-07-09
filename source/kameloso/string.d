@@ -19,7 +19,7 @@ import std.typecons : Flag, No, Yes;
  +  and advances the passed ref string to after the token.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string foobar = "foo bar";
  +  string foo = foobar.nom(" ");
  +  string bar = foobar;
@@ -30,7 +30,7 @@ import std.typecons : Flag, No, Yes;
  +
  +  enum line = "abc def ghi";
  +  string def = line[4..$].nom(" ");  // now with auto ref
- +  ------------
+ +  ---
  +
  +  Params:
  +      decode = Whether to use auto-decoding functions, or try to keep to non-
@@ -211,10 +211,10 @@ unittest
  +  numerical count of it.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string one = 1.plurality("one", "two");
  +  string two = 2.plurality("one", "two");
- +  ------------
+ +  ---
  +
  +  Params:
  +      num = Numerical count of the noun.
@@ -288,11 +288,11 @@ if (isSomeString!T)
  +  Does not decode the string and may thus give weird results on weird inputs.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string quoted = `"This is a quote"`;
  +  string unquotedLine = quoted.unquoted;
  +  assert((unquotedLine == "This is a quote"), unquotedLine);
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = The (potentially) quoted string.
@@ -326,11 +326,11 @@ unittest
  +  Does not decode the string and may thus give weird results on weird inputs.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string quoted = `'This is single-quoted'`;
  +  string unquotedLine = quoted.unsinglequoted;
  +  assert((unquotedLine == "This is single-quoted"), unquotedLine);
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = The (potentially) single-quoted string.
@@ -365,10 +365,10 @@ unittest
  +  Does not decode the string and may thus give weird results on weird inputs.
  +
  +  Example:
- +  ------------
+ +  ---
  +  assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
  +  assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
- +  ------------
+ +  ---
  +
  +  Params:
  +      haystack = Original line to examine.
@@ -492,11 +492,11 @@ unittest
  +  "`kameloso:`".
  +
  +  Example:
- +  ------------
+ +  ---
  +  string prefixed = "kameloso: sudo MODE +o #channel :user";
  +  string command = prefixed.stripPrefix("kameloso");
  +  assert((command == "sudo MODE +o #channel :user"), command);
- +  ------------
+ +  ---
  +
  +  Params:
  +      line = String line prefixed with `prefix`.
@@ -557,11 +557,11 @@ unittest
  +  Strips the supplied string from the end of a string.
  +
  +  Example:
- +  ------------
+ +  ---
  +  string suffixed = "Kameloso";
  +  string stripped = suffixed.stripSuffix("oso");
  +  assert((stripped == "Kamel"), stripped);
- +  ------------
+ +  ---
  +
  +  Params:
  +      fullStrip = Whether to allow for the stripping to clear the entire
@@ -606,10 +606,10 @@ unittest
  +  This is useful to see to what extent two addresses are similar.
  +
  +  Example:
- +  ------------
+ +  ---
  +  int numDomains = sharedDomains("irc.freenode.net", "leguin.freenode.net");
  +  assert(numDomains == 2);  // freenode.net
- +  ------------
+ +  ---
  +
  +  Params:
  +      rawOne = First domain string.
@@ -703,10 +703,10 @@ unittest
  +  Returns spaces equal to that of num tabs (\t).
  +
  +  Example:
- +  ------------
+ +  ---
  +  string indentation = 2.tabs;
  +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
- +  ------------
+ +  ---
  +
  +  Params:
  +      spaces = How many spaces make up a tab.
@@ -765,11 +765,11 @@ unittest
  +  correspond to one set of codepoints and one set only.
  +
  +  Example:
- +  ------------
+ +  ---
  +  assert("Lorem ipsum".has("Lorem"));
  +  assert(!"Lorem ipsum".has('l'));
  +  assert("Lorem ipsum".has!(Yes.decode)(" "));
- +  ------------
+ +  ---
  +
  +  Params:
  +      decode = Whether to use auto-decoding functions, or try to keep to non-
