@@ -42,8 +42,8 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
     // These arguments are by reference.
     settings.configFile.readConfigInto(tempBot, tempBot.server, tempSettings);
 
-    bot.meldInto!(Yes.overwrite)(tempBot);
-    settings.meldInto!(Yes.overwrite)(tempSettings);
+    bot.meldInto(tempBot);
+    settings.meldInto(tempSettings);
 
     bot = tempBot;
     settings = tempSettings;
