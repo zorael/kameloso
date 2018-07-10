@@ -118,6 +118,9 @@ struct ThreadMessage
 
     /// Concurrency message asking plugins to "reload".
     struct Reload {}
+
+    /// Concurrency message asking to disconnect and reconnect to the server.
+    struct Reconnect {}
 }
 
 
