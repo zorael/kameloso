@@ -104,6 +104,18 @@ void throttleline(Strings...)(ref Client client, const Strings strings)
 }
 
 
+// Next
+/++
+ +  Enum of flags carrying the meaning of "what to do next".
+ +/
+enum Next
+{
+    stayConnected,  /// Keep the connection active, treat disconnects as errors.
+    reconnect,  /// Preemptively disconnect and reconnect to the server.
+    quit,  /// Exit the program.
+}
+
+
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was
@@ -116,9 +128,10 @@ void throttleline(Strings...)(ref Client client, const Strings strings)
  +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
- +      `Yes.quit` or `No.quit`, depending.
+ +      `Next.{stayConnected,reconnect,quit}` depending on what course of action
+ +      to take next.
  +/
-Flag!"quit" checkMessages(ref Client client)
+Next checkMessages(ref Client client)
 {
     import kameloso.plugins.common : IRCPlugin;
     import kameloso.common : initLogger, settings;
@@ -128,7 +141,7 @@ Flag!"quit" checkMessages(ref Client client)
 
     scope (failure) client.teardownPlugins();
 
-    Flag!"quit" quit;
+    Next next;
 
     /// Send a message to the server bypassing throttling.
     void immediateline(ThreadMessage.Immediateline, string line)
@@ -174,7 +187,7 @@ Flag!"quit" checkMessages(ref Client client)
         immutable reason = givenReason.length ? givenReason : client.parser.bot.quitReason;
         logger.tracef(`--> QUIT :"%s"`, reason);
         client.conn.sendline("QUIT :\"", reason, "\"");
-        quit = Yes.quit;
+        next = Next.quit;
     }
 
     /// Saves current configuration to disk.
@@ -313,9 +326,9 @@ Flag!"quit" checkMessages(ref Client client)
 
         if (receivedSomething) ++receivedInARow;
     }
-    while (receivedSomething && !quit && (receivedInARow < 5));
+    while (receivedSomething && (next == Next.stayConnected) && (receivedInARow < 5));
 
-    return quit;
+    return next;
 }
 
 
@@ -335,7 +348,7 @@ Flag!"quit" checkMessages(ref Client client)
  +      `Yes.quit` if circumstances mean the bot should exit, otherwise
  +      `No.quit.`
  +/
-Flag!"quit" mainLoop(ref Client client)
+Next mainLoop(ref Client client)
 {
     import kameloso.common : printObjects;
     import kameloso.connection : listenFiber;
@@ -345,8 +358,8 @@ Flag!"quit" mainLoop(ref Client client)
     import std.datetime.systime : Clock;
     import std.utf : UTFException;
 
-    /// Flag denoting whether we should quit or not.
-    Flag!"quit" quit;
+    /// Enum denoting what we should do next loop.
+    Next next;
 
     // Instantiate a Generator to read from the socket and yield lines
     auto generator = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
@@ -360,13 +373,13 @@ Flag!"quit" mainLoop(ref Client client)
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
-    while (!quit)
+    while (next == Next.stayConnected)
     {
         if (generator.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected; reconnect
             generator.reset();
-            return No.quit;
+            return Next.stayConnected;
         }
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
@@ -414,8 +427,8 @@ Flag!"quit" mainLoop(ref Client client)
                             // case the time-to-fire is lower than the current
                             // counter value. This gives it more precision.
 
-                            immutable next = cast(int)(fiber.id - nowInUnix) / Timeout.receive;
-                            timedFiberCheckCounter = min(timedFiberCheckCounter, next);
+                            immutable nextTime = cast(int)(fiber.id - nowInUnix) / Timeout.receive;
+                            timedFiberCheckCounter = min(timedFiberCheckCounter, nextTime);
                             continue;
                         }
 
@@ -609,10 +622,10 @@ Flag!"quit" mainLoop(ref Client client)
         }
 
         // Check concurrency messages to see if we should exit, else repeat
-        quit = checkMessages(client);
+        next = checkMessages(client);
     }
 
-    return Yes.quit;
+    return next;
 }
 
 
@@ -927,8 +940,8 @@ int main(string[] args)
         // Save a backup snapshot of the bot, for restoring upon reconnections
         IRCBot backupBot = bot;
 
-        /// Flag denoting that we should quit the program.
-        Flag!"quit" quit;
+        /// Enum denoting what we should do next loop.
+        Next next;
 
         /++
          +  Bool whether this is the first connection attempt or if we have
@@ -1025,11 +1038,11 @@ int main(string[] args)
             startPlugins();
 
             // Start the main loop
-            quit = client.mainLoop();
+            next = client.mainLoop();
             firstConnect = false;
 
             // Save if we're exiting and configuration says we should.
-            if ((quit || *abort) && settings.saveOnExit)
+            if (((next == Next.quit) || *abort) && settings.saveOnExit)
             {
                 client.writeConfigurationFile(settings.configFile);
             }
@@ -1037,7 +1050,8 @@ int main(string[] args)
             // Always teardown after connection ends
             teardownPlugins();
         }
-        while (!quit && !(*abort) && settings.reconnectOnFailure);
+        while (!(*abort) && ((next == Next.reconnect) ||
+            ((next == Next.stayConnected) && settings.reconnectOnFailure)));
 
         if (*abort)
         {
