@@ -77,8 +77,8 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         thing.tupleof[i].length = 0;
 
                         static assert(hasUDA!(thing.tupleof[i], Separator),
-                            "Field %s is missing a Separator annotation"
-                            .format(memberstring));
+                            "%s.%s is missing a Separator annotation"
+                            .format(Thing.stringof, memberstring));
 
                         alias separators = getUDAs!(thing.tupleof[i], Separator);
                         enum escapedPlaceholder = "\0\0";  // anything really
