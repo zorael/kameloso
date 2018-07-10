@@ -368,6 +368,36 @@ unittest
 
     abc.meldInto!(Yes.overwrite)(def);
     assert((def.s == "some string"), def.s);
+
+    struct Bools
+    {
+        bool a = true;
+        bool b = false;
+    }
+
+    Bools bools1, bools2, backupBools1, backupBools2, inverted, backupInverted;
+
+    bools2.a = false;
+    backupBools1 = bools1;
+    backupBools2 = bools2;
+
+    inverted.a = false;
+    inverted.b = true;
+    backupInverted = inverted;
+
+    bools2.meldInto(bools1);
+    assert(!bools1.a);
+    assert(!bools1.b);
+
+    bools2.meldInto(inverted);
+    assert(!inverted.a);
+    assert(inverted.b);
+    inverted = backupInverted;
+
+    bools2.meldInto!(Yes.overwrite)(inverted);
+    assert(!inverted.a);
+    assert(!inverted.b);
+    inverted = backupInverted;
 }
 
 
