@@ -190,6 +190,13 @@ Next checkMessages(ref Client client)
         next = Next.quit;
     }
 
+    /// Disconnects from and reconnects to the server.
+    void reconnect(ThreadMessage.Reconnect)
+    {
+        client.conn.sendline("QUIT :Reconnecting.");
+        next = Next.reconnect;
+    }
+
     /// Saves current configuration to disk.
     void save(ThreadMessage.Save)
     {
@@ -317,6 +324,7 @@ Next checkMessages(ref Client client)
             &save,
             &reloadPlugins,
             &peekPlugins,
+            &reconnect,
             (Variant v)
             {
                 // Caught an unhandled message
