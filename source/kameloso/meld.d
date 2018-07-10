@@ -132,6 +132,20 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                     {
                         member ~= meldThis.tupleof[i];
                     }
+                    else static if (is(T == bool))
+                    {
+                        static if (is(Thing == class))
+                        {
+                            member = meldThis.tupleof[i];
+                        }
+                        else
+                        {
+                            if (member == Thing.init.tupleof[i])
+                            {
+                                member = meldThis.tupleof[i];
+                            }
+                        }
+                    }
                     else
                     {
                         /+  This is tricksy for bools. A value of false could be
