@@ -707,6 +707,25 @@ void onISUPPORT(ConnectService service)
 }
 
 
+// onReconnect
+/++
+ +  Disconnects and reconnects to the server.
+ +
+ +  This is a "benign" disconnect. We need to reconnect preemptively instead of
+ +  waiting for the server to disconnect us, as it would otherwise constitute
+ +  an error and the program would exit if
+ +  `kameloso.common.CoreSettings.exitOnFailure` is set.
+ +/
+@(IRCEvent.Type.RECONNECT)
+version(TwitchSupport)
+void onReconnect(ConnectService service)
+{
+    import std.concurrency : send;
+    logger.info("Reconnecting upon request.");
+    service.state.mainThread.send(ThreadMessage.Reconnect());
+}
+
+
 // register
 /++
  +  Registers with/logs onto an IRC server.
