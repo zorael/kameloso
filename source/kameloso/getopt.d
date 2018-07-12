@@ -128,6 +128,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             assert(0);
         }
     }
+    immutable argsBackup = args.idup;
 
     arraySep = ",";
 
@@ -152,9 +153,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "a",            "Append input homes and channels instead of overriding", &shouldAppendChannels,
             "settings",     "Show all plugins' settings", &shouldShowSettings,
             "show",         &shouldShowSettings,
-            "bright",       "Bright terminal colour setting",
-                            &boolWrapper,
-            "monochrome",   "Use monochrome output", &boolWrapper,
+            "bright",       "Bright terminal colour setting", &settings.brightTerminal,
+            "brightTerminal", &settings.brightTerminal,
+            "monochrome",   "Use monochrome output", &settings.monochrome,
             "set",          "Manually change a setting (--set plugin.option=setting)", &customSettings,
             "asserts",      "[DEBUG] Parse an IRC event string and generate an assert block",
                             &shouldGenerateAsserts,
@@ -185,8 +186,57 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
         client.parser.bot = bot;
 
-        if (monochromeWasSet) settings.monochrome = monochromeFromArgs;
-        if (brightTerminalWasSet) settings.brightTerminal = brightTerminalFromArgs;
+        /+
+            The way we meld settings is weak against false settings when they
+            are also the default values of a member. There's no way to tell apart
+            an unset bool from a false one. They will be overwritten by any
+            true value from the configuration file. As such, manually parse
+            `argsBackup` and look for `--monochrome` and `--bright|brightTerminal`,
+            then override `settings.monochrome` and `settings.brightTerminal`
+            accordingly.
+
+            Add more entries here as we add getopt bools.
+         +/
+        import std.range : only;
+        foreach (immutable setting; only("--monochrome", "--bright")) //, "--brightTerminal"))
+        {
+            import kameloso.string : beginsWith, has, nom;
+            import std.algorithm.iteration : filter;
+            import std.conv : to;
+
+            foreach (immutable arg; argsBackup.filter!(word => word.beginsWith(setting)))
+            {
+                if (!arg.has('='))
+                {
+                    // It's an implicitly positive assignment which do not
+                    // exhibit the behaviour we're working around.
+                    // Try the next argument.
+                    continue;
+                }
+
+                string slice = arg;  // mutable
+                slice.nom('=');
+                immutable value = slice.to!bool;
+
+                if (value) continue;  // Explicitly positive, see above.
+
+                switch (setting)
+                {
+                case "--monochrome":
+                    settings.monochrome = value;
+                    break;
+
+                case "--bright":
+                case "--brightTerminal":
+                    settings.brightTerminal = value;
+                    break;
+
+                default:
+                    // Should never get here.
+                    assert(0);
+                }
+            }
+        }
 
         // Give common.d a copy of CoreSettings for printObject. FIXME
         static import kameloso.common;
