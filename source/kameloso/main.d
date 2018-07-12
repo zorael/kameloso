@@ -894,56 +894,8 @@ int main(string[] args)
         bot.origNickname = bot.nickname;
 
         // Initialise plugins outside the loop once, for the error messages
-        string[][string] invalidEntries = initPlugins(customSettings);
-
-        if (invalidEntries.length)
-        {
-            logger.log("Found invalid configuration entries:");
-
-            bool printed;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
-
-                    immutable infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                    foreach (immutable section, const sectionEntries; invalidEntries)
-                    {
-                        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
-                            infotint.colour, section, logtint.colour,
-                            infotint.colour, sectionEntries);
-                    }
-
-                    logger.logf("They are either malformed or no longer in use. " ~
-                        "Use %s--writeconfig%s to update your configuration file.",
-                        infotint.colour, logtint.colour);
-
-                    printed = true;
-                }
-            }
-
-            if (!printed)
-            {
-                foreach (immutable section, const sectionEntries; invalidEntries)
-                {
-                    logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-                }
-
-                logger.log("They are either malformed or no longer in use. " ~
-                    "Use --writeconfig to update your configuration file.");
-            }
-        }
+        const invalidEntries = initPlugins(customSettings);
+        complainAboutInvalidConfigurationEntries(invalidEntries);
 
         // Save a backup snapshot of the bot, for restoring upon reconnections
         IRCBot backupBot = bot;

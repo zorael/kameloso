@@ -1459,3 +1459,64 @@ unittest
         sink.clear();
     }
 }
+
+
+// complainAboutInvalidConfigurationEntries
+/++
+ +  Prints some information about invalid configugration enries to the local
+ +  terminal.
+ +
+ +  Params:
+ +      invalidEntries = A `string[][string]` associative array of dynamic
+ +          `string[]` arrays.
+ +/
+void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
+{
+    if (!invalidEntries.length) return;
+
+    logger.log("Found invalid configuration entries:");
+
+    bool printed;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            immutable infotint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.info] :
+                KamelosoLogger.logcoloursDark[LogLevel.info];
+
+            immutable logtint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.all] :
+                KamelosoLogger.logcoloursDark[LogLevel.all];
+
+            foreach (immutable section, const sectionEntries; invalidEntries)
+            {
+                logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+                    infotint.colour, section, logtint.colour,
+                    infotint.colour, sectionEntries);
+            }
+
+            logger.logf("They are either malformed or no longer in use. " ~
+                "Use %s--writeconfig%s to update your configuration file.",
+                infotint.colour, logtint.colour);
+
+            printed = true;
+        }
+    }
+
+    if (!printed)
+    {
+        foreach (immutable section, const sectionEntries; invalidEntries)
+        {
+            logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
+        }
+
+        logger.log("They are either malformed or no longer in use. " ~
+            "Use --writeconfig to update your configuration file.");
+    }
+}
