@@ -252,12 +252,21 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
          case "display-name":
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
-            if (event.type != Type.USERSTATE)
+            import kameloso.string : strippedRight;
+            immutable alias_ = value.has('\\') ? decodeIRCv3String(value).strippedRight : value;
+
+            if (event.type == Type.USERSTATE)
             {
-                // USERSTATE events are server-sent events that include display-name
-                // Exempt them so that the entry for tmi.twitch.tv won't have an alias.
-                import kameloso.string : strippedRight;
-                event.sender.alias_ = value.has('\\') ? decodeIRCv3String(value).strippedRight : value;
+                // USERSTATE describes the bot in the context of a specific channel,
+                // such as what badges are available. It's *always* about the bot,
+                // so expose the display name in event.target and let Persistence store it.
+                event.target.nickname = service.state.bot.nickname;
+                event.target.alias_ = alias_;
+            }
+            else
+            {
+                // The display name of the sender.
+                event.sender.alias_ = alias_;
             }
             break;
 
