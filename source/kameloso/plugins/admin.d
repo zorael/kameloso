@@ -17,7 +17,7 @@
  +  `channels`<br>
  +  `users`<br>
  +  `user`<br>
- +  `printall`<br>
+ +  `printRaw`<br>
  +  `printbytes`<br>
  +  `resetterm`<br>
  +  `sudo`<br>
@@ -62,7 +62,7 @@ struct AdminSettings
         +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
         +  events.
         +/
-        bool printAll;
+        bool printRaw;
 
         /++
         +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
@@ -84,13 +84,13 @@ struct AdminSettings
  +  Prints all incoming events to the local terminal, in forms depending on
  +  which flags have been set with bot commands.
  +
- +  If `AdminPlugin.printAll` is set by way of invoking `onCommandPrintAll`,
+ +  If `AdminPlugin.printRaw` is set by way of invoking `onCommandprintRaw`,
  +  prints all incoming server strings.
  +
  +  If `AdminPlugin.printBytes` is set by way of invoking `onCommandPrintBytes`,
  +  prints all incoming server strings byte per byte.
  +
- +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandPrintAll`,
+ +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandprintRaw`,
  +  prints all incoming events as assert statements, for use in soure code
  +  `unittest` blocks.
  +/
@@ -101,7 +101,11 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    if (plugin.adminSettings.printAll) writeln(event.raw, '$');
+    if (plugin.adminSettings.printRaw)
+    {
+        if (event.tags.length) writeln(event.tags, '$');
+        writeln(event.raw, '$');
+    }
 
     if (plugin.adminSettings.printBytes)
     {
@@ -621,7 +625,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
 }
 
 
-// onCommandPrintAll
+// onCommandprintRaw
 /++
  +  Toggles a flag to print all incoming events *raw*.
  +
@@ -631,14 +635,14 @@ void onCommandResetTerminal(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "printall")
+@BotCommand(NickPolicy.required, "printRaw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
-void onCommandPrintAll(AdminPlugin plugin)
+void onCommandprintRaw(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    plugin.adminSettings.printAll = !plugin.adminSettings.printAll;
-    logger.info("Printing all: ", plugin.adminSettings.printAll);
+    plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+    logger.info("Printing all: ", plugin.adminSettings.printRaw);
 }
 
 
