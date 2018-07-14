@@ -144,6 +144,8 @@ If you enter an authentification password (`authPassword`) and then regenerate t
 Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
 ```
+$ ./kameloso -s irc.freenode.net -n you -H '#channel' -C '#d'
+
      you joined #channel
 kameloso sets mode +o you
      you | !say foo
