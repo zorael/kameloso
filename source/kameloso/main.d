@@ -791,6 +791,8 @@ int main(string[] args)
     Client client;
     client.abort = &abort;
 
+    // Prepare an array for `handleGetopt` to fill by ref with custom settings
+    // set on the command-line using `--set plugin.setting=value`
     string[] customSettings;
 
     // Initialise the logger immediately so it's always available, reinit later

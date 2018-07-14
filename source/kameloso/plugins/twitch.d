@@ -291,7 +291,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "user-type":
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // The broadcaster can have any of these.
-            // Not of interst currently either.
+            // Not of interest currently either.
             //if (!value.length) break;
             break;
 
@@ -431,7 +431,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "broadcaster-lang":
             // The chat language when broadcaster language mode is enabled;
             // otherwise, empty. Examples: en (English), fi (Finnish), es-MX
-            //(Mexican variant of Spanish).
+            // (Mexican variant of Spanish).
         case "subs-only":
             // Subscribers-only mode. If enabled, only subscribers and
             // moderators can chat. Valid values: 0 (disabled) or 1 (enabled).
