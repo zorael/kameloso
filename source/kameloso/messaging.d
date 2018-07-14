@@ -118,9 +118,6 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string c
     }
 }
 
-deprecated("throttleline is deprecated, use privmsg instead.")
-alias throttleline = privmsg;
-
 ///
 unittest
 {
