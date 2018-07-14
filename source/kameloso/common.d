@@ -1520,3 +1520,58 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
             "Use --writeconfig to update your configuration file.");
     }
 }
+
+
+// complainAboutMissingConfiguration
+/++
+ +  Displays an error if the configuration is *incomplete*, e.g. missing crucial
+ +  information.
+ +
+ +  Params:
+ +      bot = The current `kameloso.ircdefs.IRCBot`.
+ +      args = The command-line arguments passed to the program at start.
+ +
+ +  Returns:
+ +      `true` if configuration is complete and nothing needs doing, `false` if
+ +      incomplete and the program should exit.
+ +/
+bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
+{
+    if (bot.homes.length || bot.admins.length) return false;
+
+    import std.path : baseName;
+
+    logger.error("No administrators nor channels configured!");
+
+    bool printed;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            immutable infotint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.info] :
+                KamelosoLogger.logcoloursDark[LogLevel.info];
+
+            immutable logtint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.all] :
+                KamelosoLogger.logcoloursDark[LogLevel.all];
+
+            logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+                infotint.colour, args[0].baseName, logtint.colour);
+
+            printed = true;
+        }
+    }
+
+    if (!printed)
+    {
+        logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
+    }
+
+    return true;
+}

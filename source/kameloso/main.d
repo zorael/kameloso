@@ -850,44 +850,9 @@ int main(string[] args)
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 
-        if (!bot.homes.length && !bot.admins.length)
-        {
-            import std.path : baseName;
+        immutable configIsIncomplete = complainAboutMissingConfiguration(bot, args);
+        if (configIsIncomplete) return 1;
 
-            logger.error("No administrators nor channels configured!");
-
-            bool printed;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
-
-                    immutable infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                    logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-                        infotint.colour, args[0].baseName, logtint.colour);
-
-                    printed = true;
-                }
-            }
-
-            if (!printed)
-            {
-                logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
-            }
-
-            return 1;
-        }
 
         // Save the original nickname *once*, outside the connection loop.
         // It will change later and knowing this is useful when authenticating
