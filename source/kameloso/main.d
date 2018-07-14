@@ -853,14 +853,13 @@ int main(string[] args)
         immutable configIsIncomplete = complainAboutMissingConfiguration(bot, args);
         if (configIsIncomplete) return 1;
 
+        // Initialise plugins outside the loop once, for the error messages
+        const invalidEntries = initPlugins(customSettings);
+        complainAboutInvalidConfigurationEntries(invalidEntries);
 
         // Save the original nickname *once*, outside the connection loop.
         // It will change later and knowing this is useful when authenticating
         bot.origNickname = bot.nickname;
-
-        // Initialise plugins outside the loop once, for the error messages
-        const invalidEntries = initPlugins(customSettings);
-        complainAboutInvalidConfigurationEntries(invalidEntries);
 
         // Save a backup snapshot of the bot, for restoring upon reconnections
         IRCBot backupBot = bot;
