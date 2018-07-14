@@ -2,9 +2,9 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's very easy to write your own. Any and all ideas welcome.
+It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be very easy to write your own. Any and all ideas welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
+It works very well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
@@ -21,18 +21,19 @@ It works well with the majority of server networks. IRC is standardised but serv
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
+* configuration stored on file
 
 ### Current limitations:
 
-* **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
+* **the dmd and ldc compilers will segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
 * the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
 * some plugins don't yet differentiate between different home channels if there is more than one.
-* nicknames are not yet case-insensitive. The `lowercaseNickname` function is in place; it's just not yet seeing wide use. It is a very invasive change, so holding out until we find a usecase.
-* quirky IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report abnormalities, like error messages, or fields silently having wrong or no values.
+* nicknames are not case-insensitive. The `lowercaseNickname` function is written and in place; it's just not yet seeing use. It is a very invasive change, so holding out until we find a use-case.
+* IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is mainly done on [**freenode**](https://freenode.net), so support and coverage is best there.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there.
 
 # Table of contents
 
@@ -56,12 +57,12 @@ Testing is mainly done on [**freenode**](https://freenode.net), so support and c
 
 * compiler segfaults are back.
 * experimental `automodes` plugin, please test.
-* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `saveLogs` set to `true`. It can either write lines as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
+* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `logs` set to `true`. It can either write lines immediately as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
 * all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
-* `IRCEvent` now has a new field; `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of specifying numerics.
+* `IRCEvent` has a new member `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of specifying numerics.
 * `--asserts` vastly improved.
 * Twitch emote highlighting; now uses a `dstring` and is seemingly fully accurate.
-* Documentation offline until such time Travis manages to compile ddox again.
+* Documentation offline until such time Travis manages to compile ddox again. Old links: [github.io](https://zorael.github.io/kameloso), [dpldocs](http://kameloso.dpldocs.info/kameloso.html).
 
 # Getting started
 
@@ -94,7 +95,7 @@ This will compile it in the default `debug` *build type*, which adds some extra 
 
 > You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above may currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode.
+The above will currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode.
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
