@@ -1535,6 +1535,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +      `true` if configuration is complete and nothing needs doing, `false` if
  +      incomplete and the program should exit.
  +/
+import kameloso.irc : IRCBot;
 bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 {
     if (bot.homes.length || bot.admins.length) return false;
