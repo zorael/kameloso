@@ -85,6 +85,8 @@ $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 ```
 
+Do not use `dub fetch` until we have released **v1.0.0**; it will download an ancient version.
+
 ## Compiling
 
 ```bash
@@ -144,7 +146,9 @@ If you enter an authentification password (`authPassword`) and then regenerate t
 Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
 ```
-$ ./kameloso -s irc.freenode.net -n you -H '#channel' -C '#d'
+$ ./kameloso --server irc.freenode.net --nickname kameloso --homes '#channel' --channels '#d'
+
+...
 
      you joined #channel
 kameloso sets mode +o you
