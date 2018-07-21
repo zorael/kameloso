@@ -1877,14 +1877,13 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 // PREFIX=(Yqaohv)!~&@%+
                 import std.format : formattedRead;
 
-                string modes;
-                string thesePrefixes;
-                value.formattedRead("(%s)%s", modes, thesePrefixes);
+                string modechars, modesigns;
+                value.formattedRead("(%s)%s", modechars, modesigns);
+                prefixes = modechars;
 
-                foreach (immutable i; 0..modes.length)
+                foreach (immutable i; 0..modechars.length)
                 {
-                    prefixchars[thesePrefixes[i]] = modes[i];
-                    prefixes ~= modes[i];
+                    prefixchars[modesigns[i]] = modechars[i];
                 }
                 break;
 
