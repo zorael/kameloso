@@ -3485,7 +3485,6 @@ unittest
     server.prefixchars =
     [
         '!' : 'Y',
-        '~' : 'q',
         '&' : 'a',
         '@' : 'o',
         '%' : 'h',
