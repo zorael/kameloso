@@ -17,7 +17,7 @@
  +  `channels`<br>
  +  `users`<br>
  +  `user`<br>
- +  `printRaw`<br>
+ +  `printraw`<br>
  +  `printbytes`<br>
  +  `resetterm`<br>
  +  `sudo`<br>
@@ -635,7 +635,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "printRaw")
+@BotCommand(NickPolicy.required, "printraw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandprintRaw(AdminPlugin plugin)
 {
