@@ -807,6 +807,15 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         event.content = slice;
         break;
 
+    case RPL_UMODEGMSG:
+        // :rajaniemi.freenode.net 718 kameloso Freyjaun ~FREYJAUN@41.39.229.6 :is messaging you, and you have umode +g.
+        slice.nom(' '); // bot nickname
+        event.target.nickname = slice.nom(' ');
+        event.target.ident = slice.nom('@');
+        event.target.address = slice.nom(" :");
+        event.content = slice;
+        break;
+
     version(TwitchSupport)
     {
         import std.conv : to;
