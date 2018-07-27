@@ -2004,6 +2004,20 @@ unittest
             assert((num == 364), num.to!string);
         }
     }
+    {
+        immutable event = parser.toIRCEvent(":rajaniemi.freenode.net 718 kameloso Freyjaun ~FREYJAUN@41.39.229.6 :is messaging you, and you have umode +g.");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_UMODEGMSG), type.to!string);
+            assert((sender.address == "rajaniemi.freenode.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
+            assert((target.nickname == "Freyjaun"), target.nickname);
+            assert((target.ident == "~FREYJAUN"), target.ident);
+            assert((target.address == "41.39.229.6"), target.address);
+            assert((content == "is messaging you, and you have umode +g."), content);
+            assert((num == 718), num.to!string);
+        }
+    }
 }
 
 unittest
