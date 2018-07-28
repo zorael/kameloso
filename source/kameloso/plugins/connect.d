@@ -342,11 +342,19 @@ void onEndOfMotd(ConnectService service)
 
         if (!service.sentAfterConnect)
         {
-            // Run commands defined in the settings
-            foreach (immutable line; service.connectSettings.sendAfterConnect)
+            if (service.connectSettings.sendAfterConnect.length)
             {
-                import kameloso.string : stripped;
-                service.raw(line.stripped);
+                foreach (immutable line; service.connectSettings.sendAfterConnect)
+                {
+                    import kameloso.string : stripped;
+                    import std.array : replace;
+
+                    immutable processed = line
+                        .stripped
+                        .replace("$nickname", bot.nickname);
+
+                    service.raw(processed);
+                }
             }
 
             service.sentAfterConnect = true;
