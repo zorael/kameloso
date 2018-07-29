@@ -1,5 +1,5 @@
 /++
- +  The Webtiltes plugin catches URLs pasted in a channel, follows them and
+ +  The Webtitles plugin catches URLs pasted in a channel, follows them and
  +  reports beck the title of the web page that was linked to.
  +
  +  It has no bot commands; eveything is done by automatically scanning channel
@@ -26,7 +26,7 @@ private:
 /++
  +  All Webtitles settings, gathered in a struct.
  +/
-struct WebtiltesSettings
+struct WebtitlesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
@@ -476,7 +476,7 @@ final class WebtitlesPlugin : IRCPlugin
     shared TitleLookup[string] cache;
 
     /// All Webtitles options gathered.
-    @Settings WebtiltesSettings webtitlesSettings;
+    @Settings WebtitlesSettings webtitlesSettings;
 
     mixin IRCPluginImpl;
 }
