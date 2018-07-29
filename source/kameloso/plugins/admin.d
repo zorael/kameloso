@@ -816,8 +816,6 @@ void onCommandStatus(AdminPlugin plugin)
     {
         printObject(user);
     }
-
-    version(Cygwin_) stdout.flush();
 }
 
 
