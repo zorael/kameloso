@@ -2836,45 +2836,6 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 }
 
 
-// addChannelUserMode
-/++
- +  Adds a channel mode to a channel, to elevate or demote a participating user
- +  to/from a prefixed mode, like operator, halfop and voiced.
- +
- +  This is done by populating the `mods` associative array of
- +  `IRCPluginState.channel[channelName]`, keyed by the *modechar* of the mode
- +  (o for +o and @, v for +v and +, etc) with values of `string[]` arrays of
- +  nicknames with that mode ("prefix").
- +
- +  Params:
- +      plugin = Current `IRCPlugin`.
- +      channel = Reference to the channel to add/remove the mode to/from.
- +      modechar = Mode character, e.g. o for @, v for +.
- +      nickname = Nickname the modechange relates to.
- +/
-void addChannelUserMode(IRCPlugin plugin, ref IRCChannel channel,
-    const char modechar, const string nickname) pure nothrow @safe
-{
-    import std.algorithm.searching : canFind;
-
-    with (plugin.state)
-    {
-        // Create the prefix mod array if it doesn't exist
-        auto modslist = modechar in channel.mods;
-        if (!modslist)
-        {
-            channel.mods[modechar] = [ nickname ];
-            return;
-        }
-
-        if (!(*modslist).canFind(nickname))
-        {
-            (*modslist) ~= nickname;
-        }
-    }
-}
-
-
 // applyCustomSettings
 /++
  +  Changes a setting of a plugin, given both the names of the plugin and the
