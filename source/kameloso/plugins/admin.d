@@ -838,7 +838,7 @@ void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
     case auth:
         foreach (basePlugin; plugins)
         {
-            import kameloso.plugins.connect;
+            import kameloso.plugins.connect : ConnectService;
 
             ConnectService service = cast(ConnectService)basePlugin;
             if (!service) continue;
