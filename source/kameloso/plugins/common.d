@@ -2428,7 +2428,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
-                        channels[event.channel].setMode(*modechar, event.target.nickname, bot.server);
+                        import std.conv : to;
+                        immutable modestring = modechar.to!string;
+                        channels[event.channel].setMode(modestring, event.target.nickname, bot.server);
                     }
                     /*else
                     {
@@ -2517,7 +2519,9 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
-                        channels[event.channel].setMode(*modechar, nickname, bot.server);
+                        import std.conv : to;
+                        immutable modestring = modechar.to!string;
+                        channels[event.channel].setMode(modestring, nickname, bot.server);
                     }
                     else
                     {
