@@ -178,7 +178,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
         if (!occupiedChannel || !occupiedChannel.ops.canFind(plugin.state.bot.nickname))
         {
             logger.log("We aren't in or we aren't op in the channel we have this automode definition for");
-            logger.logf("(%s, %s, %s)", channel, nickname, *modes);
+            logger.logf("On %s: +%s %s", channel, *modes, nickname);
             continue;
         }
 
@@ -285,7 +285,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
     }
     else
     {
-        logger.log("No such channel: ", channel);
+        logger.log("No automodes defined for channel ", channel);
     }
 }
 
