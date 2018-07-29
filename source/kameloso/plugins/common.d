@@ -2427,8 +2427,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
-                        plugin.addChannelUserMode(channels[event.channel],
-                            *modechar, event.target.nickname);
+                        import kameloso.irc : setMode;
+                        channels[event.channel].setMode(*modechar, event.target.nickname, bot.server);
                     }
                     /*else
                     {
@@ -2516,7 +2516,8 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
                     {
-                        plugin.addChannelUserMode(channels[event.channel], *modechar, nickname);
+                        import kameloso.irc : setMode;
+                        channels[event.channel].setMode(*modechar, nickname, bot.server);
                     }
                     else
                     {
