@@ -193,13 +193,16 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
         {
             immutable path = titleReq.url[20..$].nom!(Yes.decode)('.');
             titleReq.url = "https://imgur.com/" ~ path;
-            logger.log("imgur URL; rewritten");
         }
         else if (titleReq.url.beginsWith("http://i.imgur.com/"))
         {
             immutable path = titleReq.url[19..$].nom!(Yes.decode)('.');
             titleReq.url = "https://imgur.com/" ~ path;
-            logger.log("imgur URL; rewritten");
+        }
+
+        if (titleReq.url != originalURL)
+        {
+            logger.log("direct imgur URL; rewritten");
         }
 
         auto lookup = lookupTitle(titleReq.url);
