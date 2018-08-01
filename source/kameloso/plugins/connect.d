@@ -351,7 +351,9 @@ void onEndOfMotd(ConnectService service)
 
                     immutable processed = line
                         .stripped
-                        .replace("$nickname", bot.nickname);
+                        .replace("$nickname", bot.nickname)
+                        .replace("$origserver", bot.server.address)
+                        .replace("$server", bot.server.resolvedAddress);
 
                     service.raw(processed);
                 }

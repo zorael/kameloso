@@ -84,12 +84,13 @@ string sedReplace(const string originalLine, const string expression) @safe
 
     static string doReplace(T)(T matches, const string originalLine) @safe
     {
+        import std.array : replace;
         import std.regex : replaceAll, replaceFirst, regex;
         string result = originalLine;  // need mutable
 
         result = result
-            .replaceAll(`\[`.regex, `\\[`)
-            .replaceAll(`\]`.regex, `\\]`);
+            .replace(`\[`, `\\[`)
+            .replace(`\]`, `\\]`);
 
         foreach (const hit; matches)
         {

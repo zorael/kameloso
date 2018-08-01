@@ -1484,7 +1484,8 @@ string mapColours(const string line, const uint resetCode)
 {
     import kameloso.bash : BashBackground, BashForeground, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
-    import std.regex : matchAll, regex, replaceAll;
+    import std.array : replace;
+    import std.regex : matchAll, regex;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
@@ -1570,18 +1571,15 @@ string mapColours(const string line, const uint resetCode)
         }
 
         sink.put('m');
-        slice = slice.replaceAll(hit[0].regex, sink.data);
+        slice = slice.replace(hit[0], sink.data);
         colouredSomething = true;
     }
 
     if (colouredSomething)
     {
         import std.format : format;
-
-        enum endPattern = I.colour ~ ""; // ~ "([0-9])?";
-        auto endEngine = endPattern.regex;
-
-        slice = slice.replaceAll(endEngine, "%s[%dm".format(TerminalToken.bashFormat ~ "", resetCode));
+        enum endToken = I.colour ~ ""; // ~ "([0-9])?";
+        slice = slice.replace(endToken, "%s[%dm".format(TerminalToken.bashFormat ~ "", resetCode));
     }
 
     return slice;
@@ -1616,6 +1614,7 @@ unittest
 string stripColours(const string line)
 {
     import kameloso.irc : I = IRCControlCharacter;
+    import std.array : replace;
     import std.regex : matchAll, regex, replaceAll;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
@@ -1632,7 +1631,7 @@ string stripColours(const string line)
 
         if (!hit[1].length) continue;
 
-        slice = slice.replaceAll(hit[0].regex, string.init);
+        slice = slice.replace(hit[0], string.init);
         strippedSomething = true;
     }
 
@@ -1695,9 +1694,9 @@ string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)(const str
 {
     import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
-    import std.array : Appender;
+    import std.array : Appender, replace;
     import std.conv  : to;
-    import std.regex : matchAll, regex, replaceAll;
+    import std.regex : matchAll, regex;
 
     enum bashToken = TerminalToken.bashFormat ~ "[" ~
         (cast(ubyte)bashEffectCode).to!string ~ "m";
@@ -1741,8 +1740,8 @@ string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)(const str
     }
 
     // We've gone through them pair-wise, now see if there are any singles left.
-    auto singleTokenEngine = (cast(char)mircToken~"").regex;
-    sink.put(hits.post.replaceAll(singleTokenEngine, bashToken));
+    enum singleToken = cast(char)mircToken ~ "";
+    sink.put(hits.post.replace(singleToken, bashToken));
 
     // End tags and commit.
     sink.colour(BashReset.all);
