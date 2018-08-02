@@ -593,6 +593,7 @@ Next mainLoop(ref Client client)
                     catch (const UTFException e)
                     {
                         logger.warningf("UTFException %s.onEvent: %s", plugin.name, e.msg);
+                        printObject(event);
                     }
                     catch (const Exception e)
                     {
