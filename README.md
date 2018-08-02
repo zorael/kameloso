@@ -2,9 +2,9 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be easy to write your own. Any and all ideas welcome.
+It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be very easy to write your own. Any and all ideas welcome.
 
-It works very well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
 ### Current functionality includes:
 
@@ -145,11 +145,16 @@ If you enter an authentification password (`authPassword`) and then regenerate t
 
 Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists.
 
+```bash
+$ ./kameloso \
+    --server irc.freenode.net \
+    --nickname "kameloso" \
+    --admins "you,friend,thatguy" \
+    --homes "#channel,#elsewhere" \
+    --channels "#d,##networking"
 ```
-$ ./kameloso --server irc.freenode.net --nickname kameloso --homes '#channel' --channels '#d'
 
-...
-
+```
      you joined #channel
 kameloso sets mode +o you
      you | !say foo
