@@ -236,6 +236,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
 
     import std.algorithm.searching : canFind;
+    import std.exception : ErrnoException;
     import std.file : FileException;
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
@@ -268,6 +269,10 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             catch (const FileException e)
             {
                 logger.warning(e.msg);
+            }
+            catch (const ErrnoException e)
+            {
+                logger.warning("Exception caught when writing to log: ", e.msg);
             }
             catch (const Exception e)
             {
@@ -387,6 +392,10 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     catch (const FileException e)
     {
         logger.warning("File exception caught when writing to log: ", e.msg);
+    }
+    catch (const ErrnoException e)
+    {
+        logger.warning("Exception caught when writing to log: ", e.msg);
     }
     catch (const Exception e)
     {
