@@ -310,7 +310,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             try client.generateAsserts();
             catch (const IRCParseException e)
             {
-                logger.error(e.msg);
+                logger.error("IRC Parse Exception: ", e.msg);
                 printObject(e.event);
             }
 

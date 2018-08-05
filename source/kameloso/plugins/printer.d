@@ -268,7 +268,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             }
             catch (const FileException e)
             {
-                logger.warning(e.msg);
+                logger.warning("File exception caught when writing to log: ", e.msg);
             }
             catch (const ErrnoException e)
             {
@@ -276,7 +276,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             }
             catch (const Exception e)
             {
-                logger.warning(e.msg);
+                logger.warning("Unhandled exception caught when writing to log: ", e.msg);
             }
         }
     }

@@ -188,6 +188,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
 {
     import kameloso.common : logger;
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
     json.reset();
@@ -204,9 +205,13 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.admin;
             }
         }
+        catch (const JSONException e)
+        {
+            logger.warning("JSON exception caught when populating admins: ", e.msg);
+        }
         catch (const Exception e)
         {
-            logger.warning(e.msg);
+            logger.warning("Unhandled exception caught when populating admins: ", e.msg);
         }
     }*/
 
@@ -219,9 +224,13 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.whitelist;
             }
         }
+        catch (const JSONException e)
+        {
+            logger.warning("JSON exception caught when populating whitelist: ", e.msg);
+        }
         catch (const Exception e)
         {
-            logger.warning(e.msg);
+            logger.warning("Unhandled exception caught when populating whitelist: ", e.msg);
         }
     }
 
@@ -234,9 +243,13 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.blacklist;
             }
         }
+        catch (const JSONException e)
+        {
+            logger.warning("JSON exception caught when populating blacklist: ", e.msg);
+        }
         catch (const Exception e)
         {
-            logger.warning(e.msg);
+            logger.warning("Unhandled exception caught when populating blacklist: ", e.msg);
         }
     }
 }

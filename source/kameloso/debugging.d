@@ -412,7 +412,7 @@ void generateAsserts(ref Client client) @system
         }
         catch (const ConvException e)
         {
-            logger.error(e.msg);
+            logger.error("Conversion exception caught when parsing daemon: ", e.msg);
             return;
         }
 

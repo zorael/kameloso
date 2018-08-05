@@ -131,7 +131,7 @@ public:
                 case "getaddrinfo error: Name or service not known":
                 case "getaddrinfo error: Temporary failure in name resolution":
                     // Assume net down, wait and try again
-                    logger.warning(e.msg);
+                    logger.warning("Socket exception caught when resolving server adddress: ", e.msg);
 
                     if (i+1 < resolveAttempts)
                     {
@@ -143,7 +143,7 @@ public:
                     break;
 
                 default:
-                    logger.error(e.msg);
+                    logger.error("Socket exception caught when resolving server adddress: ", e.msg);
                     logger.log("Could not resolve address to IPs. Verify your server address.");
                     return false;
                 }
