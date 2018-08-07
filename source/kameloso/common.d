@@ -148,6 +148,9 @@ struct CoreSettings
     /// Flag denoting that the terminal has a bright background.
     bool brightTerminal = false;
 
+    /// Whether to connect to IPv6 addresses or not.
+    bool ipv6 = true;
+
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
