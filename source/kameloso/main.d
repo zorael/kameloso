@@ -900,7 +900,7 @@ int main(string[] args)
             }
 
             conn.reset();
-            immutable resolved = conn.resolve(bot.server.address, bot.server.port, *abort);
+            immutable resolved = conn.resolve(bot.server.address, bot.server.port, settings.ipv6, *abort);
 
             if (!resolved)
             {

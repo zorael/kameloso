@@ -100,16 +100,19 @@ public:
      +  Params:
      +      address = String address to look up.
      +      port = Remote port build into the `Address`.
+     +      useIPv6 = Whether to include resolved IPv6 addresses or not.
      +      abort = Reference bool which, if set, should make us abort and
      +          return.
      +
      +  Returns:
      +      bool of whether the resolve attempt was a success or not.
      +/
-    bool resolve(const string address, const ushort port, ref bool abort)
+    bool resolve(const string address, const ushort port, const bool useIPv6, ref bool abort)
     {
         import core.thread : Thread;
-        import std.socket : getAddress, SocketException;
+        import std.algorithm : filter;
+        import std.array : array;
+        import std.socket : AddressFamily, SocketException, getAddress;
 
         enum resolveAttempts = 15;
         uint incrementedDelay = Timeout.resolve;
@@ -119,9 +122,12 @@ public:
         {
             if (abort) return false;
 
+            with (AddressFamily)
             try
             {
-                ips = getAddress(address, port);
+                ips = getAddress(address, port)
+                    .filter!(ip => (ip.addressFamily == INET) || ((ip.addressFamily == INET6) && useIPv6))
+                    .array;
                 return true;
             }
             catch (const SocketException e)
