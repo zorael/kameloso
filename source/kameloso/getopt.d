@@ -113,6 +113,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "n|nickname",   "Bot nickname", &bot.nickname,
             "s|server",     "Server address", &bot.server.address,
             "P|port",       "Server port", &bot.server.port,
+            "6|ipv6",       "Use IPv6 when available", &settings.ipv6,
             "A|account",    "Services account login name, if applicable", &bot.authLogin,
             "auth",         &bot.authLogin,
             "p|password",   "Services account password", &bot.authPassword,
