@@ -200,12 +200,6 @@ struct LogLineBuffer
     /// An `std.array.Appender` housing queued lines to write.
     Appender!(string[]) lines;
 
-    /++
-     +  How many PINGs a buffer must be empty during to be considered dead and
-     +  ripe for garbage collection.
-     +/
-    uint lives = 20;  // Arbitrary number
-
     /// Create a new `LogLineBuffer` with the passed path strig as identifier.
     this(const string path)
     {
@@ -532,20 +526,9 @@ void commitLogs(PrinterPlugin plugin)
 
     import std.file : FileException;
 
-    string[] garbage;
-
     foreach (ref buffer; plugin.buffers)
     {
-        if (!buffer.lines.data.length)
-        {
-            if (--buffer.lives == 0)
-            {
-                garbage ~= buffer.path;
-            }
-            continue;
-        }
-
-        buffer.lives = typeof(buffer).init.lives;
+        if (!buffer.lines.data.length) continue;
 
         try
         {
@@ -570,11 +553,6 @@ void commitLogs(PrinterPlugin plugin)
         {
             buffer.lines.clear();
         }
-    }
-
-    foreach (deadBuffer; garbage)
-    {
-        plugin.buffers.remove(deadBuffer);
     }
 }
 
