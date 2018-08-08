@@ -2515,7 +2515,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                 string slice = userstring;
                 string nickname;
 
-                if (names.front.has('!') && names.front.has('@'))
+                if (userstring.has('!') && userstring.has('@'))
                 {
                     // SpotChat-like, names are in full nick!ident@address form
                     nickname = slice.nom('!');
