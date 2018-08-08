@@ -22,6 +22,8 @@ script:
   - dub build --nodeps -b plain --compiler=${DC} -c vanilla || true
   - dub build --nodeps -b plain --compiler=${DC} -c colours+web || true
   - echo DC == ${DC}
+  - test ${DC} = ldc2 || dub fetch scod
+  - test ${DC} = ldc2 || rm -v ~/.dub/packages/scod-*/scod/dub.selections.json
   - test ${DC} = ldc2 || dub build --nodeps -b ddox --compiler=${DC} -c colours+web
 
 before_deploy:
