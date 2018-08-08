@@ -2429,7 +2429,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
-                        immutable modestring = modechar.to!string;
+                        immutable modestring = (*modechar).to!string;
                         channels[event.channel].setMode(modestring, event.target.nickname, bot.server);
                     }
                     /*else
@@ -2520,7 +2520,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
-                        immutable modestring = modechar.to!string;
+                        immutable modestring = (*modechar).to!string;
                         channels[event.channel].setMode(modestring, nickname, bot.server);
                     }
                     else
