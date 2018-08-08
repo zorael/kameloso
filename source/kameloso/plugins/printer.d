@@ -1967,29 +1967,18 @@ string datestamp() @property
  +/
 void periodically(PrinterPlugin plugin)
 {
-    import std.format : format;
-    import std.stdio : File, writeln;
     import std.datetime.systime : Clock;
 
-    immutable now = Clock.currTime;
-    immutable line = "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
-    logger.info(line);
+    logger.info(datestamp);
 
-    foreach (immutable path, ref buffer; plugin.buffers)
+    if (plugin.printerSettings.logs)
     {
-        if (plugin.printerSettings.bufferedWrites)
-        {
-            buffer.lines.put(line);
-        }
-        else
-        {
-            auto file = File(path, "a");
-            file.writeln(line);
-        }
+        plugin.commitLogs();
+        plugin.buffers.clear();
     }
 
     // Schedule the next run for the following midnight.
-    plugin.state.nextPeriodical = getNextMidnight(now).toUnixTime;
+    plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
 }
 
 
