@@ -254,7 +254,12 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 immutable path = buildNormalizedPath(logLocation,
                     state.bot.server.address ~ ".raw.log");
 
-                if (path !in buffers) buffers[path] = LogLineBuffer(path);
+                if (path !in buffers)
+                {
+                    buffers[path] = LogLineBuffer(path);
+                    buffers[path].lines.put("\n");  // two lines
+                    buffers[path].lines.put(datestamp);
+                }
 
                 if (printerSettings.bufferedWrites)
                 {
@@ -337,7 +342,12 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         if (plugin.printerSettings.bufferedWrites)
         {
-            if (path !in plugin.buffers) plugin.buffers[path] = LogLineBuffer(path);
+            if (path !in plugin.buffers)
+            {
+                plugin.buffers[path] = LogLineBuffer(path);
+                plugin.buffers[path].lines.put("\n");  // two lines
+                plugin.buffers[path].lines.put(datestamp);
+            }
 
             import std.array : Appender;
 
