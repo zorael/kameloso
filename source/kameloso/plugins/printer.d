@@ -1933,6 +1933,22 @@ unittest
     }
 }
 
+// datestamp
+/++
+ +  Returns a string with the current date.
+ +
+ +  Returns:
+ +      A string with the current date.
+ +/
+string datestamp() @property
+{
+    import std.format : format;
+    import std.datetime.systime : Clock;
+
+    immutable now = Clock.currTime;
+    return "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
+}
+
 
 // periodically
 /++
