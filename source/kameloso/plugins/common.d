@@ -1195,11 +1195,24 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         // Sanitise and try again once on UTF/Unicode exceptions
 
+        static void sanitizeEvent(ref IRCEvent event)
+        {
+            import std.encoding : sanitize;
+
+            with (event)
+            {
+                raw = sanitize(raw);
+                channel = sanitize(channel);
+                content = sanitize(content);
+                aux = sanitize(aux);
+                tags = sanitize(tags);
+            }
+        }
+
         void tryCatchHandle(funlist...)(const IRCEvent event)
         {
             import core.exception : UnicodeException;
             import std.utf : UTFException;
-            import std.encoding : sanitize;
 
             foreach (fun; funlist)
             {
@@ -1227,14 +1240,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 }
                 catch (const UTFException e)
                 {
+                    /*logger.warningf("tryCatchHandle UTFException on %s: %s",
+                        __traits(identifier, fun), e.msg);*/
+
                     IRCEvent saneEvent = event;
-                    saneEvent.content = sanitize(saneEvent.content);
+                    sanitizeEvent(saneEvent);
                     handle!fun(cast(const)saneEvent);
                 }
                 catch (const UnicodeException e)
                 {
+                    /*logger.warningf("tryCatchHandle UnicodeException on %s: %s",
+                        __traits(identifier, fun), e.msg);*/
+
                     IRCEvent saneEvent = event;
-                    saneEvent.content = sanitize(saneEvent.content);
+                    sanitizeEvent(saneEvent);
                     handle!fun(cast(const)saneEvent);
                 }
             }
