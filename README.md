@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be very easy to write your own. Any and all ideas welcome.
+It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be very easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas welcome.
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
@@ -39,18 +39,19 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 
 * [News](#news)
 * [Getting started](#getting-started)
-    * [Prerequisites](#prerequisites)
-    * [Downloading](#downloading)
-    * [Compiling](#compiling)
-        * [Windows](#windows)
+  * [Prerequisites](#prerequisites)
+  * [Downloading](#downloading)
+  * [Compiling](#compiling)
+    * [Windows](#windows)
 * [How to use](#how-to-use)
-    * [Twitch](#twitch)
-    * [Use as a library](#use-as-a-library)
+  * [Twitch](#twitch)
+  * [Use as a library](#use-as-a-library)
 * [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
-    * [License](#license)
-    * [Acknowledgements](#acknowledgements)
+  * [License](#license)
+  * [Acknowledgements](#acknowledgements)
+
 ---
 
 # News
@@ -62,7 +63,6 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 * `IRCEvent` has a new member `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of specifying numerics.
 * `--asserts` vastly improved.
 * Twitch emote highlighting; now uses a `dstring` and is seemingly fully accurate.
-* Documentation offline until such time Travis manages to compile ddox again. Old links: [github.io](https://zorael.github.io/kameloso), [dpldocs](http://kameloso.dpldocs.info/kameloso.html).
 
 # Getting started
 
@@ -259,7 +259,7 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 
 * [kameloso](https://www.youtube.com/watch?v=s-mOy8VUEBk) for obvious reasons
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
-* [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests) making the web-related plugins possible
-* [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd), extending web functionality
-* [`#d` on Freenode](irc://irc.freenode.org:6667/#d) for always answering questions
-* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on freenode](irc://irc.freenode.org:6667/#ircdocs) for their excellent resource pages
+* [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
+* [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
+* [`#d` on freenode](irc://irc.freenode.org:6667/#d)
+* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on freenode](irc://irc.freenode.org:6667/#ircdocs)
