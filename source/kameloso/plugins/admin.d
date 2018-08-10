@@ -122,9 +122,9 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
-        import std.algorithm.searching : canFind;
+        import kameloso.string : has;
 
-        if ((cast(ubyte[])event.raw).canFind(1))
+        if (event.raw.has(1))
         {
             logger.warning("event.raw contains CTCP 1 which might not get printed");
         }
