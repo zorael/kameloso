@@ -375,6 +375,7 @@ unittest
  +  Params:
  +      client = Reference to the current Client, with all its settings.
  +/
+debug
 void generateAsserts(ref Client client) @system
 {
     import kameloso.common : logger, printObjects;

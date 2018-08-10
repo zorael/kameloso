@@ -100,6 +100,15 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
     string[] inputChannels;
     string[] inputHomes;
 
+    debug
+    {
+        enum genDescription = "[DEBUG] Parse an IRC event string and generate an assert block";
+    }
+    else
+    {
+        enum genDescription = "(Unavailable in non-debug builds)";
+    }
+
     immutable argsBackup = args.idup;
 
     arraySep = ",";
@@ -130,8 +139,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "brightTerminal", &settings.brightTerminal,
             "monochrome",   "Use monochrome output", &settings.monochrome,
             "set",          "Manually change a setting (--set plugin.option=setting)", &customSettings,
-            "asserts",      "[DEBUG] Parse an IRC event string and generate an assert block",
-                            &shouldGenerateAsserts,
+            "asserts",      genDescription, &shouldGenerateAsserts,
             "gen",          &shouldGenerateAsserts,
             "c|config",     "Read configuration from file (default %s)"
                                 .format(CoreSettings.init.configFile), &settings.configFile,
@@ -301,6 +309,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             return Yes.quit;
         }
 
+        debug
         if (shouldGenerateAsserts)
         {
             import kameloso.common : logger, printObject;
