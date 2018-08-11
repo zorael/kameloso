@@ -815,11 +815,11 @@ void onCommandStatus(AdminPlugin plugin)
     }
     writeln();
 
-    logger.log("Users:");
+    /*logger.log("Users:");
     foreach (immutable nickname, const user; plugin.state.users)
     {
         printObject(user);
-    }
+    }*/
 }
 
 
