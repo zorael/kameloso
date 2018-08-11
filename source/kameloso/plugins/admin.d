@@ -138,7 +138,8 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowOneUser
 /++
- +  Prints the details of a specific, supplied user.
+ +  Prints the details of one or more specific, supplied users to the local
+ +  terminal.
  +
  +  It basically prints the matching `kameloso.ircdefs.IRCUser`.
  +/
@@ -147,20 +148,24 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "user")
-@Description("[debug] Prints the details of a specific user.")
-void onCommandShowOneUser(AdminPlugin plugin, const IRCEvent event)
+@Description("[debug] Prints out information about one or more specific users the local terminal.")
+void onCommandShowUser(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.common : printObject;
+    import std.algorithm.iteration : splitter;
 
-    if (const user = event.content in plugin.state.users)
+    foreach (immutable username; event.content.splitter(" "))
     {
-        printObject(*user);
-    }
-    else
-    {
-        logger.warning("No such user ", event.content, " in storage");
+        if (const user = username in plugin.state.users)
+        {
+            printObject(*user);
+        }
+        else
+        {
+            logger.trace("No such user: ", username);
+        }
     }
 }
 
