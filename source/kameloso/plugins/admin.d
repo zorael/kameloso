@@ -371,11 +371,10 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         if (!bot.homes.canFind(channel))
         {
             plugin.join(channel);
+            logger.info("Adding home: ", channel);
+            bot.homes ~= channel;
+            bot.updated = true;
         }
-
-        logger.info("Adding channel: ", channel);
-        bot.homes ~= channel;
-        bot.updated = true;
     }
 }
 
