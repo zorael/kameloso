@@ -220,25 +220,28 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
                 static if (is(typeof(member) == string[]))
                 {
-                    if (!member.length) continue;
+                    string value;
 
-                    enum escaped = '\\' ~ separator;
-                    enum placeholder = "\0\0";  // anything really
-
-                    // Replace separators with a placeholder and flatten with format
-
-                    auto separatedElements = member.map!(a => a.replace(separator, placeholder));
-                    string value = arrayPattern
-                        .format(separatedElements)
-                        .replace(placeholder, escaped);
-
-                    static if (separators.length > 1)
+                    if (member.length)
                     {
-                        foreach (furtherSeparator; separators[1..$])
+                        enum escaped = '\\' ~ separator;
+                        enum placeholder = "\0\0";  // anything really
+
+                        // Replace separators with a placeholder and flatten with format
+
+                        auto separatedElements = member.map!(a => a.replace(separator, placeholder));
+                        value = arrayPattern
+                            .format(separatedElements)
+                            .replace(placeholder, escaped);
+
+                        static if (separators.length > 1)
                         {
-                            // We're serialising; escape any other separators
-                            enum furtherEscaped = '\\' ~ furtherSeparator.token;
-                            value = value.replace(furtherSeparator.token, furtherEscaped);
+                            foreach (furtherSeparator; separators[1..$])
+                            {
+                                // We're serialising; escape any other separators
+                                enum furtherEscaped = '\\' ~ furtherSeparator.token;
+                                value = value.replace(furtherSeparator.token, furtherEscaped);
+                            }
                         }
                     }
                 }
