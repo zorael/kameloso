@@ -1683,9 +1683,10 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
 
         foreach (immutable type; EnumMembers!(IRCEvent.Type))
         {
-            import std.conv : to;
+            import kameloso.conv : Enum;
 
-            enum typestring = type.to!string;
+            //enum typestring = type.to!string;
+            enum typestring = Enum!(IRCEvent.Type).toString(type);
 
             static if (typestring.beginsWith("CTCP_"))
             {
