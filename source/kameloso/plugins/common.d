@@ -2116,22 +2116,13 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
 
                 // UserAwareness doesn't care about the modes
                 immutable nickname = bot.server.stripModesign(signed);
-
                 if (nickname == bot.nickname) continue;
 
                 immutable ident = slice.nom('@');
                 immutable address = slice;
-
                 immutable newUser = IRCUser(nickname, ident, address);
 
-                if (auto user = nickname in users)
-                {
-                    newUser.meldInto!(Yes.overwrite)(*user);
-                }
-                else
-                {
-                    users[nickname] = newUser;
-                }
+                plugin.catchUser(newUser);
             }
         }
     }
