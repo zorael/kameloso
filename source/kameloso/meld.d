@@ -128,6 +128,15 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                             member = meldThis.tupleof[i];
                         }
                     }
+                    else static if (is(T == string[]))
+                    {
+                        import std.algorithm.searching : canFind;
+
+                        if (!member.canFind(meldThis.tupleof[i]))
+                        {
+                            member ~= meldThis.tupleof[i];
+                        }
+                    }
                     else static if (isArray!T && !isSomeString!T)
                     {
                         member ~= meldThis.tupleof[i];
