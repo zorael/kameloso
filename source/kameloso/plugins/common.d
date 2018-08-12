@@ -2032,7 +2032,30 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(ChannelPolicy.home)
     void onUserAwarenessCatchSenderInHomeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        plugin.catchUser(event.sender);
+        if (event.type == IRCEvent.Type.ACCOUNT)
+        {
+            // ACCOUNT events don't carry a channel, so check our channel user
+            // lists to see if we should catch this one or not.
+
+            foreach (immutable channame, const channel; plugin.state.channels)
+            {
+                import std.algorithm.searching : canFind;
+
+                // Only process channels that are homes
+                if (!plugin.state.bot.homes.canFind(channame)) continue;
+
+                if (channel.users.canFind(event.sender.nickname))
+                {
+                    plugin.catchUser(event.sender);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            plugin.catchUser(event.sender);
+        }
+
     }
 
 
