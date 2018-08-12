@@ -1693,6 +1693,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
                 case typestring[5..$]:
                     event.type = type;
                     event.aux = typestring[5..$];
+                    if (event.content == event.aux) event.content = string.init;
                     break top;
             }
         }
