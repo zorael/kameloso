@@ -149,7 +149,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "user")
 @Description("[debug] Prints out information about one or more specific users the local terminal.")
-void onCommandShowUser(AdminPlugin plugin)
+void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
