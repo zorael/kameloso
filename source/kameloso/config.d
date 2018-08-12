@@ -720,6 +720,7 @@ unittest
             float[] floatArray = [ 0.0, 1.1, -2.2, 3.3 ];
             double[] doubleArray = [ 99.9999, 0.0001, -1.0 ];
             Bar[] barArray = [ Bar.blaawp, Bar.oorgle, Bar.blaawp ];
+            string[] yarn;
         }
     }
 
@@ -750,6 +751,7 @@ boolArray true,false,true
 floatArray 0,1.1,-2.2,3.3
 doubleArray 99.9999,0.0001,-1
 barArray blaawp,oorgle,blaawp
+#yarn
 
 [DifferentSection]
 ignored completely
@@ -773,6 +775,7 @@ boolArray               true,false,true
 floatArray              0,1.1,-2.2,3.3
 doubleArray             99.9999,0.0001,-1
 barArray                blaawp,oorgle,blaawp
+#yarn
 
 [DifferentSection]
 ignored                 completely
