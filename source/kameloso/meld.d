@@ -327,6 +327,12 @@ unittest
     w2.meldInto(w1);
     assert((w1.arr == [ "arr", "matey", "I'ma", "pirate", "stereotype", "unittest" ]), w1.arr.to!string);
 
+    WithArray w3, w4;
+    w3.arr = [ "arr", "matey", "I'ma" ];
+    w4.arr = [ "arr", "matey", "I'ma" ];
+    w4.meldInto(w3);
+    assert((w3.arr == [ "arr", "matey", "I'ma" ]), w3.arr.to!string);
+
     struct Server
     {
         string address;
