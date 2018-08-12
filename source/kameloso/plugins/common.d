@@ -2007,7 +2007,9 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
+    @(IRCEvent.Type.RPL_WHOREPLY)
     @(IRCEvent.Type.CHGHOST)
+    @(ChannelPolicy.home)
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.catchUser(event.target);
@@ -2022,15 +2024,11 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
      +  Servers with the (enabled) capability `extended-join` will include the
      +  account name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we don't have to `WHOIS` them later.
-     +
-     +  `IRCEvent.Type.RPL_WHOREPLY` is included here to deduplicate
-     +  functionality.
      +/
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    @(IRCEvent.Type.RPL_WHOREPLY)
     @(ChannelPolicy.home)
     void onUserAwarenessCatchSenderInHomeMixin(IRCPlugin plugin, const IRCEvent event)
     {
