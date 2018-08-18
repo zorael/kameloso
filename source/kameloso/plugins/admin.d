@@ -713,7 +713,6 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : joiner, splitter;
-    import std.array : array;
     import std.conv : to;
     import std.uni : asLowerCase;
 
@@ -726,7 +725,6 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
     immutable channels = event.content
         .splitter(" ")
         .joiner(",")
-        .array
         .to!string;
 
     if (event.aux.asLowerCase.equal("join"))
