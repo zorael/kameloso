@@ -22,19 +22,19 @@
             "name": "posix",
             "platforms": [ "posix" ],
             "versions": [ "Web", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.7.0" }
+            "dependencies-posix": { "requests": "~>0.9.0" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
             "versions": [ "Web" ],
-            "dependencies-windows": { "requests": "~>0.7.0" }
+            "dependencies-windows": { "requests": "~>0.9.0" }
         },
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
             "versions": [ "Cygwin_", "Web", "Colours" ],
-            "dependencies-windows": { "requests": "~>0.7.0" }
+            "dependencies-windows": { "requests": "~>0.9.0" }
         },
         {
             "name": "vanilla"
@@ -46,12 +46,12 @@
         {
             "name": "web",
             "versions": [ "Web" ],
-            "dependencies": { "requests": "~>0.7.0" }
+            "dependencies": { "requests": "~>0.9.0" }
         },
         {
             "name": "colours+web",
             "versions": [ "Colours", "Web" ],
-            "dependencies": { "requests": "~>0.7.0" }
+            "dependencies": { "requests": "~>0.9.0" }
         },
 
         {
@@ -60,7 +60,7 @@
             "versions": [ "Web", "Colours" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
-            "dependencies": { "requests": "~>0.7.0" }
+            "dependencies": { "requests": "~>0.9.0" }
         }
     ]
 }
