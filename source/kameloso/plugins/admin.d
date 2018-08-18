@@ -105,6 +105,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.tags.length) writeln(event.tags, '$');
         writeln(event.raw, '$');
+        version(Cygwin_) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
