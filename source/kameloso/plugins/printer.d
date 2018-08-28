@@ -2091,6 +2091,9 @@ void teardown(PrinterPlugin plugin)
 }
 
 
+mixin UserAwareness!(ChannelPolicy.any);
+mixin ChannelAwareness!(ChannelPolicy.any);
+
 public:
 
 
