@@ -2194,7 +2194,8 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
  +
  +  Channel awareness needs user awareness, or things won't work.
  +/
-mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__)
+mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+    bool debug_ = false, string module_ = __MODULE__)
 {
     static assert(__traits(compiles, .hasUserAwareness), module_ ~
         " is missing UserAwareness mixin (needed for ChannelAwareness).");
@@ -2211,7 +2212,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.SELFJOIN)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.channels[event.channel] = IRCChannel.init;
@@ -2231,7 +2232,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(Chainable)
     @(IRCEvent.Type.SELFPART)
     @(IRCEvent.Type.SELFKICK)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin.state)
@@ -2269,7 +2270,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         with (plugin.state)
@@ -2299,7 +2300,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessLate)
     @(Chainable)
     @(IRCEvent.Type.PART)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.algorithm.mutation : remove;
@@ -2387,7 +2388,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(Chainable)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.channels[event.channel].topic = event.content;
@@ -2401,7 +2402,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
     {
         import std.conv : to;
@@ -2420,7 +2421,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.MODE)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
@@ -2439,7 +2440,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.algorithm.searching : canFind;
@@ -2507,7 +2508,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModesign;
@@ -2603,7 +2604,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(IRCEvent.Type.RPL_INVITELIST)
     @(IRCEvent.Type.RPL_REOPLIST)
     @(IRCEvent.Type.RPL_QUIETLIST)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
@@ -2640,7 +2641,7 @@ mixin template ChannelAwareness(bool debug_ = false, string module_ = __MODULE__
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
