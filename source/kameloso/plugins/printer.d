@@ -250,8 +250,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (path !in buffers)
                 {
+                    import std.file : exists;
+
                     buffers[path] = LogLineBuffer(path);
-                    buffers[path].lines.put("\n");  // two lines
+
+                    if (path.exists)
+                    {
+                        buffers[path].lines.put("\n");  // two lines
+                    }
+
                     buffers[path].lines.put(datestamp);
                 }
 
