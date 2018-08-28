@@ -1941,7 +1941,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
  +/
-mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
+mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+    bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasUserAwareness = true;
 
@@ -2009,7 +2010,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(IRCEvent.Type.RPL_WHOISUSER)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(IRCEvent.Type.CHGHOST)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.catchUser(event.target);
@@ -2029,7 +2030,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onUserAwarenessCatchSenderInHomeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         if (event.type == IRCEvent.Type.ACCOUNT)
@@ -2087,7 +2088,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(AwarenessEarly)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModesign;
@@ -2142,7 +2143,7 @@ mixin template UserAwareness(bool debug_ = false, string module_ = __MODULE__)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
-    @(ChannelPolicy.home)
+    @channelPolicy
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
     {
         plugin.state.users.rehash();
