@@ -294,123 +294,150 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         return;
     }
 
-    // Some events are tricky to attribute to a channel. Ignore them for now as
-    // it would require channel and user awareness to properly differentiate.
+    /// Write buffered lines.
+    void writeToPath(const string path)
+    {
+        try
+        {
+            if (plugin.printerSettings.bufferedWrites)
+            {
+                if (path !in plugin.buffers)
+                {
+                    import std.file : exists;
+                    plugin.buffers[path] = LogLineBuffer(path);
+
+                    if (path.exists)
+                    {
+                        plugin.buffers[path].lines.put("\n");  // two lines
+                    }
+
+                    plugin.buffers[path].lines.put(datestamp);
+                }
+
+                import std.array : Appender;
+                Appender!string sink;
+                sink.reserve(512);
+                plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
+                plugin.buffers[path].lines ~= sink.data;
+            }
+            else
+            {
+                plugin.formatMessageMonochrome(File(path, "a").lockingTextWriter, event, false);
+            }
+
+            if (event.errors.length && plugin.printerSettings.logErrors)
+            {
+                import kameloso.common : formatObjects;
+
+                immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
+
+                if (errPath !in plugin.buffers) plugin.buffers[errPath] = LogLineBuffer(errPath);
+
+                if (plugin.printerSettings.bufferedWrites)
+                {
+                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
+
+                    if (event.sender != IRCUser.init)
+                    {
+                        plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                    }
+
+                    if (event.target != IRCUser.init)
+                    {
+                        plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
+                    }
+                }
+                else
+                {
+                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event);
+
+                    if (event.sender != IRCUser.init)
+                    {
+                        File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                    }
+
+                    if (event.target != IRCUser.init)
+                    {
+                        File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.target);
+                    }
+                }
+            }
+        }
+        catch (const FileException e)
+        {
+            logger.warning("File exception caught when writing to log: ", e.msg);
+        }
+        catch (const ErrnoException e)
+        {
+            logger.warning("Exception caught when writing to log: ", e.msg);
+        }
+        catch (const Exception e)
+        {
+            logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+        }
+    }
+
     with (IRCEvent.Type)
+    with (plugin)
+    with (event)
     switch (event.type)
     {
+    case SASL_AUTHENTICATE:
+    case PING:
+        // Not of loggable interest
+        return;
+
     case QUIT:
     case NICK:
     case ACCOUNT:
-    case SASL_AUTHENTICATE:
-    case PING:
-        return;
+        // These don't carry a channel; instead have them be logged in all
+        // channels this user is in (that the bot is also in)
+        foreach (const channelName, const thisChannel; state.channels)
+        {
+            if (!printerSettings.logAllChannels && !state.bot.homes.canFind(channelName))
+            {
+                // Not logging all channels and this is not a home.
+                continue;
+            }
+
+            if (thisChannel.users.canFind(sender.nickname))
+            {
+                // Channel message
+                writeToPath(buildNormalizedPath(logLocation, channelName ~ ".log"));
+            }
+        }
+
+        immutable queryPath = buildNormalizedPath(logLocation, sender.nickname ~ ".log");
+
+        if (queryPath in plugin.buffers)
+        {
+            // There is an open query buffer; write to it too
+            writeToPath(queryPath);
+        }
+        break;
 
     default:
-        break;
-    }
-
-    string path;
-
-    with (plugin)
-    with (event)
-    {
         if (channel.length && sender.nickname.length)
         {
             // Channel message
-            path = buildNormalizedPath(logLocation, channel ~ ".log");
+            writeToPath(buildNormalizedPath(logLocation, channel ~ ".log"));
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
-            path = buildNormalizedPath(logLocation, sender.nickname ~ ".log");
+            writeToPath(buildNormalizedPath(logLocation, sender.nickname ~ ".log"));
         }
         else if (!sender.nickname.length && sender.address.length)
         {
             // Server
-            path = buildNormalizedPath(logLocation, state.bot.server.address ~ ".log");
+            writeToPath(buildNormalizedPath(logLocation, state.bot.server.address ~ ".log"));
         }
         else
         {
             // Don't know where to log this event; bail
             return;
         }
-    }
-
-    try
-    {
-        // First bool monochrome true, second bell on mention false
-
-        if (plugin.printerSettings.bufferedWrites)
-        {
-            if (path !in plugin.buffers)
-            {
-                plugin.buffers[path] = LogLineBuffer(path);
-                plugin.buffers[path].lines.put("\n");  // two lines
-                plugin.buffers[path].lines.put(datestamp);
-            }
-
-            import std.array : Appender;
-
-            Appender!string sink;
-            sink.reserve(512);
-            plugin.formatMessageMonochrome(sink, event, false);
-            plugin.buffers[path].lines ~= sink.data;
-        }
-        else
-        {
-            plugin.formatMessageMonochrome(File(path, "a").lockingTextWriter, event, false);
-        }
-
-        if (event.errors.length && plugin.printerSettings.logErrors)
-        {
-            import kameloso.common : formatObjects;
-
-            immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
-
-            if (errPath !in plugin.buffers) plugin.buffers[errPath] = LogLineBuffer(errPath);
-
-            if (plugin.printerSettings.bufferedWrites)
-            {
-                plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
-
-                if (event.sender != IRCUser.init)
-                {
-                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
-                }
-
-                if (event.target != IRCUser.init)
-                {
-                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
-                }
-            }
-            else
-            {
-                File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event);
-
-                if (event.sender != IRCUser.init)
-                {
-                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.sender);
-                }
-
-                if (event.target != IRCUser.init)
-                {
-                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.target);
-                }
-            }
-        }
-    }
-    catch (const FileException e)
-    {
-        logger.warning("File exception caught when writing to log: ", e.msg);
-    }
-    catch (const ErrnoException e)
-    {
-        logger.warning("Exception caught when writing to log: ", e.msg);
-    }
-    catch (const Exception e)
-    {
-        logger.warning("Unhandled exception caught when writing to log: ", e.msg);
+        break;
     }
 }
 
