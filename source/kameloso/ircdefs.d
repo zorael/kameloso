@@ -1497,6 +1497,14 @@ struct IRCUser
         IRCUser eight = IRCUser("~{0v0}~!id@add");
         assert(seventh.matchesByMask(eight, IRCServer.CaseMapping.rfc1459));
         assert(!seventh.matchesByMask(eight, IRCServer.CaseMapping.strict_rfc1459));
+
+        IRCUser ninth = IRCUser("*!*@170.233.40.144]");  // Accidental trailing ]
+        IRCUser tenth = IRCUser("Joe!Shmoe@*");
+        assert(ninth.matchesByMask(tenth, IRCServer.CaseMapping.rfc1459));
+
+        IRCUser eleventh = IRCUser("abc]!*@*");
+        IRCUser twelfth = IRCUser("abc}!abc}@abc}");
+        assert(eleventh.matchesByMask(twelfth, IRCServer.CaseMapping.rfc1459));
     }
 }
 
