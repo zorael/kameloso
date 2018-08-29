@@ -1398,31 +1398,67 @@ struct IRCUser
     bool matchesByMask(const IRCUser other,
         IRCServer.CaseMapping caseMapping = IRCServer.CaseMapping.rfc1459) pure nothrow const
     {
-        import std.path : CaseSensitive, globMatch;
+        // unpatternedGlobMatch
+        /++
+         +  Performs a glob match without taking special consideration of
+         +  bracketed patterns (with [, ], { and }).
+         +
+         +  Params:
+         +      first = First string.
+         +      second = Second expression string to glob match with the first.
+         +
+         +  Returns:
+         +      True if `first` matches the `second` glob mask, false if not.
+         +/
+        static bool unpatternedGlobMatch(const string first, const string second)
+        {
+            import std.array : replace;
+            import std.path : CaseSensitive, globMatch;
 
-        // Change this if we want case-sentivity
-        enum caseSetting = CaseSensitive.no;
+            enum caseSetting = CaseSensitive.no;
 
+            enum openBracketSubstitution = "\1";
+            enum closedBracketSubstitution = "\2";
+            enum openCurlySubstitution = "\3";
+            enum closedCurlySubstitution = "\4";
+
+            immutable firstReplaced = first
+                .replace("[", openBracketSubstitution)
+                .replace("]", closedBracketSubstitution)
+                .replace("{", openCurlySubstitution)
+                .replace("}", closedCurlySubstitution);
+
+            immutable secondReplaced = second
+                .replace("[", openBracketSubstitution)
+                .replace("]", closedBracketSubstitution)
+                .replace("{", openCurlySubstitution)
+                .replace("}", closedCurlySubstitution);
+
+            return firstReplaced.globMatch!caseSetting(secondReplaced);
+        }
+
+        // Only ever compare nicknames case-insensitive
         immutable ourLower = this.lowercaseNickname(caseMapping);
         immutable theirLower = other.lowercaseNickname(caseMapping);
 
-        // globMatch in both directions
+        // (unpatterned) globMatch in both directions
         // If no match and either is empty, that means they're *
+
         immutable matchNick = ((ourLower == theirLower) ||
-            ourLower.globMatch!caseSetting(theirLower) ||
-            theirLower.globMatch!caseSetting(ourLower) ||
+            unpatternedGlobMatch(ourLower, theirLower) ||
+            unpatternedGlobMatch(theirLower, ourLower) ||
             !this.nickname.length || !other.nickname.length);
         if (!matchNick) return false;
 
         immutable matchIdent = ((this.ident == other.ident) ||
-            this.ident.globMatch!caseSetting(other.ident) ||
-            other.ident.globMatch!caseSetting(this.ident) ||
+            unpatternedGlobMatch(this.ident, other.ident) ||
+            unpatternedGlobMatch(other.ident, this.ident) ||
             !this.ident.length || !other.ident.length);
         if (!matchIdent) return false;
 
         immutable matchAddress = ((this.address == other.address) ||
-            this.address.globMatch!caseSetting(other.address) ||
-            other.address.globMatch!caseSetting(this.address) ||
+            unpatternedGlobMatch(this.address, other.address) ||
+            unpatternedGlobMatch(other.address, this.address) ||
             !this.address.length || !other.address.length);
         if (!matchAddress) return false;
 
