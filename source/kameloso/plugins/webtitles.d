@@ -13,12 +13,11 @@ module kameloso.plugins.webtitles;
 
 version(Web):
 
+import kameloso.common : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
 
-import std.concurrency : Tid;
-import std.regex : ctRegex;
+import std.concurrency;
 
 private:
 
@@ -87,11 +86,11 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.webtitlesSettings.enabled) return;
 
+    import kameloso.common : logger;
     import kameloso.constants : Timeout;
     import kameloso.string : beginsWith, has, nom;
-    import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
-    import std.regex : matchAll;
+    import std.regex : ctRegex, matchAll;
     import std.typecons : No, Yes;
 
     // Early abort so we don't use the regex as much.
@@ -170,14 +169,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, TitleRequest titleReq)
 {
-    import kameloso.common;
-
-    IRCPluginState state = cast(IRCPluginState)sState;
-
-    kameloso.common.settings = state.settings;
-    initLogger(state.settings.monochrome, state.settings.brightTerminal);
-
-    logger.info("Webtitles worker spawned.");
+    auto state = cast(IRCPluginState)sState;
 
     try
     {
@@ -202,16 +194,18 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
 
         if (titleReq.url != originalURL)
         {
-            logger.log("direct imgur URL; rewritten");
+            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+                "direct imgur URL; rewritten");
         }
 
-        auto lookup = lookupTitle(titleReq.url);
+        auto lookup = state.lookupTitle(titleReq.url);
         state.reportURL(lookup, titleReq.event);
         cache[originalURL] = lookup;
     }
     catch (const Exception e)
     {
-        logger.error("Webtitles worker exception: ", e.msg);
+        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+            "Webtitles worker exception: " ~ e.msg);
     }
 }
 
@@ -261,7 +255,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +  Returns:
  +      A finished `TitleLookup`.
  +/
-TitleLookup lookupTitle(const string url)
+TitleLookup lookupTitle(IRCPluginState state, const string url)
 {
     import kameloso.constants : BufferSize;
     import kameloso.string : beginsWith, has;
@@ -307,7 +301,7 @@ TitleLookup lookupTitle(const string url)
     if ((lookup.title == "YouTube") &&
         url.has("youtube.com/watch?"))
     {
-        fixYoutubeTitles(lookup, url);
+        state.fixYoutubeTitles(lookup, url);
     }
     else
     {
@@ -337,7 +331,7 @@ TitleLookup lookupTitle(const string url)
  +          hacking around.
  +      titleReq = Original title request.
  +/
-void fixYoutubeTitles(ref TitleLookup lookup, const string url)
+void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string url)
 {
     import kameloso.string : has;
     import std.regex : regex, replaceFirst;
@@ -345,19 +339,22 @@ void fixYoutubeTitles(ref TitleLookup lookup, const string url)
     /// Regex pattern to match YouTube URLs.
     enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
-    logger.log("Bland YouTube title ...");
+    state.mainThread.send(ThreadMessage.TerminalOutput.Log(), "Bland YouTube title ...");
 
     immutable onRepeatURL = url.replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
 
-    logger.log("ListenOnRepeat URL: ", onRepeatURL);
+    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+        "ListenOnRepeat URL: " ~ onRepeatURL);
 
-    auto onRepeatLookup = lookupTitle(onRepeatURL);
+    auto onRepeatLookup = state.lookupTitle(onRepeatURL);
 
-    logger.log("ListenOnRepeat title: ", onRepeatLookup.title);
+    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+        "ListenOnRepeat title: " ~ onRepeatLookup.title);
 
     if (!onRepeatLookup.title.has(" - ListenOnRepeat"))
     {
-        logger.warning("Failed to ListenOnRepeatify YouTube title");
+        state.mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+            "Failed to ListenOnRepeatify YouTube title");
         return;
     }
 
