@@ -121,6 +121,28 @@ struct ThreadMessage
 
     /// Concurrency message asking to disconnect and reconnect to the server.
     struct Reconnect {}
+
+    /// Concurrency messages for writing text to the terminal.
+    struct TerminalOutput
+    {
+        /// Concurrency message asking to `writeln` text to the terminal.
+        struct Writeln {}
+
+        /// Concurrency message asking to print `trace`-level text to the terminal.
+        struct Trace {}
+
+        /// Concurrency message asking to print `log`-level text to the terminal.
+        struct Log {}
+
+        /// Concurrency message asking to print `info`-level text to the terminal.
+        struct Info {}
+
+        /// Concurrency message asking to print `warning`-level text to the terminal.
+        struct Warning {}
+
+        /// Concurrency message asking to print `error`-level text to the terminal.
+        struct Error {}
+    }
 }
 
 

@@ -306,6 +306,43 @@ Next checkMessages(ref Client client)
         }
     }
 
+    /// `writeln`s the passed message.
+    void proxyWriteln(ThreadMessage.TerminalOutput.Writeln, string message)
+    {
+        import std.stdio : writeln;
+        writeln(message);
+    }
+
+    /// `trace`s the passed message.
+    void proxyTrace(ThreadMessage.TerminalOutput.Trace, string message)
+    {
+        logger.trace(message);
+    }
+
+    /// `log`s the passed message.
+    void proxyLog(ThreadMessage.TerminalOutput.Log, string message)
+    {
+        logger.log(message);
+    }
+
+    /// `info`s the passed message.
+    void proxyInfo(ThreadMessage.TerminalOutput.Info, string message)
+    {
+        logger.info(message);
+    }
+
+    /// `warning`s the passed message.
+    void proxyWarning(ThreadMessage.TerminalOutput.Warning, string message)
+    {
+        logger.warning(message);
+    }
+
+    /// `log`s the passed message.
+    void proxyError(ThreadMessage.TerminalOutput.Error, string message)
+    {
+        logger.error(message);
+    }
+
     /// Did the concurrency receive catch something?
     bool receivedSomething;
     uint receivedInARow;
@@ -320,6 +357,12 @@ Next checkMessages(ref Client client)
             &immediateline,
             &pong,
             &eventToServer,
+            &proxyWriteln,
+            &proxyTrace,
+            &proxyLog,
+            &proxyInfo,
+            &proxyWarning,
+            &proxyError,
             &quitServer,
             &save,
             &reloadPlugins,
