@@ -14,11 +14,11 @@ module kameloso.plugins.reddit;
 
 version(Web):
 
+import kameloso.common : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
 
-import std.concurrency : Tid;
+import std.concurrency;
 
 private:
 
@@ -69,9 +69,9 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     if (!plugin.redditSettings.enabled) return;
 
+    import kameloso.common : logger;
     import kameloso.constants : Timeout;
     import kameloso.string : has, stripped;
-    import std.concurrency : spawn;
     import std.datetime.systime : Clock, SysTime;
 
     immutable url = event.content.stripped;
@@ -121,19 +121,13 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     const string url, const IRCEvent event)
 {
-    import kameloso.common;
     import std.datetime.systime : Clock;
 
-    IRCPluginState state = cast(IRCPluginState)sState;
-
-    kameloso.common.settings = state.settings;
-    initLogger(state.settings.monochrome, state.settings.brightTerminal);
-
-    logger.info("Reddit worker spawned.");
+    auto state = cast(IRCPluginState)sState;
 
     try
     {
-        immutable redditURL = lookupReddit(url);
+        immutable redditURL = state.lookupReddit(url);
         state.reportReddit(redditURL, event);
 
         RedditLookup lookup;
@@ -143,7 +137,8 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     }
     catch (const Exception e)
     {
-        logger.error("Reddit worker exception: ", e.msg);
+        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+            "Reddit worker exception: " ~ e.msg);
     }
 }
 
@@ -158,7 +153,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
  +  Returns:
  +      URL to the Reddit post that links to `url`.
  +/
-string lookupReddit(const string url)
+string lookupReddit(IRCPluginState state, const string url)
 {
     import kameloso.constants : BufferSize;
     import requests : Request;
@@ -168,7 +163,7 @@ string lookupReddit(const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    logger.log("Checking Reddit ...");
+    state.mainThread.send(ThreadMessage.TerminalOutput.Log(), "Checking Reddit ...");
 
     auto res = req.get("https://www.reddit.com/" ~ url);
 
@@ -180,7 +175,8 @@ string lookupReddit(const string url)
             uri.beginsWith("https://www.reddit.com/submit") ||
             uri.beginsWith("https://www.reddit.com/http"))
         {
-            logger.log("No corresponding Reddit post.");
+            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+                "No corresponding Reddit post found.");
             return string.init;
         }
         else
