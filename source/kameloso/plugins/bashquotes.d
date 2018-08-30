@@ -15,7 +15,6 @@ version(Web):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
 
 private:
 
@@ -60,8 +59,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +  Looks up a Bash quote and reports it to the appropriate nickname or
  +  channel.
  +
- +  Supposed to be run in its own, shortlived thread. As such, it initialises
- +  its own `kameloso.logger.KamelosoLogger`.
+ +  Supposed to be run in its own, shortlived thread.
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
@@ -73,12 +71,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     import std.array : replace;
     import std.format : format;
 
-    IRCPluginState state = cast(IRCPluginState)sState;
-
-    kameloso.common.settings = state.settings;
-    initLogger(state.settings.monochrome, state.settings.brightTerminal);
-
-    //logger.info("Bashquotes worker spawned.");
+    auto state = cast(IRCPluginState)sState;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;
@@ -124,7 +117,11 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     }
     catch (const Exception e)
     {
-        logger.warning("Bashquotes could not fetch ", url, ": ", e.msg);
+        import kameloso.common : ThreadMessage;
+        import std.concurrency : send;
+
+        state.mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+            "Bashquotes could not fetch %s: %s".format(url, e.msg));
     }
 }
 
