@@ -15,7 +15,7 @@ module kameloso.plugins.pipeline;
 
 version(Posix):
 
-import kameloso.common : ThreadMessage, logger;
+import kameloso.common : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
@@ -40,16 +40,11 @@ private:
  +/
 void pipereader(shared IRCPluginState newState)
 {
-    import kameloso.common : initLogger;
     import kameloso.messaging : raw, quit;
     import core.time : seconds;
-    import std.file  : FileException, remove;
+    import std.file : FileException, remove;
 
     auto state = cast(IRCPluginState)newState;
-
-    static import kameloso.common;
-    kameloso.common.settings = state.settings;  // FIXME
-    initLogger(state.settings.monochrome, state.settings.brightTerminal);
 
     /// Named pipe (FIFO) to send messages to the server through.
     File fifo;
@@ -60,12 +55,14 @@ void pipereader(shared IRCPluginState newState)
     }
     catch (const FileException e)
     {
-        logger.error("Failed to create pipeline FIFO: ", e.msg);
+        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+            "Failed to create pipeline FIFO: " ~ e.msg);
         return;
     }
     catch (const Exception e)
     {
-        logger.error("Unhandled exception creating pipeline FIFO: ", e.msg);
+        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+            "Unhandled exception creating pipeline FIFO: " ~ e.msg);
         return;
     }
 
@@ -120,7 +117,8 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                logger.warning("pipeline received Variant: ", v);
+                mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+                    "pipeline received Variant: " ~ v.toString());
             }
         );
 
@@ -134,7 +132,8 @@ void pipereader(shared IRCPluginState newState)
             }
             catch (const ErrnoException e)
             {
-                logger.error("Failed to reopen FIFO: ", e.msg);
+                mainThread.send(ThreadMessage.TerminalOutput.Error(),
+                    "Failed to reopen FIFO: " ~ e.msg);
             }
         }
     }
@@ -154,9 +153,8 @@ void pipereader(shared IRCPluginState newState)
  +  Returns:
  +      A `std.stdio.File` repersenting the named FIFO we want to read from.
  +/
-File createFIFO(const IRCPluginState state)
+File createFIFO(IRCPluginState state)
 {
-    import std.array : Appender;
     import std.file : FileException, exists, isDir;
     import std.format : format;
     import std.process : execute;
@@ -196,16 +194,18 @@ File createFIFO(const IRCPluginState state)
                 KamelosoLogger.logcoloursBright[LogLevel.all] :
                 KamelosoLogger.logcoloursDark[LogLevel.all];
 
-            logger.logf("Pipe text to %s%s%s to send raw commands to the server.",
-                infotint.colour, filename, logtint.colour);
-
+            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+                "Pipe text to %s%s%s to send raw commands to the server."
+                .format(infotint.colour, filename, logtint.colour));
             printed = true;
         }
     }
 
     if (!printed)
     {
-        logger.infof("Pipe text to %s to send raw commands to the server", filename);
+        state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+            "Pipe text to %s to send raw commands to the server"
+            .format(filename));
     }
 
     return File(filename, "r");
@@ -229,7 +229,7 @@ void onWelcome(PipelinePlugin plugin, const IRCEvent event)
  +/
 void teardown(PipelinePlugin plugin)
 {
-    import std.file  : exists, isDir;
+    import std.file : exists, isDir;
 
     with (plugin)
     with (plugin.state)
