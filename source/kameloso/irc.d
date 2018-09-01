@@ -880,7 +880,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case ACCOUNT:
         //:ski7777!~quassel@ip5b435007.dynamic.kabel-deutschland.de ACCOUNT ski7777
         event.sender.account = slice;
-        event.content = slice;  // to make it visible?
+        event.aux = slice;  // to make it visible?
         break;
 
     case RPL_HOSTHIDDEN: // 396
