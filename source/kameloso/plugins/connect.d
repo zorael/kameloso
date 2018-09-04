@@ -83,7 +83,8 @@ void onSelfpart(ConnectService service, const IRCEvent event)
             }
             else
             {
-                logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
+                // On Twitch SELFPART may occur on untracked channels
+                //logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
             }
         }
     }

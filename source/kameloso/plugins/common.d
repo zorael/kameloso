@@ -2236,9 +2236,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
+        // Decrement user refcounts before destroying channel
+
         with (plugin.state)
         {
-            // Decrement user refcounts before destroying channel
+            // On Twitch SELFPART may occur on untracked channels
+            if (event.channel !in channels) return;
 
             foreach (immutable nickname; channels[event.channel].users)
             {
