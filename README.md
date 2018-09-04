@@ -6,6 +6,8 @@ It is written in [**D**](https://www.dlang.org). A variety of features comes bun
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy issue of specialcasing for that particular IRC network or server daemon.
 
+Please report bugs. Unreported bugs can only be fixed by accident.
+
 ### Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
