@@ -478,7 +478,7 @@ if (isOutputRange!(Sink, char[]))
 ///
 @system unittest
 {
-    import kameloso.string : has;
+    import kameloso.string : contains;
     import std.array : Appender;
     import std.format : format;
     import std.stdio;
@@ -593,21 +593,21 @@ if (isOutputRange!(Sink, char[]))
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
-        assert(sink.data.has("-- StructName"));
-        assert(sink.data.has("int_"));
-        assert(sink.data.has("12345"));
+        assert(sink.data.contains("-- StructName"));
+        assert(sink.data.contains("int_"));
+        assert(sink.data.contains("12345"));
 
-        assert(sink.data.has("string_"));
-        assert(sink.data.has(`"foo"`));
+        assert(sink.data.contains("string_"));
+        assert(sink.data.contains(`"foo"`));
 
-        assert(sink.data.has("bool_"));
-        assert(sink.data.has("true"));
+        assert(sink.data.contains("bool_"));
+        assert(sink.data.contains("true"));
 
-        assert(sink.data.has("float_"));
-        assert(sink.data.has("3.14"));
+        assert(sink.data.contains("float_"));
+        assert(sink.data.contains("3.14"));
 
-        assert(sink.data.has("double_"));
-        assert(sink.data.has("99.9"));
+        assert(sink.data.contains("double_"));
+        assert(sink.data.contains("99.9"));
 
         // Adding Settings does nothing
         alias StructName2Settings = StructName2;

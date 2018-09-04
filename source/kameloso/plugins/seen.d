@@ -372,11 +372,11 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
     foreach (const signed; event.content.splitter(" "))
     {
         import kameloso.irc : stripModesign;
-        import kameloso.string : has, nom;
+        import kameloso.string : contains, nom;
 
         string nickname = signed;
 
-        if (nickname.has('!'))
+        if (nickname.contains('!'))
         {
             // SpotChat-like, signed is in full nick!ident@address form
             nickname = nickname.nom('!');
@@ -529,7 +529,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
     import kameloso.common : timeSince;
     import kameloso.irc : isValidNickname;
-    import kameloso.string : has;
+    import kameloso.string : contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime; //: Clock, SysTime;
     import std.format : format;

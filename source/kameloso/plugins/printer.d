@@ -751,8 +751,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (badge.length)
             {
-                import kameloso.string : has, nom;
-                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
+                import kameloso.string : contains, nom;
+                immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -785,8 +785,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (target.badge.length)
             {
-                import kameloso.string : has, nom;
-                immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
+                import kameloso.string : contains, nom;
+                immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -1089,10 +1089,10 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (badge.length)
             {
-                import kameloso.string : has, nom;
+                import kameloso.string : contains, nom;
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                immutable badgefront = badge.has('/') ? badge.nom('/') : badge;
+                immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -1147,10 +1147,10 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             if (target.badge.length)
             {
-                import kameloso.string : has, nom;
+                import kameloso.string : contains, nom;
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                immutable badgefront = target.badge.has('/') ? target.badge.nom('/') : target.badge;
+                immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -1194,9 +1194,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                     {
-                        import kameloso.string : has;
+                        import kameloso.string : contains;
 
-                        if (event.tags.has("emote-only=1"))
+                        if (event.tags.contains("emote-only=1"))
                         {
                             // Just highlight the whole line, make it appear as normal content
                             event.mapEffects(contentReset);
@@ -1414,29 +1414,29 @@ void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.de
 {
     import kameloso.bash : B = BashEffect;
     import kameloso.irc : I = IRCControlCharacter;
-    import kameloso.string : has;
+    import kameloso.string : contains;
 
     with (event)
     {
-        if (content.has(I.colour))
+        if (content.contains(I.colour))
         {
             // Colour is mIRC 3
             content = mapColours(content, resetCode);
         }
 
-        if (content.has(I.bold))
+        if (content.contains(I.bold))
         {
             // Bold is bash 1, mIRC 2
             content = mapAlternatingEffectImpl!(I.bold, B.bold)(content);
         }
 
-        if (content.has(I.italics))
+        if (content.contains(I.italics))
         {
             // Italics is bash 3 (not really), mIRC 29
             content = mapAlternatingEffectImpl!(I.italics, B.italics)(content);
         }
 
-        if (content.has(I.underlined))
+        if (content.contains(I.underlined))
         {
             // Underlined is bash 4, mIRC 31
             content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(content);
@@ -1459,7 +1459,7 @@ void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.de
 string stripEffects(const string content)
 {
     import kameloso.irc : I = IRCControlCharacter;
-    import kameloso.string : has;
+    import kameloso.string : contains;
     import std.array : replace;
 
     enum boldCode = "" ~ I.bold;

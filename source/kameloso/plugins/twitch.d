@@ -85,7 +85,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
     with (IRCEvent)
     foreach (tag; event.tags.splitter(";"))
     {
-        import kameloso.string : has, nom;
+        import kameloso.string : contains, nom;
         immutable key = tag.nom("=");
         immutable value = tag;
 
@@ -253,7 +253,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // The user’s display name, escaped as described in the IRCv3 spec.
             // This is empty if it is never set.
             import kameloso.string : strippedRight;
-            immutable alias_ = value.has('\\') ? decodeIRCv3String(value).strippedRight : value;
+            immutable alias_ = value.contains('\\') ? decodeIRCv3String(value).strippedRight : value;
 
             if (event.type == Type.USERSTATE)
             {

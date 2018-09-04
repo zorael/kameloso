@@ -181,13 +181,13 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         import std.range : only;
         foreach (immutable setting; only("--monochrome", "--bright")) //, "--brightTerminal"))
         {
-            import kameloso.string : beginsWith, has, nom;
+            import kameloso.string : beginsWith, contains, nom;
             import std.algorithm.iteration : filter;
             import std.conv : to;
 
             foreach (immutable arg; argsBackup.filter!(word => word.beginsWith(setting)))
             {
-                if (!arg.has('='))
+                if (!arg.contains('='))
                 {
                     // It's an implicitly positive assignment which do not
                     // exhibit the behaviour we're working around.

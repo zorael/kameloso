@@ -730,7 +730,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.string : beginsWith, has, nom, stripPrefix, strippedLeft;
+        import kameloso.string : beginsWith, contains, nom, stripPrefix, strippedLeft;
         import std.meta : AliasSeq, Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
         import std.typecons : No, Yes;
@@ -885,7 +885,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
                         mutEvent.content = mutEvent.content.strippedLeft;
 
-                        if (mutEvent.content.has!(Yes.decode)(' '))
+                        if (mutEvent.content.contains!(Yes.decode)(' '))
                         {
                             thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
                         }
@@ -946,7 +946,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             mutEvent = event;
                             string thisCommand;
 
-                            if (mutEvent.content.has!(Yes.decode)(' '))
+                            if (mutEvent.content.contains!(Yes.decode)(' '))
                             {
                                 thisCommand = mutEvent.content.nom!(Yes.decode)(' ');
                             }
@@ -1598,11 +1598,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     string name() @property const
     {
-        import kameloso.string : has, nom;
+        import kameloso.string : contains, nom;
 
         string moduleName = module_;
 
-        while (moduleName.has('.'))
+        while (moduleName.contains('.'))
         {
             moduleName.nom('.');
         }
@@ -2093,14 +2093,14 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         import kameloso.irc : stripModesign;
         import kameloso.meld : meldInto;
-        import kameloso.string : has, nom;
+        import kameloso.string : contains, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
         import std.typecons : No, Yes;
 
         auto names = event.content.splitter(" ");
 
-        if (names.empty || !names.front.has('!') || !names.front.has('@'))
+        if (names.empty || !names.front.contains('!') || !names.front.contains('@'))
         {
             // Empty or Freenode-like, where the list is just of nicknames with
             // possible mode prefix
@@ -2517,7 +2517,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModesign;
-        import kameloso.string : has, nom;
+        import kameloso.string : contains, nom;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : canFind;
         import std.string : representation;
@@ -2533,7 +2533,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 string slice = userstring;
                 string nickname;
 
-                if (userstring.has('!') && userstring.has('@'))
+                if (userstring.contains('!') && userstring.contains('@'))
                 {
                     // SpotChat-like, names are in full nick!ident@address form
                     nickname = slice.nom('!');
@@ -2893,7 +2893,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
     import kameloso.common : logger;
-    import kameloso.string : has, nom;
+    import kameloso.string : contains, nom;
     import std.string : toLower;
 
     top:
@@ -2904,7 +2904,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         string setting;
         string value;
 
-        if (!slice.has!(Yes.decode)("."))
+        if (!slice.contains!(Yes.decode)("."))
         {
             logger.warning("Bad plugin.setting=value format");
             continue;
@@ -2912,7 +2912,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
         pluginstring = slice.nom!(Yes.decode)(".").toLower;
 
-        if (slice.has!(Yes.decode)("="))
+        if (slice.contains!(Yes.decode)("="))
         {
             setting = slice.nom!(Yes.decode)("=");
             value = slice;
