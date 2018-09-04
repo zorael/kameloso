@@ -2241,9 +2241,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         with (plugin.state)
         {
             // On Twitch SELFPART may occur on untracked channels
-            if (event.channel !in channels) return;
+            auto channel = event.channel in channels;
+            if (!channel) return;
 
-            foreach (immutable nickname; channels[event.channel].users)
+            foreach (immutable nickname; channel.users)
             {
                 // users array may not contain the user
                 auto user = nickname in users;
