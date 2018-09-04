@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gdc -oasdf kameloso/*.d 2>&1 | grep "kameloso/config.d:[0-9]\+:[0-9]\+: internal compiler error: Segmentation fault"
