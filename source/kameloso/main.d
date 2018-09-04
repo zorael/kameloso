@@ -530,6 +530,12 @@ Next mainLoop(ref Client client)
 
             IRCEvent mutEvent;
 
+            scope(failure)
+            {
+                logger.error("scopeguard tripped.");
+                printObject(mutEvent);
+            }
+
             try
             {
                 import std.encoding : sanitize;
