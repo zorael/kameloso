@@ -2097,7 +2097,7 @@ mixin ChannelAwareness!(ChannelPolicy.any);
 public:
 
 
-// Printer
+// PrinterPlugin
 /++
  +  The Printer plugin takes all `kameloso.ircdefs.IRCEvent`s and prints them to
  +  the local terminal, formatted and optionally in colour.

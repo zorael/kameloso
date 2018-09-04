@@ -58,7 +58,11 @@ void signalHandler(int sig) nothrow @nogc @system
 
 // throttleline
 /++
- +  Echo a line to the terminal and send it to the server.
+ +  Send a string to the server in a throttled fashion, based on a simple
+ +  `y = k*x + m` line.
+ +
+ +  This is so we don't get kicked by the server for spamming, if a lot of lines
+ +  are to be sent at once.
  +
  +  Params:
  +      client = Reference to the current `kameloso.common.Client`.
@@ -778,7 +782,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 // setupSignals
 /++
  +  Registers `SIGINT` (and optionally `SIGHUP` on Posix systems) to redirect to
- +  our own `signalHandler`. so we can catch Ctrl+C and gracefully shut down.
+ +  our own `signalHandler`, so we can catch Ctrl+C and gracefully shut down.
  +/
 void setupSignals() nothrow @nogc
 {
