@@ -1,20 +1,19 @@
 module segfault;
 
-struct IRCBot {}
+struct Foo {}
 
-struct CoreSettings
+struct Bar
 {
     string configFile;
 }
 
-CoreSettings settings;
+Bar settings;
 
 void meldSettingsFromFile()
 {
-    IRCBot tempBot;
-    settings.configFile.readConfigInto(tempBot);
+    Foo temp;
+    settings.configFile.readConfigInto(temp);
 }
-
 
 string[][string] readConfigInto(T)(string configFile, T things)
 {
@@ -33,8 +32,7 @@ string[][string] applyConfiguration(Range, Things...)(Range, Things things)
     {
     default:
         enum pattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-        auto engine = pattern;
-        auto hits = line.matchFirst(engine);
+        auto hits = line.matchFirst(pattern);
 
         thingloop:
         foreach (i; things)
@@ -44,7 +42,6 @@ string[][string] applyConfiguration(Range, Things...)(Range, Things things)
                 continue thingloop;
 
             default:
-                invalidEntries[section] ~= [];
             }
         }
     }
