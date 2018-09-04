@@ -43,7 +43,7 @@ public import kameloso.meld;
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {
     import kameloso.common : logger;
-    import kameloso.string : has, stripped, stripSuffix, unquoted;
+    import kameloso.string : contains, stripSuffix, stripped, unquoted;
     import kameloso.traits : isConfigurableVariable;
     import std.conv : ConvException, to;
     import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray, isSomeString, isType;
@@ -97,7 +97,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                                 .replace(escapedPlaceholder, separator.token);
                         }
 
-                        while (values.has(doubleEphemeral))
+                        while (values.contains(doubleEphemeral))
                         {
                             values = values.replace(doubleEphemeral, ephemeralSeparator);
                         }

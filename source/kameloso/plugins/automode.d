@@ -39,7 +39,7 @@ struct AutomodeSettings
 void populateAutomodes(AutomodePlugin plugin)
 {
     import kameloso.json : JSONStorage;
-    import kameloso.string : has;
+    import kameloso.string : contains;
     import std.conv : text;
     import std.json : JSON_TYPE;
 

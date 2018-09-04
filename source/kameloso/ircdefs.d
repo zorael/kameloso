@@ -1109,7 +1109,7 @@ struct IRCUser
     /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc).
     string account;
 
-    /// The highest priority "badge" the sender has, in this context.
+    /// The highest priority "badge" the sender contains, in this context.
     string badge;
 
     /// The colour (RRGGBB) to tint the user's nickname with.

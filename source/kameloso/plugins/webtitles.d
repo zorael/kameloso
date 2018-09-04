@@ -88,13 +88,13 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     import kameloso.common : logger;
     import kameloso.constants : Timeout;
-    import kameloso.string : beginsWith, has, nom;
+    import kameloso.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock, SysTime;
     import std.regex : ctRegex, matchAll;
     import std.typecons : No, Yes;
 
     // Early abort so we don't use the regex as much.
-    if (!event.content.has!(Yes.decode)("http")) return;
+    if (!event.content.contains!(Yes.decode)("http")) return;
 
     /// Regex pattern to match a URL, to see if one was pasted.
     enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
@@ -119,7 +119,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         string url = urlHit[0];  // needs mutable
 
-        if (url.has!(Yes.decode)('#'))
+        if (url.contains!(Yes.decode)('#'))
         {
             // URL contains an octorhorpe fragment identifier, like
             // https://www.google.com/index.html#this%20bit
@@ -258,7 +258,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
 TitleLookup lookupTitle(IRCPluginState state, const string url)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.string : beginsWith, has;
+    import kameloso.string : beginsWith, contains;
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
@@ -298,8 +298,7 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
 
     lookup.title = doc.title;
 
-    if ((lookup.title == "YouTube") &&
-        url.has("youtube.com/watch?"))
+    if ((lookup.title == "YouTube") && url.contains("youtube.com/watch?"))
     {
         state.fixYoutubeTitles(lookup, url);
     }
@@ -333,7 +332,7 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
  +/
 void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string url)
 {
-    import kameloso.string : has;
+    import kameloso.string : contains;
     import std.regex : regex, replaceFirst;
 
     /// Regex pattern to match YouTube URLs.
@@ -351,7 +350,7 @@ void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string
     state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
         "ListenOnRepeat title: " ~ onRepeatLookup.title);
 
-    if (!onRepeatLookup.title.has(" - ListenOnRepeat"))
+    if (!onRepeatLookup.title.contains(" - ListenOnRepeat"))
     {
         state.mainThread.send(ThreadMessage.TerminalOutput.Warning(),
             "Failed to ListenOnRepeatify YouTube title");

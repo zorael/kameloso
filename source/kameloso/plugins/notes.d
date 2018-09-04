@@ -179,11 +179,11 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    import kameloso.string : has, nom;
+    import kameloso.string : contains, nom;
     import std.json : JSONException;
     import std.typecons : No, Yes;
 
-    if (!event.content.has(" ")) return;
+    if (!event.content.contains(" ")) return;
 
     string slice = event.content;
     immutable nickname = slice.nom!(Yes.decode)(" ");
@@ -262,7 +262,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    import kameloso.string : has, nom;
+    import kameloso.string : contains, nom;
     import std.typecons : Yes;
 
     logger.info("Faking an event");
@@ -271,7 +271,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     newEvent.type = IRCEvent.Type.CHAN;
     string nickname = event.content;
 
-    if (nickname.has!(Yes.decode)(' '))
+    if (nickname.contains!(Yes.decode)(' '))
     {
         // contains more than one word
         newEvent.sender.nickname = nickname.nom!(Yes.decode)(' ');

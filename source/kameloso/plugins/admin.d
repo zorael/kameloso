@@ -123,9 +123,9 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
-        import kameloso.string : has;
+        import kameloso.string : contains;
 
-        if (event.raw.has(1))
+        if (event.raw.contains(1))
         {
             logger.warning("event.raw contains CTCP 1 which might not get printed");
         }
@@ -445,7 +445,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.irc : isValidNickname;
-    import kameloso.string : has, stripped;
+    import kameloso.string : contains, stripped;
 
     immutable account = event.content.stripped;
 
@@ -501,7 +501,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.irc : isValidNickname;
-    import kameloso.string : has, stripped;
+    import kameloso.string : contains, stripped;
 
     immutable account = event.content.stripped;
 

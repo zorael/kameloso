@@ -167,7 +167,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
-    import kameloso.string : has, nom;
+    import kameloso.string : contains, nom;
     import std.algorithm.searching : endsWith;
     import std.algorithm.sorting : sort;
     import std.format : format;
@@ -177,7 +177,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
     {
         if (content.length)
         {
-            if (content.has!(Yes.decode)(" "))
+            if (content.contains!(Yes.decode)(" "))
             {
                 string slice = content;
                 immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");

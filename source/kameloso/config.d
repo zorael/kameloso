@@ -448,11 +448,11 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                     }
                                     else
                                     {
-                                        import kameloso.string : has, nom;
+                                        import kameloso.string : contains, nom;
                                         // Slice away any comments
                                         string value = hits["value"];
-                                        value = value.has('#') ? value.nom('#') : value;
-                                        value = value.has(';') ? value.nom(';') : value;
+                                        value = value.contains('#') ? value.nom('#') : value;
+                                        value = value.contains(';') ? value.nom(';') : value;
                                         things[i].setMemberByName(entry, value);
                                     }
                                     continue thingloop;

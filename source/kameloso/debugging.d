@@ -382,7 +382,7 @@ void generateAsserts(ref Client client) @system
     import kameloso.conv : Enum;
     import kameloso.debugging : formatEventAssertBlock;
     import kameloso.ircdefs : IRCServer;
-    import kameloso.string : has, nom, stripped;
+    import kameloso.string : contains, nom, stripped;
     import std.conv : ConvException;
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
@@ -403,7 +403,7 @@ void generateAsserts(ref Client client) @system
         write("Enter daemon (ircdseven): ");
         string slice = readln().stripped;
 
-        immutable daemonstring = slice.has(" ") ? slice.nom(" ") : slice;
+        immutable daemonstring = slice.contains(" ") ? slice.nom(" ") : slice;
         immutable version_ = slice;
 
         try

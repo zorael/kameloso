@@ -423,7 +423,7 @@ unittest
  +  Checks whether or not the first letter of a string begins with any of the
  +  passed string of characters.
  +
- +  Merely a wrapper of `has`.
+ +  Merely a wrapper of `contains`.
  +
  +  Params:
  +      haystack = String line to check the beginning of.
@@ -446,7 +446,7 @@ if (isSomeString!T)
     // An empty line begins with nothing
     if (!haystack.length) return false;
 
-    return needles.has(haystack[0]);
+    return needles.contains(haystack[0]);
 }
 
 ///
@@ -470,7 +470,7 @@ if (isSomeString!T)
     // All strings begin with an empty string, even if we're only looking at one character
     if (!needles.length) return true;
 
-    return needles.has(haystraw);
+    return needles.contains(haystraw);
 }
 
 ///
@@ -757,7 +757,7 @@ unittest
 }
 
 
-// has
+// contains
 /++
  +  Checks a string to see if it contains a given substring or character.
  +
@@ -766,9 +766,9 @@ unittest
  +
  +  Example:
  +  ---
- +  assert("Lorem ipsum".has("Lorem"));
- +  assert(!"Lorem ipsum".has('l'));
- +  assert("Lorem ipsum".has!(Yes.decode)(" "));
+ +  assert("Lorem ipsum".contains("Lorem"));
+ +  assert(!"Lorem ipsum".contains('l'));
+ +  assert("Lorem ipsum".contains!(Yes.decode)(" "));
  +  ---
  +
  +  Params:
@@ -780,7 +780,7 @@ unittest
  +  Returns:
  +      Whether the passed string contained the passed substring or token.
  +/
-bool has(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
+bool contains(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     is(C : ElementEncodingType!T)))
 {
@@ -813,18 +813,26 @@ if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
 ///
 unittest
 {
-    assert("Lorem ipsum sit amet".has("sit"));
-    assert("".has(""));
-    assert(!"Lorem ipsum".has("sit amet"));
-    assert("Lorem ipsum".has(' '));
-    assert(!"Lorem ipsum".has('!'));
-    assert("Lorem ipsum"d.has("m"d));
-    assert("Lorem ipsum".has(['p', 's', 'u', 'm' ]));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].has([ 'L' ]));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].has("Lor"));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].has(cast(char[])[]));
+    assert("Lorem ipsum sit amet".contains("sit"));
+    assert("".contains(""));
+    assert(!"Lorem ipsum".contains("sit amet"));
+    assert("Lorem ipsum".contains(' '));
+    assert(!"Lorem ipsum".contains('!'));
+    assert("Lorem ipsum"d.contains("m"d));
+    assert("Lorem ipsum".contains(['p', 's', 'u', 'm' ]));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].contains([ 'L' ]));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].contains("Lor"));
+    assert([ 'L', 'o', 'r', 'e', 'm' ].contains(cast(char[])[]));
 }
 
+/// Legacy alias to `contains`.
+alias has = contains;
+
+///
+unittest
+{
+    assert("Lorem ipsum sit amet".has("sit"));
+}
 
 // strippedRight
 /++
