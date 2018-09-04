@@ -1217,7 +1217,7 @@ unittest
             assert((sender.address == "ip5b435007.dynamic.kabel-deutschland.de"), sender.address);
             assert((sender.account == "ski7777"), sender.account);
             assert((sender.class_ != IRCUser.Class.special), sender.class_.to!string);
-            assert((content == "ski7777"), content);
+            assert((aux == "ski7777"), aux);
         }
     }
 
