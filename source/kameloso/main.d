@@ -345,7 +345,12 @@ Next checkMessages(ref Client client)
 
     /// Did the concurrency receive catch something?
     bool receivedSomething;
+
+    /// Number of received concurrency messages this run.
     uint receivedInARow;
+
+    /// After how many consecutive concurrency messages we should break.
+    enum maxReceiveBeforeBreak = 5;
 
     do
     {
@@ -377,7 +382,8 @@ Next checkMessages(ref Client client)
 
         if (receivedSomething) ++receivedInARow;
     }
-    while (receivedSomething && (next == Next.stayConnected) && (receivedInARow < 5));
+    while (receivedSomething && (next == Next.stayConnected) &&
+        (receivedInARow < maxReceiveBeforeBreak));
 
     return next;
 }
