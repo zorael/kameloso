@@ -510,22 +510,16 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
         {
             if (!plugin.state.settings.monochrome)
             {
-                import kameloso.bash : BashForeground;
+                import kameloso.bash : colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.experimental.logger : LogLevel;
 
-                with (plugin.state.settings)
-                with (BashForeground)
-                {
-                    import kameloso.bash : colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
+                immutable infotint = plugin.state.settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.info] :
+                    KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                    immutable infotint = brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
-                    printed = true;
-                }
+                logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
+                printed = true;
             }
         }
 
