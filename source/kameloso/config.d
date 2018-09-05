@@ -76,7 +76,7 @@ string configReader(const string configFile)
     if (!configFile.exists) return string.init;
     else if (!configFile.isFile)
     {
-        logger.info("Config file exists but is not a file!");
+        logger.warning("Configuration file path exists but is not a file!");
         return string.init;
     }
 
