@@ -273,12 +273,37 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         if (shouldWriteConfig)
         {
             import kameloso.common : logger, writeConfigurationFile;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
 
             // --writeconfig was passed; write configuration to file and quit
-            printVersionInfo(BashForeground.white);
+
+            BashForeground bannertint;
+            string infotint, logtint;
+
+            version(Colours)
+            {
+                import kameloso.bash : colour;
+
+                if (!settings.monochrome)
+                {
+                    bannertint = settings.brightTerminal ?
+                        BashForeground.black : BashForeground.white;
+
+                    infotint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info].colour :
+                        KamelosoLogger.logcoloursDark[LogLevel.info].colour;
+
+                    logtint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all].colour :
+                        KamelosoLogger.logcoloursDark[LogLevel.all].colour;
+                }
+            }
+
+            printVersionInfo(bannertint);
             writeln();
 
-            logger.info("Writing configuration to ", settings.configFile);
+            logger.logf("Writing configuration to %s%s", infotint, settings.configFile);
             writeln();
 
             // If we don't initialise the plugins there'll be no plugins array
@@ -291,6 +316,12 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             printObjects(bot, bot.server, settings);
 
+            logger.warning("Make sure it has entries for at least one of the following:");
+            logger.logf("one or more %sadmins%s who get administrative control over the bot.",
+                infotint, logtint);
+            logger.logf("one or more %shomes%s in which to operate.", infotint, logtint);
+
+            writeln();
             return Yes.quit;
         }
 
