@@ -973,29 +973,23 @@ int main(string[] args)
             {
                 if (!settings.monochrome)
                 {
-                    import kameloso.bash : BashForeground;
+                    import kameloso.bash : colour;
+                    import kameloso.logger : KamelosoLogger;
+                    import std.experimental.logger : LogLevel;
 
-                    with (settings)
-                    with (BashForeground)
-                    {
-                        import kameloso.bash : colour;
-                        import kameloso.logger : KamelosoLogger;
-                        import std.experimental.logger : LogLevel;
+                    immutable infotint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.info] :
+                        KamelosoLogger.logcoloursDark[LogLevel.info];
 
-                        immutable infotint = brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.info] :
-                            KamelosoLogger.logcoloursDark[LogLevel.info];
+                    immutable logtint = settings.brightTerminal ?
+                        KamelosoLogger.logcoloursBright[LogLevel.all] :
+                        KamelosoLogger.logcoloursDark[LogLevel.all];
 
-                        immutable logtint = brightTerminal ?
-                            KamelosoLogger.logcoloursBright[LogLevel.all] :
-                            KamelosoLogger.logcoloursDark[LogLevel.all];
+                    logger.infof("%s%s resolved into %s%s%s IPs.",
+                        bot.server.address, logtint.colour, infotint.colour,
+                        conn.ips.length, logtint.colour);
 
-                        logger.infof("%s%s resolved into %s%s%s IPs.",
-                            bot.server.address, logtint.colour, infotint.colour,
-                            conn.ips.length, logtint.colour);
-
-                        printed = true;
-                    }
+                    printed = true;
                 }
             }
 
