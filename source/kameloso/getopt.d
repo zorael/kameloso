@@ -273,7 +273,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         if (shouldWriteConfig)
         {
             import kameloso.common : logger, writeConfigurationFile;
-            import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
             // --writeconfig was passed; write configuration to file and quit
@@ -284,6 +283,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             version(Colours)
             {
                 import kameloso.bash : colour;
+                import kameloso.logger : KamelosoLogger;
 
                 if (!settings.monochrome)
                 {
@@ -303,8 +303,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             printVersionInfo(bannertint);
             writeln();
 
-            logger.logf("Writing configuration to %s%s", infotint, settings.configFile);
-            writeln();
+            logger.log("Writing configuration file...");
 
             // If we don't initialise the plugins there'll be no plugins array
             initPlugins(customSettings);
@@ -314,14 +313,21 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             // Reload saved file
             meldSettingsFromFile(bot, settings);
 
+            writeln();
             printObjects(bot, bot.server, settings);
 
-            logger.warning("Make sure it has entries for at least one of the following:");
-            logger.logf("one or more %sadmins%s who get administrative control over the bot.",
-                infotint, logtint);
-            logger.logf("one or more %shomes%s in which to operate.", infotint, logtint);
-
+            logger.logf("Configuration written to %s%s", infotint, settings.configFile);
             writeln();
+
+            if (!bot.admins.length && !bot.homes.length)
+            {
+                logger.warning("Edit it and make sure it has entries for the at least one of the following:");
+                logger.logf("one or more %sadmins%s who get administrative control over the bot.",
+                    infotint, logtint);
+                logger.logf("one or more %shomes%s in which to operate.", infotint, logtint);
+                writeln();
+            }
+
             return Yes.quit;
         }
 
