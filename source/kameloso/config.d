@@ -89,14 +89,27 @@ string configReader(const string configFile)
 /++
  +  Exception, to be thrown when the specified file is not a file (instead a
  +  directory, a block or character device, etc).
+ +
+ +  It is a normal `Exception` but with an attached filename string.
  +/
 final class FileIsNotAFileException : Exception
 {
+    string filename;
+
     /++
-     +  Create a new `FileIsNotAFileException`.
+     +  Create a new `FileIsNotAFileException`, without attaching a filename.
      +/
     this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
     {
+        super(message, file, line);
+    }
+
+    /++
+     +  Create a new `FileIsNotAFileException`, attaching a filename.
+     +/
+    this(const string message, const string filename, const string file = __FILE__, const size_t line = __LINE__) pure
+    {
+        this.filename = filename;
         super(message, file, line);
     }
 }
