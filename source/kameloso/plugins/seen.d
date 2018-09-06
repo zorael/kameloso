@@ -34,8 +34,8 @@ import kameloso.plugins.common;
 /// Likewise `kameloso.ircdefs`, for the definitions of an IRC event.
 import kameloso.ircdefs;
 
-/// `kameloso.common` for the instance of the *logger*, for terminal output.
-import kameloso.common : logger;
+/// `kameloso.common` for some globals.
+import kameloso.common;
 
 /+
  +  Most of the module can (and ideally should) be kept private. Our surface
