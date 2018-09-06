@@ -165,7 +165,7 @@ unittest
     // log_.fatal("log: FATAL");  // crashes the program
     log_.trace("log: trace");
 
-    version (Colours)
+    version(Colours)
     {
         log_ = new KamelosoLogger(LogLevel.all, false, true);
 

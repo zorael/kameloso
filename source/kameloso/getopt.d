@@ -232,7 +232,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             BashForeground headerTint = BashForeground.default_;
 
-            version (Colours)
+            version(Colours)
             {
                 if (!settings.monochrome)
                 {
@@ -246,7 +246,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             string headline = "Command-line arguments available:\n";
 
-            version (Colours)
+            version(Colours)
             {
                 import kameloso.bash : colour;
 
