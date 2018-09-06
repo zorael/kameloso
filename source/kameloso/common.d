@@ -1614,3 +1614,36 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
         }
     }
 }
+
+
+// complainAboutIncompleteConfiguration
+/++
+ +  Displays an error on how to complete a minimal configuration file.
+ +
+ +  It assumes that the bot's `admins` and `homes` are both empty.
+ +/
+void complainAboutIncompleteConfiguration()
+{
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            infotint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.info].colour :
+                KamelosoLogger.logcoloursDark[LogLevel.info].colour;
+
+            logtint = settings.brightTerminal ?
+                KamelosoLogger.logcoloursBright[LogLevel.all].colour :
+                KamelosoLogger.logcoloursDark[LogLevel.all].colour;
+        }
+    }
+
+    logger.logf("...one or more %sadmins%s who get administrative control over the bot.", infotint, logtint);
+    logger.logf("...one or more %shomes%s in which to operate.", infotint, logtint);
+}
