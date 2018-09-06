@@ -76,7 +76,7 @@ string configReader(const string configFile)
     if (!configFile.exists) return string.init;
     else if (!configFile.isFile)
     {
-        throw new FileIsNotAFileException(configFile);
+        throw new FileIsNotAFileException("Configuration file is not a file", configFile, __FILE__);
     }
 
     return configFile
