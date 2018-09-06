@@ -1591,6 +1591,7 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
             {
                 logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
                     infotint.colour, settings.configFile, logtint.colour);
+                complainAboutIncompleteConfiguration();
             }
             else
             {
@@ -1607,6 +1608,7 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
         if (configFileExists)
         {
             logger.logf("Edit %s and and make sure it has at least one of the following:", settings.configFile);
+            complainAboutIncompleteConfiguration();
         }
         else
         {

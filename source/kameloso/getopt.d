@@ -325,10 +325,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             if (!bot.admins.length && !bot.homes.length)
             {
-                logger.warning("Edit it and make sure it has entries for at least one of the following:");
-                logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
-                    infotint, logtint);
-                logger.logf("...one or more %shomes%s in which to operate.", infotint, logtint);
+                import kameloso.common : complainAboutIncompleteConfiguration;
+                logger.log("Edit it and make sure it has entries for at least one of the following:");
+                complainAboutIncompleteConfiguration();
             }
 
             return Yes.quit;
