@@ -70,7 +70,6 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     }
                     else static if (!isSomeString!T && isArray!T)
                     {
-                        import std.algorithm.iteration : splitter;
                         import std.array : replace;
                         import std.format : format;
 
@@ -104,6 +103,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 
                         values = values.replace(doubleEscapePlaceholder, "\\");
 
+                        import std.algorithm.iteration : splitter;
                         auto range = values.splitter(ephemeralSeparator);
 
                         foreach (immutable entry; range)

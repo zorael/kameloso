@@ -5,7 +5,7 @@
 module kameloso.debugging;
 
 import kameloso.common : Client;
-import kameloso.ircdefs : IRCBot, IRCEvent;
+import kameloso.ircdefs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -46,7 +46,6 @@ void formatBotAssignment(Sink)(auto ref Sink sink, IRCBot bot)
 ///
 unittest
 {
-    import kameloso.ircdefs : IRCBot, IRCServer;
     import std.array : Appender;
 
     Appender!string sink;
@@ -190,7 +189,6 @@ if (is(QualThing == struct))
 unittest
 {
     import kameloso.irc : IRCParser;
-    import kameloso.ircdefs : IRCBot, IRCServer, IRCUser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -323,7 +321,6 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 unittest
 {
     import kameloso.irc : IRCParser;
-    import kameloso.ircdefs : IRCBot;
     import kameloso.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -380,7 +377,6 @@ void generateAsserts(ref Client client) @system
 {
     import kameloso.common : logger, printObjects;
     import kameloso.conv : Enum;
-    import kameloso.debugging : formatEventAssertBlock;
     import kameloso.ircdefs : IRCServer;
     import kameloso.string : contains, nom, stripped;
     import std.conv : ConvException;

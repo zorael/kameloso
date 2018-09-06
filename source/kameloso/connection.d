@@ -109,7 +109,6 @@ public:
      +/
     bool resolve(const string address, const ushort port, const bool useIPv6, ref bool abort)
     {
-        import core.thread : Thread;
         import std.algorithm : filter;
         import std.array : array;
         import std.socket : AddressFamily, SocketException, getAddress;
@@ -345,12 +344,12 @@ void listenFiber(Connection conn, ref bool abort)
 {
     import core.time : seconds;
     import std.concurrency : yield;
-    import std.datetime.systime : Clock, SysTime;
+    import std.datetime.systime : Clock;
     import std.socket : Socket, lastSocketError;
     import std.string : indexOf;
 
     ubyte[BufferSize.socketReceive*2] buffer;
-    SysTime timeLastReceived = Clock.currTime;
+    auto timeLastReceived = Clock.currTime;
     bool pingingToTestConnection;
     size_t start;
 

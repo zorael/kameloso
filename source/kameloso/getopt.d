@@ -281,7 +281,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
         if (shouldWriteConfig)
         {
             import kameloso.common : logger, writeConfigurationFile;
-            import std.experimental.logger : LogLevel;
 
             // --writeconfig was passed; write configuration to file and quit
 

@@ -7,7 +7,6 @@ import kameloso.common;
 import kameloso.irc;
 import kameloso.ircdefs;
 
-import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
 version(Windows)
@@ -138,7 +137,6 @@ enum Next
 Next checkMessages(ref Client client)
 {
     import kameloso.plugins.common : IRCPlugin;
-    import kameloso.common : initLogger, settings;
     import core.time : seconds;
     import std.concurrency : receiveTimeout;
     import std.variant : Variant;
@@ -766,7 +764,6 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 
         import kameloso.constants : Timeout;
         import std.datetime.systime : Clock;
-        import core.time : seconds;
 
         const then = key in client.whoisCalls;
         immutable now = Clock.currTime.toUnixTime;

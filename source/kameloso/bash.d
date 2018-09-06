@@ -6,7 +6,6 @@
  +/
 module kameloso.bash;
 
-import std.range : isOutputRange;
 import std.meta : allSatisfy;
 import std.typecons : Flag, No, Yes;
 
@@ -167,6 +166,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
  +      sink = Output range to write output to.
  +      codes = Variadic list of Bash format codes.
  +/
+import std.range : isOutputRange;
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))

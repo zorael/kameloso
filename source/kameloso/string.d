@@ -5,7 +5,6 @@
  +/
 module kameloso.string;
 
-import core.time : Duration;
 import std.range.primitives : ElementEncodingType, ElementType, isOutputRange;
 import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
@@ -438,8 +437,6 @@ pragma(inline)
 bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @nogc
 if (isSomeString!T)
 {
-    import std.string : representation;
-
     // All strings begin with an empty string
     if (!needles.length) return true;
 
@@ -465,8 +462,6 @@ pragma(inline)
 bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @nogc
 if (isSomeString!T)
 {
-    import std.string : representation;
-
     // All strings begin with an empty string, even if we're only looking at one character
     if (!needles.length) return true;
 

@@ -480,8 +480,6 @@ if (isOutputRange!(Sink, char[]))
 {
     import kameloso.string : contains;
     import std.array : Appender;
-    import std.format : format;
-    import std.stdio;
 
     struct Struct
     {
@@ -667,7 +665,6 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 ///
 unittest
 {
-    import std.stdio;
     // Rely on the main unittests of the output range version of formatObjects
 
     struct Struct
