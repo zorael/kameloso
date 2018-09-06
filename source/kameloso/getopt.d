@@ -148,25 +148,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             "version",      "Show version information", &shouldShowVersion,
         );
 
-        meldSettingsFromFile(bot, settings);
-
-        if (shouldAppendChannels)
-        {
-            if (inputHomes.length) bot.homes ~= inputHomes;
-            if (inputChannels.length) bot.channels ~= inputChannels;
-        }
-        else
-        {
-            if (inputHomes.length) bot.homes = inputHomes;
-            if (inputChannels.length) bot.channels = inputChannels;
-        }
-
-        // Clear entries that are dashes.
-        import kameloso.objmanip : zeroMembers;
-        zeroMembers!"-"(bot);
-
-        client.parser.bot = bot;
-
         /+
             The way we meld settings is weak against false settings when they
             are also the default values of a member. There's no way to tell apart
@@ -219,9 +200,35 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             }
         }
 
-        // Give common.d a copy of CoreSettings for printObject. FIXME
+        // Give common.d a copy of CoreSettings for printObject.
         static import kameloso.common;
         kameloso.common.settings = settings;
+
+        // Reinitialise the logger with settings from getopt, then meld, then
+        // repeat with settings from the meld.
+        initLogger(settings.monochrome, settings.brightTerminal);
+        meldSettingsFromFile(bot, settings);
+        initLogger(settings.monochrome, settings.brightTerminal);
+
+        // Update global settings after settings meld.
+        kameloso.common.settings = settings;
+
+        if (shouldAppendChannels)
+        {
+            if (inputHomes.length) bot.homes ~= inputHomes;
+            if (inputChannels.length) bot.channels ~= inputChannels;
+        }
+        else
+        {
+            if (inputHomes.length) bot.homes = inputHomes;
+            if (inputChannels.length) bot.channels = inputChannels;
+        }
+
+        // Clear entries that are dashes.
+        import kameloso.objmanip : zeroMembers;
+        zeroMembers!"-"(bot);
+
+        client.parser.bot = bot;
 
         // We know CoreSettings now so reinitialise the logger
         initLogger(settings.monochrome, settings.brightTerminal);
