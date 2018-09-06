@@ -1561,10 +1561,8 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +      incomplete and the program should exit.
  +/
 import kameloso.irc : IRCBot;
-bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
+void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 {
-    if (bot.homes.length || bot.admins.length) return false;
-
     import std.file : exists;
     import std.path : baseName;
 
@@ -1591,7 +1589,7 @@ bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 
             if (configFileExists)
             {
-                logger.logf("Edit %s%s%s and fill in the fields.",
+                logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
                     infotint.colour, settings.configFile, logtint.colour);
             }
             else
@@ -1608,13 +1606,11 @@ bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
     {
         if (configFileExists)
         {
-            logger.logf("Edit %s and fill in the fields.", settings.configFile);
+            logger.logf("Edit %s and and make sure it has at least one of the following:", settings.configFile);
         }
         else
         {
             logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
         }
     }
-
-    return true;
 }
