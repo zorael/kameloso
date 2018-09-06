@@ -193,7 +193,7 @@ File createFIFO(IRCPluginState state)
 
     state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
         "Pipe text to %s%s%s to send raw commands to the server."
-        .format(infotint.colour, filename, logtint.colour));
+        .format(infotint, filename, logtint));
 
     return File(filename, "r");
 }

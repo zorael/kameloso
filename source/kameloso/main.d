@@ -1009,8 +1009,7 @@ int main(string[] args)
             }
 
             logger.infof("%s%s resolved into %s%s%s IPs.",
-                bot.server.address, logtint.colour, infotint.colour,
-                conn.ips.length, logtint.colour);
+                bot.server.address, logtint, infotint, conn.ips.length, logtint);
 
             conn.connect(*abort);
 
