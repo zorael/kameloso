@@ -3477,7 +3477,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 unittest
 {
     import std.conv;
-    //import std.stdio;
+    import std.stdio;
 
     IRCServer server;
     // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
