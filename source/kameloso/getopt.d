@@ -145,6 +145,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                                 .format(CoreSettings.init.configFile), &settings.configFile,
             "w|writeconfig","Write configuration to file", &shouldWriteConfig,
             "writeconf",    &shouldWriteConfig,
+            "init",         &shouldWriteConfig,
             "version",      "Show version information", &shouldShowVersion,
         );
 
