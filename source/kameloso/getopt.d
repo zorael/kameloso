@@ -310,8 +310,6 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             printVersionInfo(bannertint);
             writeln();
 
-            logger.log("Writing configuration file...");
-
             // If we don't initialise the plugins there'll be no plugins array
             initPlugins(customSettings);
 
@@ -320,19 +318,16 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
             // Reload saved file
             meldSettingsFromFile(bot, settings);
 
-            writeln();
             printObjects(bot, bot.server, settings);
 
             logger.logf("Configuration written to %s%s", infotint, settings.configFile);
-            writeln();
 
             if (!bot.admins.length && !bot.homes.length)
             {
-                logger.warning("Edit it and make sure it has entries for the at least one of the following:");
+                logger.warning("Edit it and make sure it has entries for at least one of the following:");
                 logger.logf("...one or more %sadmins%s who get administrative control over the bot.",
                     infotint, logtint);
                 logger.logf("...one or more %shomes%s in which to operate.", infotint, logtint);
-                writeln();
             }
 
             return Yes.quit;
