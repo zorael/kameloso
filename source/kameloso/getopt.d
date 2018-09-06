@@ -256,10 +256,10 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             version(Colours)
             {
-                import kameloso.bash : colour;
-
                 if (!settings.monochrome)
                 {
+                    import kameloso.bash : colour;
+
                     immutable headlineTint = settings.brightTerminal ?
                         BashForeground.green : BashForeground.lightgreen;
                     headline = headline.colour(headlineTint);
@@ -290,11 +290,11 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             version(Colours)
             {
-                import kameloso.bash : colour;
-                import kameloso.logger : KamelosoLogger;
-
                 if (!settings.monochrome)
                 {
+                    import kameloso.bash : colour;
+                    import kameloso.logger : KamelosoLogger;
+
                     bannertint = settings.brightTerminal ?
                         BashForeground.black : BashForeground.white;
 
