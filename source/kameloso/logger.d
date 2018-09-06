@@ -74,9 +74,11 @@ final class KamelosoLogger : Logger
      +  This is merely a convenient wrapping for `logcoloursBright` and
      +  `logcoloursDark`.
      +
+     +  Example:
      +  ---
-     +  BashForeground errtint = KamelosoLogger.tint(LogLevel.error, false);
+     +  BashForeground errtint = KamelosoLogger.tint(LogLevel.error, false);  // false means dark terminal
      +  immutable errtintString = errtint.colour;
+     +  ---
      +
      +  Params:
      +      level = The `LogLevel` of the colour we want to scry.
