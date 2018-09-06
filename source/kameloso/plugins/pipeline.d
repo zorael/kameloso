@@ -15,7 +15,7 @@ module kameloso.plugins.pipeline;
 
 version(Posix):
 
-import kameloso.common : ThreadMessage;
+import kameloso.common;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
