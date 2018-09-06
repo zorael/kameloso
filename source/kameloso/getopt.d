@@ -294,17 +294,13 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                 {
                     import kameloso.bash : colour;
                     import kameloso.logger : KamelosoLogger;
+                    import std.experimental.logger : LogLevel;
 
                     bannertint = settings.brightTerminal ?
                         BashForeground.black : BashForeground.white;
 
-                    infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info].colour :
-                        KamelosoLogger.logcoloursDark[LogLevel.info].colour;
-
-                    logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all].colour :
-                        KamelosoLogger.logcoloursDark[LogLevel.all].colour;
+                    infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                    logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
                 }
             }
 

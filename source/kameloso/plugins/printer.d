@@ -463,7 +463,7 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            bool printed;
+            string infotint, warningtint;
 
             version(Colours)
             {
@@ -473,25 +473,13 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
                     import kameloso.logger : KamelosoLogger;
                     import std.experimental.logger : LogLevel;
 
-                    immutable infotint = plugin.state.settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable warningtint = plugin.state.settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.warning] :
-                        KamelosoLogger.logcoloursDark[LogLevel.warning];
-
-                    logger.warningf("Specified log directory (%s%s%s) is not a directory.",
-                        infotint.colour, logLocation, warningtint.colour);
-
-                    printed = true;
+                    infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                    warningtint = KamelosoLogger.tint(LogLevel.warning, settings.brightTerminal).colour;
                 }
             }
 
-            if (!printed)
-            {
-                logger.warningf("Specified log directory (%s) is not a directory", logLocation);
-            }
+            logger.warningf("Specified log directory (%s%s%s) is not a directory.",
+                infotint, logLocation, warningtint);
 
             plugin.naggedAboutDir = true;
         }
@@ -504,7 +492,7 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
         import std.file : mkdirRecurse;
         mkdirRecurse(logLocation);
 
-        bool printed;
+        string infotint;
 
         version(Colours)
         {
@@ -514,19 +502,11 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
                 import kameloso.logger : KamelosoLogger;
                 import std.experimental.logger : LogLevel;
 
-                immutable infotint = plugin.state.settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                logger.logf("Created log directory: %s%s", infotint.colour, logLocation);
-                printed = true;
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
             }
         }
 
-        if (!printed)
-        {
-            logger.log("Created log directory: ", logLocation);
-        }
+        logger.logf("Created log directory: %s%s", infotint, logLocation);
     }
 
     return true;
@@ -611,7 +591,7 @@ void onISUPPORT(PrinterPlugin plugin)
     with (plugin.state.bot.server)
     {
         immutable networkName = network[0].isLower ? network.capitalize() : network;
-        bool printed;
+        string infotint, logtint, tintreset;
 
         version(Colours)
         {
@@ -621,28 +601,16 @@ void onISUPPORT(PrinterPlugin plugin)
                 import kameloso.logger : KamelosoLogger;
                 import std.experimental.logger : LogLevel;
 
-                immutable infotint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                immutable logtint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
-                    infotint.colour, networkName, logtint.colour,
-                    infotint.colour, Enum!(IRCServer.Daemon).toString(daemon),
-                    BashReset.all.colour, daemonstring);
-
-                printed = true;
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+                tintreset = BashReset.all.colour;
             }
         }
 
-        if (!printed)
-        {
-            logger.logf("Detected %s running %s (%s)",
-                networkName, Enum!(IRCServer.Daemon).toString(daemon), daemonstring);
-        }
+        logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+            infotint, networkName, logtint,
+            infotint, Enum!(IRCServer.Daemon).toString(daemon),
+            tintreset, daemonstring);
     }
 }
 

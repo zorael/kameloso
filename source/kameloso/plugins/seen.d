@@ -698,7 +698,7 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
 
     scope(exit)
     {
-        bool printed;
+        string infotint, logtint;
 
         version(Colours)
         {
@@ -708,25 +708,13 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
                 import kameloso.logger : KamelosoLogger;
                 import std.experimental.logger : LogLevel;
 
-                immutable infotint = plugin.state.settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info] :
-                    KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                immutable logtint = plugin.state.settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.all] :
-                    KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                logger.logf("Seen users loaded, currently %s%d%s users seen.",
-                    infotint.colour, aa.length, logtint.colour);
-
-                printed = true;
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
             }
         }
 
-        if (!printed)
-        {
-            logger.logf("Seen users loaded, currently %d users seen.", aa.length);
-        }
+        logger.logf("Seen users loaded, currently %s%d%s users seen.",
+            infotint, aa.length, logtint);
     }
 
     if (!filename.exists || !filename.isFile)

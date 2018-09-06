@@ -176,7 +176,7 @@ File createFIFO(IRCPluginState state)
             "exists with the same name".format(filename));
     }
 
-    bool printed;
+    string infotint, logtint;
 
     version(Colours)
     {
@@ -186,27 +186,14 @@ File createFIFO(IRCPluginState state)
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
-            immutable infotint = state.settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.info] :
-                KamelosoLogger.logcoloursDark[LogLevel.info];
-
-            immutable logtint = state.settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.all] :
-                KamelosoLogger.logcoloursDark[LogLevel.all];
-
-            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
-                "Pipe text to %s%s%s to send raw commands to the server."
-                .format(infotint.colour, filename, logtint.colour));
-            printed = true;
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
         }
     }
 
-    if (!printed)
-    {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
-            "Pipe text to %s to send raw commands to the server"
-            .format(filename));
-    }
+    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+        "Pipe text to %s%s%s to send raw commands to the server."
+        .format(infotint.colour, filename, logtint.colour));
 
     return File(filename, "r");
 }

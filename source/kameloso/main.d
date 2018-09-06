@@ -887,7 +887,7 @@ int main(string[] args)
     }
     catch (const FileIsNotAFileException e)
     {
-        bool printed;
+        string infotint, errortint;
 
         version(Colours)
         {
@@ -897,25 +897,13 @@ int main(string[] args)
                 import kameloso.logger : KamelosoLogger;
                 import std.experimental.logger : LogLevel;
 
-                immutable infotint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.info].colour :
-                    KamelosoLogger.logcoloursDark[LogLevel.info].colour;
-
-                immutable errortint = settings.brightTerminal ?
-                    KamelosoLogger.logcoloursBright[LogLevel.error].colour :
-                    KamelosoLogger.logcoloursDark[LogLevel.error].colour;
-
-                logger.errorf("Specified configuration file %s%s%s is not a file!",
-                    infotint, e.filename, errortint);
-
-                printed = true;
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
             }
         }
 
-        if (!printed)
-        {
-            logger.errorf("Specified configuration file %s is not a file!", e.msg);
-        }
+        logger.errorf("Specified configuration file %s%s%s is not a file!",
+            infotint, e.filename, errortint);
 
         return 1;
     }
@@ -1005,7 +993,7 @@ int main(string[] args)
                 return 1;
             }
 
-            bool printed;
+            string infotint, logtint;
 
             version(Colours)
             {
@@ -1015,26 +1003,14 @@ int main(string[] args)
                     import kameloso.logger : KamelosoLogger;
                     import std.experimental.logger : LogLevel;
 
-                    immutable infotint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.info] :
-                        KamelosoLogger.logcoloursDark[LogLevel.info];
-
-                    immutable logtint = settings.brightTerminal ?
-                        KamelosoLogger.logcoloursBright[LogLevel.all] :
-                        KamelosoLogger.logcoloursDark[LogLevel.all];
-
-                    logger.infof("%s%s resolved into %s%s%s IPs.",
-                        bot.server.address, logtint.colour, infotint.colour,
-                        conn.ips.length, logtint.colour);
-
-                    printed = true;
+                    infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                    logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
                 }
             }
 
-            if (!printed)
-            {
-                logger.infof("%s resolved into %d IPs.", bot.server.address, conn.ips.length);
-            }
+            logger.infof("%s%s resolved into %s%s%s IPs.",
+                bot.server.address, logtint.colour, infotint.colour,
+                conn.ips.length, logtint.colour);
 
             conn.connect(*abort);
 

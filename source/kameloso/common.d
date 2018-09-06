@@ -1501,7 +1501,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 
     logger.log("Found invalid configuration entries:");
 
-    bool printed;
+    string infotint, logtint;
 
     version(Colours)
     {
@@ -1511,39 +1511,19 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
-            immutable infotint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.info] :
-                KamelosoLogger.logcoloursDark[LogLevel.info];
-
-            immutable logtint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.all] :
-                KamelosoLogger.logcoloursDark[LogLevel.all];
-
-            foreach (immutable section, const sectionEntries; invalidEntries)
-            {
-                logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
-                    infotint.colour, section, logtint.colour,
-                    infotint.colour, sectionEntries);
-            }
-
-            logger.logf("They are either malformed or no longer in use. " ~
-                "Use %s--writeconfig%s to update your configuration file.",
-                infotint.colour, logtint.colour);
-
-            printed = true;
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
         }
     }
 
-    if (!printed)
+    foreach (immutable section, const sectionEntries; invalidEntries)
     {
-        foreach (immutable section, const sectionEntries; invalidEntries)
-        {
-            logger.logf(`...under [%s]: %-("%s"%|, %)`, section, sectionEntries);
-        }
-
-        logger.log("They are either malformed or no longer in use. " ~
-            "Use --writeconfig to update your configuration file.");
+        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
+            infotint, section, logtint, infotint, sectionEntries);
     }
+
+    logger.logf("They are either malformed or no longer in use. " ~
+        "Use %s--writeconfig%s to update your configuration file.", infotint, logtint);
 }
 
 
@@ -1568,8 +1548,8 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 
     logger.error("No administrators nor channels configured!");
 
-    bool printed;
     immutable configFileExists = settings.configFile.exists;
+    string infotint, logtint;
 
     version(Colours)
     {
@@ -1579,41 +1559,21 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
-            immutable infotint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.info] :
-                KamelosoLogger.logcoloursDark[LogLevel.info];
-
-            immutable logtint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.all] :
-                KamelosoLogger.logcoloursDark[LogLevel.all];
-
-            if (configFileExists)
-            {
-                logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-                    infotint.colour, settings.configFile, logtint.colour);
-                complainAboutIncompleteConfiguration();
-            }
-            else
-            {
-                logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-                    infotint.colour, args[0].baseName, logtint.colour);
-            }
-
-            printed = true;
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
         }
     }
 
-    if (!printed)
+    if (configFileExists)
     {
-        if (configFileExists)
-        {
-            logger.logf("Edit %s and and make sure it has at least one of the following:", settings.configFile);
-            complainAboutIncompleteConfiguration();
-        }
-        else
-        {
-            logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
-        }
+        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
+            infotint, settings.configFile, logtint);
+        complainAboutIncompleteConfiguration();
+    }
+    else
+    {
+        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+            infotint, args[0].baseName, logtint);
     }
 }
 
@@ -1636,13 +1596,8 @@ void complainAboutIncompleteConfiguration()
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
-            infotint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.info].colour :
-                KamelosoLogger.logcoloursDark[LogLevel.info].colour;
-
-            logtint = settings.brightTerminal ?
-                KamelosoLogger.logcoloursBright[LogLevel.all].colour :
-                KamelosoLogger.logcoloursDark[LogLevel.all].colour;
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
         }
     }
 
