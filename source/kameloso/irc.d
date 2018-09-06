@@ -1342,8 +1342,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
     version(PrintSanityFailures)
     {
         import kameloso.common : logger, printObject;
-        import std.stdio : writeln;
-        version(Cygwin_) import std.stdio : stdout;
 
         logger.warning(sink.data);
         printObject(event);
@@ -1354,8 +1352,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
             logger.warningf("daemon:%s (%s), network:%s",
                 Enum!(IRCServer.Daemon).toString(daemon), daemonstring, network);
         }
-
-        version(Cygwin_) stdout.flush();
     }
 }
 
