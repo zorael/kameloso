@@ -842,6 +842,7 @@ else
 int main(string[] args)
 {
     import kameloso.common : printObjects;
+    import kameloso.config : FileIsNotAFileException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
     import std.stdio : writeln;
@@ -882,6 +883,40 @@ int main(string[] args)
     catch (const ConvException e)
     {
         logger.error("Error converting command-line arguments: ", e.msg);
+        return 1;
+    }
+    catch (const FileIsNotAFileException e)
+    {
+        bool printed;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.bash : colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.experimental.logger : LogLevel;
+
+                immutable infotint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.info].colour :
+                    KamelosoLogger.logcoloursDark[LogLevel.info].colour;
+
+                immutable errortint = settings.brightTerminal ?
+                    KamelosoLogger.logcoloursBright[LogLevel.error].colour :
+                    KamelosoLogger.logcoloursDark[LogLevel.error].colour;
+
+                logger.errorf("Specified configuration file %s%s%s is not a file!",
+                    infotint, e.filename, errortint);
+
+                printed = true;
+            }
+        }
+
+        if (!printed)
+        {
+            logger.errorf("Specified configuration file %s is not a file!", e.msg);
+        }
+
         return 1;
     }
     catch (const Exception e)
