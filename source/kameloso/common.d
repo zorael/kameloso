@@ -1565,11 +1565,13 @@ bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 {
     if (bot.homes.length || bot.admins.length) return false;
 
+    import std.file : exists;
     import std.path : baseName;
 
     logger.error("No administrators nor channels configured!");
 
     bool printed;
+    immutable configFileExists = settings.configFile.exists;
 
     version(Colours)
     {
@@ -1587,8 +1589,16 @@ bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
                 KamelosoLogger.logcoloursBright[LogLevel.all] :
                 KamelosoLogger.logcoloursDark[LogLevel.all];
 
-            logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-                infotint.colour, args[0].baseName, logtint.colour);
+            if (configFileExists)
+            {
+                logger.logf("Edit %s%s%s and fill in the fields.",
+                    infotint.colour, settings.configFile, logtint.colour);
+            }
+            else
+            {
+                logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
+                    infotint.colour, args[0].baseName, logtint.colour);
+            }
 
             printed = true;
         }
@@ -1596,7 +1606,14 @@ bool complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 
     if (!printed)
     {
-        logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
+        if (configFileExists)
+        {
+            logger.logf("Edit %s and fill in the fields.", settings.configFile);
+        }
+        else
+        {
+            logger.logf("Use %s --writeconfig to generate a configuration file.", args[0].baseName);
+        }
     }
 
     return true;
