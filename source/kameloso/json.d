@@ -65,7 +65,7 @@ struct JSONStorage
             import kameloso.common : logger;
 
             // How do we deal with this?
-            logger.warning(filename ~ " exists but is not a file");
+            logger.warning(filename, " exists but is not a file");
             return reset();
         }
 

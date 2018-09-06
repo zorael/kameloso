@@ -1883,6 +1883,8 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 import std.format : formattedRead;
 
                 string modechars, modesigns;
+
+                // formattedRead can throw but just let the main loop pick it up
                 value.formattedRead("(%s)%s", modechars, modesigns);
                 prefixes = modechars;
 

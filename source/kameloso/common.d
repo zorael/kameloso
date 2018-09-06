@@ -710,6 +710,7 @@ unittest
 string scopeguard(const ubyte states = exit, const string scopeName = string.init)
 {
     import std.array : Appender;
+
     Appender!string app;
 
     string scopeString(const string state)
@@ -1528,6 +1529,8 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 /++
  +  Displays an error if the configuration is *incomplete*, e.g. missing crucial
  +  information.
+ +
+ +  It assumes such information is missing.
  +
  +  Params:
  +      bot = The current `kameloso.ircdefs.IRCBot`.

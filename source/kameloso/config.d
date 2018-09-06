@@ -476,6 +476,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                     else
                                     {
                                         import kameloso.string : contains, nom;
+
                                         // Slice away any comments
                                         string value = hits["value"];
                                         value = value.contains('#') ? value.nom('#') : value;
@@ -485,6 +486,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                     continue thingloop;
                             }
                         }}
+
                     default:
                         // Unknown setting in known section
                         invalidEntries[section] ~= entry.length ? entry : line;
