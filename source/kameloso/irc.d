@@ -557,7 +557,6 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         immutable hg = slice.nom(' ');  // H|G
         if (hg.length > 1)
         {
-            import std.conv : to;
             // H
             // H@
             // H+
@@ -1287,8 +1286,6 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
 {
-    import kameloso.string : beginsWith;
-
     import std.array : Appender;
 
     Appender!string sink;
@@ -1477,8 +1474,9 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
  +/
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWith, beginsWithOneOf, sharedDomains;
+    import kameloso.string : beginsWith, beginsWithOneOf;
     import std.string : toLower;
+
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
     // :tolkien.freenode.net NOTICE * :*** Checking Ident
@@ -1593,8 +1591,6 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string : beginsWith;
-
     immutable target = slice.nom(" :");
     event.content = slice;
 
@@ -1681,6 +1677,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         foreach (immutable type; EnumMembers!(IRCEvent.Type))
         {
             import kameloso.conv : Enum;
+            import kameloso.string : beginsWith;
 
             //enum typestring = type.to!string;
             enum typestring = Enum!(IRCEvent.Type).toString(type);
@@ -1923,8 +1920,6 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 break;
 
             case "NETWORK":
-                import std.algorithm.searching : endsWith;
-
                 network = value;
 
                 if (value == "RusNet")
@@ -2170,7 +2165,6 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
             // @badges=broadcaster/1;color=;display-name=Zorael;emote-sets=0;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zorael
             // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
             // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
-            import std.algorithm.iteration : splitter;
 
             // Get rid of the prepended @
             auto newRaw = event.raw[1..$];
@@ -2360,7 +2354,6 @@ unittest
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
     import kameloso.string : sharedDomains;
-    import std.algorithm.searching : endsWith;
     import std.string : toLower;
 
     immutable service = event.sender.nickname.toLower();
@@ -2763,7 +2756,7 @@ unittest
  +/
 bool containsNickname(const string haystack, const string needle) pure
 {
-    import std.string : indexOf, representation;
+    import std.string : indexOf;
 
     if ((haystack.length == needle.length) && (haystack == needle)) return true;
 
@@ -3174,11 +3167,9 @@ unittest
 void setMode(ref IRCChannel channel, const string signedModestring,
     const string data, IRCServer server) pure
 {
-    import kameloso.string : beginsWith, contains, nom;
+    import kameloso.string : beginsWith;
     import std.array : array;
     import std.algorithm.iteration : splitter;
-    import std.algorithm.mutation : remove;
-    import std.conv : to;
     import std.range : StoppingPolicy, retro, zip;
 
     if (!signedModestring.length) return;
@@ -3210,6 +3201,8 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 
         foreach (modechar, datastring; ziprange)
         {
+            import std.conv : to;
+
             Mode newMode;
             newMode.modechar = modechar.to!char;
 
@@ -3389,9 +3382,10 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             }
             else if (sign == '-')
             {
+                import std.algorithm.mutation : remove;
+
                 if (server.prefixes.contains(modechar))
                 {
-                    import std.algorithm.mutation : remove;
                     import std.algorithm.searching : countUntil;
 
                     // Remove users with prefix modes (op, halfop, voice, ...)
@@ -3480,8 +3474,8 @@ void setMode(ref IRCChannel channel, const string signedModestring,
 ///
 unittest
 {
-    import std.stdio;
     import std.conv;
+    //import std.stdio;
 
     IRCServer server;
     // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
