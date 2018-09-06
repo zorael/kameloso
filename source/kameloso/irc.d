@@ -1290,8 +1290,9 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
     import kameloso.string : beginsWith;
 
     import std.array : Appender;
+
     Appender!string sink;
-    //sink.reserve(128);
+    sink.reserve(128);
 
     if (event.target.nickname.contains(' ') || event.channel.contains(' '))
     {
@@ -2248,6 +2249,8 @@ string decodeIRCv3String(const string line)
     if (!line.length) return string.init;
 
     Appender!string sink;
+    sink.reserve(line.length);
+
     bool escaping;
 
     foreach (immutable c; line.representation)

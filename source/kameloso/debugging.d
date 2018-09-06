@@ -329,7 +329,7 @@ unittest
     import std.format : formattedWrite;
 
     Appender!string sink;
-    sink.reserve(512);
+    sink.reserve(1024);
 
     IRCBot bot;
     auto parser = IRCParser(bot);
