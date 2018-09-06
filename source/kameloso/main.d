@@ -946,8 +946,11 @@ int main(string[] args)
         // Print the current settings to show what's going on.
         printObjects(bot, bot.server);
 
-        immutable configIsIncomplete = complainAboutMissingConfiguration(bot, args);
-        if (configIsIncomplete) return 1;
+        if (!bot.homes.length && !bot.admins.length)
+        {
+            complainAboutMissingConfiguration(bot, args);
+            return 1;
+        }
 
         // Initialise plugins outside the loop once, for the error messages
         const invalidEntries = initPlugins(customSettings);
