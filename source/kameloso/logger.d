@@ -66,6 +66,53 @@ final class KamelosoLogger : Logger
         super(lv);
     }
 
+    // tint
+    /++
+     +  Returns the corresponding `BashForeground` for the supplied `LogLevel`,
+     +  taking into account whether the terminal is said to be bright or not.
+     +
+     +  This is merely a convenient wrapping for `logcoloursBright` and
+     +  `logcoloursDark`.
+     +
+     +  ---
+     +  BashForeground errtint = KamelosoLogger.tint(LogLevel.error, false);
+     +  immutable errtintString = errtint.colour;
+     +
+     +  Params:
+     +      level = The `LogLevel` of the colour we want to scry.
+     +      bright = Whether the colour should be for a bright terminal
+     +          background or a dark one.
+     +
+     +  Returns:
+     +      A `BashForeground` of the right colour. Use with
+     +      `kameloso.bash.colour` to get a string.
+     +/
+    version(Colours)
+    static BashForeground tint(const LogLevel level, const bool bright)
+    {
+        return bright ? logcoloursBright[level] : logcoloursDark[level];
+    }
+
+    ///
+    version(Colours)
+    unittest
+    {
+        import std.range : only;
+
+        foreach (const logLevel; only(LogLevel.all, LogLevel.info, LogLevel.warning, LogLevel.fatal))
+        {
+            import std.format : format;
+
+            immutable tintBright = tint(logLevel, true);
+            immutable tintBrightTable = logcoloursBright[logLevel];
+            assert((tintBright == tintBrightTable), "%s != %s".format(tintBright, tintBrightTable));
+
+            immutable tintDark = tint(logLevel, false);
+            immutable tintDarkTable = logcoloursDark[logLevel];
+            assert((tintDark == tintDarkTable), "%s != %s".format(tintDark, tintDarkTable));
+        }
+    }
+
     /// This override is needed or it won't compile.
     override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
 
