@@ -1826,6 +1826,49 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +/
     pragma(inline)
     alias raw(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.raw!quiet, privateState);
+
+    // askToWriteln
+    /++
+     +  Asks the main thread to print text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToWriteln = partial!(kameloso.messaging.askToWriteln, privateState);
+
+    // askToTrace
+    /++
+     +  Asks the main thread to `logger.trace` text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToTrace = partial!(kameloso.messaging.askToTrace, privateState);
+
+    // askToLog
+    /++
+     +  Asks the main thread to `logger.log` text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToLog = partial!(kameloso.messaging.askToLog, privateState);
+
+    // askToInfo
+    /++
+     +  Asks the main thread to `logger.info` text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToInfo = partial!(kameloso.messaging.askToInfo, privateState);
+
+    // askToWarn
+    /++
+     +  Asks the main thread to `logger.warning` text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToWarn = partial!(kameloso.messaging.askToWarn, privateState);
+    alias askToWarning = askToWarn;
+
+    // askToError
+    /++
+     +  Asks the main thread to `logger.error` text to the local terminal.
+     +/
+    pragma(inline)
+    alias askToError = partial!(kameloso.messaging.askToError, privateState);
 }
 
 
