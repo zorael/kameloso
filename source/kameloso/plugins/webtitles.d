@@ -194,7 +194,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
 
         if (titleReq.url != originalURL)
         {
-            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+            state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
                 "direct imgur URL; rewritten");
         }
 
@@ -204,7 +204,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
     }
     catch (const Exception e)
     {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
             "Webtitles worker exception: " ~ e.msg);
     }
 }
@@ -338,21 +338,21 @@ void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string
     /// Regex pattern to match YouTube URLs.
     enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
-    state.mainThread.send(ThreadMessage.TerminalOutput.Log(), "Bland YouTube title ...");
+    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(), "Bland YouTube title ...");
 
     immutable onRepeatURL = url.replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
 
-    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
         "ListenOnRepeat URL: " ~ onRepeatURL);
 
     auto onRepeatLookup = state.lookupTitle(onRepeatURL);
 
-    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
         "ListenOnRepeat title: " ~ onRepeatLookup.title);
 
     if (!onRepeatLookup.title.contains(" - ListenOnRepeat"))
     {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Warning(),
             "Failed to ListenOnRepeatify YouTube title");
         return;
     }

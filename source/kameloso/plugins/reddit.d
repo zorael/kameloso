@@ -137,7 +137,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     }
     catch (const Exception e)
     {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
             "Reddit worker exception: " ~ e.msg);
     }
 }
@@ -163,7 +163,7 @@ string lookupReddit(IRCPluginState state, const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    state.mainThread.send(ThreadMessage.TerminalOutput.Log(), "Checking Reddit ...");
+    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(), "Checking Reddit ...");
 
     auto res = req.get("https://www.reddit.com/" ~ url);
 
@@ -180,7 +180,8 @@ string lookupReddit(IRCPluginState state, const string url)
             // No Reddit post found but retry with a slash appended if it
             // doesn't already end with one. It apparently matters.
             if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
-            state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+
+            state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
                 "No corresponding Reddit post found.");
             return string.init;
         }

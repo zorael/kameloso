@@ -118,9 +118,9 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     catch (const Exception e)
     {
         import kameloso.common : ThreadMessage;
-        import std.concurrency : send;
+        import std.concurrency : prioritySend;
 
-        state.mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Warning(),
             "Bashquotes could not fetch %s: %s".format(url, e.msg));
     }
 }

@@ -55,13 +55,13 @@ void pipereader(shared IRCPluginState newState)
     }
     catch (const FileException e)
     {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
             "Failed to create pipeline FIFO: " ~ e.msg);
         return;
     }
     catch (const Exception e)
     {
-        state.mainThread.send(ThreadMessage.TerminalOutput.Error(),
+        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
             "Unhandled exception creating pipeline FIFO: " ~ e.msg);
         return;
     }
@@ -117,7 +117,7 @@ void pipereader(shared IRCPluginState newState)
             },
             (Variant v)
             {
-                mainThread.send(ThreadMessage.TerminalOutput.Warning(),
+                mainThread.prioritySend(ThreadMessage.TerminalOutput.Warning(),
                     "pipeline received Variant: " ~ v.toString());
             }
         );
@@ -132,7 +132,7 @@ void pipereader(shared IRCPluginState newState)
             }
             catch (const ErrnoException e)
             {
-                mainThread.send(ThreadMessage.TerminalOutput.Error(),
+                mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
                     "Failed to reopen FIFO: " ~ e.msg);
             }
         }
@@ -191,7 +191,7 @@ File createFIFO(IRCPluginState state)
         }
     }
 
-    state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
+    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
         "Pipe text to %s%s%s to send raw commands to the server."
         .format(infotint, filename, logtint));
 
