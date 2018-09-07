@@ -138,7 +138,7 @@ void onPing(ChanQueriesService service)
 // onSelfjoin
 /++
  +  Adds a channel we join to the internal `ChanQueriesService.channels` list of
- +  channels.
+ +  channel states.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -153,7 +153,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 // onSelfpart
 /++
  +  Removes a channel we part from the internal `ChanQueriesService.channels`
- +  list of channels.
+ +  list of channel states.
  +/
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)

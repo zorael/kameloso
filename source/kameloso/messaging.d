@@ -492,9 +492,6 @@ unittest
 /++
  +  Sends a concurrency message asking to print the supplied text to the local
  +  terminal, instead of doing it directly.
- +
- +  This is the implementation template and should not be used directly; use one
- +  of the askTo* aliases instead.
  +/
 void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 {
@@ -503,12 +500,19 @@ void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
     mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
 }
 
+/// Sends a concurrency message to the main thread asking to print text to the local terminal.
 alias askToWriteln = askToLogImpl!"writeln";
+/// Sends a concurrency message to the main thread to `logger.trace` text to the local terminal.
 alias askToTrace = askToLogImpl!"trace";
+/// Sends a concurrency message to the main thread to `logger.log` text to the local terminal.
 alias askToLog = askToLogImpl!"log";
+/// Sends a concurrency message to the main thread to `logger.info` text to the local terminal.
 alias askToInfo = askToLogImpl!"info";
+/// Sends a concurrency message to the main thread to `logger.warning` text to the local terminal.
 alias askToWarn = askToLogImpl!"warning";
+/// Simple alias to `askToWarn`, because both spellings are right.
 alias askToWarning = askToWarn;
+/// Sends a concurrency message to the main thread to `logger.error` text to the local terminal.
 alias askToError = askToLogImpl!"error";
 
 unittest
