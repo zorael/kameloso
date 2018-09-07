@@ -486,3 +486,84 @@ unittest
         assert((content == "commands"), content);
     }
 }
+
+
+// askToLogImpl
+/++
+ +  Sends a concurrency message asking to print the supplied text to the local
+ +  terminal, instead of doing it directly.
+ +
+ +  This is the implementation template and should not be used directly; use one
+ +  of the askTo* aliases instead.
+ +/
+private void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
+{
+    import std.concurrency : prioritySend;
+    import kameloso.common : ThreadMessage;
+    mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
+}
+
+alias askToWriteln = askToLogImpl!"writeln";
+alias askToTrace = askToLogImpl!"trace";
+alias askToLog = askToLogImpl!"log";
+alias askToInfo = askToLogImpl!"info";
+alias askToWarn = askToLogImpl!"warning";
+alias askToWarning = askToWarn;
+alias askToError = askToLogImpl!"error";
+
+unittest
+{
+    import kameloso.common : ThreadMessage;
+
+    IRCPluginState state;
+    state.mainThread = thisTid;
+
+    state.askToWriteln("writeln");
+    state.askToTrace("trace");
+    state.askToLog("log");
+    state.askToInfo("info");
+    state.askToWarn("warning");
+    state.askToError("error");
+
+    alias T = ThreadMessage.TerminalOutput;
+
+    immutable T[6] expectedLevels =
+    [
+        T.writeln,
+        T.trace,
+        T.log,
+        T.info,
+        T.warning,
+        T.error,
+    ];
+
+    immutable string[6] expectedMessages =
+    [
+        "writeln",
+        "trace",
+        "log",
+        "info",
+        "warning",
+        "error",
+    ];
+
+    foreach (immutable i; 0..6)
+    {
+        import core.time : seconds;
+        import std.concurrency : receiveTimeout;
+        import std.conv : text;
+        import std.variant : Variant;
+
+        receiveTimeout(0.seconds,
+            (ThreadMessage.TerminalOutput logLevel, string message)
+            {
+                assert((logLevel == expectedLevels[i]), logLevel.text);
+                assert((message == expectedMessages[i]), message.text);
+            },
+            (Variant v)
+            {
+                assert(0, "Receive loop test in messaging.d failed.");
+            }
+        );
+    }
+}
