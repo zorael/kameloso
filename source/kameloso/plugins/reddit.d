@@ -14,9 +14,9 @@ module kameloso.plugins.reddit;
 
 version(Web):
 
-import kameloso.common : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.messaging;
 
 import std.concurrency;
 
@@ -137,8 +137,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     }
     catch (const Exception e)
     {
-        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
-            "Reddit worker exception: " ~ e.msg);
+        state.askToError("Reddit worker exception: " ~ e.msg);
     }
 }
 
@@ -163,7 +162,7 @@ string lookupReddit(IRCPluginState state, const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(), "Checking Reddit ...");
+    state.askToLog("Checking Reddit ...");
 
     auto res = req.get("https://www.reddit.com/" ~ url);
 
@@ -181,8 +180,7 @@ string lookupReddit(IRCPluginState state, const string url)
             // doesn't already end with one. It apparently matters.
             if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
 
-            state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
-                "No corresponding Reddit post found.");
+            state.askToLog("No corresponding Redit post found.");
             return string.init;
         }
         else
@@ -206,8 +204,6 @@ string lookupReddit(IRCPluginState state, const string url)
  +/
 void reportReddit(IRCPluginState state, const string reddit, const IRCEvent event)
 {
-    import kameloso.messaging : privmsg;
-
     if (reddit.length)
     {
         state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);

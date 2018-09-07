@@ -14,6 +14,7 @@ module kameloso.plugins.webtitles;
 version(Web):
 
 import kameloso.common : ThreadMessage;
+import kameloso.messaging;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
@@ -194,8 +195,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
 
         if (titleReq.url != originalURL)
         {
-            state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
-                "direct imgur URL; rewritten");
+            state.askToLog("direct imgur URL; rewritten");
         }
 
         auto lookup = state.lookupTitle(titleReq.url);
@@ -204,8 +204,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
     }
     catch (const Exception e)
     {
-        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Error(),
-            "Webtitles worker exception: " ~ e.msg);
+        state.askToError("Webtitles worker exception: " ~ e.msg);
     }
 }
 
@@ -222,13 +221,11 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
  +/
 void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event)
 {
-    import kameloso.messaging : privmsg;
-    import std.format : format;
-
     string line;
 
     if (lookup.domain.length)
     {
+        import std.format : format;
         line = "[%s] %s".format(lookup.domain, lookup.title);
     }
     else
@@ -338,22 +335,16 @@ void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string
     /// Regex pattern to match YouTube URLs.
     enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
 
-    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(), "Bland YouTube title ...");
+    state.askToLog("Bland YouTube title ...");
 
     immutable onRepeatURL = url.replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
-
-    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
-        "ListenOnRepeat URL: " ~ onRepeatURL);
-
+    state.askToLog("ListenOnRepeat URL: " ~ onRepeatURL);
     auto onRepeatLookup = state.lookupTitle(onRepeatURL);
-
-    state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Log(),
-        "ListenOnRepeat title: " ~ onRepeatLookup.title);
+    state.askToLog("ListenOnRepeat title: " ~ onRepeatLookup.title);
 
     if (!onRepeatLookup.title.contains(" - ListenOnRepeat"))
     {
-        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Warning(),
-            "Failed to ListenOnRepeatify YouTube title");
+        state.askToWarn("Failed to ListOnRepeatify YouTube title");
         return;
     }
 

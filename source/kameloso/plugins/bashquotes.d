@@ -15,6 +15,7 @@ version(Web):
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.messaging;
 
 private:
 
@@ -64,7 +65,6 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
     import kameloso.common;
-    import kameloso.messaging : privmsg;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;
@@ -117,11 +117,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
     }
     catch (const Exception e)
     {
-        import kameloso.common : ThreadMessage;
-        import std.concurrency : prioritySend;
-
-        state.mainThread.prioritySend(ThreadMessage.TerminalOutput.Warning(),
-            "Bashquotes could not fetch %s: %s".format(url, e.msg));
+        state.askToWarn("Bashquotes could not fetch %s: %s".format(url, e.msg));
     }
 }
 
