@@ -50,14 +50,23 @@ void onPing(ChanQueriesService service)
     import core.thread : Fiber;
 
     if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.querying) return;  // Try again next PING
+
+    service.querying = true;  // "Lock"
 
     string[] querylist;
 
-    foreach (channel, queried; service.channels)
+    foreach (immutable channelName, ref state; service.channelStates)
     {
-        if (queried) continue;
-        service.channels[channel] = true;
-        querylist ~= channel;
+        if ((state == ChannelState.queried) ||
+            (state == ChannelState.queued))
+        {
+            // Either already queried or queued to be
+            continue;
+        }
+
+        state |= ChannelState.queued;
+        querylist ~= channelName;
     }
 
     if (!querylist.length) return;
@@ -66,51 +75,61 @@ void onPing(ChanQueriesService service)
 
     void fiberFn()
     {
-        import kameloso.messaging : raw;
-        import core.thread : Fiber;
-
-        foreach (channel; querylist)
+        with (IRCEvent.Type)
+        with (service.state)
+        foreach (immutable channelName; querylist)
         {
-            raw!(Yes.quiet)(service.state, "WHO " ~ channel);
+            import kameloso.messaging : raw;
+            import std.string : representation;
+
+            if (!(service.channelStates[channelName] & ChannelState.topicKnown))
+            {
+                raw!(Yes.quiet)(service.state, "TOPIC " ~ channelName);
+                awaitingFibers[RPL_TOPIC] ~= fiber;
+                awaitingFibers[RPL_NOTOPIC] ~= fiber;
+                Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
+            }
+
+            service.delayFiber(fiber, service.secondsBetween);
+            Fiber.yield();  // delay
+
+            raw!(Yes.quiet)(service.state, "WHO " ~ channelName);
+            awaitingFibers[RPL_ENDOFWHO] ~= fiber;
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw!(Yes.quiet)(service.state, "TOPIC " ~ channel);
-            Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
-
-            service.delayFiber(fiber, service.secondsBetween);
-            Fiber.yield();  // delay
-
-            raw!(Yes.quiet)(service.state, "MODE " ~ channel);
+            raw!(Yes.quiet)(service.state, "MODE " ~ channelName);
+            awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             service.delayFiber(fiber, service.secondsBetween);
             Fiber.yield();  // delay
 
-            foreach (immutable modechar; service.state.bot.server.aModes)
+            foreach (immutable modechar; service.state.bot.server.aModes.representation)
             {
                 import std.format : format;
 
-                raw!(Yes.quiet)(service.state, "MODE %s +%c".format(channel, modechar));
-                service.delayFiber(fiber, service.secondsBetween);
+                raw!(Yes.quiet)(service.state, "MODE %s +%c"
+                    .format(channelName, cast(char)modechar));
+                // Cannot await an event; there are too many types,
+                // so just delay for twice the duration
+                service.delayFiber(fiber, (service.secondsBetween * 2));
                 Fiber.yield();
             }
+
+            // Overwrite state with `ChannelState.queried`; `topicKnown` etc are
+            // no longer relevant.
+            service.channelStates[channelName] = ChannelState.queried;
+
+            // The main loop will clean up the `awaitingFibers` array.
         }
+
+        service.querying = false;  // "Unlock"
     }
 
     fiber = new Fiber(&fiberFn);
-
-    with (IRCEvent.Type)
-    with (service.state)
-    {
-        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
-        awaitingFibers[RPL_TOPIC] ~= fiber;
-        awaitingFibers[RPL_NOTOPIC] ~= fiber;
-        awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
-    }
-
     fiber.call();
 }
 
@@ -146,6 +165,20 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
 }
 
 
+// onTopic
+/++
+ +  Registers that we have seen the topic of a channel.
+ +
+ +  We do this so we know not to query it later. Mostly cosmetic.
+ +/
+@(IRCEvent.Type.RPL_TOPIC)
+@(ChannelPolicy.any)
+void onTopic(ChanQueriesService service, const IRCEvent event)
+{
+    service.channelStates[event.channel] |= ChannelState.topicKnown;
+}
+
+
 public:
 
 
@@ -169,6 +202,9 @@ final class ChanQueriesService : IRCPlugin
      +  they are in.
      +/
     ubyte[string] channelStates;
+
+    /// Whether or not a channel query Fiber is running.
+    bool querying;
 
     mixin IRCPluginImpl;
 }
