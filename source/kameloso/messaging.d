@@ -496,7 +496,7 @@ unittest
  +  This is the implementation template and should not be used directly; use one
  +  of the askTo* aliases instead.
  +/
-private void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
+void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 {
     import std.concurrency : prioritySend;
     import kameloso.common : ThreadMessage;
