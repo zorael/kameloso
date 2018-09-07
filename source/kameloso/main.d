@@ -308,41 +308,37 @@ Next checkMessages(ref Client client)
         }
     }
 
-    /// `writeln`s the passed message.
-    void proxyWriteln(ThreadMessage.TerminalOutput.Writeln, string message)
+    /// Proxies the passed message to the `logger`.
+    void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message)
     {
-        import std.stdio : writeln;
-        writeln(message);
-    }
+        with (ThreadMessage.TerminalOutput)
+        final switch (logLevel)
+        {
+        case writeln:
+            import std.stdio : writeln;
+            writeln(message);
+            break;
 
-    /// `trace`s the passed message.
-    void proxyTrace(ThreadMessage.TerminalOutput.Trace, string message)
-    {
-        logger.trace(message);
-    }
+        case trace:
+            logger.trace(message);
+            break;
 
-    /// `log`s the passed message.
-    void proxyLog(ThreadMessage.TerminalOutput.Log, string message)
-    {
-        logger.log(message);
-    }
+        case log:
+            logger.log(message);
+            break;
 
-    /// `info`s the passed message.
-    void proxyInfo(ThreadMessage.TerminalOutput.Info, string message)
-    {
-        logger.info(message);
-    }
+        case info:
+            logger.info(message);
+            break;
 
-    /// `warning`s the passed message.
-    void proxyWarning(ThreadMessage.TerminalOutput.Warning, string message)
-    {
-        logger.warning(message);
-    }
+        case warning:
+            logger.warning(message);
+            break;
 
-    /// `log`s the passed message.
-    void proxyError(ThreadMessage.TerminalOutput.Error, string message)
-    {
-        logger.error(message);
+        case error:
+            logger.error(message);
+            break;
+        }
     }
 
     /// Did the concurrency receive catch something?
@@ -364,12 +360,7 @@ Next checkMessages(ref Client client)
             &immediateline,
             &pong,
             &eventToServer,
-            &proxyWriteln,
-            &proxyTrace,
-            &proxyLog,
-            &proxyInfo,
-            &proxyWarning,
-            &proxyError,
+            &proxyLoggerMessages,
             &quitServer,
             &save,
             &reloadPlugins,
