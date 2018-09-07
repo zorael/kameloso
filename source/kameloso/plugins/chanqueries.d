@@ -126,7 +126,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
     if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    service.channels[event.channel] = false;
+    service.channelStates[event.channel] = ChannelState.unset;
 }
 
 
@@ -142,7 +142,7 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
     if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
 
-    service.channels.remove(event.channel);
+    service.channelStates.remove(event.channel);
 }
 
 
@@ -165,10 +165,10 @@ final class ChanQueriesService : IRCPlugin
     enum secondsBetween = 2;
 
     /++
-     +  Short associative array of the channels the bot is in and whether they
-     +  have been queried.
+     +  Short associative array of the channels the bot is in and which state(s)
+     +  they are in.
      +/
-    bool[string] channels;
+    ubyte[string] channelStates;
 
     mixin IRCPluginImpl;
 }
