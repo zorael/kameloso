@@ -101,7 +101,7 @@ final class KamelosoLogger : Logger
     {
         import std.range : only;
 
-        foreach (const logLevel; only(LogLevel.all, LogLevel.info, LogLevel.warning, LogLevel.fatal))
+        foreach (immutable logLevel; only(LogLevel.all, LogLevel.info, LogLevel.warning, LogLevel.fatal))
         {
             import std.format : format;
 
