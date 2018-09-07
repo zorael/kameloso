@@ -20,6 +20,23 @@ import std.typecons : Flag, No, Yes;
 private:
 
 
+// ChannelState
+/++
+ +  Different states which tracked channels can be in.
+ +
+ +  This is to keep track of which channels have been queried, which are
+ +  currently queued for being queried, etc. It is checked via bitmask, so a
+ +  channel can have several channel states.
+ +/
+enum ChannelState
+{
+    unset = 1 << 0,
+    topicKnown = 1 << 1,
+    queued = 1 << 2,
+    queried = 1 << 3,
+}
+
+
 // onPing
 /++
  +  Queries channels for information about them and their users.
