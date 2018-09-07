@@ -175,6 +175,11 @@ string lookupReddit(IRCPluginState state, const string url)
             uri.beginsWith("https://www.reddit.com/submit") ||
             uri.beginsWith("https://www.reddit.com/http"))
         {
+            import std.algorithm.searching : endsWith;
+
+            // No Reddit post found but retry with a slash appended if it
+            // doesn't already end with one. It apparently matters.
+            if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
             state.mainThread.send(ThreadMessage.TerminalOutput.Log(),
                 "No corresponding Reddit post found.");
             return string.init;
