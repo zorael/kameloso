@@ -531,7 +531,7 @@ unittest
 
     alias T = ThreadMessage.TerminalOutput;
 
-    immutable T[6] expectedLevels =
+    static immutable T[6] expectedLevels =
     [
         T.writeln,
         T.trace,
@@ -541,7 +541,7 @@ unittest
         T.error,
     ];
 
-    immutable string[6] expectedMessages =
+    static immutable string[6] expectedMessages =
     [
         "writeln",
         "trace",
@@ -551,7 +551,9 @@ unittest
         "error",
     ];
 
-    foreach (immutable i; 0..6)
+    static assert(expectedLevels.length == expectedMessages.length);
+
+    foreach (immutable i; 0..expectedMessages.length)
     {
         import core.time : seconds;
         import std.concurrency : receiveTimeout;
