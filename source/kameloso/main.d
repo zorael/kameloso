@@ -20,6 +20,34 @@ shared static this()
     SetConsoleOutputCP(CP_UTF8);
 }
 
+
+/+
+ +  Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
+ +
+ +  It may have been fixed in versions in the future at time of writing, so
+ +  limit it to 2.082 and earlier. Update this condition as compilers are
+ +  released.
+ +
+ +  Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
+ +/
+static if (__VERSION__ <= 2082L)
+{
+    debug
+    {
+        // Everything is fine in debug mode
+    }
+    else version(D_Ddoc)
+    {
+        // Also fine
+    }
+    else
+    {
+        pragma(msg, "NOTE: Compilation may not succeed outside of debug mode.");
+        pragma(msg, "See bug #18026 at https://issues.dlang.org/show_bug.cgi?id=18026");
+    }
+}
+
+
 private:
 
 /++
