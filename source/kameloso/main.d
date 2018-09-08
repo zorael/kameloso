@@ -826,6 +826,69 @@ void resetSignals() nothrow @nogc
 }
 
 
+// tryGetopt
+/++
+ +  Attempt handling `getopt`, wrapped in try-catch blocks.
+ +
+ +  Params:
+ +      client = Reference to the current `kameloso.common.Client`.
+ +      args = The arguments passed to the program.
+ +      customSettings = Reference to the dynamic array of custom settings as
+ +          defined with `--set plugin.setting=value` on the command lnie.
+ +
+ +  Returns:
+ +      `Next.*` depending on what action the calling site should take.
+ +/
+Next tryGetopt(ref Client client, string[] args, ref string[] customSettings)
+{
+    import kameloso.config : FileIsNotAFileException;
+    import std.conv : ConvException;
+    import std.getopt : GetOptException;
+
+    try
+    {
+        import kameloso.getopt : handleGetopt;
+        // Act on arguments getopt, quit if whatever was passed demands it
+        return (client.handleGetopt(args, customSettings) == Yes.quit) ?
+            Next.returnSuccess : Next.continue_;
+    }
+    catch (const GetOptException e)
+    {
+        logger.error("Error parsing command-line arguments: ", e.msg);
+    }
+    catch (const ConvException e)
+    {
+        logger.error("Error converting command-line arguments: ", e.msg);
+    }
+    catch (const FileIsNotAFileException e)
+    {
+        string infotint, errortint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.bash : colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.experimental.logger : LogLevel;
+
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
+            }
+        }
+
+        logger.errorf("Specified configuration file %s%s%s is not a file!",
+            infotint, e.filename, errortint);
+    }
+    catch (const Exception e)
+    {
+        logger.error("Unhandled exception handling command-line arguments: ", e.msg);
+    }
+
+    return Next.returnFailure;
+}
+
+
 public:
 
 version(unittest)
@@ -846,9 +909,6 @@ else
 int main(string[] args)
 {
     import kameloso.common : printObjects;
-    import kameloso.config : FileIsNotAFileException;
-    import std.conv : ConvException;
-    import std.getopt : GetOptException;
     import std.stdio : writeln;
 
     // Initialise the main Client. Set its abort pointer to the global abort.
@@ -873,48 +933,20 @@ int main(string[] args)
 
     setupSignals();
 
-    try
-    {
-        import kameloso.getopt : handleGetopt;
-        // Act on arguments getopt, quit if whatever was passed demands it
-        if (client.handleGetopt(args, customSettings) == Yes.quit) return 0;
-    }
-    catch (const GetOptException e)
-    {
-        logger.error("Error parsing command-line arguments: ", e.msg);
-        return 1;
-    }
-    catch (const ConvException e)
-    {
-        logger.error("Error converting command-line arguments: ", e.msg);
-        return 1;
-    }
-    catch (const FileIsNotAFileException e)
-    {
-        string infotint, errortint;
+    immutable nextAction = client.tryGetopt(args, customSettings);
 
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.bash : colour;
-                import kameloso.logger : KamelosoLogger;
-                import std.experimental.logger : LogLevel;
-
-                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
-            }
-        }
-
-        logger.errorf("Specified configuration file %s%s%s is not a file!",
-            infotint, e.filename, errortint);
-
-        return 1;
-    }
-    catch (const Exception e)
+    with (Next)
+    final switch (nextAction)
     {
-        logger.error("Unhandled exception handling command-line arguments: ", e.msg);
-        return 1;
+        case continue_:
+        case retry:  // should never happen
+            break;
+
+        case exitSuccess:
+            return 0;
+
+        case exitError:
+            return 1;
     }
 
     with (client)
