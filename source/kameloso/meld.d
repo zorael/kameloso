@@ -413,6 +413,23 @@ unittest
     assert(!inverted.a);
     assert(!inverted.b);
     inverted = backupInverted;
+
+    struct Asdf
+    {
+        string nickname = "sadf";
+        string server = "asdf.net";
+    }
+
+    Asdf a, b;
+    a.server = "a";
+    b.server = "b";
+    b.meldInto!(Yes.overwrite)(a);
+    assert((a.server == "b"), a.server);
+
+    a.server = "a";
+    b.server = Asdf.init.server;
+    b.meldInto!(Yes.overwrite)(a);
+    assert((a.server == "a"), a.server);
 }
 
 
