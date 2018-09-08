@@ -135,18 +135,6 @@ void throttleline(Strings...)(ref Client client, const Strings strings)
 }
 
 
-// Next
-/++
- +  Enum of flags carrying the meaning of "what to do next".
- +/
-enum Next
-{
-    stayConnected,  /// Keep the connection active, treat disconnects as errors.
-    reconnect,  /// Preemptively disconnect and reconnect to the server.
-    quit,  /// Exit the program.
-}
-
-
 // checkMessages
 /++
  +  Checks for concurrency messages and performs action based on what was
