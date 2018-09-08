@@ -942,10 +942,10 @@ int main(string[] args)
         case retry:  // should never happen
             break;
 
-        case exitSuccess:
+        case returnSuccess:
             return 0;
 
-        case exitError:
+        case returnFailure:
             return 1;
     }
 
