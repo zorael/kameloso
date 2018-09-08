@@ -3,7 +3,7 @@
  +/
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Client;
+import kameloso.common : CoreSettings, Client, Next;
 import kameloso.ircdefs : IRCBot;
 import std.typecons : Flag, No, Yes;
 
@@ -64,9 +64,9 @@ public:
  +  Example:
  +  ---
  +  Client client;
- +  Flag!"quit" quit = client.handleGetopt(args);
+ +  Next next = client.handleGetopt(args);
  +
- +  if (quit) return 0;
+ +  if (next == Next.returnSuccess) return 0;
  +  // ...
  +  ---
  +
@@ -77,10 +77,10 @@ public:
  +          the settings read from the configuration file.
  +
  +  Returns:
- +      `Yes.quit` or `No.quit` depending on whether the arguments chosen mean
- +      the program should proceed or not.
+ +      `Next.continue_` or `Next.returnSuccess` depending on whether the
+ +      arguments chosen mean the program should proceed or not.
  +/
-Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
+Next handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
     import kameloso.bash : BashForeground;
     import kameloso.common : initLogger, printObjects, printVersionInfo, settings;
@@ -270,14 +270,14 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             defaultGetoptPrinter(headline, results.options);
             writeln();
-            return Yes.quit;
+            return Next.returnSuccess;
         }
 
         if (shouldShowVersion)
         {
             // --version was passed; show info and quit
             printVersionInfo();
-            return Yes.quit;
+            return Next.returnSuccess;
         }
 
         if (shouldWriteConfig)
@@ -327,7 +327,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                 complainAboutIncompleteConfiguration();
             }
 
-            return Yes.quit;
+            return Next.returnSuccess;
         }
 
         if (shouldShowSettings)
@@ -342,7 +342,7 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
 
             foreach (plugin; plugins) plugin.printSettings();
 
-            return Yes.quit;
+            return Next.returnSuccess;
         }
 
         debug
@@ -360,9 +360,9 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                 printObject(e.event);
             }
 
-            return Yes.quit;
+            return Next.returnSuccess;
         }
 
-        return No.quit;
+        return Next.continue_;
     }
 }

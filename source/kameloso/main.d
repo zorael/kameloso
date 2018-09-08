@@ -847,9 +847,8 @@ Next tryGetopt(ref Client client, string[] args, ref string[] customSettings)
     try
     {
         import kameloso.getopt : handleGetopt;
-        // Act on arguments getopt, quit if whatever was passed demands it
-        return (client.handleGetopt(args, customSettings) == Yes.quit) ?
-            Next.returnSuccess : Next.continue_;
+        // Act on arguments getopt, pass return value to main
+        return client.handleGetopt(args, customSettings);
     }
     catch (const GetOptException e)
     {
