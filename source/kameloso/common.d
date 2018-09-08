@@ -162,6 +162,9 @@ struct CoreSettings
     /// Whether to connect to IPv6 addresses or not.
     bool ipv6 = true;
 
+    /// Whether to print outgoing messages or not.
+    bool hideOutgoing = false;
+
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 

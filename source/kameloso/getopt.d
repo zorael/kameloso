@@ -133,6 +133,8 @@ Flag!"quit" handleGetopt(ref Client client, string[] args, ref string[] customSe
                             "(remember to escape or enquote the octothorpe #s!)", &inputHomes,
             "C|channels",   "Non-home channels to idle in, comma-separated (ditto)", &inputChannels,
             "a",            "Append input homes and channels instead of overriding", &shouldAppendChannels,
+            "hideOutgoing", "Hide outgoing messages", &settings.hideOutgoing,
+            "hide",         &settings.hideOutgoing,
             "settings",     "Show all plugins' settings", &shouldShowSettings,
             "show",         &shouldShowSettings,
             "bright",       "Bright terminal colour setting", &settings.brightTerminal,
