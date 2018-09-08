@@ -13,7 +13,7 @@ module kameloso.plugins.connect;
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage, logger;
+import kameloso.common : ThreadMessage, logger, settings;
 
 import std.concurrency : prioritySend;
 import std.format : format;
@@ -265,7 +265,7 @@ void tryAuth(ConnectService service)
             }
 
             service.query!(Yes.quiet)(serviceNick, "%s %s".format(verb, password));
-            logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+            if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
         case snircd:
@@ -282,13 +282,13 @@ void tryAuth(ConnectService service)
             }
 
             service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, password));
-            logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+            if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
         case rusnet:
             // Doesn't want a PRIVMSG
             service.raw!(No.quiet)("NICKSERV IDENTIFY " ~ password);
-            logger.trace("--> NICKSERV IDENTIFY hunter2");
+            if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
         case twitch:
@@ -616,7 +616,7 @@ void onSASLAuthenticate(ConnectService service)
         immutable encoded = Base64.encode(cast(ubyte[])authToken);
 
         service.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
-        logger.trace("--> AUTHENTICATE hunter2");
+        if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
     }
 }
 
@@ -755,7 +755,7 @@ void register(ConnectService service)
             service.raw!(Yes.quiet)("PASS " ~ bot.pass);
 
             // fake it
-            logger.trace("--> PASS hunter2");
+            if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");
         }
         else
         {

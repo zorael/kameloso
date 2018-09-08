@@ -165,14 +165,14 @@ Next checkMessages(ref Client client)
     void immediateline(ThreadMessage.Immediateline, string line)
     {
         // FIXME: quiet?
-        logger.trace("--> ", line);
+        if (!settings.hideOutgoing) logger.trace("--> ", line);
         client.conn.sendline(line);
     }
 
     /// Echo a line to the terminal and send it to the server.
     void sendline(ThreadMessage.Sendline, string line)
     {
-        logger.trace("--> ", line);
+        if (!settings.hideOutgoing) logger.trace("--> ", line);
         client.throttleline(line);
     }
 
@@ -203,7 +203,7 @@ Next checkMessages(ref Client client)
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
         immutable reason = givenReason.length ? givenReason : client.parser.bot.quitReason;
-        logger.tracef(`--> QUIT :"%s"`, reason);
+        if (!settings.hideOutgoing) logger.tracef(`--> QUIT :"%s"`, reason);
         client.conn.sendline("QUIT :\"", reason, "\"");
         next = Next.returnSuccess;
     }
@@ -777,7 +777,7 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
 
         if (!then || ((now - *then) > Timeout.whois))
         {
-            logger.trace("--> WHOIS ", key);
+            if (!settings.hideOutgoing) logger.trace("--> WHOIS ", key);
             client.throttleline("WHOIS ", key);
             client.whoisCalls[key] = Clock.currTime.toUnixTime;
         }
