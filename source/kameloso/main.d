@@ -147,8 +147,7 @@ void throttleline(Strings...)(ref Client client, const Strings strings)
  +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
- +      `Next.{stayConnected,reconnect,quit}` depending on what course of action
- +      to take next.
+ +      `Next.*` depending on what course of action to take next.
  +/
 Next checkMessages(ref Client client)
 {
