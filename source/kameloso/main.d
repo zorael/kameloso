@@ -205,14 +205,14 @@ Next checkMessages(ref Client client)
         immutable reason = givenReason.length ? givenReason : client.parser.bot.quitReason;
         logger.tracef(`--> QUIT :"%s"`, reason);
         client.conn.sendline("QUIT :\"", reason, "\"");
-        next = Next.quit;
+        next = Next.returnSuccess;
     }
 
     /// Disconnects from and reconnects to the server.
     void reconnect(ThreadMessage.Reconnect)
     {
         client.conn.sendline("QUIT :Reconnecting.");
-        next = Next.reconnect;
+        next = Next.retry;
     }
 
     /// Saves current configuration to disk.
@@ -391,7 +391,7 @@ Next checkMessages(ref Client client)
 
         if (receivedSomething) ++receivedInARow;
     }
-    while (receivedSomething && (next == Next.stayConnected) &&
+    while (receivedSomething && (next == Next.continue_) &&
         (receivedInARow < maxReceiveBeforeBreak));
 
     return next;
@@ -439,13 +439,13 @@ Next mainLoop(ref Client client)
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
-    while (next == Next.stayConnected)
+    while (next == Next.continue_)
     {
         if (generator.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected; reconnect
             generator.reset();
-            return Next.stayConnected;
+            return Next.continue_;
         }
 
         immutable nowInUnix = Clock.currTime.toUnixTime;
@@ -1038,7 +1038,7 @@ int main(string[] args)
             firstConnect = false;
 
             // Save if we're exiting and configuration says we should.
-            if (((next == Next.quit) || *abort) && settings.saveOnExit)
+            if (((next == Next.returnSuccess) || *abort) && settings.saveOnExit)
             {
                 client.writeConfigurationFile(settings.configFile);
             }
@@ -1046,8 +1046,8 @@ int main(string[] args)
             // Always teardown after connection ends
             teardownPlugins();
         }
-        while (!(*abort) && ((next == Next.reconnect) ||
-            ((next == Next.stayConnected) && settings.reconnectOnFailure)));
+        while (!(*abort) && ((next == Next.retry) ||
+            ((next == Next.continue_) && settings.reconnectOnFailure)));
 
         if (*abort)
         {
