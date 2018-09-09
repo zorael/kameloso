@@ -1692,7 +1692,6 @@ unittest
 
     version(Posix)
     {
-        import kameloso.string : beginsWith;
         import std.process : environment;
 
         environment["XDG_CONFIG_HOME"] = "/tmp";
@@ -1701,11 +1700,12 @@ unittest
 
         environment.remove("XDG_CONFIG_HOME");
         df = defaultConfigFile;
-        assert(df.beginsWith("/home/") && df.endsWith("/.config/kameloso/kameloso.conf"));
+        assert(df.endsWith("/.config/kameloso/kameloso.conf"), df);
     }
     else version(Windows)
     {
-        assert(defaultConfigFile.endsWith("\\Local\\kameloso\\kameloso\\kameloso.conf"));
+        immutable df = defaultConfigFile;
+        assert(df.endsWith("\\Local\\kameloso\\kameloso\\kameloso.conf"), df);
     }
 }
 
