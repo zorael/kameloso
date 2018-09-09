@@ -172,9 +172,10 @@ struct CoreSettings
     string prefix = "!";
 
     @Unconfigurable
+    @Hidden
     {
-        @Hidden
-        string configFile = "kameloso.conf";  /// Main configuration file.
+        string configFile;  /// Main configuration file.
+        string resourceDirectory;  /// Path to resource directory.
     }
 }
 
