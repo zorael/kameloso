@@ -34,7 +34,12 @@ import std.typecons : Flag, No, Yes;
 void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
     (const string filename, const string configurationText)
 {
+    import std.file : mkdirRecurse;
+    import std.path : dirName;
     import std.stdio : File, writefln, writeln;
+
+    immutable dir = filename.dirName;
+    mkdirRecurse(dir);
 
     auto file = File(filename, "w");
 
