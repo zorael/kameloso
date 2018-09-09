@@ -1549,7 +1549,8 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
     }
 
     logger.logf("They are either malformed or no longer in use. " ~
-        "Use %s--writeconfig%s to update your configuration file.", infotint, logtint);
+        "Use %s--writeconfig%s to update your configuration file. [%s]",
+        infotint, logtint, settings.configFile);
 }
 
 
