@@ -1720,8 +1720,8 @@ unittest
     }
     else version(OSX)
     {
-        return buildNormalizedPath(environment["HOME"], "Library",
-            "Application Support", "kameloso", "kameloso.conf");
+        immutable df = defaultConfigFile;
+        assert((df.endsWith("Library/Application Support/kameloso/kameloso.conf"), df);
     }
     else version(Windows)
     {
@@ -1790,6 +1790,11 @@ unittest
         environment.remove("XDG_DATA_HOME");
         df = defaultResourcePrefix;
         assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
+    }
+    else version (OSX)
+    {
+        immutable df = defaultResourcePrefix;
+        assert((df.endsWith("Library/Application Support/kameloso"), df);
     }
     else version(Windows)
     {
