@@ -1648,7 +1648,7 @@ enum Next
 }
 
 
-version(Linux)
+version(linux)
 {
     version = XDG;
 }
