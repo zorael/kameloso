@@ -1657,7 +1657,8 @@ enum Next
  +  back to `~/.config/kameloso/kameloso.conf` if no `XDG_CONFIG_HOME`
  +  environment variable present.
  +
- +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +  On Windows it defaults to
+ +  `%LOCALAPPDATA%\\Local\\kameloso\\kameloso.conf`.
  +
  +  Returns:
  +      A string path to the default configuration file.
@@ -1676,8 +1677,8 @@ string defaultConfigFile() @property
     }
     else version(Windows)
     {
-        return buildNormalizedPath(environment["APPDATA"], "Local",
-            "kameloso", "kameloso", "kameloso.conf");
+        // Blindly assume %LOCALAPPDATA% is defined
+        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso", "kameloso.conf");
     }
     else
     {
@@ -1705,7 +1706,7 @@ unittest
     else version(Windows)
     {
         immutable df = defaultConfigFile;
-        assert(df.endsWith("\\Local\\kameloso\\kameloso\\kameloso.conf"), df);
+        assert(df.endsWith("\\Local\\kameloso\\kameloso.conf"), df);
     }
 }
 
@@ -1719,7 +1720,7 @@ unittest
  +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable
  +  present.
  +
- +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso\\kameloso`.
  +
  +  Returns:
  +      A string path to the default resource directory.
@@ -1738,8 +1739,8 @@ string defaultResourcePrefix() @property
     }
     else version(Windows)
     {
-        return buildNormalizedPath(environment["APPDATA"], "Local",
-            "kameloso", "kameloso");
+        // Blindly assume %LOCALAPPDATA% is defined
+        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
     }
     else
     {
@@ -1767,6 +1768,7 @@ unittest
     }
     else version(Windows)
     {
-        assert(defaultConfigFile.endsWith("\\Local\\kameloso\\kameloso"));
+        immutable df = defaultResourcePrefix;
+        assert(df.endsWith("\\Local\\kameloso"), df);
     }
 }
