@@ -143,8 +143,11 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             "set",          "Manually change a setting (--set plugin.option=setting)", &customSettings,
             "asserts",      genDescription, &shouldGenerateAsserts,
             "gen",          &shouldGenerateAsserts,
-            "c|config",     "Read configuration from file (default %s)"
-                                .format(CoreSettings.init.configFile), &settings.configFile,
+            "c|config",     "Specify a different configuration file [%s]"
+                                .format(settings.configFile), &settings.configFile,
+            "r|resourceDir","Specify a different resource directory [%s]"
+                                .format(settings.resourceDirectory),
+                                &settings.resourceDirectory,
             "w|writeconfig","Write configuration to file", &shouldWriteConfig,
             "writeconf",    &shouldWriteConfig,
             "init",         &shouldWriteConfig,
