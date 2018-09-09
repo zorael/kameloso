@@ -1037,6 +1037,9 @@ int main(string[] args)
                 return 1;
             }
 
+            logger.infof("%s%s resolved into %s%s%s IPs.",
+            bot.server.address, logtint, infotint, conn.ips.length, logtint);
+
             string infotint, logtint;
 
             version(Colours)
@@ -1052,8 +1055,6 @@ int main(string[] args)
                 }
             }
 
-            logger.infof("%s%s resolved into %s%s%s IPs.",
-                bot.server.address, logtint, infotint, conn.ips.length, logtint);
             import std.file : exists;
 
             if (!settings.resourceDirectory.exists)
