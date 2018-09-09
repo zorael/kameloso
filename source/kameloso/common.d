@@ -1055,6 +1055,21 @@ struct Client
     }
 
 
+    // initPluginResources
+    /++
+     +  Initialises all plugins' resource files.
+     +
+     +  This merely calls `IRCPlugin.initResources()` on each plugin.
+     +/
+    void initPluginResources()
+    {
+        foreach (plugin; plugins)
+        {
+            plugin.initResources();
+        }
+    }
+
+
     // teardownPlugins
     /++
     +  Tears down all plugins, deinitialising them and having them save their
