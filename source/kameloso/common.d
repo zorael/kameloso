@@ -1697,7 +1697,9 @@ string defaultConfigFile() @property
     }
     else
     {
-        static assert(0, "Unsupported platform? Cannot divine default config file path.");
+        pragma(msg, "Unsupported platform? Cannot divine default config file path.");
+        pragma(msg, "Configuration file will be placed in the working directory.");
+        return "kameloso.conf";
     }
 }
 
@@ -1769,7 +1771,9 @@ string defaultResourcePrefix() @property
     }
     else
     {
-        static assert(0, "Unsupported platform? Cannot divine default resource file directory.");
+        pragma(msg, "Unsupported platform? Cannot divine default resource prefix.");
+        pragma(msg, "Resource files will be placed in the working directory.");
+        return ".";
     }
 }
 
