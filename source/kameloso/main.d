@@ -977,6 +977,11 @@ int main(string[] args)
             return 1;
         }
 
+        // Resolve the resource directory
+        import std.path : buildNormalizedPath;
+        settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
+            "server", bot.server.address);
+
         // Initialise plugins outside the loop once, for the error messages
         const invalidEntries = initPlugins(customSettings);
         complainAboutInvalidConfigurationEntries(invalidEntries);
