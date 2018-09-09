@@ -22,9 +22,6 @@ struct AutomodeSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
-
-    /// The file to read and save automode definitions from/to.
-    string automodeFile = "automodes.json";
 }
 
 
@@ -44,7 +41,7 @@ void populateAutomodes(AutomodePlugin plugin)
     import std.json : JSON_TYPE;
 
     JSONStorage automodes;
-    automodes.load(plugin.automodeSettings.automodeFile);
+    automodes.load(plugin.automodeFile);
     plugin.automodes = typeof(plugin.automodes).init;
 
     foreach (immutable channel, const modesigns; automodes.object)
@@ -72,7 +69,7 @@ void saveAutomodes(AutomodePlugin plugin)
     JSONStorage automodes;
     pruneChannels(plugin.automodes);
     automodes.storage = JSONValue(plugin.automodes);
-    automodes.save(plugin.automodeSettings.automodeFile);
+    automodes.save(plugin.automodeFile);
 }
 
 
@@ -85,8 +82,8 @@ void initResources(AutomodePlugin plugin)
     import kameloso.json : JSONStorage;
 
     JSONStorage json;
-    json.load(plugin.automodeSettings.automodeFile);
-    json.save(plugin.automodeSettings.automodeFile);
+    json.load(plugin.automodeFile);
+    json.save(plugin.automodeFile);
 }
 
 
@@ -427,6 +424,9 @@ final class AutomodePlugin : IRCPlugin
 
     /// All Automode options gathered.
     @Settings AutomodeSettings automodeSettings;
+
+    /// The file to read and save automode definitions from/to.
+    @ResourceFile string automodeFile = "automodes.json";
 
     mixin IRCPluginImpl;
 }
