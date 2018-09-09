@@ -600,6 +600,13 @@ struct Description
 }
 
 
+/++
+ +  Annotation denoting that a variable is a filename to a resource file, such
+ +  as JSONs.
+ +/
+struct ResourceFile;
+
+
 // filterUser
 /++
  +  Decides whether a nickname is known good (whitelisted/admin), known bad (not
