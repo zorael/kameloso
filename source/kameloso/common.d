@@ -1648,6 +1648,16 @@ enum Next
 }
 
 
+version(Linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
+
 // defaultConfigFile
 /++
  +  Divines the default path to the configuration file, depending on what
