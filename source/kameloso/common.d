@@ -1678,12 +1678,17 @@ string defaultConfigFile() @property
     import std.path : buildNormalizedPath;
     import std.process : environment;
 
-    version(Posix)
+    version(XDG)
     {
         import std.path : expandTilde;
         enum defaultDir = "~/.config";
         return buildNormalizedPath(environment.get("XDG_CONFIG_HOME", defaultDir),
             "kameloso", "kameloso.conf").expandTilde;
+    }
+    else version(OSX)
+    {
+        return buildNormalizedPath(environment["HOME"], "Library",
+            "Application Support", "kameloso", "kameloso.conf");
     }
     else version(Windows)
     {
@@ -1701,7 +1706,7 @@ unittest
 {
     import std.algorithm.searching : endsWith;
 
-    version(Posix)
+    version(XDG)
     {
         import std.process : environment;
 
@@ -1712,6 +1717,11 @@ unittest
         environment.remove("XDG_CONFIG_HOME");
         df = defaultConfigFile;
         assert(df.endsWith("/.config/kameloso/kameloso.conf"), df);
+    }
+    else version(OSX)
+    {
+        return buildNormalizedPath(environment["HOME"], "Library",
+            "Application Support", "kameloso", "kameloso.conf");
     }
     else version(Windows)
     {
@@ -1740,12 +1750,17 @@ string defaultResourcePrefix() @property
     import std.path : buildNormalizedPath;
     import std.process : environment;
 
-    version(Posix)
+    version(XDG)
     {
         import std.path : expandTilde;
         enum defaultDir = "~/.local/share";
         return buildNormalizedPath(environment.get("XDG_DATA_HOME", defaultDir),
             "kameloso").expandTilde;
+    }
+    else version(OSX)
+    {
+        return buildNormalizedPath(environment["HOME"], "Library",
+            "Application Support", "kameloso");
     }
     else version(Windows)
     {
@@ -1763,7 +1778,7 @@ unittest
 {
     import std.algorithm.searching : endsWith;
 
-    version(Posix)
+    version(XDG)
     {
         import kameloso.string : beginsWith;
         import std.process : environment;
