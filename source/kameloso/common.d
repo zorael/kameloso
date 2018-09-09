@@ -1658,6 +1658,9 @@ enum Next
  +  environment variable present.
  +
  +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +
+ +  Returns:
+ +      A string path to the default configuration file.
  +/
 string defaultConfigFile() @property
 {
@@ -1717,6 +1720,9 @@ unittest
  +  present.
  +
  +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +
+ +  Returns:
+ +      A string path to the default resource directory.
  +/
 string defaultResourceBaseDirectory() @property
 {
