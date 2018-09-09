@@ -913,6 +913,9 @@ int main(string[] args)
     Client client;
     client.abort = &abort;
 
+    settings.configFile = defaultConfigFile;
+    settings.resourceDirectory = defaultResourcePrefix;
+
     // Prepare an array for `handleGetopt` to fill by ref with custom settings
     // set on the command-line using `--set plugin.setting=value`
     string[] customSettings;
@@ -974,6 +977,11 @@ int main(string[] args)
             return 1;
         }
 
+        // Resolve the resource directory
+        import std.path : buildNormalizedPath;
+        settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
+            "server", bot.server.address);
+
         // Initialise plugins outside the loop once, for the error messages
         const invalidEntries = initPlugins(customSettings);
         complainAboutInvalidConfigurationEntries(invalidEntries);
@@ -1022,7 +1030,9 @@ int main(string[] args)
 
             if (!resolved)
             {
-                teardownPlugins();
+                // No need to teardown; if it's the first connect there's
+                // nothing to tear down, and if it's after the first, later code
+                // will have already torn it down.
                 logger.info("Exiting...");
                 return 1;
             }
@@ -1043,7 +1053,20 @@ int main(string[] args)
             }
 
             logger.infof("%s%s resolved into %s%s%s IPs.",
-                bot.server.address, logtint, infotint, conn.ips.length, logtint);
+            bot.server.address, logtint, infotint, conn.ips.length, logtint);
+
+            import std.file : exists;
+
+            if (!settings.resourceDirectory.exists)
+            {
+                import std.file : mkdirRecurse;
+                mkdirRecurse(settings.resourceDirectory);
+                logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
+            }
+
+            // Ensure initialised resources after resolve so we know we have a
+            // valid server to create a directory for.
+            initPluginResources();
 
             conn.connect(*abort);
 

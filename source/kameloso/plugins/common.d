@@ -600,6 +600,13 @@ struct Description
 }
 
 
+/++
+ +  Annotation denoting that a variable is a filename to a resource file, such
+ +  as JSONs.
+ +/
+struct ResourceFile;
+
+
 // filterUser
 /++
  +  Decides whether a nickname is known good (whitelisted/admin), known bad (not
@@ -1278,7 +1285,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     this(IRCPluginState state) @system
     {
+        import kameloso.common : settings;
+        import kameloso.traits : isConfigurableVariable;
+        import std.traits : getSymbolsByUDA, hasUDA;
+
         this.privateState = state;
+
+        foreach (immutable i, ref member; this.tupleof)
+        {
+            static if (isConfigurableVariable!member && hasUDA!(this.tupleof[i], ResourceFile))
+            {
+                import std.path : buildNormalizedPath;
+                member = buildNormalizedPath(settings.resourceDirectory, member);
+            }
+        }
 
         static if (__traits(compiles, .initialise))
         {

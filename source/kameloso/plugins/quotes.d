@@ -32,9 +32,6 @@ struct QuotesSettings
 {
     /// Whether the Quotes plugin should react to events at all.
     bool enabled = true;
-
-    /// Filename of file to save the quotes to.
-    string quotesFile = "quotes.json";
 }
 
 
@@ -195,7 +192,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addQuote(nickname, slice);
-        plugin.quotes.save(plugin.quotesSettings.quotesFile);
+        plugin.quotes.save(plugin.quotesFile);
 
         plugin.privmsg(event.channel, event.sender.nickname,
             "Quote for %s saved (%d on record)"
@@ -249,7 +246,7 @@ void onCommandReloadQuotes(QuotesPlugin plugin)
     if (!plugin.quotesSettings.enabled) return;
 
     logger.log("Reloading quotes");
-    plugin.quotes.load(plugin.quotesSettings.quotesFile);
+    plugin.quotes.load(plugin.quotesFile);
 }
 
 
@@ -263,7 +260,7 @@ void onEndOfMotd(QuotesPlugin plugin)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    plugin.quotes.load(plugin.quotesSettings.quotesFile);
+    plugin.quotes.load(plugin.quotesFile);
 }
 
 
@@ -276,8 +273,8 @@ void initResources(QuotesPlugin plugin)
     import kameloso.json : JSONStorage;
 
     JSONStorage json;
-    json.load(plugin.quotesSettings.quotesFile);
-    json.save(plugin.quotesSettings.quotesFile);
+    json.load(plugin.quotesFile);
+    json.save(plugin.quotesFile);
 }
 
 
@@ -309,6 +306,9 @@ final class QuotesPlugin : IRCPlugin
 
     /// All Quotes plugin settings gathered.
     @Settings QuotesSettings quotesSettings;
+
+    /// Filename of file to save the quotes to.
+    @ResourceFile string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;

@@ -390,11 +390,9 @@ unittest
         bool b = false;
     }
 
-    Bools bools1, bools2, backupBools1, backupBools2, inverted, backupInverted;
+    Bools bools1, bools2, inverted, backupInverted;
 
     bools2.a = false;
-    backupBools1 = bools1;
-    backupBools2 = bools2;
 
     inverted.a = false;
     inverted.b = true;
@@ -475,7 +473,7 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     }
     else
     {
-        static assert(0);
+        static assert(0, "Attempted to meld an unsupported type");
     }
 
     foreach (immutable i, val; meldThis)

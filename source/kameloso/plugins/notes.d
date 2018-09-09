@@ -33,9 +33,6 @@ struct NotesSettings
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
-    /// Filename of file to save the notes to.
-    string notesFile = "notes.json";
-
     /// Whether or not to replay notes when the user joins.
     bool replayOnJoin = true;
 
@@ -104,7 +101,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         }
 
         plugin.clearNotes(event.sender.nickname, event.channel);
-        plugin.notes.save(plugin.notesSettings.notesFile);
+        plugin.notes.save(plugin.notesFile);
     }
     catch (const JSONException e)
     {
@@ -114,7 +111,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         if (e.msg == "JSONValue is not an object")
         {
             plugin.notes.reset();
-            plugin.notes.save(plugin.notesSettings.notesFile);
+            plugin.notes.save(plugin.notesFile);
         }
     }
 }
@@ -193,7 +190,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     {
         plugin.addNote(nickname, event.sender.nickname, event.channel, line);
         plugin.chan(event.channel, "Note added.");
-        plugin.notes.save(plugin.notesSettings.notesFile);
+        plugin.notes.save(plugin.notesFile);
     }
     catch (const JSONException e)
     {
@@ -242,7 +239,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
     if (!plugin.notesSettings.enabled) return;
 
     logger.log("Reloading notes");
-    plugin.notes.load(plugin.notesSettings.notesFile);
+    plugin.notes.load(plugin.notesFile);
 }
 
 
@@ -466,7 +463,7 @@ void onEndOfMotd(NotesPlugin plugin)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    plugin.notes.load(plugin.notesSettings.notesFile);
+    plugin.notes.load(plugin.notesFile);
 }
 
 
@@ -479,8 +476,8 @@ void initResources(NotesPlugin plugin)
     import kameloso.json : JSONStorage;
 
     JSONStorage json;
-    json.load(plugin.notesSettings.notesFile);
-    json.save(plugin.notesSettings.notesFile);
+    json.load(plugin.notesFile);
+    json.save(plugin.notesFile);
 }
 
 
@@ -509,6 +506,9 @@ final class NotesPlugin : IRCPlugin
     +  string key is a channel and the second a nickname.
     +/
     JSONStorage notes;
+
+    /// Filename of file to save the notes to.
+    @ResourceFile string notesFile = "notes.json";
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;

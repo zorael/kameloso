@@ -148,6 +148,20 @@ final class SeenPlugin : IRCPlugin
     long[string] seenUsers;
 
 
+    // seenFile
+    /+
+     +  The filename to which to persistently store our list of seen users
+     +  between executions of the program.
+     +
+     +  This is only the basename of the file. It will be completed with a path
+     +  to the default (or specified) resource directory, which varies by
+     +  platform. Expect this variable to have values like
+     +  "/home/user/.local/share/kameloso/servers/irc.freenode.net/seen.json"
+     +  after the plugin has been instantiated.
+     +/
+    @ResourceFile string seenFile = "seen.json";
+
+
     // mixin IRCPluginImpl
     /++
      +  This mixes in functions that fully implement an
@@ -214,13 +228,6 @@ struct SeenSettings
 
     /// How often to save seen users to disk (aside from program exit).
     int hoursBetweenSaves = 6;
-
-    // seenFile
-    /+
-     +  The filename to which to persistently store our list of seen users
-     +  between executions of the program.
-     +/
-    string seenFile = "seen.json";
 }
 
 
@@ -434,7 +441,7 @@ void onEndOfList(SeenPlugin plugin)
  +      with (plugin)
  +      while (true)
  +      {
- +          seenUser.saveSeen(seenSettings.seenFile);
+ +          seenUsers.saveSeen(seenFile);
  +          fiber.delayFiber(secs);  // <-- needs visibility of fiber
  +          Fiber.yield();
  +      }
@@ -463,7 +470,7 @@ void onPing(SeenPlugin plugin)
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-            seenUsers.rehash().saveSeen(seenSettings.seenFile);
+            seenUsers.rehash().saveSeen(seenFile);
         }
     }
 }
@@ -781,7 +788,7 @@ void onEndOfMotd(SeenPlugin plugin)
 
     with (plugin)
     {
-        seenUsers = plugin.loadSeen(seenSettings.seenFile);
+        seenUsers = plugin.loadSeen(seenFile);
 
         if ((seenSettings.hoursBetweenSaves > 24) ||
             (seenSettings.hoursBetweenSaves < 0))
@@ -808,7 +815,7 @@ void onEndOfMotd(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
-    plugin.seenUsers.saveSeen(plugin.seenSettings.seenFile);
+    plugin.seenUsers.saveSeen(plugin.seenFile);
 }
 
 
@@ -821,8 +828,8 @@ void initResources(SeenPlugin plugin)
     import kameloso.json : JSONStorage;
 
     JSONStorage json;
-    json.load(plugin.seenSettings.seenFile);
-    json.save(plugin.seenSettings.seenFile);
+    json.load(plugin.seenFile);
+    json.save(plugin.seenFile);
 }
 
 

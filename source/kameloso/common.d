@@ -172,9 +172,10 @@ struct CoreSettings
     string prefix = "!";
 
     @Unconfigurable
+    @Hidden
     {
-        @Hidden
-        string configFile = "kameloso.conf";  /// Main configuration file.
+        string configFile;  /// Main configuration file.
+        string resourceDirectory;  /// Path to resource directory.
     }
 }
 
@@ -1054,6 +1055,21 @@ struct Client
     }
 
 
+    // initPluginResources
+    /++
+     +  Initialises all plugins' resource files.
+     +
+     +  This merely calls `IRCPlugin.initResources()` on each plugin.
+     +/
+    void initPluginResources()
+    {
+        foreach (plugin; plugins)
+        {
+            plugin.initResources();
+        }
+    }
+
+
     // teardownPlugins
     /++
     +  Tears down all plugins, deinitialising them and having them save their
@@ -1067,7 +1083,28 @@ struct Client
 
         foreach (plugin; plugins)
         {
-            try plugin.teardown();
+            import std.exception : ErrnoException;
+
+            try
+            {
+                plugin.teardown();
+            }
+            catch (ErrnoException e)
+            {
+                import core.stdc.errno : ENOENT;
+                import std.file : exists;
+                import std.path : dirName;
+
+                if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
+                {
+                    // The resource directory hasn't been created, don't panic
+                }
+                else
+                {
+                    logger.warningf("ErrnoException when tearing down %s: %s",
+                        plugin.name, e.msg);
+                }
+            }
             catch (const Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
@@ -1200,7 +1237,6 @@ void writeConfigurationFile(ref Client client, const string filename)
 
         foreach (plugin; plugins)
         {
-            plugin.initResources();  // This is sort of out of place
             plugin.serialiseConfigInto(sink);
         }
 
@@ -1513,7 +1549,8 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
     }
 
     logger.logf("They are either malformed or no longer in use. " ~
-        "Use %s--writeconfig%s to update your configuration file.", infotint, logtint);
+        "Use %s--writeconfig%s to update your configuration file. [%s]",
+        infotint, logtint, settings.configFile);
 }
 
 
@@ -1608,4 +1645,169 @@ enum Next
     retry,         /// Halt what's being done and give it another attempt.
     returnSuccess, /// Exit or abort with a positive return value.
     returnFailure, /// Exit or abort with a negative return value.
+}
+
+
+/++
+ +  A version identifier that catches non-OSX Posix platforms.
+ +
+ +  We need it to version code for freedesktop.org-aware environments.
+ +/
+version(linux)
+{
+    version = XDG;
+}
+else version(FreeBSD)
+{
+    version = XDG;
+}
+
+
+// defaultConfigFile
+/++
+ +  Divines the default path to the configuration file, depending on what
+ +  platform we're currently running.
+ +
+ +  On Posix it defaults to `$XDG_CONFIG_HOME/kameloso/kameloso.conf` and falls
+ +  back to `~/.config/kameloso/kameloso.conf` if no `XDG_CONFIG_HOME`
+ +  environment variable present.
+ +
+ +  On Windows it defaults to
+ +  `%LOCALAPPDATA%\\Local\\kameloso\\kameloso.conf`.
+ +
+ +  Returns:
+ +      A string path to the default configuration file.
+ +/
+string defaultConfigFile() @property
+{
+    import std.path : buildNormalizedPath;
+    import std.process : environment;
+
+    version(XDG)
+    {
+        import std.path : expandTilde;
+        enum defaultDir = "~/.config";
+        return buildNormalizedPath(environment.get("XDG_CONFIG_HOME", defaultDir),
+            "kameloso", "kameloso.conf").expandTilde;
+    }
+    else version(OSX)
+    {
+        return buildNormalizedPath(environment["HOME"], "Library",
+            "Application Support", "kameloso", "kameloso.conf");
+    }
+    else version(Windows)
+    {
+        // Blindly assume %LOCALAPPDATA% is defined
+        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso", "kameloso.conf");
+    }
+    else
+    {
+        pragma(msg, "Unsupported platform? Cannot divine default config file path.");
+        pragma(msg, "Configuration file will be placed in the working directory.");
+        return "kameloso.conf";
+    }
+}
+
+///
+unittest
+{
+    import std.algorithm.searching : endsWith;
+
+    version(XDG)
+    {
+        import std.process : environment;
+
+        environment["XDG_CONFIG_HOME"] = "/tmp";
+        string df = defaultConfigFile;
+        assert((df == "/tmp/kameloso/kameloso.conf"), df);
+
+        environment.remove("XDG_CONFIG_HOME");
+        df = defaultConfigFile;
+        assert(df.endsWith("/.config/kameloso/kameloso.conf"), df);
+    }
+    else version(OSX)
+    {
+        immutable df = defaultConfigFile;
+        assert(df.endsWith("Library/Application Support/kameloso/kameloso.conf"), df);
+    }
+    else version(Windows)
+    {
+        immutable df = defaultConfigFile;
+        assert(df.endsWith("\\Local\\kameloso\\kameloso.conf"), df);
+    }
+}
+
+
+// defaultResourcePrefix
+/++
+ +  Divines the default resource base directory, depending on what platform
+ +  we're currently running.
+ +
+ +  On Posix it defaults to `$XDG_DATA_HOME/kameloso` and falls back to
+ +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable
+ +  present.
+ +
+ +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
+ +
+ +  Returns:
+ +      A string path to the default resource directory.
+ +/
+string defaultResourcePrefix() @property
+{
+    import std.path : buildNormalizedPath;
+    import std.process : environment;
+
+    version(XDG)
+    {
+        import std.path : expandTilde;
+        enum defaultDir = "~/.local/share";
+        return buildNormalizedPath(environment.get("XDG_DATA_HOME", defaultDir),
+            "kameloso").expandTilde;
+    }
+    else version(OSX)
+    {
+        return buildNormalizedPath(environment["HOME"], "Library",
+            "Application Support", "kameloso");
+    }
+    else version(Windows)
+    {
+        // Blindly assume %LOCALAPPDATA% is defined
+        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
+    }
+    else
+    {
+        pragma(msg, "Unsupported platform? Cannot divine default resource prefix.");
+        pragma(msg, "Resource files will be placed in the working directory.");
+        return ".";
+    }
+}
+
+///
+unittest
+{
+    import std.algorithm.searching : endsWith;
+
+    version(XDG)
+    {
+        import kameloso.string : beginsWith;
+        import std.process : environment;
+
+        environment["XDG_DATA_HOME"] = "/tmp";
+        string df = defaultResourcePrefix;
+        assert((df == "/tmp/kameloso"), df);
+
+        environment.remove("XDG_DATA_HOME");
+        df = defaultResourcePrefix;
+        assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
+    }
+    else version (OSX)
+    {
+        immutable df = defaultResourcePrefix;
+        assert(df.endsWith("Library/Application Support/kameloso"), df);
+    }
+    else version(Windows)
+    {
+        immutable df = defaultResourcePrefix;
+        assert(df.endsWith("\\Local\\kameloso"), df);
+    }
 }
