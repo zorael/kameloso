@@ -1054,6 +1054,17 @@ int main(string[] args)
 
             logger.infof("%s%s resolved into %s%s%s IPs.",
                 bot.server.address, logtint, infotint, conn.ips.length, logtint);
+            import std.file : exists;
+
+            if (!settings.resourceDirectory.exists)
+            {
+                mkdirRecurse(settings.resourceDirectory);
+                logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
+            }
+
+            // Ensure initialised resources after resolve so we know we have a
+            // valid server to create a directory for.
+            initPluginResources();
 
             conn.connect(*abort);
 
