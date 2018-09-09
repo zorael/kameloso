@@ -1610,3 +1610,121 @@ enum Next
     returnSuccess, /// Exit or abort with a positive return value.
     returnFailure, /// Exit or abort with a negative return value.
 }
+
+
+// defaultConfigFile
+/++
+ +  Divines the default path to the configuration file, depending on what
+ +  platform we're currently running.
+ +
+ +  On Posix it defaults to `$XDG_CONFIG_HOME/kameloso/kameloso.conf` and falls
+ +  back to `~/.config/kameloso/kameloso.conf` if no `XDG_CONFIG_HOME`
+ +  environment variable present.
+ +
+ +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +/
+string defaultConfigFile() @property
+{
+    import std.path : buildNormalizedPath;
+    import std.process : environment;
+
+    version(Posix)
+    {
+        import std.path : expandTilde;
+        enum defaultDir = "~/.config";
+        return buildNormalizedPath(environment.get("XDG_CONFIG_HOME", defaultDir),
+            "kameloso", "kameloso.conf").expandTilde;
+    }
+    else version(Windows)
+    {
+        return buildNormalizedPath(environment["APPDATA"], "Local",
+            "kameloso", "kameloso", "kameloso.conf");
+    }
+    else
+    {
+        static assert(0, "Unsupported platform? Cannot divine default config file path.");
+    }
+}
+
+///
+unittest
+{
+    import std.algorithm.searching : endsWith;
+
+    version(Posix)
+    {
+        import kameloso.string : beginsWith;
+        import std.process : environment;
+
+        environment["XDG_CONFIG_HOME"] = "/tmp";
+        string df = defaultConfigFile;
+        assert((df == "/tmp/kameloso/kameloso.conf"), df);
+
+        environment.remove("XDG_CONFIG_HOME");
+        df = defaultConfigFile;
+        assert(df.beginsWith("/home/") && df.endsWith("/.config/kameloso/kameloso.conf"));
+    }
+    else version(Windows)
+    {
+        assert(defaultConfigFile.endsWith("\\Local\\kameloso\\kameloso\\kameloso.conf"));
+    }
+}
+
+
+// defaultResourceBaseDirectory
+/++
+ +  Divines the default resource base directory, depending on what platform
+ +  we're currently running.
+ +
+ +  On Posix it defaults to `$XDG_DATA_HOME/kameloso` and falls back to
+ +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable
+ +  present.
+ +
+ +  On Windows it defaults to `%APPDATA%\\Local\\kameloso\\kameloso`.
+ +/
+string defaultResourceBaseDirectory() @property
+{
+    import std.path : buildNormalizedPath;
+    import std.process : environment;
+
+    version(Posix)
+    {
+        import std.path : expandTilde;
+        enum defaultDir = "~/.local/share";
+        return buildNormalizedPath(environment.get("XDG_DATA_HOME", defaultDir),
+            "kameloso").expandTilde;
+    }
+    else version(Windows)
+    {
+        return buildNormalizedPath(environment["APPDATA"], "Local",
+            "kameloso", "kameloso");
+    }
+    else
+    {
+        static assert(0, "Unsupported platform? Cannot divine default resource file directory.");
+    }
+}
+
+///
+unittest
+{
+    import std.algorithm.searching : endsWith;
+
+    version(Posix)
+    {
+        import kameloso.string : beginsWith;
+        import std.process : environment;
+
+        environment["XDG_DATA_HOME"] = "/tmp";
+        string df = defaultResourceBaseDirectory;
+        assert((df == "/tmp/kameloso"), df);
+
+        environment.remove("XDG_DATA_HOME");
+        df = defaultResourceBaseDirectory;
+        assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
+    }
+    else version(Windows)
+    {
+        assert(defaultConfigFile.endsWith("\\Local\\kameloso\\kameloso"));
+    }
+}
