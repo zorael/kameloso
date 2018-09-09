@@ -1444,7 +1444,6 @@ unittest
 
     enum boldCode = "" ~ I.bold;
     enum italicsCode = "" ~ I.italics;
-    enum underlinedCode = "" ~ I.underlined;
 
     {
         immutable withTags = "This is " ~ boldCode ~ "riddled" ~ boldCode ~ " with " ~

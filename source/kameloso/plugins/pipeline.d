@@ -200,7 +200,7 @@ File createFIFO(IRCPluginState state)
  +  Spawns the pipereader thread.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
-void onWelcome(PipelinePlugin plugin, const IRCEvent event)
+void onWelcome(PipelinePlugin plugin)
 {
     plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state);
 }

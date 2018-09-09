@@ -201,7 +201,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
                 default:
                     // Should never get here.
-                    assert(0);
+                    assert(0, "Unexpected getopt: " ~ setting);
                 }
             }
         }
@@ -290,7 +290,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             // --writeconfig was passed; write configuration to file and quit
 
             BashForeground bannertint;
-            string infotint, logtint;
+            string infotint;
 
             version(Colours)
             {
@@ -304,7 +304,6 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
                         BashForeground.black : BashForeground.white;
 
                     infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                    logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
                 }
             }
 

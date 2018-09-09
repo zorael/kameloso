@@ -99,6 +99,7 @@ string configReader(const string configFile)
  +/
 final class FileIsNotAFileException : Exception
 {
+    /// The name of the non-file the exception refers to.
     string filename;
 
     /++

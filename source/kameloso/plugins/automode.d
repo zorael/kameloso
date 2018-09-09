@@ -128,7 +128,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         return;
 
     default:
-        assert(0);
+        assert(0, "Invalid IRCEvent annotation on " ~ __FUNCTION__);
     }
 
     plugin.applyAutomodes(nickname, account);
