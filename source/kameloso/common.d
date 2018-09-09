@@ -1728,7 +1728,7 @@ unittest
     else version(OSX)
     {
         immutable df = defaultConfigFile;
-        assert((df.endsWith("Library/Application Support/kameloso/kameloso.conf"), df);
+        assert(df.endsWith("Library/Application Support/kameloso/kameloso.conf"), df);
     }
     else version(Windows)
     {
@@ -1803,7 +1803,7 @@ unittest
     else version (OSX)
     {
         immutable df = defaultResourcePrefix;
-        assert((df.endsWith("Library/Application Support/kameloso"), df);
+        assert(df.endsWith("Library/Application Support/kameloso"), df);
     }
     else version(Windows)
     {
