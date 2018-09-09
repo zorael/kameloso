@@ -914,7 +914,7 @@ int main(string[] args)
     client.abort = &abort;
 
     settings.configFile = defaultConfigFile;
-    settings.resourceDirectory = defaultResourceBaseDirectory;
+    settings.resourceDirectory = defaultResourcePrefix;
 
     // Prepare an array for `handleGetopt` to fill by ref with custom settings
     // set on the command-line using `--set plugin.setting=value`

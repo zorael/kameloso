@@ -1710,7 +1710,7 @@ unittest
 }
 
 
-// defaultResourceBaseDirectory
+// defaultResourcePrefix
 /++
  +  Divines the default resource base directory, depending on what platform
  +  we're currently running.
@@ -1724,7 +1724,7 @@ unittest
  +  Returns:
  +      A string path to the default resource directory.
  +/
-string defaultResourceBaseDirectory() @property
+string defaultResourcePrefix() @property
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
@@ -1758,11 +1758,11 @@ unittest
         import std.process : environment;
 
         environment["XDG_DATA_HOME"] = "/tmp";
-        string df = defaultResourceBaseDirectory;
+        string df = defaultResourcePrefix;
         assert((df == "/tmp/kameloso"), df);
 
         environment.remove("XDG_DATA_HOME");
-        df = defaultResourceBaseDirectory;
+        df = defaultResourcePrefix;
         assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
     }
     else version(Windows)
