@@ -1285,7 +1285,20 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     this(IRCPluginState state) @system
     {
+        import kameloso.common : settings;
+        import kameloso.traits : isConfigurableVariable;
+        import std.traits : getSymbolsByUDA, hasUDA;
+
         this.privateState = state;
+
+        foreach (immutable i, ref member; this.tupleof)
+        {
+            static if (isConfigurableVariable!member && hasUDA!(this.tupleof[i], ResourceFile))
+            {
+                import std.path : buildNormalizedPath;
+                member = buildNormalizedPath(settings.resourceDirectory, member);
+            }
+        }
 
         static if (__traits(compiles, .initialise))
         {
