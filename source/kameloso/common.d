@@ -1648,6 +1648,11 @@ enum Next
 }
 
 
+/++
+ +  A version identifier that catches non-OSX Posix platforms.
+ +
+ +  We need it to version code for freedesktop.org-aware environments.
+ +/
 version(linux)
 {
     version = XDG;
