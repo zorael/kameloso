@@ -1083,7 +1083,28 @@ struct Client
 
         foreach (plugin; plugins)
         {
-            try plugin.teardown();
+            import std.exception : ErrnoException;
+
+            try
+            {
+                plugin.teardown();
+            }
+            catch (ErrnoException e)
+            {
+                import core.stdc.errno : ENOENT;
+                import std.file : exists;
+                import std.path : dirName;
+
+                if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
+                {
+                    // The resource directory hasn't been created, don't panic
+                }
+                else
+                {
+                    logger.warningf("ErrnoException when tearing down %s: %s",
+                        plugin.name, e.msg);
+                }
+            }
             catch (const Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
