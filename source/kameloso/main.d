@@ -1059,6 +1059,7 @@ int main(string[] args)
 
             if (!settings.resourceDirectory.exists)
             {
+                import std.file : mkdirRecurse;
                 mkdirRecurse(settings.resourceDirectory);
                 logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
             }
