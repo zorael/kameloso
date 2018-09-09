@@ -1030,7 +1030,9 @@ int main(string[] args)
 
             if (!resolved)
             {
-                teardownPlugins();
+                // No need to teardown; if it's the first connect there's
+                // nothing to tear down, and if it's after the first, later code
+                // will have already torn it down.
                 logger.info("Exiting...");
                 return 1;
             }
