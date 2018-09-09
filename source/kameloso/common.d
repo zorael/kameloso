@@ -1747,7 +1747,7 @@ unittest
  +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable
  +  present.
  +
- +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso\\kameloso`.
+ +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
  +
  +  Returns:
  +      A string path to the default resource directory.
