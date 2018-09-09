@@ -4,7 +4,7 @@
 module kameloso.uda;
 
 /// UDA conveying that a field is not to be saved in configuration files.
-struct Unconfigurable {}
+struct Unconfigurable;
 
 /// UDA conveying that a string is an array with this token as separator.
 struct Separator
@@ -17,10 +17,10 @@ struct Separator
  +  UDA conveying that this member contains sensitive information and should not
  +  be printed in clear text; e.g. passwords.
  +/
-struct Hidden {}
+struct Hidden;
 
 /++
  +  UDA conveying that a string contains characters that could otherwise
  +  indicate a comment.
  +/
-struct CannotContainComments {}
+struct CannotContainComments;
