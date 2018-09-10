@@ -555,7 +555,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
 
     JSONStorage json;
     json.reset();
-    json.load(plugin.usersFile);
+    json.load(plugin.userFile);
 
     /*if ("admin" !in json)
     {
@@ -598,7 +598,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     }
 
     logger.logf("%s %s%sed", account, (add ? string.init : "de"), section);
-    json.save(plugin.usersFile);
+    json.save(plugin.userFile);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
@@ -884,8 +884,8 @@ final class AdminPlugin : IRCPlugin
         auth,
     }
 
-    /// FIXME: File with user definitions. Must be the same as in persistence.d.
-    enum usersFile = "users.json";
+    /// File with user definitions. Must be the same as in persistence.d.
+    @ResourceFile string userFile = "users.json";
 
     /// Which sort of peek is currently in flight; see `peekPlugins`.
     PeekType currentPeekType;
