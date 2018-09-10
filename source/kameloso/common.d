@@ -1663,22 +1663,23 @@ else version(FreeBSD)
 }
 
 
-// defaultConfigFile
+// defaultConfigurationPrefix
 /++
- +  Divines the default path to the configuration file, depending on what
- +  platform we're currently running.
+ +  Divines the default configuration file directory, depending on what platform
+ +  we're currently running.
  +
- +  On Posix it defaults to `$XDG_CONFIG_HOME/kameloso/kameloso.conf` and falls
- +  back to `~/.config/kameloso/kameloso.conf` if no `XDG_CONFIG_HOME`
- +  environment variable present.
+ +  On Linux it defaults to `$XDG_CONFIG_HOME/kameloso` and falls back to
+ +  `~/.config/kameloso` if no `XDG_CONFIG_HOME` environment variable present.
+ +
+ +  On MacOS it defualts to `$HOME/Library/Application Support/kameloso`.
  +
  +  On Windows it defaults to
- +  `%LOCALAPPDATA%\\Local\\kameloso\\kameloso.conf`.
+ +  `%LOCALAPPDATA%\\Local\\kameloso`.
  +
  +  Returns:
  +      A string path to the default configuration file.
  +/
-string defaultConfigFile() @property
+string defaultConfigurationPrefix() @property
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
@@ -1688,17 +1689,17 @@ string defaultConfigFile() @property
         import std.path : expandTilde;
         enum defaultDir = "~/.config";
         return buildNormalizedPath(environment.get("XDG_CONFIG_HOME", defaultDir),
-            "kameloso", "kameloso.conf").expandTilde;
+            "kameloso").expandTilde;
     }
     else version(OSX)
     {
         return buildNormalizedPath(environment["HOME"], "Library",
-            "Application Support", "kameloso", "kameloso.conf");
+            "Application Support", "kameloso");
     }
     else version(Windows)
     {
         // Blindly assume %LOCALAPPDATA% is defined
-        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso", "kameloso.conf");
+        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
     }
     else
     {
@@ -1713,27 +1714,27 @@ unittest
 {
     import std.algorithm.searching : endsWith;
 
+    immutable df = defaultConfigurationPrefix;
+
     version(XDG)
     {
         import std.process : environment;
 
         environment["XDG_CONFIG_HOME"] = "/tmp";
-        string df = defaultConfigFile;
-        assert((df == "/tmp/kameloso/kameloso.conf"), df);
+        immutable dfTmp = defaultConfigurationPrefix;
+        assert((dfTmp == "/tmp/kameloso"), dfTmp);
 
         environment.remove("XDG_CONFIG_HOME");
-        df = defaultConfigFile;
-        assert(df.endsWith("/.config/kameloso/kameloso.conf"), df);
+        immutable dfWithout = defaultConfigurationPrefix;
+        assert(dfWithout.endsWith("/.config/kameloso"), dfWithout);
     }
     else version(OSX)
     {
-        immutable df = defaultConfigFile;
-        assert(df.endsWith("Library/Application Support/kameloso/kameloso.conf"), df);
+        assert(df.endsWith("Library/Application Support/kameloso"), df);
     }
     else version(Windows)
     {
-        immutable df = defaultConfigFile;
-        assert(df.endsWith("\\Local\\kameloso\\kameloso.conf"), df);
+        assert(df.endsWith("\\Local\\kameloso"), df);
     }
 }
 
