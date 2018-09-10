@@ -3023,13 +3023,13 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
 // delayFiber
 /++
-    +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
-    +  appending it to `timedFibers`.
-    +
-    +  It only supports a precision of a *worst* case of
-    +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
-    +  than that. See the main loop for more information.
-    +/
+ +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
+ +  appending it to `timedFibers`.
+ +
+ +  It only supports a precision of a *worst* case of
+ +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
+ +  than that. See the main loop for more information.
+ +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 {
     import kameloso.common : labeled;
@@ -3037,4 +3037,17 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 
     immutable time = Clock.currTime.toUnixTime + secs;
     plugin.state.timedFibers ~= labeled(fiber, time);
+}
+
+
+// delayFiber
+/++
+ +  Queues a `core.thread.Fiber` to be called at a point n seconds later, by
+ +  appending it to `timedFibers`.
+ +
+ +  Overload that implicitly queues `Fiber.getThis`.
+ +/
+void delayFiber(IRCPlugin plugin, const long secs)
+{
+    return plugin.delayFiber(Fiber.getThis, secs);
 }
