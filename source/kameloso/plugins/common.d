@@ -1300,10 +1300,18 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref member; this.tupleof)
         {
-            static if (isConfigurableVariable!member && hasUDA!(this.tupleof[i], Resource))
+            static if (isConfigurableVariable!member)
             {
                 import std.path : buildNormalizedPath;
-                member = buildNormalizedPath(settings.resourceDirectory, member);
+
+                static if (hasUDA!(this.tupleof[i], Resource))
+                {
+                    member = buildNormalizedPath(settings.resourceDirectory, member);
+                }
+                else static if (hasUDA!(this.tupleof[i], Configuration))
+                {
+                    member = buildNormalizedPath(settings.configDirectory, member);
+                }
             }
         }
 
