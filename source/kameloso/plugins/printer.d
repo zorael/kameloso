@@ -75,9 +75,6 @@ struct PrinterSettings
     /// Whether to log raw events.
     bool logRaw = false;
 
-    /// Where to save logs.
-    @Resource string logLocation = "logs";
-
     /// Whether to buffer writes.
     bool bufferedWrites = true;
 }
@@ -235,7 +232,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
 
-    immutable logLocation = plugin.printerSettings.logLocation.expandTilde;
+    immutable logLocation = plugin.logDirectory.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
 
     // Save raws first
@@ -2079,6 +2076,9 @@ final class PrinterPlugin : IRCPlugin
 
     /// All Printer plugin options gathered.
     @Settings PrinterSettings printerSettings;
+
+    /// Where to save logs.
+    @Resource string logDirectory = "logs";
 
     mixin IRCPluginImpl;
 }
