@@ -913,7 +913,8 @@ int main(string[] args)
     Client client;
     client.abort = &abort;
 
-    settings.configFile = defaultConfigFile;
+    import std.path : buildNormalizedPath;
+    settings.configFile = buildNormalizedPath(defaultConfigurationPrefix, "kameloso.conf");
     settings.resourceDirectory = defaultResourcePrefix;
 
     // Prepare an array for `handleGetopt` to fill by ref with custom settings
