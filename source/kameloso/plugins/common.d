@@ -601,10 +601,17 @@ struct Description
 
 
 /++
- +  Annotation denoting that a variable is a filename to a resource file, such
- +  as JSONs.
+ +  Annotation denoting that a variable is the basename of a resource file or
+ +  directory.
  +/
 struct Resource;
+
+
+/++
+ +  Annotation denoting that a variable is the basename of a configuration file
+ +  or directory.
+ +/
+struct Configuration;
 
 
 // filterUser
