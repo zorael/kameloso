@@ -75,8 +75,8 @@ struct PrinterSettings
     /// Whether to log raw events.
     bool logRaw = false;
 
-    /// Where to save logs (absolute or relative path).
-    string logLocation = "kameloso.logs";
+    /// Where to save logs.
+    @Resource string logLocation = "logs";
 
     /// Whether to buffer writes.
     bool bufferedWrites = true;
