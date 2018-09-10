@@ -71,12 +71,8 @@ void onPing(ChanQueriesService service)
 
     if (!querylist.length) return;
 
-    Fiber fiber;
-
     void fiberFn()
     {
-        with (IRCEvent.Type)
-        with (service.state)
         foreach (immutable channelName; querylist)
         {
             import kameloso.messaging : raw;
@@ -86,42 +82,35 @@ void onPing(ChanQueriesService service)
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
                 raw!(Yes.quiet)(service.state, "TOPIC " ~ channelName);
-                awaitingFibers[RPL_TOPIC] ~= fiber;
-                awaitingFibers[RPL_NOTOPIC] ~= fiber;
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
+
+                service.delayFiber(service.secondsBetween);
+                Fiber.yield();  // delay
             }
 
-            service.delayFiber(fiber, service.secondsBetween);
-            Fiber.yield();  // delay
-
             raw!(Yes.quiet)(service.state, "WHO " ~ channelName);
-            awaitingFibers[RPL_ENDOFWHO] ~= fiber;
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
-            service.delayFiber(fiber, service.secondsBetween);
+            service.delayFiber(service.secondsBetween);
             Fiber.yield();  // delay
 
             raw!(Yes.quiet)(service.state, "MODE " ~ channelName);
-            awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
-
-            service.delayFiber(fiber, service.secondsBetween);
-            Fiber.yield();  // delay
 
             foreach (immutable modechar; service.state.bot.server.aModes.representation)
             {
                 import std.format : format;
+                // Cannot await by event type; there are too many types,
+                // so just delay for twice the normal delay duration
+                service.delayFiber(service.secondsBetween * 2);
+                Fiber.yield();  // delay
 
                 raw!(Yes.quiet)(service.state, "MODE %s +%c"
                     .format(channelName, cast(char)modechar));
-                // Cannot await an event; there are too many types,
-                // so just delay for twice the duration
-                service.delayFiber(fiber, (service.secondsBetween * 2));
-                Fiber.yield();
             }
 
-            // Overwrite state with `ChannelState.queried`; `topicKnown` etc are
-            // no longer relevant.
+            // Overwrite state with `ChannelState.queried`;
+            // `topicKnown` etc are no longer relevant.
             service.channelStates[channelName] = ChannelState.queried;
 
             // The main loop will clean up the `awaitingFibers` array.
@@ -130,7 +119,18 @@ void onPing(ChanQueriesService service)
         service.querying = false;  // "Unlock"
     }
 
-    fiber = new Fiber(&fiberFn);
+    auto fiber = new Fiber(&fiberFn);
+
+    with (IRCEvent.Type)
+    with (service.state)
+    {
+        // Append the fiber *ONCE*
+        awaitingFibers[RPL_TOPIC] ~= fiber;
+        awaitingFibers[RPL_NOTOPIC] ~= fiber;
+        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
+        awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
+    }
+
     fiber.call();
 }
 
