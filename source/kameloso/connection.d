@@ -297,10 +297,15 @@ public:
      +/
     void sendline(Strings...)(const Strings strings)
     {
+        int remainingMaxLength = 511;
+
         foreach (immutable string_; strings)
         {
             import std.algorithm.comparison : min;
-            socket.send(string_[0..min(string_.length, 511)]);
+            immutable thisLength = min(string_.length, remainingMaxLength);
+            socket.send(string_[0..thisLength]);
+            remainingMaxLength -= thisLength;
+            if (remainingMaxLength <= 0) break;
         }
 
         socket.send("\n");
