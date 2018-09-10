@@ -604,7 +604,7 @@ struct Description
  +  Annotation denoting that a variable is a filename to a resource file, such
  +  as JSONs.
  +/
-struct ResourceFile;
+struct Resource;
 
 
 // filterUser
@@ -1293,7 +1293,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
         foreach (immutable i, ref member; this.tupleof)
         {
-            static if (isConfigurableVariable!member && hasUDA!(this.tupleof[i], ResourceFile))
+            static if (isConfigurableVariable!member && hasUDA!(this.tupleof[i], Resource))
             {
                 import std.path : buildNormalizedPath;
                 member = buildNormalizedPath(settings.resourceDirectory, member);

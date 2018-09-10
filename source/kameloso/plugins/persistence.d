@@ -309,7 +309,7 @@ public:
 final class PersistenceService : IRCPlugin
 {
     /// File with user definitions.
-    @ResourceFile string userFile = "users.json";
+    @Resource string userFile = "users.json";
 
     /// Associative array of user classifications, per account string name.
     IRCUser.Class[string] userClasses;

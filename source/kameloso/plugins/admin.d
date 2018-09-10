@@ -885,7 +885,7 @@ final class AdminPlugin : IRCPlugin
     }
 
     /// File with user definitions. Must be the same as in persistence.d.
-    @ResourceFile string userFile = "users.json";
+    @Resource string userFile = "users.json";
 
     /// Which sort of peek is currently in flight; see `peekPlugins`.
     PeekType currentPeekType;

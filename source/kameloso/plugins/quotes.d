@@ -308,7 +308,7 @@ final class QuotesPlugin : IRCPlugin
     @Settings QuotesSettings quotesSettings;
 
     /// Filename of file to save the quotes to.
-    @ResourceFile string quotesFile = "quotes.json";
+    @Resource string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;

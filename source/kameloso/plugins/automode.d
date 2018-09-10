@@ -426,7 +426,7 @@ final class AutomodePlugin : IRCPlugin
     @Settings AutomodeSettings automodeSettings;
 
     /// The file to read and save automode definitions from/to.
-    @ResourceFile string automodeFile = "automodes.json";
+    @Resource string automodeFile = "automodes.json";
 
     mixin IRCPluginImpl;
 }

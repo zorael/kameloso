@@ -159,7 +159,7 @@ final class SeenPlugin : IRCPlugin
      +  "/home/user/.local/share/kameloso/servers/irc.freenode.net/seen.json"
      +  after the plugin has been instantiated.
      +/
-    @ResourceFile string seenFile = "seen.json";
+    @Resource string seenFile = "seen.json";
 
 
     // mixin IRCPluginImpl

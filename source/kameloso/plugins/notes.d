@@ -508,7 +508,7 @@ final class NotesPlugin : IRCPlugin
     JSONStorage notes;
 
     /// Filename of file to save the notes to.
-    @ResourceFile string notesFile = "notes.json";
+    @Resource string notesFile = "notes.json";
 
     mixin IRCPluginImpl;
     mixin MessagingProxy;
