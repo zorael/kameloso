@@ -310,7 +310,7 @@ unittest
     f4.i = 0;
     f4.f = 0.1f;
 
-    f4.meldInto!(Yes.overwrite)(f3);
+    f4.meldInto!(MeldingStrategy.aggressive)(f3);
 
     with (f3)
     {
@@ -355,7 +355,7 @@ unittest
 
     User twoCopy = two;
 
-    one.meldInto!(No.overwrite)(two);
+    one.meldInto!(MeldingStrategy.conservative)(two);
     with (two)
     {
         assert((nickname == "kameloso^"), nickname);
@@ -369,7 +369,7 @@ unittest
 
     one.class_ = User.Class.blacklist;
 
-    one.meldInto!(Yes.overwrite)(twoCopy);
+    one.meldInto!(MeldingStrategy.overwriting)(twoCopy);
     with (twoCopy)
     {
         assert((nickname == "kameloso"), nickname);
@@ -435,7 +435,7 @@ unittest
     b2.nickname = "harbl";
     b2.server.address = "rizon.net";
 
-    b2.meldInto!(Yes.overwrite)(b1);
+    b2.meldInto!(MeldingStrategy.aggressive)(b1);
     assert((b1.nickname == "harbl"), b1.nickname);
     assert((b1.server.address == "rizon.net"), b1.server.address);
 
@@ -459,7 +459,7 @@ unittest
     assert((def.s == "other string"), def.s);
     assert(def.b);
 
-    abc.meldInto!(Yes.overwrite)(def);
+    abc.meldInto!(MeldingStrategy.aggressive)(def);
     assert((def.s == "some string"), def.s);
 
     struct Bools
@@ -485,7 +485,7 @@ unittest
     assert(inverted.b);
     inverted = backupInverted;
 
-    bools2.meldInto!(Yes.overwrite)(inverted);
+    bools2.meldInto!(MeldingStrategy.overwriting)(inverted);
     assert(!inverted.a);
     assert(!inverted.b);
     inverted = backupInverted;
