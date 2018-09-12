@@ -8,6 +8,34 @@ module kameloso.meld;
 import std.typecons : Flag, No, Yes;
 import std.traits : isArray, isAssociativeArray;
 
+
+// MeldingStrategy
+/++
+ +  To what extent a source should overwrite a target when melding.
+ +/
+enum MeldingStrategy
+{
+    /++
+     +  Takes care not to overwrite settings when either the source or the
+     +  target is `.init`.
+     +/
+    conservative,
+
+    /++
+     +  Only considers the `init`-ness of the source, so as not to overwrite
+     +  things with empty strings, but otherwise always considers the source to
+     +  trump the target.
+     +/
+    aggressive,
+
+    /++
+     +  works like aggressive but also always overwrites bools, regardless o
+     +  falseness.
+     +/
+    overwriting,
+}
+
+
 // meldInto
 /++
  +  Takes two structs or classes of the same type and melds them together,
