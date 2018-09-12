@@ -34,16 +34,20 @@ private:
 void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 {
     import kameloso.config : readConfigInto;
-    import kameloso.meld : meldInto;
+    import kameloso.meld : MeldingStrategy, meldInto;
 
     IRCBot tempBot;
     CoreSettings tempSettings;
 
     // These arguments are by reference.
+    // 1. Read arguments into bot
+    // 2. Read settings into temporary bot
+    // 3. Meld arguments *into* temporary bot, overwriting
+    // 4. Inherit temporary bot into bot
     settings.configFile.readConfigInto(tempBot, tempBot.server, tempSettings);
 
-    bot.meldInto!(Yes.overwrite)(tempBot);
-    settings.meldInto!(Yes.overwrite)(tempSettings);
+    bot.meldInto!(MeldingStrategy.aggressive)(tempBot);
+    settings.meldInto!(MeldingStrategy.aggressive)(tempSettings);
 
     bot = tempBot;
     settings = tempSettings;
@@ -154,71 +158,18 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             "version",      "Show version information", &shouldShowVersion,
         );
 
-        /+
-            The way we meld settings is weak against false settings when they
-            are also the default values of a member. There's no way to tell apart
-            an unset bool from a false one. They will be overwritten by any
-            true value from the configuration file. As such, manually parse
-            `argsBackup` and look for `--monochrome` and `--bright|brightTerminal`,
-            then override `settings.monochrome` and `settings.brightTerminal`
-            accordingly.
+        // 1. Populate `bot` and `settings` with getopt (above)
+        // 2. Manuallly adjust members `monochrome` and `brightTerminal`
+        // 3. Reinitialise the logger with new settings
+        meldSettingsFromFile(bot, settings);
+        argsBackup.manuallyAdjustGetoptBools(settings);
+        initLogger(settings.monochrome, settings.brightTerminal);
 
-            Add more entries here as we add getopt bools.
-         +/
-        import std.range : only;
-        foreach (immutable setting; only("--monochrome", "--bright")) //, "--brightTerminal"))
-        {
-            import kameloso.string : beginsWith, contains, nom;
-            import std.algorithm.iteration : filter;
-            import std.conv : to;
-
-            foreach (immutable arg; argsBackup.filter!(word => word.beginsWith(setting)))
-            {
-                if (!arg.contains('='))
-                {
-                    // It's an implicitly positive assignment which do not
-                    // exhibit the behaviour we're working around.
-                    // Try the next argument.
-                    continue;
-                }
-
-                string slice = arg;  // mutable
-                slice.nom('=');
-                immutable value = slice.to!bool;
-
-                if (value) continue;  // Explicitly positive, see above.
-
-                switch (setting)
-                {
-                case "--monochrome":
-                    settings.monochrome = value;
-                    break;
-
-                case "--bright":
-                case "--brightTerminal":
-                    settings.brightTerminal = value;
-                    break;
-
-                default:
-                    // Should never get here.
-                    assert(0, "Unexpected getopt: " ~ setting);
-                }
-            }
-        }
-
-        // Give common.d a copy of CoreSettings for printObject.
+        // 4. Give common.d a copy of `settings` for `printObject`
         static import kameloso.common;
         kameloso.common.settings = settings;
 
-        // Reinitialise the logger with settings from getopt, then meld, then
-        // repeat with settings from the meld.
-        initLogger(settings.monochrome, settings.brightTerminal);
-        meldSettingsFromFile(bot, settings);
-        initLogger(settings.monochrome, settings.brightTerminal);
-
-        // Update global settings after settings meld.
-        kameloso.common.settings = settings;
-
+        // 5. Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
@@ -230,14 +181,12 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
-        // Clear entries that are dashes.
+        // 6. Clear entries that are dashes
         import kameloso.objmanip : zeroMembers;
         zeroMembers!"-"(bot);
 
+        // 7. `bot` finished; inherit into `client`
         client.parser.bot = bot;
-
-        // We know CoreSettings now so reinitialise the logger
-        initLogger(settings.monochrome, settings.brightTerminal);
 
         if (results.helpWanted)
         {
