@@ -160,7 +160,7 @@ Open the file in there in a text editor and fill in the fields. Peruse it to get
 
 ### Command-line arguments
 
-You can override some configuration file entries with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will save these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
+You can override some settings with arguments on the command line, listed by calling the program with `--help`. If you specify some and also add `--writeconfig` it will save these changes to the file so you don't have to repeat them, without having to manually edit the configuration file.
 
 ```bash
 $ ./kameloso \
