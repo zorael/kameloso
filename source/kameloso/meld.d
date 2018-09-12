@@ -72,12 +72,12 @@ enum MeldingStrategy
  +  ---
  +
  +  Params:
- +      overwrite = Whether the source object should overwrite set (non-`init`)
- +          values in the receiving object.
+ +      strategy = To what extent the source object should overwrite set
+ +          (non-`init`) values in the receiving object.
  +      meldThis = Struct to meld (source).
  +      intoThis = Reference to struct to meld (target).
  +/
-void meldInto(Flag!"overwrite" overwrite = No.overwrite, Thing)
+void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, Thing)
     (Thing meldThis, ref Thing intoThis)
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     !is(intoThis == immutable))
@@ -85,7 +85,8 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
     import kameloso.traits : hasElaborateInit, isOfAssignableType;
     import std.traits : isArray, isSomeString, isType;
 
-    static if (is(Thing == struct) && !hasElaborateInit!Thing && !overwrite)
+    static if (is(Thing == struct) && !hasElaborateInit!Thing &&
+        (strategy == MeldingStrategy.conservative))
     {
         if (meldThis == Thing.init)
         {
@@ -95,20 +96,22 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
         }
     }
 
-    foreach (immutable i, ref member; intoThis.tupleof)
+    foreach (immutable i, ref targetMember; intoThis.tupleof)
     {
-        static if (!isType!member)
+        static if (!isType!targetMember)
         {
-            alias T = typeof(member);
+            alias T = typeof(targetMember);
 
             static if (is(T == struct) || is(T == class))
             {
                 // Recurse
-                meldThis.tupleof[i].meldInto!overwrite(member);
+                meldThis.tupleof[i].meldInto!strategy(targetMember);
             }
             else static if (isOfAssignableType!T)
             {
-                static if (overwrite)
+                // Overwriting strategy overwrites everything except where the
+                // source is clearly `.init`.
+                static if (strategy == MeldingStrategy.overwriting)
                 {
                     static if (is(T == float))
                     {
@@ -116,70 +119,117 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
 
                         if (!meldThis.tupleof[i].isNaN)
                         {
-                            member = meldThis.tupleof[i];
+                            targetMember = meldThis.tupleof[i];
                         }
                     }
                     else static if (is(T == bool))
                     {
-                        member = meldThis.tupleof[i];
+                        targetMember = meldThis.tupleof[i];
                     }
                     else
                     {
                         static if (is(Thing == class))
                         {
-                            member = meldThis.tupleof[i];
+                            targetMember = meldThis.tupleof[i];
                         }
                         else
                         {
                             if (meldThis.tupleof[i] != Thing.init.tupleof[i])
                             {
-                                member = meldThis.tupleof[i];
+                                targetMember = meldThis.tupleof[i];
                             }
                         }
                     }
                 }
-                else
+                // Aggressive strategy works like overwriting except it doesn't
+                // blindly overwrite struct bools.
+                else static if (strategy == MeldingStrategy.aggressive)
                 {
                     static if (is(T == float))
                     {
                         import std.math : isNaN;
 
-                        if (member.isNaN)
+                        if (!meldThis.tupleof[i].isNaN)
                         {
-                            member = meldThis.tupleof[i];
+                            targetMember = meldThis.tupleof[i];
+                        }
+                    }
+                    else static if (is(T == bool))
+                    {
+                        static if (is(Thing == class))
+                        {
+                            // We cannot tell whether it has the same value as
+                            // `Thing.init` does, as it would need to be instantiated.
+                            // Assume overwrite?
+                            targetMember = meldThis.tupleof[i];
+                        }
+                        else
+                        {
+                            if (targetMember == Thing.init.tupleof[i])
+                            {
+                                targetMember = meldThis.tupleof[i];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        static if (is(Thing == class))
+                        {
+                            targetMember = meldThis.tupleof[i];
+                        }
+                        else
+                        {
+                            if (meldThis.tupleof[i] != Thing.init.tupleof[i])
+                            {
+                                targetMember = meldThis.tupleof[i];
+                            }
+                        }
+                    }
+                }
+                // Conservative strategy takes care not to overwrite members
+                // with non-`init` values.
+                else if (strategy == MeldingStrategy.conservative)
+                {
+                    static if (is(T == float))
+                    {
+                        import std.math : isNaN;
+
+                        if (targetMember.isNaN)
+                        {
+                            targetMember = meldThis.tupleof[i];
                         }
                     }
                     else static if (is(T == enum))
                     {
-                        if (meldThis.tupleof[i] > member)
+                        if (meldThis.tupleof[i] > targetMember)
                         {
-                            member = meldThis.tupleof[i];
+                            targetMember = meldThis.tupleof[i];
                         }
                     }
                     else static if (is(T == string[]))
                     {
                         import std.algorithm.searching : canFind;
 
-                        if (!member.canFind(meldThis.tupleof[i]))
+                        if (!targetMember.canFind(meldThis.tupleof[i]))
                         {
-                            member ~= meldThis.tupleof[i];
+                            targetMember ~= meldThis.tupleof[i];
                         }
                     }
                     else static if (isArray!T && !isSomeString!T)
                     {
-                        member ~= meldThis.tupleof[i];
+                        targetMember ~= meldThis.tupleof[i];
                     }
                     else static if (is(T == bool))
                     {
                         static if (is(Thing == class))
                         {
-                            member = meldThis.tupleof[i];
+                            targetMember = meldThis.tupleof[i];
                         }
                         else
                         {
-                            if (member == Thing.init.tupleof[i])
+                            if (targetMember == Thing.init.tupleof[i])
                             {
-                                member = meldThis.tupleof[i];
+                                targetMember = meldThis.tupleof[i];
                             }
                         }
                     }
@@ -191,17 +241,17 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
 
                         static if (is(Thing == class))
                         {
-                            if (member == T.init)
+                            if (targetMember == T.init)
                             {
-                                member = meldThis.tupleof[i];
+                                targetMember = meldThis.tupleof[i];
                             }
                         }
                         else
                         {
-                            if ((member == T.init) ||
-                                (member == Thing.init.tupleof[i]))
+                            if ((targetMember == T.init) ||
+                                (targetMember == Thing.init.tupleof[i]))
                             {
-                                member = meldThis.tupleof[i];
+                                targetMember = meldThis.tupleof[i];
                             }
                         }
                     }
