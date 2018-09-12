@@ -499,13 +499,45 @@ unittest
     Asdf a, b;
     a.server = "a";
     b.server = "b";
-    b.meldInto!(Yes.overwrite)(a);
+    b.meldInto!(MeldingStrategy.aggressive)(a);
     assert((a.server == "b"), a.server);
 
     a.server = "a";
     b.server = Asdf.init.server;
-    b.meldInto!(Yes.overwrite)(a);
+    b.meldInto!(MeldingStrategy.aggressive)(a);
     assert((a.server == "a"), a.server);
+}
+
+
+// meldInto
+/++
+ +  Takes two structs or classes of the same type and melds them together,
+ +  making the members a union of the two.
+ +
+ +  Deprecated compatibility version taking an `overwrite` flag. Please use the
+ +  one taking a `MeldingStrategy` instead.
+ +
+ +  Params:
+ +      overwrite = Whether the source object should overwrite set (non-`init`)
+ +          values in the receiving object.
+ +      meldThis = Struct to meld (source).
+ +      intoThis = Reference to struct to meld (target).
+ +/
+deprecated("Use meldInto!MeldingStrategy instead")
+void meldInto(Flag!"overwrite" overwrite, Thing)(Thing meldThis, ref Thing intoThis)
+if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
+    !is(intoThis == immutable))
+{
+    static if (overwrite)
+    {
+        enum strategy = MeldingStrategy.aggressive;
+    }
+    else
+    {
+        enum strategy = MeldingStrategy.conservative;
+    }
+
+    return meldInto!(strategy, Thing)(meldThis, intoThis);
 }
 
 
