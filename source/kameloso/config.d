@@ -296,7 +296,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
             static if (is(T == bool) || is(T == enum))
             {
-                immutable comment = false;
+                enum comment = false;
             }
             else static if (is(T == float) || is(T == double))
             {
