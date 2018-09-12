@@ -137,6 +137,34 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     {
                         // Silently ignore AAs for now
                     }
+                    else static if (is(T == bool))
+                    {
+                        import std.string : toLower;
+
+                        switch (valueToSet.stripped.unquoted.toLower)
+                        {
+                        case "true":
+                        case "yes":
+                        case "on":
+                            thing.tupleof[i] = true;
+                            success = true;
+                            break;
+
+                        case "false":
+                        case "no":
+                        case "off":
+                            thing.tupleof[i] = false;
+                            success = true;
+                            break;
+
+                        default:
+                            logger.warningf("Invalid value for setting %s.%s: " ~
+                                `could not convert "%s" to a boolean value`,
+                                Thing.stringof.stripSuffix("Settings"),
+                                memberToSet, valueToSet);
+                            break;
+                        }
+                    }
                     else
                     {
                         try
