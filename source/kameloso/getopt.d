@@ -368,3 +368,66 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         return Next.continue_;
     }
 }
+
+
+// manuallyAjustGetoptBools
+/++
+ +  Manually adjust struct bools by looking for their getopt strings in an
+ +  `args` `string[]`.
+ +
+ +  The way we meld settings is weak against false settings when they are also
+ +  the default values of a member. There's no way to tell apart an unset bool
+ +  an unset bool from a false one. They will be overwritten by any true value
+ +  from the configuration file. As such, manually parse a backup `args` and
+ +  look for `--monochrome` and `--bright|brightTerminal`, then override
+ +  `core.monochrome` and `core.brightTerminal` accordingly.
+ +
+ +  Add more entries here as we add getopt bools.
+ +
+ +  Params:
+ +      args = Arguments passed to the program upon invocation.
+ +      core = Reference to the global `CoreSettings`.
+ +/
+void manuallyAdjustGetoptBools(const string[] args, ref CoreSettings core)
+{
+    import std.range : only;
+
+    foreach (immutable setting; only("--monochrome", "--bright")) //, "--brightTerminal"))
+    {
+        import kameloso.string : beginsWith, contains, nom;
+        import std.algorithm.iteration : filter;
+        import std.conv : to;
+
+        foreach (immutable arg; args.filter!(word => word.beginsWith(setting)))
+        {
+            string slice = arg;  // mutable
+            bool value;
+
+            if (arg.contains('='))
+            {
+                slice.nom('=');
+                value = slice.to!bool;
+            }
+            else
+            {
+                value = true;
+            }
+
+            switch (setting)
+            {
+            case "--monochrome":
+                core.monochrome = value;
+                break;
+
+            case "--bright":
+            case "--brightTerminal":
+                core.brightTerminal = value;
+                break;
+
+            default:
+                // Should never get here.
+                assert(0, "Unexpected getopt: " ~ setting);
+            }
+        }
+    }
+}
