@@ -1361,7 +1361,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.config : readConfigInto;
-        import kameloso.meld : meldInto;
+        import kameloso.meld : MeldingStrategy, meldInto;
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
@@ -1390,7 +1390,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 invalidEntries[section] ~= sectionEntries;
             }
 
-            tempSymbol.meldInto!(Yes.overwrite)(symbol);
+            tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
         }
 
         foreach (immutable i, ref symbol; this.tupleof)
@@ -1414,7 +1414,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     invalidEntries[section] ~= sectionEntries;
                 }
 
-                tempSymbol.meldInto!(Yes.overwrite)(symbol);
+                tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
             }
         }
 
@@ -2869,13 +2869,10 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
  +  If a user already exists, meld the new information into the old one.
  +
  +  Params:
- +      overwrite = Whether the catch should completely overwrite any old
- +          entries, or if they should be conservatively melded.
  +      plugin = Current `IRCPlugin`.
  +      newUser = The `kameloso.ircdefs.IRCUser` to catch.
  +/
-void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
-    (IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
+void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 {
     import kameloso.meld : meldInto;
 
@@ -2895,7 +2892,7 @@ void catchUser(Flag!"overwrite" overwrite = Yes.overwrite)
 
         if (auto user = newUser.nickname in state.users)
         {
-            newUser.meldInto!overwrite(*user);
+            newUser.meldInto(*user);
         }
         else
         {

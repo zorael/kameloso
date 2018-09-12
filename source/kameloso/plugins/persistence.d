@@ -30,7 +30,7 @@ private:
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    import kameloso.meld : meldInto;
+    import kameloso.meld : MeldingStrategy, meldInto;
     import std.algorithm.searching : canFind;
     import std.range : only;
     import std.typecons : Flag, No, Yes;
@@ -78,7 +78,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
 
             // Meld into the stored user, and store the union in the event
-            (*user).meldInto!(Yes.overwrite)(*stored);
+            (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
 
             // An account of "*" means the user logged out of services
             if (user.account == "*") stored.account = string.init;
