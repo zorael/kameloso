@@ -212,6 +212,73 @@ Next printHelp(GetoptResult results) @system
 }
 
 
+// writeConfig
+/++
+ +  Writes configuration to file, verbosely.
+ +
+ +  The filename is read from `kameloso.common.settings`.
+ +
+ +  Params:
+ +      client = Reference to the current `Client`.
+ +      bot = Reference to the current `IRCBot`.
+ +      customSettings = Reference string array to all the custom settings set
+ +          via `getopt`, to apply to things before saving to disk.
+ +
+ +  Returns:
+ +      `Next.returnSuccess` so the caller knows to return and exit.
+ +/
+Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings) @system
+{
+    import kameloso.bash : BashForeground;
+    import kameloso.common; // : logger, printObjects, printVersionInfo, settings, writeConfigurationFile;
+    import std.stdio : writeln;
+
+    // --writeconfig was passed; write configuration to file and quit
+
+    BashForeground bannertint;
+    string infotint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            bannertint = settings.brightTerminal ?
+                BashForeground.black : BashForeground.white;
+
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+        }
+    }
+
+    printVersionInfo(bannertint);
+    writeln();
+
+    // If we don't initialise the plugins there'll be no plugins array
+    client.initPlugins(customSettings);
+
+    client.writeConfigurationFile(settings.configFile);
+
+    // Reload saved file
+    meldSettingsFromFile(bot, settings);
+
+    printObjects(bot, bot.server, settings);
+
+    logger.logf("Configuration written to %s%s", infotint, settings.configFile);
+
+    if (!bot.admins.length && !bot.homes.length)
+    {
+        import kameloso.common : complainAboutIncompleteConfiguration;
+        logger.log("Edit it and make sure it has entries for at least one of the following:");
+        complainAboutIncompleteConfiguration();
+    }
+
+    return Next.returnSuccess;
+}
+
+
 public:
 
 
@@ -386,51 +453,8 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
         if (shouldWriteConfig)
         {
-            import kameloso.common : logger, writeConfigurationFile;
-
             // --writeconfig was passed; write configuration to file and quit
-
-            BashForeground bannertint;
-            string infotint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : colour;
-                    import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
-
-                    bannertint = settings.brightTerminal ?
-                        BashForeground.black : BashForeground.white;
-
-                    infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                }
-            }
-
-            printVersionInfo(bannertint);
-            writeln();
-
-            // If we don't initialise the plugins there'll be no plugins array
-            initPlugins(customSettings);
-
-            client.writeConfigurationFile(settings.configFile);
-
-            // Reload saved file
-            meldSettingsFromFile(bot, settings);
-
-            printObjects(bot, bot.server, settings);
-
-            logger.logf("Configuration written to %s%s", infotint, settings.configFile);
-
-            if (!bot.admins.length && !bot.homes.length)
-            {
-                import kameloso.common : complainAboutIncompleteConfiguration;
-                logger.log("Edit it and make sure it has entries for at least one of the following:");
-                complainAboutIncompleteConfiguration();
-            }
-
-            return Next.returnSuccess;
+            return writeConfig(client, bot, customSettings);
         }
 
         if (shouldShowSettings)
