@@ -144,6 +144,74 @@ unittest
 }
 
 
+// printHelp
+/++
+ +  Prints the `getopt` `helpWanted` help table to screen.
+ +
+ +  Merely leverages `defaultGetoptPrinter` for the printing.
+ +
+ +  Example:
+ +  ---
+ +  auto results = args.getopt(
+ +      "n|nickname",   "Bot nickname", &nickname,
+ +      "s|server",     "Server",       &server,
+ +      // ...
+ +  );
+ +
+ +  if (results.helpWanted)
+ +  {
+ +      printHelp(results);
+ +  }
+ +  ---
+ +
+ +  Params:
+ +      results = Results from a `getopt` call, usually with `.helpWanted` true.
+ +
+ +  Returns:
+ +      `Next.returnSuccess` to make sure the calling function returns.
+ +/
+import std.getopt : GetoptResult;
+Next printHelp(GetoptResult results) @system
+{
+    import kameloso.bash : BashForeground;
+    import kameloso.common : printVersionInfo, settings;
+    import std.getopt : defaultGetoptPrinter;
+    import std.stdio : writeln;
+
+    BashForeground headerTint = BashForeground.default_;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            headerTint = settings.brightTerminal ?
+                BashForeground.black : BashForeground.white;
+        }
+    }
+
+    printVersionInfo(headerTint);
+    writeln();
+
+    string headline = "Command-line arguments available:\n";
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+
+            immutable headlineTint = settings.brightTerminal ?
+                BashForeground.green : BashForeground.lightgreen;
+            headline = headline.colour(headlineTint);
+        }
+    }
+
+    defaultGetoptPrinter(headline, results.options);
+    writeln();
+    return Next.returnSuccess;
+}
+
+
 public:
 
 
@@ -284,6 +352,13 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         kameloso.common.settings = settings;
 
         // 5. Manually override or append channels, depending on `shouldAppendChannels`
+        // 6. Maybe show help
+        if (results.helpWanted)
+        {
+            // --help|-h was passed; show the help table and quit
+            return printHelp(results);
+        }
+
         if (shouldAppendChannels)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
@@ -301,43 +376,6 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
         // 7. `bot` finished; inherit into `client`
         client.parser.bot = bot;
-
-        if (results.helpWanted)
-        {
-            // --help|-h was passed; show the help table and quit
-
-            BashForeground headerTint = BashForeground.default_;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    headerTint = settings.brightTerminal ?
-                        BashForeground.black : BashForeground.white;
-                }
-            }
-
-            printVersionInfo(headerTint);
-            writeln();
-
-            string headline = "Command-line arguments available:\n";
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.bash : colour;
-
-                    immutable headlineTint = settings.brightTerminal ?
-                        BashForeground.green : BashForeground.lightgreen;
-                    headline = headline.colour(headlineTint);
-                }
-            }
-
-            defaultGetoptPrinter(headline, results.options);
-            writeln();
-            return Next.returnSuccess;
-        }
 
         if (shouldShowVersion)
         {
