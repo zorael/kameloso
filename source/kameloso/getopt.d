@@ -342,7 +342,6 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
     arraySep = ",";
 
-    with (client)
     with (client.parser)
     {
         auto results = args.getopt(
@@ -465,9 +464,9 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
             printObjects!(No.printAll)(bot, bot.server, settings);
 
-            initPlugins(customSettings);
+            client.initPlugins(customSettings);
 
-            foreach (plugin; plugins) plugin.printSettings();
+            foreach (plugin; client.plugins) plugin.printSettings();
 
             return Next.returnSuccess;
         }
