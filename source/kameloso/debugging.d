@@ -425,7 +425,7 @@ void generateAsserts(ref Client client) @system
         stdout.lockingTextWriter.formatBotAssignment(parser.bot);
 
         writeln();
-        writeln("Paste raw event strings and hit Enter to generate an assert block.");
+        writeln("// Paste raw event strings and hit Enter to generate an assert block.");
         writeln();
 
         string input;
