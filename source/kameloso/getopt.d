@@ -54,66 +54,93 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
 }
 
 
-// manuallyAjustGetoptBools
+// ajustGetopt
 /++
- +  Manually adjust struct bools by looking for their getopt strings in an
- +  `args` `string[]`.
+ +  Adjust values set by getopt, by looking for setting strings in the `args`
+ +  `string[]` and manually overriding melded values with them.
  +
  +  The way we meld settings is weak against false settings when they are also
  +  the default values of a member. There's no way to tell apart an unset bool
  +  an unset bool from a false one. They will be overwritten by any true value
- +  from the configuration file. As such, manually parse a backup `args` and
- +  look for `--monochrome` and `--bright|brightTerminal`, then override
- +  `core.monochrome` and `core.brightTerminal` accordingly.
+ +  from the configuration file.
  +
- +  Add more entries here as we add getopt bools.
+ +  As such, manually parse a backup `args` and look for some passed strings,
+ +  then override the variable that was set thus accordingly.
  +
  +  Params:
  +      args = Arguments passed to the program upon invocation.
- +      core = Reference to the global `CoreSettings`.
+ +      option = String option in long `--long` or short `-s` form, including
+ +          dashes, with an equals sign between option name and value if
+ +          applicable (in all cases except bools).
+ +      rest = Remaining `args` and `option` s to call recursively.
  +/
-void manuallyAdjustGetoptBools(const string[] args, ref CoreSettings core)
+void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {
-    import std.range : only;
+    import kameloso.string : beginsWith, contains, nom;
+    import std.algorithm.iteration : filter;
 
-    foreach (immutable setting; only("--monochrome", "--bright")) //, "--brightTerminal"))
+    static assert((!Rest.length || (Rest.length % 2 == 0)),
+        "adjustGetopt must be called with string option, value pointer pairs");
+
+    foreach (immutable arg; args.filter!(word => word.beginsWith(option)))
     {
-        import kameloso.string : beginsWith, contains, nom;
-        import std.algorithm.iteration : filter;
-        import std.conv : to;
+        string slice = arg;  // mutable
 
-        foreach (immutable arg; args.filter!(word => word.beginsWith(setting)))
+        if (arg.contains('='))
         {
-            string slice = arg;  // mutable
-            bool value;
+            import std.conv : to;
 
-            if (arg.contains('='))
-            {
-                slice.nom('=');
-                value = slice.to!bool;
-            }
-            else
-            {
-                value = true;
-            }
-
-            switch (setting)
-            {
-            case "--monochrome":
-                core.monochrome = value;
-                break;
-
-            case "--bright":
-            case "--brightTerminal":
-                core.brightTerminal = value;
-                break;
-
-            default:
-                // Should never get here.
-                assert(0, "Unexpected getopt: " ~ setting);
-            }
+            immutable realWord = slice.nom('=');
+            if (realWord != option) continue;
+            *ptr = slice.to!T;
+        }
+        else static if (is(T == bool))
+        {
+            if (arg != option) continue;
+            *ptr = true;
+        }
+        else
+        {
+            import std.getopt : GetOptException;
+            import std.format : format;
+            throw new GetOptException("No %s value passed to %s".format(T.stringof, option));
         }
     }
+
+    static if (rest.length)
+    {
+        return adjustGetopt(args, rest);
+    }
+}
+
+///
+unittest
+{
+    string[] args =
+    [
+        "./kameloso", "--monochrome",
+        "--server=irc.freenode.net",
+        //"--nickname", "kameloso"  // Not supported under the current design
+    ];
+
+    struct S
+    {
+        bool monochrome;
+        string server;
+        string nickname;
+    }
+
+    S s;
+
+    args.adjustGetopt(
+        //"--nickname", &s.nickname,
+        "--server", &s.server,
+        "--monochrome", &s.monochrome,
+    );
+
+    assert(s.monochrome);
+    assert((s.server == "irc.freenode.net"), s.server);
+    //assert((s.nickname == "kameloso"), s.nickname);
 }
 
 
@@ -225,7 +252,11 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         // 2. Manuallly adjust members `monochrome` and `brightTerminal`
         // 3. Reinitialise the logger with new settings
         meldSettingsFromFile(bot, settings);
-        argsBackup.manuallyAdjustGetoptBools(settings);
+        adjustGetopt(argsBackup,
+            "--bright", &settings.brightTerminal,
+            "--brightTerminal", &settings.brightTerminal,
+            "--monochrome", &settings.monochrome,
+        );
         initLogger(settings.monochrome, settings.brightTerminal);
 
         // 4. Give common.d a copy of `settings` for `printObject`
