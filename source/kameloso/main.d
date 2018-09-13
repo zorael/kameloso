@@ -921,8 +921,8 @@ int main(string[] args)
     // set on the command-line using `--set plugin.setting=value`
     string[] customSettings;
 
-    // Initialise the logger immediately so it's always available, reinit later
-    // when we know the settings for monochrome
+    // Initialise the logger immediately so it's always available.
+    // handleGetopt reinits later when we know the settings for monochrome
     initLogger(settings.monochrome, settings.brightTerminal);
 
     scope(failure)
@@ -935,10 +935,10 @@ int main(string[] args)
 
     setupSignals();
 
-    immutable nextAction = client.tryGetopt(args, customSettings);
+    immutable actionAfterGetopt = client.tryGetopt(args, customSettings);
 
     with (Next)
-    final switch (nextAction)
+    final switch (actionAfterGetopt)
     {
         case continue_:
         case retry:  // should never happen
