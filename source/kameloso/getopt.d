@@ -472,21 +472,11 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             return Next.returnSuccess;
         }
 
-        debug
-        if (shouldGenerateAsserts)
+        debug if (shouldGenerateAsserts)
         {
-            import kameloso.common : logger, printObject;
-            import kameloso.debugging : generateAsserts;
-            import kameloso.irc : IRCParseException;
-
             // --gen|--generate was passed, enter assert generation
-            try client.generateAsserts();
-            catch (const IRCParseException e)
-            {
-                logger.error("IRC Parse Exception: ", e.msg);
-                printObject(e.event);
-            }
-
+            import kameloso.debugging : generateAsserts;
+            client.generateAsserts();
             return Next.returnSuccess;
         }
 
