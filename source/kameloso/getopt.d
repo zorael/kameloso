@@ -312,7 +312,7 @@ public:
 Next handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
     import kameloso.bash : BashForeground;
-    import kameloso.common : initLogger, printObjects, printVersionInfo, settings;
+    import kameloso.common : printVersionInfo, settings;
     import std.format : format;
     import std.getopt;
     import std.stdio : stdout, writeln;
@@ -402,22 +402,29 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
                             &shouldShowVersion,
         );
 
-        // 1. Populate `bot` and `settings` with getopt (above)
-        // 2. Manuallly adjust members `monochrome` and `brightTerminal`
-        // 3. Reinitialise the logger with new settings
+        /+
+            1. Populate `bot` and `settings` with getopt (above)
+            2. Meld with settings from file
+            3. Adjust members `monochrome` and `brightTerminal` to counter the
+               fact that melding doesn't work well with bools that don't have
+               an "unset" state
+            4. Reinitialise the logger with new settings
+         +/
+
         meldSettingsFromFile(bot, settings);
         adjustGetopt(argsBackup,
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
             "--monochrome", &settings.monochrome,
         );
+
+        import kameloso.common : initLogger;
         initLogger(settings.monochrome, settings.brightTerminal);
 
-        // 4. Give common.d a copy of `settings` for `printObject`
+        // 5. Give common.d a copy of `settings` for `printObject`
         static import kameloso.common;
         kameloso.common.settings = settings;
 
-        // 5. Manually override or append channels, depending on `shouldAppendChannels`
         // 6. Maybe show help
         if (results.helpWanted)
         {
@@ -425,6 +432,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             return printHelp(results);
         }
 
+        // 7. Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
             if (inputHomes.length) bot.homes ~= inputHomes;
@@ -436,13 +444,14 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             if (inputChannels.length) bot.channels = inputChannels;
         }
 
-        // 6. Clear entries that are dashes
+        // 8. Clear entries that are dashes
         import kameloso.objmanip : zeroMembers;
         zeroMembers!"-"(bot);
 
         // 7. `bot` finished; inherit into `client`
         client.parser.bot = bot;
 
+        // 9. Handle showstopper arguments (that display something and then exits)
         if (shouldShowVersion)
         {
             // --version was passed; show info and quit
@@ -459,6 +468,8 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
+            import kameloso.common : printObjects;
+
             printVersionInfo(BashForeground.white);
             writeln();
 
@@ -479,6 +490,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             return Next.returnSuccess;
         }
 
+        // No showstopper arguments passed; return and continue connecting
         return Next.continue_;
     }
 }
