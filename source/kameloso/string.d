@@ -19,9 +19,9 @@ import std.typecons : Flag, No, Yes;
  +
  +  Example:
  +  ---
- +  string foobar = "foo bar";
+ +  string foobar = "foo bar!";
  +  string foo = foobar.nom(" ");
- +  string bar = foobar;
+ +  string bar = foobar.nom("!");
  +
  +  assert((foo == "foo"), foo);
  +  assert((bar == "bar"), bar);
