@@ -1,0 +1,4 @@
+#!/bin/sh
+
+dmd -g -ofk source/kameloso/*.d || return 1
+gdb --batch -ex run k 2>&1 | grep __res_context_hostalias
