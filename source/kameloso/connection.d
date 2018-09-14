@@ -431,6 +431,7 @@ struct ResolveAttempt
  +  `Address` IPs.
  +
  +  Params:
+ +      conn = Reference to the current `Connection`.
  +      address = String address to look up.
  +      port = Remote port build into the `Address`.
  +      useIPv6 = Whether to include resolved IPv6 addresses or not.
