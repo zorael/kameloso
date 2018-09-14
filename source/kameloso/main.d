@@ -1176,19 +1176,28 @@ int main(string[] args)
             // valid server to create a directory for.
             initPluginResources();
 
-            conn.connect(*abort);
+            immutable actionAfterConnect = tryConnect(client);
 
-            if (!conn.connected)
+            with (Next)
+            final switch (actionAfterConnect)
             {
-                // Save if configuration says we should
-                if (settings.saveOnExit)
-                {
-                    client.writeConfigurationFile(settings.configFile);
-                }
+                case continue_:
+                    break;
 
-                teardownPlugins();
-                logger.info("Exiting...");
-                return 1;
+                case returnSuccess:
+                case retry:     // should never happen
+                    assert(0);  // should never happen
+
+                case returnFailure:
+                    // Save if it's not the first connection andconfiguration says we should
+                    if (!firstConnect && settings.saveOnExit)
+                    {
+                        client.writeConfigurationFile(settings.configFile);
+                    }
+
+                    teardownPlugins();
+                    logger.info("Exiting...");
+                    return 1;
             }
 
             parser = IRCParser(bot);
