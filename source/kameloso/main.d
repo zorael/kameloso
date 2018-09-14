@@ -427,7 +427,7 @@ Next mainLoop(ref Client client)
     Next next;
 
     // Instantiate a Generator to read from the socket and yield lines
-    auto generator = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
+    auto listener = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
 
     /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -440,10 +440,10 @@ Next mainLoop(ref Client client)
 
     while (next == Next.continue_)
     {
-        if (generator.state == Fiber.State.TERM)
+        if (listener.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected; reconnect
-            generator.reset();
+            listener.reset();
             return Next.continue_;
         }
 
@@ -455,11 +455,11 @@ Next mainLoop(ref Client client)
         }
 
         // Call the generator, query it for event lines
-        generator.call();
+        listener.call();
 
         with (client)
         with (client.parser)
-        foreach (immutable line; generator)
+        foreach (immutable line; listener)
         {
             // Go through Fibers awaiting a point in time, regardless of whether
             // something was read or not.
