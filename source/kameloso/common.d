@@ -1,47 +1,18 @@
-
 module kameloso.common;
 
 CoreSettings settings;
 
-
-
-
-
 struct CoreSettings
 {
-    
-    bool ipv6 ;
-
+    bool ipv6;
 }
-
-
-
 
 struct Client
 {
-    import kameloso.connection ;
+    import kameloso.connection;
+    import kameloso.irc;
 
-    
-    
-
-    
     Connection conn;
-
-    
-    import kameloso.irc ;
     IRCParser parser;
-
-bool* abort;
-
+    bool* abort;
 }
-
-
-
-
-enum Next
-{
-    returnFailure, 
-}
-
-
-

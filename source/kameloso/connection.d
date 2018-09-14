@@ -1,45 +1,19 @@
-
 module kameloso.connection;
 
-struct Connection
-{
-}
+struct Connection {}
 
+struct ResolveAttempt {}
 
-
-
-struct ResolveAttempt
-{
-    
-    enum State
-    {
-        error    }
-
-    
-    State state;
-
-}
-
-
-
-
-void resolveFiber(Connection , string address, ushort port,
-bool , ref bool )
+void resolveFiber(Connection, string address, ushort port, bool, ref bool)
 {
     import std.socket : AddressFamily, SocketException, getAddress;
+    import std.stdio;
 
-    enum resolveAttempts = 15;
+    getAddress(address, port);
 
-    alias State = ResolveAttempt.State;
-    ResolveAttempt attempt;
-
-    foreach (i; 0..resolveAttempts)
-        try
-getAddress(address, port)
-;
-
-        catch (SocketException e)
-            switch (e.msg)
-            default:
-                attempt.state = State.error;
+    foreach (i; 0 .. 0)
+    {
+        try writeln();
+        catch (Exception e) {}
+    }
 }

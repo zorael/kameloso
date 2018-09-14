@@ -1,24 +1,12 @@
-
 module kameloso.ircdefs;
 
 struct IRCBot
 {
-        
-        IRCServer server;
-
+    IRCServer server;
 }
-
-
 
 struct IRCServer
 {
-    
-    string address ;
-
-    
-    ushort port ;
-
+    string address;
+    ushort port;
 }
-
-
-
