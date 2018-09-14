@@ -1044,38 +1044,38 @@ Next tryResolve(ref Client client)
         with (State)
         final switch (attempt.state)
         {
-            case preresolve:
-                // No message for this
-                continue;
+        case preresolve:
+            // No message for this
+            continue;
 
-            case success:
-                logger.infof("%s%s resolved into %s%s%2$s IPs.",
-                    parser.bot.server.address, logtint, infotint, conn.ips.length);
-                return Next.continue_;
+        case success:
+            logger.infof("%s%s resolved into %s%s%2$s IPs.",
+                parser.bot.server.address, logtint, infotint, conn.ips.length);
+            return Next.continue_;
 
-            case exception:
-                logger.warning("Socket exception caught when resolving server adddress: ", attempt.error);
+        case exception:
+            logger.warning("Socket exception caught when resolving server adddress: ", attempt.error);
 
-                enum resolveAttempts = 15;  // FIXME
-                if (attempt.numRetry+1 < resolveAttempts)
-                {
-                    import core.time : seconds;
+            enum resolveAttempts = 15;  // FIXME
+            if (attempt.numRetry+1 < resolveAttempts)
+            {
+                import core.time : seconds;
 
-                    logger.logf("Network down? Retrying in %s%d%s seconds.",
-                        infotint, incrementedRetryDelay, logtint);
-                    interruptibleSleep(incrementedRetryDelay.seconds, *abort);
-                    incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-                }
-                continue;
+                logger.logf("Network down? Retrying in %s%d%s seconds.",
+                    infotint, incrementedRetryDelay, logtint);
+                interruptibleSleep(incrementedRetryDelay.seconds, *abort);
+                incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+            }
+            continue;
 
-            case error:
-                logger.error("Socket exception caught when resolving server adddress: ", attempt.error);
-                logger.log("Could not resolve address to IPs. Verify your server address.");
-                return Next.returnFailure;
+        case error:
+            logger.error("Socket exception caught when resolving server adddress: ", attempt.error);
+            logger.log("Could not resolve address to IPs. Verify your server address.");
+            return Next.returnFailure;
 
-            case failure:
-                logger.error("Failed to resolve host.");
-                return Next.returnFailure;
+        case failure:
+            logger.error("Failed to resolve host.");
+            return Next.returnFailure;
         }
     }
 
