@@ -1225,20 +1225,27 @@ int main(string[] args)
 
             conn.reset();
 
-            import kameloso.connection : ResolveAttempt, resolveFiber;
-            import kameloso.constants : Timeout;
-            import std.concurrency : Generator;
+            immutable actionAfterResolve = tryResolve(client);
 
-            alias State = ResolveAttempt.State;
-            auto resolver = new Generator!ResolveAttempt(() =>
-                resolveFiber(client.conn, bot.server.address, bot.server.port,
-                settings.ipv6, *(client.abort)));
+            with (Next)
+            final switch (actionAfterResolve)
+            {
+            case continue_:
+                break;
 
-            uint incrementedRetryDelay = Timeout.retry;
-            enum incrementMultiplier = 0.8; //1.5
+            case returnSuccess:  // should never happen
+            case retry:  // should never happen
+                assert(0);
 
-            bool resolved;
-            string infotint, logtint;
+            case returnFailure:
+                // No need to teardown; if it's the first connect there's
+                // nothing to tear down, and if it's after the first, later code
+                // will have already torn it down.
+                logger.info("Exiting...");
+                return 1;
+            }
+
+            string infotint; //, logtint;
 
             version(Colours)
             {
@@ -1249,62 +1256,8 @@ int main(string[] args)
                     import std.experimental.logger : LogLevel;
 
                     infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                    logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+                    //logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
                 }
-            }
-
-            resolver.call();
-
-            with (client)
-            resolverloop:
-            foreach (attempt; resolver)
-            {
-                with (State)
-                final switch (attempt.state)
-                {
-                    case preresolve:
-                        // No message for this
-                        continue;
-
-                    case success:
-                        logger.infof("%s%s resolved into %s%s%2$s IPs.",
-                            bot.server.address, logtint, infotint, conn.ips.length);
-                        resolved = true;
-                        break resolverloop;
-
-                    case exception:
-                        logger.warning("Socket exception caught when resolving server adddress: ", attempt.error);
-
-                        enum resolveAttempts = 15;  // FIXME
-                        if (attempt.numRetry+1 < resolveAttempts)
-                        {
-                            import core.time : seconds;
-
-                            logger.logf("Network down? Retrying in %s%d%s seconds.",
-                                infotint, incrementedRetryDelay, logtint);
-                            interruptibleSleep(incrementedRetryDelay.seconds, *abort);
-                            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
-                        }
-                        continue;
-
-                    case error:
-                        logger.error("Socket exception caught when resolving server adddress: ", attempt.error);
-                        logger.log("Could not resolve address to IPs. Verify your server address.");
-                        break resolverloop;
-
-                    case failure:
-                        logger.error("Failed to resolve host.");
-                        break resolverloop;
-                }
-            }
-
-            if (!resolved)
-            {
-                // No need to teardown; if it's the first connect there's
-                // nothing to tear down, and if it's after the first, later code
-                // will have already torn it down.
-                logger.info("Exiting...");
-                return 1;
             }
 
             import std.file : exists;
