@@ -109,8 +109,6 @@ public:
      +/
     bool resolve(const string address, const ushort port, const bool useIPv6, ref bool abort)
     {
-        import std.algorithm : filter;
-        import std.array : array;
         import std.socket : AddressFamily, SocketException, getAddress;
 
         enum resolveAttempts = 15;
@@ -124,8 +122,12 @@ public:
             with (AddressFamily)
             try
             {
+                import std.algorithm.iteration : filter, uniq;
+                import std.array : array;
+
                 ips = getAddress(address, port)
                     .filter!(ip => (ip.addressFamily == INET) || ((ip.addressFamily == INET6) && useIPv6))
+                    .uniq!((a,b) => a.toString == b.toString)
                     .array;
                 return true;
             }
