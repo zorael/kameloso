@@ -455,3 +455,36 @@ void listenFiber(Connection conn, ref bool abort)
         memmove(buffer.ptr, (buffer.ptr + pos), (ubyte.sizeof * start));
     }
 }
+
+
+// ConnectionAttempt
+/++
+ +  Embodies the state of a connection attempt.
+ +/
+struct ConnectionAttempt
+{
+    import std.socket : Address;
+
+    /// At what state in the connection process this attempt is currently at.
+    enum State
+    {
+        preconnect,         /// About to connect.
+        connected,          /// Successfully connected.
+        delayThenReconnect, /// Failed to connect; should delay and retry.
+        delayThenNextIP,    /// Failed to reconnect several times; next IP.
+        noMoreIPs,          /// Exhausted all IPs anc could not connect.
+        error,              /// Error connecting; should abort.
+    }
+
+    /// The current state of the attempt.
+    State state;
+
+    /// The IP that the attempt is trying to connect to.
+    Address ip;
+
+    /// The error message as thrown by an exception.
+    string error;
+
+    /// The number of retries so far towards this `ip`.
+    uint numRetry;
+}
