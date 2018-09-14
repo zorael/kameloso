@@ -588,3 +588,30 @@ void connectFiber(ref Connection conn, ref bool abort)
     attempt.state = State.noMoreIPs;
     yield(attempt);
 }
+
+
+// ResolveAttempt
+/++
+ +  Embodies the state of an address resolution attempt.
+ +/
+struct ResolveAttempt
+{
+    /// At what state the resolution process this attempt is currently at.
+    enum State
+    {
+        preresolve,     /// About to resolve.
+        success,        /// Successfully resolved.
+        exception,      /// Failure, recoverable exception thrown.
+        error,          /// Failure, unrecoverable exception thrown.
+        failure,        /// Resolution failure; should abort.
+    }
+
+    /// The current state of the attempt.
+    State state;
+
+    /// The error message as thrown by an exception.
+    string error;
+
+    /// The number of retries so far towards his `address`.
+    uint numRetry;
+}
