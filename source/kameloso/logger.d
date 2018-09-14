@@ -200,38 +200,3 @@ final class KamelosoLogger : Logger
     }
 }
 
-///
-unittest
-{
-    import std.experimental.logger : LogLevel;
-
-    Logger log_ = new KamelosoLogger(LogLevel.all, true, false);
-
-    log_.log("log: log");
-    log_.info("log: info");
-    log_.warning("log: warning");
-    log_.error("log: error");
-    // log_.fatal("log: FATAL");  // crashes the program
-    log_.trace("log: trace");
-
-    version(Colours)
-    {
-        log_ = new KamelosoLogger(LogLevel.all, false, true);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
-
-        log_ = new KamelosoLogger(LogLevel.all, false, false);
-
-        log_.log("log: log");
-        log_.info("log: info");
-        log_.warning("log: warning");
-        log_.error("log: error");
-        // log_.fatal("log: FATAL");
-        log_.trace("log: trace");
-    }
-}

@@ -49,159 +49,9 @@ T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator
     const string callingFile = __FILE__, const size_t callingLine = __LINE__) pure
 if (isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 {
-    static if (decode || is(T : dstring) || is(T : wstring))
-    {
-        import std.string : indexOf;
-        // dstring and wstring only work with indexOf, not countUntil
-        immutable index = line.indexOf(separator);
-    }
-    else
-    {
-        // Only do this if we know it's not user text
-        import std.algorithm.searching : countUntil;
-        import std.string : representation;
-
-        static if (isSomeString!C)
-        {
-            immutable index = line.representation.countUntil(separator.representation);
-        }
-        else
-        {
-            immutable index = line.representation.countUntil(cast(ubyte)separator);
-        }
-    }
-
-    if (index == -1)
-    {
-        import std.format : format;
-        throw new Exception(`Tried to nom too much: "%s" with "%s"`
-            .format(line, separator), callingFile, callingLine);
-    }
-
-    static if (isSomeString!C)
-    {
-        immutable separatorLength = separator.length;
-    }
-    else
-    {
-        enum separatorLength = 1;
-    }
-
-    scope(exit) line = line[(index+separatorLength)..$];
-
-    return line[0..index];
+    return T.init;
 }
 
-///
-unittest
-{
-    import std.conv : to;
-
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(" :");
-        assert(lorem == "Lorem ipsum", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(" :");
-        assert(lorem == "Lorem ipsum", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(':');
-        assert(lorem == "Lorem ipsum ", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(':');
-        assert(lorem == "Lorem ipsum ", lorem);
-        assert(line == "sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom(' ');
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)(' ');
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom("");
-        assert(!lorem.length, lorem);
-        assert(line == "Lorem ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)("");
-        assert(!lorem.length, lorem);
-        assert(line == "Lorem ipsum :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom("Lorem ipsum");
-        assert(!lorem.length, lorem);
-        assert(line == " :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable lorem = line.nom!(Yes.decode)("Lorem ipsum");
-        assert(!lorem.length, lorem);
-        assert(line == " :sit amet", line);
-    }
-    {
-        string line = "Lorem ipsum :sit amet";
-        immutable dchar dspace = ' ';
-        immutable lorem = line.nom(dspace);
-        assert(lorem == "Lorem", lorem);
-        assert(line == "ipsum :sit amet", line);
-    }
-    {
-        dstring dline = "Lorem ipsum :sit amet"d;
-        immutable dspace = " "d;
-        immutable lorem = dline.nom(dspace);
-        assert((lorem == "Lorem"d), lorem.to!string);
-        assert((dline == "ipsum :sit amet"d), dline.to!string);
-    }
-    {
-        dstring dline = "Lorem ipsum :sit amet"d;
-        immutable wchar wspace = ' ';
-        immutable lorem = dline.nom(wspace);
-        assert((lorem == "Lorem"d), lorem.to!string);
-        assert((dline == "ipsum :sit amet"d), dline.to!string);
-    }
-    {
-        wstring wline = "Lorem ipsum :sit amet"w;
-        immutable wchar wspace = ' ';
-        immutable lorem = wline.nom(wspace);
-        assert((lorem == "Lorem"w), lorem.to!string);
-        assert((wline == "ipsum :sit amet"w), wline.to!string);
-    }
-    {
-        wstring wline = "Lorem ipsum :sit amet"w;
-        immutable wspace = " "w;
-        immutable lorem = wline.nom(wspace);
-        assert((lorem == "Lorem"w), lorem.to!string);
-        assert((wline == "ipsum :sit amet"w), wline.to!string);
-    }
-    {
-        string user = "foo!bar@asdf.adsf.com";
-        user = user.nom('!');
-        assert((user == "foo"), user);
-    }
-    {
-        immutable def = "abc def ghi"[4..$].nom(" ");
-        assert((def == "def"), def);
-    }
-}
 
 
 // plurality
@@ -227,16 +77,7 @@ pragma(inline)
 T plurality(T)(const int num, const T singular, const T plural) pure nothrow @nogc
 if (isSomeString!T)
 {
-    return ((num == 1) || (num == -1)) ? singular : plural;
-}
-
-///
-unittest
-{
-    assert(10.plurality("one","many") == "many");
-    assert(1.plurality("one", "many") == "one");
-    assert((-1).plurality("one", "many") == "one");
-    assert(0.plurality("one", "many") == "many");
+    return T.init;
 }
 
 
@@ -257,26 +98,7 @@ unittest
 private T unenclosed(char token = '"', T)(const T line) pure nothrow @nogc @property
 if (isSomeString!T)
 {
-    enum escaped = "\\" ~ token;
-
-    if (line.length < 2)
-    {
-        return line;
-    }
-    else if ((line[0] == token) && (line[$-1] == token))
-    {
-        if ((line.length >= 3) && (line[$-2..$] == escaped))
-        {
-            // End quote is escaped
-            return line;
-        }
-
-        return line[1..$-1].unenclosed!token;
-    }
-    else
-    {
-        return line;
-    }
+    return T.init;
 }
 
 
@@ -302,20 +124,9 @@ if (isSomeString!T)
 pragma(inline)
 T unquoted(T)(const T line) pure nothrow @nogc @property
 {
-    return unenclosed!'"'(line);
+    return T.init;
 }
 
-///
-unittest
-{
-    assert(`"Lorem ipsum sit amet"`.unquoted == "Lorem ipsum sit amet");
-    assert(`"""""Lorem ipsum sit amet"""""`.unquoted == "Lorem ipsum sit amet");
-    // Unbalanced quotes are left untouched
-    assert(`"Lorem ipsum sit amet`.unquoted == `"Lorem ipsum sit amet`);
-    assert(`"Lorem \"`.unquoted == `"Lorem \"`);
-    assert("\"Lorem \\\"".unquoted == "\"Lorem \\\"");
-    assert(`"\"`.unquoted == `"\"`);
-}
 
 
 // unsinglequoted
@@ -340,20 +151,9 @@ unittest
 pragma(inline)
 T unsinglequoted(T)(const T line) pure nothrow @nogc @property
 {
-    return unenclosed!'\''(line);
+    return T.init;
 }
 
-///
-unittest
-{
-    assert(`'Lorem ipsum sit amet'`.unsinglequoted == "Lorem ipsum sit amet");
-    assert(`''''Lorem ipsum sit amet''''`.unsinglequoted == "Lorem ipsum sit amet");
-    // Unbalanced quotes are left untouched
-    assert(`'Lorem ipsum sit amet`.unsinglequoted == `'Lorem ipsum sit amet`);
-    assert(`'Lorem \'`.unsinglequoted == `'Lorem \'`);
-    assert("'Lorem \\'".unsinglequoted == "'Lorem \\'");
-    assert(`'`.unsinglequoted == `'`);
-}
 
 
 // beginsWith
@@ -380,41 +180,17 @@ pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure nothrow @nogc
 if (isSomeString!T)
 {
-    if ((needle.length > haystack.length) || !haystack.length)
-    {
-        return false;
-    }
-
-    if (needle.length && (haystack[0] != needle[0])) return false;
-
-    return (haystack[0..needle.length] == needle);
+    return false;
 }
-
-///
-unittest
-{
-    assert("Lorem ipsum sit amet".beginsWith("Lorem ip"));
-    assert(!"Lorem ipsum sit amet".beginsWith("ipsum sit amet"));
-    assert("Lorem ipsum sit amet".beginsWith(""));
-}
-
 
 /// Ditto
 pragma(inline)
 bool beginsWith(T)(const T line, const ubyte charcode) pure nothrow @nogc
 if (isSomeString!T)
 {
-    if (!line.length) return false;
-
-    return (line[0] == charcode);
+    return false;
 }
 
-///
-unittest
-{
-    assert(":Lorem ipsum".beginsWith(':'));
-    assert(!":Lorem ipsum".beginsWith(';'));
-}
 
 
 // beginsWithOneOf
@@ -437,23 +213,7 @@ pragma(inline)
 bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @nogc
 if (isSomeString!T)
 {
-    // All strings begin with an empty string
-    if (!needles.length) return true;
-
-    // An empty line begins with nothing
-    if (!haystack.length) return false;
-
-    return needles.contains(haystack[0]);
-}
-
-///
-unittest
-{
-    assert("#channel".beginsWithOneOf("#%+"));
-    assert(!"#channel".beginsWithOneOf("~%+"));
-    assert("".beginsWithOneOf(""));
-    assert("abc".beginsWithOneOf(string.init));
-    assert(!"".beginsWithOneOf("abc"));
+    return false;
 }
 
 
@@ -462,19 +222,7 @@ pragma(inline)
 bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @nogc
 if (isSomeString!T)
 {
-    // All strings begin with an empty string, even if we're only looking at one character
-    if (!needles.length) return true;
-
-    return needles.contains(haystraw);
-}
-
-///
-unittest
-{
-    assert('#'.beginsWithOneOf("#%+"));
-    assert(!'#'.beginsWithOneOf("~%+"));
-    assert('a'.beginsWithOneOf(string.init));
-    assert(!'d'.beginsWithOneOf("abc"));
+    return false;
 }
 
 
@@ -503,47 +251,7 @@ unittest
 string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure
 {
-    string slice = line.strippedLeft;  // mutable
-
-    // the onus is on the caller that slice begins with prefix
-    slice.nom!(Yes.decode)(prefix);
-
-    static if (demandSeparatingChars)
-    {
-        // Return the whole lin, a non-match, if there are no separating characters
-        // (at least one of [:?! ])
-        if (!slice.beginsWithOneOf(":?! ")) return line;
-        slice = slice[1..$];
-    }
-
-    while (slice.length && slice.beginsWithOneOf(":?! "))
-    {
-        slice = slice[1..$];
-    }
-
-    return slice;
-}
-
-///
-unittest
-{
-    immutable lorem = "say: lorem ipsum".stripPrefix("say");
-    assert((lorem == "lorem ipsum"), lorem);
-
-    immutable notehello = "note!!!! zorael hello".stripPrefix("note");
-    assert((notehello == "zorael hello"), notehello);
-
-    immutable sudoquit = "sudo quit :derp".stripPrefix("sudo");
-    assert((sudoquit == "quit :derp"), sudoquit);
-
-    immutable eightball = "8ball predicate?".stripPrefix("");
-    assert((eightball == "8ball predicate?"), eightball);
-
-    immutable isnotabot = "kamelosois a bot".stripPrefix("kameloso");
-    assert((isnotabot == "kamelosois a bot"), isnotabot);
-
-    immutable isabot = "kamelosois a bot".stripPrefix!(No.demandSeparatingChars)("kameloso");
-    assert((isabot == "is a bot"), isabot);
+    return "";
 }
 
 
@@ -570,27 +278,7 @@ unittest
 string stripSuffix(Flag!"allowFullStrip" fullStrip = No.allowFullStrip)
     (const string line, const string suffix) pure nothrow @nogc
 {
-    static if (fullStrip)
-    {
-        if (line.length < suffix.length) return line;
-    }
-    else
-    {
-        if (line.length <= suffix.length) return line;
-    }
-
-    return (line[($-suffix.length)..$] == suffix) ? line[0..($-suffix.length)] : line;
-}
-
-///
-unittest
-{
-    immutable line = "harblsnarbl";
-    assert(line.stripSuffix("snarbl") == "harbl");
-    assert(line.stripSuffix("") == "harblsnarbl");
-    assert(line.stripSuffix("INVALID") == "harblsnarbl");
-    assert(!line.stripSuffix!(Yes.allowFullStrip)("harblsnarbl").length);
-    assert(line.stripSuffix("harblsnarbl") == "harblsnarbl");
+    return "";
 }
 
 
@@ -618,78 +306,7 @@ unittest
  +/
 uint sharedDomains(const string rawOne, const string rawOther) pure nothrow
 {
-    uint dots;
-    bool doubleDots;
-
-    // If both strings are the same, act as if there's an extra dot.
-    // That gives (.)rizon.net and (.)rizon.net two suffixes.
-    if (rawOne.length && (rawOne == rawOther)) ++dots;
-
-    immutable one = (rawOne != rawOther) ? '.' ~ rawOne : rawOne;
-    immutable other = (rawOne != rawOther) ? '.' ~ rawOther : rawOther;
-
-    foreach (i; 0..one.length)
-    {
-        if (i == other.length)
-        {
-            // The first string was longer than the second
-            break;
-        }
-
-        if (one[$-i-1] != other[$-i-1])
-        {
-            // There was a character mismatch
-            break;
-        }
-
-        if (one[$-i-1] == '.')
-        {
-            if (!doubleDots)
-            {
-                ++dots;
-                doubleDots = true;
-            }
-        }
-        else
-        {
-            doubleDots = false;
-        }
-    }
-
-    return dots;
-}
-
-///
-unittest
-{
-    import std.conv : text;
-
-    immutable n1 = sharedDomains("irc.freenode.net", "help.freenode.net");
-    assert((n1 == 2), n1.text);
-
-    immutable n2 = sharedDomains("irc.rizon.net", "services.rizon.net");
-    assert((n2 == 2), n2.text);
-
-    immutable n3 = sharedDomains("www.google.com", "www.yahoo.com");
-    assert((n3 == 1), n3.text);
-
-    immutable n4 = sharedDomains("www.google.se", "www.google.co.uk");
-    assert((n4 == 0), n4.text);
-
-    immutable n5 = sharedDomains("", string.init);
-    assert((n5 == 0), n5.text);
-
-    immutable n6 = sharedDomains("irc.rizon.net", "rizon.net");
-    assert((n6 == 2), n6.text);
-
-    immutable n7 = sharedDomains("rizon.net", "rizon.net");
-    assert((n7 == 2), n7.text);
-
-    immutable n8 = sharedDomains("net", "net");
-    assert((n8 == 1), n8.text);
-
-    immutable n9 = sharedDomains("forum.dlang.org", "...");
-    assert((n9 == 0), n8.text);
+    return 0;
 }
 
 
@@ -712,43 +329,7 @@ unittest
  +/
 auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc @property
 {
-    import std.range : repeat, takeExactly;
-    import std.algorithm.iteration : joiner;
-    import std.array : array;
-
-    assert((num >= 0), "Negative number of tabs");
-
-    enum char[spaces] tab = ' '.repeat.takeExactly(spaces).array;
-
-    return tab[].repeat.takeExactly(num).joiner;
-}
-
-///
-@system
-unittest
-{
-    import std.array : Appender;
-    import std.conv : to;
-    import std.exception : assertThrown;
-    import std.format : formattedWrite;
-    import std.algorithm.comparison : equal;
-    import core.exception : AssertError;
-
-    auto one = 1.tabs!4;
-    auto two = 2.tabs!3;
-    auto three = 3.tabs!2;
-    auto zero = 0.tabs;
-
-    assert(one.equal("    "), one.to!string);
-    assert(two.equal("      "), two.to!string);
-    assert(three.equal("      "), three.to!string);
-    assert(zero.equal(string.init), zero.to!string);
-
-    assertThrown!AssertError((-1).tabs);
-
-    Appender!string sink;
-    sink.formattedWrite("%sHello world", 2.tabs!2);
-    assert((sink.data == "    Hello world"), sink.data);
+    return "";
 }
 
 
@@ -779,54 +360,7 @@ bool contains(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C 
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
     is(C : ElementEncodingType!T)))
 {
-    static if (is(C : T)) if (haystack == needle) return true;
-
-    static if (decode || is(T : dstring) || is(T : wstring) ||
-        is(C : ElementType!T) || is(C : ElementEncodingType!T))
-    {
-        import std.string : indexOf;
-        // dstring and wstring only work with indexOf, not countUntil
-        return haystack.indexOf(needle) != -1;
-    }
-    else
-    {
-        // Only do this if we know it's not user text
-        import std.algorithm.searching : canFind;
-        import std.string : representation;
-
-        static if (isSomeString!C)
-        {
-            return haystack.representation.canFind(needle.representation);
-        }
-        else
-        {
-            return haystack.representation.canFind(cast(ubyte)needle);
-        }
-    }
-}
-
-///
-unittest
-{
-    assert("Lorem ipsum sit amet".contains("sit"));
-    assert("".contains(""));
-    assert(!"Lorem ipsum".contains("sit amet"));
-    assert("Lorem ipsum".contains(' '));
-    assert(!"Lorem ipsum".contains('!'));
-    assert("Lorem ipsum"d.contains("m"d));
-    assert("Lorem ipsum".contains(['p', 's', 'u', 'm' ]));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].contains([ 'L' ]));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].contains("Lor"));
-    assert([ 'L', 'o', 'r', 'e', 'm' ].contains(cast(char[])[]));
-}
-
-/// Legacy alias to `contains`.
-alias has = contains;
-
-///
-unittest
-{
-    assert("Lorem ipsum sit amet".has("sit"));
+    return false;
 }
 
 // strippedRight
@@ -842,60 +376,8 @@ unittest
  +/
 string strippedRight(const string line) pure nothrow @nogc @property
 {
-    if (!line.length) return line;
-
-    size_t pos = line.length;
-
-    loop:
-    while (pos > 0)
-    {
-        switch (line[pos-1])
-        {
-        case ' ':
-        case '\n':
-        case '\r':
-        case '\t':
-            --pos;
-            break;
-
-        default:
-            break loop;
-        }
-    }
-
-    return line[0..pos];
+    return "";
 }
-
-///
-unittest
-{
-    {
-        immutable trailing = "abc  ";
-        immutable stripped = trailing.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable trailing = "  ";
-        immutable stripped = trailing.strippedRight;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable empty = "";
-        immutable stripped = empty.strippedRight;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable noTrailing = "abc";
-        immutable stripped = noTrailing.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable linebreak = "abc\r\n  \r\n";
-        immutable stripped = linebreak.strippedRight;
-        assert((stripped == "abc"), stripped);
-    }
-}
-
 
 // strippedLeft
 /++
@@ -910,59 +392,9 @@ unittest
  +/
 string strippedLeft(const string line) pure nothrow @nogc @property
 {
-    if (!line.length) return line;
-
-    size_t pos;
-
-    loop:
-    while (pos < line.length)
-    {
-        switch (line[pos])
-        {
-        case ' ':
-        case '\n':
-        case '\r':
-        case '\t':
-            ++pos;
-            break;
-
-        default:
-            break loop;
-        }
-    }
-
-    return line[pos..$];
+    return "";
 }
 
-///
-unittest
-{
-    {
-        immutable preceded = "   abc";
-        immutable stripped = preceded.strippedLeft;
-        assert((stripped == "abc"), stripped);
-    }
-    {
-        immutable preceded = "   ";
-        immutable stripped = preceded.strippedLeft;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable empty = "";
-        immutable stripped = empty.strippedLeft;
-        assert((stripped == ""), stripped);
-    }
-    {
-        immutable noPreceded = "abc";
-        immutable stripped = noPreceded.strippedLeft;
-        assert((stripped == noPreceded), stripped);
-    }
-    {
-        immutable linebreak  = "\r\n\r\n  abc";
-        immutable stripped = linebreak.strippedLeft;
-        assert((stripped == "abc"), stripped);
-    }
-}
 
 
 // stripped
@@ -980,38 +412,9 @@ unittest
  +/
 string stripped(const string line) pure nothrow @nogc @property
 {
-    return line.strippedLeft.strippedRight;
+    return "";
 }
 
-///
-unittest
-{
-    {
-        immutable line = "   abc   ";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-    {
-        immutable line = "   ";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == ""), stripped_);
-    }
-    {
-        immutable line = "";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == ""), stripped_);
-    }
-    {
-        immutable line = "abc";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-    {
-        immutable line = " \r\n  abc\r\n\r\n";
-        immutable stripped_ = line.stripped;
-        assert((stripped_ == "abc"), stripped_);
-    }
-}
 
 
 // encode64
@@ -1026,25 +429,7 @@ unittest
  +/
 string encode64(const string line) @safe pure nothrow
 {
-    import std.base64 : Base64;
-    import std.string : representation;
-
-    return Base64.encode(line.representation);
-}
-
-///
-unittest
-{
-    {
-        immutable password = "harbl snarbl 12345";
-        immutable encoded = encode64(password);
-        assert((encoded == "aGFyYmwgc25hcmJsIDEyMzQ1"), encoded);
-    }
-    {
-        immutable string password;
-        immutable encoded = encode64(password);
-        assert(!encoded.length, encoded);
-    }
+    return "";
 }
 
 
@@ -1060,21 +445,6 @@ unittest
  +/
 string decode64(const string encoded) @safe pure
 {
-    import std.base64 : Base64;
-    return (cast(char[])Base64.decode(encoded)).idup;
+    return "";
 }
 
-///
-unittest
-{
-    {
-        immutable password = "base64:aGFyYmwgc25hcmJsIDEyMzQ1";
-        immutable decoded = decode64(password[7..$]);
-        assert((decoded == "harbl snarbl 12345"), decoded);
-    }
-    {
-        immutable password = "base64:";
-        immutable decoded = decode64(password[7..$]);
-        assert(!decoded.length, decoded);
-    }
-}

@@ -90,74 +90,10 @@ if (is(E == enum))
      +/
     string toString(E value) pure nothrow
     {
-        switch (value)
-        {
-
-        foreach (m; __traits(allMembers, E))
-        {
-            case mixin("E." ~ m) : return m;
-        }
-
-        default:
-            string result = "cast(" ~ E.stringof ~ ")";
-            uint val = value;
-            enum headLength = E.stringof.length + "cast()".length;
-
-            immutable log10Val =
-                (val < 10) ? 0 :
-                (val < 100) ? 1 :
-                (val < 1_000) ? 2 :
-                (val < 10_000) ? 3 :
-                (val < 100_000) ? 4 :
-                (val < 1_000_000) ? 5 :
-                (val < 10_000_000) ? 6 :
-                (val < 100_000_000) ? 7 :
-                (val < 1_000_000_000) ? 8 : 9;
-
-            result.length += log10Val + 1;
-
-            for (uint i; i != log10Val + 1; ++i)
-            {
-                cast(char)result[headLength + log10Val - i] = cast(char)('0' + (val % 10));
-                val /= 10;
-            }
-
-            return cast(string) result;
-        }
+        return "";
     }
 }
 
-///
-@system
-unittest
-{
-    import std.conv : ConvException;
-    import std.exception  : assertThrown;
-
-    enum T
-    {
-        UNSET,
-        QUERY,
-        PRIVMSG,
-        RPL_ENDOFMOTD
-    }
-
-    with (T)
-    {
-        assert(Enum!T.fromString("QUERY") == QUERY);
-        assert(Enum!T.fromString("PRIVMSG") == PRIVMSG);
-        assert(Enum!T.fromString("RPL_ENDOFMOTD") == RPL_ENDOFMOTD);
-        assert(Enum!T.fromString("UNSET") == UNSET);
-        assertThrown!ConvException(Enum!T.fromString("DOESNTEXIST"));  // needs @system
-    }
-
-    with (T)
-    {
-        assert(Enum!T.toString(QUERY) == "QUERY");
-        assert(Enum!T.toString(PRIVMSG) == "PRIVMSG");
-        assert(Enum!T.toString(RPL_ENDOFMOTD) == "RPL_ENDOFMOTD");
-    }
-}
 
 
 // numFromHex
@@ -178,48 +114,7 @@ unittest
  +/
 uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(const string hex) pure
 {
-    import std.string : representation;
-
-    int val = -1;
-    int total;
-
-    foreach (immutable c; hex.representation)
-    {
-        switch (c)
-        {
-        case '0':
-        ..
-        case '9':
-            val = (c - 48);
-            goto case 'F';
-
-    static if (acceptLowercase)
-    {
-        case 'a':
-        ..
-        case 'f':
-            val = (c - (55+32));
-            goto case 'F';
-    }
-
-        case 'A':
-        ..
-        case 'F':
-            if (val < 0) val = (c - 55);
-            total *= 16;
-            total += val;
-            val = -1;
-            break;
-
-        default:
-            import std.conv : ConvException;
-            throw new ConvException("Invalid hex string: " ~ hex);
-        }
-    }
-
-    assert((total < 16^^hex.length), "numFromHex output is too large!");
-
-    return total;
+    return 0;
 }
 
 
@@ -240,50 +135,6 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(con
 void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hexString, out int r, out int g, out int b) pure
 {
-    if (!hexString.length) return;
-
-    immutable hex = (hexString[0] == '#') ? hexString[1..$] : hexString;
-
-    r = numFromHex!acceptLowercase(hex[0..2]);
-    g = numFromHex!acceptLowercase(hex[2..4]);
-    b = numFromHex!acceptLowercase(hex[4..$]);
 }
 
-///
-unittest
-{
-    import std.conv : text;
-    {
-        int r, g, b;
-        numFromHex("000102", r, g, b);
-
-        assert((r == 0), r.text);
-        assert((g == 1), g.text);
-        assert((b == 2), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex("FFFFFF", r, g, b);
-
-        assert((r == 255), r.text);
-        assert((g == 255), g.text);
-        assert((b == 255), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex("3C507D", r, g, b);
-
-        assert((r == 60), r.text);
-        assert((g == 80), g.text);
-        assert((b == 125), b.text);
-    }
-    {
-        int r, g, b;
-        numFromHex!(Yes.acceptLowercase)("9a4B7c", r, g, b);
-
-        assert((r == 154), r.text);
-        assert((g == 75), g.text);
-        assert((b == 124), b.text);
-    }
-}
 

@@ -78,62 +78,6 @@ void initLogger(const bool monochrome = settings.monochrome,
 __gshared CoreSettings settings;
 
 
-// ThreadMessage
-/++
- +  Aggregate of thread message types.
- +
- +  This is a way to make concurrency message passing easier. You could use
- +  string literals to differentiate between messages and then have big
- +  switches inside the catching function, but with these you can actually
- +  have separate concurrency-receiving delegates for each.
- +/
-struct ThreadMessage
-{
-    /// Concurrency message type asking for a to-server `PONG` event.
-    struct Pong {}
-
-    /// Concurrency message type asking to verbosely send a line to the server.
-    struct Sendline {}
-
-    /// Concurrency message type asking to quietly send a line to the server.
-    struct Quietline {}
-
-    /// Concurrency message type asking to immediately send a message.
-    struct Immediateline {}
-
-    /// Concurrency message type asking to quit the server and the program.
-    struct Quit {}
-
-    /// Concurrency message type asking for a plugin to shut down cleanly.
-    struct Teardown {}
-
-    /// Concurrency message type asking to have plugins' configuration saved.
-    struct Save {}
-
-    /++
-     +  Concurrency message asking for a reference to the arrays of
-     +  `kameloso.plugins.common.IRCPlugin`s in the current `Client`.
-     +/
-    struct PeekPlugins {}
-
-    /// Concurrency message asking plugins to "reload".
-    struct Reload {}
-
-    /// Concurrency message asking to disconnect and reconnect to the server.
-    struct Reconnect {}
-
-    /// Concurrency messages for writing text to the terminal.
-    enum TerminalOutput
-    {
-        writeln,
-        trace,
-        log,
-        info,
-        warning,
-        error,
-    }
-}
-
 
 // CoreSettings
 /++
@@ -209,27 +153,6 @@ struct CoreSettings
  +/
 void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Things...)(Things things) @trusted
 {
-    import std.stdio : stdout;
-
-    // writeln trusts `lockingTextWriter` so we will too.
-
-    bool printed;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter, things);
-            printed = true;
-        }
-    }
-
-    if (!printed)
-    {
-        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
-    }
-
-    version(Cygwin_) stdout.flush();
 }
 
 alias printObject = printObjects;
@@ -272,344 +195,6 @@ void formatObjects(Flag!"printAll" printAll = No.printAll,
     (auto ref Sink sink, Things things) @trusted
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.string : stripSuffix;
-    import kameloso.traits;
-    import std.algorithm.comparison : max;
-    import std.format : formattedWrite;
-    import std.range.primitives : ElementEncodingType;
-    import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
-
-    static if (coloured)
-    {
-        import kameloso.bash : colour;
-    }
-
-    // workaround formattedWrite taking Appender by value
-    version(LDC) sink.put(string.init);
-
-    enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
-    enum minimumNameWidth = 20;
-
-    static if (printAll)
-    {
-        enum typewidth = max(minimumTypeWidth, (longestUnconfigurableMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
-    }
-    else
-    {
-        enum typewidth = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
-        enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
-    }
-
-    enum compensatedWidth = (typewidth > minimumTypeWidth) ?
-        (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
-    enum namewidth = max(minimumNameWidth, compensatedWidth);
-
-    immutable bright = .settings.brightTerminal;
-
-    with (BashForeground)
-    foreach (immutable n, thing; things)
-    {
-        alias Thing = Unqual!(typeof(thing));
-
-        static if (coloured)
-        {
-            immutable titleColour = bright ? black : white;
-            sink.formattedWrite("%s-- %s\n", titleColour.colour, Thing.stringof.stripSuffix("Settings"));
-        }
-        else
-        {
-            sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
-        }
-
-        foreach (immutable i, member; thing.tupleof)
-        {
-            enum shouldNormallyBePrinted = !isType!member &&
-                isConfigurableVariable!member &&
-                !hasUDA!(thing.tupleof[i], Hidden) &&
-                !hasUDA!(thing.tupleof[i], Unconfigurable);
-
-            enum shouldMaybeBePrinted = printAll && !hasUDA!(thing.tupleof[i], Hidden);
-
-            static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
-            {
-                import std.traits : isArray, isSomeString;
-
-                alias T = Unqual!(typeof(member));
-
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
-
-                static if (isTrulyString!T)
-                {
-                    static if (coloured)
-                    {
-                        enum stringPattern = `%s%*s %s%-*s %s"%s"%s(%d)` ~ '\n';
-                        immutable memberColour = bright ? black : white;
-                        immutable valueColour = bright ? green : lightgreen;
-                        immutable lengthColour = bright ? lightgrey : darkgrey;
-
-                        sink.formattedWrite(stringPattern,
-                            cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (namewidth + 2), memberstring,
-                            valueColour.colour, member,
-                            lengthColour.colour, member.length);
-                    }
-                    else
-                    {
-                        enum stringPattern = `%*s %-*s "%s"(%d)` ~ '\n';
-                        sink.formattedWrite(stringPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring,
-                            member, member.length);
-                    }
-                }
-                else static if (isArray!T || isAssociativeArray!T)
-                {
-                    alias ElemType = Unqual!(ElementEncodingType!T);
-                    enum elemIsCharacter = is(ElemType == char) || is(ElemType == dchar) || is(ElemType == wchar);
-
-                    immutable thisWidth = member.length ? (namewidth + 2) : (namewidth + 4);
-
-                    static if (coloured)
-                    {
-                        static if (elemIsCharacter)
-                        {
-                            enum arrayPattern = "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n";
-                        }
-                        else
-                        {
-                            enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
-                        }
-
-                        immutable memberColour = bright ? black : white;
-                        immutable valueColour = bright ? green : lightgreen;
-                        immutable lengthColour = bright ? lightgrey : darkgrey;
-
-                        sink.formattedWrite(arrayPattern,
-                            cyan.colour, typewidth, UnqualArray!T.stringof,
-                            memberColour.colour, thisWidth, memberstring,
-                            valueColour.colour, member,
-                            lengthColour.colour, member.length);
-                    }
-                    else
-                    {
-                        static if (elemIsCharacter)
-                        {
-                            enum arrayPattern = "%*s %-*s[%(%s, %)](%d)\n";
-                        }
-                        else
-                        {
-                            enum arrayPattern = "%*s %-*s%s(%d)\n";
-                        }
-
-                        sink.formattedWrite(arrayPattern,
-                            typewidth, UnqualArray!T.stringof,
-                            thisWidth, memberstring,
-                            member,
-                            member.length);
-                    }
-                }
-                else static if (is(T == struct) || is(T == class))
-                {
-                    enum classOrStruct = is(T == struct) ? "struct" : "class";
-
-                    immutable initText = (thing.tupleof[i] == Thing.init.tupleof[i]) ? " (init)" : string.init;
-
-                    static if (coloured)
-                    {
-                        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
-                        immutable memberColour = bright ? black : white;
-                        immutable valueColour = bright ? green : lightgreen;
-
-                        sink.formattedWrite(normalPattern,
-                            cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (namewidth + 2), memberstring,
-                            valueColour.colour, classOrStruct, initText);
-                    }
-                    else
-                    {
-                        enum normalPattern = "%*s %-*s <%s>%s\n";
-                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, classOrStruct, initText);
-                    }
-                }
-                else
-                {
-                    static if (coloured)
-                    {
-                        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
-                        immutable memberColour = bright ? black : white;
-                        immutable valueColour = bright ? green : lightgreen;
-
-                        sink.formattedWrite(normalPattern,
-                            cyan.colour, typewidth, T.stringof,
-                            memberColour.colour, (namewidth + 2), memberstring,
-                            valueColour.colour, member);
-                    }
-                    else
-                    {
-                        enum normalPattern = "%*s %-*s  %s\n";
-                        sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                            (namewidth + 2), memberstring, member);
-                    }
-                }
-            }
-        }
-
-        static if (coloured)
-        {
-            sink.put(default_.colour);
-        }
-
-        static if ((n+1 < things.length) || !__traits(hasMember, Sink, "data"))
-        {
-            // Not an Appender, make sure it has a final linebreak to be consistent
-            // with Appender writeln
-            sink.put('\n');
-        }
-    }
-}
-
-///
-@system unittest
-{
-    import kameloso.string : contains;
-    import std.array : Appender;
-
-    struct Struct
-    {
-        string members;
-        int asdf;
-    }
-
-    // Monochrome
-
-    struct StructName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "foo";
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        const(char)[char] cC;
-    }
-
-    StructName s;
-    s.cC = [ 'a':'a', 'b':'b' ];
-    assert('a' in s.cC);
-    assert('b' in s.cC);
-    Appender!(char[]) sink;
-
-    sink.reserve(512);  // ~323
-    sink.formatObjects!(No.printAll, No.coloured)(s);
-
-    enum structNameSerialised =
-`-- StructName
-     Struct struct_                <struct> (init)
-        int i                       12345
-     string s                      "foo"(3)
-       bool b                       true
-      float f                       3.14
-     double d                       99.9
-     char[] c                     ['a', 'b', 'c'](3)
-     char[] emptyC                  [](0)
-   string[] dynA                  ["foo", "bar", "baz"](3)
-      int[] iA                    [1, 2, 3, 4](4)
- char[char] cC                    ['b':'b', 'a':'a'](2)
-`;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-    // Adding Settings does nothing
-    alias StructNameSettings = StructName;
-    StructNameSettings so = s;
-    sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(so);
-
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
-
-    // Two at a time
-    struct Struct1
-    {
-        string members;
-        int asdf;
-    }
-
-    struct Struct2
-    {
-        string mumburs;
-        int fdsa;
-    }
-
-    Struct1 st1;
-    Struct2 st2;
-
-    st1.members = "harbl";
-    st1.asdf = 42;
-    st2.mumburs = "hirrs";
-    st2.fdsa = -1;
-
-    sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(st1, st2);
-    enum st1st2Formatted =
-`-- Struct1
-   string members                "harbl"(5)
-      int asdf                    42
-
--- Struct2
-   string mumburs                "hirrs"(5)
-      int fdsa                    -1
-`;
-    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
-
-    // Colour
-    struct StructName2
-    {
-        int int_ = 12_345;
-        string string_ = "foo";
-        bool bool_ = true;
-        float float_ = 3.14f;
-        double double_ = 99.9;
-    }
-
-    version(Colours)
-    {
-        StructName2 s2;
-
-        sink.clear();
-        sink.reserve(256);  // ~239
-        sink.formatObjects!(No.printAll, Yes.coloured)(s2);
-
-        assert((sink.data.length > 12), "Empty sink after coloured fill");
-
-        assert(sink.data.contains("-- StructName"));
-        assert(sink.data.contains("int_"));
-        assert(sink.data.contains("12345"));
-
-        assert(sink.data.contains("string_"));
-        assert(sink.data.contains(`"foo"`));
-
-        assert(sink.data.contains("bool_"));
-        assert(sink.data.contains("true"));
-
-        assert(sink.data.contains("float_"));
-        assert(sink.data.contains("3.14"));
-
-        assert(sink.data.contains("double_"));
-        assert(sink.data.contains("99.9"));
-
-        // Adding Settings does nothing
-        alias StructName2Settings = StructName2;
-        immutable sinkCopy = sink.data.idup;
-        StructName2Settings s2o;
-
-        sink.clear();
-        sink.formatObjects!(No.printAll, Yes.coloured)(s2o);
-        assert((sink.data == sinkCopy), sink.data);
-    }
 }
 
 
@@ -647,37 +232,9 @@ string formatObjects(Flag!"printAll" printAll = No.printAll,
     (Things things) @trusted
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(1024);
-
-    sink.formatObjects!(printAll, coloured, widthArg)(things);
-    return sink.data;
+    return "";
 }
 
-///
-unittest
-{
-    // Rely on the main unittests of the output range version of formatObjects
-
-    struct Struct
-    {
-        string members;
-        int asdf;
-    }
-
-    Struct s;
-    s.members = "foo";
-    s.asdf = 42;
-
-    immutable formatted = formatObjects!(No.printAll, No.coloured)(s);
-    assert((formatted ==
-`-- Struct
-   string members                "foo"(3)
-      int asdf                    42
-`), '\n' ~ formatted);
-}
 
 
 // scopeguard
@@ -703,70 +260,7 @@ unittest
  +/
 string scopeguard(const ubyte states = exit, const string scopeName = string.init)
 {
-    import std.array : Appender;
-
-    Appender!string app;
-
-    string scopeString(const string state)
-    {
-        import std.string : format, toLower;
-
-        if (scopeName.length)
-        {
-            return
-            q{
-                // scopeguard mixin
-                scope(%1$s)
-                {
-                    logger.infof("[%2$s] %3$s");
-                }
-            }.format(state.toLower, state, scopeName);
-        }
-        else
-        {
-            return
-            q{
-                // scopeguard mixin
-                scope(%1$s)
-                {
-                    import std.string : indexOf;
-                    enum __%2$sdotPos  = __FUNCTION__.indexOf('.');
-                    enum __%2$sfunName = __FUNCTION__[(__%2$sdotPos+1)..$];
-                    logger.infof("[%%s] %2$s", __%2$sfunName);
-                }
-            }.format(state.toLower, state);
-        }
-    }
-
-    string entryString(const string state)
-    {
-        import std.string : format, toLower;
-
-        if (scopeName.length)
-        {
-            return
-            q{
-                logger.infof("[%s] %s");
-            }.format(scopeName, state);
-        }
-        else
-        {
-            return
-            q{
-                import std.string : indexOf;
-                enum __%1$sdotPos  = __FUNCTION__.indexOf('.');
-                enum __%1$sfunName = __FUNCTION__[(__%1$sdotPos+1)..$];
-                logger.infof("[%%s] %1$s", __%1$sfunName);
-            }.format(state);
-        }
-    }
-
-    if (states & entry)   app.put(entryString("entry"));
-    if (states & exit)    app.put(scopeString("exit"));
-    if (states & success) app.put(scopeString("success"));
-    if (states & failure) app.put(scopeString("FAILURE"));
-
-    return app.data;
+    return "";
 }
 
 /++
@@ -808,56 +302,7 @@ enum : ubyte
  +/
 uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(const Number num, const int n)
 {
-    assert((n > 0), "Cannot get multiple of 0 or negatives");
-    assert((num >= 0), "Cannot get multiples for a negative number");
-
-    if (num == 0) return 0;
-
-    if (num == n)
-    {
-        static if (oneUp) return (n * 2);
-        else
-        {
-            return n;
-        }
-    }
-
-    immutable frac = (num / double(n));
-    immutable floor_ = cast(uint)frac;
-
-    static if (oneUp)
-    {
-        immutable mod = (floor_ + 1);
-    }
-    else
-    {
-        immutable mod = (floor_ == frac) ? floor_ : (floor_ + 1);
-    }
-
-    return (mod * n);
-}
-
-///
-unittest
-{
-    import std.conv : text;
-
-    immutable n1 = 15.getMultipleOf(4);
-    assert((n1 == 16), n1.text);
-
-    immutable n2 = 16.getMultipleOf!(Yes.alwaysOneUp)(4);
-    assert((n2 == 20), n2.text);
-
-    immutable n3 = 16.getMultipleOf(4);
-    assert((n3 == 16), n3.text);
-    immutable n4 = 0.getMultipleOf(5);
-    assert((n4 == 0), n4.text);
-
-    immutable n5 = 1.getMultipleOf(1);
-    assert((n5 == 1), n5.text);
-
-    immutable n6 = 1.getMultipleOf!(Yes.alwaysOneUp)(1);
-    assert((n6 == 2), n6.text);
+    return 0;
 }
 
 
@@ -885,26 +330,6 @@ unittest
  +/
 void interruptibleSleep(const Duration dur, const ref bool abort)
 {
-    import core.thread : Thread, msecs, seconds;
-    import std.algorithm.comparison : min;
-
-    immutable step = 250.msecs;
-
-    Duration left = dur;
-
-    static immutable nothing = 0.seconds;
-
-    while (left > nothing)
-    {
-        if (abort) return;
-
-        immutable nextStep = min((left-step), step);
-
-        if (nextStep <= nothing) break;
-
-        Thread.sleep(nextStep);
-        left -= step;
-    }
 }
 
 
@@ -916,9 +341,6 @@ void interruptibleSleep(const Duration dur, const ref bool abort)
 struct Client
 {
     import kameloso.connection : Connection;
-    import kameloso.ircdefs : IRCBot;
-    import kameloso.irc : IRCParser;
-    import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
 
@@ -962,12 +384,11 @@ struct Client
      +  parsing an `kameloso.ircdefs.IRCEvent`, and call the relevant event
      +  handlers of each.
      +/
-    IRCPlugin[] plugins;
-
     /// When a nickname was called `WHOIS` on, for hysteresis.
     long[string] whoisCalls;
 
     /// Parser instance.
+    import kameloso.irc : IRCParser;
     IRCParser parser;
 
     /// Values and state needed to throttle sending messages.
@@ -996,167 +417,8 @@ struct Client
      +/
     string[][string] initPlugins(string[] customSettings)
     {
-        import kameloso.plugins;
-        import kameloso.plugins.common : IRCPluginState;
-        import std.concurrency : thisTid;
-        import std.datetime.systime : Clock;
-
-        teardownPlugins();
-
-        IRCPluginState state;
-        state.bot = parser.bot;
-        state.settings = settings;
-        state.mainThread = thisTid;
-        immutable now = Clock.currTime.toUnixTime;
-
-        plugins.reserve(EnabledPlugins.length + 4);
-
-        // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
-        // `kameloso.plugins.package`
-        foreach (Plugin; EnabledPlugins)
-        {
-            plugins ~= new Plugin(state);
-        }
-
-        version(Web)
-        {
-            plugins ~= new WebtitlesPlugin(state);
-            plugins ~= new RedditPlugin(state);
-            plugins ~= new BashQuotesPlugin(state);
-        }
-
-        version(Posix)
-        {
-            plugins ~= new PipelinePlugin(state);
-        }
-
         string[][string] allInvalidEntries;
-
-        foreach (plugin; plugins)
-        {
-            auto theseInvalidEntries = plugin.deserialiseConfigFrom(state.settings.configFile);
-
-            if (theseInvalidEntries.length)
-            {
-                import kameloso.meld : meldInto;
-                theseInvalidEntries.meldInto(allInvalidEntries);
-            }
-
-            if (plugin.state.nextPeriodical == 0)
-            {
-                // Schedule first periodical in an hour for plugins that don't
-                // set a timestamp themselves in `initialise`
-                plugin.state.nextPeriodical = now + 3600;
-            }
-        }
-
-        plugins.applyCustomSettings(customSettings);
-
         return allInvalidEntries;
-    }
-
-
-    // initPluginResources
-    /++
-     +  Initialises all plugins' resource files.
-     +
-     +  This merely calls `IRCPlugin.initResources()` on each plugin.
-     +/
-    void initPluginResources()
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.initResources();
-        }
-    }
-
-
-    // teardownPlugins
-    /++
-    +  Tears down all plugins, deinitialising them and having them save their
-    +  settings for a clean shutdown.
-    +
-    +  Think of it as a plugin destructor.
-    +/
-    void teardownPlugins()
-    {
-        if (!plugins.length) return;
-
-        foreach (plugin; plugins)
-        {
-            import std.exception : ErrnoException;
-
-            try
-            {
-                plugin.teardown();
-            }
-            catch (ErrnoException e)
-            {
-                import core.stdc.errno : ENOENT;
-                import std.file : exists;
-                import std.path : dirName;
-
-                if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
-                {
-                    // The resource directory hasn't been created, don't panic
-                }
-                else
-                {
-                    logger.warningf("ErrnoException when tearing down %s: %s",
-                        plugin.name, e.msg);
-                }
-            }
-            catch (const Exception e)
-            {
-                logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
-            }
-        }
-
-        // Zero out old plugins array
-        plugins.length = 0;
-    }
-
-
-    // startPlugins
-    /++
-    +  *start* all plugins, loading any resources they may want.
-    +
-    +  This has to happen after `initPlugins` or there will not be any plugins
-    +  in the `plugins` array to start.
-    +/
-    void startPlugins()
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.start();
-            auto pluginBot = plugin.state.bot;
-
-            if (pluginBot.updated)
-            {
-                // start changed the bot; propagate
-                parser.bot = pluginBot;
-                propagateBot(parser.bot);
-            }
-        }
-    }
-
-
-    // propagateBot
-    /++
-    +  Takes a bot and passes it out to all plugins.
-    +
-    +  This is called when a change to the bot has occured and we want to update
-    +  all plugins to have an updated copy of it.
-    +
-    +  Params:
-    +      bot = `kameloso.ircdefs.IRCBot` to propagate to all plugins.
-    +/
-    void propagateBot(IRCBot bot) pure nothrow @nogc @safe
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.state.bot = bot;
-        }
     }
 }
 
@@ -1176,27 +438,6 @@ struct Client
  +/
 void printVersionInfo(BashForeground colourCode = BashForeground.default_)
 {
-    import kameloso.constants : KamelosoInfo;
-    import std.stdio : writefln, stdout;
-
-    string pre;
-    string post;
-
-    version(Colours)
-    {
-        import kameloso.bash : colour;
-        pre = colourCode.colour;
-        post = BashForeground.default_.colour;
-    }
-
-    writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
-        pre,
-        cast(string)KamelosoInfo.version_,
-        cast(string)KamelosoInfo.built,
-        cast(string)KamelosoInfo.source,
-        post);
-
-    version(Cygwin_) stdout.flush();
 }
 
 
@@ -1219,31 +460,6 @@ void printVersionInfo(BashForeground colourCode = BashForeground.default_)
  +/
 void writeConfigurationFile(ref Client client, const string filename)
 {
-    import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
-    import kameloso.string : beginsWith, encode64;
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(1536);  // ~1097
-
-    with (client)
-    with (client.parser)
-    {
-        if (bot.authPassword.length && !bot.authPassword.beginsWith("base64:"))
-        {
-            bot.authPassword = "base64:" ~ encode64(bot.authPassword);
-        }
-
-        sink.serialise(bot, bot.server, settings);
-
-        foreach (plugin; plugins)
-        {
-            plugin.serialiseConfigInto(sink);
-        }
-
-        immutable justified = sink.data.justifiedConfigurationText;
-        writeToDisk!(Yes.addBanner)(filename, justified);
-    }
 }
 
 
@@ -1283,23 +499,6 @@ public:
     mixin Proxy!thing;
 }
 
-///
-unittest
-{
-    struct Foo {}
-    Foo foo;
-    Foo bar;
-
-    Labeled!(Foo,int)[] arr;
-
-    arr ~= labeled(foo, 1);
-    arr ~= labeled(bar, 2);
-
-    assert(arr[0].id == 1);
-    assert(arr[1].id == 2);
-}
-
-
 // labeled
 /++
  +  Convenience function to create a `Labeled` struct while inferring the
@@ -1328,15 +527,6 @@ auto labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
     return Labeled!(Unqual!Thing, Unqual!Label, disableThis)(thing, label);
 }
 
-///
-unittest
-{
-    auto foo = labeled("FOO", "foo");
-    assert(is(typeof(foo) == Labeled!(string, string)));
-
-    assert(foo.thing == "FOO");
-    assert(foo.id == "foo");
-}
 
 
 // timeSince
@@ -1365,153 +555,13 @@ void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
     (auto ref Sink sink, const Duration duration) pure
 if (isOutputRange!(Sink, string))
 {
-    import kameloso.string : plurality;
-    import std.format : formattedWrite;
-
-    int days, hours, minutes, seconds;
-    duration.split!("days", "hours", "minutes", "seconds")(days, hours, minutes, seconds);
-
-    if (days)
-    {
-        static if (abbreviate)
-        {
-            sink.formattedWrite("%dd", days);
-        }
-        else
-        {
-            sink.formattedWrite("%d %s", days, days.plurality("day", "days"));
-        }
-    }
-
-    if (hours)
-    {
-        static if (abbreviate)
-        {
-            if (days) sink.put(' ');
-            sink.formattedWrite("%dh", hours);
-        }
-        else
-        {
-            if (days)
-            {
-                if (minutes) sink.put(", ");
-                else sink.put("and ");
-            }
-            sink.formattedWrite("%d %s", hours, hours.plurality("hour", "hours"));
-        }
-    }
-
-    if (minutes)
-    {
-        static if (abbreviate)
-        {
-            if (hours) sink.put(' ');
-            sink.formattedWrite("%dm", minutes);
-        }
-        else
-        {
-            if (hours) sink.put(" and ");
-            sink.formattedWrite("%d %s", minutes, minutes.plurality("minute", "minutes"));
-        }
-    }
-
-    if (!minutes && !hours && !days)
-    {
-        static if (abbreviate)
-        {
-            sink.formattedWrite("%ds", seconds);
-        }
-        else
-        {
-            sink.formattedWrite("%d %s", seconds, seconds.plurality("second", "seconds"));
-        }
-    }
 }
 
 /// Ditto
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
-    import std.array : Appender;
-
-    Appender!string sink;
-    sink.reserve(50);
-    sink.timeSince!abbreviate(duration);
-    return sink.data;
+    return "";
 }
-
-///
-unittest
-{
-    import core.time : msecs, seconds;
-
-    {
-        immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "9 days, 3 hours and 16 minutes"), since);
-        assert((abbrev == "9d 3h 16m"), abbrev);
-    }
-
-    {
-        immutable dur = 3_620.seconds;  // 1 hour and 20 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "1 hour"), since);
-        assert((abbrev == "1h"), abbrev);
-    }
-
-    {
-        immutable dur = 30.seconds;  // 30 secs
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "30 seconds"), since);
-        assert((abbrev == "30s"), abbrev);
-    }
-
-    {
-        immutable dur = 1.seconds;
-        immutable since = dur.timeSince;
-        immutable abbrev = dur.timeSince!(Yes.abbreviate);
-        assert((since == "1 second"), since);
-        assert((abbrev == "1s"), abbrev);
-    }
-
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-    sink.reserve(64);  // workaround for LDC
-
-    {
-        immutable dur = 0.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "0 seconds"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "0s"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3_141_519_265.msecs;
-        sink.timeSince(dur);
-        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "36d 8h 38m"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3599.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "59 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "59m"), sink.data);
-        sink.clear();
-    }
-}
-
 
 // complainAboutInvalidConfigurationEntries
 /++
@@ -1524,34 +574,6 @@ unittest
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
-    if (!invalidEntries.length) return;
-
-    logger.log("Found invalid configuration entries:");
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.bash : colour;
-            import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
-
-            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
-        }
-    }
-
-    foreach (immutable section, const sectionEntries; invalidEntries)
-    {
-        logger.logf(`...under [%s%s%s]: %s%-("%s"%|, %)`,
-            infotint, section, logtint, infotint, sectionEntries);
-    }
-
-    logger.logf("They are either malformed or no longer in use. " ~
-        "Use %s--writeconfig%s to update your configuration file. [%1$s%3$s%2$s]",
-        infotint, logtint, settings.configFile);
 }
 
 
@@ -1573,38 +595,6 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 import kameloso.irc : IRCBot;
 void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
 {
-    import std.file : exists;
-    import std.path : baseName;
-
-    logger.error("No administrators nor channels configured!");
-
-    immutable configFileExists = settings.configFile.exists;
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.bash : colour;
-            import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
-
-            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
-        }
-    }
-
-    if (configFileExists)
-    {
-        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            infotint, settings.configFile, logtint);
-        complainAboutIncompleteConfiguration();
-    }
-    else
-    {
-        logger.logf("Use %s%s --writeconfig%s to generate a configuration file.",
-            infotint, args[0].baseName, logtint);
-    }
 }
 
 
@@ -1616,23 +606,6 @@ void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
  +/
 void complainAboutIncompleteConfiguration()
 {
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.bash : colour;
-            import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
-
-            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
-        }
-    }
-
-    logger.logf("...one or more %sadmins%s who get administrative control over the bot.", infotint, logtint);
-    logger.logf("...one or more %shomes%s in which to operate.", infotint, logtint);
 }
 
 
@@ -1682,62 +655,9 @@ else version(FreeBSD)
  +/
 string defaultConfigurationPrefix() @property
 {
-    import std.path : buildNormalizedPath;
-    import std.process : environment;
-
-    version(XDG)
-    {
-        import std.path : expandTilde;
-        enum defaultDir = "~/.config";
-        return buildNormalizedPath(environment.get("XDG_CONFIG_HOME", defaultDir),
-            "kameloso").expandTilde;
-    }
-    else version(OSX)
-    {
-        return buildNormalizedPath(environment["HOME"], "Library",
-            "Application Support", "kameloso");
-    }
-    else version(Windows)
-    {
-        // Blindly assume %LOCALAPPDATA% is defined
-        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
-    }
-    else
-    {
-        pragma(msg, "Unsupported platform? Cannot divine default config file path.");
-        pragma(msg, "Configuration file will be placed in the working directory.");
-        return "kameloso.conf";
-    }
+    return "";
 }
 
-///
-unittest
-{
-    import std.algorithm.searching : endsWith;
-
-    immutable df = defaultConfigurationPrefix;
-
-    version(XDG)
-    {
-        import std.process : environment;
-
-        environment["XDG_CONFIG_HOME"] = "/tmp";
-        immutable dfTmp = defaultConfigurationPrefix;
-        assert((dfTmp == "/tmp/kameloso"), dfTmp);
-
-        environment.remove("XDG_CONFIG_HOME");
-        immutable dfWithout = defaultConfigurationPrefix;
-        assert(dfWithout.endsWith("/.config/kameloso"), dfWithout);
-    }
-    else version(OSX)
-    {
-        assert(df.endsWith("Library/Application Support/kameloso"), df);
-    }
-    else version(Windows)
-    {
-        assert(df.endsWith("\\Local\\kameloso"), df);
-    }
-}
 
 
 // defaultResourcePrefix
@@ -1756,60 +676,6 @@ unittest
  +/
 string defaultResourcePrefix() @property
 {
-    import std.path : buildNormalizedPath;
-    import std.process : environment;
-
-    version(XDG)
-    {
-        import std.path : expandTilde;
-        enum defaultDir = "~/.local/share";
-        return buildNormalizedPath(environment.get("XDG_DATA_HOME", defaultDir),
-            "kameloso").expandTilde;
-    }
-    else version(OSX)
-    {
-        return buildNormalizedPath(environment["HOME"], "Library",
-            "Application Support", "kameloso");
-    }
-    else version(Windows)
-    {
-        // Blindly assume %LOCALAPPDATA% is defined
-        return buildNormalizedPath(environment["LOCALAPPDATA"], "kameloso");
-    }
-    else
-    {
-        pragma(msg, "Unsupported platform? Cannot divine default resource prefix.");
-        pragma(msg, "Resource files will be placed in the working directory.");
-        return ".";
-    }
+    return "";
 }
 
-///
-unittest
-{
-    import std.algorithm.searching : endsWith;
-
-    version(XDG)
-    {
-        import kameloso.string : beginsWith;
-        import std.process : environment;
-
-        environment["XDG_DATA_HOME"] = "/tmp";
-        string df = defaultResourcePrefix;
-        assert((df == "/tmp/kameloso"), df);
-
-        environment.remove("XDG_DATA_HOME");
-        df = defaultResourcePrefix;
-        assert(df.beginsWith("/home/") && df.endsWith("/.local/share/kameloso"));
-    }
-    else version (OSX)
-    {
-        immutable df = defaultResourcePrefix;
-        assert(df.endsWith("Library/Application Support/kameloso"), df);
-    }
-    else version(Windows)
-    {
-        immutable df = defaultResourcePrefix;
-        assert(df.endsWith("\\Local\\kameloso"), df);
-    }
-}
