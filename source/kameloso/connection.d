@@ -165,8 +165,6 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
 
     foreach (immutable i; 0..resolveAttempts)
     {
-        if (abort) return;
-
         attempt.numRetry = i;
 
         with (AddressFamily)
