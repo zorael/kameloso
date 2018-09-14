@@ -615,3 +615,74 @@ struct ResolveAttempt
     /// The number of retries so far towards his `address`.
     uint numRetry;
 }
+
+
+// resolveFiber
+/++
+ +  Given an address and a port, resolves these and builds an array of unique
+ +  `Address` IPs.
+ +
+ +  Params:
+ +      address = String address to look up.
+ +      port = Remote port build into the `Address`.
+ +      useIPv6 = Whether to include resolved IPv6 addresses or not.
+ +      abort = Reference bool which, if set, should make us abort and return.
+ +/
+void resolveFiber(ref Connection conn, const string address, const ushort port,
+    const bool useIPv6, ref bool abort)
+{
+    import std.concurrency : yield;
+    import std.socket : AddressFamily, SocketException, getAddress;
+
+    enum resolveAttempts = 15;
+
+    alias State = ResolveAttempt.State;
+    ResolveAttempt attempt;
+
+    yield(attempt);
+
+    foreach (immutable i; 0..resolveAttempts)
+    {
+        if (abort) return;
+
+        attempt.numRetry = i;
+
+        with (AddressFamily)
+        try
+        {
+            import std.algorithm.iteration : filter, uniq;
+            import std.array : array;
+
+            conn.ips = getAddress(address, port)
+                .filter!(ip => (ip.addressFamily == INET) || ((ip.addressFamily == INET6) && useIPv6))
+                .uniq!((a,b) => a.toString == b.toString)
+                .array;
+
+            attempt.state = State.success;
+            yield(attempt);
+            return;  // Should never get here
+        }
+        catch (const SocketException e)
+        {
+            switch (e.msg)
+            {
+            case "getaddrinfo error: Name or service not known":
+            case "getaddrinfo error: Temporary failure in name resolution":
+                // Assume net down, wait and try again
+                attempt.state = State.exception;
+                attempt.error = e.msg;
+                yield(attempt);
+                continue;
+
+            default:
+                attempt.state = State.error;
+                attempt.error = e.msg;
+                yield(attempt);
+                return;  // Should never get here
+            }
+        }
+    }
+
+    attempt.state = State.failure;
+    yield(attempt);
+}
