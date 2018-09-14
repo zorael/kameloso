@@ -488,3 +488,103 @@ struct ConnectionAttempt
     /// The number of retries so far towards this `ip`.
     uint numRetry;
 }
+
+
+// connectFiber
+/++
+ +  Fiber function that tries to connect to IPs in the `conn.ips` array,
+ +  yielding at certain points throghout the process to let the calling function
+ +  (here `kameloso.common.main`) output progress text to the local terminal.
+ +
+ +  It would make sense to just make this a single normal function, but then it
+ +  would need knowledge of internals such as `kameloso.common.settings` that it
+ +  really has no business with, separation of concerns-wise.
+ +
+ +  Params:
+ +      conn = Reference to the currenct, unconnected `Connection`.
+ +      abort = Reference to the current `abort` flag, which -- if set -- should
+ +          make the function return.
+ +/
+void connectFiber(ref Connection conn, ref bool abort)
+{
+    import std.concurrency : yield;
+    import std.socket : AddressFamily, Socket, SocketException;
+
+    assert((conn.ips.length > 0), "Tried to connect to an unresolved connection");
+    assert(!conn.connected, "Tried to connect to a connected connection!");
+
+    alias State = ConnectionAttempt.State;
+    ConnectionAttempt attempt;
+
+    yield(attempt);
+
+    foreach (immutable i, ip; conn.ips)
+    {
+        attempt.ip = ip;
+
+        Socket* socket = (ip.addressFamily == AddressFamily.INET6) ? &conn.socket6 : &conn.socket4;
+
+        enum connectionRetries = 3;
+
+        foreach (immutable retry; 0..connectionRetries)
+        {
+            if (abort) return;
+
+            if ((i > 0) || (retry > 0))
+            {
+                import std.socket : SocketShutdown;
+                socket.shutdown(SocketShutdown.BOTH);
+                socket.close();
+                conn.reset();
+            }
+
+            try
+            {
+                attempt.numRetry = retry;
+                attempt.state = State.preconnect;
+                yield(attempt);
+
+                socket.connect(ip);
+
+                // If we're here no exception was thrown, so we're connected
+                attempt.state = State.connected;
+                yield(attempt);
+                return;  // Will never get here
+            }
+            catch (const SocketException e)
+            {
+                switch (e.msg)
+                {
+                //case "Unable to connect socket: Connection refused":
+                case "Unable to connect socket: Address family not supported by protocol":
+                    attempt.state = State.error;
+                    attempt.error = e.msg;
+                    yield(attempt);
+                    return;  // Will never get here
+
+                //case "Unable to connect socket: Network is unreachable":
+                default:
+                    // Don't delay for retrying on the last retry, drop down below
+                    if (retry < (connectionRetries - 1))
+                    {
+                        attempt.state = State.delayThenReconnect;
+                        yield(attempt);
+                    }
+                    break;
+                }
+
+            }
+        }
+
+        if (i+1 < conn.ips.length)
+        {
+            // Not last IP
+            attempt.state = State.delayThenNextIP;
+            yield(attempt);
+        }
+    }
+
+    // All IPs exhausted
+    attempt.state = State.noMoreIPs;
+    yield(attempt);
+}
