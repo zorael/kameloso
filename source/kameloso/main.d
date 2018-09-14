@@ -887,6 +887,112 @@ Next tryGetopt(ref Client client, string[] args, ref string[] customSettings)
 }
 
 
+// tryConnect
+/++
+ +  Tries to connect to the IPs in `Client.conn.ips` by leveraging
+ +  `kameloso.connection.connectFiber`, reacting on the
+ +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the
+ +  user.
+ +
+ +  Params:
+ +      client = Reference to the current `Client`.
+ +
+ +  Returns:
+ +      `Next.continue_` if connection succeeded, `Next.returnFaillure` if
+ +      connection failed and the program should exit.
+ +/
+Next tryConnect(ref Client client)
+{
+    import kameloso.connection : ConnectionAttempt, connectFiber;
+    import kameloso.constants : Timeout;
+    import std.concurrency : Generator;
+
+    alias State = ConnectionAttempt.State;
+    auto connector = new Generator!ConnectionAttempt(() => connectFiber(client.conn, *(client.abort)));
+    uint incrementedRetryDelay = Timeout.retry;
+    enum incrementMultiplier = 0.8; //1.5
+
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+        }
+    }
+
+    connector.call();
+
+    with (client)
+    foreach (attempt; connector)
+    {
+        import core.time : seconds;
+
+        with (ConnectionAttempt.State)
+        final switch (attempt.state)
+        {
+        case preconnect:
+            // Alternative: attempt.ip.toHostNameString
+            logger.logf("Connecting to %s%s%s:%1$s%4$s%3$s ...",
+                infotint, attempt.ip.toAddrString, logtint, attempt.ip.toPortString);
+            continue;
+
+        case connected:
+            logger.log("Connected!");
+            conn.connected = true;
+            connector.reset();
+            return Next.continue_;
+
+        case delayThenReconnect:
+            import core.time : seconds;
+
+            if (attempt.numRetry == 0)
+            {
+                //logger.logf("Retrying in %d seconds...", incrementedRetryDelay);
+                logger.logf("Retrying in %s%d%s seconds...",
+                    infotint, incrementedRetryDelay, logtint);
+            }
+            else
+            {
+                /*logger.logf("Retrying in %d seconds (attempt %d)...",
+                    incrementedRetryDelay, attempt.numRetry+1);*/
+                logger.logf("Retrying in %s%d%s seconds (attempt %1$s%4$d%3$s)...",
+                    infotint, incrementedRetryDelay, logtint, attempt.numRetry+1);
+            }
+
+            interruptibleSleep(incrementedRetryDelay.seconds, *abort);
+            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+            continue;
+
+        case delayThenNextIP:
+            //logger.logf("Trying next IP in %d seconds.", Timeout.retry);
+            logger.logf("Trying next IP in %s%d%s seconds.",
+                infotint, Timeout.retry, logtint);
+            interruptibleSleep(Timeout.retry.seconds, *abort);
+            continue;
+
+        case noMoreIPs:
+            logger.warning("Could not connect to server!");
+            // Drop down to if (!conn.connected) below.
+            return Next.returnFailure;
+
+        case error:
+            logger.error("Failed to connect: ", attempt.error);
+            // Drop down to if (!conn.connected) below.
+            return Next.returnFailure;
+        }
+    }
+
+    return Next.returnFailure;
+}
+
+
 public:
 
 version(unittest)
