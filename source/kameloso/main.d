@@ -1136,15 +1136,15 @@ int main(string[] args)
     with (Next)
     final switch (actionAfterGetopt)
     {
-        case continue_:
-        case retry:  // should never happen
-            break;
+    case continue_:
+    case retry:  // should never happen
+        break;
 
-        case returnSuccess:
-            return 0;
+    case returnSuccess:
+        return 0;
 
-        case returnFailure:
-            return 1;
+    case returnFailure:
+        return 1;
     }
 
     with (client)
@@ -1278,23 +1278,23 @@ int main(string[] args)
             with (Next)
             final switch (actionAfterConnect)
             {
-                case continue_:
-                    break;
+            case continue_:
+                break;
 
-                case returnSuccess:
-                case retry:     // should never happen
-                    assert(0);  // should never happen
+            case returnSuccess:
+            case retry:     // should never happen
+                assert(0);  // should never happen
 
-                case returnFailure:
-                    // Save if it's not the first connection andconfiguration says we should
-                    if (!firstConnect && settings.saveOnExit)
-                    {
-                        client.writeConfigurationFile(settings.configFile);
-                    }
+            case returnFailure:
+                // Save if it's not the first connection andconfiguration says we should
+                if (!firstConnect && settings.saveOnExit)
+                {
+                    client.writeConfigurationFile(settings.configFile);
+                }
 
-                    teardownPlugins();
-                    logger.info("Exiting...");
-                    return 1;
+                teardownPlugins();
+                logger.info("Exiting...");
+                return 1;
             }
 
             parser = IRCParser(bot);
