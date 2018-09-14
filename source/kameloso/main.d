@@ -910,7 +910,7 @@ Next tryConnect(ref Client client)
     alias State = ConnectionAttempt.State;
     auto connector = new Generator!ConnectionAttempt(() => connectFiber(client.conn, *(client.abort)));
     uint incrementedRetryDelay = Timeout.retry;
-    enum incrementMultiplier = 0.8; //1.5
+    enum incrementMultiplier = 1.5;
 
     string infotint, logtint;
 
