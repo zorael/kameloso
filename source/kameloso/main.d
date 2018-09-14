@@ -1134,17 +1134,20 @@ int main(string[] args)
             }
 
             conn.reset();
-            immutable resolved = conn.resolve(bot.server.address, bot.server.port, settings.ipv6, *abort);
 
-            if (!resolved)
-            {
-                // No need to teardown; if it's the first connect there's
-                // nothing to tear down, and if it's after the first, later code
-                // will have already torn it down.
-                logger.info("Exiting...");
-                return 1;
-            }
+            import kameloso.connection : ResolveAttempt, resolveFiber;
+            import kameloso.constants : Timeout;
+            import std.concurrency : Generator;
 
+            alias State = ResolveAttempt.State;
+            auto resolver = new Generator!ResolveAttempt(() =>
+                resolveFiber(client.conn, bot.server.address, bot.server.port,
+                settings.ipv6, *(client.abort)));
+
+            uint incrementedRetryDelay = Timeout.retry;
+            enum incrementMultiplier = 0.8; //1.5
+
+            bool resolved;
             string infotint, logtint;
 
             version(Colours)
@@ -1160,8 +1163,59 @@ int main(string[] args)
                 }
             }
 
-            logger.infof("%s%s resolved into %s%s%s IPs.",
-            bot.server.address, logtint, infotint, conn.ips.length, logtint);
+            resolver.call();
+
+            with (client)
+            resolverloop:
+            foreach (attempt; resolver)
+            {
+                with (State)
+                final switch (attempt.state)
+                {
+                    case preresolve:
+                        // No message for this
+                        continue;
+
+                    case success:
+                        logger.infof("%s%s resolved into %s%s%2$s IPs.",
+                            bot.server.address, logtint, infotint, conn.ips.length);
+                        resolved = true;
+                        break resolverloop;
+
+                    case exception:
+                        logger.warning("Socket exception caught when resolving server adddress: ", attempt.error);
+
+                        enum resolveAttempts = 15;  // FIXME
+                        if (attempt.numRetry+1 < resolveAttempts)
+                        {
+                            import core.time : seconds;
+
+                            logger.logf("Network down? Retrying in %s%d%s seconds.",
+                                infotint, incrementedRetryDelay, logtint);
+                            interruptibleSleep(incrementedRetryDelay.seconds, *abort);
+                            incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+                        }
+                        continue;
+
+                    case error:
+                        logger.error("Socket exception caught when resolving server adddress: ", attempt.error);
+                        logger.log("Could not resolve address to IPs. Verify your server address.");
+                        break resolverloop;
+
+                    case failure:
+                        logger.error("Failed to resolve host.");
+                        break resolverloop;
+                }
+            }
+
+            if (!resolved)
+            {
+                // No need to teardown; if it's the first connect there's
+                // nothing to tear down, and if it's after the first, later code
+                // will have already torn it down.
+                logger.info("Exiting...");
+                return 1;
+            }
 
             import std.file : exists;
 
