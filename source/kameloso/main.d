@@ -800,38 +800,55 @@ Next mainLoop(ref Client client)
  +          processing.
  +      fibers = Reference to an array of `core.thread.Fiber`s to process.
  +/
-void handleFibers(Flag!"exhaustive" exhaustive = No.exhaustive)(ref Fiber[] fibers)
+import kameloso.plugins.common : IRCPlugin;
+void handleFibers(IRCPlugin plugin, const IRCEvent event)
 {
-    size_t[] emptyIndices;
+    import core.thread : Fiber;
 
-    foreach (immutable i, ref fiber; fibers)
+    if (auto fibers = event.type in plugin.state.awaitingFibers)
     {
-        if (fiber.state == Fiber.State.TERM)
-        {
-            emptyIndices ~= i;
-        }
-        else if (fiber.state == Fiber.State.HOLD)
-        {
-            fiber.call();
-        }
-        else
-        {
-            assert(0, "Invalid Fiber state");
-        }
-    }
+        size_t[] toRemove;
 
-    static if (exhaustive)
-    {
-        // Remove all called Fibers
-        fibers.length = 0;
-    }
-    else
-    {
-        // Remove completed Fibers
-        foreach_reverse (i; emptyIndices)
+        foreach (immutable i, ref fiber; *fibers)
+        {
+            try
+            {
+                if (fiber.state == Fiber.State.HOLD)
+                {
+                    fiber.call();
+                }
+
+                if (fiber.state == Fiber.State.TERM)
+                {
+                    toRemove ~= i;
+                }
+            }
+            catch (const IRCParseException e)
+            {
+                logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s",
+                    plugin.name, i, e.msg);
+                printObject(e.event);
+                toRemove ~= i;
+            }
+            catch (const Exception e)
+            {
+                logger.warningf("Exception %s.awaitingFibers[%d]: %s", plugin.name, i, e.msg);
+                printObject(event);
+                toRemove ~= i;
+            }
+        }
+
+        // Clean up processed Fibers
+        foreach_reverse (immutable i; toRemove)
         {
             import std.algorithm.mutation : remove;
-            fibers = fibers.remove(i);
+            *fibers = (*fibers).remove(i);
+        }
+
+        // If no more Fibers left, remove the Type entry in the AA
+        if (!(*fibers).length)
+        {
+            plugin.state.awaitingFibers.remove(event.type);
         }
     }
 }
