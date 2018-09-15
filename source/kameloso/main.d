@@ -1155,7 +1155,6 @@ int main(string[] args)
         return 1;
     }
 
-    with (client)
     with (client.parser)
     {
         import kameloso.bash : BashForeground;
@@ -1189,7 +1188,7 @@ int main(string[] args)
         settings.configDirectory = settings.configFile.dirName;
 
         // Initialise plugins outside the loop once, for the error messages
-        const invalidEntries = initPlugins(customSettings);
+        const invalidEntries = client.initPlugins(customSettings);
         complainAboutInvalidConfigurationEntries(invalidEntries);
 
         // Save the original nickname *once*, outside the connection loop.
@@ -1225,13 +1224,13 @@ int main(string[] args)
                 bot = backupBot;
 
                 logger.log("Please wait a few seconds...");
-                interruptibleSleep(Timeout.retry.seconds, *abort);
+                interruptibleSleep(Timeout.retry.seconds, *client.abort);
 
                 // Reinit plugins here so it isn't done on the first connect attempt
-                initPlugins(customSettings);
+                client.initPlugins(customSettings);
             }
 
-            conn.reset();
+            client.conn.reset();
 
             immutable actionAfterResolve = tryResolve(client);
 
@@ -1279,7 +1278,7 @@ int main(string[] args)
 
             // Ensure initialised resources after resolve so we know we have a
             // valid server to create a directory for.
-            initPluginResources();
+            client.initPluginResources();
 
             immutable actionAfterConnect = tryConnect(client);
 
@@ -1300,31 +1299,31 @@ int main(string[] args)
                     client.writeConfigurationFile(settings.configFile);
                 }
 
-                teardownPlugins();
+                client.teardownPlugins();
                 logger.info("Exiting...");
                 return 1;
             }
 
-            parser = IRCParser(bot);
-            startPlugins();
+            client.parser = IRCParser(bot);
+            client.startPlugins();
 
             // Start the main loop
             next = client.mainLoop();
             firstConnect = false;
 
             // Save if we're exiting and configuration says we should.
-            if (((next == Next.returnSuccess) || *abort) && settings.saveOnExit)
+            if (((next == Next.returnSuccess) || *client.abort) && settings.saveOnExit)
             {
                 client.writeConfigurationFile(settings.configFile);
             }
 
             // Always teardown after connection ends
-            teardownPlugins();
+            client.teardownPlugins();
         }
-        while (!(*abort) && ((next == Next.retry) ||
+        while (!(*client.abort) && ((next == Next.retry) ||
             ((next == Next.continue_) && settings.reconnectOnFailure)));
 
-        if (*abort)
+        if (*client.abort)
         {
             // Ctrl+C
             logger.error("Aborting...");
