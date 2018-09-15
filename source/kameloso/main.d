@@ -953,14 +953,11 @@ Next tryConnect(ref Client client)
 
             if (attempt.numRetry == 0)
             {
-                //logger.logf("Retrying in %d seconds...", incrementedRetryDelay);
                 logger.logf("Retrying in %s%d%s seconds...",
                     infotint, incrementedRetryDelay, logtint);
             }
             else
             {
-                /*logger.logf("Retrying in %d seconds (attempt %d)...",
-                    incrementedRetryDelay, attempt.numRetry+1);*/
                 logger.logf("Retrying in %s%d%s seconds (attempt %1$s%4$d%3$s)...",
                     infotint, incrementedRetryDelay, logtint, attempt.numRetry+1);
             }
@@ -970,7 +967,6 @@ Next tryConnect(ref Client client)
             continue;
 
         case delayThenNextIP:
-            //logger.logf("Trying next IP in %d seconds.", Timeout.retry);
             logger.logf("Trying next IP in %s%d%s seconds.",
                 infotint, Timeout.retry, logtint);
             interruptibleSleep(Timeout.retry.seconds, *abort);
@@ -978,12 +974,10 @@ Next tryConnect(ref Client client)
 
         case noMoreIPs:
             logger.warning("Could not connect to server!");
-            // Drop down to if (!conn.connected) below.
             return Next.returnFailure;
 
         case error:
             logger.error("Failed to connect: ", attempt.error);
-            // Drop down to if (!conn.connected) below.
             return Next.returnFailure;
         }
     }
@@ -1290,9 +1284,9 @@ int main(string[] args)
             case continue_:
                 break;
 
-            case returnSuccess:
-            case retry:     // should never happen
-                assert(0);  // should never happen
+            case returnSuccess:  // should never happen
+            case retry:  // should never happen
+                assert(0);n
 
             case returnFailure:
                 // Save if it's not the first connection andconfiguration says we should
@@ -1319,7 +1313,7 @@ int main(string[] args)
                 client.writeConfigurationFile(settings.configFile);
             }
 
-            // Always teardown after connection ends
+            // Always teardown after connection ends in case we just drop down
             client.teardownPlugins();
         }
         while (!(*client.abort) && ((next == Next.retry) ||

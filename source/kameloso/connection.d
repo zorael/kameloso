@@ -9,7 +9,7 @@ import kameloso.constants;
 
 // Connection
 /++
- +  Functions and state needed to connect and maintain a connection.
+ +  Functions and state needed to maintain a connection.
  +
  +  This is simply to decrease the amount of globals and to create some
  +  convenience functions.
@@ -30,7 +30,7 @@ private:
     Socket* socket;
 
 public:
-    /// IPs already resolved using `Connection.resolve`.
+    /// IPs already resolved using `.resolveFiber`.
     Address[] ips;
 
     /++
@@ -42,11 +42,7 @@ public:
     /// Whether we are connected or not.
     bool connected;
 
-
-    // reset
-    /++
-     +  (Re-)initialises the sockets and sets the IPv4 one as the active one.
-     +/
+    /// (Re-)initialises the sockets and sets the IPv4 one as the active one.
     void reset()
     {
         import std.socket : TcpSocket, AddressFamily, SocketType;
@@ -60,7 +56,6 @@ public:
 
         connected = false;
     }
-
 
     // setOptions
     /++
@@ -86,7 +81,6 @@ public:
         }
     }
 
-
     // sendline
     /++
      +  Sends a line to the server.
@@ -96,6 +90,8 @@ public:
      +  allowed to write to the same socket in parallel, this would be a race
      +  condition.
      +
+     +  Additionally lines are only allowed to be 512 bytes.
+     +
      +  Example:
      +  ---
      +  conn.sendline("NICK kameloso");
@@ -104,6 +100,10 @@ public:
      +
      +  Params:
      +      strings = Variadic list of strings to send.
+     +
+     +  Bugs:
+     +      Limits lines to 512 but doesn't take into consideration whether a
+     +      line included a newline, which would break.
      +/
     void sendline(Strings...)(const Strings strings)
     {
