@@ -1205,9 +1205,6 @@ int main(string[] args)
 
         do
         {
-            import kameloso.ircdefs : IRCBot;  // fix visibility warning
-            import kameloso.irc : IRCParser;
-
             if (!firstConnect)
             {
                 import kameloso.constants : Timeout;
