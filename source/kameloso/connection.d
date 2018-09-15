@@ -372,7 +372,7 @@ void connectFiber(ref Connection conn, ref bool abort)
                 // If we're here no exception was thrown, so we're connected
                 attempt.state = State.connected;
                 yield(attempt);
-                return;  // Will never get here
+                assert(0);  // Should never get here
             }
             catch (const SocketException e)
             {
@@ -383,7 +383,7 @@ void connectFiber(ref Connection conn, ref bool abort)
                     attempt.state = State.error;
                     attempt.error = e.msg;
                     yield(attempt);
-                    return;  // Will never get here
+                    assert(0);  // Should never get here
 
                 //case "Unable to connect socket: Network is unreachable":
                 default:
@@ -502,7 +502,7 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
                 attempt.state = State.error;
                 attempt.error = e.msg;
                 yield(attempt);
-                return;  // Should never get here
+                assert(0);  // Should never get here
             }
         }
     }

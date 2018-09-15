@@ -1283,7 +1283,7 @@ int main(string[] args)
 
             case returnSuccess:  // should never happen
             case retry:  // should never happen
-                assert(0);n
+                assert(0);
 
             case returnFailure:
                 // Save if it's not the first connection andconfiguration says we should
