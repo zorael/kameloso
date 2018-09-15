@@ -811,6 +811,70 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
 }
 
 
+// handleTimedFibers
+/++
+ +  Processes the timed `Fiber`s of an `IRCPlugin`.
+ +
+ +  Params:
+ +      plugin = The `IRCPlugin` whose timed `Fiber`s to iterate and process.
+ +      timedFiberCheckCounter = The ref timestamp at which to next check for
+ +          timed fibers to process.
+ +/
+void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const long nowInUnix)
+{
+    size_t[] toRemove;
+
+    foreach (immutable i, ref fiber; plugin.state.timedFibers)
+    {
+        if (fiber.id > nowInUnix)
+        {
+            import kameloso.constants : Timeout;
+            import std.algorithm.comparison : min;
+
+            // This Fiber shouldn't yet be triggered.
+            // Lower timedFiberCheckCounter to fire earlier, in
+            // case the time-to-fire is lower than the current
+            // counter value. This gives it more precision.
+
+            immutable nextTime = cast(int)(fiber.id - nowInUnix) / Timeout.receive;
+            timedFiberCheckCounter = min(timedFiberCheckCounter, nextTime);
+            continue;
+        }
+
+        try
+        {
+            import core.thread : Fiber;
+
+            if (fiber.state == Fiber.State.HOLD)
+            {
+                fiber.call();
+            }
+
+            // Always removed a timed Fiber after processing
+            toRemove ~= i;
+        }
+        catch (const IRCParseException e)
+        {
+            logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
+            printObject(e.event);
+            toRemove ~= i;
+        }
+        catch (const Exception e)
+        {
+            logger.warningf("Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
+            toRemove ~= i;
+        }
+    }
+
+    // Clean up processed Fibers
+    foreach_reverse (immutable i; toRemove)
+    {
+        import std.algorithm.mutation : remove;
+        plugin.state.timedFibers = plugin.state.timedFibers.remove(i);
+    }
+}
+
+
 // handleWHOISQueue
 /++
  +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each
