@@ -416,7 +416,7 @@ Next checkMessages(ref Client client)
 Next mainLoop(ref Client client)
 {
     import kameloso.common : printObjects;
-    import kameloso.connection : listenFiber;
+    import kameloso.connection : ListenAttempt, listenFiber;
     import core.exception : UnicodeException;
     import core.thread : Fiber;
     import std.concurrency : Generator;
@@ -426,8 +426,11 @@ Next mainLoop(ref Client client)
     /// Enum denoting what we should do next loop.
     Next next;
 
+    alias State = ListenAttempt.State;
+
     // Instantiate a Generator to read from the socket and yield lines
-    auto listener = new Generator!string(() => listenFiber(client.conn, *(client.abort)));
+    auto listener = new Generator!ListenAttempt(
+        () => listenFiber(client.conn, *(client.abort)));
 
     /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -437,6 +440,21 @@ Next mainLoop(ref Client client)
      +  `Fiber`s.
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
+
+    string logtint, errortint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+            errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
+        }
+    }
 
     while (next == Next.continue_)
     {
@@ -458,7 +476,8 @@ Next mainLoop(ref Client client)
         listener.call();
 
         with (client.parser)
-        foreach (immutable line; listener)
+        listenerloop:
+        foreach (const attempt; listener)
         {
             // Go through Fibers awaiting a point in time, regardless of whether
             // something was read or not.
@@ -528,8 +547,77 @@ Next mainLoop(ref Client client)
                 }
             }
 
-            // Empty line yielded means nothing received; break and try again
-            if (!line.length) break;
+            // Handle the attempt; switch on its state
+            with (State)
+            final switch (attempt.state)
+            {
+            case isEmpty:
+                // Empty line yielded means nothing received; break foreach and try again
+                break listenerloop;
+
+            case hasString:
+                // hasString means we should drop down and continue
+                break;
+
+            case warning:
+                // Benign socket error; break foreach and try again
+                logger.warningf("Socket.ERROR and last error: %s%s",
+                    logtint, attempt.lastSocketError_);
+                break listenerloop;
+
+            case error:
+                import kameloso.constants : Timeout;
+                import std.socket : Socket;
+
+                if (attempt.bytesReceived == 0)
+                {
+                    logger.errorf("ZERO RECEIVED! last error: %s%s", logtint, attempt.lastSocketError_);
+                    logger.error("Assuming dead and returning.");
+                    return Next.returnFailure;
+                }
+                else if (attempt.bytesReceived == Socket.ERROR)
+                {
+                    import core.time : seconds;
+
+                    if (attempt.elapsed > Timeout.connectionLost.seconds)
+                    {
+                        import kameloso.common : timeSince;
+                        // Too much time has passed; we can reasonably assume the socket is disconnected
+                        logger.errorf("NOTHING RECEIVED FOR %s%s%s (timeout %1$s%4$s%3$s)",
+                            logtint, timeSince(attempt.elapsed), errortint,
+                            Timeout.connectionLost.seconds);
+                        return Next.returnFailure;
+                    }
+
+                    switch (attempt.lastSocketError_)
+                    {
+                    case "Resource temporarily unavailable":
+                        // Nothing received
+                    case "Interrupted system call":
+                        // Unlucky callgrind_control -d timing
+                    case "A connection attempt failed because the connected party did not " ~
+                        "properly respond after a period of time, or established connection " ~
+                        "failed because connected host has failed to respond.":
+                        // Timed out read in Windows
+                        break listenerloop;
+
+                    // Others that may be benign?
+                    case "An established connection was aborted by the software in your host machine.":
+                    case "An existing connection was forcibly closed by the remote host.":
+                    case "Connection reset by peer":
+                        logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint,
+                            attempt.lastSocketError_, errortint);
+                        return Next.returnFailure;
+
+                    default:
+                        logger.warningf("Unforeseen socket error: %s%s",
+                            logtint, attempt.lastSocketError_);
+                        // How to deal with this?
+                        break listenerloop;
+                    }
+                }
+                break;
+            }
 
             IRCEvent mutEvent;
 
@@ -546,15 +634,15 @@ Next mainLoop(ref Client client)
 
                 try
                 {
-                    mutEvent = client.parser.toIRCEvent(line);
+                    mutEvent = client.parser.toIRCEvent(attempt.line);
                 }
                 catch (const UTFException e)
                 {
-                    mutEvent = client.parser.toIRCEvent(sanitize(line));
+                    mutEvent = client.parser.toIRCEvent(sanitize(attempt.line));
                 }
                 catch (const UnicodeException e)
                 {
-                    mutEvent = client.parser.toIRCEvent(sanitize(line));
+                    mutEvent = client.parser.toIRCEvent(sanitize(attempt.line));
                 }
 
                 if (bot.updated)
@@ -686,7 +774,7 @@ Next mainLoop(ref Client client)
                 }
                 else
                 {
-                    logger.warningf(`Offending line: "%s"`, line);
+                    logger.warningf(`Offending line: "%s"`, attempt.line);
                 }
             }
         }
