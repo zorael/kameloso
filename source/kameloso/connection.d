@@ -168,6 +168,21 @@ void listenFiber(Connection conn, ref bool abort)
     bool pingingToTestConnection;
     size_t start;
 
+    string logtint, errortint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
+
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+            errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
+        }
+    }
+
     // The Generator we use this function with popFronts the first thing it does
     // after being instantiated. To work around our main loop popping too we
     // yield an initial empty value; else the first thing to happen will be a
@@ -180,8 +195,8 @@ void listenFiber(Connection conn, ref bool abort)
 
         if (!bytesReceived)
         {
-            logger.errorf("ZERO RECEIVED! last error: '%s'", lastSocketError);
-            logger.error("assuming dead and returning.");
+            logger.errorf("ZERO RECEIVED! last error: %s%s", logtint, lastSocketError);
+            logger.error("Assuming dead and returning.");
             return;
         }
         else if (bytesReceived == Socket.ERROR)
@@ -199,8 +214,8 @@ void listenFiber(Connection conn, ref bool abort)
             {
                 import kameloso.common : timeSince;
                 // Too much time has passed; we can reasonably assume the socket is disconnected
-                logger.errorf("NOTHING RECEIVED FOR %s (timeout %s)",
-                    timeSince(elapsed), Timeout.connectionLost.seconds);
+                logger.errorf("NOTHING RECEIVED FOR %s%s%s (timeout %1$s%4$s%3$s)",
+                    logtint, timeSince(elapsed), errortint, Timeout.connectionLost.seconds);
                 return;
             }
 
@@ -221,11 +236,11 @@ void listenFiber(Connection conn, ref bool abort)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
-                logger.errorf("FATAL SOCKET ERROR (%s)", lastSocketError);
+                logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint, lastSocketError, errortint);
                 return;
 
             default:
-                logger.warningf("Socket.ERROR and last error %s", lastSocketError);
+                logger.warningf("Socket.ERROR and last error: %s%s", logtint, lastSocketError);
                 yield(string.init);
                 break;
             }
