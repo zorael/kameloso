@@ -551,6 +551,9 @@ Next mainLoop(ref Client client)
             with (State)
             final switch (attempt.state)
             {
+            case prelisten:  // Should never happen
+                assert(0);
+
             case isEmpty:
                 // Empty line yielded means nothing received; break foreach and try again
                 break listenerloop;
