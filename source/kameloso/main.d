@@ -1111,7 +1111,6 @@ else
 int main(string[] args)
 {
     import kameloso.common : printObjects;
-    import std.stdio : writeln;
 
     // Initialise the main Client. Set its abort pointer to the global abort.
     Client client;
@@ -1169,6 +1168,7 @@ int main(string[] args)
             }
         }
 
+        import std.stdio : writeln;
         printVersionInfo(tint);
         writeln();
 
