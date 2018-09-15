@@ -1013,23 +1013,7 @@ Next tryResolve(ref Client client)
     import kameloso.string : contains;
     import std.concurrency : Generator;
 
-    if (!client.parser.bot.server.address.contains("."))
-    {
-        // Workaround for Issue 19247:
-        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
-        logger.errorf("Invalid address! (%s)", client.parser.bot.server.address);
-        return Next.returnFailure;
-    }
-
-    alias State = ResolveAttempt.State;
-    auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(client.conn, client.parser.bot.server.address,
-        client.parser.bot.server.port, settings.ipv6, *(client.abort)));
-
-    uint incrementedRetryDelay = Timeout.retry;
-    enum incrementMultiplier = 1.5;
-
-    string infotint, logtint;
+    string infotint, logtint, errortint;
 
     version(Colours)
     {
@@ -1041,8 +1025,26 @@ Next tryResolve(ref Client client)
 
             infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
             logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+            errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
         }
     }
+
+    if (!client.parser.bot.server.address.contains("."))
+    {
+        // Workaround for Issue 19247:
+        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
+        logger.errorf("Invalid address! [%s%s%s]", logtint,
+            client.parser.bot.server.address, errortint);
+        return Next.returnFailure;
+    }
+
+    alias State = ResolveAttempt.State;
+    auto resolver = new Generator!ResolveAttempt(() =>
+        resolveFiber(client.conn, client.parser.bot.server.address,
+        client.parser.bot.server.port, settings.ipv6, *(client.abort)));
+
+    uint incrementedRetryDelay = Timeout.retry;
+    enum incrementMultiplier = 1.5;
 
     resolver.call();
 
