@@ -458,6 +458,8 @@ Next mainLoop(ref Client client)
 
     while (next == Next.continue_)
     {
+        if (*client.abort) return Next.returnFailure;
+
         if (listener.state == Fiber.State.TERM)
         {
             // Listening Generator disconnected; reconnect
@@ -479,6 +481,8 @@ Next mainLoop(ref Client client)
         listenerloop:
         foreach (const attempt; listener)
         {
+            if (*client.abort) return Next.returnFailure;
+
             // Go through Fibers awaiting a point in time, regardless of whether
             // something was read or not.
 
