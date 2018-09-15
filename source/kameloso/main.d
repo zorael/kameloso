@@ -457,7 +457,6 @@ Next mainLoop(ref Client client)
         // Call the generator, query it for event lines
         listener.call();
 
-        with (client)
         with (client.parser)
         foreach (immutable line; listener)
         {
@@ -474,7 +473,7 @@ Next mainLoop(ref Client client)
                 // Reset counter
                 timedFiberCheckCounter = checkTimedFibersEveryN;
 
-                foreach (plugin; plugins)
+                foreach (plugin; client.plugins)
                 {
                     if (!plugin.state.timedFibers.length) continue;
 
@@ -547,25 +546,25 @@ Next mainLoop(ref Client client)
 
                 try
                 {
-                    mutEvent = parser.toIRCEvent(line);
+                    mutEvent = client.parser.toIRCEvent(line);
                 }
                 catch (const UTFException e)
                 {
-                    mutEvent = parser.toIRCEvent(sanitize(line));
+                    mutEvent = client.parser.toIRCEvent(sanitize(line));
                 }
                 catch (const UnicodeException e)
                 {
-                    mutEvent = parser.toIRCEvent(sanitize(line));
+                    mutEvent = client.parser.toIRCEvent(sanitize(line));
                 }
 
                 if (bot.updated)
                 {
                     // Parsing changed the bot; propagate
                     bot.updated = false;
-                    propagateBot(bot);
+                    client.propagateBot(bot);
                 }
 
-                foreach (plugin; plugins)
+                foreach (plugin; client.plugins)
                 {
                     plugin.postprocess(mutEvent);
 
@@ -574,14 +573,14 @@ Next mainLoop(ref Client client)
                         // Postprocessing changed the bot; propagate
                         bot = plugin.state.bot;
                         bot.updated = false;
-                        propagateBot(bot);
+                        client.propagateBot(bot);
                     }
                 }
 
                 immutable IRCEvent event = mutEvent;
 
                 // Let each plugin process the event
-                foreach (plugin; plugins)
+                foreach (plugin; client.plugins)
                 {
                     try
                     {
@@ -649,8 +648,8 @@ Next mainLoop(ref Client client)
                             */
                             bot = plugin.state.bot;
                             bot.updated = false;
-                            parser.bot = bot;
-                            propagateBot(bot);
+                            client.parser.bot = bot;
+                            client.propagateBot(bot);
                         }
                     }
                     catch (const UTFException e)
