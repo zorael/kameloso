@@ -675,53 +675,7 @@ Next mainLoop(ref Client client)
                         plugin.onEvent(event);
 
                         // Go through Fibers awaiting IRCEvent.Types
-                        if (auto fibers = event.type in plugin.state.awaitingFibers)
-                        {
-                            size_t[] toRemove;
-
-                            foreach (immutable i, ref fiber; *fibers)
-                            {
-                                try
-                                {
-                                    if (fiber.state == Fiber.State.HOLD)
-                                    {
-                                        fiber.call();
-                                    }
-
-                                    if (fiber.state == Fiber.State.TERM)
-                                    {
-                                        toRemove ~= i;
-                                    }
-                                }
-                                catch (const IRCParseException e)
-                                {
-                                    logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s",
-                                        plugin.name, i, e.msg);
-                                    printObject(e.event);
-                                    toRemove ~= i;
-                                }
-                                catch (const Exception e)
-                                {
-                                    logger.warningf("Exception %s.awaitingFibers[%d]: %s",
-                                        plugin.name, i, e.msg);
-                                    printObject(event);
-                                    toRemove ~= i;
-                                }
-                            }
-
-                            // Clean up processed Fibers
-                            foreach_reverse (immutable i; toRemove)
-                            {
-                                import std.algorithm.mutation : remove;
-                                *fibers = (*fibers).remove(i);
-                            }
-
-                            // If no more Fibers left, remove the Type entry in the AA
-                            if (!(*fibers).length)
-                            {
-                                plugin.state.awaitingFibers.remove(event.type);
-                            }
-                        }
+                        plugin.handleFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
                         client.handleWHOISQueue(plugin.state.whoisQueue);
