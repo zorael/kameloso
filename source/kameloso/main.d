@@ -1011,7 +1011,16 @@ Next tryResolve(ref Client client)
 {
     import kameloso.connection : ResolveAttempt, resolveFiber;
     import kameloso.constants : Timeout;
+    import kameloso.string : contains;
     import std.concurrency : Generator;
+
+    if (!client.parser.bot.server.address.contains("."))
+    {
+        // Workaround for Issue 19247:
+        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
+        logger.errorf("Invalid address! (%s)", client.parser.bot.server.address);
+        return Next.returnFailure;
+    }
 
     alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
