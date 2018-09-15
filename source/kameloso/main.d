@@ -698,16 +698,11 @@ Next mainLoop(ref Client client)
 
 // handleFibers
 /++
- +  Takes an array of `core.thread.Fiber`s and processes them.
- +
- +  If passed `Yes.exhaustive` they are removed from the arrays after they are
- +  called, so they won't be triggered again next pass. Otherwise only the
- +  finished ones are removed.
+ +  Processes the awaiting `Fiber`s of an `IRCPlugin`.
  +
  +  Params:
- +      exhaustive = Whether to always remove `core.thread.Fiber`s after
- +          processing.
- +      fibers = Reference to an array of `core.thread.Fiber`s to process.
+ +      plugin = The `IRCPlugin` whose awaiting `Fiber`s to iterate and process.
+ +      event = The triggering `IRCEvent`.
  +/
 import kameloso.plugins.common : IRCPlugin;
 void handleFibers(IRCPlugin plugin, const IRCEvent event)
