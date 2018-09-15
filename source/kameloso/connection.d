@@ -167,20 +167,21 @@ struct ListenAttempt
  +
  +  It maintains its own buffer into which it receives from the server, though
  +  not neccessarily full lines. It thus keeps filling the buffer until it
- +  finds a newline character, yields it back to the caller of the fiber,
- +  checks for more lines to yield, and if none yields `string.init` to wait for
- +  its turn to read from the server again. The buffer logic is complex.
+ +  finds a newline character, yields `ListenAttempt`s back to the caller of
+ +  the fiber, checks for more lines to yield, and if none yields an attempt
+ +  with a `ListenAttempt.State` denoting that nothing was read and that a new
+ +  attempt should be made later. The buffer logic is complex.
  +
  +  Example:
  +  ---
  +  import std.concurrency : Generator;
  +
- +  auto generator = new Generator!string(() => listenFiber(conn, abort));
+ +  auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort));
  +  generator.call();
  +
- +  foreach (immutable line; generator)
+ +  foreach (const attempt; listener)
  +  {
- +      // line is a yielded string
+ +      // attempt is a yielded `ListenAttempt`
  +  }
  +  ---
  +
@@ -190,7 +191,8 @@ struct ListenAttempt
  +      abort = Reference flag which, if set, means we should abort and return.
  +
  +  Yields:
- +      Full IRC event strings.
+ +      `ListenAttempt`s with information about the line receieved in its
+ +      member values.
  +/
 void listenFiber(Connection conn, ref bool abort)
 {
@@ -205,58 +207,52 @@ void listenFiber(Connection conn, ref bool abort)
     bool pingingToTestConnection;
     size_t start;
 
-    string logtint, errortint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.bash : colour;
-            import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
-
-            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
-            errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
-        }
-    }
+    alias State = ListenAttempt.State;
+    ListenAttempt attempt;
 
     // The Generator we use this function with popFronts the first thing it does
     // after being instantiated. To work around our main loop popping too we
     // yield an initial empty value; else the first thing to happen will be a
     // double pop, and the first line is missed.
-    yield(string.init);
+    yield(attempt);
 
     while (!abort)
     {
         immutable ptrdiff_t bytesReceived = conn.receive(buffer[start..$]);
+        attempt.bytesReceived = bytesReceived;
 
         if (!bytesReceived)
         {
-            logger.errorf("ZERO RECEIVED! last error: %s%s", logtint, lastSocketError);
-            logger.error("Assuming dead and returning.");
-            return;
+            attempt.state = State.error;
+            attempt.lastSocketError_ = lastSocketError;
+            yield(attempt);
+            assert(0);  // Should never get here
         }
         else if (bytesReceived == Socket.ERROR)
         {
             immutable elapsed = (Clock.currTime - timeLastReceived);
+            attempt.elapsed = elapsed;
+            attempt.line = string.init;
 
             if (!pingingToTestConnection && (elapsed > Timeout.keepalive.seconds))
             {
-                conn.send("PING :hello");
+                conn.send("PING :helloasdf");
                 pingingToTestConnection = true;
+                attempt.state = State.isEmpty;
+                yield(attempt);
                 continue;
             }
 
             if (elapsed > Timeout.connectionLost.seconds)
             {
-                import kameloso.common : timeSince;
-                // Too much time has passed; we can reasonably assume the socket is disconnected
-                logger.errorf("NOTHING RECEIVED FOR %s%s%s (timeout %1$s%4$s%3$s)",
-                    logtint, timeSince(elapsed), errortint, Timeout.connectionLost.seconds);
-                return;
+                attempt.state = State.error;
+                yield(attempt);
+                assert(0);  // Should never get here
             }
 
-            switch (lastSocketError)
+            attempt.lastSocketError_ = lastSocketError;
+
+            switch (attempt.lastSocketError_)
             {
             case "Resource temporarily unavailable":
                 // Nothing received
@@ -266,23 +262,23 @@ void listenFiber(Connection conn, ref bool abort)
                  "properly respond after a period of time, or established connection " ~
                  "failed because connected host has failed to respond.":
                 // Timed out read in Windows
-                yield(string.init);
-                break;
+                attempt.state = State.isEmpty;
+                yield(attempt);
+                continue;
 
             // Others that may be benign?
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
-                logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint, lastSocketError, errortint);
-                return;
+                attempt.state = State.error;
+                yield(attempt);
+                assert(0);  // Should never get here
 
             default:
-                logger.warningf("Socket.ERROR and last error: %s%s", logtint, lastSocketError);
-                yield(string.init);
-                break;
+                attempt.state = State.warning;
+                yield(attempt);
+                continue;
             }
-
-            continue;
         }
 
         timeLastReceived = Clock.currTime;
@@ -294,12 +290,16 @@ void listenFiber(Connection conn, ref bool abort)
 
         while (newline != -1)
         {
-            yield((cast(char[])buffer[pos..pos+newline-1]).idup);
+            //yield((cast(char[])buffer[pos..pos+newline-1]).idup);
+            attempt.state = State.hasString;
+            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;
+            yield(attempt);
             pos += (newline + 1); // eat remaining newline
             newline = (cast(char[])buffer[pos..end]).indexOf('\n');
         }
 
-        yield(string.init);
+        attempt.state = State.isEmpty;
+        yield(attempt);
 
         if (pos >= end)
         {
