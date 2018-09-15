@@ -123,6 +123,43 @@ public:
 }
 
 
+// ListenAttempt
+/++
+ +  Embodies the state of a listening attempt.
+ +/
+import core.time : Duration;
+struct ListenAttempt
+{
+    /// At what state the listening process this attemt is currently at.
+    enum State
+    {
+        prelisten,  /// About to listen.
+        isEmpty,    /// Empty result; nothing read or similar.
+        hasString,  /// String read, ready for processing.
+        warning,    /// Recoverable exception thrown; warn and continue.
+        error,      /// Unrecoverable exception thrown; abort.
+    }
+
+    /// The current state of the attempt.
+    State state;
+
+    /// The last read line of text sent by the server.
+    string line;
+
+    /// The error text of the last exception thrown.
+    string error;
+
+    /// The `lastSocketError` at the last point of error.
+    string lastSocketError_;
+
+    /// The amount of bytes received this attempt.
+    long bytesReceived;
+
+    /// The duration since the last string was successfully read.
+    Duration elapsed;
+}
+
+
 // listenFiber
 /++
  +  A `std.socket.Socket`-reading `std.concurrency.Generator`
