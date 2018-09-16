@@ -666,21 +666,42 @@ unittest
  +      meldThis = Associative array to meld (source).
  +      intoThis = Reference to the associative array to meld (target).
  +/
-void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, AA)(AA meldThis, ref AA intoThis) pure
+void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, AA)
+    (AA meldThis, ref AA intoThis) //pure
 if (isAssociativeArray!AA)
 {
     foreach (key, val; meldThis)
     {
-        static if (overwrite)
+        with (MeldingStrategy)
+        final switch (strategy)
         {
-            intoThis[key] = val;
-        }
-        else
-        {
-            if ((val != typeof(val).init) && (intoThis[key] == typeof(intoThis[i]).init))
+        case conservative:
+            const target = key in intoThis;
+            if (val == typeof(val).init)
             {
-                intoThis[i] = val;
+                // Source value is .init; do nothing
             }
+            else if (!target || (*target == typeof(*target).init))
+            {
+                // Target value doesn't exist or is .init; meld
+                intoThis[key] = val;
+            }
+            break;
+
+        case aggressive:
+            //const target = key in intoThis;
+            //if (!target || (*target == typeof(*target).init))
+            if (val != typeof(val).init)
+            {
+                // Target value doesn't exist; meld
+                intoThis[key] = val;
+            }
+            break;
+
+        case overwriting:
+            // Always overwrite
+            intoThis[key] = val;
+            break;
         }
     }
 }
@@ -701,10 +722,26 @@ unittest
     assert("c" in aa2);
     assert("d" in aa2);
 
-    aa1.meldInto(aa2);
+    aa1.meldInto!(MeldingStrategy.overwriting)(aa2);
 
     assert("a" in aa2);
     assert("b" in aa2);
+
+    string[string] saa1;
+    string[string] saa2;
+
+    saa1["a"] = "a";
+    saa1["b"] = "b";
+    saa2["c"] = "c";
+    saa2["d"] = "d";
+
+    saa1.meldInto!(MeldingStrategy.conservative)(saa2);
+    assert("a" in saa2);
+    assert("b" in saa2);
+
+    saa1["a"] = "A";
+    saa1.meldInto!(MeldingStrategy.aggressive)(saa2);
+    assert(saa2["a"] == "A");
 }
 
 
