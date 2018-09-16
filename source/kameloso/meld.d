@@ -48,8 +48,8 @@ enum MeldingStrategy
  +  In the case of structs it also overwrites members that still have their
  +  default values, in cases where such is applicable.
  +
- +  Supply a template parameter `Yes.overwrite` to make it always overwrite,
-    except if the melding struct's member is `typeof(member).init`.
+ +  Supply a template parameter `MeldingStrategy` to decide to which extent
+ +  values are overwritten.
  +
  +  Example:
  +  ---
@@ -74,8 +74,8 @@ enum MeldingStrategy
  +  Params:
  +      strategy = To what extent the source object should overwrite set
  +          (non-`init`) values in the receiving object.
- +      meldThis = Struct to meld (source).
- +      intoThis = Reference to struct to meld (target).
+ +      meldThis = Object to meld (source).
+ +      intoThis = Reference to object to meld (target).
  +/
 void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, Thing)
     (Thing meldThis, ref Thing intoThis)
@@ -223,6 +223,9 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                     {
                         static if (is(Thing == class))
                         {
+                            // We cannot tell whether it has the same value as
+                            // `Thing.init` does, as it would need to be instantiated.
+                            // Assume overwrite?
                             targetMember = meldThis.tupleof[i];
                         }
                         else

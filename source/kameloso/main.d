@@ -710,7 +710,8 @@ Next mainLoop(ref Client client)
  +  Processes the awaiting `Fiber`s of an `IRCPlugin`.
  +
  +  Params:
- +      plugin = The `IRCPlugin` whose awaiting `Fiber`s to iterate and process.
+ +      plugin = The `IRCPlugin` whose `IRCEvent.Type`-awaiting `Fiber`s to
+ +          iterate and process.
  +      event = The triggering `IRCEvent`.
  +/
 import kameloso.plugins.common : IRCPlugin;
@@ -1185,6 +1186,12 @@ void main()
 else
 /++
  +  Entry point of the program.
+ +
+ +  Params:
+ +      args = Command-line arguments passed to the program.
+ +
+ +  Returns:
+ +      `0` on success, `1` on failure.
  +/
 int main(string[] args)
 {
