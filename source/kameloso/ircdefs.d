@@ -922,13 +922,6 @@ struct IRCBot
         /// The current modechars active on the bot (e.g. "ix");
         string modes;
     }
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : formattedWrite;
-        sink.formattedWrite("%s:%s!~%s | homes:%s | chans:%s | server:%s",
-             nickname, authLogin, ident, homes, channels, server);
-    }
 }
 
 
@@ -1065,12 +1058,6 @@ struct IRCServer
 
         /// The modechar for invite exceptions.
         char invexChar = 'I';
-    }
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : formattedWrite;
-        sink.formattedWrite("[Daemon.%s@%s] %s:%d (%s)", daemon, network, address, port,resolvedAddress);
     }
 }
 
@@ -1322,15 +1309,6 @@ struct IRCUser
         this.nickname = nickname;
         this.ident = ident;
         this.address = address;
-    }
-
-    /// Formats the `IRCBot` to a humanly readable (and printable) string.
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : formattedWrite;
-        sink.formattedWrite("%s!%s@%s#%s%s @%d [%d]",
-            nickname, ident, address, account,
-            (class_ == Class.special) ? " *" : string.init, lastWhois, refcount);
     }
 
     /// Guesses that a sender is a server.
@@ -2557,18 +2535,6 @@ struct IRCChannel
             immutable match = (charMatch && dataMatch && userMatch && chanMatch);
             return negated ? !match : match;
         }
-
-        void toString(scope void delegate(const(char)[]) @safe sink) const
-        {
-            import std.format : formattedWrite;
-            sink.formattedWrite("+%c (%s@%s) <%s>", modechar, data, user, exceptions);
-        }
-
-        string toString() const
-        {
-            import std.format : format;
-            return "+%c (%s@%s) <%s>".format(modechar, data, user, exceptions);
-        }
     }
 
     /// The current topic of the channel, as set by operators.
@@ -2619,17 +2585,4 @@ struct IRCChannel
 
     /// When the channel was created, expresed in UNIX time.
     long created;
-
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : formattedWrite;
-
-        sink.formattedWrite("TOPIC:%s\nnUSERS:%d\nMODES(%s):%s",
-            topic, users.length, modechars, modes);
-
-        foreach (immutable prefix, list; mods)
-        {
-            sink.formattedWrite("\n+%s: %s", prefix, list);
-        }
-    }
 }
