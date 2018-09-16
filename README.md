@@ -8,28 +8,29 @@ It works well with the majority of server networks. IRC is standardised but serv
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
-### Current functionality includes:
+## Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` for op)
 * looking up titles of pasted web URLs
+* logging to file
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch support; Twitch bot is now easy (see notes on connecting below)
+* Twitch support; Twitch bot is now easy (see [notes on connecting](#twitch) below)
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration stored on file
+* configuration stored on file; generate one and edit it to get an idea of the features available to toggle (see [notes on generating](#configuration) below)
 
-### Current limitations:
+## Current limitations:
 
 * **the dmd and ldc compilers will segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
-* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot.
-* some plugins don't yet differentiate between different home channels if there is more than one.
+* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. On the other hand, the development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
+* some plugins don't (yet) differentiate between different home channels if there is more than one.
 * nicknames are not case-insensitive. The `lowercaseNickname` function is written and in place; it's just not yet seeing use. It is a very invasive change, so holding out until we find a compelling use-case.
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
@@ -64,13 +65,11 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 
 # News
 
-* compiler segfaults are back.
+* compiler segfaults are back; dmd, ldc, gdc.
 * experimental `automodes` plugin, please test.
-* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `logs` set to `true`. It can either write lines immediately as they are received, or buffer writes to write with a cadence of once every PING, configured with `bufferedWrites`. By default only homes are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
-* all* (non-service) plugins can now be toggled as enabled or disabled in the configuration file. Regenerate it to get the needed entries.
-* `IRCEvent` has a new member `count`. It houses counts, amounts, the number of times something has happened, and similar numbers. This lets us leave `num` alone to its original purpose of specifying numerics.
+* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `logs` set to `true`. By default only home channels are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
 * `--asserts` vastly improved.
-* Twitch emote highlighting; now uses a `dstring` and is seemingly fully accurate.
+* Twitch emote highlighting now uses a `dstring` and is seemingly fully accurate.
 
 # Getting started
 
@@ -80,13 +79,11 @@ These instructions will get you a copy of the project up and running on your loc
 
 You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used, and the development release crashes when trying.
 
 It's *possible* to build it manually without dub, but it is non-trivial if you want the web-related plugins to work. Your best bet is to first build it with dub in verbose mode, then copy the actual command it runs and modify it to suit your needs.
 
 ## Downloading
-
-GitHub offers downloads in [ZIP format](https://github.com/zorael/kameloso/archive/master.zip), but it's arguably easier to use **git** and clone a copy of the source that way.
 
 ```bash
 $ git clone https://github.com/zorael/kameloso.git
@@ -103,9 +100,9 @@ $ dub build
 
 This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols.
 
-> You can automatically strip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
+> You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above will currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode.
+The above will currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode. [Bug reported.](https://issues.dlang.org/show_bug.cgi?id=18026)
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
@@ -135,9 +132,9 @@ $ dub build -c cygwin
 
 There are a few Windows caveats.
 
-* Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a light installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+* Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 * Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to fix this.
-* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Normal `cmd` and Powershell consoles are not affected and can be used with any configuration.
+* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Powershell consoles are not affected and can be used with any configuration, as can normal `cmd` ones, albeit with the previously mentioned colour issues.
 
 # How to use
 
@@ -219,6 +216,7 @@ kameloso | <Reverend> IRC is just multiplayer notepad.
 kameloso | [youtube.com] Danish language
      you | !reddit https://dlang.org/blog/2018/01/04/dmd-2-078-0-has-been-released
 kameloso | Reddit post: https://www.reddit.com/r/programming/comments/7o2tcw/dmd_20780_has_been_released
+kameloso | [reddit.com] DMD 2.078.0 Has Been Released : programming
 ```
 
 ### Online help and commands
@@ -253,6 +251,8 @@ port                6667
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
 Mind that in some cases Twitch does not behave as a conventional IRC server. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at regular intervals. It is also possible to leave a channel that you aren't in, and you cannot join a channel if that corresponding user doesn't exist.
+
+Also, due to current design user badges are not per channel as they should be.
 
 ## Use as a library
 
