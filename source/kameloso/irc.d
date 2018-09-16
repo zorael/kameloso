@@ -3539,14 +3539,14 @@ unittest
         lMode.data = "200";
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].toString());
+        assert((chan.modes[0] == lMode), chan.modes[0].to!string);
 
         chan.setMode("+l", "100", server);
         lMode.modechar = 'l';
         lMode.data = "100";
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].toString());
+        assert((chan.modes[0] == lMode), chan.modes[0].to!string);
     }
 
     {
