@@ -272,12 +272,8 @@ void formatObjects(Flag!"printAll" printAll = No.printAll,
     (auto ref Sink sink, Things things) @trusted
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.string : stripSuffix;
     import kameloso.traits;
     import std.algorithm.comparison : max;
-    import std.format : formattedWrite;
-    import std.range.primitives : ElementEncodingType;
-    import std.traits : Unqual, hasUDA, isAssociativeArray, isType;
 
     static if (coloured)
     {
@@ -310,6 +306,10 @@ if (isOutputRange!(Sink, char[]))
     with (BashForeground)
     foreach (immutable n, thing; things)
     {
+        import kameloso.string : stripSuffix;
+        import std.format : formattedWrite;
+        import std.traits : Unqual;
+
         alias Thing = Unqual!(typeof(thing));
 
         static if (coloured)
@@ -324,6 +324,8 @@ if (isOutputRange!(Sink, char[]))
 
         foreach (immutable i, member; thing.tupleof)
         {
+            import std.traits : hasUDA, isAssociativeArray, isType;
+
             enum shouldNormallyBePrinted = !isType!member &&
                 isConfigurableVariable!member &&
                 !hasUDA!(thing.tupleof[i], Hidden) &&
@@ -364,6 +366,8 @@ if (isOutputRange!(Sink, char[]))
                 }
                 else static if (isArray!T || isAssociativeArray!T)
                 {
+                    import std.range.primitives : ElementEncodingType;
+
                     alias ElemType = Unqual!(ElementEncodingType!T);
                     enum elemIsCharacter = is(ElemType == char) || is(ElemType == dchar) || is(ElemType == wchar);
 
