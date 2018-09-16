@@ -390,18 +390,11 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : remove;
 
     immutable channel = event.content.stripped;
-
-    if (!channel.isValidChannel(plugin.state.bot.server))
-    {
-        logger.warning("Invalid channel: ", channel);
-        return;
-    }
 
     with (plugin.state)
     {
