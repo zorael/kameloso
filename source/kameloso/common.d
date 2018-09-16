@@ -813,7 +813,8 @@ enum : ubyte
  +  Returns:
  +      The multiple of `n` that reaches and possibly overshoots `num`.
  +/
-uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)(const Number num, const int n)
+uint getMultipleOf(Flag!"alwaysOneUp" oneUp = No.alwaysOneUp, Number)
+    (const Number num, const int n)
 {
     assert((n > 0), "Cannot get multiple of 0 or negatives");
     assert((num >= 0), "Cannot get multiples for a negative number");

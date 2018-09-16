@@ -1033,7 +1033,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             throw new IRCParseException("Uncaught NUMERIC or UNSET", event);
         }
 
-        parser.parseGeneralCases(event, slice);
+        return parser.parseGeneralCases(event, slice);
     }
 }
 
