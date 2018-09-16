@@ -76,7 +76,7 @@ void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
  +/
 void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {
-    import kameloso.string : beginsWith, contains, nom;
+    import kameloso.string : beginsWith, contains;
     import std.algorithm.iteration : filter;
 
     static assert((!Rest.length || (Rest.length % 2 == 0)),
@@ -88,6 +88,7 @@ void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, 
 
         if (arg.contains('='))
         {
+            import kameloso.string : nom;
             import std.conv : to;
 
             immutable realWord = slice.nom('=');
@@ -175,7 +176,6 @@ Next printHelp(GetoptResult results) @system
 {
     import kameloso.bash : BashForeground;
     import kameloso.common : printVersionInfo, settings;
-    import std.getopt : defaultGetoptPrinter;
     import std.stdio : writeln;
 
     BashForeground headerTint = BashForeground.default_;
@@ -206,6 +206,7 @@ Next printHelp(GetoptResult results) @system
         }
     }
 
+    import std.getopt : defaultGetoptPrinter;
     defaultGetoptPrinter(headline, results.options);
     writeln();
     return Next.returnSuccess;
