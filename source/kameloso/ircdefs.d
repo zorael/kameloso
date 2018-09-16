@@ -2537,6 +2537,9 @@ struct IRCChannel
         }
     }
 
+    /// The channel name.
+    string name;
+
     /// The current topic of the channel, as set by operators.
     string topic;
 
