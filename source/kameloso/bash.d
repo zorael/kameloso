@@ -134,7 +134,7 @@ enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
  +      A Bash code sequence of the passed codes.
  +/
 version(Colours)
-string colour(Codes...)(Codes codes) pure nothrow
+string colour(Codes...)(const Codes codes) pure nothrow
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
     import std.array : Appender;
