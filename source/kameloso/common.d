@@ -1025,16 +1025,32 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
+        // Only instantiate available plugins
+
         version(Web)
         {
-            plugins ~= new WebtitlesPlugin(state);
-            plugins ~= new RedditPlugin(state);
-            plugins ~= new BashQuotesPlugin(state);
+            static if (__traits(compiles, WebtitlesPlugin))
+            {
+                plugins ~= new WebtitlesPlugin(state);
+            }
+
+            static if (__traits(compiles, RedditPlugin))
+            {
+                plugins ~= new RedditPlugin(state);
+            }
+
+            static if (__traits(compiles, BashQuotesPlugin))
+            {
+                plugins ~= new BashQuotesPlugin(state);
+            }
         }
 
         version(Posix)
         {
-            plugins ~= new PipelinePlugin(state);
+            static if (__traits(compiles, PipelinePlugin))
+            {
+                plugins ~= new PipelinePlugin(state);
+            }
         }
 
         string[][string] allInvalidEntries;
