@@ -21,7 +21,7 @@
  +  `printbytes`<br>
  +  `resetterm`<br>
  +  `sudo`<br>
- +  `asserts`<br>
+ +  `printasserts`<br>
  +  `forgetaccounts`<br>
  +  `whitelist`<br>
  +  `unwhitelist`<br>
@@ -670,7 +670,7 @@ debug
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "asserts")
+@BotCommand(NickPolicy.required, "printasserts")
 @Description("[debug] Toggles a flag to generate assert statements for incoming events")
 void onCommandAsserts(AdminPlugin plugin)
 {
