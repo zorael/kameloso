@@ -414,10 +414,7 @@ pipyon 3
  +/
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
-    import kameloso.string : stripped, stripSuffix;
-    import std.format : formattedRead;
-    import std.regex : matchFirst, regex;
-    import std.traits : Unqual, hasUDA, isType;
+    import kameloso.string : stripped;
 
     string section;
     string[][string] invalidEntries;
@@ -438,6 +435,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             // New section
             try
             {
+                import std.format : formattedRead;
                 line.formattedRead("[%s]", section);
             }
             catch (const Exception e)
@@ -454,6 +452,8 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 continue;
             }
 
+            import std.regex : matchFirst, regex;
+
             enum pattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
             auto engine = pattern.regex;
             auto hits = line.matchFirst(engine);
@@ -461,10 +461,13 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             thingloop:
             foreach (immutable i, thing; things)
             {
+                import std.traits : Unqual, hasUDA, isType;
                 alias T = Unqual!(typeof(thing));
 
                 static if (!is(T == enum))
                 {
+                    import kameloso.string : stripSuffix;
+
                     if (section != T.stringof.stripSuffix("Settings")) continue;
 
                     immutable entry = hits["entry"];
