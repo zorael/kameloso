@@ -3039,7 +3039,14 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             foreach (plugin; plugins)
             {
                 if (plugin.name != pluginstring) continue;
-                plugin.setSettingByName(setting, value);
+
+                immutable success = plugin.setSettingByName(setting, value);
+
+                if (!success)
+                {
+                    logger.warningf("No such %s plugin setting: %s", plugin.name, setting);
+                }
+
                 continue top;
             }
         }
