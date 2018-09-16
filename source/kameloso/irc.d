@@ -2968,7 +2968,7 @@ struct IRCParser
      +/
     void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
-        import kameloso.meld : meldInto;
+        import kameloso.meld : MeldingStrategy, meldInto;
         import std.typecons : Flag, No, Yes;
 
         /// https://upload.wikimedia.org/wikipedia/commons/d/d5/IRCd_software_implementations3.svg
@@ -2985,19 +2985,19 @@ struct IRCParser
         final switch (bot.server.daemon)
         {
         case unreal:
-            Typenums.unreal.meldInto!(Yes.overwrite)(typenums);
+            Typenums.unreal.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case inspircd:
-            Typenums.inspIRCd.meldInto!(Yes.overwrite)(typenums);
+            Typenums.inspIRCd.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case bahamut:
-            Typenums.bahamut.meldInto!(Yes.overwrite)(typenums);
+            Typenums.bahamut.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ratbox:
-            Typenums.ratBox.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ratBox.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case u2:
@@ -3006,100 +3006,100 @@ struct IRCParser
 
         case rizon:
             // Rizon is hybrid but has some own extras
-            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
-            Typenums.rizon.meldInto!(Yes.overwrite)(typenums);
+            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.rizon.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case hybrid:
-            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
+            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ircu:
-            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case aircd:
-            Typenums.aircd.meldInto!(Yes.overwrite)(typenums);
+            Typenums.aircd.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case rfc1459:
-            Typenums.rfc1459.meldInto!(Yes.overwrite)(typenums);
+            Typenums.rfc1459.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case rfc2812:
-            Typenums.rfc2812.meldInto!(Yes.overwrite)(typenums);
+            Typenums.rfc2812.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case snircd:
             // snircd is based on ircu
-            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
-            Typenums.snircd.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.snircd.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case nefarious:
             // Both nefarious and nefarious2 are based on ircu
-            Typenums.ircu.meldInto!(Yes.overwrite)(typenums);
-            Typenums.nefarious.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.nefarious.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case rusnet:
-            Typenums.rusnet.meldInto!(Yes.overwrite)(typenums);
+            Typenums.rusnet.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case austhex:
-            Typenums.austHex.meldInto!(Yes.overwrite)(typenums);
+            Typenums.austHex.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ircnet:
-            Typenums.ircNet.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ircNet.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ptlink:
-            Typenums.ptlink.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ptlink.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ultimate:
-            Typenums.ultimate.meldInto!(Yes.overwrite)(typenums);
+            Typenums.ultimate.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case charybdis:
-            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
+            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ircdseven:
             // Nei | freenode is based in charybdis which is based on ratbox iirc
-            Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
-            Typenums.ratBox.meldInto!(Yes.overwrite)(typenums);
-            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
+            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ratBox.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case undernet:
-            Typenums.undernet.meldInto!(Yes.overwrite)(typenums);
+            Typenums.undernet.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case anothernet:
-            //Typenums.anothernet.meldInto!(Yes.overwrite)(typenums);
+            //Typenums.anothernet.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case sorircd:
-            Typenums.charybdis.meldInto!(Yes.overwrite)(typenums);
-            Typenums.sorircd.meldInto!(Yes.overwrite)(typenums);
+            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.sorircd.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case bdqircd:
-            //Typenums.bdqIrcD.meldInto!(Yes.overwrite)(typenums);
+            //Typenums.bdqIrcD.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case chatircd:
-            //Typenums.chatIRCd.meldInto!(Yes.overwrite)(typenums);
+            //Typenums.chatIRCd.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case irch:
-            //Typenums.irch.meldInto!(Yes.overwrite)(typenums);
+            //Typenums.irch.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case ithildin:
-            //Typenums.ithildin.meldInto!(Yes.overwrite)(typenums);
+            //Typenums.ithildin.meldInto!(MeldingStrategy.aggressive)(typenums);
             break;
 
         case twitch:
@@ -3116,7 +3116,7 @@ struct IRCParser
 
 unittest
 {
-    import kameloso.meld : meldInto;
+    import kameloso.meld : MeldingStrategy, meldInto;
     import std.typecons : Flag, No, Yes;
 
     IRCParser parser;
@@ -3128,7 +3128,7 @@ unittest
         typenums = Typenums.base;
 
         assert(typenums[344] == T.init);
-        Typenums.hybrid.meldInto!(Yes.overwrite)(typenums);
+        Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
         assert(typenums[344] != T.init);
     }
 }
