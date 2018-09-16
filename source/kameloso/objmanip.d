@@ -124,10 +124,10 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             }
                             catch (const ConvException e)
                             {
-                                logger.warningf(`Could not convert %s.%s array entry "%s" into %s (%s)`,
-                                    Thing.stringof.stripSuffix("Settings"),
+                                immutable message = `Could not convert %s.%s array entry "%s" into %s (%s)`
+                                    .format(Thing.stringof.stripSuffix("Settings"),
                                     memberToSet, entry, T.stringof, e.msg);
-                                break top;
+                                throw new ConvException(message);
                             }
                         }
                     }
@@ -161,11 +161,11 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             break;
 
                         default:
-                            logger.warningf("Invalid value for setting %s.%s: " ~
-                                `could not convert "%s" to a boolean value`,
-                                Thing.stringof.stripSuffix("Settings"),
+                            immutable message = ("Invalid value for setting %s.%s: " ~
+                                `could not convert "%s" to a boolean value`)
+                                .format(Thing.stringof.stripSuffix("Settings"),
                                 memberToSet, valueToSet);
-                            break;
+                            throw new ConvException(message);
                         }
                     }
                     else
@@ -182,9 +182,11 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         }
                         catch (const ConvException e)
                         {
-                            logger.warningf(`Invalid value for setting %s.%s: could not convert "%s" to %s (%s)`,
-                                Thing.stringof.stripSuffix("Settings"),
+                            immutable message = `Invalid value for setting %s.%s: " ~
+                                "could not convert "%s" to %s (%s)`
+                                .format(Thing.stringof.stripSuffix("Settings"),
                                 memberToSet, valueToSet, T.stringof, e.msg);
+                            throw new ConvException(message);
                         }
                     }
                     break top;
