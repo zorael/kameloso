@@ -270,6 +270,7 @@ void listenFiber(Connection conn, ref bool abort)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
+            case "Transport endpoint is not connected":  // Failed IPv6 connection
                 attempt.state = State.error;
                 yield(attempt);
                 assert(0);  // Should never get here
