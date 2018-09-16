@@ -151,11 +151,6 @@ void throttleline(Strings...)(ref Client client, const Strings strings)
  +/
 Next checkMessages(ref Client client)
 {
-    import kameloso.plugins.common : IRCPlugin;
-    import core.time : seconds;
-    import std.concurrency : receiveTimeout;
-    import std.variant : Variant;
-
     scope (failure) client.teardownPlugins();
 
     Next next;
@@ -225,6 +220,7 @@ Next checkMessages(ref Client client)
      +  `kameloso.plugins.common.IRCPlugin`s array (housing all plugins) to the
      +  supplied `kameloso.plugins.common.IRCPlugin`.
      +/
+    import kameloso.plugins.common : IRCPlugin;
     void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin, IRCEvent event)
     {
         auto plugin = cast(IRCPlugin)sPlugin;
@@ -367,6 +363,10 @@ Next checkMessages(ref Client client)
 
     do
     {
+        import core.time : seconds;
+        import std.concurrency : receiveTimeout;
+        import std.variant : Variant;
+
         static immutable instant = 0.seconds;
 
         receivedSomething = receiveTimeout(instant,
