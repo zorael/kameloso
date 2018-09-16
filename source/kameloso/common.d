@@ -280,8 +280,11 @@ if (isOutputRange!(Sink, char[]))
         import kameloso.bash : colour;
     }
 
-    // workaround formattedWrite taking Appender by value
-    version(LDC) sink.put(string.init);
+    static if (__VERSION__ < 2076L)
+    {
+        // workaround formattedWrite taking sink by value pre 2.076
+        sink.put(string.init);
+    }
 
     enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
     enum minimumNameWidth = 20;
