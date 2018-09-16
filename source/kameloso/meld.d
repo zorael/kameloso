@@ -28,7 +28,7 @@ enum MeldingStrategy
     aggressive,
 
     /++
-     +  works like aggressive but also always overwrites bools, regardless o
+     +  Works like aggressive but also always overwrites bools, regardless of
      +  falseness.
      +/
     overwriting,
@@ -550,21 +550,22 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
  +
  +  It only overwrites members that are `T.init`, so only unset
  +  fields get their values overwritten by the melding array. Supply a
- +  template parameter `Yes.overwrite` to make it overwrite if the melding
- +  array's field is not `T.init`.
+ +  template parameter `MeldingStrategy.aggressive` to make it overwrite if the
+ +  melding array's field is not `T.init`. Furthermore use
+ +  `MeldingStrategy.overwriting` if working with bool members.
  +
  +  Example:
  +  ---
  +  int[] arr1 = [ 1, 2, 3, 0, 0, 0 ];
  +  int[] arr2 = [ 0, 0, 0, 4, 5, 6 ];
- +  arr1.meldInto!(No.overwrite)(arr2);
+ +  arr1.meldInto!(MeldingStrategy.conservative)(arr2);
  +
  +  assert(arr2 == [ 1, 2, 3, 4, 5, 6 ]);
  +  ---
  +
  +  Params:
- +      overwrite = Whether the source array should overwrite set (non-`init`)
- +          values in the receiving array.
+ +      strategy = To what extent the source object should overwrite set
+ +          (non-`init`) values in the receiving object.
  +      meldThis = Array to meld (source).
  +      intoThis = Reference to the array to meld (target).
  +/
@@ -663,7 +664,7 @@ unittest
  +  ---
  +
  +  Params:
- +      overwrite = Whether the source associative array should overwrite set
+ +      strategy = To what extent the source object should overwrite set
  +          (non-`init`) values in the receiving object.
  +      meldThis = Associative array to meld (source).
  +      intoThis = Reference to the associative array to meld (target).

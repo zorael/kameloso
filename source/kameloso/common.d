@@ -1395,6 +1395,7 @@ unittest
  +  ---
  +
  +  Params:
+ +      sink = Output buffer sink to write to.
  +      duration = A period of time.
  +/
 void timeSince(Flag!"abbreviate" abbreviate = No.abbreviate, Sink)
@@ -1524,6 +1525,9 @@ unittest
  +
  +  Params:
  +      duration = A period of time.
+ +
+ +  Returns:
+ +      The passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
