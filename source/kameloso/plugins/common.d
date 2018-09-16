@@ -20,7 +20,7 @@ import std.typecons : Flag, No, Yes;
  +
  +  Infer it by testing for the broken behaviour and warn (during compilation).
  +/
-static if (__VERSION__ == 2079)
+static if (__VERSION__ == 2079L)
 {
     import std.traits : getSymbolsByUDA;
 
