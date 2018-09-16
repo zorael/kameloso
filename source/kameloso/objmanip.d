@@ -42,11 +42,9 @@ public import kameloso.meld;
  +/
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {
-    import kameloso.common : logger;
-    import kameloso.string : contains, stripSuffix, stripped, unquoted;
-    import kameloso.traits : isConfigurableVariable;
+    import kameloso.string : stripSuffix, stripped, unquoted;
     import std.conv : ConvException, to;
-    import std.traits : Unqual, getUDAs, hasUDA, isArray, isAssociativeArray, isSomeString, isType;
+    import std.format : format;
 
     bool success;
 
@@ -55,6 +53,9 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
     {
         static foreach (immutable i; 0..thing.tupleof.length)
         {{
+            import kameloso.traits : isConfigurableVariable;
+            import std.traits : Unqual, isType;
+
             alias T = Unqual!(typeof(thing.tupleof[i]));
 
             static if (!isType!(thing.tupleof[i]) &&
@@ -64,6 +65,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 
                 case memberstring:
                 {
+                    import std.traits : isArray, isAssociativeArray, isSomeString;
                     static if (is(T == struct) || is(T == class))
                     {
                         // can't assign whole structs or classes
@@ -71,7 +73,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     else static if (!isSomeString!T && isArray!T)
                     {
                         import std.array : replace;
-                        import std.format : format;
+                        import std.traits : getUDAs, hasUDA;
 
                         thing.tupleof[i].length = 0;
 
@@ -96,6 +98,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                                 .replace(escapedPlaceholder, separator.token);
                         }
 
+                        import kameloso.string : contains;
                         while (values.contains(doubleEphemeral))
                         {
                             values = values.replace(doubleEphemeral, ephemeralSeparator);
