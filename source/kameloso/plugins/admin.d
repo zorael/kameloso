@@ -120,7 +120,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
         version(Cygwin_) stdout.flush();
     }
 
-    if (plugin.adminSettings.printAsserts)
+    debug if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatEventAssertBlock;
         import kameloso.string : contains;
@@ -678,6 +678,7 @@ void onCommandPrintBytes(AdminPlugin plugin)
  +
  +  This is used to creating unittest blocks in the source code.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
