@@ -2311,6 +2311,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.state.channels[event.channel] = IRCChannel.init;
+        plugin.state.channels[event.channel].name = event.channel;
     }
 
 
