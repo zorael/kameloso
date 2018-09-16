@@ -720,9 +720,7 @@ unittest
  +/
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
-    import kameloso.common : Labeled;
     import core.thread : Fiber;
-    import std.array : Appender;
 
     enum hasIRCPluginImpl = true;
 
@@ -747,10 +745,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.string : beginsWith, contains, nom, stripPrefix, strippedLeft;
-        import std.meta : AliasSeq, Filter, templateNot, templateOr;
+        import kameloso.string : contains, nom;
+        import std.meta : Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
-        import std.typecons : No, Yes;
 
         alias earlyAwareness(alias T) = hasUDA!(T, AwarenessEarly);
         alias lateAwareness(alias T) = hasUDA!(T, AwarenessLate);
@@ -783,7 +780,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 enum name = ()
                 {
                     import kameloso.conv : Enum;
-                    import kameloso.string : nom;
                     import std.format : format;
 
                     string pluginName = module_;
@@ -896,7 +892,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             continue;  // next BotCommand UDA
                         }
 
+                        import kameloso.string : strippedLeft;
                         import std.string : toLower;
+                        import std.typecons : Flag, No, Yes;
 
                         string thisCommand;
 
@@ -1297,7 +1295,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         import kameloso.common : settings;
         import kameloso.traits : isConfigurableVariable;
-        import std.traits : getSymbolsByUDA, hasUDA;
+        import std.traits : hasUDA;
 
         this.privateState = state;
 
@@ -1368,7 +1366,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
-        import std.typecons : No, Yes;
 
         alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
 
@@ -1557,6 +1554,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      sink = Reference `std.array.Appender` to fill with plugin-specific
      +          settings text.
      +/
+    import std.array : Appender;
     void serialiseConfigInto(ref Appender!string sink) const
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -2610,11 +2608,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : stripModesign;
-        import kameloso.string : contains, nom;
+        import kameloso.string : contains;
         import std.algorithm.iteration : splitter;
-        import std.algorithm.searching : canFind;
-        import std.string : representation;
 
         if (!event.content.length) return;
 
@@ -2629,6 +2624,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                 if (userstring.contains('!') && userstring.contains('@'))
                 {
+                    import kameloso.string : nom;
                     // SpotChat-like, names are in full nick!ident@address form
                     nickname = slice.nom('!');
                 }
@@ -2638,6 +2634,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     nickname = userstring;
                 }
 
+                import kameloso.irc : stripModesign;
+
                 string modesigns;
                 nickname = bot.server.stripModesign(nickname, modesigns);
 
@@ -2645,6 +2643,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 // Can be more than one if multi-prefix capability is enabled
                 // Server-sent string, can assume ASCII (@,%,+...) and go char
                 // by char
+                import std.string : representation;
                 foreach (immutable modesign; modesigns.representation)
                 {
                     if (auto modechar = modesign in bot.server.prefixchars)
@@ -2662,6 +2661,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
                 if (nickname == bot.nickname) continue;
 
+                import std.algorithm.searching : canFind;
                 if (channels[event.channel].users.canFind(nickname))
                 {
                     continue;
@@ -2890,8 +2890,6 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 {
-    import kameloso.meld : meldInto;
-
     if (!newUser.nickname.length || (newUser.nickname == plugin.state.bot.nickname))
     {
         return;
@@ -2908,6 +2906,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 
         if (auto user = newUser.nickname in state.users)
         {
+            import kameloso.meld : meldInto;
             newUser.meldInto(*user);
         }
         else
