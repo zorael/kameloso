@@ -688,11 +688,16 @@ void onCommandAsserts(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.debugging : formatBotAssignment;
-
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
     logger.info("Printing asserts: ", plugin.adminSettings.printAsserts);
-    formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
+
+    if (plugin.adminSettings.printAsserts)
+    {
+        import kameloso.debugging : formatBotAssignment;
+        // Only print the bot assignment if we're toggling it on
+        formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
+    }
+
     version(Cygwin_) stdout.flush();
 }
 
