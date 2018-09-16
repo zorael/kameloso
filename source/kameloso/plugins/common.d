@@ -77,7 +77,7 @@ interface IRCPlugin
     void serialiseConfigInto(ref Appender!string) const;
 
     /// Executed during start if we want to change a setting by its string name.
-    void setSettingByName(const string, const string);
+    bool setSettingByName(const string, const string);
 
     /// Executed when connection has been established.
     void start() @system;
@@ -1450,12 +1450,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      setting = String name of the struct member to set.
      +      value = String value to set it to (after converting it to the
      +          correct type).
+     +
+     +  Returns:
+     +      `true` if a member was found and set, `false` otherwise.
      +/
-    void setSettingByName(const string setting, const string value)
+    bool setSettingByName(const string setting, const string value)
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.common : logger;
         import kameloso.objmanip : setMemberByName;
         import kameloso.traits : isStruct;
         import std.meta : Filter;
@@ -1480,10 +1482,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
-        if (!success)
-        {
-            logger.warningf("No such %s plugin setting: %s", name, setting);
-        }
+        return success;
     }
 
 
