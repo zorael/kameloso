@@ -5,7 +5,6 @@
  +/
 module kameloso.meld;
 
-import std.typecons : Flag, No, Yes;
 import std.traits : isArray, isAssociativeArray;
 
 
@@ -526,6 +525,7 @@ unittest
  +      meldThis = Struct to meld (source).
  +      intoThis = Reference to struct to meld (target).
  +/
+import std.typecons : Flag;
 deprecated("Use meldInto!MeldingStrategy instead")
 void meldInto(Flag!"overwrite" overwrite, Thing)(Thing meldThis, ref Thing intoThis)
 if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
@@ -619,7 +619,6 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
 unittest
 {
     import std.conv : to;
-    import std.typecons : Yes, No;
 
     auto arr1 = [ 123, 0, 789, 0, 456, 0 ];
     auto arr2 = [ 0, 456, 0, 123, 0, 789 ];
