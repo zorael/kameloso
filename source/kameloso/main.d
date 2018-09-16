@@ -1262,8 +1262,19 @@ int main(string[] args)
         settings.configDirectory = settings.configFile.dirName;
 
         // Initialise plugins outside the loop once, for the error messages
-        const invalidEntries = client.initPlugins(customSettings);
-        complainAboutInvalidConfigurationEntries(invalidEntries);
+        import std.conv : ConvException;
+
+        try
+        {
+            const invalidEntries = client.initPlugins(customSettings);
+            complainAboutInvalidConfigurationEntries(invalidEntries);
+        }
+        catch (const ConvException e)
+        {
+            // Configuration file/--set argument syntax error
+            logger.error(e.msg);
+            return 1;
+        }
 
         // Save the original nickname *once*, outside the connection loop.
         // It will change later and knowing this is useful when authenticating
