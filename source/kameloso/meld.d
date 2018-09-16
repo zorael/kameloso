@@ -670,7 +670,7 @@ unittest
  +      intoThis = Reference to the associative array to meld (target).
  +/
 void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, AA)
-    (AA meldThis, ref AA intoThis) //pure
+    (AA meldThis, ref AA intoThis) pure
 if (isAssociativeArray!AA)
 {
     foreach (key, val; meldThis)
