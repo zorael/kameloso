@@ -958,9 +958,6 @@ struct Client
         @disable this(this);
     }
 
-    /// Runtime settings for bot behaviour.
-    //CoreSettings settings;
-
     /// The socket we use to connect to the server.
     Connection conn;
 
@@ -1580,7 +1577,7 @@ unittest
  +
  +  Params:
  +      invalidEntries = A `string[][string]` associative array of dynamic
- +          `string[]` arrays.
+ +          `string[]` arrays, keyed by strings. These contain invalid settings.
  +/
 void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntries)
 {
@@ -1620,7 +1617,8 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  Displays an error if the configuration is *incomplete*, e.g. missing crucial
  +  information.
  +
- +  It assumes such information is missing.
+ +  It assumes such information is missing, and that the check has been done at
+ +  the calling site.
  +
  +  Params:
  +      bot = The current `kameloso.ircdefs.IRCBot`.
@@ -1730,12 +1728,11 @@ else version(FreeBSD)
  +  we're currently running.
  +
  +  On Linux it defaults to `$XDG_CONFIG_HOME/kameloso` and falls back to
- +  `~/.config/kameloso` if no `XDG_CONFIG_HOME` environment variable present.
+ +  `~/.config/kameloso` if no `$XDG_CONFIG_HOME` environment variable present.
  +
- +  On MacOS it defualts to `$HOME/Library/Application Support/kameloso`.
+ +  On MacOS it defaults to `$HOME/Library/Application Support/kameloso`.
  +
- +  On Windows it defaults to
- +  `%LOCALAPPDATA%\\Local\\kameloso`.
+ +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
  +
  +  Returns:
  +      A string path to the default configuration file.

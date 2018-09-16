@@ -161,7 +161,7 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
 
 // serialise
 /++
- +  Convenience method to call serialise on several objects.
+ +  Convenience method to call `serialise` on several objects.
  +
  +  Example:
  +  ---

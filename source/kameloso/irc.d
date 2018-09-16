@@ -397,8 +397,8 @@ unittest
  +  This function only focuses on specialcasing the remaining line, dividing it
  +  into fields like `target`, `channel`, `content`, etc.
  +
- +  IRC events are *riddled* with inconsistencies, so this function is very very
- +  long, but by neccessity.
+ +  IRC events are *riddled* with inconsistencies and specialcasings, so this
+ +  function is very very long, but by neccessity.
  +
  +  The `kameloso.ircdefs.IRCEvent` is finished at the end of this function.
  +
@@ -1835,6 +1835,7 @@ unittest
         assert((parser.bot.modes == "ac"), parser.bot.modes);
     }
 }
+
 
 // onISUPPORT
 /++

@@ -32,13 +32,17 @@ if (is(E == enum))
      +
      +  SomeEnum foo = Enum!someEnum.fromString("one");
      +  SomeEnum bar = Enum!someEnum.fromString("three");
+     +
+     +  assert(foo == SomeEnum.one);
+     +  assert(bar == SomeEnum.three);
      +  ---
      +
      +  Params:
      +      enumstring = the string name of an enum member.
      +
      +  Returns:
-     +      The enum member whose name matches the enumstring string.
+     +      The enum member whose name matches the enumstring string (not whose
+     +      *value* matches the string).
      +/
     E fromString(const string enumstring) pure
     {
@@ -232,10 +236,12 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(con
  +  red/green/blue equivalents.
  +
  +  Params:
+ +      acceptLowercase = Whether or not to accept the RRGGBB string in
+ +          lowercase letters.
  +      hexString = Hexadecimal number (colour) in string form.
- +      r = Reference integer for the red part of the hex string.
- +      g = Reference integer for the green part of the hex string.
- +      b = Reference integer for the blue part of the hex string.
+ +      r = Out-reference integer for the red part of the hex string.
+ +      g = Out-reference integer for the green part of the hex string.
+ +      b = Out-reference integer for the blue part of the hex string.
  +/
 void numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)
     (const string hexString, out int r, out int g, out int b) pure
