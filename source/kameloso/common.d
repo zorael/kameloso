@@ -122,6 +122,9 @@ struct ThreadMessage
     /// Concurrency message asking to disconnect and reconnect to the server.
     struct Reconnect {}
 
+    /// Concurrency message meant to be sent between plugins.
+    struct BusMessage {}
+
     /// Concurrency messages for writing text to the terminal.
     enum TerminalOutput
     {
