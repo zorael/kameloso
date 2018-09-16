@@ -10,6 +10,7 @@ import kameloso.ircdefs;
 import std.typecons : Flag, No, Yes;
 
 @safe:
+debug:
 
 
 // formatBotAssignment
@@ -374,7 +375,6 @@ unittest
  +  Params:
  +      client = Reference to the current Client, with all its settings.
  +/
-debug
 void generateAsserts(ref Client client) @system
 {
     import kameloso.common : logger, printObjects;
