@@ -546,7 +546,7 @@ Next mainLoop(ref Client client)
                 {
                     logger.errorf("ZERO RECEIVED! last error: %s%s", logtint, attempt.lastSocketError_);
                     logger.error("Assuming dead and returning.");
-                    return Next.returnFailure;
+                    return Next.continue_;
                 }
                 else if (attempt.bytesReceived == Socket.ERROR)
                 {
