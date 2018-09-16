@@ -2699,6 +2699,7 @@ unittest
  +      `true` if the character is in the list of valid characters for
  +      nicknames, `false` if not.
  +/
+pragma(inline)
 bool isValidNicknameCharacter(const ubyte c) pure nothrow @nogc
 {
     switch (c)
