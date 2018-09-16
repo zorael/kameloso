@@ -297,7 +297,6 @@ unittest
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.conv : Enum;
     import std.conv : ConvException, to;
 
     string typestring;
@@ -331,7 +330,11 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     }
     else
     {
-        try event.type = Enum!(IRCEvent.Type).fromString(typestring);
+        try
+        {
+            import kameloso.conv : Enum;
+            event.type = Enum!(IRCEvent.Type).fromString(typestring);
+        }
         catch (const ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
