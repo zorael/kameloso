@@ -415,13 +415,8 @@ Next checkMessages(ref Client client)
  +/
 Next mainLoop(ref Client client)
 {
-    import kameloso.common : printObjects;
     import kameloso.connection : ListenAttempt, listenFiber;
-    import core.exception : UnicodeException;
-    import core.thread : Fiber;
     import std.concurrency : Generator;
-    import std.datetime.systime : Clock;
-    import std.utf : UTFException;
 
     /// Enum denoting what we should do next loop.
     Next next;
@@ -458,6 +453,8 @@ Next mainLoop(ref Client client)
 
     while (next == Next.continue_)
     {
+        import core.thread : Fiber;
+
         if (*client.abort) return Next.returnFailure;
 
         if (listener.state == Fiber.State.TERM)
@@ -467,6 +464,7 @@ Next mainLoop(ref Client client)
             return Next.continue_;
         }
 
+        import std.datetime.systime : Clock;
         immutable nowInUnix = Clock.currTime.toUnixTime;
 
         foreach (ref plugin; client.plugins)
@@ -586,10 +584,13 @@ Next mainLoop(ref Client client)
                 printObject(mutEvent);
             }
 
+            import core.exception : UnicodeException;
+            import std.utf : UTFException;
+
             try
             {
-                import std.encoding : sanitize;
                 // Sanitise and try again once on UTF/Unicode exceptions
+                import std.encoding : sanitize;
 
                 try
                 {
