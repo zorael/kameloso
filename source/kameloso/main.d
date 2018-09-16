@@ -428,8 +428,8 @@ Next mainLoop(ref Client client)
     alias State = ListenAttempt.State;
 
     // Instantiate a Generator to read from the socket and yield lines
-    auto listener = new Generator!ListenAttempt(
-        () => listenFiber(client.conn, *(client.abort)));
+    auto listener = new Generator!ListenAttempt(() =>
+        listenFiber(client.conn, *(client.abort)));
 
     /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -861,10 +861,6 @@ void handleWHOISQueue(W)(ref Client client, ref W[string] reqs)
             if (!settings.hideOutgoing) logger.trace("--> WHOIS ", key);
             client.throttleline("WHOIS ", key);
             client.whoisCalls[key] = Clock.currTime.toUnixTime;
-        }
-        else
-        {
-            //logger.log(key, " too soon...");
         }
     }
 }
