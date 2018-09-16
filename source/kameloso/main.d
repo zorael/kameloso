@@ -1082,7 +1082,6 @@ Next tryResolve(ref Client client)
 {
     import kameloso.connection : ResolveAttempt, resolveFiber;
     import kameloso.constants : Timeout;
-    import kameloso.string : contains;
     import std.concurrency : Generator;
 
     string infotint, logtint, errortint;
@@ -1101,6 +1100,7 @@ Next tryResolve(ref Client client)
         }
     }
 
+    import kameloso.string : contains;
     if (!client.parser.bot.server.address.contains("."))
     {
         // Workaround for Issue 19247:
@@ -1184,8 +1184,6 @@ else
  +/
 int main(string[] args)
 {
-    import kameloso.common : printObjects;
-
     // Initialise the main Client. Set its abort pointer to the global abort.
     Client client;
     client.abort = &abort;
@@ -1247,6 +1245,7 @@ int main(string[] args)
         writeln();
 
         // Print the current settings to show what's going on.
+        import kameloso.common : printObjects;
         printObjects(bot, bot.server);
 
         if (!bot.homes.length && !bot.admins.length)
