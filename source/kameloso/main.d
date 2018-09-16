@@ -236,6 +236,14 @@ Next checkMessages(ref Client client)
         }
     }
 
+    void proxyBusMessage(ThreadMessage.BusMessage, string header, string content, IRCEvent payload)
+    {
+        foreach (plugin; client.plugins)
+        {
+            plugin.onBusMessage(header, content, payload);
+        }
+    }
+
     /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
@@ -381,6 +389,7 @@ Next checkMessages(ref Client client)
             &reloadPlugins,
             &peekPlugins,
             &reconnect,
+            &proxyBusMessage,
             (Variant v)
             {
                 // Caught an unhandled message
