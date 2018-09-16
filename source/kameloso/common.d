@@ -895,7 +895,7 @@ void interruptibleSleep(const Duration dur, const ref bool abort)
     import core.thread : Thread, msecs, seconds;
     import std.algorithm.comparison : min;
 
-    immutable step = 250.msecs;
+    static immutable step = 250.msecs;
 
     Duration left = dur;
 
