@@ -1463,7 +1463,67 @@ if (isOutputRange!(Sink, string))
     }
 }
 
-/// Ditto
+///
+unittest
+{
+    import core.time : msecs, seconds;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(64);  // workaround for formattedWrite < 2.076
+
+    {
+        immutable dur = 0.seconds;
+        sink.timeSince(dur);
+        assert((sink.data == "0 seconds"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "0s"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3_141_519_265.msecs;
+        sink.timeSince(dur);
+        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "36d 8h 38m"), sink.data);
+        sink.clear();
+    }
+
+    {
+        immutable dur = 3599.seconds;
+        sink.timeSince(dur);
+        assert((sink.data == "59 minutes"), sink.data);
+        sink.clear();
+        sink.timeSince!(Yes.abbreviate)(dur);
+        assert((sink.data == "59m"), sink.data);
+        sink.clear();
+    }
+}
+
+
+// timeSince
+/++
+ +  Express how much time has passed in a `Duration`, in natural (English)
+ +  language.
+ +
+ +  Returns the result as a string.
+ +
+ +  Example:
+ +  ---
+ +  const then = Clock.currTime;
+ +  Thread.sleep(1.seconds);
+ +  const now = Clock.currTime;
+ +
+ +  const duration = (now - then);
+ +  immutable inEnglish = timeSince(duration);
+ +  ---
+ +
+ +  Params:
+ +      duration = A period of time.
+ +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {
     import std.array : Appender;
@@ -1509,41 +1569,6 @@ unittest
         immutable abbrev = dur.timeSince!(Yes.abbreviate);
         assert((since == "1 second"), since);
         assert((abbrev == "1s"), abbrev);
-    }
-
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-    sink.reserve(64);  // workaround for LDC
-
-    {
-        immutable dur = 0.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "0 seconds"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "0s"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3_141_519_265.msecs;
-        sink.timeSince(dur);
-        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "36d 8h 38m"), sink.data);
-        sink.clear();
-    }
-
-    {
-        immutable dur = 3599.seconds;
-        sink.timeSince(dur);
-        assert((sink.data == "59 minutes"), sink.data);
-        sink.clear();
-        sink.timeSince!(Yes.abbreviate)(dur);
-        assert((sink.data == "59m"), sink.data);
-        sink.clear();
     }
 }
 
