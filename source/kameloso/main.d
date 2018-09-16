@@ -531,8 +531,11 @@ Next mainLoop(ref Client client)
 
             case warning:
                 // Benign socket error; break foreach and try again
+                import core.thread : Thread;
+                import core.time : seconds;
                 logger.warningf("Socket.ERROR and last error: %s%s",
                     logtint, attempt.lastSocketError_);
+                Thread.sleep(1.seconds);
                 break listenerloop;
 
             case error:
