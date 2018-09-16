@@ -548,48 +548,10 @@ Next mainLoop(ref Client client)
                     logger.error("Assuming dead and returning.");
                     return Next.continue_;
                 }
-                else if (attempt.bytesReceived == Socket.ERROR)
-                {
-                    import core.time : seconds;
 
-                    if (attempt.elapsed > Timeout.connectionLost.seconds)
-                    {
-                        import kameloso.common : timeSince;
-                        // Too much time has passed; we can reasonably assume the socket is disconnected
-                        logger.errorf("NOTHING RECEIVED FOR %s%s%s (timeout %1$s%4$s%3$s)",
-                            logtint, timeSince(attempt.elapsed), errortint,
-                            Timeout.connectionLost.seconds);
-                        return Next.returnFailure;
-                    }
-
-                    switch (attempt.lastSocketError_)
-                    {
-                    case "Resource temporarily unavailable":
-                        // Nothing received
-                    case "Interrupted system call":
-                        // Unlucky callgrind_control -d timing
-                    case "A connection attempt failed because the connected party did not " ~
-                        "properly respond after a period of time, or established connection " ~
-                        "failed because connected host has failed to respond.":
-                        // Timed out read in Windows
-                        break listenerloop;
-
-                    // Others that may be benign?
-                    case "An established connection was aborted by the software in your host machine.":
-                    case "An existing connection was forcibly closed by the remote host.":
-                    case "Connection reset by peer":
-                        logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint,
-                            attempt.lastSocketError_, errortint);
-                        return Next.returnFailure;
-
-                    default:
-                        logger.warningf("Unforeseen socket error: %s%s",
-                            logtint, attempt.lastSocketError_);
-                        // How to deal with this?
-                        break listenerloop;
-                    }
-                }
-                break;
+                logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint,
+                    attempt.lastSocketError_, errortint);
+                return Next.returnFailure;
             }
 
             IRCEvent mutEvent;
