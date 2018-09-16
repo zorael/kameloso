@@ -206,14 +206,17 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
 {
     if (reddit.length)
     {
+        import kameloso.common : ThreadMessage;
         state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
+        IRCEvent mutable = event;
+        mutable.content = reddit;
+        state.mainThread.send(ThreadMessage.BusMessage(), "webtitle", reddit, mutable);
     }
     else
     {
         state.privmsg(event.channel, event.sender.nickname,
             "No corresponding Reddit post found.");
     }
-
 }
 
 

@@ -449,6 +449,24 @@ void start(WebtitlesPlugin plugin)
 }
 
 
+// onBusMessage
+/++
+ +  Receives and handles a bus message from another plugin.
+ +
+ +  So far used to let other plugins trigger lookups of web URLs.
+ +/
+void onBusMessage(WebtitlesPlugin plugin, const string header,
+    const string content, const IRCEvent payload)
+{
+    logger.logf(`Webtitles received bus message: "%s : %s"`, header, content);
+
+    if (header == "webtitle")
+    {
+        return plugin.onMessage(payload);
+    }
+}
+
+
 mixin MinimalAuthentication;
 
 public:
