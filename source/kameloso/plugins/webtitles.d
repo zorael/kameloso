@@ -458,6 +458,8 @@ void start(WebtitlesPlugin plugin)
 void onBusMessage(WebtitlesPlugin plugin, const string header,
     const string content, const IRCEvent payload)
 {
+    import kameloso.common : logger;
+
     logger.logf(`Webtitles received bus message: "%s : %s"`, header, content);
 
     if (header == "webtitle")
