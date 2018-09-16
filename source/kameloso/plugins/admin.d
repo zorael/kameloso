@@ -242,11 +242,9 @@ void onCommandShowUsers(AdminPlugin plugin)
 
     logger.trace("Printing Admin's users");
 
-    printObject(plugin.state.bot);
-
     foreach (key, value; plugin.state.users)
     {
-        writefln("%-12s [%s]", key, value);
+        printObject(value);
     }
 
     writefln("%d bytes from %d users (deep size %d bytes)",
@@ -276,14 +274,10 @@ void onCommandShowChannels(AdminPlugin plugin)
 
     logger.trace("Printing Admin's channels");
 
-    printObject(plugin.state.bot);
-
     foreach (key, value; plugin.state.channels)
     {
-        writefln("%-12s [%s]", key, value);
+        printObject(value);
     }
-
-    version(Cygwin_) stdout.flush();
 }
 
 
@@ -818,7 +812,7 @@ void onCommandStatus(AdminPlugin plugin)
         writeln(name);
         printObject(channel);
     }
-    writeln();
+    //writeln();
 
     /*logger.log("Users:");
     foreach (immutable nickname, const user; plugin.state.users)
