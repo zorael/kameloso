@@ -188,7 +188,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
                 }
                 // Conservative strategy takes care not to overwrite members
                 // with non-`init` values.
-                else if (strategy == MeldingStrategy.conservative)
+                else static if (strategy == MeldingStrategy.conservative)
                 {
                     static if (is(T == float))
                     {
