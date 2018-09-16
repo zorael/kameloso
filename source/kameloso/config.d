@@ -210,11 +210,9 @@ if (Things.length > 1)
 void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 {
     import kameloso.string : stripSuffix;
-    import kameloso.traits : isConfigurableVariable;
-    import std.conv : to;
     import std.format : format, formattedWrite;
     import std.range : hasLength;
-    import std.traits : Unqual, getUDAs, hasUDA, isArray, isSomeString, isType;
+    import std.traits : Unqual;
 
     static if (__traits(hasMember, Sink, "data"))
     {
@@ -228,6 +226,9 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
 
     foreach (immutable i, member; thing.tupleof)
     {
+        import kameloso.traits : isConfigurableVariable;
+        import std.traits : Unqual, hasUDA, isType;
+
         alias T = Unqual!(typeof(member));
 
         static if (!isType!member &&
@@ -235,6 +236,8 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             !hasUDA!(Thing.tupleof[i], Unconfigurable) &&
             !is(T == struct) && !is(T == class))
         {
+            import std.traits : isArray, isSomeString;
+
             static if (!isSomeString!T && isArray!T)
             {
                 import std.algorithm.iteration : map;
@@ -245,6 +248,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
                     "%s.%s is not annotated with a Separator"
                     .format(Thing.stringof, __traits(identifier, thing.tupleof[i])));
 
+                import std.traits : getUDAs;
                 alias separators = getUDAs!(thing.tupleof[i], Separator);
                 enum separator = separators[0].token;
                 static assert(separator.length, "%s.%s has invalid Separator (empty)"
@@ -300,6 +304,7 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             }
             else static if (is(T == float) || is(T == double))
             {
+                import std.conv : to;
                 import std.math : isNaN;
                 immutable comment = member.to!T.isNaN;
             }
