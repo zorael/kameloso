@@ -141,7 +141,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.admin)
+@(PrivilegeLevel.whitelist)
 @BotCommand(NickPolicy.required, "help")
 @Description("Shows a list of all available commands.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
