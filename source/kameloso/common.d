@@ -1303,13 +1303,22 @@ public:
     }
 
     /// Tranparently proxy all `Thing`-related calls to `thing`.
-    mixin Proxy!thing;
+    alias thing this;
 }
 
 ///
 unittest
 {
-    struct Foo {}
+    struct Foo
+    {
+        bool b = true;
+
+        bool wefpok() @property
+        {
+            return false;
+        }
+    }
+
     Foo foo;
     Foo bar;
 
@@ -1320,6 +1329,9 @@ unittest
 
     assert(arr[0].id == 1);
     assert(arr[1].id == 2);
+
+    assert(arr[0].b);
+    assert(!arr[1].wefpok);
 }
 
 
