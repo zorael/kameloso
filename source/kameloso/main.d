@@ -400,18 +400,22 @@ Next checkMessages(ref Client client)
 // mainLoop
 /++
  +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
- +  over the over `std.socket.Socket`, reading and yielding lines as it goes.
+ +  over the over `std.socket.Socket`, reading lines and yielding
+ +  `kameloso.connection.ListenAttempt`s as it goes.
  +
- +  Full lines are yielded in the `std.concurrency.Generator` to be caught here,
- +  consequently parsed into `kameloso.ircdefs.IRCEvent`s, and then dispatched
- +  to all the plugins.
+ +  Full lines are stored in `kameloso.connection.ListenAttempt`s which are
+ +  yielded in the `std.concurrency.Generator` to be caught here, consequently
+ +  parsed into `kameloso.ircdefs.IRCEvent`s, and then dispatched to all the
+ +  plugins.
  +
  +  Params:
  +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
- +      `Yes.quit` if circumstances mean the bot should exit, otherwise
- +      `No.quit.`
+ +      `Next.returnFailure` if circumstances mean the bot should exit with
+ +      a non-zero exit code, `Next.returnSuccess` if it should exit by
+ +      returning `0`, `Next.continue_` if the bot should reconnect to the
+ +      server. `Next.retry` is never returned.
  +/
 Next mainLoop(ref Client client)
 {
