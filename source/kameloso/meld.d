@@ -565,7 +565,7 @@ if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
  +      meldThis = Array to meld (source).
  +      intoThis = Reference to the array to meld (target).
  +/
-void meldInto(Flag!"overwrite" overwrite = Yes.overwrite, Array1, Array2)
+void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, Array1, Array2)
     (Array1 meldThis, ref Array2 intoThis) pure nothrow
 if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
     && !is(Array2 == immutable))
@@ -588,18 +588,26 @@ if (isArray!Array1 && isArray!Array2 && !is(Array2 == const)
 
     foreach (immutable i, val; meldThis)
     {
-        if (val == typeof(val).init) continue;
-
-        static if (overwrite)
+        with (MeldingStrategy)
+        final switch (strategy)
         {
-            intoThis[i] = val;
-        }
-        else
-        {
+        case conservative:
             if ((val != typeof(val).init) && (intoThis[i] == typeof(intoThis[i]).init))
             {
                 intoThis[i] = val;
             }
+            break;
+
+        case aggressive:
+            if (val != typeof(val).init)
+            {
+                intoThis[i] = val;
+            }
+            break;
+
+        case overwriting:
+            intoThis[i] = val;
+            break;
         }
     }
 }
@@ -612,12 +620,12 @@ unittest
 
     auto arr1 = [ 123, 0, 789, 0, 456, 0 ];
     auto arr2 = [ 0, 456, 0, 123, 0, 789 ];
-    arr1.meldInto!(No.overwrite)(arr2);
+    arr1.meldInto!(MeldingStrategy.conservative)(arr2);
     assert((arr2 == [ 123, 456, 789, 123, 456, 789 ]), arr2.to!string);
 
     auto yarr1 = [ 'Z', char.init, 'Z', char.init, 'Z' ];
     auto yarr2 = [ 'A', 'B', 'C', 'D', 'E', 'F' ];
-    yarr1.meldInto!(Yes.overwrite)(yarr2);
+    yarr1.meldInto!(MeldingStrategy.aggressive)(yarr2);
     assert((yarr2 == [ 'Z', 'B', 'Z', 'D', 'Z', 'F' ]), yarr2.to!string);
 
     auto harr1 = [ char.init, 'X' ];
