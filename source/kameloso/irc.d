@@ -132,6 +132,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
     event.sender.class_ = IRCUser.Class.special;
 }
 
+///
 unittest
 {
     import std.conv : to;
@@ -215,6 +216,7 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pur
     if (parser.isSpecial(event)) event.sender.class_ = IRCUser.Class.special;
 }
 
+///
 unittest
 {
     import std.conv : to;
@@ -337,6 +339,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
     }
 }
 
+///
 unittest
 {
     import std.conv : to;
