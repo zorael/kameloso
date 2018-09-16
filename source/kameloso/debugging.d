@@ -96,9 +96,7 @@ void formatDelta(Flag!"asserts" asserts = No.asserts, Sink, QualThing)
     const uint indents = 0, const string submember = string.init)
 if (is(QualThing == struct))
 {
-    import kameloso.string : tabs;
-    import std.format : formattedWrite;
-    import std.traits : isSomeFunction, isSomeString, isType, Unqual;
+    import std.traits : Unqual;
 
     alias Thing = Unqual!QualThing;
 
@@ -106,6 +104,8 @@ if (is(QualThing == struct))
 
     foreach (immutable i, ref member; after.tupleof)
     {
+        import std.traits : isSomeFunction, isSomeString, isType;
+
         alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, before.tupleof[i]);
 
@@ -175,6 +175,8 @@ if (is(QualThing == struct))
                     }
                 }
 
+                import kameloso.string : tabs;
+                import std.format : formattedWrite;
                 sink.formattedWrite(pattern, indents.tabs, prefix, memberstring, member);
             }
         }
@@ -376,19 +378,18 @@ debug
 void generateAsserts(ref Client client) @system
 {
     import kameloso.common : logger, printObjects;
-    import kameloso.conv : Enum;
     import kameloso.ircdefs : IRCServer;
-    import kameloso.string : contains, nom, stripped;
-    import std.conv : ConvException;
-    import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
-    import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
     with (IRCServer)
     with (client)
     {
+        import kameloso.string : contains, nom, stripped;
         import kameloso.irc : IRCParser;
+        import std.conv : ConvException;
+        import std.range : chunks, only;
+        import std.traits : EnumMembers;
 
         parser = IRCParser.init;
 
@@ -404,6 +405,7 @@ void generateAsserts(ref Client client) @system
 
         try
         {
+            import kameloso.conv : Enum;
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
             parser.setDaemon(daemon, version_);
         }
