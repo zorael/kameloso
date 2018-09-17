@@ -18,19 +18,23 @@ install_deps() {
 build() {
     mkdir -p artifacts
 
-    dub test --compiler="$1" --build-mode=singleFile -c vanilla
+    dub test --compiler="$1" --build-mode=singleFile -c pluginless-vanilla
     dub test --nodeps --compiler="$1" --build-mode=singleFile -c pluginless
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c vanilla || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug \
+        -c pluginless-vanilla || true
     mv kameloso artifacts/kameloso-vanilla || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c pluginless || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug \
+        -c pluginless || true
     mv kameloso artifacts/kameloso-pluginless || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c vanilla || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain \
+        -c pluginless-vanilla || true
     test -e kameloso && mv kameloso artifacts/kameloso-plain-vanilla || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c pluginless || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain \
+        -c pluginless || true
     test -e kameloso && mv kameloso artifacts/kameloso-plain-pluginless || true
 }
 
