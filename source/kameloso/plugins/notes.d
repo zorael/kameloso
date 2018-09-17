@@ -14,12 +14,14 @@
  +/
 module kameloso.plugins.notes;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
 import kameloso.messaging;
-
-private:
 
 
 // NotesSettings

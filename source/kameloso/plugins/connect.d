@@ -11,6 +11,10 @@
  +/
 module kameloso.plugins.connect;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : ThreadMessage, logger, settings;
@@ -18,8 +22,6 @@ import kameloso.common : ThreadMessage, logger, settings;
 import std.concurrency : prioritySend;
 import std.format : format;
 import std.typecons : Flag, No, Yes;
-
-private:
 
 
 // ConnectSettings

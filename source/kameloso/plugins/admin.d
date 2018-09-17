@@ -33,6 +33,10 @@
  +/
 module kameloso.plugins.admin;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.common : logger;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
@@ -41,8 +45,6 @@ import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
 
 import std.stdio;
-
-private:
 
 
 // AdminSettings

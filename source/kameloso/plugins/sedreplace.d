@@ -24,10 +24,12 @@
  +/
 module kameloso.plugins.sedreplace;
 
-import kameloso.plugins.common;
-import kameloso.ircdefs;
+version(WithPlugins):
 
 private:
+
+import kameloso.plugins.common;
+import kameloso.ircdefs;
 
 /// Lifetime of a `Line` in `prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;

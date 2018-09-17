@@ -11,13 +11,14 @@
  +/
 module kameloso.plugins.bashquotes;
 
+version(WithPlugins):
 version(Web):
+
+private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.messaging;
-
-private:
 
 
 // BashQuotesSettings

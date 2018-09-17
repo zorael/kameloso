@@ -28,6 +28,9 @@
 
 module kameloso.plugins.seen;
 
+/// We only want to compile this if we're compiling plugins at all.
+version(WithPlugins):
+
 /// We need crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 

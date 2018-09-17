@@ -15,10 +15,12 @@
  +/
 module kameloso.plugins.persistence;
 
-import kameloso.plugins.common;
-import kameloso.ircdefs;
+version(WithPlugins):
 
 private:
+
+import kameloso.plugins.common;
+import kameloso.ircdefs;
 
 
 // postprocess

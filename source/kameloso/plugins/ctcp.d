@@ -10,11 +10,13 @@
  +/
 module kameloso.plugins.ctcp;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.irc : IRCControlCharacter;
-
-private:
 
 
 // onCTCPs

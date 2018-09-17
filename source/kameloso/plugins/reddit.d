@@ -12,15 +12,16 @@
  +/
 module kameloso.plugins.reddit;
 
+version(WithPlugins):
 version(Web):
+
+private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.messaging;
 
 import std.concurrency;
-
-private:
 
 
 // RedditSettings

@@ -13,7 +13,10 @@
  +/
 module kameloso.plugins.pipeline;
 
+version(WithPlugins):
 version(Posix):
+
+private:
 
 import kameloso.common;
 import kameloso.plugins.common;
@@ -22,8 +25,6 @@ import kameloso.messaging;
 
 import std.concurrency;
 import std.stdio : File;
-
-private:
 
 
 // pipereader

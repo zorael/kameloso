@@ -11,7 +11,10 @@
  +/
 module kameloso.plugins.webtitles;
 
+version(WithPlugins):
 version(Web):
+
+private:
 
 import kameloso.common : ThreadMessage;
 import kameloso.messaging;
@@ -20,7 +23,6 @@ import kameloso.ircdefs;
 
 import std.concurrency;
 
-private:
 
 // WebtitlesSettings
 /++

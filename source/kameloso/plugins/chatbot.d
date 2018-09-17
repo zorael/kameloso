@@ -13,12 +13,14 @@
  +/
 module kameloso.plugins.chatbot;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
 import kameloso.messaging;
-
-private:
 
 
 // ChatbotSettings

@@ -14,14 +14,16 @@
  +
  +  It is very optional.
  +/
- module kameloso.plugins.quotes;
+module kameloso.plugins.quotes;
+
+version(WithPlugins):
+
+private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
 import kameloso.messaging;
-
-private:
 
 
 // QuotesSettings

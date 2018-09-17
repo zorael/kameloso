@@ -12,12 +12,14 @@
  +/
 module kameloso.plugins.chanqueries;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
 import std.typecons : Flag, No, Yes;
-
-private:
 
 
 // ChannelState

@@ -13,6 +13,10 @@
  +/
 module kameloso.plugins.printer;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
@@ -20,8 +24,6 @@ import kameloso.bash : BashForeground;
 
 import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
-
-private:
 
 
 // PrinterSettings

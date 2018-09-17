@@ -5,13 +5,15 @@
  +/
 module kameloso.plugins.automode;
 
+version(WithPlugins):
+
+private:
+
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
 
 import std.typecons : Flag, No, Yes;
-
-private:
 
 
 // AutomodeSettings

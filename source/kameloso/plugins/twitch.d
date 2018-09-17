@@ -14,12 +14,14 @@
  +/
 module kameloso.plugins.twitch;
 
+version(WithPlugins):
 version(TwitchSupport):
+
+private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
-private:
 
 // postprocess
 /++
