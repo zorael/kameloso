@@ -58,6 +58,9 @@
             "name": "pluginless",
             "versions": [ "Colours" ]
         },
+        {
+            "name": "pluginless-vanilla"
+        },
 
         {
             "name": "unittest",
