@@ -19,19 +19,19 @@ build() {
     mkdir -p artifacts
 
     dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    dub test --nodeps --compiler="$1" --build-mode=singleFile -c colours #+web
-
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c colours+web || true
-    mv kameloso artifacts/kameloso || true
+    dub test --nodeps --compiler="$1" --build-mode=singleFile -c pluginless
 
     dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c vanilla || true
     mv kameloso artifacts/kameloso-vanilla || true
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c colours+web || true
-    test -e kameloso && mv kameloso artifacts/kameloso-plain || true
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c pluginless || true
+    mv kameloso artifacts/kameloso-pluginless || true
 
     dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c vanilla || true
     test -e kameloso && mv kameloso artifacts/kameloso-plain-vanilla || true
+
+    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain -c pluginless || true
+    test -e kameloso && mv kameloso artifacts/kameloso-plain-pluginless || true
 }
 
 # execution start
