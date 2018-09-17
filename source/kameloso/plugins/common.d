@@ -1765,14 +1765,12 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Sends a channel message.
      +/
-    pragma(inline)
     alias chan(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.chan!quiet, privateState);
 
     // query
     /++
      +  Sends a private query message to a user.
      +/
-    pragma(inline)
     alias query(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.query!quiet, privateState);
 
     // privmsg
@@ -1786,7 +1784,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  It sends it in a throttled fashion, usable for long output when the bot
      +  may otherwise get kicked for spamming.
      +/
-    pragma(inline)
     alias privmsg(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.privmsg!quiet, privateState);
 
     deprecated("All outgoing messages are now throttled. Use privmsg instead.")
@@ -1796,7 +1793,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
-    pragma(inline)
     alias emote(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.emote!quiet, privateState);
 
     // mode
@@ -1806,35 +1802,30 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  This includes modes that pertain to a user in the context of a channel,
      +  like bans.
      +/
-    pragma(inline)
     alias mode(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.mode!quiet, privateState);
 
     // topic
     /++
      +  Sets the topic of a channel.
      +/
-    pragma(inline)
     alias topic(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.topic!quiet, privateState);
 
     // invite
     /++
      +  Invites a user to a channel.
      +/
-    pragma(inline)
     alias invite(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.invite!quiet, privateState);
 
     // join
     /++
      +  Joins a channel.
      +/
-    pragma(inline)
     alias join(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.join!quiet, privateState);
 
     // kick
     /++
      +  Kicks a user from a channel.
      +/
-    pragma(inline)
     alias kick(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.kick!quiet, privateState);
 
     // part
@@ -1844,7 +1835,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Cannot seemingly be wrapped using `std.functional.partial` due to the
      +  default `= string.init` parameter.
      +/
-    pragma(inline)
     void part(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
         //alias part(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.part!quiet, privateState);
@@ -1858,7 +1848,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  Cannot seemingly be wrapped using `std.functional.partial` due to the
      +  default `= string.init` parameter.
      +/
-    pragma(inline)
     void quit(Flag!"quiet" quiet = No.quiet)(const string reason = string.init)
     {
         //alias quit(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.quit!quiet, privateState);
@@ -1872,42 +1861,36 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +  This is used to send messages of types for which there exist no helper
      +  functions.
      +/
-    pragma(inline)
     alias raw(Flag!"quiet" quiet = No.quiet) = partial!(kameloso.messaging.raw!quiet, privateState);
 
     // askToWriteln
     /++
      +  Asks the main thread to print text to the local terminal.
      +/
-    pragma(inline)
     alias askToWriteln = partial!(kameloso.messaging.askToWriteln, privateState);
 
     // askToTrace
     /++
      +  Asks the main thread to `logger.trace` text to the local terminal.
      +/
-    pragma(inline)
     alias askToTrace = partial!(kameloso.messaging.askToTrace, privateState);
 
     // askToLog
     /++
      +  Asks the main thread to `logger.log` text to the local terminal.
      +/
-    pragma(inline)
     alias askToLog = partial!(kameloso.messaging.askToLog, privateState);
 
     // askToInfo
     /++
      +  Asks the main thread to `logger.info` text to the local terminal.
      +/
-    pragma(inline)
     alias askToInfo = partial!(kameloso.messaging.askToInfo, privateState);
 
     // askToWarn
     /++
      +  Asks the main thread to `logger.warning` text to the local terminal.
      +/
-    pragma(inline)
     alias askToWarn = partial!(kameloso.messaging.askToWarn, privateState);
     alias askToWarning = askToWarn;
 
@@ -1915,7 +1898,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Asks the main thread to `logger.error` text to the local terminal.
      +/
-    pragma(inline)
     alias askToError = partial!(kameloso.messaging.askToError, privateState);
 }
 
