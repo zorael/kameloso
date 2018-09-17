@@ -1954,12 +1954,38 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     return;
                 }
 
+                void explainReplay()
+                {
+                    import kameloso.common : logger, settings;
+                    import kameloso.conv : Enum;
+
+                    string infotint, logtint;
+
+                    version(Colours)
+                    {
+                        if (!settings.monochrome)
+                        {
+                            import kameloso.bash : colour;
+                            import kameloso.logger : KamelosoLogger;
+                            import std.experimental.logger : LogLevel;
+
+                            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+                        }
+                    }
+
+                    logger.logf("Replaying %s%s%s-tier event (user is %1$s%4$s%3$s)",
+                        infotint, Enum!PrivilegeLevel.toString(request.privilegeLevel),
+                        logtint, Enum!(IRCUser.Class).toString(event.target.class_));
+                }
+
                 with (PrivilegeLevel)
                 final switch (request.privilegeLevel)
                 {
                 case admin:
                     if (bot.admins.canFind(event.target.nickname))
                     {
+                        explainReplay();
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
                     }
@@ -1969,6 +1995,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     if (bot.admins.canFind(event.target.nickname) ||
                         (event.target.class_ == IRCUser.Class.whitelist))
                     {
+                        explainReplay();
                         request.trigger();
                         whoisQueue.remove(event.target.nickname);
                     }
@@ -1977,6 +2004,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                 case anyone:
                     if (event.target.class_ != IRCUser.Class.blacklist)
                     {
+                        explainReplay();
                         request.trigger();
                     }
 
