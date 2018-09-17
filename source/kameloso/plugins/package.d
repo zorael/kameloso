@@ -56,18 +56,26 @@ else
  +  To completely omit a plugin you will either have to compile the bot
  +  manually, or add an `__EOF__` at the top of the plugin source file.
  +/
-public alias EnabledPlugins = AliasSeq!(
-    TwitchService, // Must be before PersistenceService
-    PersistenceService, // Should be early
-    PrinterPlugin,  // Might as well be early
-    ConnectService,
-    ChanQueriesService,
-    CTCPService,
-    AdminPlugin,
-    ChatbotPlugin,
-    NotesPlugin,
-    SedReplacePlugin,
-    SeenPlugin,
-    AutomodePlugin,
-    QuotesPlugin,
-);
+version(WithPlugins)
+{
+    public alias EnabledPlugins = AliasSeq!(
+        TwitchService, // Must be before PersistenceService
+        PersistenceService, // Should be early
+        PrinterPlugin,  // Might as well be early
+        ConnectService,
+        ChanQueriesService,
+        CTCPService,
+        AdminPlugin,
+        ChatbotPlugin,
+        NotesPlugin,
+        SedReplacePlugin,
+        SeenPlugin,
+        AutomodePlugin,
+        QuotesPlugin,
+    );
+}
+else
+{
+    // Not compiling in any plugins, so don't list any.
+    public alias EnabledPlugins = AliasSeq!();
+}
