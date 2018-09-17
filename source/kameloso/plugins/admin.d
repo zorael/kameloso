@@ -40,6 +40,7 @@ private:
 import kameloso.common : logger;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.messaging;
 
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
@@ -299,7 +300,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    plugin.raw(event.content);
+    plugin.state.raw(event.content);
 }
 
 
@@ -321,16 +322,13 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    with (plugin.state)
+    if (event.content.length)
     {
-        if (event.content.length)
-        {
-            plugin.quit(event.content);
-        }
-        else
-        {
-            plugin.quit();
-        }
+        plugin.state.quit(event.content);
+    }
+    else
+    {
+        plugin.state.quit();
     }
 }
 
@@ -367,7 +365,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (!bot.homes.canFind(channel))
         {
-            plugin.join(channel);
+            plugin.state.join(channel);
             logger.info("Adding home: ", channel);
             bot.homes ~= channel;
             bot.updated = true;
@@ -410,7 +408,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         bot.homes = bot.homes.remove(homeIndex);
         bot.updated = true;
-        plugin.part(channel);
+        plugin.state.part(channel);
     }
 }
 
@@ -725,11 +723,11 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (event.aux.asLowerCase.equal("join"))
     {
-        plugin.join(channels);
+        plugin.state.join(channels);
     }
     else
     {
-        plugin.part(channels);
+        plugin.state.part(channels);
     }
 }
 
@@ -889,5 +887,4 @@ final class AdminPlugin : IRCPlugin
     @Settings AdminSettings adminSettings;
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }
