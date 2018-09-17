@@ -89,7 +89,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
         if (!numBlock.length)
         {
             state.privmsg(event.channel, event.sender.nickname,
-                "No such bash.org quote: %s".format(event.content));
+                "No such bash.org quote: " ~ event.content);
             return;
         }
 
