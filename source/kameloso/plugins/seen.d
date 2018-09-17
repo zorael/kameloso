@@ -857,5 +857,5 @@ mixin ChannelAwareness;
 
 
 /++
- +  This full plugin is 146 source lines of code. (`dscanner --sloc seen.d`)
+ +  This full plugin is 132 source lines of code. (`dscanner --sloc seen.d`)
  +/
