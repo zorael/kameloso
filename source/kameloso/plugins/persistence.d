@@ -30,10 +30,7 @@ private:
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
 {
-    import kameloso.meld : MeldingStrategy, meldInto;
-    import std.algorithm.searching : canFind;
     import std.range : only;
-    import std.typecons : Flag, No, Yes;
 
     if (event.type == IRCEvent.Type.QUIT) return;
 
@@ -55,7 +52,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             case RPL_WHOISUSER:
             case ACCOUNT:
                 // Record WHOIS if we have new account information
+                import std.algorithm.searching : canFind;
                 import std.datetime.systime : Clock;
+
                 lastWhois = Clock.currTime.toUnixTime;
 
                 if (const classifier = account in service.userClasses)
@@ -76,6 +75,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 break;
             }
+
+            import kameloso.meld : MeldingStrategy, meldInto;
 
             // Meld into the stored user, and store the union in the event
             (*user).meldInto!(MeldingStrategy.aggressive)(*stored);

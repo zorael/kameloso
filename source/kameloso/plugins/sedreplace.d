@@ -55,8 +55,6 @@ struct SedReplaceSettings
  +/
 struct Line
 {
-    import std.datetime.systime : SysTime;
-
     /// Contents of last line uttered.
     string content;
 
@@ -169,10 +167,8 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     if (!plugin.sedReplaceSettings.enabled) return;
 
-    import kameloso.messaging : chan;
     import kameloso.string : beginsWith, stripped;
     import std.datetime.systime : Clock;
-    import std.format : format;
 
     immutable stripped_ = event.content.stripped;
 
@@ -194,6 +190,9 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
+
+                import kameloso.messaging : chan;
+                import std.format : format;
 
                 plugin.chan(event.channel, "%s | %s".format(event.sender.nickname, result));
 

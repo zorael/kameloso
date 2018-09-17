@@ -43,8 +43,6 @@ struct WebtitlesSettings
  +/
 struct TitleLookup
 {
-    import std.datetime.systime : SysTime;
-
     /// Looked up web page title.
     string title;
 
@@ -88,9 +86,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
     if (!plugin.webtitlesSettings.enabled) return;
 
     import kameloso.common : logger;
-    import kameloso.constants : Timeout;
-    import kameloso.string : beginsWith, contains, nom;
-    import std.datetime.systime : Clock, SysTime;
+    import kameloso.string : beginsWith, contains;
     import std.regex : ctRegex, matchAll;
     import std.typecons : No, Yes;
 
@@ -122,6 +118,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         if (url.contains!(Yes.decode)('#'))
         {
+            import kameloso.string : nom;
             // URL contains an octorhorpe fragment identifier, like
             // https://www.google.com/index.html#this%20bit
             // Strip that.
@@ -134,6 +131,9 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         plugin.cache.prune();
 
         const cachedLookup = url in plugin.cache;
+
+        import kameloso.constants : Timeout;
+        import std.datetime.systime : Clock;
 
         if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
         {
@@ -255,11 +255,9 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
 TitleLookup lookupTitle(IRCPluginState state, const string url)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.string : beginsWith, contains;
     import arsd.dom : Document;
     import requests : Request;
     import std.array : Appender;
-    import std.datetime.systime : Clock;
 
     TitleLookup lookup;
     auto doc = new Document;
@@ -295,6 +293,7 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
 
     lookup.title = doc.title;
 
+    import kameloso.string : contains;
     if ((lookup.title == "YouTube") && url.contains("youtube.com/watch?"))
     {
         state.fixYoutubeTitles(lookup, url);
@@ -306,12 +305,14 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
 
     lookup.domain = res.finalURI.original_host;  // thanks to ikod
 
+    import kameloso.string : beginsWith;
     if (lookup.domain.beginsWith("www"))
     {
         import kameloso.string : nom;
         lookup.domain.nom('.');
     }
 
+    import std.datetime.systime : Clock;
     lookup.when = Clock.currTime.toUnixTime;
     return lookup;
 }

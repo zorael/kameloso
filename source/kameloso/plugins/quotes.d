@@ -115,11 +115,9 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    import std.json : JSONException;
-
     import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : stripped;
-    import std.format : format;
+    import std.json : JSONException;
 
     // stripModesign to allow for quotes from @nickname and +dudebro
     immutable signed = event.content.stripped;
@@ -133,6 +131,8 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     try
     {
+        import std.format : format;
+
         immutable quote = plugin.getQuote(nickname);
 
         if (quote.length)
@@ -173,9 +173,8 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : nom;
-    import std.format : format;
     import std.json : JSONException;
-    import std.typecons : Yes;
+    import std.typecons : No, Yes;
 
     string slice = event.content;  // need mutable
     immutable signed = slice.nom!(Yes.decode)(' ');
@@ -191,6 +190,8 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     try
     {
+        import std.format : format;
+
         plugin.addQuote(nickname, slice);
         plugin.quotes.save(plugin.quotesFile);
 

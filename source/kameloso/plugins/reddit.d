@@ -42,8 +42,6 @@ struct RedditSettings
  +/
 struct RedditLookup
 {
-    import std.datetime.systime : SysTime;
-
     /// Lookup result URL.
     string url;
 
@@ -72,7 +70,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
     import kameloso.common : logger;
     import kameloso.constants : Timeout;
     import kameloso.string : contains, stripped;
-    import std.datetime.systime : Clock, SysTime;
+    import std.datetime.systime : Clock;
 
     immutable url = event.content.stripped;
 
@@ -207,6 +205,7 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
     if (reddit.length)
     {
         import kameloso.common : ThreadMessage;
+
         state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
         IRCEvent mutable = event;
         mutable.content = reddit;

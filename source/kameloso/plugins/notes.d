@@ -19,8 +19,6 @@ import kameloso.ircdefs;
 import kameloso.common;
 import kameloso.messaging;
 
-import std.typecons : Flag, No, Yes;
-
 private:
 
 
@@ -91,6 +89,8 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
                 foreach (const note; noteArray)
                 {
+                    import std.typecons : No, Yes;
+
                     immutable timestamp = (Clock.currTime - note.when)
                         .timeSince!(Yes.abbreviate);
 
@@ -132,7 +132,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import kameloso.irc : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock;
 
     if (!plugin.notesSettings.replayOnSelfjoin) return;
 
@@ -149,6 +148,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
         with (fakeEvent)
         {
+            import std.datetime.systime : Clock;
+
             type = IRCEvent.Type.CHAN;
             sender.nickname = nickname;
             channel = event.channel;
@@ -260,7 +261,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     if (!plugin.notesSettings.enabled) return;
 
     import kameloso.string : contains, nom;
-    import std.typecons : Yes;
+    import std.typecons : No, Yes;
 
     logger.info("Faking an event");
 

@@ -226,7 +226,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
     if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
 
-    import std.algorithm.searching : canFind;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.path : buildNormalizedPath, expandTilde;
@@ -283,6 +282,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             }
         }
     }
+
+    import std.algorithm.searching : canFind;
 
     if (!plugin.printerSettings.logAllChannels &&
         event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
@@ -452,7 +453,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
  +/
 bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 {
-    import std.file : FileException, exists, isDir;
+    import std.file : exists, isDir;
 
     if (logLocation.exists)
     {
@@ -573,10 +574,6 @@ void commitLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.conv : Enum;
-    import std.string : capitalize;
-    import std.uni : isLower;
-
     if (plugin.printedISUPPORT || !plugin.state.bot.server.network.length)
     {
         // We already printed this information, or we havent yet seen NETWORK
@@ -587,6 +584,9 @@ void onISUPPORT(PrinterPlugin plugin)
 
     with (plugin.state.bot.server)
     {
+        import std.string : capitalize;
+        import std.uni : isLower;
+
         immutable networkName = network[0].isLower ? network.capitalize() : network;
         string infotint, logtint, tintreset;
 
@@ -604,6 +604,7 @@ void onISUPPORT(PrinterPlugin plugin)
             }
         }
 
+        import kameloso.conv : Enum;
         logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
             infotint, networkName, logtint,
             infotint, Enum!(IRCServer.Daemon).toString(daemon),
@@ -656,11 +657,9 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
     import kameloso.conv : Enum;
-    import kameloso.string : beginsWith;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
-    import std.format : formattedWrite;
     import std.uni : asLowerCase, asUpperCase;
 
     immutable timestamp = (cast(DateTime)SysTime
@@ -810,6 +809,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             put(sink, " !", errors, '!');
         }
 
+        import std.format : formattedWrite;
+
         if (count != 0) sink.formattedWrite(" {%d}", count);
 
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
@@ -845,14 +846,11 @@ version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
-    import kameloso.bash : BashForeground, colour, invert;
+    import kameloso.bash : BashForeground, colour;
     import kameloso.conv : Enum;
-    import kameloso.string : beginsWith;
-    import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
-    import std.uni : asLowerCase, asUpperCase;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))
@@ -979,6 +977,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
         put(sink, '[', timestamp, "] ");
 
+        import kameloso.string : beginsWith;
         if (rawTypestring.beginsWith("ERR_"))
         {
             sink.colour(bright ? DefaultBright.error : DefaultDark.error);
@@ -998,6 +997,8 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             sink.colour(typeColour);
         }
+
+        import std.uni : asLowerCase;
 
         put(sink, '[');
 
@@ -1024,6 +1025,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     sink.put('*');
                 }
 
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 if (!alias_.asLowerCase.equal(nickname))
                 {
                     sink.colour(BashForeground.default_);
@@ -1049,6 +1053,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             if (badge.length)
             {
                 import kameloso.string : contains, nom;
+                import std.uni : asUpperCase;
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
                 immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
@@ -1081,6 +1086,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     sink.put('*');
                 }
 
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
                     //sink.colour(BashForeground.default_);
@@ -1107,6 +1115,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             if (target.badge.length)
             {
                 import kameloso.string : contains, nom;
+                import std.uni : asUpperCase;
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
                 immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
@@ -1221,6 +1230,8 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case EMOTE:
                     if (content.containsNickname(bot.nickname))
                     {
+                        import kameloso.bash : invert;
+
                         // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
                         put(sink, `: "`, content.invert(bot.nickname), '"');
@@ -1775,9 +1786,7 @@ version(Colours)
 void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
     const string emotes, const BashForeground pre, const BashForeground post)
 {
-    import kameloso.bash : colour;
     import std.algorithm.iteration : splitter;
-    import std.algorithm.sorting : sort;
     import std.conv : to;
 
     struct Highlight
@@ -1816,6 +1825,7 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
         }
     }
 
+    import std.algorithm.sorting : sort;
     highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
 
     // We need a dstring since we're slicing something that isn't neccessarily ASCII
@@ -1824,6 +1834,8 @@ void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
 
     foreach (immutable i; 0..numHighlights)
     {
+        import kameloso.bash : colour;
+
         immutable start = highlights[i].start;
         immutable end = highlights[i].end;
 

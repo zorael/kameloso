@@ -41,8 +41,6 @@ private:
  +/
 void pipereader(shared IRCPluginState newState)
 {
-    import kameloso.messaging : raw, quit;
-    import core.time : seconds;
     import std.file : FileException, remove;
 
     auto state = cast(IRCPluginState)newState;
@@ -77,6 +75,7 @@ void pipereader(shared IRCPluginState newState)
         {
             foreach (immutable line; fifo.byLineCopy)
             {
+                import kameloso.messaging : raw, quit;
                 import kameloso.string : beginsWith;
                 import std.format : format;
                 import std.string : toLower;
@@ -103,6 +102,7 @@ void pipereader(shared IRCPluginState newState)
             }
         }
 
+        import core.time : seconds;
         static immutable instant = 0.seconds;
 
         receiveTimeout(instant,
@@ -154,12 +154,13 @@ File createFIFO(IRCPluginState state)
 {
     import std.file : FileException, exists, isDir;
     import std.format : format;
-    import std.process : execute;
 
     immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
 
     if (!filename.exists)
     {
+        import std.process : execute;
+
         immutable mkfifo = execute([ "mkfifo", filename ]);
 
         if (mkfifo.status != 0)

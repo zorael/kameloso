@@ -59,10 +59,8 @@ void postprocess(TwitchService service, ref IRCEvent event)
  +/
 void parseTwitchTags(TwitchService service, ref IRCEvent event)
 {
-    import kameloso.common : logger;
     import kameloso.irc : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
-    import std.conv : to;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
 
@@ -244,6 +242,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             default:
+                import kameloso.common : logger;
                 logger.warning("Unknown Twitch msg-id: ", value);
                 break;
             }
@@ -391,6 +390,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
+            import std.conv : to;
             event.count = value.to!int;
             break;
 
@@ -494,6 +494,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "number-of-viewers":
             // (Optional) Number of viewers watching the host.
         default:
+            import kameloso.common : logger;
             // Verbosely
             logger.warningf("Unknown Twitch tag: %s = %s", key, value);
             break;
