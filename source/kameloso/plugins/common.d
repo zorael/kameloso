@@ -718,6 +718,7 @@ unittest
  +  Uses compile-time introspection to call top-level functions to extend
  +  behaviour;
  +/
+version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     import core.thread : Fiber;
@@ -1753,6 +1754,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
  +  `kameloso.messaging` and include the thread ID of the main thread in every
  +  call of the functions.
  +/
+version(WithPlugins)
 mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 {
     static import kameloso.messaging;
@@ -1906,6 +1908,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 /++
  +  Implements triggering of queued events in a plugin module.
  +/
+version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
     enum hasMinimalAuthentication = true;
@@ -2014,6 +2017,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
  +  If more elaborate ones are needed, additional functions can be written and,
  +  where applicable, annotated appropriately.
  +/
+version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
@@ -2268,6 +2272,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +
  +  Channel awareness needs user awareness, or things won't work.
  +/
+version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
