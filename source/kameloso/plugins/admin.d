@@ -97,6 +97,7 @@ struct AdminSettings
  +  prints all incoming events as assert statements, for use in soure code
  +  `unittest` blocks.
  +/
+debug
 @(Chainable)
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
@@ -147,6 +148,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
  +
  +  It basically prints the matching `kameloso.ircdefs.IRCUser`.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
@@ -182,6 +184,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
  +  information. It is a tool to help diagnose whether logins are being caught
  +  or not, used in tandem with `onCommandShowOneUser`.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
@@ -230,6 +233,7 @@ void onCommandSave(AdminPlugin plugin)
  +  Prints out the current `users` array of the `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -263,12 +267,13 @@ void onCommandShowUsers(AdminPlugin plugin)
  +  Prints out the current `channels` array of the `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "channels")
-@Description("Prints out the current channels array to the local terminal.")
+@Description("[debug] Prints out the current channels array to the local terminal.")
 void onCommandShowChannels(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -290,12 +295,13 @@ void onCommandShowChannels(AdminPlugin plugin)
  +
  +  You need basic knowledge of IRC server strings to use this.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "sudo")
-@Description("Sends supplied text to the server, verbatim.")
+@Description("[debug] Sends supplied text to the server, verbatim.")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -623,6 +629,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -644,6 +651,7 @@ void onCommandprintRaw(AdminPlugin plugin)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -740,7 +748,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "set")
-@Description("[debug] Changes a plugin's settings")
+@Description("Changes a plugin's settings")
 void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -784,6 +792,7 @@ void onCommandAuth(AdminPlugin plugin)
  +
  +  This can be very spammy.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
