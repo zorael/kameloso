@@ -231,6 +231,18 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
 
+    // Ignore some types that would only show up in the log with the bot's name.
+    with (IRCEvent.Type)
+    switch (event.type)
+    {
+    case SELFMODE:
+        // Add more types as they are found
+        return;
+
+    default:
+        break;
+    }
+
     immutable logLocation = plugin.logDirectory.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
 
