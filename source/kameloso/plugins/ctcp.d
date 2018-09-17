@@ -260,7 +260,8 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
             {
                 foreach (type; getUDAs!(fun, IRCEvent.Type))
                 {
-                    enum typestring = type.to!string;
+                    import kameloso.conv : Enum;
+                    enum typestring = Enum!(IRCEvent.Type).toString(type);
 
                     static if (typestring.beginsWith("CTCP_"))
                     {

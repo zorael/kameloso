@@ -144,7 +144,8 @@ if (is(QualThing == struct))
 
                     static if (asserts)
                     {
-                        immutable pattern = "%sassert((%s%s == " ~ typename ~ ".%s), %2$s%3$s.to!string);\n";
+                        immutable pattern = "%sassert((%s%s == " ~ typename ~ ".%s), " ~
+                            "Enum!(" ~ typename ~ ").toString(%2$s%3$s));\n";
                     }
                     else
                     {
@@ -228,7 +229,7 @@ assert(sink.data ==
 assert((user == "UUUUUSER"), user);
 assert((server.address == "something.freenode.net"), server.address);
 assert((server.port == 0), server.port.to!string);
-assert((server.daemon == IRCServer.Daemon.unreal), server.daemon.to!string);
+assert((server.daemon == IRCServer.Daemon.unreal), Enum!(IRCServer.Daemon).toString(server.daemon));
 assert((server.aModes == ""), server.aModes);
 `, '\n' ~ sink.data);
 
@@ -272,11 +273,11 @@ assert(!b);
     sink.formatDelta!(Yes.asserts)(IRCEvent.init, event, 2);
 
     assert(sink.data ==
-`        assert((type == IRCEvent.Type.CHAN), type.to!string);
+`        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);
-        assert((sender.class_ == IRCUser.Class.special), sender.class_.to!string);
+        assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
         assert((channel == "#flerrp"), channel);
         assert((content == "kameloso: 8ball"), content);
 `, '\n' ~ sink.data);
@@ -350,7 +351,7 @@ unittest
     immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
     with (event)
     {
-        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
         assert((sender.nickname == "zorael"), sender.nickname);
         assert((sender.ident == "~NaN"), sender.ident);
         assert((sender.address == "2001:41d0:2:80b4::"), sender.address);

@@ -135,6 +135,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 ///
 unittest
 {
+    import kameloso.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -144,7 +145,7 @@ unittest
     {
         raw = "PING :irc.server.address";
         parser.parseBasic(e1);
-        assert((type == IRCEvent.Type.PING), type.to!string);
+        assert((type == IRCEvent.Type.PING), Enum!(IRCEvent.Type).toString(type));
         assert((sender.address == "irc.server.address"), sender.address);
         assert(!sender.nickname.length, sender.nickname);
     }
@@ -155,7 +156,7 @@ unittest
         // QuakeNet and others not having the sending server as prefix
         raw = "NOTICE AUTH :*** Couldn't look up your hostname";
         parser.parseBasic(e2);
-        assert((type == IRCEvent.Type.NOTICE), type.to!string);
+        assert((type == IRCEvent.Type.NOTICE), Enum!(IRCEvent.Type).toString(type));
         assert(!sender.nickname.length, sender.nickname);
         assert((content == "*** Couldn't look up your hostname"));
     }
@@ -165,7 +166,7 @@ unittest
     {
         raw = "ERROR :Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)";
         parser.parseBasic(e3);
-        assert((type == IRCEvent.Type.ERROR), type.to!string);
+        assert((type == IRCEvent.Type.ERROR), Enum!(IRCEvent.Type).toString(type));
         assert(!sender.nickname.length, sender.nickname);
         assert((content == "Closing Link: 81-233-105-62-no80.tbcn.telia.com (Quit: kameloso^)"), content);
     }
@@ -219,6 +220,7 @@ void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pur
 ///
 unittest
 {
+    import kameloso.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -233,7 +235,7 @@ unittest
         assert((nickname == "zorael"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "some.address.org"), address);
-        assert((class_ != IRCUser.Class.special), class_.to!string);
+        assert((class_ != IRCUser.Class.special), Enum!(IRCUser.Class).toString(class_));
     }
 
     IRCEvent e2;
@@ -246,7 +248,7 @@ unittest
         assert((nickname == "NickServ"), nickname);
         assert((ident == "NickServ"), ident);
         assert((address == "services."), address);
-        assert((class_ == IRCUser.Class.special), class_.to!string);
+        assert((class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(class_));
     }
 
     IRCEvent e3;
@@ -259,7 +261,7 @@ unittest
         assert((nickname == "kameloso^^"), nickname);
         assert((ident == "~NaN"), ident);
         assert((address == "C2802314.E23AD7D8.E9841504.IP"), address);
-        assert((class_ != IRCUser.Class.special), class_.to!string);
+        assert((class_ != IRCUser.Class.special), Enum!(IRCUser.Class).toString(class_));
     }
 
     IRCEvent e4;
@@ -273,7 +275,7 @@ unittest
         assert((nickname == "Q"), nickname);
         assert((ident == "TheQBot"), ident);
         assert((address == "CServe.quakenet.org"), address);
-        assert((class_ == IRCUser.Class.special), class_.to!string);
+        assert((class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(class_));
     }
 }
 
@@ -345,6 +347,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
 ///
 unittest
 {
+    import kameloso.conv : Enum;
     import std.conv : to;
 
     IRCParser parser;
@@ -355,7 +358,7 @@ unittest
         raw = /*":port80b.se.quakenet.org */"421 kameloso åäö :Unknown command";
         string slice = raw;  // mutable
         parser.parseTypestring(e1, slice);
-        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), type.to!string);
+        assert((type == IRCEvent.Type.ERR_UNKNOWNCOMMAND), Enum!(IRCEvent.Type).toString(type));
         assert((num == 421), num.to!string);
     }
 
@@ -365,7 +368,7 @@ unittest
         raw = /*":port80b.se.quakenet.org */"353 kameloso = #garderoben :@kameloso'";
         string slice = raw;  // mutable
         parser.parseTypestring(e2, slice);
-        assert((type == IRCEvent.Type.RPL_NAMREPLY), type.to!string);
+        assert((type == IRCEvent.Type.RPL_NAMREPLY), Enum!(IRCEvent.Type).toString(type));
         assert((num == 353), num.to!string);
     }
 
@@ -375,7 +378,7 @@ unittest
         raw = /*":zorael!~NaN@ns3363704.ip-94-23-253.eu */"PRIVMSG kameloso^ :test test content";
         string slice = raw;
         parser.parseTypestring(e3, slice);
-        assert((type == IRCEvent.Type.PRIVMSG), type.to!string);
+        assert((type == IRCEvent.Type.PRIVMSG), Enum!(IRCEvent.Type).toString(type));
     }
 
     IRCEvent e4;
@@ -384,7 +387,7 @@ unittest
         raw = /*`:zorael!~NaN@ns3363704.ip-94-23-253.eu */`PART #flerrp :"WeeChat 1.6"`;
         string slice = raw;
         parser.parseTypestring(e4, slice);
-        assert((type == IRCEvent.Type.PART), type.to!string);
+        assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
     }
 }
 
