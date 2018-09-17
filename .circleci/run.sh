@@ -19,7 +19,7 @@ build() {
     mkdir -p artifacts
 
     dub test --compiler="$1" --build-mode=singleFile -c vanilla
-    dub test --nodeps --compiler="$1" --build-mode=singleFile -c colours+web
+    dub test --nodeps --compiler="$1" --build-mode=singleFile -c colours #+web
 
     dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug -c colours+web || true
     mv kameloso artifacts/kameloso || true
