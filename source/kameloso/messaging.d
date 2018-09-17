@@ -41,6 +41,8 @@ void chan(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -49,7 +51,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
     }
@@ -74,6 +76,8 @@ void query(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string nic
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -82,7 +86,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.QUERY), type.to!string);
+        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "content"), content);
     }
@@ -121,6 +125,8 @@ void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string c
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -129,7 +135,7 @@ unittest
     immutable event1 = receiveOnly!IRCEvent;
     with (event1)
     {
-        assert((type == IRCEvent.Type.CHAN), type.to!string);
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
         assert(!target.nickname.length, target.nickname);
@@ -140,7 +146,7 @@ unittest
     immutable event2 = receiveOnly!IRCEvent;
     with (event2)
     {
-        assert((type == IRCEvent.Type.QUERY), type.to!string);
+        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
         assert(!channel.length, channel);
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "content"), content);
@@ -174,6 +180,8 @@ void emote(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string emo
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -182,7 +190,7 @@ unittest
     immutable event1 = receiveOnly!IRCEvent;
     with (event1)
     {
-        assert((type == IRCEvent.Type.EMOTE), type.to!string);
+        assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
         assert(!target.nickname.length, target.nickname);
@@ -193,7 +201,7 @@ unittest
     immutable event2 = receiveOnly!IRCEvent;
     with (event2)
     {
-        assert((type == IRCEvent.Type.EMOTE), type.to!string);
+        assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
         assert(!channel.length, channel);
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "content"), content);
@@ -227,6 +235,8 @@ void mode(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -235,7 +245,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.MODE), type.to!string);
+        assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
         assert((aux == "+o"), aux);
@@ -263,6 +273,8 @@ void topic(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string cha
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -271,7 +283,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.TOPIC), type.to!string);
+        assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
     }
@@ -298,6 +310,8 @@ void invite(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string ch
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -306,7 +320,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.INVITE), type.to!string);
+        assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((target.nickname == "kameloso"), target.nickname);
     }
@@ -332,6 +346,8 @@ void join(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -340,7 +356,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.JOIN), type.to!string);
+        assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
     }
 }
@@ -371,6 +387,8 @@ void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string chan
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -379,7 +397,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.KICK), type.to!string);
+        assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "content"), content);
         assert((target.nickname == "kameloso"), target.nickname);
@@ -408,6 +426,8 @@ void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state,
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -416,7 +436,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.PART), type.to!string);
+        assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
         assert((channel == "#channel"), channel);
         assert((content == "reason"), content);
     }
@@ -440,6 +460,7 @@ void quit(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string reas
 ///
 unittest
 {
+    import kameloso.conv : Enum;
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -448,7 +469,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.QUIT), type.to!string);
+        assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
         assert((content == "reason"), content);
     }
 }
@@ -474,6 +495,8 @@ void raw(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string line)
 ///
 unittest
 {
+    import kameloso.conv : Enum;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -482,7 +505,7 @@ unittest
     immutable event = receiveOnly!IRCEvent;
     with (event)
     {
-        assert((type == IRCEvent.Type.UNSET), type.to!string);
+        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
         assert((content == "commands"), content);
     }
 }
