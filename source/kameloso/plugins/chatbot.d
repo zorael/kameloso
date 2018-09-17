@@ -61,7 +61,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    plugin.privmsg(event.channel, event.sender.nickname, event.content);
+    plugin.state.privmsg(event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -114,7 +114,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
-    plugin.privmsg(event.channel, event.sender.nickname, reply);
+    plugin.state.privmsg(event.channel, event.sender.nickname, reply);
 }
 
 
@@ -175,75 +175,72 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
     import std.format : format;
 
     with (event)
-    with (plugin)
+    if (content.length)
     {
-        if (content.length)
+        if (content.contains!(Yes.decode)(" "))
         {
-            if (content.contains!(Yes.decode)(" "))
-            {
-                string slice = content;
-                immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
-                immutable specifiedCommand = slice;
-
-                foreach (p; plugins)
-                {
-                    if (p.name != specifiedPlugin) continue;
-
-                    if (auto description = specifiedCommand in p.commands)
-                    {
-                        query(sender.nickname, "[%s] %s: %s"
-                            .format(p.name, specifiedCommand, *description));
-                        return;
-                    }
-                    else
-                    {
-                        query(sender.nickname, "No help available for command %s of plugin %s"
-                            .format(specifiedCommand, specifiedPlugin));
-                        return;
-                    }
-                }
-
-                query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
-                return;
-            }
-            else
-            {
-                foreach (p; plugins)
-                {
-                    if (p.name != content) continue;
-
-                    enum width = 11;
-
-                    query(sender.nickname, "* %-*s %-([%s]%| %)"
-                        .format(width, p.name, p.commands.keys.sort()));
-                    return;
-                }
-
-                query(sender.nickname, "No such plugin: " ~ content);
-            }
-        }
-        else
-        {
-            enum banner = "kameloso IRC bot v%s, built %s"
-                .format(cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.built);
-
-            query(sender.nickname, banner);
-            query(sender.nickname, "Available bot commands per plugin:");
+            string slice = content;
+            immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
+            immutable specifiedCommand = slice;
 
             foreach (p; plugins)
             {
-                if (!p.commands.length || p.name.endsWith("Service")) continue;
+                if (p.name != specifiedPlugin) continue;
+
+                if (auto description = specifiedCommand in p.commands)
+                {
+                    plugin.state.query(sender.nickname, "[%s] %s: %s"
+                        .format(p.name, specifiedCommand, *description));
+                    return;
+                }
+                else
+                {
+                    plugin.state.query(sender.nickname, "No help available for command %s of plugin %s"
+                        .format(specifiedCommand, specifiedPlugin));
+                    return;
+                }
+            }
+
+            plugin.state.query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
+            return;
+        }
+        else
+        {
+            foreach (p; plugins)
+            {
+                if (p.name != content) continue;
 
                 enum width = 11;
 
-                query(sender.nickname, "* %-*s %-([%s]%| %)"
+                plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
                     .format(width, p.name, p.commands.keys.sort()));
+                return;
             }
 
-            query(sender.nickname, "Use help [plugin] [command] for information about a command.");
-            query(sender.nickname, "Additional unlisted regex commands may be available.");
+            plugin.state.query(sender.nickname, "No such plugin: " ~ content);
         }
+    }
+    else
+    {
+        enum banner = "kameloso IRC bot v%s, built %s"
+            .format(cast(string)KamelosoInfo.version_,
+            cast(string)KamelosoInfo.built);
+
+        plugin.state.query(sender.nickname, banner);
+        plugin.state.query(sender.nickname, "Available bot commands per plugin:");
+
+        foreach (p; plugins)
+        {
+            if (!p.commands.length || p.name.endsWith("Service")) continue;
+
+            enum width = 11;
+
+            plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
+                .format(width, p.name, p.commands.keys.sort()));
+        }
+
+        plugin.state.query(sender.nickname, "Use help [plugin] [command] for information about a command.");
+        plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
     }
 }
 
@@ -270,5 +267,4 @@ final class ChatbotPlugin : IRCPlugin
     @Settings ChatbotSettings chatbotSettings;
 
     mixin IRCPluginImpl;
-    mixin MessagingProxy;
 }
