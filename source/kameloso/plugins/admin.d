@@ -23,9 +23,14 @@
  +  `printasserts`<br>
  +  `forgetaccounts`<br>
  +  `whitelist`<br>
- +  `unwhitelist`<br>
+ +  `dewhitelist`<br>
+ +  `blacklist`<br>
+ +  `dewblacklist`<br>
  +  `writeconfig` | `save`<br>
- +  `quit`
+ +  `quit`<br>
+ +  `set`<br>
+ +  `auth`<br>
+ +  `status`
  +
  +  It is optional if you don't intend to be controlling the bot from another
  +  client.
