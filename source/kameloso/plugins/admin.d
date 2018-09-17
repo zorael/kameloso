@@ -14,7 +14,6 @@
  +  `delhome`<br>
  +  `join`<br>
  +  `part`<br>
- +  `channels`<br>
  +  `users`<br>
  +  `user`<br>
  +  `printraw`<br>
@@ -259,33 +258,6 @@ void onCommandShowUsers(AdminPlugin plugin)
         plugin.state.users.deepSizeof);
 
     version(Cygwin_) stdout.flush();
-}
-
-
-// onCommandShowChannels
-/++
- +  Prints out the current `channels` array of the `AdminPlugin`'s
- +  `kameloso.plugins.common.IRCPluginState` to the local terminal.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "channels")
-@Description("[debug] Prints out the current channels array to the local terminal.")
-void onCommandShowChannels(AdminPlugin plugin)
-{
-    if (!plugin.adminSettings.enabled) return;
-
-    import kameloso.common : printObject;
-
-    logger.trace("Printing Admin's channels");
-
-    foreach (key, value; plugin.state.channels)
-    {
-        printObject(value);
-    }
 }
 
 
