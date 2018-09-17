@@ -173,6 +173,7 @@ void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event
     import std.algorithm.searching : endsWith;
     import std.algorithm.sorting : sort;
     import std.format : format;
+    import std.typecons : No, Yes;
 
     with (event)
     if (content.length)
