@@ -28,16 +28,17 @@ public import kameloso.plugins.common;
 version(WithPlugins)
 string tryImportMixin(const string module_, const string alias_)
 {
-    import std.format;
+    import std.format : format;
 
     return q{
-    static if (__traits(compiles, %1$s))
+        static if (__traits(compiles, __traits(identifier, %1$s)))
         {
             //pragma(msg, "Importing plugin: %1$s");
             public import %1$s;
         }
         else
         {
+            //pragma(msg, "NOT importing: %1$s (missing or doesn't compile)");
             import std.meta : AliasSeq;
             alias %2$s = AliasSeq!();
         }
