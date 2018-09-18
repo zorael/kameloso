@@ -236,11 +236,12 @@ Next checkMessages(ref Client client)
         }
     }
 
-    void proxyBusMessage(ThreadMessage.BusMessage, string header, string content, IRCEvent payload)
+    /// Passes a bus message to each plugin.
+    void proxyBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content)
     {
         foreach (plugin; client.plugins)
         {
-            plugin.onBusMessage(header, content, payload);
+            plugin.onBusMessage(header, content);
         }
     }
 
