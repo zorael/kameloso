@@ -394,7 +394,6 @@ unittest
  +  Returns:
  +      `true` if `haystack` begins with `needle`, `false` if not.
  +/
-pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure nothrow @nogc
 if (isSomeString!T)
 {
@@ -417,7 +416,6 @@ unittest
 }
 
 
-pragma(inline)
 // beginsWith
 /++
  +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
