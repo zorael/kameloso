@@ -1026,31 +1026,19 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
-        // Only instantiate available plugins
-
         version(Web)
         {
-            static if (__traits(compiles, WebtitlesPlugin))
+            foreach (WebPlugin; EnabledWebPlugins)
             {
-                plugins ~= new WebtitlesPlugin(state);
-            }
-
-            static if (__traits(compiles, RedditPlugin))
-            {
-                plugins ~= new RedditPlugin(state);
-            }
-
-            static if (__traits(compiles, BashQuotesPlugin))
-            {
-                plugins ~= new BashQuotesPlugin(state);
+                plugins ~= new WebPlugin(state);
             }
         }
 
         version(Posix)
         {
-            static if (__traits(compiles, PipelinePlugin))
+            foreach (PosixPlugin; EnabledPosixPlugins)
             {
-                plugins ~= new PipelinePlugin(state);
+                plugins ~= new PosixPlugin(state);
             }
         }
 
