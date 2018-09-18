@@ -2,6 +2,10 @@
  +  String manipulation functions, used throughout the program complementing the
  +  standard library, as well as providing dumbed-down and optimised versions
  +  of existing functions therein.
+ +
+ +  Notable functions are `nom`, which allows for advancing a string past a
+ +  supplied substring; and `contains`, which uses an educated approach to
+ +  finding substrings in a string.
  +/
 module kameloso.string;
 
@@ -14,8 +18,12 @@ import std.typecons : Flag, No, Yes;
 
 // nom
 /++
- +  Finds the supplied separator token, returns the string up to that point,
- +  and advances the passed ref string to after the token.
+ +  Given some string, finds the supplied separator token in it, returns the
+ +  string up to that point, and advances the passed string by ref to after the
+ +  token.
+ +
+ +  The naming is in line with standard library functions such as
+ +  `std.string.munch`, `std.file.slurp` and others.
  +
  +  Example:
  +  ---
@@ -37,12 +45,14 @@ import std.typecons : Flag, No, Yes;
  +      line = String to walk and advance.
  +      separator = Token that deliminates what should be returned and to where
  +          to advance.
- +      callingFile = Name of the calling source file.
- +      callingLine = Line number where in the source file this is called.
+ +      callingFile = Name of the calling source file, used to pass along when
+ +          throwing an exception.
+ +      callingLine = Line number where in the source file this is called, used
+ +          to pass along when throwing an exception.
  +
  +  Returns:
- +      The string `line` from the start up to the separator. The original
- +      variable is advanced to after the separator.
+ +      The string `line` from the start up to the separator token. The original
+ +      variable is advanced to after the token.
  +/
 pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,
@@ -213,6 +223,13 @@ unittest
  +  ---
  +  string one = 1.plurality("one", "two");
  +  string two = 2.plurality("one", "two");
+ +  string many = (-2).plurality("one", "many");
+ +  string many0 = 0.plurlity("one", "many");
+ +
+ +  assert((one == "one"), one);
+ +  assert((two == "two"), two);
+ +  assert((many == "many"), many);
+ +  assert((many0 == "many"), many0);
  +  ---
  +
  +  Params:
@@ -297,7 +314,7 @@ if (isSomeString!T)
  +      line = The (potentially) quoted string.
  +
  +  Returns:
- +      A slice of the line argument that excludes the quotes.
+ +      A slice of the `line` argument that excludes the quotes.
  +/
 pragma(inline)
 T unquoted(T)(const T line) pure nothrow @nogc @property
@@ -335,7 +352,7 @@ unittest
  +      line = The (potentially) single-quoted string.
  +
  +  Returns:
- +      A slice of the line argument that excludes the single-quotes.
+ +      A slice of the `line` argument that excludes the single-quotes.
  +/
 pragma(inline)
 T unsinglequoted(T)(const T line) pure nothrow @nogc @property
@@ -361,7 +378,8 @@ unittest
  +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
  +  such a hotspot.
  +
- +  Does not decode the string and may thus give weird results on weird inputs.
+ +  Merely slices; does not decode the string and may thus give weird results on
+ +  weird inputs.
  +
  +  Example:
  +  ---
@@ -374,7 +392,7 @@ unittest
  +      needle = Snippet of text to check if `haystack` begins with.
  +
  +  Returns:
- +      `true` if `haystack` starts with `needle`, `false` if not.
+ +      `true` if `haystack` begins with `needle`, `false` if not.
  +/
 pragma(inline)
 bool beginsWith(T)(const T haystack, const T needle) pure nothrow @nogc
@@ -399,8 +417,32 @@ unittest
 }
 
 
-/// Ditto
 pragma(inline)
+// beginsWith
+/++
+ +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
+ +  such a hotspot.
+ +
+ +  Merely slices; does not decode the string and may thus give weird results on
+ +  weird inputs.
+ +
+ +  Overload that takes a `char` or `ubyte` as beginning character, instead of
+ +  a full string like the primary overload.
+ +
+ +  Example:
+ +  ---
+ +  assert("Lorem ipsum sit amet".beginsWith('L'));
+ +  assert(!"Lorem ipsum sit amet".beginsWith('o'));
+ +  ---
+ +
+ +  Params:
+ +      haystack = Original line to examine.
+ +      needle = The `char` (or technically `ubyte`) to check if `haystack`
+ +          begins with.
+ +
+ +  Returns:
+ +      `true` if `haystack` begins with `needle`, `false` if not.
+ +/
 bool beginsWith(T)(const T line, const ubyte charcode) pure nothrow @nogc
 if (isSomeString!T)
 {
@@ -422,16 +464,19 @@ unittest
  +  Checks whether or not the first letter of a string begins with any of the
  +  passed string of characters.
  +
- +  Merely a wrapper of `contains`.
+ +  Wraps `contains`.
+ +
+ +  Merely slices; does not decode the string and may thus give weird results on
+ +  weird inputs.
  +
  +  Params:
  +      haystack = String line to check the beginning of.
- +      needles = String of characters to test and see if `line` begins with
- +          any of them.
+ +      needles = String of characters to test and see whether `haystack` begins
+ +          with any of them.
  +
  +  Returns:
- +      True if the first character of `line` is also in `characters`, false if
- +      not.
+ +      `true` if the first character of `haystack` is also in `characters`,
+ +      `false` if not.
  +/
 pragma(inline)
 bool beginsWithOneOf(T)(const T haystack, const T needles) pure nothrow @nogc
@@ -457,7 +502,27 @@ unittest
 }
 
 
-/// Ditto
+// beginsWithOneOf
+/++
+ +  Checks whether or not the first letter of a string begins with any of the
+ +  passed string of characters.
+ +
+ +  Overload that takes a single `char` or `ubyte` as "string" to identify the
+ +  "beginning" of, which in this case translates to the `char`/`ubyte` itself.
+ +
+ +  Wraps `contains`.
+ +
+ +  Merely slices; does not decode the string and may thus give weird results on
+ +  weird inputs.
+ +
+ +  Params:
+ +      haystraw = Single character to evaluate whether it exists in `needles`.
+ +      needles = String of characters to test and see whether `haystraw`
+ +          equals any of them.
+ +
+ +  Returns:
+ +      `true` if the `haystraw` is in `needles`, `false` if not.
+ +/
 pragma(inline)
 bool beginsWithOneOf(T)(const ubyte haystraw, const T needles) pure nothrow @nogc
 if (isSomeString!T)
@@ -480,8 +545,8 @@ unittest
 
 // stripPrefix
 /++
- +  Strips a prefix word from a string, also stripping away some non-word
- +  characters.
+ +  Strips a prefix word from a string, optionally also stripping away some
+ +  non-word characters (`:?! `).
  +
  +  This is to make a helper for stripping away bot prefixes, where such may be
  +  "`kameloso:`".
@@ -494,7 +559,11 @@ unittest
  +  ---
  +
  +  Params:
- +      line = String line prefixed with `prefix`.
+ +      demandSeparatingChars = Makes it a necessity that `line` is followed
+ +          by one of the prefix letters `:?! `. If it isn't, the `line` string
+ +          will be returned as is.
+ +      line = String line prefixed with `prefix`, potentially including
+ +          separating characters.
  +      prefix = Prefix to strip.
  +
  +  Returns:
@@ -695,12 +764,14 @@ unittest
 
 // tabs
 /++
- +  Returns spaces equal to that of num tabs (\t).
+ +  Returns *spaces* equal to that of `num` tabs (\t).
  +
  +  Example:
  +  ---
  +  string indentation = 2.tabs;
  +  assert((indentation == "        "), `"` ~  indentation ~ `"`);
+ +  string smallIndent = 1.tabs!2;
+ +  assert((smallIndent == "  "), `"` ~  smallIndent ~ `"`);
  +  ---
  +
  +  Params:
@@ -708,7 +779,7 @@ unittest
  +      num = How many tabs we want.
  +
  +  Returns:
- +      Whitespace equalling (`num` ' `spaces`) spaces.
+ +      Whitespace equalling (`num` * `spaces`) spaces.
  +/
 auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc @property
 {
@@ -756,8 +827,8 @@ unittest
 /++
  +  Checks a string to see if it contains a given substring or character.
  +
- +  This is not UTF-8 safe. It is naive in how it thinks a string always
- +  correspond to one set of codepoints and one set only.
+ +  Merely slices; this is not UTF-8 safe. It is naive in how it thinks a string
+ +  always correspond to one set of codepoints and one set only.
  +
  +  Example:
  +  ---
@@ -773,7 +844,8 @@ unittest
  +      needle = Substring to search `haystack` for.
  +
  +  Returns:
- +      Whether the passed string contained the passed substring or token.
+ +      Whether the passed `haystack` string contained the passed `needle`
+ +      substring or token.
  +/
 bool contains(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
 if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
@@ -834,8 +906,11 @@ unittest
  +  Returns a slice of the passed string with any trailing whitespace and/or
  +  linebreaks sliced off.
  +
+ +  Duplicates `std.string.stripRight`, which we can no longer trust not to
+ +  assert on unexpected input.
+ +
  +  Params:
- +      line = Line to stripRight.
+ +      line = Line to strip the right side of.
  +
  +  Returns:
  +      The passed line without any trailing whitespace or linebreaks.
@@ -902,8 +977,11 @@ unittest
  +  Returns a slice of the passed string with any preceding whitespace and/or
  +  linebreaks sliced off.
  +
+ +  Duplicates `std.string.stripLeft`, which we can no longer trust not to
+ +  assert on unexpected input.
+ +
  +  Params:
- +      line = Line to stripLeft.
+ +      line = Line to strip the left side of.
  +
  +  Returns:
  +      The passed line without any preceding whitespace or linebreaks.
@@ -970,13 +1048,15 @@ unittest
  +  Returns a slice of the passed string with any preceding or trailing
  +  whitespace or linebreaks sliced off.
  +
- +  It merely calls both `strippedLeft` and `strippedRight`.
+ +  It merely calls both `strippedLeft` and `strippedRight`. As such it
+ +  duplicates `std.string.strip`, which we can no longer trust not to assert
+ +  on unexpected input.
  +
  +  Params:
- +      line = Line to strip.
+ +      line = Line to strip both the right and left side of.
  +
  +  Returns:
- +      The passed line, stripped.
+ +      The passed line, stripped of surrounding whitespace.
  +/
 string stripped(const string line) pure nothrow @nogc @property
 {
@@ -1018,13 +1098,19 @@ unittest
 /++
  +  Base64-encodes a string.
  +
+ +  Merely wraps `std.base64.Base64.encode` and `std.string.representation`
+ +  into one function that will work with strings.
+ +
  +  Params:
  +      line = String line to encode.
  +
  +  Returns:
  +      An encoded Base64 string.
+ +
+ +  See_Also:
+ +      https://en.wikipedia.org/wiki/Base64
  +/
-string encode64(const string line) @safe pure nothrow
+string encode64(const string line) pure nothrow
 {
     import std.base64 : Base64;
     import std.string : representation;
@@ -1052,13 +1138,19 @@ unittest
 /++
  +  Base64-decodes a string.
  +
+ +  Merely wraps `std.base64.Base64.decode` and `std.string.representation`
+ +  into one function that will work with strings.
+ +
  +  Params:
  +      encoded = Encoded string to decode.
  +
  +  Returns:
  +      A decoded normal string.
+ +
+ +  See_Also:
+ +      https://en.wikipedia.org/wiki/Base64
  +/
-string decode64(const string encoded) @safe pure
+string decode64(const string encoded) pure
 {
     import std.base64 : Base64;
     return (cast(char[])Base64.decode(encoded)).idup;
