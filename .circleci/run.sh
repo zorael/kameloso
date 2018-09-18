@@ -18,24 +18,17 @@ install_deps() {
 build() {
     mkdir -p artifacts
 
-    dub test --compiler="$1" --build-mode=singleFile -c pluginless-vanilla
-    dub test --nodeps --compiler="$1" --build-mode=singleFile -c pluginless
+    dub test --compiler="$1" --build-mode=singleFile -c pluginless
+    mv kameloso artifacts/kameloso-test-pluginless
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug \
-        -c pluginless-vanilla || true
-    mv kameloso artifacts/kameloso-vanilla || true
+    dub test --compiler="$1" --build-mode=singleFile --nodeps -c vanilla
+    mv kameloso artifacts/kameloso-test-plugins-vanilla
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b debug \
-        -c pluginless || true
-    mv kameloso artifacts/kameloso-pluginless || true
+    dub build --compiler="$1" --build-mode=singleFile --nodeps -b debug -c pluginless
+    mv kameloso artifacts/kameloso-debug-pluginless
 
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain \
-        -c pluginless-vanilla || true
-    test -e kameloso && mv kameloso artifacts/kameloso-plain-vanilla || true
-
-    dub build --nodeps --compiler="$1" --build-mode=singleFile -b plain \
-        -c pluginless || true
-    test -e kameloso && mv kameloso artifacts/kameloso-plain-pluginless || true
+    dub build --compiler="$1" --build-mode=singleFile --nodeps -b debug -c vanilla
+    mv kameloso artifacts/kameloso-debug-plugins-vanilla
 }
 
 # execution start
@@ -46,7 +39,7 @@ case "$1" in
         ;;
     build)
         build dmd;
-        #build ldc2;  # doesn't support single build mode
+        #build ldc2;  # 0.14.0; too old
         ;;
     *)
         echo "Unknown command: $1";
