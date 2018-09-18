@@ -107,7 +107,8 @@ interface IRCPlugin
     void reload() @system;
 
     /// Executed when a bus message arrives from another plugin.
-    void onBusMessage(const string, const string content, const IRCEvent payload) @system;
+    import kameloso.common : Sendable;
+    void onBusMessage(const string, shared Sendable content) @system;
 }
 
 
@@ -1734,11 +1735,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Proxies a bus message to the plugin, to let it handle it (or not).
      +/
-    void onBusMessage(const string header, const string content, const IRCEvent payload) @system
+    import kameloso.common : Sendable;
+    void onBusMessage(const string header, shared Sendable content) @system
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            .onBusMessage(this, header, content, payload);
+            .onBusMessage(this, header, content);
         }
     }
 }
