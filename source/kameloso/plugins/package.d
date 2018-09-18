@@ -33,7 +33,7 @@ string tryImportMixin(const string module_, const string alias_)
     return q{
     static if (__traits(compiles, %1$s))
         {
-            pragma(msg, "Importing plugin: %1$s");
+            //pragma(msg, "Importing plugin: %1$s");
             public import %1$s;
         }
         else
