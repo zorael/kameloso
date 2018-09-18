@@ -570,20 +570,23 @@ unittest
 string stripPrefix(Flag!"demandSeparatingChars" demandSeparatingChars = Yes.demandSeparatingChars)
     (const string line, const string prefix) pure
 {
+    // Characters to also strip away after `prefix`.
+    enum separatingChars = ":?! ";
+
     string slice = line.strippedLeft;  // mutable
 
-    // the onus is on the caller that slice begins with prefix
+    // the onus is on the caller that slice begins with prefix, else this will throw
     slice.nom!(Yes.decode)(prefix);
 
     static if (demandSeparatingChars)
     {
-        // Return the whole lin, a non-match, if there are no separating characters
+        // Return the whole line, a non-match, if there are no separating characters
         // (at least one of [:?! ])
-        if (!slice.beginsWithOneOf(":?! ")) return line;
-        slice = slice[1..$];
+        if (!slice.beginsWithOneOf(separatingChars)) return line;
+        slice = slice[1..$];  // One less call to beginsWithOneOf if we do this here
     }
 
-    while (slice.length && slice.beginsWithOneOf(":?! "))
+    while (slice.length && slice.beginsWithOneOf(separatingChars))
     {
         slice = slice[1..$];
     }
