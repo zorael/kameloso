@@ -1866,3 +1866,56 @@ unittest
         assert(df.endsWith("\\Local\\kameloso"), df);
     }
 }
+
+
+// Sendable
+/++
+ +  Interface for a message sendable through the message bus.
+ +/
+interface Sendable {}
+
+
+// MessageContent
+/++
+ +  A payload of type `T` wrapped in a class implementing the `Sendable`
+ +  interface.
+ +
+ +  Used to wrap values for sending via the message bus.
+ +/
+final class BusMessage(T) : Sendable
+{
+    T payload;
+
+    this(T payload) shared
+    {
+        this.payload = payload;
+    }
+}
+
+
+// busMessage
+/++
+ +  Constructor function to create a `shared` `BusMessage` with an unqualified
+ +  template type.
+ +
+ +  Example:
+ +  ---
+ +  IRCEvent event;  // ...
+ +  mainThread.send(ThreadMessage.BusMessage(), "header", busMessage(event));
+ +  mainThread.send(ThreadMessage.BusMessage(), "other header", busMessage("text payload"));
+ +  mainThread.send(ThreadMessage.BusMessage(), "ladida", busMessage(42));
+ +  ---
+ +
+ +  Params:
+ +      payload = Payload whose type to instantiate the `BusMessage` with, and
+ +          then assign to its internal `payload`.
+ +
+ +  Returns:
+ +      A `shared` `BusMessage!T` where `T` is the unqualified type of the
+ +      payload.
+ +/
+shared(Sendable) busMessage(T)(T payload)
+{
+    import std.traits : Unqual;
+    return new shared BusMessage!(Unqual!T)(payload);
+}
