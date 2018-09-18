@@ -458,16 +458,18 @@ void start(WebtitlesPlugin plugin)
  +
  +  So far used to let other plugins trigger lookups of web URLs.
  +/
-void onBusMessage(WebtitlesPlugin plugin, const string header,
-    const string content, const IRCEvent payload)
+import kameloso.common : Sendable;
+void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
 {
-    import kameloso.common : logger;
+    import kameloso.common : BusMessage; //, logger;
 
-    logger.logf(`Webtitles received bus message: "%s : %s"`, header, content);
+    //logger.log("Webtitles received bus message: ", header);
 
-    if (header == "webtitle")
+    if (header == "reddit title")
     {
-        return plugin.onMessage(payload);
+        auto message = cast(BusMessage!IRCEvent)content;
+        assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+        return plugin.onMessage(message.payload);
     }
 }
 
