@@ -441,12 +441,12 @@ unittest
  +  Returns:
  +      `true` if `haystack` begins with `needle`, `false` if not.
  +/
-bool beginsWith(T)(const T line, const ubyte charcode) pure nothrow @nogc
+bool beginsWith(T)(const T haystack, const ubyte needle) pure nothrow @nogc
 if (isSomeString!T)
 {
-    if (!line.length) return false;
+    if (!haystack.length) return false;
 
-    return (line[0] == charcode);
+    return (haystack[0] == needle);
 }
 
 ///
