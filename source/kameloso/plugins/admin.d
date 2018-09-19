@@ -730,13 +730,30 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : ThreadMessage;
+    import kameloso.common : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
-    plugin.currentPeekType = AdminPlugin.PeekType.set;
-    IRCEvent mutEvent = event;
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin, mutEvent);
+    void dg()
+    {
+        import core.thread : Fiber;
+        import std.conv : ConvException;
+
+        auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+        try
+        {
+            thisFiber.payload.applyCustomSettings([ event.content ]);
+            logger.info("Setting changed.");
+        }
+        catch (const ConvException e)
+        {
+            logger.warning("Invalid setting.");
+        }
+    }
+
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
 
@@ -756,10 +773,7 @@ void onCommandAuth(AdminPlugin plugin)
     import kameloso.common : ThreadMessage;
     import std.concurrency : send;
 
-    plugin.currentPeekType = AdminPlugin.PeekType.auth;
-    IRCEvent mutEvent;  // may as well be .init, we won't use the information
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin, mutEvent);
+    plugin.state.mainThread.send(ThreadMessage.BusMessage(), "auth");
 }
 
 
