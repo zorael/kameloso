@@ -148,101 +148,95 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Shows a list of all available commands.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.common : ThreadMessage;
+    import kameloso.common : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
-    IRCEvent mutEvent = event;
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(),
-        cast(shared IRCPlugin)plugin, mutEvent);
-}
-
-
-// peekPlugins
-/++
- +  Takes a reference to the main `kameloso.common.Client.plugins` array of
- +  `kameloso.plugins.common.IRCPlugin`s, and gathers and formats each
- +  plugin's list of available bot commands.
- +
- +  This does not include bot regexes, as we do not know how to extract the
- +  expression from the `std.regex.Regex` structure.
- +/
-void peekPlugins(ChatbotPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
-{
-    import kameloso.constants : KamelosoInfo;
-    import kameloso.string : contains, nom;
-    import std.algorithm.searching : endsWith;
-    import std.algorithm.sorting : sort;
-    import std.format : format;
-    import std.typecons : No, Yes;
-
-    with (event)
-    if (content.length)
+    void dg()
     {
-        if (content.contains!(Yes.decode)(" "))
+        import kameloso.string : contains, nom;
+        import core.thread : Fiber;
+        import std.algorithm.searching : endsWith;
+        import std.algorithm.sorting : sort;
+        import std.format : format;
+        import std.typecons : No, Yes;
+
+        auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        const plugins = thisFiber.payload;
+
+        with (event)
+        if (content.length)
         {
-            string slice = content;
-            immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
-            immutable specifiedCommand = slice;
-
-            foreach (p; plugins)
+            if (content.contains!(Yes.decode)(" "))
             {
-                if (p.name != specifiedPlugin) continue;
+                string slice = content;
+                immutable specifiedPlugin = slice.nom!(Yes.decode)(" ");
+                immutable specifiedCommand = slice;
 
-                if (auto description = specifiedCommand in p.commands)
+                foreach (p; plugins)
                 {
-                    plugin.state.query(sender.nickname, "[%s] %s: %s"
-                        .format(p.name, specifiedCommand, *description));
-                    return;
+                    if (p.name != specifiedPlugin) continue;
+
+                    if (auto description = specifiedCommand in p.commands)
+                    {
+                        plugin.state.query(sender.nickname, "[%s] %s: %s"
+                            .format(p.name, specifiedCommand, *description));
+                        return;
+                    }
+                    else
+                    {
+                        plugin.state.query(sender.nickname, "No help available for command %s of plugin %s"
+                            .format(specifiedCommand, specifiedPlugin));
+                        return;
+                    }
                 }
-                else
-                {
-                    plugin.state.query(sender.nickname, "No help available for command %s of plugin %s"
-                        .format(specifiedCommand, specifiedPlugin));
-                    return;
-                }
+
+                plugin.state.query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
+                return;
             }
+            else
+            {
+                foreach (p; plugins)
+                {
+                    if (p.name != content) continue;
 
-            plugin.state.query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
-            return;
+                    enum width = 11;
+
+                    plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
+                        .format(width, p.name, p.commands.keys.sort()));
+                    return;
+                }
+
+                plugin.state.query(sender.nickname, "No such plugin: " ~ content);
+            }
         }
         else
         {
+            import kameloso.constants : KamelosoInfo;
+            enum banner = "kameloso IRC bot v%s, built %s"
+                .format(cast(string)KamelosoInfo.version_,
+                cast(string)KamelosoInfo.built);
+
+            plugin.state.query(sender.nickname, banner);
+            plugin.state.query(sender.nickname, "Available bot commands per plugin:");
+
             foreach (p; plugins)
             {
-                if (p.name != content) continue;
+                if (!p.commands.length || p.name.endsWith("Service")) continue;
 
                 enum width = 11;
 
                 plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
                     .format(width, p.name, p.commands.keys.sort()));
-                return;
             }
 
-            plugin.state.query(sender.nickname, "No such plugin: " ~ content);
+            plugin.state.query(sender.nickname, "Use help [plugin] [command] for information about a command.");
+            plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
-    else
-    {
-        enum banner = "kameloso IRC bot v%s, built %s"
-            .format(cast(string)KamelosoInfo.version_,
-            cast(string)KamelosoInfo.built);
 
-        plugin.state.query(sender.nickname, banner);
-        plugin.state.query(sender.nickname, "Available bot commands per plugin:");
-
-        foreach (p; plugins)
-        {
-            if (!p.commands.length || p.name.endsWith("Service")) continue;
-
-            enum width = 11;
-
-            plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
-                .format(width, p.name, p.commands.keys.sort()));
-        }
-
-        plugin.state.query(sender.nickname, "Use help [plugin] [command] for information about a command.");
-        plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
-    }
+    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
 
