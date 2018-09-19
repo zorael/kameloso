@@ -1919,3 +1919,55 @@ shared(Sendable) busMessage(T)(T payload)
     import std.traits : Unqual;
     return new shared BusMessage!(Unqual!T)(payload);
 }
+
+
+// CarryingFiber
+/++
+ +  A `core.thread.Fiber` carrying a payload of type `T`.
+ +
+ +  Used interchangably with `core.thread.Fiber`, but allows for casting to true
+ +  `CarryingFiber!T`-ness to access the `payload` member.
+ +
+ +  Example:
+ +  ---
+ +  void dg()
+ +  {
+ +      CarryingFiber!T fiber = cast(CarryingFiber!T)(Fiber.getThis);
+ +      assert(fiber !is null);  // Correct cast
+ +      assert(fiber.payload);
+ +  }
+ +
+ +  auto fiber = new CarryingFiber!bool(true, &dg);
+ +  ---
+ +/
+import core.thread : Fiber;
+final class CarryingFiber(T) : Fiber
+{
+    /++
+     +  Embedded payload value in this `core.thread.Fiber`, what distinguishes
+     +  it from normal ones.
+     +/
+    T payload;
+
+    /++
+     +  Constructor function merely taking a function/delgate pointer, to call
+     +  when invoking this `Fiber` (via `.call()`).
+     +/
+    this(Fn, Args...)(Fn fn, Args args)
+    {
+        // fn is a pointer
+        super(fn, args);
+    }
+
+    /++
+     +  Constructor function taking a `T` `payload` to assign to its own
+     +  internal `this.payload`, as well as a function/delegate pointer to call
+     +  when invoking this `Fiber` (via `.call()`).
+     +/
+    this(Fn, Args...)(T payload, Fn fn, Args args)
+    {
+        this.payload = payload;
+        // fn is a pointer
+        super(fn, args);
+    }
+}
