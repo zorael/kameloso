@@ -429,9 +429,9 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
 
     default:
-        if (channel.length && sender.nickname.length)
+        if (channel.length && (sender.nickname.length || type == MODE))
         {
-            // Channel message
+            // Channel message, or specialcased server-sent MODEs
             writeToPath(buildNormalizedPath(logLocation, channel ~ ".log"));
         }
         else if (sender.nickname.length)
