@@ -81,9 +81,6 @@ interface IRCPlugin
     /// Executed when connection has been established.
     void start() @system;
 
-    /// Executed when a plugin wants to examine all the other plugins.
-    void peekPlugins(IRCPlugin[], const IRCEvent event) @system;
-
     /// Executed when we want a plugin to print its Settings struct.
     void printSettings() @system const;
 
@@ -1481,25 +1478,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         }
 
         return success;
-    }
-
-
-    // peekPlugins
-    /++
-     +  Lends a const reference to the array of `IRCPlugin`s to the plugin.
-     +
-     +  This is to allow for plugins to inspect eachother, notably for the
-     +  `kameloso.plugins.chatbot.Chatbot` plugin to list all plugins'
-     +  `BotCommand`s. This is not to be directly used, but rather to be called
-     +  by the main loop's message-receiving after having been sent a
-     +  `kameloso.common.ThreadMessage.PeekPlugins` thread message.
-     +/
-    void peekPlugins(IRCPlugin[] plugins, const IRCEvent event) @system
-    {
-        static if (__traits(compiles, .peekPlugins))
-        {
-            .peekPlugins(this, plugins, event);
-        }
     }
 
 
