@@ -216,15 +216,18 @@ Next checkMessages(ref Client client)
     }
 
     /++
-     +  Passes a reference to the main array of
-     +  `kameloso.plugins.common.IRCPlugin`s array (housing all plugins) to the
-     +  supplied `kameloso.plugins.common.IRCPlugin`.
+     +  Attaches a reference to the main array of
+     +  `kameloso.plugins.common.IRCPlugin`s (housing all plugins) to the
+     +  payload member of the supplied `kameloso.common.CarryingFiber`, then
+     +  invokes it.
      +/
     import kameloso.plugins.common : IRCPlugin;
-    void peekPlugins(ThreadMessage.PeekPlugins, shared IRCPlugin sPlugin, IRCEvent event)
+    void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber)
     {
-        auto plugin = cast(IRCPlugin)sPlugin;
-        plugin.peekPlugins(client.plugins, event);
+        auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
+        assert(fiber, "Peeking Fiber was null!");
+        fiber.payload = client.plugins;  // Make it visible from within the Fiber
+        fiber.call();
     }
 
     /// Reloads all plugins.
