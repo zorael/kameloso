@@ -54,8 +54,6 @@ static if (__VERSION__ == 2079L)
  +/
 interface IRCPlugin
 {
-    import std.array : Appender;
-
     @safe:
 
     /// Returns a reference to the current `IRCPluginState` of the plugin.
@@ -74,6 +72,7 @@ interface IRCPlugin
     string[][string] deserialiseConfigFrom(const string);
 
     /// Executed when gathering things to put in the configuration file.
+    import std.array : Appender;
     void serialiseConfigInto(ref Appender!string) const;
 
     /// Executed during start if we want to change a setting by its string name.
