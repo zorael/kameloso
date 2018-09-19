@@ -1888,7 +1888,7 @@ final class BusMessage(T) : Sendable
 
     this(T payload) shared
     {
-        this.payload = payload;
+        this.payload = cast(shared)payload;
     }
 }
 
