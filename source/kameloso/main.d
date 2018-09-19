@@ -240,7 +240,7 @@ Next checkMessages(ref Client client)
     }
 
     /// Passes a bus message to each plugin.
-    void proxyBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content)
+    void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content)
     {
         foreach (plugin; client.plugins)
         {
@@ -403,7 +403,7 @@ Next checkMessages(ref Client client)
             &reloadPlugins,
             &peekPlugins,
             &reconnect,
-            &proxyBusMessage,
+            &dispatchBusMessage,
             &dispatchEmptyBusMessage,
             (Variant v)
             {
