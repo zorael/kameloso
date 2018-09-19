@@ -815,46 +815,6 @@ void onCommandStatus(AdminPlugin plugin)
 }
 
 
-// peekPlugins
-/++
- +  Takes a reference to the main `kameloso.common.Client.plugins` array of
- +  `kameloso.plugins.common.IRCPlugin`s. Either sets a plugin's settings' value
- +  by name, or tells the `kameloso.plugins.connect.ConnectService` to reauth
- +  with services, depending on how the peek was requested.
- +/
-void peekPlugins(AdminPlugin plugin, IRCPlugin[] plugins, const IRCEvent event)
-{
-    with (plugin.PeekType)
-    final switch (plugin.currentPeekType)
-    {
-    case set:
-        plugins.applyCustomSettings([ event.content ]);
-        break;
-
-    case auth:
-        foreach (basePlugin; plugins)
-        {
-            import kameloso.plugins.connect : ConnectService;
-
-            ConnectService service = cast(ConnectService)basePlugin;
-            if (!service) continue;
-
-            service.auth(service);
-            plugin.state.bot = service.state.bot;
-            plugin.state.bot.updated = true;
-            break;
-        }
-        break;
-
-    case unset:
-        logger.warning("Admin peekPlugins type of peek was unset!");
-        break;
-    }
-
-    plugin.currentPeekType = AdminPlugin.PeekType.unset;
-}
-
-
 mixin UserAwareness;
 mixin ChannelAwareness;
 
@@ -869,19 +829,8 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-    /// The kind of peek that we know the incoming `peekPlugins` will be of.
-    enum PeekType
-    {
-        unset,
-        set,
-        auth,
-    }
-
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
-
-    /// Which sort of peek is currently in flight; see `peekPlugins`.
-    PeekType currentPeekType;
 
     /// All Admin options gathered.
     @Settings AdminSettings adminSettings;
