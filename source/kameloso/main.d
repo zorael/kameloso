@@ -248,6 +248,16 @@ Next checkMessages(ref Client client)
         }
     }
 
+    /// Passes an empty header-only bus message to each plugin.
+    void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header)
+    {
+        foreach (plugin; client.plugins)
+        {
+            shared Sendable content;
+            plugin.onBusMessage(header, content);
+        }
+    }
+
     /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
@@ -394,6 +404,7 @@ Next checkMessages(ref Client client)
             &peekPlugins,
             &reconnect,
             &proxyBusMessage,
+            &dispatchEmptyBusMessage,
             (Variant v)
             {
                 // Caught an unhandled message
