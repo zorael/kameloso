@@ -792,6 +792,26 @@ void start(ConnectService service)
 }
 
 
+// onBusMessage
+/++
+ +  Receives and handles a bus message from another plugin.
+ +
+ +  So far only reauthenticates with services, on demand.
+ +/
+import kameloso.common : Sendable;
+void onBusMessage(ConnectService service, const string header, shared Sendable content)
+{
+    import kameloso.common : BusMessage; //, logger;
+
+    //logger.log("Connect received bus message: ", header);
+
+    if (header == "auth")
+    {
+        service.tryAuth();
+    }
+}
+
+
 mixin MinimalAuthentication;
 
 public:
