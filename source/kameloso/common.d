@@ -1932,7 +1932,7 @@ shared(Sendable) busMessage(T)(T payload)
  +  ---
  +  void dg()
  +  {
- +      CarryingFiber!T fiber = cast(CarryingFiber!T)(Fiber.getThis);
+ +      CarryingFiber!bool fiber = cast(CarryingFiber!bool)(Fiber.getThis);
  +      assert(fiber !is null);  // Correct cast
  +      assert(fiber.payload);
  +  }

@@ -1612,16 +1612,21 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     string name() @property const
     {
-        import kameloso.string : contains, nom;
-
-        string moduleName = module_;
-
-        while (moduleName.contains('.'))
+        enum ctName =
         {
-            moduleName.nom('.');
-        }
+            import kameloso.string : contains, nom;
 
-        return moduleName;
+            string moduleName = module_;
+
+            while (moduleName.contains('.'))
+            {
+                moduleName.nom('.');
+            }
+
+            return moduleName;
+        }();
+
+        return ctName;
     }
 
 
