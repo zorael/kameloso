@@ -1642,29 +1642,34 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     string[string] commands() pure nothrow @property const
     {
-        import std.meta : Filter;
-        import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
-
-        mixin("static import thisModule = " ~ module_ ~ ";");
-
-        alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
-        alias funs = Filter!(isSomeFunction, symbols);
-
-        string[string] descriptions;
-
-        foreach (fun; funs)
+        enum ctCommands =
         {
-            foreach (commandUDA; getUDAs!(fun, BotCommand))
+            import std.meta : Filter;
+            import std.traits : getUDAs, getSymbolsByUDA, hasUDA, isSomeFunction;
+
+            mixin("static import thisModule = " ~ module_ ~ ";");
+
+            alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
+            alias funs = Filter!(isSomeFunction, symbols);
+
+            string[string] descriptions;
+
+            foreach (fun; funs)
             {
-                static if (hasUDA!(fun, Description))
+                foreach (commandUDA; getUDAs!(fun, BotCommand))
                 {
-                    enum descriptionUDA = getUDAs!(fun, Description)[0];
-                    descriptions[commandUDA.string_] = descriptionUDA.string_;
+                    static if (hasUDA!(fun, Description))
+                    {
+                        enum descriptionUDA = getUDAs!(fun, Description)[0];
+                        descriptions[commandUDA.string_] = descriptionUDA.string_;
+                    }
                 }
             }
-        }
 
-        return descriptions;
+            return descriptions;
+        }();
+
+        return ctCommands;
     }
 
     // state
