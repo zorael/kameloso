@@ -30,12 +30,12 @@ import std.typecons : Flag, No, Yes;
  +  currently queued for being queried, etc. It is checked via bitmask, so a
  +  channel can have several channel states.
  +/
-enum ChannelState
+enum ChannelState : ubyte
 {
-    unset = 1 << 0,
-    topicKnown = 1 << 1,
-    queued = 1 << 2,
-    queried = 1 << 3,
+    unset = 1 << 0,      /// Initial value, invalid state.
+    topicKnown = 1 << 1, /// Topic has been sent once, it is known.
+    queued = 1 << 2,     /// Channel queued to be queried.
+    queried = 1 << 3,    /// Channel has been queried.
 }
 
 
