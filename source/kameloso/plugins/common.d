@@ -91,7 +91,7 @@ interface IRCPlugin
     string name() @property const;
 
     /// Returns an array of the descriptions of the commands a plugin offers.
-    string[string] commands() pure nothrow @property const;
+    Description[string] commands() pure nothrow @property const;
 
     /++
      +  Call a plugin to perform its periodic tasks, iff the time is equal to or
@@ -1636,15 +1636,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // commands
     /++
-     +  Collects all `BotCommand` strings that this plugin offers and returns
-     +  them alongside their `Description`s as an associative `string[string]`
-     +  array.
+     +  Collects all `BotCommand` strings that this plugin offers at compile
+     +  time, then at runtime returns them alongside their `Description`s as an
+     +  associative `Description[string]` array.
      +
      +  Returns:
      +      Associative array of all `Descriptions`, keyed by
      +      `BotCommand.string_`s.
      +/
-    string[string] commands() pure nothrow @property const
+    Description[string] commands() pure nothrow @property const
     {
         enum ctCommands =
         {
@@ -1656,7 +1656,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
             alias funs = Filter!(isSomeFunction, symbols);
 
-            string[string] descriptions;
+            Description[string] descriptions;
 
             foreach (fun; funs)
             {
@@ -1664,8 +1664,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                     static if (hasUDA!(fun, Description))
                     {
-                        enum descriptionUDA = getUDAs!(fun, Description)[0];
-                        descriptions[commandUDA.string_] = descriptionUDA.string_;
+                        descriptions[commandUDA.string_] = getUDAs!(fun, Description)[0];
                     }
                 }
             }
