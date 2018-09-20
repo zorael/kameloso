@@ -180,15 +180,23 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                     if (auto description = specifiedCommand in p.commands)
                     {
                         plugin.state.query(sender.nickname, "[%s] %s: %s"
-                            .format(p.name, specifiedCommand, *description));
-                        return;
+                            .format(p.name, specifiedCommand, description.string_));
+
+                        if (description.syntax.length)
+                        {
+                            import std.array : replace;
+                            immutable syntax = "Usage: " ~ description.syntax
+                                .replace("$command", specifiedCommand);
+                            plugin.state.query(sender.nickname, syntax);
+                        }
                     }
                     else
                     {
                         plugin.state.query(sender.nickname, "No help available for command %s of plugin %s"
                             .format(specifiedCommand, specifiedPlugin));
-                        return;
                     }
+
+                    return;
                 }
 
                 plugin.state.query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
