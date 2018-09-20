@@ -17,8 +17,6 @@ addons:
       - libevent-dev
 
 script:
-  - ${DC} --version
-  - dub --version
   - dub test  --compiler=${DC}          -c colours #+web  # no web unittests
   - dub test  --compiler=${DC} --nodeps -c vanilla
   - dub build --compiler=${DC} --nodeps -b debug   -c colours+web

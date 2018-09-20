@@ -8,7 +8,7 @@
     "mainSourceFile": "source/kameloso/main.d",
     "sourcePaths": [ "source" ],
     "importPaths": [ "source" ],
-    "libs-posix": [ "phobos2" ],
+    "libs-posix-dmd": [ "phobos2" ],
     "-ddoxFilterArgs":
     [
         "--unittest-examples",
