@@ -5,7 +5,7 @@ dist: trusty
 
 d:
   - dmd
-  #- ldc
+  - ldc
 
 os:
   - linux
@@ -17,12 +17,17 @@ addons:
       - libevent-dev
 
 script:
-  - dub test --compiler=${DC} -c vanilla
-  - dub test --nodeps --compiler=${DC} -c colours #+web  # no web unittests
-  - dub build --nodeps -b plain --compiler=${DC} -c vanilla || true
-  - dub build --nodeps -b plain --compiler=${DC} -c colours+web || true
-  - echo DC == ${DC}
-  - test ${DC} = ldc2 || dub build --nodeps -b ddox --compiler=${DC} -c colours #+web
+  - ${DC} --version
+  - dub --version
+  - dub test  --compiler=${DC}          -c colours #+web  # no web unittests
+  - dub test  --compiler=${DC} --nodeps -c vanilla
+  - dub build --compiler=${DC} --nodeps -b debug   -c colours+web
+  - dub build --compiler=${DC} --nodeps -b debug   -c vanilla || true
+  - dub build --compiler=${DC} --nodeps -b plain   -c colours+web || true
+  - dub build --compiler=${DC} --nodeps -b plain   -c vanilla || true
+  - dub build --compiler=${DC} --nodeps -b release -c colours+web || true
+  - dub build --compiler=${DC} --nodeps -b release -c vanilla || true
+  - test ${DC} = ldc2 || dub build --compiler=${DC} --nodeps -b ddox -c pluginless-vanilla
 
 before_deploy:
   - cp -rv .circleci docs/
