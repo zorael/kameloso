@@ -127,7 +127,23 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
             url = url.nom!(Yes.decode)('#');
         }
 
-        logger.log("Caught URL: ", url);
+        string infotint;
+
+        version(Colours)
+        {
+            import kameloso.common : settings;
+
+            if (!settings.monochrome)
+            {
+                import kameloso.bash : colour;
+                import kameloso.logger : KamelosoLogger;
+                import std.experimental.logger : LogLevel;
+
+                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            }
+        }
+
+        logger.log("Caught URL: ", infotint, url);
 
         // Garbage-collect entries too old to use
         plugin.cache.prune();
