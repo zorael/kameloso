@@ -592,10 +592,14 @@ struct Description
     /// Description string.
     string string_;
 
+    /// Command usage syntax help string.
+    string syntax;
+
     /// Creates a new `Description` with the passed `string_` description text.
-    this(const string string_)
+    this(const string string_, const string syntax = string.init)
     {
         this.string_ = string_;
+        this.syntax = syntax;
     }
 }
 
