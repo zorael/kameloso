@@ -44,7 +44,7 @@ struct BashQuotesSettings
 @(ChannelPolicy.home)
 @BotCommand("bash")
 @BotCommand(NickPolicy.required, "bash")
-@Description("Fetch a random or specified bash.org quote.")
+@Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.bashQuotesSettings.enabled) return;

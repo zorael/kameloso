@@ -532,7 +532,7 @@ void onPing(SeenPlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand("seen")
 @BotCommand(NickPolicy.required, "seen")
-@Description("Queries the bot when it last saw a specified nickname online.")
+@Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;

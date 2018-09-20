@@ -197,7 +197,8 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "addmode")
-@Description("Adds an automatic mode change for a user account.")
+@Description("Adds an automatic mode change for a user account.",
+    "$command [channel] [account] [mode]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
@@ -257,7 +258,8 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "clearmodes")
 @BotCommand(NickPolicy.required, "delmodes")
-@Description("Clears any automatic mode change definitions for an account in a channel.")
+@Description("Clears any automatic mode change definitions for an account in a channel.",
+    "$command [channel] [account]")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;

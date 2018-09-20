@@ -48,7 +48,7 @@ struct ChatbotSettings
 @BotCommand("säg")
 @BotCommand(NickPolicy.required, "say")
 @BotCommand(NickPolicy.required, "säg")
-@Description("Repeats text to the channel the event was sent to.")
+@Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
     if (!plugin.chatbotSettings.enabled) return;

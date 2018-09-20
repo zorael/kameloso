@@ -158,7 +158,8 @@ debug
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "user")
-@Description("[debug] Prints out information about one or more specific users the local terminal.")
+@Description("[debug] Prints out information about one or more specific users " ~
+    "the local terminal.", "$command [nickname]")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -278,7 +279,8 @@ debug
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "sudo")
-@Description("[debug] Sends supplied text to the server, verbatim.")
+@Description("[debug] Sends supplied text to the server, verbatim.",
+    "$command [raw string]")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -300,7 +302,8 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "quit")
-@Description("Send a QUIT event to the server and exits the program.")
+@Description("Send a QUIT event to the server and exits the program.",
+    "$command [optional quit reason]")
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -327,7 +330,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "addhome")
-@Description("Adds a channel to the list of homes.")
+@Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -368,7 +371,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "delhome")
-@Description("Removes a channel from the list of homes.")
+@Description("Removes a channel from the list of homes.", "$command [channel]")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -409,7 +412,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "whitelist")
-@Description("Adds an account to the whitelist of users who may trigger the bot.")
+@Description("Adds an account to the whitelist of users who may trigger the bot.",
+    "$command [account to whitelist]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -442,7 +446,8 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "dewhitelist")
-@Description("Removes an account from the whitelist of users who may trigger the bot.")
+@Description("Removes an account from the whitelist of users who may trigger the bot.",
+    "$command [account to remove from whitelist]")
 void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -465,7 +470,8 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "blacklist")
-@Description("Adds an account to the blacklist, exempting them from triggering the bot.")
+@Description("Adds an account to the blacklist, exempting them from triggering the bot.",
+    "$command [account to blacklist]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -497,7 +503,8 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "deblacklist")
-@Description("Removes an account from the blacklist, allowing them to trigger the bot again.")
+@Description("Removes an account from the blacklist, allowing them to trigger the bot again.",
+    "$command [account to remove from whitelist]")
 void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -685,7 +692,7 @@ void onCommandAsserts(AdminPlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "join")
 @BotCommand(NickPolicy.required, "part")
-@Description("Joins/parts a channel.")
+@Description("Joins/parts a channel.", "$command [channel]")
 void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -725,7 +732,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @BotCommand(NickPolicy.required, "set")
-@Description("Changes a plugin's settings")
+@Description("Changes a plugin's settings", "$command [plugin.setting=value]")
 void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;

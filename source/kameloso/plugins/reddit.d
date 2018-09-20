@@ -63,7 +63,8 @@ struct RedditLookup
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "reddit")
 @BotCommand(NickPolicy.required, "reddit")
-@Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.")
+@Description("Look up an URL and see if it has been posted on Reddit. Echo that link if so.",
+    "$command [URL to look up]")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
     if (!plugin.redditSettings.enabled) return;

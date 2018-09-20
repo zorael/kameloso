@@ -174,7 +174,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @BotCommand("note")
 @BotCommand(NickPolicy.required, "addnote")
 @BotCommand(NickPolicy.required, "note")
-@Description("Adds a note and saves it to disk.")
+@Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
@@ -259,7 +259,8 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "fakechan")
 @BotCommand(NickPolicy.required, "fakejoin")
-@Description("[debug] Fakes a user being active in a channel.")
+@Description("[debug] Fakes a user being active in a channel.",
+    "$command [nickname to fake a join for]")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;

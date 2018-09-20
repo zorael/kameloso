@@ -112,7 +112,8 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 @(ChannelPolicy.home)
 @BotCommand("quote")
 @BotCommand(NickPolicy.required, "quote")
-@Description("Fetches and repeats a random quote of a supplied nickname.")
+@Description("Fetches and repeats a random quote of a supplied nickname.",
+    "$command [nickname of user to quote]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
@@ -168,7 +169,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand("addquote")
 @BotCommand(NickPolicy.required, "addquote")
-@Description("Creates a new quote.")
+@Description("Creates a new quote.", "$command [nickname] [quote text]")
 void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
