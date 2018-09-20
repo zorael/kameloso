@@ -295,6 +295,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)

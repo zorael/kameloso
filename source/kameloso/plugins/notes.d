@@ -208,6 +208,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -229,14 +230,14 @@ void onCommandPrintNotes(NotesPlugin plugin)
 /++
  +  Reloads quotes from disk, overwriting the in-memory storage.
  +
- +  This is for debugging purposes.
+ +  This is both for debugging purposes and for live-editing notes on disk.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "reloadnotes")
-@Description("[debug] Reloads quotes from disk.")
+@Description("Reloads quotes from disk.")
 void onCommandReloadQuotes(NotesPlugin plugin)
 {
     if (!plugin.notesSettings.enabled) return;
@@ -252,6 +253,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)

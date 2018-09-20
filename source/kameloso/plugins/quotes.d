@@ -214,6 +214,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
  +
  +  This is for debugging purposes.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
@@ -243,7 +244,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "reloadquotes")
-@Description("[debug] Reloads quotes from disk.")
+@Description("Reloads quotes from disk.")
 void onCommandReloadQuotes(QuotesPlugin plugin)
 {
     if (!plugin.quotesSettings.enabled) return;

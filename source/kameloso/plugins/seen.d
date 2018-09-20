@@ -624,6 +624,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
  +  As a tool to help debug, prints the current `seenUsers` associative array to
  +  the local terminal.
  +/
+debug
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.admin)
