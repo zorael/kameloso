@@ -60,8 +60,7 @@ void onPing(ChanQueriesService service)
 
     foreach (immutable channelName, ref state; service.channelStates)
     {
-        if ((state == ChannelState.queried) ||
-            (state == ChannelState.queued))
+        if (state & (ChannelState.queried | ChannelState.queued))
         {
             // Either already queried or queued to be
             continue;
