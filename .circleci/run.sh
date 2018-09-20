@@ -17,18 +17,46 @@ install_deps() {
 
 build() {
     mkdir -p artifacts
+    ARGS="--compiler=$1 --build-mode=singleFile"
 
-    dub test --compiler="$1" --build-mode=singleFile -c pluginless
-    mv kameloso* artifacts/
+    ## test
+    dub test $ARGS -c colours+web
+    ARGS="$ARGS --nodeps --force"
+    #dub test $ARGS -c pluginless
+    dub test $ARGS -c vanilla
 
-    dub test --compiler="$1" --build-mode=singleFile --nodeps -c vanilla
-    mv kameloso* artifacts/
 
-    dub build --compiler="$1" --build-mode=singleFile --nodeps -b debug -c pluginless
-    mv kameloso* artifacts/
+    ## debug
+    dub build $ARGS -b debug -c colours+web
+    mv kameloso artifacts/kameloso-debug
 
-    dub build --compiler="$1" --build-mode=singleFile --nodeps -b debug -c vanilla
-    mv kameloso* artifacts/
+    #dub build $ARGS -b debug -c pluginless
+    #mv kameloso artifacts/kameloso-debug-pluginless
+
+    dub build $ARGS -b debug -c vanilla
+    mv kameloso artifacts/kameloso-debug-vanilla
+
+
+    ## plain
+    dub build $ARGS -b plain -c colours+web || true
+    mv kameloso artifacts/kameloso-plain || true
+
+    #dub build $ARGS -b plain -c pluginless || true
+    #mv kameloso artifacts/kameloso-plain-pluginless || true
+
+    dub build $ARGS -b plain -c vanilla || true
+    mv kameloso artifacts/kameloso-plain-vanilla || true
+
+
+    ## release
+    dub build $ARGS -b release -c colours+web || true
+    mv kameloso artifacts/kameloso-release || true
+
+    #dub build $ARGS -b release -c pluginless || true
+    #mv kameloso artifacts/kameloso-release-pluginless || true
+
+    dub build $ARGS -b release -c vanilla || true
+    mv kameloso artifacts/kameloso-release-vanilla || true
 }
 
 # execution start
