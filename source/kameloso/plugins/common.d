@@ -1064,6 +1064,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         version(Cygwin_) stdout.flush();
                     }
 
+                    bool shouldWhois;
+
                     with (PrivilegeLevel)
                     final switch (privilegeLevel)
                     {
@@ -1093,44 +1095,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             break;
 
                         case whois:
-                            import kameloso.plugins.common : doWhois;
-
-                            alias This = typeof(this);
-                            alias Params = staticMap!(Unqual, Parameters!fun);
-                            enum isIRCPluginParam(T) = is(T == IRCPlugin);
-
-                            static if (verbose)
-                            {
-                                writefln("...%s WHOIS", typeof(this).stringof);
-                                version(Cygwin_) stdout.flush();
-                            }
-
-                            static if (is(Params : AliasSeq!IRCEvent) ||
-                                (arity!fun == 0))
-                            {
-                                this.doWhois(mutEvent, privilegeLevel, &fun);
-                                return Next.continue_;
-                            }
-                            else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
-                                is(Params : AliasSeq!This))
-                            {
-                                this.doWhois(this, mutEvent, privilegeLevel, &fun);
-                                return Next.continue_;
-                            }
-                            else static if (Filter!(isIRCPluginParam, Params).length)
-                            {
-                                pragma(msg, name);
-                                pragma(msg, typeof(fun).stringof);
-                                pragma(msg, Params);
-                                static assert(0, "Function signature takes IRCPlugin instead of subclass plugin");
-                            }
-                            else
-                            {
-                                pragma(msg, name);
-                                pragma(msg, typeof(fun).stringof);
-                                pragma(msg, Params);
-                                static assert(0, "Unknown event handler function signature");
-                            }
+                            shouldWhois = true;
+                            break;
 
                         case fail:
                             static if (verbose)
@@ -1148,10 +1114,53 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             // Continue with the next function or abort?
                             return Next.continue_;
                         }
+
+                        shouldWhois = true;
                         break;
 
                     case ignore:
                         break;
+                    }
+
+                    if (shouldWhois)
+                    {
+                        import kameloso.plugins.common : doWhois;
+
+                        alias This = typeof(this);
+                        alias Params = staticMap!(Unqual, Parameters!fun);
+                        enum isIRCPluginParam(T) = is(T == IRCPlugin);
+
+                        static if (verbose)
+                        {
+                            writefln("...%s WHOIS", typeof(this).stringof);
+                            version(Cygwin_) stdout.flush();
+                        }
+
+                        static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                        {
+                            this.doWhois(mutEvent, privilegeLevel, &fun);
+                            return Next.continue_;
+                        }
+                        else static if (is(Params : AliasSeq!(This, IRCEvent)) ||
+                            is(Params : AliasSeq!This))
+                        {
+                            this.doWhois(this, mutEvent, privilegeLevel, &fun);
+                            return Next.continue_;
+                        }
+                        else static if (Filter!(isIRCPluginParam, Params).length)
+                        {
+                            pragma(msg, name);
+                            pragma(msg, typeof(fun).stringof);
+                            pragma(msg, Params);
+                            static assert(0, "Function signature takes IRCPlugin instead of subclass plugin");
+                        }
+                        else
+                        {
+                            pragma(msg, name);
+                            pragma(msg, typeof(fun).stringof);
+                            pragma(msg, Params);
+                            static assert(0, "Unknown event handler function signature");
+                        }
                     }
                 }
 
