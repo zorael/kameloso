@@ -528,7 +528,7 @@ void onPing(SeenPlugin plugin)
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.whitelist)
+@(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 @BotCommand("seen")
 @BotCommand(NickPolicy.required, "seen")
