@@ -569,12 +569,12 @@ Next mainLoop(ref Client client)
                 return Next.returnFailure;
             }
 
-            IRCEvent mutEvent;
+            IRCEvent event;
 
             scope(failure)
             {
                 logger.error("scopeguard tripped.");
-                printObject(mutEvent);
+                printObject(event);
             }
 
             import core.exception : UnicodeException;
@@ -587,15 +587,15 @@ Next mainLoop(ref Client client)
 
                 try
                 {
-                    mutEvent = client.parser.toIRCEvent(attempt.line);
+                    event = client.parser.toIRCEvent(attempt.line);
                 }
                 catch (const UTFException e)
                 {
-                    mutEvent = client.parser.toIRCEvent(sanitize(attempt.line));
+                    event = client.parser.toIRCEvent(sanitize(attempt.line));
                 }
                 catch (const UnicodeException e)
                 {
-                    mutEvent = client.parser.toIRCEvent(sanitize(attempt.line));
+                    event = client.parser.toIRCEvent(sanitize(attempt.line));
                 }
 
                 if (bot.updated)
@@ -607,7 +607,7 @@ Next mainLoop(ref Client client)
 
                 foreach (plugin; client.plugins)
                 {
-                    plugin.postprocess(mutEvent);
+                    plugin.postprocess(event);
 
                     if (plugin.state.bot.updated)
                     {
@@ -617,8 +617,6 @@ Next mainLoop(ref Client client)
                         client.propagateBot(bot);
                     }
                 }
-
-                immutable IRCEvent event = mutEvent;
 
                 // Let each plugin process the event
                 foreach (plugin; client.plugins)
@@ -675,9 +673,9 @@ Next mainLoop(ref Client client)
             {
                 logger.warningf("Unhandled exception at %s:%d: %s", e.file, e.line, e.msg);
 
-                if (mutEvent != IRCEvent.init)
+                if (event != IRCEvent.init)
                 {
-                    printObject(mutEvent);
+                    printObject(event);
                 }
                 else
                 {
