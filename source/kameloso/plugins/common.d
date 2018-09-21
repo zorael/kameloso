@@ -376,7 +376,7 @@ struct IRCPluginState
      +  response returns, the event bundled with the `WHOISRequest` will be
      +  replayed.
      +/
-    WHOISRequest[string] whoisQueue;
+    WHOISRequest[][string] whoisQueue;
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
@@ -2952,26 +2952,18 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event,
     PrivilegeLevel privilegeLevel, F fn)
 {
-    import kameloso.constants : Timeout;
-    import std.datetime.systime : Clock;
-
-    immutable user = event.sender;
-    immutable now = Clock.currTime.toUnixTime;
-
-    if ((now - user.lastWhois) < Timeout.whois)
-    {
-        return;
-    }
+    immutable user = event.sender.isServer ? event.target : event.sender;
+    assert(user.nickname.length, "Bad user derived in doWhois (no nickname.length)");
 
     with (plugin)
     {
         static if (!is(Payload == typeof(null)))
         {
-            state.whoisQueue[user.nickname] = whoisRequest(payload, event, privilegeLevel, fn);
+            state.whoisQueue[user.nickname] ~= whoisRequest(payload, event, privilegeLevel, fn);
         }
         else
         {
-            state.whoisQueue[user.nickname] = whoisRequest(state, event, privilegeLevel, fn);
+            state.whoisQueue[user.nickname] ~= whoisRequest(state, event, privilegeLevel, fn);
         }
     }
 }

@@ -973,7 +973,7 @@ struct Client
     IRCPlugin[] plugins;
 
     /// When a nickname was called `WHOIS` on, for hysteresis.
-    long[string] whoisCalls;
+    long[string] previousWhoisTimestamps;
 
     /// Parser instance.
     IRCParser parser;
