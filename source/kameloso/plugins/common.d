@@ -785,9 +785,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     import std.format : format;
 
                     string pluginName = module_;
-                    // pop two dots
-                    pluginName.nom('.');
-                    pluginName.nom('.');
+                    while (pluginName.contains('.'))
+                    {
+                        pluginName.nom('.');
+                    }
 
                     return "[%s] %s (%s)".format(pluginName,__traits(identifier, fun),
                         Enum!(IRCEvent.Type).toString(eventTypeUDA));
