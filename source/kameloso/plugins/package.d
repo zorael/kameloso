@@ -121,6 +121,16 @@ version(WithPlugins)
 import std.meta : AliasSeq;
 version(WithPlugins)
 {
+    public alias EnabledWebPlugins = AliasSeq!(
+        WebtitlesPlugin,
+        RedditPlugin,
+        BashQuotesPlugin,
+    );
+
+    public alias EnabledPosixPlugins = AliasSeq!(
+        PipelinePlugin,
+    );
+
     public alias EnabledPlugins = AliasSeq!(
         TwitchService, // Must be before PersistenceService
         PersistenceService, // Should be early
@@ -135,22 +145,12 @@ version(WithPlugins)
         SeenPlugin,
         AutomodePlugin,
         QuotesPlugin,
-    );
-
-    public alias EnabledWebPlugins = AliasSeq!(
-        WebtitlesPlugin,
-        RedditPlugin,
-        BashQuotesPlugin,
-    );
-
-    public alias EnabledPosixPlugins = AliasSeq!(
-        PipelinePlugin,
+        EnabledWebPlugins,  // Automatically expands
+        EnabledPosixPlugins,  // Ditto
     );
 }
 else
 {
     // Not compiling in any plugins, so don't list any.
     public alias EnabledPlugins = AliasSeq!();
-    public alias EnabledWebPlugins = AliasSeq!();
-    public alias EnabledPosixPlugins = AliasSeq!();
 }

@@ -1026,22 +1026,6 @@ struct Client
             plugins ~= new Plugin(state);
         }
 
-        version(Web)
-        {
-            foreach (WebPlugin; EnabledWebPlugins)
-            {
-                plugins ~= new WebPlugin(state);
-            }
-        }
-
-        version(Posix)
-        {
-            foreach (PosixPlugin; EnabledPosixPlugins)
-            {
-                plugins ~= new PosixPlugin(state);
-            }
-        }
-
         string[][string] allInvalidEntries;
 
         foreach (plugin; plugins)
