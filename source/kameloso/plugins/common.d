@@ -640,14 +640,9 @@ struct Configuration;
  +/
 FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
 {
-    import kameloso.constants : Timeout;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock, SysTime;
 
     immutable user = event.sender;
-    immutable now = Clock.currTime.toUnixTime;
-
-    immutable timediff = (now - user.lastWhois);
     immutable isAdmin = state.bot.admins.canFind(user.account);
     immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
     immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
@@ -656,12 +651,7 @@ FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
     {
         return FilterResult.pass;
     }
-    else if (isBlacklisted)
-    {
-        return FilterResult.fail;
-    }
-    else if ((!user.account.length && (timediff > Timeout.whois)) ||
-        (!isWhitelisted && (timediff > 6 * Timeout.whois)))
+    else if (!user.account.length && !isBlacklisted)
     {
         return FilterResult.whois;
     }
