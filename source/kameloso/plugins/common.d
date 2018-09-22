@@ -2215,11 +2215,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : stripModesign;
-        import kameloso.meld : meldInto;
         import kameloso.string : contains, nom;
         import std.algorithm.iteration : splitter;
-        import std.algorithm.searching : canFind;
-        import std.typecons : No, Yes;
 
         auto names = event.content.splitter(" ");
 
@@ -2454,6 +2451,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (--(*user).refcount == 0)
             {
+                import std.algorithm.mutation : remove;
                 users.remove(event.sender.nickname);
             }
         }
@@ -2573,7 +2571,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.searching : canFind;
         import std.string : representation;
 
         // User awareness bits add the IRCUser
@@ -2604,6 +2601,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (event.target.nickname == bot.nickname) return;
 
+            import std.algorithm.searching : canFind;
             if (channels[event.channel].users.canFind(event.target.nickname))
             {
                 return;
