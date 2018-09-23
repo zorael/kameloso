@@ -172,6 +172,122 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 }
 
 
+// findURLs
+/++
+ +  Finds URLs in a string, returning an array of them.
+ +
+ +  Replacement for regex matching using much less memory when compiling
+ +  (around ~300mb).
+ +
+ +  To consider: does this need a `dstring`?
+ +
+ +  Example:
+ +  ---
+ +  // Replaces the following:
+ +  // enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
+ +  // static urlRegex = ctRegex!stephenhay;
+ +
+ +  string[] urls = findURL("blah https://google.com http://facebook.com httpx://wefpokwe");
+ +  assert(urls.length == 2);
+ +  ---
+ +
+ +  Params:
+ +      line = String line to examine and find URLs in.
+ +
+ +  Returns:
+ +      A `string[]` array of found URLs. These include fragment identifiers.
+ +/
+string[] findURLs(const string line) @safe pure
+{
+    import std.string : indexOf;
+
+    string[] hits;
+    string slice = line;
+
+	ptrdiff_t httpPos = slice.indexOf("http");
+
+    while (httpPos != -1)
+    {
+        if ((httpPos > 0) && (slice[httpPos-1] != ' '))
+        {
+            // Run-on http address (character before the 'h')
+            slice = slice[httpPos+4..$];
+            httpPos = slice.indexOf("http");
+            continue;
+        }
+
+        slice = slice[httpPos..$];
+        if (slice.length < 11)
+        {
+            break;  // "http://a.se".length
+        }
+        else if ((slice[4] != ':') && (slice[4] != 's'))
+        {
+            // Not http or https, something else
+            break;
+        }
+        else if (slice[8..$].indexOf('.') == -1)
+        {
+            break;
+        }
+
+        immutable spacePos = slice.indexOf(' ');
+        if (spacePos == -1)
+        {
+            // Check if there's a second URL in the middle of this one
+            if (slice[10..$].indexOf("http") != -1) break;
+            // Line finishes with the URL
+            hits ~= slice;
+            break;
+        }
+        else
+        {
+            // The URL is followed by a space
+            hits ~= slice[0..spacePos];
+            // Advance past this URL so we can look for the next
+            slice = slice[spacePos..$];
+        }
+
+        httpPos = slice.indexOf("http");
+    }
+
+    return hits;
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        const urls = findURLs("http://google.com");
+        assert((urls.length == 1), urls.text);
+        assert((urls[0] == "http://google.com"), urls[0]);
+    }
+    {
+        const urls = findURLs("blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        ");
+        assert((urls.length == 3), urls.text);
+        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.text);
+    }
+    {
+        const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http");
+        assert(!urls.length, urls.text);
+    }
+    {
+        const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
+        assert(!urls.length, urls.text);
+    }
+    {
+        const urls = findURLs("blahblah https://motorbörsen.se blhblah");
+        assert(urls.length, urls.text);
+    }
+    {
+        // Let dlang-requests attempt complex URLs, don't validate more than necessary
+        const urls = findURLs("blahblah https://高所恐怖症。co.jp blhblah");
+        assert(urls.length, urls.text);
+    }
+}
+
 // worker
 /++
  +  Looks up an URL and reports the title to the main thread, for printing in a
