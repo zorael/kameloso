@@ -419,7 +419,20 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
     import kameloso.string : contains;
     if ((lookup.title == "YouTube") && url.contains("youtube.com/watch?"))
     {
-        state.fixYoutubeTitles(lookup, url);
+        state.askToLog("Bland YouTube title ...");
+
+        immutable title = youTubeToListenOnRepeat(url);
+
+        if (!title.contains(" - ListenOnRepeat"))
+        {
+            state.askToWarn("Failed to ListOnRepeatify YouTube title");
+        }
+        else
+        {
+            // Truncate away " - ListenOnRepeat"
+            lookup.title = title[0..$-17];
+            lookup.domain = "youtube.com";
+        }
     }
     else
     {
@@ -441,41 +454,98 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
 }
 
 
-// fixYoutubeTitles
+// youTubeToListenOnRepeat
 /++
  +  If a YouTube video link resolves its title to just "YouTube", rewrites the
  +  URL to ListenOnRepeat with the same video ID and fetch its title there.
  +
+ +  As this is only called from within this module's functions it is *assumed*
+ +  that the strings are proper URLs, in the sense that they start with "http".
+ +
  +  Params:
- +      lookup = Reference to the failing `TitleLookup`, that we want to try
- +          hacking around.
- +      titleReq = Original title request.
+ +      url = The original (possibly YouTube) URL string to process.
+ +
+ +  Returns:
+ +      A rewritten ListenOnRepeat URL, in case the original `url` was a YouTube
+ +      one. Otherwise the same URL as was passed.
  +/
-void fixYoutubeTitles(IRCPluginState state, ref TitleLookup lookup, const string url)
+string youTubeToListenOnRepeat(const string url)
 {
-    import kameloso.string : contains;
-    import std.regex : regex, replaceFirst;
+    import kameloso.string : beginsWith, nom;
+    import std.string : indexOf;
 
-    /// Regex pattern to match YouTube URLs.
-    enum youtubePattern = `https?://(?:www.)?youtube.com/watch`;
-
-    state.askToLog("Bland YouTube title ...");
-
-    immutable onRepeatURL = url.replaceFirst(youtubePattern.regex, "https://www.listenonrepeat.com/watch/");
-    state.askToLog("ListenOnRepeat URL: " ~ onRepeatURL);
-    auto onRepeatLookup = state.lookupTitle(onRepeatURL);
-    state.askToLog("ListenOnRepeat title: " ~ onRepeatLookup.title);
-
-    if (!onRepeatLookup.title.contains(" - ListenOnRepeat"))
+    if (url.length < 38)
     {
-        state.askToWarn("Failed to ListOnRepeatify YouTube title");
-        return;
+        // Too short to be a YouTube watch one
+        // Shortest is: "http://youtube.com/watch?v=s-mOy8VUEBk";
+        return url;
     }
 
-    // Truncate away " - ListenOnRepeat"
-    onRepeatLookup.title = onRepeatLookup.title[0..$-17];
-    onRepeatLookup.domain = "youtube.com";
-    lookup = onRepeatLookup;
+    // Guaranteed by findURLs
+    assert((url[0..4] == "http"), "YouTube to ListenOnRepeat URL did not start " ~
+        "with 'http': " ~ url[0..4]);
+
+    string slice = url;
+
+    if (url[4] == 's')
+    {
+        // Begins with https
+        slice = slice[8..$];
+    }
+    else if (url[4] == ':')
+    {
+        // Begins with http:
+        slice = slice[7..$];
+    }
+    else
+    {
+        // Invalid protocol text
+        return url;
+    }
+
+    if (slice.beginsWith("www."))
+    {
+        slice = slice[4..$];
+    }
+
+    if (!slice.beginsWith("youtube.com/watch?v="))
+    {
+        return url;
+    }
+
+    slice.nom('=');
+    if (slice.length < 11)
+    {
+        //writeln("TOO SHORT:", slice.length);
+        return url;
+    }
+
+    return "https://www.listenonrepeat.com/watch/?v=" ~ slice;
+}
+
+///
+unittest
+{
+    {
+        immutable url = "https://www.youtube.com/watch?v=s-mOy8VUEBk";
+        immutable fixed = youTubeToListenOnRepeat(url);
+        assert(fixed == "https://www.listenonrepeat.com/watch/?v=s-mOy8VUEBk", fixed);
+    }
+    {
+        immutable url = "http://youtube.com/watch?v=s-mOy8VUEBk";
+        immutable fixed = youTubeToListenOnRepeat(url);
+        assert(fixed == "https://www.listenonrepeat.com/watch/?v=s-mOy8VUEBk", fixed);
+    }
+    {
+        immutable url = "https://www.YOUTUBE.com/watch?v=s-mOy8VUEBk";
+        immutable fixed = youTubeToListenOnRepeat(url);
+        assert(fixed == "https://www.YOUTUBE.com/watch?v=s-mOy8VUEBk", fixed);
+    }
+    {
+        immutable url = "https://www.youtube.com/watch?v=s-mOy8VUEB";
+        immutable fixed = youTubeToListenOnRepeat(url);
+        assert(fixed == "https://www.youtube.com/watch?v=s-mOy8VUEB", fixed);
+    }
 }
 
 
