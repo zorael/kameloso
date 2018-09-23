@@ -75,9 +75,11 @@ struct TitleRequest
 
 // onMessage
 /++
- +  Parses a message to see if the message contains an URL.
+ +  Parses a message to see if the message contains one or more URLs.
  +
- +  It uses a simple regex and exhaustively tries to match every URL it detects.
+ +  It uses a simple state machine in `findURLs` to exhaustively try to look up
+ +  every URL returned by it. It accesses the cache of already looked up
+ +  addresses to lessen the amount of work.
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
@@ -89,17 +91,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
     import kameloso.common : logger;
     import kameloso.string : beginsWith, contains;
-    import std.regex : ctRegex, matchAll;
     import std.typecons : No, Yes;
-
-    // Early abort so we don't use the regex as much.
-    if (!event.content.contains!(Yes.decode)("http")) return;
-
-    /// Regex pattern to match a URL, to see if one was pasted.
-    enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;
-
-    /// Regex engine to catch URLs.
-    static urlRegex = ctRegex!stephenhay;
 
     immutable prefix = plugin.state.settings.prefix;
     if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
@@ -110,14 +102,26 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         return;
     }
 
-    auto matches = event.content.matchAll(urlRegex);
+    string infotint;
 
-    foreach (urlHit; matches)
+    version(Colours)
     {
-        if (!urlHit.length) continue;
+        import kameloso.common : settings;
 
-        string url = urlHit[0];  // needs mutable
+        if (!settings.monochrome)
+        {
+            import kameloso.bash : colour;
+            import kameloso.logger : KamelosoLogger;
+            import std.experimental.logger : LogLevel;
 
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+        }
+    }
+
+    auto matches = findURLs(event.content);
+
+    foreach (url; matches)
+    {
         if (url.contains!(Yes.decode)('#'))
         {
             import kameloso.string : nom;
@@ -127,26 +131,10 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
             url = url.nom!(Yes.decode)('#');
         }
 
-        string infotint;
-
-        version(Colours)
-        {
-            import kameloso.common : settings;
-
-            if (!settings.monochrome)
-            {
-                import kameloso.bash : colour;
-                import kameloso.logger : KamelosoLogger;
-                import std.experimental.logger : LogLevel;
-
-                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-            }
-        }
-
         logger.log("Caught URL: ", infotint, url);
 
         // Garbage-collect entries too old to use
-        plugin.cache.prune();
+        prune(plugin.cache);
 
         const cachedLookup = url in plugin.cache;
 
