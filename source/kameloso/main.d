@@ -1268,7 +1268,7 @@ int main(string[] args)
 
         if (!bot.homes.length && !bot.admins.length)
         {
-            complainAboutMissingConfiguration(bot, args);
+            complainAboutMissingConfiguration(args);
             return 1;
         }
 

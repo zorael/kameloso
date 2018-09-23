@@ -1601,15 +1601,13 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +  the calling site.
  +
  +  Params:
- +      bot = The current `kameloso.ircdefs.IRCBot`.
  +      args = The command-line arguments passed to the program at start.
  +
  +  Returns:
  +      `true` if configuration is complete and nothing needs doing, `false` if
  +      incomplete and the program should exit.
  +/
-import kameloso.irc : IRCBot;
-void complainAboutMissingConfiguration(const IRCBot bot, const string[] args)
+void complainAboutMissingConfiguration(const string[] args)
 {
     import std.file : exists;
     import std.path : baseName;
