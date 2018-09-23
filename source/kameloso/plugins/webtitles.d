@@ -369,7 +369,8 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +  Then we get our YouTube title.
  +
  +  Params:
- +      titleReq = Current title request.
+ +      state = Current `IRCPluginState`.
+ +      url = URL string to look up.
  +
  +  Returns:
  +      A finished `TitleLookup`.
