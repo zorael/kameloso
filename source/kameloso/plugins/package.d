@@ -26,7 +26,7 @@ public import kameloso.plugins.common;
  +      A selectively-importing `static if`. Mix this in to use.
  +/
 version(WithPlugins)
-string tryImportMixin(const string module_, const string alias_)
+private string tryImportMixin(const string module_, const string alias_)
 {
     import std.format : format;
 
