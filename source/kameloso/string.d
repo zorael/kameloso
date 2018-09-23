@@ -97,7 +97,10 @@ if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C
         enum separatorLength = 1;
     }
 
-    scope(exit) line = line[(index+separatorLength)..$];
+    static if (__traits(isRef, line))
+    {
+        scope(exit) line = line[(index+separatorLength)..$];
+    }
 
     return line[0..index];
 }
