@@ -152,7 +152,7 @@ final class SeenPlugin : IRCPlugin
 
 
     // seenFile
-    /+
+    /++
      +  The filename to which to persistently store our list of seen users
      +  between executions of the program.
      +
