@@ -6,11 +6,11 @@ module kameloso.irc;
 
 public import kameloso.ircdefs;
 
+private:
+
 import kameloso.string : contains, nom;
 
 @safe:
-
-private:
 
 version(AsAnApplication)
 {
