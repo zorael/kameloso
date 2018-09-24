@@ -629,24 +629,7 @@ Next mainLoop(ref Client client)
                         plugin.handleFibers(event);
 
                         // Fetch any queued `WHOIS` requests and handle
-                        const called = client.handleWHOISQueue(plugin.state.whoisQueue);
-
-                        foreach (immutable thisNickname; called)
-                        {
-                            // thisNickname.length and lastWhois > 0 guaranteed
-
-                            const updatedLastWhois = thisNickname in client.previousWhoisTimestamps;
-                            assert(updatedLastWhois, "Empty lastWhois after handling WHOIS queue");
-
-                            if (event.sender.nickname == thisNickname)
-                            {
-                                event.sender.lastWhois = *updatedLastWhois;
-                            }
-                            else /*if (event.sender.isServer)*/
-                            {
-                                event.target.lastWhois = *updatedLastWhois;
-                            }
-                        }
+                        client.handleWHOISQueue(plugin.state.whoisQueue);
 
                         if (plugin.state.bot.updated)
                         {
@@ -846,13 +829,10 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
  +      reqs = Reference to an associative array of `WHOISRequest`s.
  +/
 import kameloso.plugins.common : WHOISRequest;
-string[] handleWHOISQueue(ref Client client, ref WHOISRequest[][string] reqs)
+void handleWHOISQueue(ref Client client, ref WHOISRequest[][string] reqs)
 {
     // Walk through requests and call `WHOIS` on those that haven't been
     // `WHOIS`ed in the last `Timeout.whois` seconds
-
-    string[] called;
-    called.reserve(reqs.length);
 
     foreach (immutable nickname, const requestsForNickname; reqs)
     {
@@ -869,11 +849,8 @@ string[] handleWHOISQueue(ref Client client, ref WHOISRequest[][string] reqs)
             if (!settings.hideOutgoing) logger.trace("--> WHOIS ", nickname);
             client.throttleline("WHOIS ", nickname);
             client.previousWhoisTimestamps[nickname] = now;
-            called ~= nickname;
         }
     }
-
-    return called;
 }
 
 
