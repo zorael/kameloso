@@ -1260,9 +1260,6 @@ struct IRCUser
         }
     }
 
-    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
-    long lastWhois;
-
     /// How many references to this user exists (in channels).
     int refcount;
 
