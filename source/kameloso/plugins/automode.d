@@ -100,7 +100,8 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
 @(IRCEvent.Type.JOIN)
-@(PrivilegeLevel.anyone)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;

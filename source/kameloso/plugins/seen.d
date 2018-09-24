@@ -286,7 +286,7 @@ struct SeenSettings
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
 @(IRCEvent.Type.QUIT)
-@(PrivilegeLevel.anyone)
+@(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
@@ -317,7 +317,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
  +/
 @(Chainable)
 @(IRCEvent.Type.NICK)
-@(PrivilegeLevel.anyone)
+@(PrivilegeLevel.ignore)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
