@@ -500,6 +500,13 @@ Next mainLoop(ref Client client)
             plugin.periodically(nowInUnix);
         }
 
+        // Once every 24h (24*3600s), clear the `previousWhoisTimestamps` AA.
+        // That should be enough to stop it from being a memory leak.
+        if ((nowInUnix % 86_400) == 0)
+        {
+            client.previousWhoisTimestamps = typeof(client.previousWhoisTimestamps).init;
+        }
+
         // Call the generator, query it for event lines
         listener.call();
 
