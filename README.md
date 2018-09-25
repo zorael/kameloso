@@ -13,7 +13,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * bedazzling coloured terminal output like it's the 90s
 * automatic mode sets (eg. auto `+o` for op)
 * looking up titles of pasted web URLs
-* logging to file
+* logs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
@@ -283,6 +283,7 @@ If more state is necessary to replicate the environment, such as needing things 
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * automode channel awareness boost
+* private notes
 
 # Built with
 
