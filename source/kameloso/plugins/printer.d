@@ -698,6 +698,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         put(sink, "] ");
 
+        if (channel.length) put(sink, '[', channel, "] ");
+
         if (sender.isServer)
         {
             sink.put(address);
@@ -767,8 +769,6 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 put(sink, ']');
             }
         }
-
-        if (channel.length) put(sink, " [", channel, ']');
 
         if (content.length)
         {
@@ -1021,6 +1021,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         put(sink, "] ");
 
+        if (channel.length)
+        {
+            sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
+            put(sink, '[', channel, "] ");
+        }
+
         colourUserTruecolour(sink, event.sender);
 
         if (sender.isServer)
@@ -1140,12 +1146,6 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 put(sink, ']');
             }
-        }
-
-        if (channel.length)
-        {
-            sink.colour(bright ? DefaultBright.channel : DefaultDark.channel);
-            put(sink, " [", channel, ']');
         }
 
         if (content.length)
