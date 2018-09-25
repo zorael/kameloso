@@ -285,7 +285,7 @@ struct SeenSettings
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.PART)
-@(IRCEvent.Type.QUIT)
+@(IRCEvent.Type.QUIT)  // ChannelPolicy does not apply
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
@@ -660,27 +660,23 @@ void updateUser(SeenPlugin plugin, const string signed)
 {
     import kameloso.irc : stripModesign;
     import std.algorithm.searching : canFind;
-    import std.datetime.systime : Clock;
 
-    with (plugin.state)
+    /++
+     +  Make sure to strip the modesign, so `@foo` is the same person as
+     +  `foo`.
+     +/
+    immutable nickname = plugin.state.bot.server.stripModesign(signed);
+
+    // Only update the user if he/she is in a home channel.
+    foreach (const channel; plugin.state.channels)
     {
-        /++
-         +  Make sure to strip the modesign, so `@foo` is the same person as
-         +  `foo`.
-         +/
-        immutable nickname = bot.server.stripModesign(signed);
+        if (!plugin.state.bot.homes.canFind(channel.name)) continue;
 
-        // Only update the user if he/she is in a home channel.
-        foreach (homechan; bot.homes)
+        if (channel.users.canFind(nickname))
         {
-            if (const channel = homechan in channels)
-            {
-                if (channel.users.canFind(nickname))
-                {
-                    plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
-                    return;
-                }
-            }
+            import std.datetime.systime : Clock;
+            plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
+            return;
         }
     }
 }
