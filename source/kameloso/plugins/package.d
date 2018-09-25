@@ -116,7 +116,8 @@ version(WithPlugins)
  +  Note that `dub` will still compile any files in the `plugins` directory!
  +  To completely omit a plugin you will either have to compile the bot
  +  manually, delete the source file(s) in question, or add an `__EOF__` at the
- +  top of them. (Everything a line with that text is skipped.)
+ +  top of them. Everything below a line with that text is skipped. Make sure
+ +  it's above the `module` declaration.
  +/
 import std.meta : AliasSeq;
 version(WithPlugins)
