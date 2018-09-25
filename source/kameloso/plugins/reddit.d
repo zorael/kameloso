@@ -206,7 +206,7 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
 {
     if (reddit.length)
     {
-        import kameloso.common : ThreadMessage, busMessage;
+        import kameloso.thread : ThreadMessage, busMessage;
 
         state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
         state.mainThread.send(ThreadMessage.BusMessage(), "reddit title", busMessage(event));

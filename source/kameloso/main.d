@@ -4,6 +4,7 @@
 module kameloso.main;
 
 import kameloso.common;
+import kameloso.thread : ThreadMessage;
 import kameloso.irc;
 import kameloso.ircdefs;
 
@@ -97,6 +98,7 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 void throttleline(Strings...)(ref Client client, const Strings strings)
 {
+    import kameloso.thread : interruptibleSleep;
     import core.thread : Thread;
     import core.time : seconds, msecs;
     import std.datetime.systime : Clock, SysTime;
@@ -221,6 +223,7 @@ Next checkMessages(ref Client client)
      +  payload member of the supplied `kameloso.common.CarryingFiber`, then
      +  invokes it.
      +/
+    import kameloso.thread : CarryingFiber;
     import kameloso.plugins.common : IRCPlugin;
     void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber)
     {
@@ -240,6 +243,7 @@ Next checkMessages(ref Client client)
     }
 
     /// Passes a bus message to each plugin.
+    import kameloso.thread : Sendable;
     void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content)
     {
         foreach (plugin; client.plugins)
@@ -978,6 +982,7 @@ Next tryConnect(ref Client client)
 {
     import kameloso.connection : ConnectionAttempt, connectFiber;
     import kameloso.constants : Timeout;
+    import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
     alias State = ConnectionAttempt.State;
@@ -1137,6 +1142,7 @@ Next tryResolve(ref Client client)
             enum resolveAttempts = 15;  // FIXME
             if (attempt.numRetry+1 < resolveAttempts)
             {
+                import kameloso.thread : interruptibleSleep;
                 import core.time : seconds;
 
                 logger.logf("Network down? Retrying in %s%d%s seconds.",
@@ -1298,6 +1304,7 @@ int main(string[] args)
             if (!firstConnect)
             {
                 import kameloso.constants : Timeout;
+                import kameloso.thread : interruptibleSleep;
                 import core.time : seconds;
 
                 // Carry some values but otherwise restore the pristine bot backup

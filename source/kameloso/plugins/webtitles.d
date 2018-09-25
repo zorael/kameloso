@@ -16,7 +16,7 @@ version(Web):
 
 private:
 
-import kameloso.common : ThreadMessage;
+import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
@@ -649,10 +649,10 @@ void start(WebtitlesPlugin plugin)
  +
  +  So far used to let other plugins trigger lookups of web URLs.
  +/
-import kameloso.common : Sendable;
+import kameloso.thread : Sendable;
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
 {
-    import kameloso.common : BusMessage; //, logger;
+    import kameloso.thread : BusMessage;
 
     //logger.log("Webtitles received bus message: ", header);
 

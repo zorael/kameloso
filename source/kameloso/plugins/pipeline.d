@@ -19,6 +19,7 @@ version(Posix):
 private:
 
 import kameloso.common;
+import kameloso.thread : ThreadMessage;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.messaging;

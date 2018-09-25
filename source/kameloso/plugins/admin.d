@@ -225,7 +225,7 @@ void onCommandSave(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : ThreadMessage;
+    import kameloso.thread : ThreadMessage;
 
     logger.info("Saving configuration to disk.");
     plugin.state.mainThread.send(ThreadMessage.Save());
@@ -523,7 +523,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string section, const string account)
 {
     import kameloso.json : JSONStorage;
-    import kameloso.common : ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
@@ -736,7 +736,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
     void dg()
@@ -776,7 +776,7 @@ void onCommandAuth(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
     plugin.state.mainThread.send(ThreadMessage.BusMessage(), "auth");

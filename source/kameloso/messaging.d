@@ -519,7 +519,7 @@ unittest
 void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 {
     import std.concurrency : prioritySend;
-    import kameloso.common : ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
 }
 
@@ -540,7 +540,7 @@ alias askToError = askToLogImpl!"error";
 
 unittest
 {
-    import kameloso.common : ThreadMessage;
+    import kameloso.thread : ThreadMessage;
 
     IRCPluginState state;
     state.mainThread = thisTid;

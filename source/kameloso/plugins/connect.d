@@ -17,7 +17,8 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : ThreadMessage, logger, settings;
+import kameloso.common : logger, settings;
+import kameloso.thread : ThreadMessage;
 
 import std.concurrency : prioritySend;
 import std.format : format;
@@ -798,10 +799,10 @@ void start(ConnectService service)
  +
  +  So far only reauthenticates with services, on demand.
  +/
-import kameloso.common : Sendable;
+import kameloso.thread : Sendable;
 void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
-    import kameloso.common : BusMessage; //, logger;
+    import kameloso.thread : BusMessage;
 
     //logger.log("Connect received bus message: ", header);
 

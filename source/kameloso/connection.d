@@ -3,7 +3,7 @@
  +/
 module kameloso.connection;
 
-import kameloso.common : interruptibleSleep, logger;
+import kameloso.common : logger;
 import kameloso.constants;
 
 
