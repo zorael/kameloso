@@ -1901,7 +1901,14 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
 version(WithPlugins)
 mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MODULE__)
 {
-    enum hasMinimalAuthentication = true;
+    static if (__traits(compiles, .hasMinimalAuthentication))
+    {
+        static assert(0, "Double mixin of MinimalAuthentication in module " ~ module_);
+    }
+    else
+    {
+        enum hasMinimalAuthentication = true;
+    }
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
@@ -2065,7 +2072,14 @@ version(WithPlugins)
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     bool debug_ = false, string module_ = __MODULE__)
 {
-    enum hasUserAwareness = true;
+    static if (__traits(compiles, .hasUserAwareness))
+    {
+        static assert(0, "Double mixin of UserAwareness in module " ~ module_);
+    }
+    else
+    {
+        enum hasUserAwareness = true;
+    }
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
     {
@@ -2317,7 +2331,14 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     static assert(__traits(compiles, .hasUserAwareness), module_ ~
         " is missing UserAwareness mixin (needed for ChannelAwareness).");
 
-    enum hasChannelAwareness = true;
+    static if (__traits(compiles, .hasChannelAwareness))
+    {
+        static assert(0, "Double mixin of ChannelAwareness in module " ~ module_);
+    }
+    else
+    {
+        enum hasChannelAwareness = true;
+    }
 
 
     // onChannelAwarenessSelfjoinMixin
