@@ -181,7 +181,7 @@ Next printHelp(GetoptResult results) @system
 
     version(Colours)
     {
-        import kameloso.bash : BashForeground;
+        import kameloso.bash : BashForeground, colour;
 
         if (!settings.monochrome)
         {
@@ -480,7 +480,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             {
                 version(Colours)
                 {
-                    import kameloso.bash : BashForeground;
+                    import kameloso.bash : BashForeground, colour;
 
                     if (!settings.monochrome)
                     {

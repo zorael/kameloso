@@ -1248,7 +1248,7 @@ int main(string[] args)
 
         version(Colours)
         {
-            import kameloso.bash : BashForeground;
+            import kameloso.bash : BashForeground, colour;
 
             if (!settings.monochrome)
             {
