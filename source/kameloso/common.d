@@ -591,7 +591,7 @@ version(Colours)
 void printVersionInfo(const string pre = string.init, const string post = string.init)
 {
     import kameloso.constants : KamelosoInfo;
-    import std.stdio : writefln;
+    import std.stdio : stdout, writefln;
 
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         pre,
