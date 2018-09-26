@@ -343,6 +343,8 @@ if (isOutputRange!(Sink, char[]))
         Struct struct_;
         int i = 12_345;
         string s = "foo";
+        string p = "!";
+        string p2;
         bool b = true;
         float f = 3.14f;
         double d = 99.9;
@@ -367,6 +369,8 @@ if (isOutputRange!(Sink, char[]))
      Struct struct_                <struct> (init)
         int i                       12345
      string s                      "foo"(3)
+     string p                       "!"(1)
+     string p2                      ""(0)
        bool b                       true
       float f                       3.14
      double d                       99.9
