@@ -189,7 +189,7 @@ if (isOutputRange!(Sink, char[]))
                 {
                     static if (coloured)
                     {
-                        enum stringPattern = `%s%*s %s%-*s %s"%s"%s(%d)` ~ '\n';
+                        enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
                         immutable memberCode = bright ? B.black : B.white;
                         immutable valueCode = bright ? B.green : B.lightgreen;
                         immutable lengthCode = bright ? B.lightgrey : B.darkgrey;
@@ -198,14 +198,16 @@ if (isOutputRange!(Sink, char[]))
                         sink.formattedWrite(stringPattern,
                             typeCode.colour, typewidth, T.stringof,
                             memberCode.colour, (namewidth + 2), memberstring,
+                            (member.length < 2) ? " " : string.init,
                             valueCode.colour, member,
                             lengthCode.colour, member.length);
                     }
                     else
                     {
-                        enum stringPattern = `%*s %-*s "%s"(%d)` ~ '\n';
+                        enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
                         sink.formattedWrite(stringPattern, typewidth, T.stringof,
                             (namewidth + 2), memberstring,
+                            (member.length < 2) ? " " : string.init,
                             member, member.length);
                     }
                 }
