@@ -927,27 +927,34 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     {
         if (plugin.printerSettings.randomNickColours)
         {
+            import std.algorithm.searching : countUntil;
             import std.traits : EnumMembers;
 
             alias foregroundMembers = EnumMembers!BashForeground;
-            enum lastIndex = (foregroundMembers.length - 1);
             static immutable BashForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
-            auto colourIndex = hashOf(nickname) % lastIndex;
+            enum chancodeBright = fg[].countUntil(cast(int)DefaultBright.channel);
+            enum chancodeDark = fg[].countUntil(cast(int)DefaultDark.channel);
 
-            // Map black to white on dark terminals, reverse on bright
+            // Range from 2 to 15, excluding black and white and manually changing
+            // the code for bright/dark channel to black/white
+            size_t colourIndex = (hashOf(nickname) % 14) + 2;
+
             if (bright)
             {
-                if (colourIndex == lastIndex) colourIndex = 1;
+                // Index is bright channel code, set to black
+                if (colourIndex == chancodeBright) colourIndex = 1;  // black
             }
             else
             {
-                if (colourIndex == 1) colourIndex = lastIndex;
+                // Index is dark channel code, set to white
+                if (colourIndex == chancodeDark) colourIndex = 16; // white
             }
 
             return fg[colourIndex];
         }
 
+        // Don't differentiate between sender and target? Consistency?
         return bright ? DefaultBright.sender : DefaultDark.sender;
     }
 
