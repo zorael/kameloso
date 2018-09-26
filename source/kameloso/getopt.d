@@ -238,7 +238,7 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
 
     // --writeconfig was passed; write configuration to file and quit
 
-    string infotint, pre, post;
+    string infotint, post;
 
     version(Colours)
     {
