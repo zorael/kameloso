@@ -560,20 +560,39 @@ struct Client
  +  Params:
  +      colourCode = Bash foreground colour to display the text in.
  +/
-void printVersionInfo(BashForeground colourCode = BashForeground.default_)
+version(Colours)
 {
-    import kameloso.constants : KamelosoInfo;
-    import std.stdio : writefln, stdout;
+    import kameloso.bash : BashForeground;
 
-    string pre;
-    string post;
-
-    version(Colours)
+    void printVersionInfo(BashForeground colourCode = BashForeground.default_)
     {
         import kameloso.bash : colour;
-        pre = colourCode.colour;
-        post = BashForeground.default_.colour;
+        return printVersionInfo(colourCode.colour, BashForeground.default_.colour);
     }
+}
+
+
+// printVersionInfo
+/++
+ +  Prints out the bot banner with the version number and GitHub URL, optionally
+ +  with passed colouring in string format.
+ +
+ +  Overload that does not rely on `BashForeground` being available, yet takes
+ +  the necessary parameters to allow the other overload to reuse this one.
+ +
+ +  Example:
+ +  ---
+ +  printVersionInfo();
+ +  ---
+ +
+ +  Params:
+ +      pre = String to preface the line with, usually a colour code string.
+ +      post = String to end the line with, usually a resetting code string.
+ +/
+void printVersionInfo(const string pre = string.init, const string post = string.init)
+{
+    import kameloso.constants : KamelosoInfo;
+    import std.stdio : writefln;
 
     writefln("%skameloso IRC bot v%s, built %s\n$ git clone %s.git%s",
         pre,
