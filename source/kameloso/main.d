@@ -468,7 +468,7 @@ Next mainLoop(ref Client client)
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
-    string logtint, errortint;
+    string infotint, logtint, errortint;
 
     version(Colours)
     {
@@ -478,6 +478,7 @@ Next mainLoop(ref Client client)
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
+            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
             logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
             errortint = KamelosoLogger.tint(LogLevel.error, settings.brightTerminal).colour;
         }
@@ -577,6 +578,12 @@ Next mainLoop(ref Client client)
 
                 logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint,
                     attempt.lastSocketError_, errortint);
+
+                if ((attempt.lastSocketError_ == "Transport endpoint is not connected") && settings.ipv6)
+                {
+                    logger.logf("Try running the bot with %s--ipv6=false", infotint);
+                }
+
                 return Next.returnFailure;
             }
 
