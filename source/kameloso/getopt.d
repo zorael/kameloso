@@ -252,13 +252,11 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
 
             infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
             immutable defaulttint = BashForeground.default_;
-
-            pre = infotint.colour;
             post = defaulttint.colour;
         }
     }
 
-    printVersionInfo(pre, post);
+    printVersionInfo(infotint, post);
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
