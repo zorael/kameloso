@@ -1393,36 +1393,40 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.default_)
 {
-    import kameloso.bash : B = BashEffect;
-    import kameloso.irc : I = IRCControlCharacter;
-    import kameloso.string : contains;
+    import kameloso.bash : BashForeground;
 
-    with (event)
+    void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.default_)
     {
-        if (content.contains(I.colour))
-        {
-            // Colour is mIRC 3
-            content = mapColours(content, resetCode);
-        }
+        import kameloso.bash : B = BashEffect;
+        import kameloso.irc : I = IRCControlCharacter;
+        import kameloso.string : contains;
 
-        if (content.contains(I.bold))
+        with (event)
         {
-            // Bold is bash 1, mIRC 2
-            content = mapAlternatingEffectImpl!(I.bold, B.bold)(content);
-        }
+            if (content.contains(I.colour))
+            {
+                // Colour is mIRC 3
+                content = mapColours(content, resetCode);
+            }
 
-        if (content.contains(I.italics))
-        {
-            // Italics is bash 3 (not really), mIRC 29
-            content = mapAlternatingEffectImpl!(I.italics, B.italics)(content);
-        }
+            if (content.contains(I.bold))
+            {
+                // Bold is bash 1, mIRC 2
+                content = mapAlternatingEffectImpl!(I.bold, B.bold)(content);
+            }
 
-        if (content.contains(I.underlined))
-        {
-            // Underlined is bash 4, mIRC 31
-            content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(content);
+            if (content.contains(I.italics))
+            {
+                // Italics is bash 3 (not really), mIRC 29
+                content = mapAlternatingEffectImpl!(I.italics, B.italics)(content);
+            }
+
+            if (content.contains(I.underlined))
+            {
+                // Underlined is bash 4, mIRC 31
+                content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(content);
+            }
         }
     }
 }
