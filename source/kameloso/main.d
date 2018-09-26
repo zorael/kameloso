@@ -1244,24 +1244,27 @@ int main(string[] args)
 
     with (client.parser)
     {
-        import kameloso.bash : BashForeground;
-
-        BashForeground tint = BashForeground.default_;
+        string pre, post;
 
         version(Colours)
         {
+            import kameloso.bash : BashForeground;
+
             if (!settings.monochrome)
             {
-                tint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+                immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+                immutable defaulttint = BashForeground.default_;
+                pre = headertint.colour;
+                post = defaulttint.colour;
             }
         }
 
         import std.stdio : writeln;
-        printVersionInfo(tint);
+        printVersionInfo(pre, post);
         writeln();
 
         // Print the current settings to show what's going on.
-        import kameloso.common : printObjects;
+        import kameloso.printing : printObjects;
         printObjects(bot, bot.server);
 
         if (!bot.homes.length && !bot.admins.length)

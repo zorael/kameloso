@@ -174,22 +174,25 @@ unittest
 import std.getopt : GetoptResult;
 Next printHelp(GetoptResult results) @system
 {
-    import kameloso.bash : BashForeground;
     import kameloso.common : printVersionInfo, settings;
     import std.stdio : writeln;
 
-    BashForeground headerTint = BashForeground.default_;
+    string pre, post;
 
     version(Colours)
     {
+        import kameloso.bash : BashForeground;
+
         if (!settings.monochrome)
         {
-            headerTint = settings.brightTerminal ?
-                BashForeground.black : BashForeground.white;
+            immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+            immutable defaulttint = BashForeground.default_;
+            pre = headertint.colour;
+            post = defaulttint.colour;
         }
     }
 
-    printVersionInfo(headerTint);
+    printVersionInfo(pre, post);
     writeln();
 
     string headline = "Command-line arguments available:\n";
@@ -198,10 +201,9 @@ Next printHelp(GetoptResult results) @system
     {
         if (!settings.monochrome)
         {
-            import kameloso.bash : colour;
+            import kameloso.bash : BashForeground, colour;
 
-            immutable headlineTint = settings.brightTerminal ?
-                BashForeground.green : BashForeground.lightgreen;
+            immutable headlineTint = settings.brightTerminal ? BashForeground.green : BashForeground.lightgreen;
             headline = headline.colour(headlineTint);
         }
     }
@@ -230,31 +232,33 @@ Next printHelp(GetoptResult results) @system
  +/
 Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings) @system
 {
-    import kameloso.bash : BashForeground;
-    import kameloso.common; // : logger, printObjects, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
+    import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
     // --writeconfig was passed; write configuration to file and quit
 
-    BashForeground bannertint;
-    string infotint;
+    string infotint, pre, post;
 
     version(Colours)
     {
+        import kameloso.bash : BashForeground;
+
         if (!settings.monochrome)
         {
             import kameloso.bash : colour;
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
-            bannertint = settings.brightTerminal ?
-                BashForeground.black : BashForeground.white;
-
             infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            immutable defaulttint = BashForeground.default_;
+
+            pre = infotint.colour;
+            post = defaulttint.colour;
         }
     }
 
-    printVersionInfo(bannertint);
+    printVersionInfo(pre, post);
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
@@ -312,7 +316,6 @@ public:
  +/
 Next handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
 {
-    import kameloso.bash : BashForeground;
     import kameloso.common : printVersionInfo, settings;
     import std.format : format;
     import std.getopt;
@@ -469,9 +472,27 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            import kameloso.common : printObjects;
+            import kameloso.printing : printObjects;
 
-            printVersionInfo(BashForeground.white);
+            string pre, post;
+
+            version(Colours)
+            {
+                version(Colours)
+                {
+                    import kameloso.bash : BashForeground;
+
+                    if (!settings.monochrome)
+                    {
+                        immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+                        immutable defaulttint = BashForeground.default_;
+                        pre = headertint.colour;
+                        post = defaulttint.colour;
+                    }
+                }
+            }
+
+            printVersionInfo(pre, post);
             writeln();
 
             printObjects!(No.printAll)(bot, bot.server, settings);

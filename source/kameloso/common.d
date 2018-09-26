@@ -4,7 +4,6 @@
  +/
 module kameloso.common;
 
-import kameloso.bash : BashForeground;
 import kameloso.uda;
 
 import core.time : Duration;

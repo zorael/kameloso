@@ -21,7 +21,6 @@ final class KamelosoLogger : Logger
 {
     @safe:
 
-    import kameloso.bash : BashForeground, BashFormat, BashReset;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;
@@ -29,30 +28,30 @@ final class KamelosoLogger : Logger
 
     version(Colours)
     {
-        import kameloso.bash : colour;
+        import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
+
+        /// Logger colours to use with a dark terminal.
+        static immutable BashForeground[193] logcoloursDark  =
+        [
+            LogLevel.all     : BashForeground.white,
+            LogLevel.trace   : BashForeground.default_,
+            LogLevel.info    : BashForeground.lightgreen,
+            LogLevel.warning : BashForeground.lightred,
+            LogLevel.error   : BashForeground.red,
+            LogLevel.fatal   : BashForeground.red,
+        ];
+
+        /// Logger colours to use with a bright terminal.
+        static immutable BashForeground[193] logcoloursBright  =
+        [
+            LogLevel.all     : BashForeground.black,
+            LogLevel.trace   : BashForeground.default_,
+            LogLevel.info    : BashForeground.green,
+            LogLevel.warning : BashForeground.red,
+            LogLevel.error   : BashForeground.red,
+            LogLevel.fatal   : BashForeground.red,
+        ];
     }
-
-    /// Logger colours to use with a dark terminal.
-    static immutable BashForeground[193] logcoloursDark  =
-    [
-        LogLevel.all     : BashForeground.white,
-        LogLevel.trace   : BashForeground.default_,
-        LogLevel.info    : BashForeground.lightgreen,
-        LogLevel.warning : BashForeground.lightred,
-        LogLevel.error   : BashForeground.red,
-        LogLevel.fatal   : BashForeground.red,
-    ];
-
-    /// Logger colours to use with a bright terminal.
-    static immutable BashForeground[193] logcoloursBright  =
-    [
-        LogLevel.all     : BashForeground.black,
-        LogLevel.trace   : BashForeground.default_,
-        LogLevel.info    : BashForeground.green,
-        LogLevel.warning : BashForeground.red,
-        LogLevel.error   : BashForeground.red,
-        LogLevel.fatal   : BashForeground.red,
-    ];
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;   /// Whether to use colours for a bright background.
