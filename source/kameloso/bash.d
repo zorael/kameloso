@@ -24,6 +24,8 @@ enum TerminalToken
     reset = 15,
 }
 
+version(Colours):
+
 /++
  +  Effect codes that work like Bash colouring does, except for formatting
  +  effects like bold, dim, italics, etc.
