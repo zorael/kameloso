@@ -689,11 +689,13 @@ unittest
     assert((res3 == FilterResult.pass), res3.text);
 
     event.sender.class_ = IRCUser.Class.anyone;
+    event.sender.lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = state.filterUser(event);
     assert((res4 == FilterResult.fail), res4.text);
 
     event.sender.class_ = IRCUser.Class.blacklist;
+    event.sender.lastWhois = long.init;
 
     immutable res5 = state.filterUser(event);
     assert((res5 == FilterResult.fail), res5.text);
@@ -2133,6 +2135,9 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     /++
      +  Catches a user's information and saves it in the plugin's
      +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s.
+     +
+     +  `IRCEvent.Type.RPL_WHOISUSER` events carry values in the
+     +  `IRCUser.lastWhois` field that we want to store.
      +
      +  `IRCEvent.Type.CHGHOST` occurs when a user changes host on some servers
      +  that allow for custom host addresses.

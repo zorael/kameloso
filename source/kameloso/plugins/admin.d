@@ -204,6 +204,7 @@ void onCommandForgetAccounts(AdminPlugin plugin)
     {
         writeln("Clearing ", user.nickname);
         user.account = string.init;
+        user.lastWhois = 0L;
     }
 }
 
