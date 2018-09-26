@@ -563,7 +563,7 @@ version(Colours)
 {
     import kameloso.bash : BashForeground;
 
-    void printVersionInfo(BashForeground colourCode = BashForeground.default_)
+    void printVersionInfo(BashForeground colourCode)
     {
         import kameloso.bash : colour;
         return printVersionInfo(colourCode.colour, BashForeground.default_.colour);
