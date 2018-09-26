@@ -378,8 +378,9 @@ unittest
  +/
 void generateAsserts(ref Client client) @system
 {
-    import kameloso.common : logger, printObjects;
+    import kameloso.common : logger;
     import kameloso.ircdefs : IRCServer;
+    import kameloso.printing : printObjects;
     import std.stdio : stdout, readln, write, writeln, writefln;
     import std.typecons : Flag, No, Yes;
 

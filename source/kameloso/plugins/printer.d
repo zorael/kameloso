@@ -339,7 +339,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
             if (event.errors.length && plugin.printerSettings.logErrors)
             {
-                import kameloso.common : formatObjects;
+                import kameloso.printing : formatObjects;
 
                 immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
 

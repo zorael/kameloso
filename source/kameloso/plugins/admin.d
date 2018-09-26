@@ -164,7 +164,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : printObject;
+    import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
 
     foreach (immutable username; event.content.splitter(" "))
@@ -248,7 +248,7 @@ void onCommandShowUsers(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.common : printObject;
+    import kameloso.printing : printObject;
     import kameloso.objmanip : deepSizeof;
 
     logger.trace("Printing Admin's users");
@@ -798,7 +798,7 @@ debug
 @Description("[debug] Dumps information about the current state of the bot to the local terminal.")
 void onCommandStatus(AdminPlugin plugin)
 {
-    import kameloso.common : printObject, printObjects;
+    import kameloso.printing : printObjects;
     import std.stdio : writeln, stdout;
 
     logger.log("Current state:");
@@ -809,7 +809,7 @@ void onCommandStatus(AdminPlugin plugin)
     foreach (immutable name, const channel; plugin.state.channels)
     {
         writeln(name);
-        printObject(channel);
+        printObjects(channel);
     }
     //writeln();
 

@@ -1348,7 +1348,8 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
 
     version(PrintSanityFailures)
     {
-        import kameloso.common : logger, printObject;
+        import kameloso.common : logger;
+        import kameloso.printing : printObject;
 
         logger.warning(sink.data);
         printObject(event);

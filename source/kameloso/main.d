@@ -4,9 +4,10 @@
 module kameloso.main;
 
 import kameloso.common;
-import kameloso.thread : ThreadMessage;
 import kameloso.irc;
 import kameloso.ircdefs;
+import kameloso.printing;
+import kameloso.thread : ThreadMessage;
 
 import std.typecons : Flag, No, Yes;
 
