@@ -1962,7 +1962,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     immutable now = Clock.currTime.toUnixTime;
                     immutable then = request.when;
 
-                    if ((now - then) > Timeout.whois)
+                    if ((now - then) > Timeout.whoisRetry)
                     {
                         // Entry is too old, request timed out. Flag it for removal.
                         garbageIndexes ~= i;

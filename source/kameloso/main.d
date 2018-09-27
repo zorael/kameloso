@@ -863,7 +863,7 @@ void handleWHOISQueue(ref Client client, ref WHOISRequest[][string] reqs)
         const then = nickname in client.previousWhoisTimestamps;
         immutable now = Clock.currTime.toUnixTime;
 
-        if (!then || ((now - *then) > Timeout.whois))
+        if (!then || ((now - *then) > Timeout.whoisRetry))
         {
             if (!settings.hideOutgoing) logger.trace("--> WHOIS ", nickname);
             client.throttleline("WHOIS ", nickname);
