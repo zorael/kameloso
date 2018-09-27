@@ -647,13 +647,14 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
     immutable now = Clock.currTime.toUnixTime;
     immutable timediff = (now - user.lastWhois);
 
+    immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
+
     if (user.account.length)
     {
         immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
         immutable isAdmin = (user.class_ == IRCUser.Class.admin);  // Trust in persistence.d
         immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
-        immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
         //immutable isSpecial = (user.class_ == IRCUser.Class.special);
 
         if (isAdmin && (level <= PrivilegeLevel.admin))
@@ -679,7 +680,15 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
     }
     else
     {
-        if (timediff > Timeout.whoisRetry)
+        if (isBlacklisted)
+        {
+            // Should always be ignored
+        }
+        else if (level == PrivilegeLevel.ignore)
+        {
+            return FilterResult.pass;
+        }
+        else if (timediff > Timeout.whoisRetry)
         {
             return FilterResult.whois;
         }
