@@ -579,13 +579,6 @@ Next mainLoop(ref Client client)
                 logger.errorf("Failed to read from server! (%s%s%s)", logtint,
                     attempt.lastSocketError_, errortint);
 
-                import std.socket : AddressFamily;
-                if ((client.conn.socket.addressFamily == AddressFamily.INET6) &&
-                    (attempt.lastSocketError_ == "Transport endpoint is not connected"))
-                {
-                    logger.logf("Try running the bot with %s--ipv6=false", infotint);
-                }
-
                 return Next.returnFailure;
             }
 
