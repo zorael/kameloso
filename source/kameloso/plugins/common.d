@@ -1082,66 +1082,16 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         version(Cygwin_) stdout.flush();
                     }
 
-                    bool shouldWhois;
+                    immutable result = filterUser(mutEvent, privilegeLevel);
 
-                    with (PrivilegeLevel)
-                    final switch (privilegeLevel)
+                    with (FilterResult)
+                    final switch (result)
                     {
-                    case whitelist:
-                    case admin:
-                        immutable result = privateState.filterUser(mutEvent);
-
-                        with (privateState)
-                        with (FilterResult)
-                        final switch (result)
-                        {
-                        case pass:
-                            import std.algorithm.searching : canFind;
-
-                            if ((privilegeLevel == admin) &&
-                                !bot.admins.canFind(mutEvent.sender.account))
-                            {
-                                static if (verbose)
-                                {
-                                    writefln("...%s passed privilege check but isn't admin " ~
-                                        "when admin is what we want; continue",
-                                        mutEvent.sender.nickname);
-                                    version(Cygwin_) stdout.flush();
-                                }
-                                return Next.continue_;
-                            }
-                            break;
-
-                        case whois:
-                            shouldWhois = true;
-                            break;
-
-                        case fail:
-                            static if (verbose)
-                            {
-                                import kameloso.common : logger;
-                                logger.warningf("...%s failed privilege check; continue", mutEvent.sender.nickname);
-                            }
-                            return Next.continue_;
-                        }
+                    case pass:
+                        // Drop down
                         break;
 
-                    case anyone:
-                        if (mutEvent.sender.class_ == IRCUser.Class.blacklist)
-                        {
-                            // Continue with the next function or abort?
-                            return Next.continue_;
-                        }
-
-                        shouldWhois = true;
-                        break;
-
-                    case ignore:
-                        break;
-                    }
-
-                    if (shouldWhois)
-                    {
+                    case whois:
                         import kameloso.plugins.common : doWhois;
 
                         alias This = typeof(this);
@@ -1179,6 +1129,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             pragma(msg, Params);
                             static assert(0, "Unknown event handler function signature");
                         }
+
+                    case fail:
+                        return Next.continue_;
                     }
                 }
 
