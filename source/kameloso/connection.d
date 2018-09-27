@@ -383,7 +383,7 @@ void connectFiber(ref Connection conn, ref bool abort)
     {
         attempt.ip = ip;
 
-        Socket* socket = (ip.addressFamily == AddressFamily.INET6) ? &conn.socket6 : &conn.socket4;
+        conn.socket = (ip.addressFamily == AddressFamily.INET6) ? &conn.socket6 : &conn.socket4;
 
         enum connectionRetries = 3;
 
@@ -394,8 +394,8 @@ void connectFiber(ref Connection conn, ref bool abort)
             if ((i > 0) || (retry > 0))
             {
                 import std.socket : SocketShutdown;
-                socket.shutdown(SocketShutdown.BOTH);
-                socket.close();
+                conn.socket.shutdown(SocketShutdown.BOTH);
+                conn.socket.close();
                 conn.reset();
             }
 
@@ -405,7 +405,7 @@ void connectFiber(ref Connection conn, ref bool abort)
                 attempt.state = State.preconnect;
                 yield(attempt);
 
-                socket.connect(ip);
+                conn.socket.connect(ip);
 
                 // If we're here no exception was thrown, so we're connected
                 attempt.state = State.connected;
