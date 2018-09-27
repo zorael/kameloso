@@ -433,10 +433,10 @@ enum ChannelPolicy
 /// What level of privilege is needed to trigger an event.
 enum PrivilegeLevel
 {
-    anyone, /// Anyone may trigger this event.
-    whitelist, /// Only those of the `whitelist` class may trigger this event.
-    admin, /// Only the administrators may trigger this event.
-    ignore, /// Override privilege checks.
+    ignore = 0, /// Override privilege checks.
+    anyone = 1, /// Anyone may trigger this event.
+    whitelist = 2, /// Only those of the `whitelist` class may trigger this event.
+    admin = 3, /// Only the administrators may trigger this event.
 }
 
 
