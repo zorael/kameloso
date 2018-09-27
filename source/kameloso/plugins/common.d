@@ -630,45 +630,62 @@ struct Configuration;
  +  and deny use.
  +
  +  Params:
- +      state = The current `IRCPluginState` for context (`admins` and
- +          `whitelist` arrays, etc).
  +      event = `kameloso.ircdefs.IRCEvent` to filter.
+ +      level = The `PrivilegeLevel` context in which this user should be
+ +          filtered.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
  +      information about the sender is needed via a `WHOIS` call.
  +/
-FilterResult filterUser(const IRCPluginState state, const IRCEvent event) @safe
+FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 {
     import kameloso.constants : Timeout;
-    import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
 
     immutable user = event.sender;
     immutable now = Clock.currTime.toUnixTime;
-
     immutable timediff = (now - user.lastWhois);
-    immutable isAdmin = state.bot.admins.canFind(user.account);
-    immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
-    immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
 
-    if (user.account.length && (isAdmin || isWhitelisted))
+    if (user.account.length)
     {
-        return FilterResult.pass;
-    }
-    else if (isBlacklisted)
-    {
-        return FilterResult.fail;
-    }
-    else if ((!user.account.length && (timediff > Timeout.whois)) ||
-        (!isWhitelisted && (timediff > 6 * Timeout.whois)))
-    {
-        return FilterResult.whois;
+        immutable whoisExpired = (timediff > 6 * Timeout.whoisRetry);
+        immutable isAdmin = (user.class_ == IRCUser.Class.admin);  // Trust in persistence.d
+        immutable isWhitelisted = (user.class_ == IRCUser.Class.whitelist);
+        immutable isAnyone = (user.class_ == IRCUser.Class.anyone);
+        immutable isBlacklisted = (user.class_ == IRCUser.Class.blacklist);
+        //immutable isSpecial = (user.class_ == IRCUser.Class.special);
+
+        if (isAdmin && (level <= PrivilegeLevel.admin))
+        {
+            return FilterResult.pass;
+        }
+        else if (isWhitelisted && (level <= PrivilegeLevel.whitelist))
+        {
+            return FilterResult.pass;
+        }
+        else if (isAnyone && ((level <= PrivilegeLevel.anyone) || whoisExpired))
+        {
+            return FilterResult.pass;
+        }
+        else if ((level == PrivilegeLevel.ignore) && !isBlacklisted)
+        {
+            return FilterResult.pass;
+        }
+        /*else if (isBlacklisted || isSpecial)
+        {
+            return FilterResult.fail;
+        }*/
     }
     else
     {
-        return FilterResult.fail;
+        if (timediff > Timeout.whoisRetry)
+        {
+            return FilterResult.whois;
+        }
     }
+
+    return FilterResult.fail;
 }
 
 ///
@@ -677,37 +694,37 @@ unittest
     import std.conv : text;
     import std.datetime.systime : Clock;
 
-    IRCPluginState state;
     IRCEvent event;
+    PrivilegeLevel level = PrivilegeLevel.admin;
 
     event.type = IRCEvent.Type.CHAN;
     event.sender.nickname = "zorael";
 
-    immutable res1 = state.filterUser(event);
+    immutable res1 = filterUser(event, level);
     assert((res1 == FilterResult.whois), res1.text);
 
     event.sender.account = "zorael";
     state.bot.admins = [ "zorael" ];
 
-    immutable res2 = state.filterUser(event);
+    immutable res2 = filterUser(event, level);
     assert((res2 == FilterResult.pass), res2.text);
 
     state.bot.admins = [ "harbl" ];
     event.sender.class_ = IRCUser.Class.whitelist;
 
-    immutable res3 = state.filterUser(event);
-    assert((res3 == FilterResult.pass), res3.text);
+    immutable res3 = filterUser(event, level);
+    assert((res3 == FilterResult.fail), res3.text);
 
     event.sender.class_ = IRCUser.Class.anyone;
     event.sender.lastWhois = Clock.currTime.toUnixTime;
 
-    immutable res4 = state.filterUser(event);
+    immutable res4 = filterUser(event, level);
     assert((res4 == FilterResult.fail), res4.text);
 
     event.sender.class_ = IRCUser.Class.blacklist;
     event.sender.lastWhois = long.init;
 
-    immutable res5 = state.filterUser(event);
+    immutable res5 = filterUser(event, level);
     assert((res5 == FilterResult.fail), res5.text);
 }
 
