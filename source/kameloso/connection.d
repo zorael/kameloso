@@ -23,13 +23,13 @@ private:
     /// Real IPv4 and IPv6 sockets to connect through.
     Socket socket4, socket6;
 
+public:
     /++
      +  Pointer to the socket of the `std.socket.AddressFamily` we want to
      +  connect with.
      +/
     Socket* socket;
 
-public:
     /// IPs already resolved using `.resolveFiber`.
     Address[] ips;
 
