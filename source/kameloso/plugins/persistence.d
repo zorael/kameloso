@@ -47,12 +47,24 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             switch (event.type)
             {
             case JOIN:
-                if (account.length) goto case ACCOUNT;
+                if (account.length) goto case RPL_WHOISACCOUNT;
+                break;
+
+            case ACCOUNT:
+                if (account == "*")
+                {
+                    // User logged out, reset lastWhois so it can be triggered again later
+                    // A value of 0L won't be melded...
+                    lastWhois = 1L;
+                }
+                else
+                {
+                    goto case RPL_WHOISACCOUNT;
+                }
                 break;
 
             case RPL_WHOISACCOUNT:
             case RPL_WHOISUSER:
-            case ACCOUNT:
                 // Record WHOIS if we have new account information
                 import std.algorithm.searching : canFind;
                 import std.datetime.systime : Clock;
@@ -73,7 +85,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             default:
                 if (account.length && (account != "*") && !stored.account.length)
                 {
-                    goto case ACCOUNT;
+                    goto case RPL_WHOISACCOUNT;
                 }
                 break;
             }
