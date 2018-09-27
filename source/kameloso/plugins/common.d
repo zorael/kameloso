@@ -691,7 +691,7 @@ FilterResult filterUser(const IRCEvent event, const PrivilegeLevel level) @safe
 ///
 unittest
 {
-    import std.conv : text;
+    import kameloso.conv : Enum;
     import std.datetime.systime : Clock;
 
     IRCEvent event;
@@ -701,30 +701,30 @@ unittest
     event.sender.nickname = "zorael";
 
     immutable res1 = filterUser(event, level);
-    assert((res1 == FilterResult.whois), res1.text);
+    assert((res1 == FilterResult.whois), Enum!FilterResult.toString(res1));
 
     event.sender.class_ = IRCUser.Class.admin;
     event.sender.account = "zorael";
 
     immutable res2 = filterUser(event, level);
-    assert((res2 == FilterResult.pass), res2.text);
+    assert((res2 == FilterResult.pass), Enum!FilterResult.toString(res2));
 
     event.sender.class_ = IRCUser.Class.whitelist;
 
     immutable res3 = filterUser(event, level);
-    assert((res3 == FilterResult.fail), res3.text);
+    assert((res3 == FilterResult.fail), Enum!FilterResult.toString(res3));
 
     event.sender.class_ = IRCUser.Class.anyone;
     event.sender.lastWhois = Clock.currTime.toUnixTime;
 
     immutable res4 = filterUser(event, level);
-    assert((res4 == FilterResult.fail), res4.text);
+    assert((res4 == FilterResult.fail), Enum!FilterResult.toString(res4));
 
     event.sender.class_ = IRCUser.Class.blacklist;
     event.sender.lastWhois = long.init;
 
     immutable res5 = filterUser(event, level);
-    assert((res5 == FilterResult.fail), res5.text);
+    assert((res5 == FilterResult.fail), Enum!FilterResult.toString(res5));
 }
 
 
