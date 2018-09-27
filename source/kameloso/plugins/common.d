@@ -703,13 +703,12 @@ unittest
     immutable res1 = filterUser(event, level);
     assert((res1 == FilterResult.whois), res1.text);
 
+    event.sender.class_ = IRCUser.Class.admin;
     event.sender.account = "zorael";
-    state.bot.admins = [ "zorael" ];
 
     immutable res2 = filterUser(event, level);
     assert((res2 == FilterResult.pass), res2.text);
 
-    state.bot.admins = [ "harbl" ];
     event.sender.class_ = IRCUser.Class.whitelist;
 
     immutable res3 = filterUser(event, level);
