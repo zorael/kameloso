@@ -10,8 +10,7 @@
  +  It has no commands. It only does postprocessing and doesn't handle
  +  `kameloso.ircdefs.IRCEvent`s in the normal sense at all.
  +
- +  It is technically optional but it's very enriching for plugins, so it stays
- +  recommended.
+ +  It is mandatory for plugins to pick up user classes.
  +/
 module kameloso.plugins.persistence;
 
