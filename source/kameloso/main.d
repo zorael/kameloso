@@ -561,8 +561,7 @@ Next mainLoop(ref Client client)
                 // Benign socket error; break foreach and try again
                 import core.thread : Thread;
                 import core.time : seconds;
-                logger.warningf("Socket.ERROR and last error: %s%s",
-                    logtint, attempt.lastSocketError_);
+                logger.warningf("Socket error! %s%s", logtint, attempt.lastSocketError_);
                 Thread.sleep(1.seconds);
                 break listenerloop;
 
@@ -572,15 +571,17 @@ Next mainLoop(ref Client client)
 
                 if (attempt.bytesReceived == 0)
                 {
-                    logger.errorf("ZERO RECEIVED! last error: %s%s", logtint, attempt.lastSocketError_);
-                    logger.error("Assuming dead and returning.");
+                    logger.errorf("Empty response from server! (%s%s%s)", logtint,
+                        attempt.lastSocketError_, errortint);
                     return Next.continue_;
                 }
 
-                logger.errorf("FATAL SOCKET ERROR (%s%s%s)", logtint,
+                logger.errorf("Failed to read from server! (%s%s%s)", logtint,
                     attempt.lastSocketError_, errortint);
 
-                if ((attempt.lastSocketError_ == "Transport endpoint is not connected") && settings.ipv6)
+                import std.socket : AddressFamily;
+                if ((client.conn.socket.addressFamily == AddressFamily.INET6) &&
+                    (attempt.lastSocketError_ == "Transport endpoint is not connected"))
                 {
                     logger.logf("Try running the bot with %s--ipv6=false", infotint);
                 }
