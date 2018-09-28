@@ -238,7 +238,7 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
 
     // --writeconfig was passed; write configuration to file and quit
 
-    string infotint, post;
+    string logtint, infotint, post;
 
     version(Colours)
     {
@@ -250,13 +250,14 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
             import kameloso.logger : KamelosoLogger;
             import std.experimental.logger : LogLevel;
 
+            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
             infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
             immutable defaulttint = BashForeground.default_;
             post = defaulttint.colour;
         }
     }
 
-    printVersionInfo(infotint, post);
+    printVersionInfo(logtint, post);
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
