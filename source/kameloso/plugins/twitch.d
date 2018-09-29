@@ -507,6 +507,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-profileImageURL":
             // URL link to profile picture.
 
+        case "flags":
+            // Unsure.
+            // flags =
+            // flags = 4-11:P.5,40-46:P.6
+
             // Ignore these events.
             break;
 
