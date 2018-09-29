@@ -252,8 +252,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 break;
 
             default:
-                import kameloso.common : logger;
-                logger.warning("Unknown Twitch msg-id: ", value);
+                version(TwitchWarnings)
+                {
+                    import kameloso.bash : TerminalToken;
+                    import kameloso.common : logger;
+                    logger.warning("Unknown Twitch msg-id: ", value, TerminalToken.bell);
+                }
                 break;
             }
             break;
@@ -520,9 +524,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "number-of-viewers":
             // (Optional) Number of viewers watching the host.
         default:
-            import kameloso.common : logger;
-            // Verbosely
-            logger.warningf("Unknown Twitch tag: %s = %s", key, value);
+            version(TwitchWarnings)
+            {
+                import kameloso.bash : TerminalToken;
+                import kameloso.common : logger;
+                logger.warningf("Unknown Twitch tag: %s = %s%s", key, value, TerminalToken.bell);
+            }
             break;
         }
     }
