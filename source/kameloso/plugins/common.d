@@ -2447,7 +2447,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             immutable userIndex = channels[event.channel].users
                 .countUntil(event.sender.nickname);
 
-            assert((userIndex != -1), "Tried to part a user that wasn't there: " ~ event.sender.nickname);
+            if (userIndex == -1)
+            {
+                // On Twitch servers with no NAMES on joining a channel, users
+                // that you haven't seen may leave despite never having been seen
+                return;
+            }
 
             channels[event.channel].users = channels[event.channel].users.remove(userIndex);
 
