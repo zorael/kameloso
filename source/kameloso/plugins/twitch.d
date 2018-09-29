@@ -243,6 +243,10 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.aux = value;
                 break;
 
+            case "submysterygift":
+                event.type = Type.TWITCH_SUBGIFT;
+                break;
+
             case "giftpaidupgrade":
                 event.type = Type.TWITCH_GIFTUPGRADE;
                 break;
@@ -374,6 +378,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-ritual-name":
             // msg-param-ritual-name = 'new_chatter'
             // [ritual] tmi.twitch.tv [#couragejd]: "@callmejosh15 is new here. Say hello!"
+        case "msg-param-promo-name":
+            // Promotion name
+            // msg-param-promo-name = Subtember
             event.aux = value;
             break;
 
@@ -400,6 +407,10 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
+        case "msg-param-mass-gift-count":  // Collides with something else
+            // Number of subs being gifted
+        case "msg-param-promo-gift-total":
+            // Number of total gifts this promotion
             import std.conv : to;
             event.count = value.to!int;
             break;
