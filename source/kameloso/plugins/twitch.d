@@ -243,6 +243,10 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 event.aux = value;
                 break;
 
+            case "giftpaidupgrade":
+                event.type = Type.TWITCH_GIFTUPGRADE;
+                break;
+
             default:
                 import kameloso.common : logger;
                 logger.warning("Unknown Twitch msg-id: ", value);
@@ -311,10 +315,14 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "msg-param-recipient-display-name":
+        case "msg-param-sender-name":
+            // In a GIFTUPGRADE the display name of the one who started the gift sub train?
             event.target.alias_ = value;
             break;
 
         case "msg-param-recipient-user-name":
+        case "msg-param-sender-login":
+            // In a GIFTUPGRADE the one who started the gift sub train?
             event.target.nickname = value;
             break;
 
