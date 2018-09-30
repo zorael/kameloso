@@ -516,6 +516,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // flags =
             // flags = 4-11:P.5,40-46:P.6
 
+        case "msg-param-domain":
+            // msg-param-domain = owl2018
+            // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
+            // Unsure.
+
             // Ignore these events.
             break;
 
