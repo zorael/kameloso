@@ -1978,7 +1978,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                     final switch (request.privilegeLevel)
                     {
                     case admin:
-                        if (bot.admins.canFind(event.target.nickname))
+                        if (event.target.class_ == IRCUser.Class.admin)
                         {
                             explainReplay();
                             request.trigger();
@@ -1987,7 +1987,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
                         break;
 
                     case whitelist:
-                        if (bot.admins.canFind(event.target.nickname) ||
+                        if ((event.target.class_ == IRCUser.Class.admin) ||
                             (event.target.class_ == IRCUser.Class.whitelist))
                         {
                             explainReplay();
