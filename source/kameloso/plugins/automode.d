@@ -99,6 +99,7 @@ void initResources(AutomodePlugin plugin)
  +/
 @(IRCEvent.Type.ACCOUNT)
 @(IRCEvent.Type.RPL_WHOISACCOUNT)
+@(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.JOIN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
@@ -118,6 +119,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         break;
 
     case RPL_WHOISACCOUNT:
+    case RPL_WHOISREGNICK:
         account = target.account;
         nickname = target.nickname;
         break;

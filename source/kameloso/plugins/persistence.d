@@ -64,6 +64,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
             case RPL_WHOISACCOUNT:
             case RPL_WHOISUSER:
+            case RPL_WHOISREGNICK:
                 // Record WHOIS if we have new account information
                 import std.algorithm.searching : canFind;
                 import std.datetime.systime : Clock;
