@@ -698,8 +698,10 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
     case RPL_WHOISREGNICK: // 307
         // :irc.x2x.cc 307 kameloso^^ py-ctcp :has identified for this nick
         // :irc.x2x.cc 307 kameloso^^ wob^2 :has identified for this nick
+        // What is the nickname? Are they always the same?
         slice.nom(' '); // bot nickname
-        event.target.nickname = slice.nom(" :");
+        event.target.account = slice.nom(" :");
+        event.target.nickname = event.target.account;  // uneducated guess
         event.content = event.target.nickname;
         break;
 
