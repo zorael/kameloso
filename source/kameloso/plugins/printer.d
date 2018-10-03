@@ -247,57 +247,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     immutable logLocation = plugin.logDirectory.expandTilde;
     if (!plugin.verifyLogLocation(logLocation)) return;
 
-    // Save raws first
-    with (plugin)
-    {
-        if (printerSettings.logRaw)
-        {
-            try
-            {
-                immutable path = buildNormalizedPath(logLocation,
-                    state.bot.server.address ~ ".raw.log");
-
-                if (path !in buffers)
-                {
-                    import std.file : exists;
-
-                    buffers[path] = LogLineBuffer(path);
-
-                    if (path.exists)
-                    {
-                        buffers[path].lines.put("\n");  // two lines
-                    }
-
-                    buffers[path].lines.put(datestamp);
-                }
-
-                if (printerSettings.bufferedWrites)
-                {
-                    buffers[path].lines.put(event.raw);
-                }
-                else
-                {
-                    auto file = File(path, "a");
-                    file.writeln(event.raw);
-                }
-            }
-            catch (const FileException e)
-            {
-                logger.warning("File exception caught when writing to log: ", e.msg);
-            }
-            catch (const ErrnoException e)
-            {
-                logger.warning("Exception caught when writing to log: ", e.msg);
-            }
-            catch (const Exception e)
-            {
-                logger.warning("Unhandled exception caught when writing to log: ", e.msg);
-            }
-        }
-    }
-
     import std.algorithm.searching : canFind;
-
     if (!plugin.printerSettings.logAllChannels &&
         event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
     {
@@ -441,6 +391,13 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         {
             logger.warning("Unhandled exception caught when writing to log: ", e.msg);
         }
+    }
+
+    if (plugin.printerSettings.logRaw)
+    {
+        // No need to sanitise the server address; it's ASCII
+        writeToPath(string.init, buildNormalizedPath(logLocation,
+            plugin.state.bot.server.address ~ ".raw.log"), false);
     }
 
     with (IRCEvent.Type)
