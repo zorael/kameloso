@@ -554,7 +554,8 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 @(IRCEvent.Type.ERR_NOMOTD)
 void commitLogs(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
+    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs ||
+        !plugin.printerSettings.bufferedWrites) return;
 
     import std.file : FileException;
 
