@@ -2057,6 +2057,79 @@ unittest
 }
 
 
+// sanitisedPath
+/++
+ +  Replaces some characters in a string that don't translate well to paths.
+ +
+ +  This is platform-specific, as Windows uses backslashes as directory
+ +  separators and percentages for environment variables, whereas Posix uses
+ +  forward slashes and dollar signs.
+ +
+ +  Params:
+ +      path = A filesystem path in string form.
+ +
+ +  Returns:
+ +      The passed path with some characters replaced.
+ +/
+string sanitisedPath(const string path)
+{
+    import std.array : replace;
+
+    // Replace some characters that don't translate well to paths.
+    version(Windows)
+    {
+        return path
+            .replace("\\", "_")
+            .replace("%", "_");
+    }
+    else /*version(Posix)*/
+    {
+        return path
+            .replace("/", "_")
+            .replace("$", "_")
+            .replace("{", "_")
+            .replace("}", "_");
+    }
+}
+
+///
+unittest
+{
+    {
+        immutable before = sanitisedPath("unchanged");
+        immutable after = "unchanged";
+        assert((before == after), after);
+    }
+
+    version(Windows)
+    {
+        {
+            immutable before = sanitisedPath("a\\b");
+            immutable after = "a_b";
+            assert((before == after), after);
+        }
+        {
+            immutable before = sanitisedPath("a%PATH%b");
+            immutable after = "a_PATH_b";
+            assert((before == after), after);
+        }
+    }
+    else /*version(Posix)*/
+    {
+        {
+            immutable before = sanitisedPath("a/b");
+            immutable after = "a_b";
+            assert((before == after), after);
+        }
+        {
+            immutable before = sanitisedPath("a${PATH}b");
+            immutable after = "a__PATH_b";
+            assert((before == after), after);
+        }
+    }
+}
+
+
 // initialise
 /++
  +  Set the next periodical timestamp to midnight immediately after plugin
