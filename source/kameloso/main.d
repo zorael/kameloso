@@ -729,7 +729,23 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
             {
                 if (fiber.state == Fiber.State.HOLD)
                 {
-                    fiber.call();
+                    import kameloso.thread : CarryingFiber;
+
+                    // Specialcase CarryingFiber!IRCEvent to update it to carry
+                    // the current IRCEvent.
+
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
+                    {
+                        if (carryingFiber.payload == IRCEvent.init)
+                        {
+                            carryingFiber.payload = event;
+                        }
+                        carryingFiber.call();
+                    }
+                    else
+                    {
+                        fiber.call();
+                    }
                 }
 
                 if (fiber.state == Fiber.State.TERM)
