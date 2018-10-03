@@ -418,18 +418,100 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import kameloso.string : stripped;
+    return plugin.addToList(event.content.stripped, "whitelist");
+}
+
+
+// addToList
+/++
+ +  Adds an account to either the whitelist or the blacklist.
+ +
+ +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      specified = The nickname or account to white-/blacklist.
+ +      list = Which of "whitelist" or "blacklist" to add to.
+ +/
+void addToList(AdminPlugin plugin, const string specified, const string list)
+{
     import kameloso.irc : isValidNickname;
     import kameloso.string : contains, stripped;
 
-    immutable account = event.content.stripped;
+    const user = specified in plugin.state.users;
 
-    if (!account.isValidNickname(plugin.state.bot.server))
+    if (user && user.account.length)
     {
-        logger.warning("Invalid account: ", account);
-        return;
+        // user.nickname == specified
+        return plugin.alterAccountClassifier(Yes.add, list, user.account);
     }
+    else if (!specified.isValidNickname(plugin.state.bot.server))
+    {
+        logger.warning("Invalid nickname/account: ", specified);
+    }
+    else
+    {
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
 
-    plugin.alterAccountClassifier(Yes.add, "whitelist", account);
+        // User not on record or on record but no account; WHOIS and try based on results
+
+        void dg()
+        {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            const whoisEvent = thisFiber.payload;
+            writeln(whoisEvent.type);
+            IRCUser whoisUser;
+
+            with (IRCEvent.Type)
+            switch (whoisEvent.type)
+            {
+            case RPL_WHOISACCOUNT:
+            case RPL_WHOISREGNICK:
+                whoisUser = whoisEvent.target;
+                break;
+
+            case ACCOUNT:
+                whoisUser = whoisEvent.sender;
+                break;
+
+            case RPL_ENDOFWHOIS:
+                logger.logf("% is not logged onto a service account.", specified);
+                return;  // End fiber
+
+            case ERR_NOSUCHNICK:
+                whoisUser = whoisEvent.target;
+                break;  // Drop down
+
+            default:
+                assert(0);
+            }
+
+            immutable m = plugin.state.bot.server.caseMapping;
+            if (IRCUser.toLowercase(specified, m) != IRCUser.toLowercase(whoisUser.nickname, m))
+            {
+                // wrong WHOIS; reset and await a new one
+                Fiber.yield();
+                return dg();
+            }
+
+            immutable endAccount = whoisUser.account.length ? whoisUser.account : specified;
+            plugin.alterAccountClassifier(Yes.add, list, endAccount);
+        }
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+        plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
+
+        import kameloso.messaging : raw;
+        plugin.state.raw("WHOIS " ~ specified);
+    }
 }
 
 
@@ -476,18 +558,8 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.irc : isValidNickname;
-    import kameloso.string : contains, stripped;
-
-    immutable account = event.content.stripped;
-
-    if (!account.isValidNickname(plugin.state.bot.server))
-    {
-        logger.warning("Invalid account: ", account);
-        return;
-    }
-
-    plugin.alterAccountClassifier(Yes.add, "blacklist", account);
+    import kameloso.string : stripped;
+    return plugin.addToList(event.content.stripped, "blacklist");
 }
 
 
