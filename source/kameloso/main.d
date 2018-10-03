@@ -1347,7 +1347,7 @@ int main(string[] args)
                 return 1;
             }
 
-            string infotint; //, logtint;
+            string infotint, logtint;
 
             version(Colours)
             {
@@ -1358,7 +1358,7 @@ int main(string[] args)
                     import std.experimental.logger : LogLevel;
 
                     infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                    //logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
+                    logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
                 }
             }
 
@@ -1371,9 +1371,19 @@ int main(string[] args)
                 logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
             }
 
+            import kameloso.plugins.common : IRCPluginInitialisationException;
+
             // Ensure initialised resources after resolve so we know we have a
             // valid server to create a directory for.
-            client.initPluginResources();
+            try
+            {
+                client.initPluginResources();
+            }
+            catch (const IRCPluginInitialisationException e)
+            {
+                logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
+                return Next.returnFailure;
+            }
 
             immutable actionAfterConnect = tryConnect(client);
 
@@ -1400,7 +1410,16 @@ int main(string[] args)
             }
 
             client.parser = IRCParser(bot);
-            client.startPlugins();
+
+            try
+            {
+                client.startPlugins();
+            }
+            catch (const IRCPluginInitialisationException e)
+            {
+                logger.warningf("A plugin failed to start: %s%s", logtint, e.msg);
+                return Next.returnFailure;
+            }
 
             // Start the main loop
             next = client.mainLoop();
