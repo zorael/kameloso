@@ -280,11 +280,19 @@ void reloadClassifiersFromDisk(PersistenceService service)
 void initResources(PersistenceService service)
 {
     import kameloso.json : JSONStorage;
-    import std.json : JSONValue;
+    import std.json : JSONException, JSONValue;
 
     JSONStorage json;
     json.reset();
-    json.load(service.userFile);
+
+    try
+    {
+        json.load(service.userFile);
+    }
+    catch (const JSONException e)
+    {
+        throw new IRCPluginInitialisationException(service.userFile ~ " may be malformed.");
+    }
 
     if ("whitelist" !in json)
     {
