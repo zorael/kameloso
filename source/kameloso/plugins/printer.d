@@ -469,16 +469,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (thisChannel.users.canFind(sender.nickname))
             {
                 // Channel message
-                writeToPath(buildNormalizedPath(logLocation, channelName ~ ".log"));
+                writeToPath(channelName, buildNormalizedPath(logLocation, channelName.sanitisedPath ~ ".log"));
             }
         }
 
-        immutable queryPath = buildNormalizedPath(logLocation, sender.nickname ~ ".log");
-
-        if (queryPath in plugin.buffers)
+        if (sender.nickname.length && sender.nickname in plugin.buffers)
         {
+            immutable queryPath = buildNormalizedPath(logLocation, sender.nickname.sanitisedPath ~ ".log");
             // There is an open query buffer; write to it too
-            writeToPath(queryPath);
+            writeToPath(sender.nickname, queryPath);
         }
         break;
 
@@ -486,17 +485,19 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (channel.length && (sender.nickname.length || type == MODE))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeToPath(buildNormalizedPath(logLocation, channel ~ ".log"));
+            writeToPath(channel, buildNormalizedPath(logLocation, channel.sanitisedPath ~ ".log"));
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
-            writeToPath(buildNormalizedPath(logLocation, sender.nickname ~ ".log"));
+            writeToPath(sender.nickname, buildNormalizedPath(logLocation,
+                sender.nickname.sanitisedPath ~ ".log"));
         }
         else if (!sender.nickname.length && sender.address.length)
         {
             // Server
-            writeToPath(buildNormalizedPath(logLocation, state.bot.server.address ~ ".log"));
+            writeToPath(state.bot.server.address, buildNormalizedPath(logLocation,
+                state.bot.server.address.sanitisedPath ~ ".log"));
         }
         else
         {
