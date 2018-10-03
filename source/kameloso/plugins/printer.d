@@ -306,70 +306,125 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     }
 
     /// Write buffered lines.
-    void writeToPath(const string path)
+    void writeToPath(const string key, const string path, bool doFormat = true)
     {
         try
         {
+            LogLineBuffer* pathBuffer = key in plugin.buffers;
+
+            if (!pathBuffer)
+            {
+                plugin.buffers[key] = LogLineBuffer(path);
+                pathBuffer = key in plugin.buffers;
+
+                import std.file : exists;
+                if (pathBuffer.path.exists)
+                {
+                    if (plugin.printerSettings.bufferedWrites)
+                    {
+                        pathBuffer.lines.put("\n");  // two lines
+                        pathBuffer.lines.put(datestamp);
+                    }
+                    else
+                    {
+                        auto file = File(pathBuffer.path, "a");
+                        file.writeln("\n"); // likewise
+                        file.writeln(datestamp);
+                    }
+                }
+            }
+
             if (plugin.printerSettings.bufferedWrites)
             {
-                if (path !in plugin.buffers)
+                if (doFormat)
                 {
-                    import std.file : exists;
-                    plugin.buffers[path] = LogLineBuffer(path);
-
-                    if (path.exists)
-                    {
-                        plugin.buffers[path].lines.put("\n");  // two lines
-                    }
-
-                    plugin.buffers[path].lines.put(datestamp);
+                    import std.array : Appender;
+                    Appender!string sink;
+                    sink.reserve(512);
+                    plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
+                    pathBuffer.lines ~= sink.data;
                 }
-
-                import std.array : Appender;
-                Appender!string sink;
-                sink.reserve(512);
-                plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
-                plugin.buffers[path].lines ~= sink.data;
+                else
+                {
+                    pathBuffer.lines ~= event.raw;
+                }
             }
             else
             {
-                plugin.formatMessageMonochrome(File(path, "a").lockingTextWriter, event, false);
+                auto file = File(pathBuffer.path, "a");
+
+                if (doFormat)
+                {
+                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false);
+                }
+                else
+                {
+                    file.writeln(event.raw);
+                }
             }
 
-            if (event.errors.length && plugin.printerSettings.logErrors)
+            if (doFormat && event.errors.length && plugin.printerSettings.logErrors)
             {
                 import kameloso.printing : formatObjects;
 
-                immutable errPath = buildNormalizedPath(logLocation, plugin.state.bot.server.address ~ ".err.log");
+                enum errorLabel = "<error>";
+                LogLineBuffer* errBuffer = errorLabel in plugin.buffers;
 
-                if (errPath !in plugin.buffers) plugin.buffers[errPath] = LogLineBuffer(errPath);
+                if (!errBuffer)
+                {
+                    plugin.buffers[errorLabel] = LogLineBuffer(buildNormalizedPath(logLocation,
+                        plugin.state.bot.server.address ~ ".err.log"));
+                    errBuffer = errorLabel in plugin.buffers;
+
+                    import std.file : exists;
+                    if (errBuffer.path.exists)
+                    {
+                        if (plugin.printerSettings.bufferedWrites)
+                        {
+                            errBuffer.lines.put("\n");  // two lines
+                            errBuffer.lines.put(datestamp);
+                        }
+                        else
+                        {
+                            auto file = File(errBuffer.path, "a");
+                            file.writeln("\n"); // likewise
+                            file.writeln(datestamp);
+                        }
+                    }
+                }
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
+                    errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
 
                     if (event.sender != IRCUser.init)
                     {
-                        plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
                     }
 
                     if (event.target != IRCUser.init)
                     {
-                        plugin.buffers[errPath].lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
+                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
                     }
                 }
                 else
                 {
-                    File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event);
+                    File(errBuffer.path, "a")
+                        .lockingTextWriter
+                        .formatObjects!(Yes.printAll, No.coloured)(event);
 
                     if (event.sender != IRCUser.init)
                     {
-                        File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                        File(errBuffer.path, "a")
+                            .lockingTextWriter
+                            .formatObjects!(Yes.printAll, No.coloured)(event.sender);
                     }
 
                     if (event.target != IRCUser.init)
                     {
-                        File(errPath, "a").lockingTextWriter.formatObjects!(Yes.printAll, No.coloured)(event.target);
+                        File(errBuffer.path, "a")
+                            .lockingTextWriter
+                            .formatObjects!(Yes.printAll, No.coloured)(event.target);
                     }
                 }
             }
