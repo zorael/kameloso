@@ -181,34 +181,6 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandForgetUserAccounts
-/++
- +  Forgets all users' accounts, prompting new `WHOIS` calls.
- +
- +  This is only done locally to this plugin; other plugins will retain the
- +  information. It is a tool to help diagnose whether logins are being caught
- +  or not, used in tandem with `onCommandShowOneUser`.
- +/
-debug
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(PrivilegeLevel.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "forgetaccounts")
-@Description("[debug] Forget user accounts (for this plugin).")
-void onCommandForgetAccounts(AdminPlugin plugin)
-{
-    if (!plugin.adminSettings.enabled) return;
-
-    foreach (ref user; plugin.state.users)
-    {
-        writeln("Clearing ", user.nickname);
-        user.account = string.init;
-        user.lastWhois = 0L;
-    }
-}
-
-
 // onCommandSave
 /++
  +  Saves current configuration to disk.
