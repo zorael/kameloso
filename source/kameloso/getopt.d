@@ -246,12 +246,11 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
 
         if (!settings.monochrome)
         {
-            import kameloso.bash : colour;
             import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
+            import kameloso.bash : colour;
 
-            logtint = KamelosoLogger.tint(LogLevel.all, settings.brightTerminal).colour;
-            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
             immutable defaulttint = BashForeground.default_;
             post = defaulttint.colour;
         }

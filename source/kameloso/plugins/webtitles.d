@@ -110,11 +110,8 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         if (!settings.monochrome)
         {
-            import kameloso.bash : colour;
             import kameloso.logger : KamelosoLogger;
-            import std.experimental.logger : LogLevel;
-
-            infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+            infotint = (cast(KamelosoLogger)logger).infotint;
         }
     }
 
