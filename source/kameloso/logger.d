@@ -114,6 +114,44 @@ final class KamelosoLogger : Logger
         }
     }
 
+    // tintImpl
+    /++
+     +  Template for returning tints based on the settings of the `this`
+     +  `KamelosoLogger`.
+     +
+     +  This saves us having to pass the brightness setting, and allows for
+     +  making easy aliases for the log level.
+     +
+     +  Params:
+     +      level = Compile-time `LogLevel`.
+     +
+     +  Returns:
+     +      A tint string.
+     +/
+    version(Colours)
+    private string tintImpl(LogLevel level)() const @property
+    {
+        return tint(level, brightTerminal).colour;
+    }
+
+    version(Colours)
+    {
+        /// Provides easy way to get a log tint.
+        alias logtint = tintImpl!(LogLevel.all);
+
+        /// Provides easy way to get an info tint.
+        alias infotint = tintImpl!(LogLevel.info);
+
+        /// Provides easy way to get a warning tint.
+        alias warningtint = tintImpl!(LogLevel.warning);
+
+        /// Provides easy way to get an error tint.
+        alias errortint = tintImpl!(LogLevel.error);
+
+        /// Provides easy way to get a fatal tint.
+        alias fataltint = tintImpl!(LogLevel.fatal);
+    }
+
     /// This override is needed or it won't compile.
     override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
 
