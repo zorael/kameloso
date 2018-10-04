@@ -574,6 +574,21 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
 
     assert(((section == "whitelist") || (section == "blacklist")), section);
 
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        import kameloso.common : settings;
+
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
     JSONStorage json;
     json.reset();
     json.load(plugin.userFile);
@@ -600,7 +615,17 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
 
     if (add)
     {
-        json[section].array ~= accountAsJSON;
+        import std.algorithm.searching : canFind;
+
+        if (json[section].array.canFind(accountAsJSON))
+        {
+            logger.logf("Account %s%s%s already %sed.", infotint, account, logtint, section);
+            return;
+        }
+        else
+        {
+            json[section].array ~= accountAsJSON;
+        }
     }
     else
     {
@@ -611,14 +636,14 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
 
         if (index == -1)
         {
-            logger.logf("No such account %s to de%s", account, section);
+            logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, section);
             return;
         }
 
         json[section] = json[section].array.remove(index);
     }
 
-    logger.logf("%s %s%sed", account, (add ? string.init : "de"), section);
+    logger.logf("%s%sed %s%s%s.", (add ? string.init : "de"), section, infotint, account, logtint);
     json.save(plugin.userFile);
 
     // Force persistence to reload the file with the new changes
