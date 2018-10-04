@@ -98,7 +98,7 @@ struct AdminSettings
  +  prints all incoming server strings byte per byte.
  +
  +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandprintRaw`,
- +  prints all incoming events as assert statements, for use in soure code
+ +  prints all incoming events as assert statements, for use in source code
  +  `unittest` blocks.
  +/
 debug
@@ -159,7 +159,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
-    "the local terminal.", "$command [nickname]")
+    "to the local terminal.", "$command [nickname]")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -343,7 +343,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "delhome")
-@Description("Removes a channel from the list of homes.", "$command [channel]")
+@Description("Removes a channel from the list of homes and leaves it.", "$command [channel]")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -507,7 +507,6 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-
     plugin.alterAccountClassifier(No.add, "whitelist", event.content.stripped);
 }
 
@@ -554,7 +553,6 @@ void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-
     plugin.alterAccountClassifier(No.add, "blacklist", event.content.stripped);
 }
 
@@ -743,7 +741,7 @@ void onCommandAsserts(AdminPlugin plugin)
     if (plugin.adminSettings.printAsserts)
     {
         import kameloso.debugging : formatBotAssignment;
-        // Only print the bot assignment if we're toggling it on
+        // Print the bot assignment but only if we're toggling it on
         formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
     }
 
