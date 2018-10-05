@@ -8,6 +8,12 @@ import std.experimental.logger : Logger;
 
 @safe:
 
+/++
+ +  Build tint colours at compile time, saving the need to compute them during
+ +  runtime. It's a trade-off.
+ +/
+version = CtTints;
+
 
 // KamelosoLogger
 /++
@@ -131,7 +137,23 @@ final class KamelosoLogger : Logger
     version(Colours)
     private string tintImpl(LogLevel level)() const @property
     {
-        return tint(level, brightTerminal).colour;
+        version(CtTints)
+        {
+            if (brightTerminal)
+            {
+                enum ctTint = tint(level, true).colour;
+                return ctTint;
+            }
+            else
+            {
+                enum ctTint = tint(level, false).colour;
+                return ctTint;
+            }
+        }
+        else
+        {
+            return tint(level, brightTerminal).colour;
+        }
     }
 
     version(Colours)
