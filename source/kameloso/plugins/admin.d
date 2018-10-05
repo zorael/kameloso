@@ -467,6 +467,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
             if (IRCUser.toLowercase(specified, m) != IRCUser.toLowercase(whoisUser.nickname, m))
             {
                 // wrong WHOIS; reset and await a new one
+                thisFiber.payload = IRCEvent.init;
                 Fiber.yield();
                 return dg();
             }
