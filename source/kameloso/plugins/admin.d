@@ -452,7 +452,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
                 break;
 
             case RPL_ENDOFWHOIS:
-                logger.logf("% is not logged onto a service account.", specified);
+                logger.logf("%s is not logged onto a service account.", specified);
                 return;  // End fiber
 
             case ERR_NOSUCHNICK:
