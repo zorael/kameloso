@@ -483,7 +483,8 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
         plugin.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
 
         import kameloso.messaging : raw;
-        plugin.state.raw("WHOIS " ~ specified);
+        import std.typecons : Flag, No, Yes;
+        plugin.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ specified);
     }
 }
 
