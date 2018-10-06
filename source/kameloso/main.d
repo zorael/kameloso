@@ -1244,215 +1244,213 @@ int main(string[] args)
         return 1;
     }
 
-    with (client.parser)
+    string pre, post;
+
+    version(Colours)
     {
-        string pre, post;
+        import kameloso.bash : BashForeground, colour;
+
+        if (!settings.monochrome)
+        {
+            immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+            immutable defaulttint = BashForeground.default_;
+            pre = headertint.colour;
+            post = defaulttint.colour;
+        }
+    }
+
+    import std.stdio : writeln;
+    printVersionInfo(pre, post);
+    writeln();
+
+    // Print the current settings to show what's going on.
+    import kameloso.printing : printObjects;
+    printObjects(client.parser.bot, client.parser.bot.server);
+
+    if (!client.parser.bot.homes.length && !client.parser.bot.admins.length)
+    {
+        complainAboutMissingConfiguration(args);
+        return 1;
+    }
+
+    // Resolve the resource directory
+    import std.path : dirName;
+    settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
+        "server", client.parser.bot.server.address);
+    settings.configDirectory = settings.configFile.dirName;
+
+    // Initialise plugins outside the loop once, for the error messages
+    import std.conv : ConvException;
+
+    try
+    {
+        const invalidEntries = client.initPlugins(customSettings);
+        complainAboutInvalidConfigurationEntries(invalidEntries);
+    }
+    catch (const ConvException e)
+    {
+        // Configuration file/--set argument syntax error
+        logger.error(e.msg);
+        return 1;
+    }
+
+    // Save the original nickname *once*, outside the connection loop.
+    // It will change later and knowing this is useful when authenticating
+    client.parser.bot.origNickname = client.parser.bot.nickname;
+
+    // Save a backup snapshot of the bot, for restoring upon reconnections
+    IRCBot backupBot = client.parser.bot;
+
+    /// Enum denoting what we should do next loop.
+    Next next;
+
+    /++
+     +  Bool whether this is the first connection attempt or if we have
+     +  connected at least once already.
+     +/
+    bool firstConnect = true;
+
+    with (client.parser)
+    do
+    {
+        if (!firstConnect)
+        {
+            import kameloso.constants : Timeout;
+            import kameloso.thread : interruptibleSleep;
+            import core.time : seconds;
+
+            // Carry some values but otherwise restore the pristine bot backup
+            backupBot.nickname = bot.nickname;
+            backupBot.homes = bot.homes;
+            backupBot.channels = bot.channels;
+            bot = backupBot;
+
+            logger.log("Please wait a few seconds...");
+            interruptibleSleep(Timeout.retry.seconds, *client.abort);
+
+            // Reinit plugins here so it isn't done on the first connect attempt
+            client.initPlugins(customSettings);
+        }
+
+        client.conn.reset();
+
+        immutable actionAfterResolve = tryResolve(client);
+
+        with (Next)
+        final switch (actionAfterResolve)
+        {
+        case continue_:
+            break;
+
+        case returnSuccess:  // should never happen
+        case retry:  // should never happen
+            assert(0);
+
+        case returnFailure:
+            // No need to teardown; if it's the first connect there's
+            // nothing to tear down, and if it's after the first, later code
+            // will have already torn it down.
+            logger.info("Exiting...");
+            return 1;
+        }
+
+        string infotint, logtint;
 
         version(Colours)
         {
-            import kameloso.bash : BashForeground, colour;
-
             if (!settings.monochrome)
             {
-                immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
-                immutable defaulttint = BashForeground.default_;
-                pre = headertint.colour;
-                post = defaulttint.colour;
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
             }
         }
 
-        import std.stdio : writeln;
-        printVersionInfo(pre, post);
-        writeln();
+        import std.file : exists;
 
-        // Print the current settings to show what's going on.
-        import kameloso.printing : printObjects;
-        printObjects(bot, bot.server);
-
-        if (!bot.homes.length && !bot.admins.length)
+        if (!settings.resourceDirectory.exists)
         {
-            complainAboutMissingConfiguration(args);
-            return 1;
+            import std.file : mkdirRecurse;
+            mkdirRecurse(settings.resourceDirectory);
+            logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
         }
 
-        // Resolve the resource directory
-        import std.path : dirName;
-        settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
-            "server", bot.server.address);
-        settings.configDirectory = settings.configFile.dirName;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
-        // Initialise plugins outside the loop once, for the error messages
-        import std.conv : ConvException;
-
+        // Ensure initialised resources after resolve so we know we have a
+        // valid server to create a directory for.
         try
         {
-            const invalidEntries = client.initPlugins(customSettings);
-            complainAboutInvalidConfigurationEntries(invalidEntries);
+            client.initPluginResources();
         }
-        catch (const ConvException e)
+        catch (const IRCPluginInitialisationException e)
         {
-            // Configuration file/--set argument syntax error
-            logger.error(e.msg);
-            return 1;
+            logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
+            return Next.returnFailure;
         }
 
-        // Save the original nickname *once*, outside the connection loop.
-        // It will change later and knowing this is useful when authenticating
-        bot.origNickname = bot.nickname;
+        immutable actionAfterConnect = tryConnect(client);
 
-        // Save a backup snapshot of the bot, for restoring upon reconnections
-        IRCBot backupBot = bot;
-
-        /// Enum denoting what we should do next loop.
-        Next next;
-
-        /++
-         +  Bool whether this is the first connection attempt or if we have
-         +  connected at least once already.
-         +/
-        bool firstConnect = true;
-
-        do
+        with (Next)
+        final switch (actionAfterConnect)
         {
-            if (!firstConnect)
-            {
-                import kameloso.constants : Timeout;
-                import kameloso.thread : interruptibleSleep;
-                import core.time : seconds;
+        case continue_:
+            break;
 
-                // Carry some values but otherwise restore the pristine bot backup
-                backupBot.nickname = bot.nickname;
-                backupBot.homes = bot.homes;
-                backupBot.channels = bot.channels;
-                bot = backupBot;
+        case returnSuccess:  // should never happen
+        case retry:  // should never happen
+            assert(0);
 
-                logger.log("Please wait a few seconds...");
-                interruptibleSleep(Timeout.retry.seconds, *client.abort);
-
-                // Reinit plugins here so it isn't done on the first connect attempt
-                client.initPlugins(customSettings);
-            }
-
-            client.conn.reset();
-
-            immutable actionAfterResolve = tryResolve(client);
-
-            with (Next)
-            final switch (actionAfterResolve)
-            {
-            case continue_:
-                break;
-
-            case returnSuccess:  // should never happen
-            case retry:  // should never happen
-                assert(0);
-
-            case returnFailure:
-                // No need to teardown; if it's the first connect there's
-                // nothing to tear down, and if it's after the first, later code
-                // will have already torn it down.
-                logger.info("Exiting...");
-                return 1;
-            }
-
-            string infotint, logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-
-                    infotint = (cast(KamelosoLogger)logger).infotint;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
-            import std.file : exists;
-
-            if (!settings.resourceDirectory.exists)
-            {
-                import std.file : mkdirRecurse;
-                mkdirRecurse(settings.resourceDirectory);
-                logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
-            }
-
-            import kameloso.plugins.common : IRCPluginInitialisationException;
-
-            // Ensure initialised resources after resolve so we know we have a
-            // valid server to create a directory for.
-            try
-            {
-                client.initPluginResources();
-            }
-            catch (const IRCPluginInitialisationException e)
-            {
-                logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
-                return Next.returnFailure;
-            }
-
-            immutable actionAfterConnect = tryConnect(client);
-
-            with (Next)
-            final switch (actionAfterConnect)
-            {
-            case continue_:
-                break;
-
-            case returnSuccess:  // should never happen
-            case retry:  // should never happen
-                assert(0);
-
-            case returnFailure:
-                // Save if it's not the first connection andconfiguration says we should
-                if (!firstConnect && settings.saveOnExit)
-                {
-                    client.writeConfigurationFile(settings.configFile);
-                }
-
-                client.teardownPlugins();
-                logger.info("Exiting...");
-                return 1;
-            }
-
-            client.parser = IRCParser(bot);
-
-            try
-            {
-                client.startPlugins();
-            }
-            catch (const IRCPluginInitialisationException e)
-            {
-                logger.warningf("A plugin failed to start: %s%s", logtint, e.msg);
-                return Next.returnFailure;
-            }
-
-            // Start the main loop
-            next = client.mainLoop();
-            firstConnect = false;
-
-            // Save if we're exiting and configuration says we should.
-            if (((next == Next.returnSuccess) || *client.abort) && settings.saveOnExit)
+        case returnFailure:
+            // Save if it's not the first connection and configuration says we should
+            if (!firstConnect && settings.saveOnExit)
             {
                 client.writeConfigurationFile(settings.configFile);
             }
 
-            // Always teardown after connection ends in case we just drop down
             client.teardownPlugins();
-        }
-        while (!(*client.abort) && ((next == Next.retry) ||
-            ((next == Next.continue_) && settings.reconnectOnFailure)));
-
-        if (*client.abort)
-        {
-            // Ctrl+C
-            logger.error("Aborting...");
+            logger.info("Exiting...");
             return 1;
         }
-        else
+
+        client.parser = IRCParser(bot);
+
+        try
         {
-            logger.info("Exiting...");
-            return 0;
+            client.startPlugins();
         }
+        catch (const IRCPluginInitialisationException e)
+        {
+            logger.warningf("A plugin failed to start: %s%s", logtint, e.msg);
+            return Next.returnFailure;
+        }
+
+        // Start the main loop
+        next = client.mainLoop();
+        firstConnect = false;
+
+        // Save if we're exiting and configuration says we should.
+        if (((next == Next.returnSuccess) || *client.abort) && settings.saveOnExit)
+        {
+            client.writeConfigurationFile(settings.configFile);
+        }
+
+        // Always teardown after connection ends in case we just drop down
+        client.teardownPlugins();
+    }
+    while (!(*client.abort) && ((next == Next.retry) ||
+        ((next == Next.continue_) && settings.reconnectOnFailure)));
+
+    if (*client.abort)
+    {
+        // Ctrl+C
+        logger.error("Aborting...");
+        return 1;
+    }
+    else
+    {
+        logger.info("Exiting...");
+        return 0;
     }
 }
