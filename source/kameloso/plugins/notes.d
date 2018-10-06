@@ -33,9 +33,6 @@ struct NotesSettings
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
-    /// Whether or not to replay notes when the user joins.
-    bool replayOnJoin = true;
-
     /// Whether or not to replay notes when the bot joins.
     bool replayOnSelfjoin = false;
 }
@@ -43,8 +40,8 @@ struct NotesSettings
 
 // onReplayEvent
 /++
- +  Sends notes queued for a user to a channel when they speak up, or when they
- +  join iff the `NotesSettings.replayOnJoin` setting is set.
+ +  Sends notes queued for a user to a channel when they speak up or when they
+ +  join.
  +
  +  Nothing is sent if no notes are stored.
  +/
@@ -62,12 +59,6 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
-
-    if ((event.type == IRCEvent.Type.JOIN) && !plugin.notesSettings.replayOnJoin)
-    {
-        // It's a JOIN and we shouldn't replay on those
-        return;
-    }
 
     try
     {
