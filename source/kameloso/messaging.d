@@ -25,8 +25,11 @@ version(unittest)
 /++
  +  Sends a channel message.
  +/
-void chan(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string content)
+void chan(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string content)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "chan was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -62,8 +65,11 @@ unittest
 /++
  +  Sends a private query message to a user.
  +/
-void query(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string nickname, const string content)
+void query(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string nickname, const string content)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -101,9 +107,11 @@ unittest
  +  This reflects how channel messages and private messages are both the
  +  underlying same type; `PRIVMSG`.
  +/
-void privmsg(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
-    const string nickname, const string content)
+void privmsg(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string nickname, const string content)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     if (channel.length)
     {
         assert(channel.beginsWithOneOf(state.bot.server.chantypes),
@@ -158,8 +166,11 @@ unittest
 /++
  +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
  +/
-void emote(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string emoteTarget, const string content)
+void emote(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string emoteTarget, const string content)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     IRCEvent event;
     event.type = IRCEvent.Type.EMOTE;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -217,9 +228,11 @@ unittest
  +  This includes modes that pertain to a user in the context of a channel,
  +  like bans.
  +/
-void mode(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
-    const string modes, const string content = string.init)
+void mode(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string modes, const string content = string.init)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "mode was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -257,8 +270,11 @@ unittest
 /++
  +  Sets the topic of a channel.
  +/
-void topic(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string content)
+void topic(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string content)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "topic was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -294,8 +310,11 @@ unittest
 /++
  +  Invites a user to a channel.
  +/
-void invite(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel, const string nickname)
+void invite(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string nickname)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "invite was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -331,8 +350,11 @@ unittest
 /++
  +  Joins a channel.
  +/
-void join(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel)
+void join(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "join was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -366,9 +388,11 @@ unittest
 /++
  +  Kicks a user from a channel.
  +/
-void kick(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string channel,
-    const string nickname, const string reason = string.init)
+void kick(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string nickname, const string reason = string.init)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes),
         "kick was passed invalid channel: " ~ channel);
     assert(!nickname.beginsWithOneOf(state.bot.server.chantypes),
@@ -409,9 +433,11 @@ unittest
 /++
  +  Leaves a channel.
  +/
-void part(Flag!"quiet" quiet = No.quiet)(IRCPluginState state,
-    const string channel, const string reason = string.init)
+void part(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string channel, const string reason = string.init)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     assert(channel.beginsWithOneOf(state.bot.server.chantypes), "part was passed invalid channel: " ~ channel);
 
     IRCEvent event;
@@ -447,8 +473,11 @@ unittest
 /++
  +  Disconnects from the server, optionally with a quit reason.
  +/
-void quit(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string reason = string.init)
+void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string reason = string.init)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     IRCEvent event;
     event.type = IRCEvent.Type.QUIT;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -482,8 +511,11 @@ unittest
  +  This is used to send messages of types for which there exist no helper
  +  functions.
  +/
-void raw(Flag!"quiet" quiet = No.quiet)(IRCPluginState state, const string line)
+void raw(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string line)
 {
+    static if (priority) import std.concurrency : send = prioritySend;
+
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -518,8 +550,8 @@ unittest
  +/
 void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 {
-    import std.concurrency : prioritySend;
     import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend;
     mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
 }
 
