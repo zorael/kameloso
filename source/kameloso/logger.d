@@ -156,23 +156,22 @@ final class KamelosoLogger : Logger
         }
     }
 
-    pragma(inline)
     version(Colours)
     {
         /// Provides easy way to get a log tint.
-        string logtint() const @property { return tintImpl!(LogLevel.all); }
+        alias logtint = tintImpl!(LogLevel.all);
 
         /// Provides easy way to get an info tint.
-        string infotint() const @property { return tintImpl!(LogLevel.info); }
+        alias infotint = tintImpl!(LogLevel.info);
 
         /// Provides easy way to get a warning tint.
-        string warningtint() const @property { return tintImpl!(LogLevel.warning); }
+        alias warningtint = tintImpl!(LogLevel.warning);
 
         /// Provides easy way to get an error tint.
-        string errortint() const @property { return tintImpl!(LogLevel.error); }
+        alias errortint = tintImpl!(LogLevel.error);
 
         /// Provides easy way to get a fatal tint.
-        string fataltint() const @property { return tintImpl!(LogLevel.fatal); }
+        alias fataltint = tintImpl!(LogLevel.fatal);
     }
 
     /// This override is needed or it won't compile.
