@@ -1,5 +1,3 @@
-module kamelso.main;
-
 import std.experimental.logger;
 
 Logger logger;
