@@ -1,16 +1,6 @@
-
 module kameloso.common;
 
-import std.experimental.logger ;
+import std.experimental.logger;
+
 Logger logger;
-
-
-
-
-enum Next
-{
-    returnFailure, 
-}
-
-
 

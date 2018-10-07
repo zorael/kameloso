@@ -1,18 +1,8 @@
-import kameloso.common;
-Next tryConnect()
+import kameloso.common : logger;
+
+void main()
 {
-    string infotint;
-
-            import kameloso.logger ;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-    return Next.returnFailure;
+    import kameloso.logger;
+    string infotint = (cast(KamelosoLogger)logger).infotint;
 }
 
-
-
-
-int main()
-{
-        return 0;
-}
