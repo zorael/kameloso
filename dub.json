@@ -1,74 +1,8 @@
 {
     "name": "kameloso",
-    "description": "IRC bot in D",
     "authors": [ "JR" ],
     "copyright": "Copyright © 2018, JR",
     "license": "MIT",
     "targetType": "executable",
-    "mainSourceFile": "source/kameloso/main.d",
-    "sourcePaths": [ "source" ],
-    "importPaths": [ "source" ],
-    "libs-posix-dmd": [ "phobos2" ],
-    "-ddoxFilterArgs":
-    [
-        "--unittest-examples",
-        "--ex", "arsd."
-    ],
-    "-ddoxTool" : "scod",
-    "versions": [ "AsAnApplication", "TwitchSupport" ],
-    "configurations":
-    [
-        {
-            "name": "posix",
-            "platforms": [ "posix" ],
-            "versions": [ "WithPlugins", "Web", "Colours" ],
-            "dependencies-posix": { "requests": "~>0.9.0" }
-        },
-        {
-            "name": "windows",
-            "platforms": [ "windows" ],
-            "versions": [ "WithPlugins", "Web" ],
-            "dependencies-windows": { "requests": "~>0.9.0" }
-        },
-        {
-            "name": "cygwin",
-            "platforms": [ "windows", "cygwin" ],
-            "versions": [ "WithPlugins", "Cygwin_", "Web", "Colours" ],
-            "dependencies-windows": { "requests": "~>0.9.0" }
-        },
-        {
-            "name": "vanilla",
-            "versions": [ "WithPlugins" ]
-        },
-        {
-            "name": "colours",
-            "versions": [ "WithPlugins", "Colours" ]
-        },
-        {
-            "name": "web",
-            "versions": [ "WithPlugins", "Web" ],
-            "dependencies": { "requests": "~>0.9.0" }
-        },
-        {
-            "name": "colours+web",
-            "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies": { "requests": "~>0.9.0" }
-        },
-        {
-            "name": "pluginless",
-            "versions": [ "Colours" ]
-        },
-        {
-            "name": "pluginless-vanilla"
-        },
-
-        {
-            "name": "unittest",
-            "buildType": "unittest",
-            "versions": [ "WithPlugins", "Web", "Colours" ],
-            "sourcePaths": [ "tests" ],
-            "importPaths": [ "tests" ],
-            "dependencies": { "requests": "~>0.9.0" }
-        }
-    ]
+    "mainSourceFile": "source/kameloso/main.d"
 }
