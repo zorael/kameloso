@@ -4,12 +4,12 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: pre-releases
-      DVersion: 2.081.0
+      DVersion: 2.082.1
       DSubversion: -beta.1
-      DAppVeyorBuildJob: ck4u5ymflxl5ybvy
+      DAppVeyorBuildJob: g3p21p0863xxw1be
       arch: x64
     - DC: ldc
-      DVersion: 1.10.0
+      DVersion: 1.12.0-beta2
       arch: x64
 
 skip_tags: true
@@ -63,7 +63,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
-  - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.9.0-windows-x86.zip -OutFile dub.zip
+  - ps: Invoke-WebRequest https://code.dlang.org/files/dub-1.11.0-windows-x86.zip -OutFile dub.zip
   - 7z x dub.zip -odub > nul
   - set PATH=%CD%\%binpath%;%CD%\dub;%PATH%
   - dub --version
