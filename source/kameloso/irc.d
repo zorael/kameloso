@@ -3458,19 +3458,17 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 else /*if (server.dModes.contains(modechar))*/
                 {
                     // Some clients assume that any mode not listed is of type D
+                    import std.algorithm.mutation : remove;
+                    import std.exception : assumeUnique;
                     import std.string : indexOf;
 
                     immutable modecharIndex = modechars.indexOf(modechar);
                     if (modecharIndex == -1) continue;
 
-                    if (modecharIndex != (modechars.length-1))
-                    {
-                        modechars = modechars[1..modecharIndex] ~ modechars[modecharIndex+1..$];
-                    }
-                    else
-                    {
-                        modechars = modechars[0..modecharIndex];
-                    }
+                    // Remove the char from the modechar string
+                    modechars = modechars
+                        .dup
+                        .remove(modecharIndex);
                 }
             }
             else
