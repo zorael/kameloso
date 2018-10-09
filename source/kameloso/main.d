@@ -545,7 +545,7 @@ Next mainLoop(ref Client client)
             final switch (attempt.state)
             {
             case prelisten:  // Should never happen
-                assert(0);
+                assert(0, "listener attempt yielded state prelisten");
 
             case isEmpty:
                 // Empty line yielded means nothing received; break foreach and try again
@@ -1344,7 +1344,7 @@ int main(string[] args)
 
         case returnSuccess:  // should never happen
         case retry:  // should never happen
-            assert(0);
+            assert(0, "tryResolve returned Next returnSuccess or retry");
 
         case returnFailure:
             // No need to teardown; if it's the first connect there's
@@ -1400,7 +1400,7 @@ int main(string[] args)
 
         case returnSuccess:  // should never happen
         case retry:  // should never happen
-            assert(0);
+            assert(0, "tryConnect returned Next returnSuccess or retry");
 
         case returnFailure:
             // Save if it's not the first connection and configuration says we should

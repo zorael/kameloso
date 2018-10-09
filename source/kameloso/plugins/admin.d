@@ -461,7 +461,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
                 break;  // Drop down
 
             default:
-                assert(0);
+                assert(0, "addToList delegate received unwanted IRCEvent type");
             }
 
             immutable m = plugin.state.bot.server.caseMapping;

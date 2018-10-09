@@ -226,7 +226,8 @@ void listenFiber(Connection conn, ref bool abort)
             attempt.state = State.error;
             attempt.lastSocketError_ = lastSocketError;
             yield(attempt);
-            assert(0);  // Should never get here
+            // Should never get here
+            assert(0, "Dead listenFiber resumed after yield (no bytes received)");
         }
         else if (bytesReceived == Socket.ERROR)
         {
@@ -247,7 +248,8 @@ void listenFiber(Connection conn, ref bool abort)
             {
                 attempt.state = State.error;
                 yield(attempt);
-                assert(0);  // Should never get here
+                // Should never get here
+                assert(0, "Dead listenFiber resumed after yield (received error, elapsed > timeout)");
             }
 
             attempt.lastSocketError_ = lastSocketError;
@@ -270,10 +272,11 @@ void listenFiber(Connection conn, ref bool abort)
             case "An established connection was aborted by the software in your host machine.":
             case "An existing connection was forcibly closed by the remote host.":
             case "Connection reset by peer":
-            case "Transport endpoint is not connected":  // Failed IPv6 connection
+            case "Transport endpoint is not connected":  // IPv6/IPv4 connection/socket mismatch
                 attempt.state = State.error;
                 yield(attempt);
-                assert(0);  // Should never get here
+                // Should never get here
+                assert(0, "Dead listenFiber resumed after yield (lastSocketError error)");
 
             default:
                 attempt.state = State.warning;
@@ -410,7 +413,8 @@ void connectFiber(ref Connection conn, ref bool abort)
                 // If we're here no exception was thrown, so we're connected
                 attempt.state = State.connected;
                 yield(attempt);
-                assert(0);  // Should never get here
+                // Should never get here
+                assert(0, "Finished connectFiber resumed after yield");
             }
             catch (const SocketException e)
             {
@@ -421,7 +425,8 @@ void connectFiber(ref Connection conn, ref bool abort)
                     attempt.state = State.error;
                     attempt.error = e.msg;
                     yield(attempt);
-                    assert(0);  // Should never get here
+                    // Should never get here
+                    assert(0, "Dead connectFiber resumed after yield");
 
                 //case "Unable to connect socket: Network is unreachable":
                 default:
@@ -540,7 +545,8 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
                 attempt.state = State.error;
                 attempt.error = e.msg;
                 yield(attempt);
-                assert(0);  // Should never get here
+                // Should never get here
+                assert(0, "Dead resolveFiber resumed after yield");
             }
         }
     }
