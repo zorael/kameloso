@@ -3206,262 +3206,260 @@ void setMode(ref IRCChannel channel, const string signedModestring,
         modestring = signedModestring;
     }
 
-    with (channel)
+    alias Mode = IRCChannel.Mode;
+    auto datalines = data.splitter(" ").array.retro;
+    auto moderange = modestring.retro;
+    auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
+
+    Mode[] newModes;
+    IRCUser[] carriedExceptions;
+
+    ziploop:
+    foreach (immutable modechar, immutable datastring; ziprange)
     {
-        auto datalines = data.splitter(" ").array.retro;
-        auto moderange = modestring.retro;
-        auto ziprange = zip(StoppingPolicy.longest, moderange, datalines);
+        import std.conv : to;
 
-        Mode[] newModes;
-        IRCUser[] carriedExceptions;
+        Mode newMode;
+        newMode.modechar = modechar.to!char;
 
-        ziploop:
-        foreach (modechar, datastring; ziprange)
+        if ((modechar == server.exceptsChar) || (modechar == server.invexChar))
         {
-            import std.conv : to;
+            // Exception, carry it to the next aMode
+            carriedExceptions ~= IRCUser(datastring);
+            continue;
+        }
 
-            Mode newMode;
-            newMode.modechar = modechar.to!char;
+        if (!datastring.beginsWith(server.extbanPrefix) && datastring.contains('!') && datastring.contains('@'))
+        {
+            // Looks like a user and not an extban
+            newMode.user = IRCUser(datastring);
+        }
+        else if (datastring.beginsWith(server.extbanPrefix))
+        {
+            // extban; https://freenode.net/kb/answer/extbans
+            // https://defs.ircdocs.horse/defs/extbans.html
+            // Does not support a mix of normal and second form bans
+            // e.g. *!*@*$#channel
 
-            if ((modechar == server.exceptsChar) || (modechar == server.invexChar))
+            /+ extban format:
+            "$a:dannylee$##arguments"
+            "$a:shr000ms"
+            "$a:deadfrogs"
+            "$a:b4b"
+            "$a:terabits$##arguments"
+            // "$x:*0x71*"
+            "$a:DikshitNijjer"
+            "$a:NETGEAR_WNDR3300"
+            "$~a:eir"+/
+            string slice = datastring[1..$];
+
+            if (slice[0] == '~')
             {
-                // Exception, carry it to the next aMode
-                carriedExceptions ~= IRCUser(datastring);
-                continue;
+                // Negated extban
+                newMode.negated = true;
+                slice = slice[1..$];
             }
 
-            if (!datastring.beginsWith(server.extbanPrefix) && datastring.contains('!') && datastring.contains('@'))
+            switch (slice[0])
             {
-                // Looks like a user and not an extban
-                newMode.user = IRCUser(datastring);
-            }
-            else if (datastring.beginsWith(server.extbanPrefix))
-            {
-                // extban; https://freenode.net/kb/answer/extbans
-                // https://defs.ircdocs.horse/defs/extbans.html
-                // Does not support a mix of normal and second form bans
-                // e.g. *!*@*$#channel
-
-                /+ extban format:
-                "$a:dannylee$##arguments"
-                "$a:shr000ms"
-                "$a:deadfrogs"
-                "$a:b4b"
-                "$a:terabits$##arguments"
-                // "$x:*0x71*"
-                "$a:DikshitNijjer"
-                "$a:NETGEAR_WNDR3300"
-                "$~a:eir"+/
-                string slice = datastring[1..$];
-
-                if (slice[0] == '~')
+            case 'a':
+            case 'R':
+                // Match account
+                if (slice.contains(':'))
                 {
-                    // Negated extban
-                    newMode.negated = true;
-                    slice = slice[1..$];
-                }
+                    // More than one field
+                    slice.nom(':');
 
-                switch (slice[0])
-                {
-                case 'a':
-                case 'R':
-                    // Match account
-                    if (slice.contains(':'))
+                    if (slice.contains('$'))
                     {
-                        // More than one field
-                        slice.nom(':');
-
-                        if (slice.contains('$'))
-                        {
-                            // More than one field, first is account
-                            newMode.user.account = slice.nom('$');
-                            newMode.data = slice;
-                        }
-                        else
-                        {
-                            // Whole slice is an account
-                            newMode.user.account = slice;
-                        }
+                        // More than one field, first is account
+                        newMode.user.account = slice.nom('$');
+                        newMode.data = slice;
                     }
                     else
                     {
-                        // "$~a"
-                        // "$R"
-                        // FIXME: Figure out how to express this.
-                        if (slice.length)
-                        {
-                            newMode.data = slice;
-                        }
-                        else
-                        {
-                            newMode.data = datastring;
-                        }
+                        // Whole slice is an account
+                        newMode.user.account = slice;
                     }
-                    break;
-
-                case 'j':
-                //case 'c':  // Conflicts with colour ban
-                    // Match channel
-                    slice.nom(':');
-                    newMode.channel = slice;
-                    break;
-
-                /*case 'r':
-                    // GECOS/Real name, which we aren't saving currently.
-                    // Can be done if there's a use-case for it.
-                    break;*/
-
-                /*case 's':
-                    // Which server the user(s) the mode refers to are connected to
-                    // which we aren't saving either. Can also be fixed.
-                    break;*/
-
-                default:
-                    // Unhandled extban mode
-                    newMode.data = datastring;
-                    break;
                 }
-            }
-            else
-            {
-                // Normal, non-user non-extban mode
+                else
+                {
+                    // "$~a"
+                    // "$R"
+                    // FIXME: Figure out how to express this.
+                    if (slice.length)
+                    {
+                        newMode.data = slice;
+                    }
+                    else
+                    {
+                        newMode.data = datastring;
+                    }
+                }
+                break;
+
+            case 'j':
+            //case 'c':  // Conflicts with colour ban
+                // Match channel
+                slice.nom(':');
+                newMode.channel = slice;
+                break;
+
+            /*case 'r':
+                // GECOS/Real name, which we aren't saving currently.
+                // Can be done if there's a use-case for it.
+                break;*/
+
+            /*case 's':
+                // Which server the user(s) the mode refers to are connected to
+                // which we aren't saving either. Can also be fixed.
+                break;*/
+
+            default:
+                // Unhandled extban mode
                 newMode.data = datastring;
+                break;
             }
-
-            if (sign == '+')
-            {
-                if (server.prefixes.contains(modechar))
-                {
-                    import std.algorithm.searching : canFind;
-
-                    // Register users with prefix modes (op, halfop, voice, ...)
-                    auto prefixedUsers = newMode.modechar in channel.mods;
-                    if (prefixedUsers && (*prefixedUsers).canFind(newMode.data))
-                    {
-                        continue;
-                    }
-
-                    channel.mods[newMode.modechar] ~= newMode.data;
-                    continue;
-                }
-                else if (server.aModes.contains(modechar))
-                {
-                    /++
-                     +  A = Mode that adds or removes a nick or address to a
-                     +  list. Always has a parameter.
-                     +/
-
-                    // STACKS.
-                    // If an identical Mode exists, add exceptions and skip
-                    foreach (mode; modes)
-                    {
-                        if (mode == newMode)
-                        {
-                            mode.exceptions ~= carriedExceptions;
-                            carriedExceptions.length = 0;
-                            continue ziploop;
-                        }
-                    }
-
-                    newMode.exceptions ~= carriedExceptions;
-                    carriedExceptions.length = 0;
-                }
-                else if (server.bModes.contains(modechar) || server.cModes.contains(modechar))
-                {
-                    /++
-                     +  B = Mode that changes a setting and always has a
-                     +  parameter.
-                     +
-                     +  C = Mode that changes a setting and only has a
-                     +  parameter when set.
-                     +/
-
-                    // DOES NOT STACK.
-                    // If an identical Mode exists, overwrite
-                    foreach (immutable i, mode; modes)
-                    {
-                        if (mode.modechar == modechar)
-                        {
-                            modes[i] = newMode;
-                            continue ziploop;
-                        }
-                    }
-                }
-                else /*if (server.dModes.contains(modechar))*/
-                {
-                    // Some clients assume that any mode not listed is of type D
-                    if (!modechars.contains(modechar)) modechars ~= modechar;
-                    continue;
-                }
-
-                newModes ~= newMode;
-            }
-            else if (sign == '-')
-            {
-                import std.algorithm.mutation : SwapStrategy, remove;
-
-                if (server.prefixes.contains(modechar))
-                {
-                    import std.algorithm.searching : countUntil;
-
-                    // Remove users with prefix modes (op, halfop, voice, ...)
-                    auto prefixedUsers = newMode.modechar in channel.mods;
-                    if (!prefixedUsers) continue;
-
-                    immutable index = (*prefixedUsers).countUntil(newMode.data);
-                    if (index != -1)
-                    {
-                        *prefixedUsers = (*prefixedUsers).remove!(SwapStrategy.unstable)(index);
-                    }
-                }
-                else if (server.aModes.contains(modechar))
-                {
-                    /++
-                     +  A = Mode that adds or removes a nick or address to a
-                     +  a list. Always has a parameter.
-                     +/
-
-                    // If a comparison matches, remove
-                    modes = modes.remove!((listed => listed == newMode), SwapStrategy.unstable);
-                }
-                else if (server.bModes.contains(modechar) || server.cModes.contains(modechar))
-                {
-                    /++
-                     +  B = Mode that changes a setting and always has a
-                     +  parameter.
-                     +
-                     +  C = Mode that changes a setting and only has a
-                     +  parameter when set.
-                     +/
-
-                    // If the modechar matches, remove
-                    modes = modes.remove!((listed =>
-                        listed.modechar == newMode.modechar), SwapStrategy.unstable);
-                }
-                else /*if (server.dModes.contains(modechar))*/
-                {
-                    // Some clients assume that any mode not listed is of type D
-                    import std.string : indexOf;
-
-                    immutable modecharIndex = modechars.indexOf(modechar);
-                    if (modecharIndex != -1)
-                    {
-                        // Remove the char from the modechar string
-                        modechars = modechars.dup.remove(modecharIndex);
-                    }
-                }
-            }
-            else
-            {
-                assert(0, "Invalid mode sign: " ~ sign);
-            }
-
+        }
+        else
+        {
+            // Normal, non-user non-extban mode
+            newMode.data = datastring;
         }
 
         if (sign == '+')
         {
-            modes ~= newModes;
+            if (server.prefixes.contains(modechar))
+            {
+                import std.algorithm.searching : canFind;
+
+                // Register users with prefix modes (op, halfop, voice, ...)
+                auto prefixedUsers = newMode.modechar in channel.mods;
+                if (prefixedUsers && (*prefixedUsers).canFind(newMode.data))
+                {
+                    continue;
+                }
+
+                channel.mods[newMode.modechar] ~= newMode.data;
+                continue;
+            }
+            else if (server.aModes.contains(modechar))
+            {
+                /++
+                 +  A = Mode that adds or removes a nick or address to a
+                 +  list. Always has a parameter.
+                 +/
+
+                // STACKS.
+                // If an identical Mode exists, add exceptions and skip
+                foreach (ref listedMode; channel.modes)
+                {
+                    if (listedMode == newMode)
+                    {
+                        listedMode.exceptions ~= carriedExceptions;
+                        carriedExceptions.length = 0;
+                        continue ziploop;
+                    }
+                }
+
+                newMode.exceptions ~= carriedExceptions;
+                carriedExceptions.length = 0;
+            }
+            else if (server.bModes.contains(modechar) || server.cModes.contains(modechar))
+            {
+                /++
+                 +  B = Mode that changes a setting and always has a
+                 +  parameter.
+                 +
+                 +  C = Mode that changes a setting and only has a
+                 +  parameter when set.
+                 +/
+
+                // DOES NOT STACK.
+                // If an identical Mode exists, overwrite
+                foreach (ref listedMode; channel.modes)
+                {
+                    if (listedMode.modechar == modechar)
+                    {
+                        listedMode = newMode;
+                        continue ziploop;
+                    }
+                }
+            }
+            else /*if (server.dModes.contains(modechar))*/
+            {
+                // Some clients assume that any mode not listed is of type D
+                if (!channel.modechars.contains(modechar)) channel.modechars ~= modechar;
+                continue;
+            }
+
+            newModes ~= newMode;
         }
+        else if (sign == '-')
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+
+            if (server.prefixes.contains(modechar))
+            {
+                import std.algorithm.searching : countUntil;
+
+                // Remove users with prefix modes (op, halfop, voice, ...)
+                auto prefixedUsers = newMode.modechar in channel.mods;
+                if (!prefixedUsers) continue;
+
+                immutable index = (*prefixedUsers).countUntil(newMode.data);
+                if (index != -1)
+                {
+                    *prefixedUsers = (*prefixedUsers).remove!(SwapStrategy.unstable)(index);
+                }
+            }
+            else if (server.aModes.contains(modechar))
+            {
+                /++
+                 +  A = Mode that adds or removes a nick or address to a
+                 +  a list. Always has a parameter.
+                 +/
+
+                // If a comparison matches, remove
+                channel.modes = channel.modes.remove!((listed => listed == newMode), SwapStrategy.unstable);
+            }
+            else if (server.bModes.contains(modechar) || server.cModes.contains(modechar))
+            {
+                /++
+                 +  B = Mode that changes a setting and always has a
+                 +  parameter.
+                 +
+                 +  C = Mode that changes a setting and only has a
+                 +  parameter when set.
+                 +/
+
+                // If the modechar matches, remove
+                channel.modes = channel.modes.remove!((listed =>
+                    listed.modechar == newMode.modechar), SwapStrategy.unstable);
+            }
+            else /*if (server.dModes.contains(modechar))*/
+            {
+                // Some clients assume that any mode not listed is of type D
+                import std.string : indexOf;
+
+                immutable modecharIndex = channel.modechars.indexOf(modechar);
+                if (modecharIndex != -1)
+                {
+                    // Remove the char from the modechar string
+                    channel.modechars = channel.modechars.dup.remove(modecharIndex);
+                }
+            }
+        }
+        else
+        {
+            assert(0, "Invalid mode sign: " ~ sign);
+        }
+
+    }
+
+    if (sign == '+')
+    {
+        channel.modes ~= newModes;
     }
 }
 
