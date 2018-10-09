@@ -3515,17 +3515,17 @@ unittest
         chan.setMode("+b", "kameloso!~NaN@aasdf.freenode.org", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert(chan.modes.length == 1);
+        assert((chan.modes.length == 1), chan.modes.length.to!string);
 
         chan.setMode("+bbe", "hirrsteff!*@* harblsnarf!ident@* NICK!~IDENT@ADDRESS", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert(chan.modes.length == 3);
+        assert((chan.modes.length == 3), chan.modes.length.to!string);
 
         chan.setMode("-b", "*!*@*", server);
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert(chan.modes.length == 0);
+        assert((chan.modes.length == 3), chan.modes.length.to!string);
 
         chan.setMode("+i", string.init, server);
         assert(chan.modechars == "i", chan.modechars);
@@ -3542,14 +3542,14 @@ unittest
         lMode.data = "200";
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].to!string);
+        assert((chan.modes[3] == lMode), chan.modes[3].to!string);
 
         chan.setMode("+l", "100", server);
         lMode.modechar = 'l';
         lMode.data = "100";
         //foreach (i, mode; chan.modes) writefln("%2d: %s", i, mode);
         //writeln("-------------------------------------");
-        assert((chan.modes[0] == lMode), chan.modes[0].to!string);
+        assert((chan.modes[3] == lMode), chan.modes[3].to!string);
     }
 
     {
