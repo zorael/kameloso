@@ -3343,8 +3343,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     channel.mods[newMode.modechar] ~= newMode.data;
                     continue;
                 }
-
-                if (server.aModes.contains(modechar))
+                else if (server.aModes.contains(modechar))
                 {
                     /++
                      +  A = Mode that adds or removes a nick or address to a
@@ -3411,8 +3410,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     immutable index = (*prefixedUsers).countUntil(newMode.data);
                     if (index != -1) *prefixedUsers = (*prefixedUsers).remove(index);
                 }
-
-                if (server.aModes.contains(modechar))
+                else if (server.aModes.contains(modechar))
                 {
                     /++
                      +  A = Mode that adds or removes a nick or address to a
