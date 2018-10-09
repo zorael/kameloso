@@ -3398,7 +3398,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
             }
             else if (sign == '-')
             {
-                import std.algorithm.mutation : remove;
+                import std.algorithm.mutation : SwapStrategy, remove;
 
                 if (server.prefixes.contains(modechar))
                 {
@@ -3409,7 +3409,10 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                     if (!prefixedUsers) continue;
 
                     immutable index = (*prefixedUsers).countUntil(newMode.data);
-                    if (index != -1) *prefixedUsers = (*prefixedUsers).remove(index);
+                    if (index != -1)
+                    {
+                        *prefixedUsers = (*prefixedUsers).remove!(SwapStrategy.unstable)(index);
+                    }
                 }
                 else if (server.aModes.contains(modechar))
                 {
@@ -3419,20 +3422,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                      +/
 
                     // If a comparison matches, remove
-                    size_t[] toRemove;
-
-                    foreach (immutable i, mode; modes)
-                    {
-                        if (mode == newMode)
-                        {
-                            toRemove ~= i;
-                        }
-                    }
-
-                    foreach_reverse (i; toRemove)
-                    {
-                        modes = modes.remove(i);
-                    }
+                    modes = modes.remove!((listed => listed == newMode), SwapStrategy.unstable);
                 }
                 else if (server.bModes.contains(modechar) || server.cModes.contains(modechar))
                 {
@@ -3445,29 +3435,20 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                      +/
 
                     // If the modechar matches, remove
-                    foreach (immutable i, mode; modes)
-                    {
-                        if (mode.modechar == newMode.modechar)
-                        {
-                            modes = modes.remove(i);
-                            break;
-                        }
-                    }
+                    modes = modes.remove!((listed =>
+                        listed.modechar == newMode.modechar), SwapStrategy.unstable);
                 }
                 else /*if (server.dModes.contains(modechar))*/
                 {
                     // Some clients assume that any mode not listed is of type D
-                    import std.algorithm.mutation : remove;
-                    import std.exception : assumeUnique;
                     import std.string : indexOf;
 
                     immutable modecharIndex = modechars.indexOf(modechar);
-                    if (modecharIndex == -1) continue;
-
-                    // Remove the char from the modechar string
-                    modechars = modechars
-                        .dup
-                        .remove(modecharIndex);
+                    if (modecharIndex != -1)
+                    {
+                        // Remove the char from the modechar string
+                        modechars = modechars.dup.remove(modecharIndex);
+                    }
                 }
             }
             else
