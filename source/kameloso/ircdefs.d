@@ -2479,13 +2479,13 @@ struct IRCChannel
          +  Compare two `Mode`s with eachother to see if they are both of the
          +  same type, as well as having the same `data` and/or `user`.
          +/
-        bool opEquals(const Mode other) pure nothrow @safe const
+        bool opEquals(const Mode that) pure nothrow @safe const
         {
             // Ignore exemptions when comparing Modes
-            immutable charMatch = (modechar == other.modechar);
-            immutable dataMatch = (data == other.data);
-            immutable userMatch = user.matchesByMask(other.user);
-            immutable chanMatch = (channel == other.channel);
+            immutable charMatch = (this.modechar == that.modechar);
+            immutable dataMatch = (this.data == that.data);
+            immutable userMatch = (this.user == that.user);  // IRCUser.opEquals
+            immutable chanMatch = (this.channel == that.channel);
 
             immutable match = (charMatch && dataMatch && userMatch && chanMatch);
             return negated ? !match : match;
