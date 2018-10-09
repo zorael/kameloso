@@ -2012,8 +2012,8 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
                 foreach_reverse (immutable i; garbageIndexes)
                 {
-                    import std.algorithm.mutation : remove;
-                    whoisQueue[event.target.nickname].remove(i);
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    whoisQueue[event.target.nickname].remove!(SwapStrategy.unstable)(i);
                 }
 
                 if (!whoisQueue[event.target.nickname].length)
@@ -2437,7 +2437,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.mutation : remove;
+        import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
         with (plugin.state)
@@ -2452,7 +2452,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 return;
             }
 
-            channels[event.channel].users = channels[event.channel].users.remove(userIndex);
+            channels[event.channel].users = channels[event.channel].users
+                .remove!(SwapStrategy.unstable)(userIndex);
 
             auto user = event.sender.nickname in users;
             if (!user)
@@ -2463,7 +2464,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (--(*user).refcount == 0)
             {
-                import std.algorithm.mutation : remove;
                 users.remove(event.sender.nickname);
             }
         }
@@ -2507,14 +2507,14 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.mutation : remove;
+        import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
         foreach (ref channel; plugin.state.channels)
         {
             immutable userIndex = channel.users.countUntil(event.sender.nickname);
             if (userIndex == -1) continue;
-            channel.users = channel.users.remove(userIndex);
+            channel.users = channel.users.remove!(SwapStrategy.unstable)(userIndex);
         }
     }
 

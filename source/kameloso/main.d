@@ -769,8 +769,8 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
         // Clean up processed Fibers
         foreach_reverse (immutable i; toRemove)
         {
-            import std.algorithm.mutation : remove;
-            *fibers = (*fibers).remove(i);
+            import std.algorithm.mutation : SwapStrategy, remove;
+            *fibers = (*fibers).remove!(SwapStrategy.unstable)(i);
         }
 
         // If no more Fibers left, remove the Type entry in the AA
@@ -840,8 +840,8 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
     // Clean up processed Fibers
     foreach_reverse (immutable i; toRemove)
     {
-        import std.algorithm.mutation : remove;
-        plugin.state.timedFibers = plugin.state.timedFibers.remove(i);
+        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.timedFibers = plugin.state.timedFibers.remove!(SwapStrategy.unstable)(i);
     }
 }
 

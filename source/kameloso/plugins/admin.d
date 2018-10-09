@@ -350,7 +350,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     import kameloso.string : stripped;
     import std.algorithm.searching : countUntil;
-    import std.algorithm.mutation : remove;
+    import std.algorithm.mutation : SwapStrategy, remove;
 
     immutable channel = event.content.stripped;
 
@@ -364,7 +364,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
             return;
         }
 
-        bot.homes = bot.homes.remove(homeIndex);
+        bot.homes = bot.homes.remove!(SwapStrategy.unstable)(homeIndex);
         bot.updated = true;
         plugin.state.part(channel);
     }
@@ -629,7 +629,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     }
     else
     {
-        import std.algorithm.mutation : remove;
+        import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
         immutable index = json[section].array.countUntil(accountAsJSON);
@@ -640,7 +640,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
             return;
         }
 
-        json[section] = json[section].array.remove(index);
+        json[section] = json[section].array.remove!(SwapStrategy.unstable)(index);
     }
 
     logger.logf("%s%sed %s%s%s.", (add ? string.init : "de"), section, infotint, account, logtint);

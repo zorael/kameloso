@@ -64,7 +64,7 @@ alias Progress = IRCBot.Progress;
 @(ChannelPolicy.any)
 void onSelfpart(ConnectService service, const IRCEvent event)
 {
-    import std.algorithm.mutation : remove;
+    import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
 
     with (service.state)
@@ -73,7 +73,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
         if (index != -1)
         {
-            bot.channels = bot.channels.remove(index);
+            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(index);
             bot.updated = true;
         }
         else
