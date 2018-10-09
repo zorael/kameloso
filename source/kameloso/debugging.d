@@ -5,6 +5,7 @@
 module kameloso.debugging;
 
 import kameloso.common : Client;
+import kameloso.irc : IRCBot;
 import kameloso.ircdefs;
 
 import std.typecons : Flag, No, Yes;

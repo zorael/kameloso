@@ -16,6 +16,7 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
+import kameloso.irc : IRCBot;
 import kameloso.ircdefs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;

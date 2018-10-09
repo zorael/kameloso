@@ -7,6 +7,7 @@
  +/
 module kameloso.plugins.common;
 
+import kameloso.irc : IRCBot;
 import kameloso.ircdefs;
 
 import core.thread : Fiber;

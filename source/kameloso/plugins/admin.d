@@ -43,6 +43,7 @@ private:
 
 import kameloso.common : logger;
 import kameloso.plugins.common;
+import kameloso.irc : IRCBot;
 import kameloso.ircdefs;
 import kameloso.messaging;
 

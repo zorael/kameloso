@@ -4,7 +4,7 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, Client, Next;
-import kameloso.ircdefs : IRCBot;
+import kameloso.irc : IRCBot;
 import std.typecons : Flag, No, Yes;
 
 @safe:
