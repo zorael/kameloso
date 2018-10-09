@@ -986,7 +986,7 @@ Next tryGetopt(ref Client client, string[] args, ref string[] customSettings)
  +  user.
  +
  +  Params:
- +      client = Reference to the current `Client`.
+ +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
  +      `Next.continue_` if connection succeeded, `Next.returnFaillure` if
@@ -1085,7 +1085,7 @@ Next tryConnect(ref Client client)
  +  user.
  +
  +  Params:
- +      client = Reference to the current `Client`.
+ +      client = Reference to the current `kameloso.common.Client`.
  +
  +  Returns:
  +      `Next.continue_` if resolution succeeded, `Next.returnFaillure` if

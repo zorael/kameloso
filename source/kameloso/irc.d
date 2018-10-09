@@ -2939,10 +2939,7 @@ struct IRCParser
     alias Type = IRCEvent.Type;
     alias Daemon = IRCServer.Daemon;
 
-    /++
-     +  The current `kameloso.ircdefs.IRCBot` with all the state needed for
-     +  parsing.
-     +/
+    /// The current `IRCBot` with all the state needed for parsing.
     IRCBot bot;
 
     /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
@@ -2959,10 +2956,7 @@ struct IRCParser
         return .toIRCEvent(this, raw);
     }
 
-    /++
-     +  Create a new `IRCParser` with the passed `kameloso.ircdefs.IRCBot` as
-     +  base.
-     +/
+    /// Create a new `IRCParser` with the passed `IRCBot` as base.
     this(IRCBot bot) pure
     {
         this.bot = bot;

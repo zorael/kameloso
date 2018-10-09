@@ -533,7 +533,7 @@ struct Client
     +  all plugins to have an updated copy of it.
     +
     +  Params:
-    +      bot = `kameloso.ircdefs.IRCBot` to propagate to all plugins.
+    +      bot = `kameloso.irc.IRCBot` to propagate to all plugins.
     +/
     void propagateBot(IRCBot bot) pure nothrow @nogc @safe
     {

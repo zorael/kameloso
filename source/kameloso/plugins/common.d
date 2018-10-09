@@ -351,8 +351,8 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `kameloso.ircdefs.IRCBot`, containing information pertaining
-     +  to bot in the bot in the context of the current (alive) connection.
+     +  The current `kameloso.irc.IRCBot`, containing information pertaining to
+     +  the bot in the context of the current (alive) connection.
      +/
     IRCBot bot;
 
@@ -2187,7 +2187,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessAccountInfoTargetMixin
     /++
      +  Records a user's services account by saving it to the user's
-     +  `kameloso.ircdefs.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `kameloso.irc.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +/
     @(AwarenessEarly)

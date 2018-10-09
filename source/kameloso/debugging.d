@@ -17,7 +17,7 @@ debug:
 // formatBotAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `kameloso.ircdefs.IRCBot`, including instantiating a fresh one.
+ +  `kameloso.irc.IRCBot`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
@@ -29,7 +29,7 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      bot = `kameloso.ircdefs.IRCBot` to simulate the assignment of.
+ +      bot = `kameloso.irc.IRCBot` to simulate the assignment of.
  +/
 void formatBotAssignment(Sink)(auto ref Sink sink, IRCBot bot)
 {

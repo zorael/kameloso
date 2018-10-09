@@ -295,7 +295,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddChan
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.ircdefs.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCBot.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -336,7 +336,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.ircdefs.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCBot.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -375,7 +375,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCBot.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
@@ -493,7 +493,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.ircdefs.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCBot.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.

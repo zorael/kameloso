@@ -50,7 +50,7 @@ struct ConnectSettings
 }
 
 
-/// Shorthand alias to `kameloso.ircdefs.IRCBot.Progress`.
+/// Shorthand alias to `kameloso.irc.IRCBot.Progress`.
 alias Progress = IRCBot.Progress;
 
 
@@ -97,9 +97,9 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `kameloso.ircdefs.IRCBot`
- +  of the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState`
- +  upon joining it.
+ +  Records a channel in the `channels` array in the `kameloso.irc.IRCBot` of
+ +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon
+ +  joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -122,7 +122,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `kameloso.ircdefs.IRCBot` of the current `ConnectService`'s
+ +  `kameloso.ircd.IRCBot` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void joinChannels(ConnectService service)
@@ -592,16 +592,15 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.ircdefs.IRCBot.authLogin` and
- +  `kameloso.ircdefs.IRCBot.authPassword`, then sends it to the server, during
- +  registration.
+ +  `kameloso.irc.IRCBot.authLogin` and `kameloso.irc.IRCBot.authPassword`, then
+ +  sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(authLogin \0 authLogin \0 authPassword)`
  +
- +  ...where `kameloso.ircdefs.IRCBot.authLogin` is the services account name
- +  and `kameloso.ircdefs.IRCBot.authPassword` is the account password.
+ +  ...where `kameloso.irc.IRCBot.authLogin` is the services account name and
+ +  `kameloso.irc.IRCBot.authPassword` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
