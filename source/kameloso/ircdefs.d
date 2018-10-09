@@ -1429,6 +1429,16 @@ struct IRCUser
         IRCUser twelfth = IRCUser("abc}!abc}@abc}");
         assert(eleventh.matchesByMask(twelfth, IRCServer.CaseMapping.rfc1459));
     }
+
+    /++
+     +  Compares two `IRCUser`s with eachother, ignoring members considered to
+     +  be extra or optional.
+     +/
+    bool opEquals(const IRCUser that) pure nothrow @safe const
+    {
+        return (this.nickname == that.nickname) &&
+            (this.ident == that.ident) && (this.address == that.address);
+    }
 }
 
 
