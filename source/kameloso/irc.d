@@ -3215,6 +3215,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
         Mode[] newModes;
         IRCUser[] carriedExceptions;
 
+        ziploop:
         foreach (modechar, datastring; ziprange)
         {
             import std.conv : to;
@@ -3358,7 +3359,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                         {
                             mode.exceptions ~= carriedExceptions;
                             carriedExceptions.length = 0;
-                            continue;
+                            continue ziploop;
                         }
                     }
 
@@ -3382,7 +3383,7 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                         if (mode.modechar == modechar)
                         {
                             modes[i] = newMode;
-                            continue;
+                            continue ziploop;
                         }
                     }
                 }
