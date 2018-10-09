@@ -469,7 +469,7 @@ Next mainLoop(ref Client client)
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
-    string infotint, logtint, errortint;
+    string logtint, errortint;
 
     version(Colours)
     {
@@ -477,7 +477,6 @@ Next mainLoop(ref Client client)
         {
             import kameloso.logger : KamelosoLogger;
 
-            infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
             errortint = (cast(KamelosoLogger)logger).errortint;
         }
