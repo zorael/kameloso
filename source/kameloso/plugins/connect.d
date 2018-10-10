@@ -21,7 +21,6 @@ import kameloso.ircdefs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
 
-import std.concurrency : prioritySend;
 import std.format : format;
 import std.typecons : Flag, No, Yes;
 
@@ -204,21 +203,19 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 @(IRCEvent.Type.PING)
 void onPing(ConnectService service, const IRCEvent event)
 {
+    import std.concurrency : prioritySend;
+
     service.serverPinged = true;
+
     immutable target = event.content.length ? event.content : event.sender.address;
+    service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
 
-    with (service.state)
+    if (!service.joinedChannels && (service.authentication == Progress.started))
     {
-        mainThread.prioritySend(ThreadMessage.Pong(), target);
-
-        if (!service.joinedChannels && (bot.authentication == Progress.started))
-        {
-            logger.log("Auth timed out. Joining channels ...");
-            bot.authentication = Progress.finished;
-            bot.updated = true;
-            service.joinChannels();
-            service.joinedChannels = true;
-        }
+        logger.log("Auth timed out.");
+        service.authentication = Progress.finished;
+        service.joinChannels();
+        service.joinedChannels = true;
     }
 }
 
@@ -238,7 +235,6 @@ void tryAuth(ConnectService service)
     with (service.state)
     {
         import kameloso.string : beginsWith, decode64;
-
         immutable password = bot.authPassword.beginsWith("base64:") ?
             decode64(bot.authPassword[7..$]) : bot.authPassword;
 
@@ -255,8 +251,7 @@ void tryAuth(ConnectService service)
 
         case "EFNet":
             // No registration available
-            bot.authentication = Progress.finished;
-            bot.updated = true;
+            service.authentication = Progress.finished;
             return;
 
         case "QuakeNet":
@@ -268,8 +263,7 @@ void tryAuth(ConnectService service)
             break;
         }
 
-        bot.authentication = Progress.started;
-        bot.updated = true;
+        service.authentication = Progress.started;
 
         with (IRCServer.Daemon)
         switch (bot.server.daemon)
@@ -284,7 +278,7 @@ void tryAuth(ConnectService service)
                 logger.warningf("Cannot auth when you have changed your nickname " ~
                     "(%s != %s)", bot.nickname, bot.origNickname);
 
-                bot.authentication = Progress.finished;
+                service.authentication = Progress.finished;
                 return;
             }
 
@@ -317,14 +311,17 @@ void tryAuth(ConnectService service)
 
         case twitch:
             // No registration available
-            bot.authentication = Progress.finished;
-            break;
+            service.authentication = Progress.finished;
+            return;
 
         default:
             logger.warning("Unsure of what AUTH approach to use.");
             logger.info("Need information about what approach succeeded!");
 
-            if (bot.authLogin.length) goto case ircdseven;
+            if (bot.authLogin.length)
+            {
+                goto case ircdseven;
+            }
             else
             {
                 goto case bahamut;
@@ -346,46 +343,42 @@ void tryAuth(ConnectService service)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
 {
-    with (service.state)
+    if (service.state.bot.authPassword.length && (service.authentication == Progress.notStarted))
     {
-        if (bot.authPassword.length && (bot.authentication == Progress.notStarted))
-        {
-            service.tryAuth();
-        }
+        service.tryAuth();
+    }
 
-        if (!service.joinedChannels && ((bot.authentication == Progress.finished) ||
-            !bot.authPassword.length || (bot.server.daemon == IRCServer.Daemon.twitch)))
-        {
-            // tryAuth finished early with an unsuccessful login, else
-            // `bot.authentication` would be set much later.
-            // Twitch servers can't auth so join immediately
-            // but don't do anything if we already joined channels.
-            logger.log("Joining channels ...");
-            service.joinChannels();
-            service.joinedChannels = true;
-        }
+    if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
+        !service.state.bot.authPassword.length || (service.state.bot.server.daemon == IRCServer.Daemon.twitch)))
+    {
+        // tryAuth finished early with an unsuccessful login, else
+        // `service.authentication` would be set much later.
+        // Twitch servers can't auth so join immediately
+        // but don't do anything if we already joined channels.
+        service.joinChannels();
+        service.joinedChannels = true;
+    }
 
-        if (!service.sentAfterConnect)
+    if (!service.sentAfterConnect)
+    {
+        if (service.connectSettings.sendAfterConnect.length)
         {
-            if (service.connectSettings.sendAfterConnect.length)
+            foreach (immutable line; service.connectSettings.sendAfterConnect)
             {
-                foreach (immutable line; service.connectSettings.sendAfterConnect)
-                {
-                    import kameloso.string : stripped;
-                    import std.array : replace;
+                import kameloso.string : stripped;
+                import std.array : replace;
 
-                    immutable processed = line
-                        .stripped
-                        .replace("$nickname", bot.nickname)
-                        .replace("$origserver", bot.server.address)
-                        .replace("$server", bot.server.resolvedAddress);
+                immutable processed = line
+                    .stripped
+                    .replace("$nickname", service.state.bot.nickname)
+                    .replace("$origserver", service.state.bot.server.address)
+                    .replace("$server", service.state.bot.server.resolvedAddress);
 
-                    service.raw(processed);
-                }
+                service.raw(processed);
             }
-
-            service.sentAfterConnect = true;
         }
+
+        service.sentAfterConnect = true;
     }
 }
 
@@ -401,21 +394,16 @@ void onEndOfMotd(ConnectService service)
 @(IRCEvent.Type.AUTH_FAILURE)
 void onAuthEnd(ConnectService service)
 {
-    with (service.state)
+    service.authentication = Progress.finished;
+
+    // This can be before registration ends in case of SASL
+    // return if still registering
+    if (service.registration == Progress.started) return;
+
+    if (!service.joinedChannels)
     {
-        bot.authentication = Progress.finished;
-        bot.updated = true;
-
-        // This can be before registration ends in case of SASL
-        // return if still registering
-        if (bot.registration == Progress.started) return;
-
-        if (!service.joinedChannels)
-        {
-            logger.log("Joining channels ...");
-            service.joinChannels();
-            service.joinedChannels = true;
-        }
+        service.joinChannels();
+        service.joinedChannels = true;
     }
 }
 
@@ -430,27 +418,24 @@ void onAuthEnd(ConnectService service)
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
 {
-    with (service.state)
+    if (service.registration == Progress.started)
     {
-        if (bot.registration == Progress.started)
+        if (service.renamedDuringRegistration)
         {
-            if (service.renamedDuringRegistration)
-            {
-                import std.conv : text;
-                import std.random : uniform;
+            import std.conv : text;
+            import std.random : uniform;
 
-                bot.nickname ~= uniform(0, 10).text;
-            }
-            else
-            {
-                import kameloso.constants : altNickSign;
-                bot.nickname ~= altNickSign;
-                service.renamedDuringRegistration = true;
-            }
-
-            bot.updated = true;
-            service.raw("NICK " ~ bot.nickname);
+            service.state.bot.nickname ~= uniform(0, 10).text;
         }
+        else
+        {
+            import kameloso.constants : altNickSign;
+            service.state.bot.nickname ~= altNickSign;
+            service.renamedDuringRegistration = true;
+        }
+
+        service.state.bot.updated = true;
+        service.raw("NICK " ~ service.state.bot.nickname);
     }
 }
 
@@ -463,7 +448,9 @@ void onNickInUse(ConnectService service)
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
 {
-    if (service.state.bot.registration == Progress.started)
+    import std.concurrency : prioritySend;
+
+    if (service.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters");
@@ -481,6 +468,8 @@ void onBadNick(ConnectService service)
 @(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
 void onBanned(ConnectService service)
 {
+    import std.concurrency : prioritySend;
+
     logger.error("You are banned!");
     service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Banned");
 }
@@ -518,14 +507,13 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
     /// http://ircv3.net/irc
     /// https://blog.irccloud.com/ircv3
 
-    if (service.state.bot.registration == Progress.finished)
+    if (service.registration == Progress.finished)
     {
         // It's possible to call CAP LS after registration, and that would start
         // this whole process anew. So stop if we have registered.
         return;
     }
 
-    with (service.state)
     switch (event.aux)
     {
     case "LS":
@@ -538,7 +526,7 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !bot.authPassword.length) continue;
+                if (!service.connectSettings.sasl || !service.state.bot.authPassword.length) continue;
                 service.raw!(Yes.quiet)("CAP REQ :sasl");
                 tryingSASL = true;
                 break;
@@ -630,8 +618,7 @@ void onSASLAuthenticate(ConnectService service)
         import kameloso.string : beginsWith, decode64;
         import std.base64 : Base64;
 
-        authentication = Progress.started;
-        updated = true;
+        service.authentication = Progress.started;
 
         immutable authLogin = authLogin.length ? authLogin : origNickname;
         immutable password = authPassword.beginsWith("base64:") ? decode64(authPassword[7..$]) : authPassword;
@@ -655,25 +642,21 @@ void onSASLAuthenticate(ConnectService service)
 @(IRCEvent.Type.RPL_SASLSUCCESS)
 void onSASLSuccess(ConnectService service)
 {
-    with (service.state)
-    {
-        bot.authentication = Progress.finished;
-        bot.updated = true;
+    service.authentication = Progress.finished;
 
-        /++
-        +  The END subcommand signals to the server that capability negotiation
-        +  is complete and requests that the server continue with client
-        +  registration. If the client is already registered, this command
-        +  MUST be ignored by the server.
-        +
-        +  Clients that support capabilities but do not wish to enter negotiation
-        +  SHOULD send CAP END upon connection to the server.
-        +
-        +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
-        +/
+    /++
+     +  The END subcommand signals to the server that capability negotiation
+     +  is complete and requests that the server continue with client
+     +  registration. If the client is already registered, this command
+     +  MUST be ignored by the server.
+     +
+     +  Clients that support capabilities but do not wish to enter negotiation
+     +  SHOULD send CAP END upon connection to the server.
+     +
+     +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
+     +/
 
-        service.raw!(Yes.quiet)("CAP END");
-    }
+    service.raw!(Yes.quiet)("CAP END");
 }
 
 
@@ -688,22 +671,18 @@ void onSASLSuccess(ConnectService service)
 @(IRCEvent.Type.ERR_SASLFAIL)
 void onSASLFailure(ConnectService service)
 {
-    with (service.state)
+    if (service.connectSettings.exitOnSASLFailure)
     {
-        if (service.connectSettings.exitOnSASLFailure)
-        {
-            service.quit("SASL Negotiation Failure");
-            return;
-        }
-
-        // Auth failed and will fail even if we try NickServ, so flag as
-        // finished auth and invoke `CAP END`
-        bot.authentication = Progress.finished;
-        bot.updated = true;
-
-        // See `onSASLSuccess` for info on `CAP END`
-        service.raw!(Yes.quiet)("CAP END");
+        service.quit("SASL Negotiation Failure");
+        return;
     }
+
+    // Auth failed and will fail even if we try NickServ, so flag as
+    // finished auth and invoke `CAP END`
+    service.authentication = Progress.finished;
+
+    // See `onSASLSuccess` for info on `CAP END`
+    service.raw!(Yes.quiet)("CAP END");
 }
 
 
@@ -714,11 +693,7 @@ void onSASLFailure(ConnectService service)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service)
 {
-    with (service.state)
-    {
-        bot.registration = Progress.finished;
-        bot.updated = true;
-    }
+    service.registration = Progress.finished;
 }
 
 
@@ -768,8 +743,7 @@ void register(ConnectService service)
 {
     with (service.state)
     {
-        bot.registration = Progress.started;
-        bot.updated = true;
+        service.registration = Progress.started;
 
         service.raw!(Yes.quiet)("CAP LS 302");
 
