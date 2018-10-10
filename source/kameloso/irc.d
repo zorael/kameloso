@@ -1784,14 +1784,15 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         if (subtractive)
         {
             // Remove the mode from bot.modes
-            foreach (immutable c; slice.representation)
+            char[] mutModes  = parser.bot.modes.dup;
+
+            foreach (immutable modechar; slice.representation)
             {
-                parser.bot.modes = cast(string)parser.bot.modes
-                    .representation
-                    .filter!((a) => a != c)
-                    .array
-                    .idup;
+                import std.algorithm.mutation : remove;
+                mutModes = mutModes.remove!(listedModechar => listedModechar == modechar);
             }
+
+            parser.bot.modes = mutModes.idup;
         }
         else
         {
