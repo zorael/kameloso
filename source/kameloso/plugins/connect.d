@@ -854,9 +854,6 @@ final class ConnectService : IRCPlugin
     /// Whether or not the bot has sent configured commands after connect.
     bool sentAfterConnect;
 
-    /// An alias to let other plugins call `.tryAuth` from outside the module.
-    alias auth = .tryAuth;
-
     mixin IRCPluginImpl;
     mixin MessagingProxy;
 }
