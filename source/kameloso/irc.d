@@ -3712,14 +3712,6 @@ struct IRCBot
         string[] channels;
     }
 
-    /// Progress of a process.
-    enum Progress
-    {
-        notStarted,
-        started,
-        finished,
-    }
-
     @Unconfigurable
     {
         /// The current `IRCServer` we're connected to.
@@ -3727,12 +3719,6 @@ struct IRCBot
 
         /// The original bot nickname before connecting, in case it changed.
         string origNickname;
-
-        /// Progress of authentication process (SASL, NickServ).
-        Progress authentication;
-
-        /// Progress of registration process (logon).
-        Progress registration;
 
         /// Whether or not the bot was altered.
         bool updated;

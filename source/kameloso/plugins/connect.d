@@ -50,8 +50,13 @@ struct ConnectSettings
 }
 
 
-/// Shorthand alias to `kameloso.irc.IRCBot.Progress`.
-alias Progress = IRCBot.Progress;
+/// Progress of a process.
+enum Progress
+{
+    notStarted, /// Process not yet started, init state.
+    started,    /// Process started but has yet to finish.
+    finished,   /// Process finished.
+}
 
 
 // onSelfpart
@@ -830,6 +835,12 @@ final class ConnectService : IRCPlugin
 {
     /// All Connect service settings gathered.
     @Settings ConnectSettings connectSettings;
+
+    /// At what step we're currently at with regards to authentication.
+    Progress authentication;
+
+    /// At what step we're currently at with regards to registration.
+    Progress registration;
 
     /// Whether the server has sent at least one `PING`.
     bool serverPinged;
