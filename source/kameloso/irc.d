@@ -1747,9 +1747,6 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     else
     {
         import kameloso.string : beginsWith;
-        import std.algorithm.iteration : filter, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
         import std.string : representation;
 
         // :kameloso^ MODE kameloso^ :+i
@@ -1796,6 +1793,10 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         }
         else
         {
+            import std.algorithm.iteration : filter, uniq;
+            import std.algorithm.sorting : sort;
+            import std.array : array;
+
             // Add the new mode to bot.modes
             auto modes = parser.bot.modes.dup.representation;
             modes ~= slice;
