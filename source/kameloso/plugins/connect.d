@@ -140,6 +140,19 @@ void joinChannels(ConnectService service)
             return;
         }
 
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
         import std.array : array, join;
@@ -152,6 +165,8 @@ void joinChannels(ConnectService service)
             .sort()
             .uniq
             .join(",");
+
+        logger.logf("Joining %s%d%s channels ...", infotint, chanlist.length, logtint);
 
         service.join(chanlist);
     }
