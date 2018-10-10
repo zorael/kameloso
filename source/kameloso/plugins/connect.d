@@ -155,16 +155,16 @@ void joinChannels(ConnectService service)
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
         import std.array : array, join;
-        import std.range : chain;
+        import std.range : chain, walkLength;
 
         // FIXME: line should split if it reaches 512 characters
         // Needs .array or .dup, sort() will sort in-place and reorder homes
-        immutable chanlist = chain(bot.homes, bot.channels)
+        auto chanlist = chain(bot.homes, bot.channels)
             .array
             .sort()
             .uniq;
 
-        logger.logf("Joining %s%d%s channels ...", infotint, chanlist.length, logtint);
+        logger.logf("Joining %s%d%s channels ...", infotint, chanlist.walkLength, logtint);
 
         service.join(chanlist.join(","));
     }
