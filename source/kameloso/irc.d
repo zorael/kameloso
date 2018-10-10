@@ -2990,24 +2990,26 @@ struct IRCParser
         bot.server.daemonstring = daemonstring;
         bot.updated = true;
 
+        alias strategy = MeldingStrategy.aggressive;
+
         with (Typenums)
         with (Daemon)
         final switch (bot.server.daemon)
         {
         case unreal:
-            Typenums.unreal.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.unreal.meldInto!strategy(typenums);
             break;
 
         case inspircd:
-            Typenums.inspIRCd.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.inspIRCd.meldInto!strategy(typenums);
             break;
 
         case bahamut:
-            Typenums.bahamut.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.bahamut.meldInto!strategy(typenums);
             break;
 
         case ratbox:
-            Typenums.ratBox.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ratBox.meldInto!strategy(typenums);
             break;
 
         case u2:
@@ -3016,100 +3018,100 @@ struct IRCParser
 
         case rizon:
             // Rizon is hybrid but has some own extras
-            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.rizon.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.hybrid.meldInto!strategy(typenums);
+            Typenums.rizon.meldInto!strategy(typenums);
             break;
 
         case hybrid:
-            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.hybrid.meldInto!strategy(typenums);
             break;
 
         case ircu:
-            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ircu.meldInto!strategy(typenums);
             break;
 
         case aircd:
-            Typenums.aircd.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.aircd.meldInto!strategy(typenums);
             break;
 
         case rfc1459:
-            Typenums.rfc1459.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.rfc1459.meldInto!strategy(typenums);
             break;
 
         case rfc2812:
-            Typenums.rfc2812.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.rfc2812.meldInto!strategy(typenums);
             break;
 
         case snircd:
             // snircd is based on ircu
-            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.snircd.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ircu.meldInto!strategy(typenums);
+            Typenums.snircd.meldInto!strategy(typenums);
             break;
 
         case nefarious:
             // Both nefarious and nefarious2 are based on ircu
-            Typenums.ircu.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.nefarious.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ircu.meldInto!strategy(typenums);
+            Typenums.nefarious.meldInto!strategy(typenums);
             break;
 
         case rusnet:
-            Typenums.rusnet.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.rusnet.meldInto!strategy(typenums);
             break;
 
         case austhex:
-            Typenums.austHex.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.austHex.meldInto!strategy(typenums);
             break;
 
         case ircnet:
-            Typenums.ircNet.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ircNet.meldInto!strategy(typenums);
             break;
 
         case ptlink:
-            Typenums.ptlink.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ptlink.meldInto!strategy(typenums);
             break;
 
         case ultimate:
-            Typenums.ultimate.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.ultimate.meldInto!strategy(typenums);
             break;
 
         case charybdis:
-            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.charybdis.meldInto!strategy(typenums);
             break;
 
         case ircdseven:
             // Nei | freenode is based in charybdis which is based on ratbox iirc
-            Typenums.hybrid.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.ratBox.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.hybrid.meldInto!strategy(typenums);
+            Typenums.ratBox.meldInto!strategy(typenums);
+            Typenums.charybdis.meldInto!strategy(typenums);
             break;
 
         case undernet:
-            Typenums.undernet.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.undernet.meldInto!strategy(typenums);
             break;
 
         case anothernet:
-            //Typenums.anothernet.meldInto!(MeldingStrategy.aggressive)(typenums);
+            //Typenums.anothernet.meldInto!strategy(typenums);
             break;
 
         case sorircd:
-            Typenums.charybdis.meldInto!(MeldingStrategy.aggressive)(typenums);
-            Typenums.sorircd.meldInto!(MeldingStrategy.aggressive)(typenums);
+            Typenums.charybdis.meldInto!strategy(typenums);
+            Typenums.sorircd.meldInto!strategy(typenums);
             break;
 
         case bdqircd:
-            //Typenums.bdqIrcD.meldInto!(MeldingStrategy.aggressive)(typenums);
+            //Typenums.bdqIrcD.meldInto!strategy(typenums);
             break;
 
         case chatircd:
-            //Typenums.chatIRCd.meldInto!(MeldingStrategy.aggressive)(typenums);
+            //Typenums.chatIRCd.meldInto!strategy(typenums);
             break;
 
         case irch:
-            //Typenums.irch.meldInto!(MeldingStrategy.aggressive)(typenums);
+            //Typenums.irch.meldInto!strategy(typenums);
             break;
 
         case ithildin:
-            //Typenums.ithildin.meldInto!(MeldingStrategy.aggressive)(typenums);
+            //Typenums.ithildin.meldInto!strategy(typenums);
             break;
 
         case twitch:
