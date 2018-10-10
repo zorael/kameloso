@@ -3443,8 +3443,14 @@ void setMode(ref IRCChannel channel, const string signedModestring,
                 immutable modecharIndex = channel.modechars.indexOf(modechar);
                 if (modecharIndex != -1)
                 {
+                    import std.string : representation;
+
                     // Remove the char from the modechar string
-                    channel.modechars = channel.modechars.dup.remove(modecharIndex);
+                    channel.modechars = cast(string)channel.modechars
+                        .dup
+                        .representation
+                        .remove!(SwapStrategy.unstable)(modecharIndex)
+                        .idup;
                 }
             }
         }
