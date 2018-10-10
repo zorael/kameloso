@@ -162,12 +162,11 @@ void joinChannels(ConnectService service)
         immutable chanlist = chain(bot.homes, bot.channels)
             .array
             .sort()
-            .uniq
-            .join(",");
+            .uniq;
 
         logger.logf("Joining %s%d%s channels ...", infotint, chanlist.length, logtint);
 
-        service.join(chanlist);
+        service.join(chanlist.join(","));
     }
 }
 
