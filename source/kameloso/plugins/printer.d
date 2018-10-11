@@ -1401,9 +1401,10 @@ unittest
  +/
 version(Colours)
 {
-    import kameloso.bash : BashForeground;
+    import kameloso.bash : BashBackground, BashForeground;
 
-    void mapEffects(ref IRCEvent event, BashForeground resetCode = BashForeground.default_)
+    void mapEffects(ref IRCEvent event, const uint fgReset = BashForeground.default_,
+        const uint bgReset = BashBackground.default_)
     {
         import kameloso.bash : B = BashEffect;
         import kameloso.irc : I = IRCControlCharacter;
@@ -1414,7 +1415,7 @@ version(Colours)
             if (content.contains(I.colour))
             {
                 // Colour is mIRC 3
-                content = mapColours(content, resetCode);
+                content = mapColours(content, fgReset, bgReset);
             }
 
             if (content.contains(I.bold))
