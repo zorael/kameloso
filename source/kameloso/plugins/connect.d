@@ -806,8 +806,6 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 }
 
 
-mixin MinimalAuthentication;
-
 public:
 
 
