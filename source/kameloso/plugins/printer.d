@@ -1169,6 +1169,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length)
         {
+            immutable BashForeground contentFgReset = bright ?
+                DefaultBright.content : DefaultDark.content;
+            immutable BashForeground emoteFgReset = bright ?
+                DefaultBright.emote : DefaultDark.emote;
+
             version(TwitchSupport)
             {
                 if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
@@ -1185,13 +1190,8 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     immutable BashForeground contentHighlight = bright ?
                         DefaultBright.highlight : DefaultDark.highlight;
-                    immutable BashForeground contentReset = bright ?
-                        DefaultBright.content : DefaultDark.content;
-
                     immutable BashForeground emoteHighlight = bright ?
                         DefaultBright.highlight : DefaultDark.highlight;
-                    immutable BashForeground emoteReset = bright ?
-                        DefaultBright.emote : DefaultDark.emote;
 
                     if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
                     {
