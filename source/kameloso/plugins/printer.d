@@ -1504,17 +1504,16 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-string mapColours(const string line, const uint resetCode)
+string mapColours(const string line, const uint fgReset = BashForeground.default_,
+    const uint bgReset = BashBackground.default_)
 {
-    import kameloso.bash : BashBackground, BashForeground, BashReset, TerminalToken, colour;
+    import kameloso.bash : colour;
     import kameloso.irc : I = IRCControlCharacter;
     import std.array : replace;
     import std.regex : matchAll, regex;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
-
-    bool colouredSomething;
 
     alias F = BashForeground;
     BashForeground[16] weechatForegroundMap =
@@ -1565,8 +1564,6 @@ string mapColours(const string line, const uint resetCode)
         import std.array : Appender;
         import std.conv : to;
 
-        if (!hit[1].length) continue;
-
         immutable fgIndex = hit[1].to!ubyte;
 
         if (fgIndex > 15)
@@ -1577,7 +1574,7 @@ string mapColours(const string line, const uint resetCode)
 
         Appender!string sink;
         sink.reserve(8);
-        sink.put(TerminalToken.bashFormat ~ "[");
+        sink.put("\033[");
         sink.put((cast(ubyte)weechatForegroundMap[fgIndex]).to!string);
 
         if (hit[2].length)
@@ -1596,15 +1593,11 @@ string mapColours(const string line, const uint resetCode)
 
         sink.put('m');
         slice = slice.replace(hit[0], sink.data);
-        colouredSomething = true;
     }
 
-    if (colouredSomething)
-    {
-        import std.format : format;
-        enum endToken = I.colour ~ ""; // ~ "([0-9])?";
-        slice = slice.replace(endToken, "%s[%dm".format(TerminalToken.bashFormat ~ "", resetCode));
-    }
+    import std.format : format;
+    enum endToken = I.colour ~ ""; // ~ "([0-9])?";
+    slice = slice.replace(endToken, "\033[%d;%dm".format(fgReset, bgReset));
 
     return slice;
 }
@@ -1617,13 +1610,18 @@ unittest
 
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
-        immutable mapped = mapColours(line, 0);
-        assert((mapped == "This is \033[91mall red!\033[0m while this is not."), mapped);
+        immutable mapped = mapColours(line, 39, 49);
+        assert((mapped == "This is \033[91mall red!\033[39;49m while this is not."), mapped);
     }
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-        immutable mapped = mapColours(line, 0);
+        immutable mapped = mapColours(line);
         assert((mapped == "This time there's\033[35m no ending token, only magenta."), mapped);
+    }
+    {
+        immutable line = I.colour ~ "1,0You" ~ I.colour ~ "0,4Tube" ~ I.colour ~ " asdf";
+        immutable mapped = mapColours(line, 39, 49);
+        assert((mapped == "\033[90;107mYou\033[97;41mTube\033[39;49m asdf"), mapped);
     }
 }
 
