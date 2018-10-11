@@ -1200,26 +1200,26 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                         if (event.tags.contains("emote-only=1"))
                         {
                             // Just highlight the whole line, make it appear as normal content
-                            event.mapEffects(contentReset);
-                            sink.colour(contentReset);
+                            event.mapEffects(contentFgReset);
                             highlightSink.colour(contentHighlight);
                             highlightSink.put(content);
-                            highlightSink.colour(contentReset);
+                            highlightSink.colour(contentFgReset);
+                            sink.colour(contentFgReset);
                         }
                         else
                         {
                             // Emote but mixed text and emotes
-                            event.mapEffects(emoteReset);
-                            sink.colour(emoteReset);
-                            content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteReset);
+                            event.mapEffects(emoteFgReset);
+                            content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteFgReset);
+                            sink.colour(emoteFgReset);
                         }
                     }
                     else
                     {
                         // Normal content, normal text, normal emotes
-                        sink.colour(contentReset);
-                        event.mapEffects(contentReset);
-                        content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentReset);
+                        event.mapEffects(contentFgReset);
+                        content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentFgReset);
+                        sink.colour(contentFgReset);
                     }
 
                     content = highlightSink.data;  // mutable...
@@ -1227,29 +1227,16 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 }
                 else
                 {
-                    immutable BashForeground tint = (event.type == IRCEvent.Type.EMOTE) ?
-                        (bright ? DefaultBright.emote : DefaultDark.emote) :
-                        (bright ? DefaultBright.content : DefaultDark.content);
-
-                    sink.colour(tint);
-                    event.mapEffects(tint);
+                    immutable fgReset = (event.type == IRCEvent.Type.EMOTE) ? emoteFgReset : contentFgReset;
+                    event.mapEffects(fgReset);
+                    sink.colour(fgReset);
                 }
             }
             else
             {
-                BashForeground tint;
-
-                if (event.type == IRCEvent.Type.EMOTE)
-                {
-                    tint = bright ? DefaultBright.emote : DefaultDark.emote;
-                }
-                else
-                {
-                    tint = bright ? DefaultBright.content : DefaultDark.content;
-                }
-
-                sink.colour(tint);
-                event.mapEffects(tint);
+                immutable fgReset = (event.type == IRCEvent.Type.EMOTE) ? emoteFgReset : contentFgReset;
+                event.mapEffects(fgReset);
+                sink.colour(fgReset);
             }
 
             if (sender.isServer || nickname.length)
