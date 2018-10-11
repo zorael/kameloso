@@ -741,8 +741,14 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
                 put(sink, " [");
 
-                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                else put(sink, badgefront);
+                if (plugin.printerSettings.uppercaseTypes)
+                {
+                    put(sink, badgefront.asUpperCase);
+                }
+                else
+                {
+                    put(sink, badgefront);
+                }
 
                 put(sink, ']');
             }
