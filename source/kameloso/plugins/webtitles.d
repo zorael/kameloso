@@ -420,6 +420,25 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
 }
 
 
+// reportYouTube
+/++
+ +  Prints the result of a YouTube lookup in the channel or as a message to
+ +  the user specified.
+ +
+ +  Params:
+ +      state = The current `kameloso.plugins.common.IRCPluginState`.
+ +      lookup = Finished title lookup.
+ +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +/
+void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event)
+{
+    import std.format : format;
+
+    immutable line = "[youtube.com] %s (uploaded by %s)".format(info.title, info.author);
+    state.privmsg(event.channel, event.sender.nickname, line);
+}
+
+
 // lookupTitle
 /++
  +  Given an URL, tries to look up the web page title of it.
