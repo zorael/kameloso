@@ -342,6 +342,56 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
 }
 
 
+// rewriteDirectImgurURL
+/++
+ +  Takes a direct imgur link (one that points to an image) and rewrites it to
+ +  instead point to the image's page.
+ +
+ +  Images (jpg, png, ...) can naturally not have titles, but the normal pages
+ +  can.
+ +
+ +  Params:
+ +      url = String link to rewrite.
+ +
+ +  Returns:
+ +      A rewritten string if it's a compatible imgur one, else the passed
+ +      `url`.
+ +/
+string rewriteDirectImgurURL(const string url)
+{
+    import kameloso.string : beginsWith, nom;
+    import std.typecons : Flag, No, Yes;
+
+    if (url.beginsWith("https://i.imgur.com/"))
+    {
+        immutable path = url[20..$].nom!(Yes.decode)('.');
+        return "https://imgur.com/" ~ path;
+    }
+    else if (url.beginsWith("http://i.imgur.com/"))
+    {
+        immutable path = url[19..$].nom!(Yes.decode)('.');
+        return "https://imgur.com/" ~ path;
+    }
+
+    return url;
+}
+
+///
+unittest
+{
+    {
+        immutable directURL = "https://i.imgur.com/URHe5og.jpg";
+        immutable rewritten = rewriteDirectImgurURL(directURL);
+        assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
+    }
+    {
+        immutable directURL = "http://i.imgur.com/URHe5og.jpg";
+        immutable rewritten = rewriteDirectImgurURL(directURL);
+        assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
+    }
+}
+
+
 // reportURL
 /++
  +  Prints the result of a web title lookup in the channel or as a message to
