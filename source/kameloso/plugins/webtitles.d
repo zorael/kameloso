@@ -73,6 +73,20 @@ struct TitleRequest
 }
 
 
+// YouTubeVideoInfo
+/++
+ +  Information about a YouTube video.
+ +/
+struct YouTubeVideoInfo
+{
+    /// The title of this YouTube video.
+    string title;
+
+    /// Name of the author of this YouTube video.
+    string author;
+}
+
+
 // onMessage
 /++
  +  Parses a message to see if the message contains one or more URLs.
