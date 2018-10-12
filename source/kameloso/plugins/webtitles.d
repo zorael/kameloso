@@ -443,11 +443,6 @@ void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCE
 /++
  +  Given an URL, tries to look up the web page title of it.
  +
- +  It doesn't work well on YouTube if they decided your IP is spamming; it will
- +  want you to solve a captcha to fetch the page. We hack our way around it
- +  by rewriting the URL to be one to ListenOnRepeat with the same video ID.
- +  Then we get our YouTube title.
- +
  +  Params:
  +      state = Current `IRCPluginState`.
  +      url = URL string to look up.
@@ -494,31 +489,7 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
         throw new Exception("Could not find a title tag");
     }
 
-    lookup.title = doc.title;
-
-    import kameloso.string : contains;
-    if ((lookup.title == "YouTube") && url.contains("youtube.com/watch?"))
-    {
-        state.askToLog("Bland YouTube title ...");
-
-        immutable title = youTubeToListenOnRepeat(url);
-
-        if (!title.contains(" - ListenOnRepeat"))
-        {
-            state.askToWarn("Failed to ListOnRepeatify YouTube title");
-        }
-        else
-        {
-            // Truncate away " - ListenOnRepeat"
-            lookup.title = title[0..$-17];
-            lookup.domain = "youtube.com";
-        }
-    }
-    else
-    {
-        lookup.title = decodeTitle(lookup.title);
-    }
-
+    lookup.title = decodeTitle(doc.title);
     lookup.domain = res.finalURI.original_host;  // thanks to ikod
 
     import kameloso.string : beginsWith;
