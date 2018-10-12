@@ -307,33 +307,44 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
 
     try
     {
-        import kameloso.string : beginsWith, nom;
+        import kameloso.string : beginsWith, contains, nom;
         import std.typecons : No, Yes;
 
-        // imgur direct links naturally have no titles, but the normal pages do
-        // Rewrite and look those up instead.
-
-        immutable originalURL = titleReq.url;
-
-        if (titleReq.url.beginsWith("https://i.imgur.com/"))
+        if (titleReq.url.contains("youtube.com/watch?v=") || titleReq.url.contains("youtu.be/"))
         {
-            immutable path = titleReq.url[20..$].nom!(Yes.decode)('.');
-            titleReq.url = "https://imgur.com/" ~ path;
+            // Do our own slicing instead of using regexes, because footprint.
+            string slice = titleReq.url;
+
+            slice.nom!(Yes.decode)("http");
+            if (slice[0] == 's') slice = slice[1..$];
+            slice = slice[3..$];  // ://
+
+            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)("www.");
+
+            if (slice.beginsWith("youtube.com/watch?v=") ||
+                slice.beginsWith("youtu.be/"))
+            {
+                // Don't cache it for now
+                auto info = getYouTubeInfo(titleReq.url);
+                state.reportYouTube(info, titleReq.event);
+                return;
+            }
+            else
+            {
+                // Unsure what this is really. Drop down and treat like normal link
+            }
         }
-        else if (titleReq.url.beginsWith("http://i.imgur.com/"))
+        else if (titleReq.url.contains("://i.imgur.com/"))
         {
-            immutable path = titleReq.url[19..$].nom!(Yes.decode)('.');
-            titleReq.url = "https://imgur.com/" ~ path;
-        }
+            // imgur direct links naturally have no titles, but the normal pages do.
+            // Rewrite and look those up instead.
 
-        if (titleReq.url != originalURL)
-        {
-            state.askToLog("direct imgur URL; rewritten");
+            titleReq.url = rewriteDirectImgurURL(titleReq.url);
         }
 
         auto lookup = state.lookupTitle(titleReq.url);
         state.reportURL(lookup, titleReq.event);
-        cache[originalURL] = lookup;
+        cache[titleReq.url] = lookup;
     }
     catch (const Exception e)
     {
