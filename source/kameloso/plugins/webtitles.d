@@ -465,98 +465,45 @@ TitleLookup lookupTitle(IRCPluginState state, const string url)
 }
 
 
-// youTubeToListenOnRepeat
+/// getYouTubeInfo
 /++
- +  If a YouTube video link resolves its title to just "YouTube", rewrites the
- +  URL to ListenOnRepeat with the same video ID and fetch its title there.
+ +  Fetches the JSON description of a YouTube video link, allowing us to report
+ +  it the page's title without having to actually fetch the video page.
  +
- +  As this is only called from within this module's functions it is *assumed*
- +  that the strings are proper URLs, in the sense that they start with "http".
+ +  Example:
+ +  ---
+ +  YouTubeVideoInfo info = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
+ +  writeln(info.title);
+ +  writeln(info.author);
+ +  ---
  +
  +  Params:
- +      url = The original (possibly YouTube) URL string to process.
+ +      url = A YouTube video link string.
  +
  +  Returns:
- +      A rewritten ListenOnRepeat URL, in case the original `url` was a YouTube
- +      one. Otherwise the same URL as was passed.
+ +      A `YouTubeVideoInfo` with members describing the looked-up video.
  +/
-string youTubeToListenOnRepeat(const string url)
+YouTubeVideoInfo getYouTubeInfo(const string url)
 {
-    import kameloso.string : beginsWith, nom;
-    import std.string : indexOf;
+    import requests : getContent;
+    import std.json : parseJSON;
 
-    if (url.length < 38)
-    {
-        // Too short to be a YouTube watch one
-        // Shortest is: "http://youtube.com/watch?v=s-mOy8VUEBk";
-        return url;
-    }
+    YouTubeVideoInfo info;
 
-    // Guaranteed by findURLs
-    assert((url[0..4] == "http"), "YouTube to ListenOnRepeat URL did not start " ~
-        "with 'http': " ~ url[0..4]);
+    immutable youtubeURL = "https://www.youtube.com/oembed?url=" ~ url ~ "&format=json";
+    const data = cast(char[])getContent(youtubeURL).data;
 
-    string slice = url;
-
-    if (url[4] == 's')
+    if (data == "Not Found")
     {
-        // Begins with https
-        slice = slice[8..$];
-    }
-    else if (url[4] == ':')
-    {
-        // Begins with http:
-        slice = slice[7..$];
-    }
-    else
-    {
-        // Invalid protocol text
-        return url;
+        // Invalid video ID
+        throw new Exception("Invalid YouTube video ID");
     }
 
-    if (slice.beginsWith("www."))
-    {
-        slice = slice[4..$];
-    }
+    auto jsonFromYouTube = parseJSON(data);
 
-    if (!slice.beginsWith("youtube.com/watch?v="))
-    {
-        return url;
-    }
-
-    slice.nom('=');
-    if (slice.length < 11)
-    {
-        //writeln("TOO SHORT:", slice.length);
-        return url;
-    }
-
-    return "https://www.listenonrepeat.com/watch/?v=" ~ slice;
-}
-
-///
-unittest
-{
-    {
-        immutable url = "https://www.youtube.com/watch?v=s-mOy8VUEBk";
-        immutable fixed = youTubeToListenOnRepeat(url);
-        assert(fixed == "https://www.listenonrepeat.com/watch/?v=s-mOy8VUEBk", fixed);
-    }
-    {
-        immutable url = "http://youtube.com/watch?v=s-mOy8VUEBk";
-        immutable fixed = youTubeToListenOnRepeat(url);
-        assert(fixed == "https://www.listenonrepeat.com/watch/?v=s-mOy8VUEBk", fixed);
-    }
-    {
-        immutable url = "https://www.YOUTUBE.com/watch?v=s-mOy8VUEBk";
-        immutable fixed = youTubeToListenOnRepeat(url);
-        assert(fixed == "https://www.YOUTUBE.com/watch?v=s-mOy8VUEBk", fixed);
-    }
-    {
-        immutable url = "https://www.youtube.com/watch?v=s-mOy8VUEB";
-        immutable fixed = youTubeToListenOnRepeat(url);
-        assert(fixed == "https://www.youtube.com/watch?v=s-mOy8VUEB", fixed);
-    }
+    info.title = jsonFromYouTube["title"].str;
+    info.author = jsonFromYouTube["author_name"].str;
+    return info;
 }
 
 
