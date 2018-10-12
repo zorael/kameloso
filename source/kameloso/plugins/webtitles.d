@@ -97,7 +97,7 @@ struct YouTubeVideoInfo
  +/
 @(Terminating)
 @(IRCEvent.Type.CHAN)
-@(PrivilegeLevel.whitelist)
+@(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
