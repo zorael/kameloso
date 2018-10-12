@@ -409,7 +409,7 @@ unittest
  +  the user specified.
  +
  +  Params:
- +      tid = Thread ID of the main thread, to report the lookup to.
+ +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
@@ -455,7 +455,7 @@ void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCE
  +  Given an URL, tries to look up the web page title of it.
  +
  +  Params:
- +      state = Current `IRCPluginState`.
+ +      state = Current `kameloso.plugins.common.IRCPluginState`.
  +      url = URL string to look up.
  +
  +  Returns:
