@@ -1804,9 +1804,11 @@ unittest
     assert((event.content == line2), event.content);
 }
 
-// highlightTwitchEmotes
+
+// highlightTwitchEmotesInto
 /++
- +  Highlights Twitch emotes in the chat by tinting them a different colour.
+ +  Highlights Twitch emotes in the chat by tinting them a different colour,
+ +  saving the results into a passed output range sink.
  +
  +  Params:
  +      line = Content line whose containing emotes should be highlit.
@@ -1818,7 +1820,7 @@ unittest
  +/
 version(TwitchSupport)
 version(Colours)
-void highlightTwitchEmotes(Sink)(const string line, auto ref Sink sink,
+void highlightTwitchEmotesInto(Sink)(const string line, auto ref Sink sink,
     const string emotes, const BashForeground pre, const BashForeground post)
 {
     import std.algorithm.iteration : splitter;
