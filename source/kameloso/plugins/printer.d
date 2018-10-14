@@ -1403,45 +1403,51 @@ unittest
  +  Maps mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
  +
  +  Params:
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
+ +      origLine = String line to map effects of.
+ +      fgBase = Foreground base code to reset to after end colour tags.
+ +      bgBase = Backgrund base code to reset to after end colour tags.
+ +
+ +  Returns:
+ +      A new string based on `origLine` with mIRC tokens mapped to Bash ones.
  +/
 version(Colours)
 {
     import kameloso.bash : BashBackground, BashForeground;
 
-    void mapEffects(ref IRCEvent event, const uint fgReset = BashForeground.default_,
-        const uint bgReset = BashBackground.default_)
+    string mapEffects(const string origLine, const uint fgBase = BashForeground.default_,
+        const uint bgBase = BashBackground.default_)
     {
         import kameloso.bash : B = BashEffect;
         import kameloso.irc : I = IRCControlCharacter;
         import kameloso.string : contains;
 
-        with (event)
+        string line = origLine;
+
+        if (line.contains(I.colour))
         {
-            if (content.contains(I.colour))
-            {
-                // Colour is mIRC 3
-                content = mapColours(content, fgReset, bgReset);
-            }
-
-            if (content.contains(I.bold))
-            {
-                // Bold is bash 1, mIRC 2
-                content = mapAlternatingEffectImpl!(I.bold, B.bold)(content);
-            }
-
-            if (content.contains(I.italics))
-            {
-                // Italics is bash 3 (not really), mIRC 29
-                content = mapAlternatingEffectImpl!(I.italics, B.italics)(content);
-            }
-
-            if (content.contains(I.underlined))
-            {
-                // Underlined is bash 4, mIRC 31
-                content = mapAlternatingEffectImpl!(I.underlined, B.underlined)(content);
-            }
+            // Colour is mIRC 3
+            line = mapColours(line, fgBase, bgBase);
         }
+
+        if (line.contains(I.bold))
+        {
+            // Bold is bash 1, mIRC 2
+            line = mapAlternatingEffectImpl!(I.bold, B.bold)(line);
+        }
+
+        if (line.contains(I.italics))
+        {
+            // Italics is bash 3 (not really), mIRC 29
+            line = mapAlternatingEffectImpl!(I.italics, B.italics)(line);
+        }
+
+        if (line.contains(I.underlined))
+        {
+            // Underlined is bash 4, mIRC 31
+            line = mapAlternatingEffectImpl!(I.underlined, B.underlined)(line);
+        }
+
+        return line;
     }
 }
 
