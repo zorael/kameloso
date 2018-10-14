@@ -1175,9 +1175,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length)
         {
-            immutable BashForeground contentFgReset = bright ?
+            immutable BashForeground contentFgBase = bright ?
                 DefaultBright.content : DefaultDark.content;
-            immutable BashForeground emoteFgReset = bright ?
+            immutable BashForeground emoteFgBase = bright ?
                 DefaultBright.emote : DefaultDark.emote;
 
             version(TwitchSupport)
@@ -1194,9 +1194,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     Appender!string highlightSink;
                     highlightSink.reserve(content.length + 60);  // mostly +10
 
-                    immutable BashForeground contentHighlight = bright ?
-                        DefaultBright.highlight : DefaultDark.highlight;
-                    immutable BashForeground emoteHighlight = bright ?
+                    immutable BashForeground highlight = bright ?
                         DefaultBright.highlight : DefaultDark.highlight;
 
                     if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
@@ -1205,27 +1203,29 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                         if (event.tags.contains("emote-only=1"))
                         {
-                            // Just highlight the whole line, make it appear as normal content
-                            event.mapEffects(contentFgReset);
-                            highlightSink.colour(contentHighlight);
+                            // Just highlight the whole line
+                            content = mapEffects(content, emoteFgBase);
+                            highlightSink.colour(highlight);
                             highlightSink.put(content);
-                            highlightSink.colour(contentFgReset);
-                            sink.colour(contentFgReset);
+                            highlightSink.colour(emoteFgBase);
+                            sink.colour(emoteFgBase);
                         }
                         else
                         {
                             // Emote but mixed text and emotes
-                            event.mapEffects(emoteFgReset);
-                            content.highlightTwitchEmotes(highlightSink, aux, emoteHighlight, emoteFgReset);
-                            sink.colour(emoteFgReset);
+                            content = mapEffects(content, contentFgBase);
+                            content.highlightTwitchEmotesInto(highlightSink,
+                                aux, highlight, contentFgBase);
+                            sink.colour(contentFgBase);
                         }
                     }
                     else
                     {
                         // Normal content, normal text, normal emotes
-                        event.mapEffects(contentFgReset);
-                        content.highlightTwitchEmotes(highlightSink, aux, contentHighlight, contentFgReset);
-                        sink.colour(contentFgReset);
+                        content = mapEffects(content, contentFgBase);
+                        content.highlightTwitchEmotesInto(highlightSink,
+                            aux, highlight, contentFgBase);
+                        sink.colour(contentFgBase);
                     }
 
                     content = highlightSink.data;  // mutable...
@@ -1233,16 +1233,16 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 }
                 else
                 {
-                    immutable fgReset = (event.type == IRCEvent.Type.EMOTE) ? emoteFgReset : contentFgReset;
-                    event.mapEffects(fgReset);
-                    sink.colour(fgReset);
+                    immutable fgBase = (event.type == IRCEvent.Type.EMOTE) ? emoteFgBase : contentFgBase;
+                    content = mapEffects(content, fgBase);
+                    sink.colour(fgBase);
                 }
             }
             else
             {
-                immutable fgReset = (event.type == IRCEvent.Type.EMOTE) ? emoteFgReset : contentFgReset;
-                event.mapEffects(fgReset);
-                sink.colour(fgReset);
+                immutable fgBase = (event.type == IRCEvent.Type.EMOTE) ? emoteFgBase : contentFgBase;
+                content = mapEffects(content, fgBase);
+                sink.colour(fgBase);
             }
 
             if (sender.isServer || nickname.length)
