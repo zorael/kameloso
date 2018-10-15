@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of plugins, and it's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of compile-time plugins, some of which are toys, proofs of concepts and examples. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy case of specialcasing for that kind of event on that particular IRC network or server daemon.
 
@@ -25,6 +25,8 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; generate one and edit it to get an idea of the features available to toggle (see [notes on generating](#configuration) below)
+
+If nothing else it makes for a good read-only lurkbot.
 
 ## Current limitations:
 
