@@ -1141,8 +1141,10 @@ Next tryResolve(ref Client client)
             continue;
 
         case success:
-            logger.infof("%s%s resolved into %s%s%2$s IPs.",
-                parser.bot.server.address, logtint, infotint, conn.ips.length);
+            import kameloso.string : plurality;
+            logger.infof("%s%s resolved into %s%s%2$s %5$s.",
+                parser.bot.server.address, logtint, infotint, conn.ips.length,
+                conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
         case exception:

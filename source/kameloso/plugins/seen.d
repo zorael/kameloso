@@ -727,8 +727,10 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
             }
         }
 
-        logger.logf("Seen users loaded, currently %s%d%s users seen.",
-            infotint, aa.length, logtint);
+        import kameloso.string : plurality;
+
+        logger.logf("Seen users loaded, currently %s%d%s %s seen.",
+            infotint, aa.length, logtint, aa.length.plurality("user", "users"));
     }
 
     if (!filename.exists || !filename.isFile)

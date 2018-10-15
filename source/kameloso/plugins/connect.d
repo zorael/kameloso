@@ -152,6 +152,7 @@ void joinChannels(ConnectService service)
             }
         }
 
+        import kameloso.string : plurality;
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
         import std.array : array, join;
@@ -164,7 +165,10 @@ void joinChannels(ConnectService service)
             .sort()
             .uniq;
 
-        logger.logf("Joining %s%d%s channels ...", infotint, chanlist.walkLength, logtint);
+        immutable numChans = chanlist.walkLength;
+
+        logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
+            numChans.plurality("channel", "channels"));
 
         service.join(chanlist.join(","));
     }
