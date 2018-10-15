@@ -699,7 +699,6 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
     with (plugin.state)
     with (event)
-    with (event.sender)
     {
         event.content = stripEffects(event.content);
 
@@ -714,31 +713,31 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (sender.isServer)
         {
-            sink.put(address);
+            sink.put(sender.address);
         }
         else
         {
-            if (alias_.length)
+            if (sender.alias_.length)
             {
-                sink.put(alias_);
-                if (class_ == IRCUser.Class.special) sink.put('*');
+                sink.put(sender.alias_);
+                if (sender.class_ == IRCUser.Class.special) sink.put('*');
 
-                if (!alias_.asLowerCase.equal(nickname))
+                if (!sender.alias_.asLowerCase.equal(sender.nickname))
                 {
-                    put(sink, " <", nickname, '>');
+                    put(sink, " <", sender.nickname, '>');
                 }
             }
-            else if (nickname.length)
+            else if (sender.nickname.length)
             {
                 // Can be no-nick special: [PING] *2716423853
-                sink.put(nickname);
-                if (class_ == IRCUser.Class.special) sink.put('*');
+                sink.put(sender.nickname);
+                if (sender.class_ == IRCUser.Class.special) sink.put('*');
             }
 
-            if (badge.length)
+            if (sender.badge.length && (event.type != IRCEvent.Type.JOIN))
             {
                 import kameloso.string : contains, nom;
-                immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
+                immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes)
@@ -790,30 +789,28 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length)
         {
-            version(TwitchSupport)
+            if (sender.isServer || sender.nickname.length)
             {
-                if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
-                    ((event.type == IRCEvent.Type.CHAN) ||
-                    (event.type == IRCEvent.Type.EMOTE) ||
-                    (event.type == IRCEvent.Type.TWITCH_CHEER) ||
-                    (event.type == IRCEvent.Type.SELFCHAN) ||
-                    (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
-                {
-                    // Here we would normally highlight emotes, but we're monochrome
-                    // clear aux though; it may contain emote positions.
-                    aux = string.init;
-                }
-            }
+                immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
+                    (event.type == IRCEvent.Type.SELFEMOTE) ||
+                    (event.type == IRCEvent.Type.TWITCH_CHEER);
 
-            if (sender.isServer || nickname.length)
-            {
-                import kameloso.irc : containsNickname;
+                if (isEmote)
+                {
+                    put(sink, ' ');
+                }
+                else
+                {
+                    put(sink, `: "`);
+                }
 
                 with (IRCEvent.Type)
                 switch (event.type)
                 {
                 case CHAN:
                 case EMOTE:
+                case TWITCH_CHEER:
+                    import kameloso.irc : containsNickname;
                     if (content.containsNickname(bot.nickname))
                     {
                         // Nick was mentioned (certain)
@@ -825,12 +822,13 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     break;
                 }
 
-                put(sink, `: "`, content, '"');
+                put(sink, content);
+                if (!isEmote) put(sink, '"');
             }
             else
             {
                 // PING or ERROR likely
-                put(sink, content);
+                put(sink, content);  // No need for indenting space
             }
         }
 
@@ -972,10 +970,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
     with (plugin.state)
     with (event)
-    with (event.sender)
     {
         sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
-        put(sink, '[', timestamp, "] ");
+        put(sink, '[', timestamp, ']');
 
         import kameloso.string : beginsWith;
         if (rawTypestring.beginsWith("ERR_"))
@@ -1000,7 +997,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         import std.uni : asLowerCase;
 
-        put(sink, '[');
+        put(sink, " [");
 
         if (plugin.printerSettings.uppercaseTypes) put(sink, typestring);
         else put(sink, typestring.asLowerCase);
@@ -1017,15 +1014,15 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (sender.isServer)
         {
-            sink.put(address);
+            sink.put(sender.address);
         }
         else
         {
-            if (alias_.length)
+            if (sender.alias_.length)
             {
-                sink.put(alias_);
+                sink.put(sender.alias_);
 
-                if (class_ == IRCUser.Class.special)
+                if (sender.class_ == IRCUser.Class.special)
                 {
                     sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
@@ -1034,35 +1031,35 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 import std.algorithm.comparison : equal;
                 import std.uni : asLowerCase;
 
-                if (!alias_.asLowerCase.equal(nickname))
+                if (!sender.alias_.asLowerCase.equal(sender.nickname))
                 {
                     sink.colour(BashForeground.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.sender);
-                    sink.put(nickname);
+                    sink.put(sender.nickname);
                     sink.colour(BashForeground.default_);
                     sink.put('>');
                 }
             }
-            else if (nickname.length)
+            else if (sender.nickname.length)
             {
                 // Can be no-nick special: [PING] *2716423853
-                sink.put(nickname);
+                sink.put(sender.nickname);
 
-                if (class_ == IRCUser.Class.special)
+                if (sender.class_ == IRCUser.Class.special)
                 {
                     sink.colour(bright ? DefaultBright.special : DefaultDark.special);
                     sink.put('*');
                 }
             }
 
-            if (badge.length)
+            if (sender.badge.length && (type != IRCEvent.Type.JOIN))
             {
                 import kameloso.string : contains, nom;
                 import std.uni : asUpperCase;
 
                 sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                immutable badgefront = badge.contains('/') ? badge.nom('/') : badge;
+                immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
                 put(sink, " [");
 
                 if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
@@ -1141,107 +1138,60 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             immutable BashForeground emoteFgBase = bright ?
                 DefaultBright.emote : DefaultDark.emote;
 
-            version(TwitchSupport)
+            immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
+                (event.type == IRCEvent.Type.SELFEMOTE) ||
+                (event.type == IRCEvent.Type.TWITCH_CHEER)) ? emoteFgBase : contentFgBase;
+            immutable isEmote = (fgBase == emoteFgBase);
+
+            sink.colour(fgBase);  // Always grey colon and SASL +, prepare for emote
+
+            if (sender.isServer || sender.nickname.length)
             {
-                if ((bot.server.daemon == IRCServer.Daemon.twitch) &&
-                    ((event.type == IRCEvent.Type.CHAN) ||
-                    (event.type == IRCEvent.Type.EMOTE) ||
-                    (event.type == IRCEvent.Type.TWITCH_CHEER) ||
-                    (event.type == IRCEvent.Type.SELFCHAN) ||
-                    (event.type == IRCEvent.Type.SELFEMOTE)) && aux.length)
+                if (isEmote)
                 {
-                    import std.array : Appender;
-
-                    Appender!string highlightSink;
-                    highlightSink.reserve(content.length + 60);  // mostly +10
-
-                    immutable BashForeground highlight = bright ?
-                        DefaultBright.highlight : DefaultDark.highlight;
-
-                    if ((event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.TWITCH_CHEER))
-                    {
-                        import kameloso.string : contains;
-
-                        if (event.tags.contains("emote-only=1"))
-                        {
-                            // Just highlight the whole line
-                            content = mapEffects(content, emoteFgBase);
-                            highlightSink.colour(highlight);
-                            highlightSink.put(content);
-                            highlightSink.colour(emoteFgBase);
-                            sink.colour(emoteFgBase);
-                        }
-                        else
-                        {
-                            // Emote but mixed text and emotes
-                            content = mapEffects(content, contentFgBase);
-                            content.highlightTwitchEmotesInto(highlightSink,
-                                aux, highlight, contentFgBase);
-                            sink.colour(contentFgBase);
-                        }
-                    }
-                    else
-                    {
-                        // Normal content, normal text, normal emotes
-                        content = mapEffects(content, contentFgBase);
-                        content.highlightTwitchEmotesInto(highlightSink,
-                            aux, highlight, contentFgBase);
-                        sink.colour(contentFgBase);
-                    }
-
-                    content = highlightSink.data;  // mutable...
-                    aux = string.init;
+                    put(sink, ' ');
                 }
                 else
                 {
-                    immutable fgBase = (event.type == IRCEvent.Type.EMOTE) ? emoteFgBase : contentFgBase;
-                    content = mapEffects(content, fgBase);
-                    sink.colour(fgBase);
+                    put(sink, `: "`);
                 }
-            }
-            else
-            {
-                immutable fgBase = (event.type == IRCEvent.Type.EMOTE) ? emoteFgBase : contentFgBase;
-                content = mapEffects(content, fgBase);
-                sink.colour(fgBase);
-            }
 
-            if (sender.isServer || nickname.length)
-            {
-                import kameloso.irc : containsNickname;
+                content = mapEffects(content, fgBase);
 
                 with (IRCEvent.Type)
                 switch (event.type)
                 {
                 case CHAN:
                 case EMOTE:
-                    if (content.containsNickname(bot.nickname))
-                    {
-                        import kameloso.bash : invert;
+                case TWITCH_CHEER:
+                    import kameloso.bash : invert;
+                    import kameloso.irc : containsNickname;
 
-                        // Nick was mentioned (certain)
-                        shouldBell = bellOnMention;
-                        put(sink, `: "`, content.invert(bot.nickname), '"');
-                        break;
-                    }
-                    else goto default;
+                    if (!content.containsNickname(bot.nickname)) goto default;
+
+                    // Nick was mentioned (certain)
+                    shouldBell = bellOnMention;
+                    put(sink, content.invert(bot.nickname));
+                    break;
 
                 default:
                     // Normal non-highlighting channel message
-                    put(sink, `: "`, content, '"');
+                    put(sink, content);
                     break;
                 }
+
+                import kameloso.bash : BashBackground;
+
+                // Reset the background to ward off bad backgrounds bleeding out
+                sink.colour(fgBase, BashBackground.default_);
+                if (!isEmote) put(sink, '"');
             }
             else
             {
-                // PING or ERROR likely
-                put(sink, content);
+                // PING or ERROR likely, or SASL +
+                put(sink, content);  // No need for indenting space
             }
         }
-
-        // Reset the background to ward off bad backgrounds bleeding out
-        import kameloso.bash : BashBackground;
-        sink.colour(BashBackground.default_);
 
         if (aux.length)
         {
