@@ -66,6 +66,7 @@ struct ThreadMessage
     }
 }
 
+
 // Sendable
 /++
  +  Interface for a message sendable through the message bus.

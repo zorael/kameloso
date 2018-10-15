@@ -905,6 +905,7 @@ unittest
     assert("Lorem ipsum sit amet".has("sit"));
 }
 
+
 // strippedRight
 /++
  +  Returns a slice of the passed string with any trailing whitespace and/or

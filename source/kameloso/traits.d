@@ -238,6 +238,7 @@ if (Things.length > 0)
     }();
 }
 
+
 // longestMemberTypeName
 /++
  +  Gets the name of the longest type of a member in one or more structs.
@@ -263,6 +264,7 @@ unittest
     enum longestConfigurable = longestMemberTypeName!S1;
     assert((longestConfigurable == "char[][string]"), longestConfigurable);
 }
+
 
 // longestUnconfigurableMemberTypeName
 /++
