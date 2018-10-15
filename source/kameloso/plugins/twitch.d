@@ -45,6 +45,32 @@ void postprocess(TwitchService service, ref IRCEvent event)
             event.type = (event.count > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
         }
     }
+
+    version(Colours)
+    {
+        import kameloso.common : settings;
+
+        if (!settings.monochrome)
+        {
+            highlightEmotes(event);
+        }
+    }
+
+    // Reset event.aux on events which only used it to carry information for highlighting
+    with (IRCEvent.Type)
+    switch (event.type)
+    {
+    case CHAN:
+    case EMOTE:
+    case TWITCH_CHEER:
+    case SELFCHAN:
+    case SELFEMOTE:
+        event.aux = string.init;
+        break;
+
+    default:
+        break;
+    }
 }
 
 
