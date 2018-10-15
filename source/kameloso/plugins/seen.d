@@ -604,6 +604,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         {
             // Channel message and the user is in the channel
             chan(event.channel, event.content ~ " is here right now!");
+            return;
         }
 
         const userTimestamp = event.content in seenUsers;
