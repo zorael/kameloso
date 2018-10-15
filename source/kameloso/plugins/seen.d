@@ -588,6 +588,12 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content);
             return;
         }
+        else if (state.bot.nickname == event.content)
+        {
+            // The requested nick is the bot's.
+            privmsg(event.channel, event.sender.nickname, "T-that's me though...");
+            return;
+        }
         else if (event.sender.nickname == event.content)
         {
             // The person is asking for seen information about him-/herself.
