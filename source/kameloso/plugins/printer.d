@@ -879,6 +879,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
     import kameloso.bash : BashForeground, colour;
+    import kameloso.constants : DefaultBright, DefaultDark;
     import kameloso.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -893,46 +894,6 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     immutable typestring = rawTypestring.withoutTypePrefix;
 
     bool shouldBell;
-
-    alias BF = BashForeground;
-
-    enum DefaultDark : BashForeground
-    {
-        timestamp = BF.white,
-        type    = BF.lightblue,
-        error   = BF.lightred,
-        sender  = BF.lightgreen,
-        special = BF.lightyellow,
-        target  = BF.cyan,
-        channel = BF.yellow,
-        content = BF.default_,
-        aux     = BF.white,
-        count   = BF.green,
-        num     = BF.darkgrey,
-        badge   = BF.white,
-        emote   = BF.cyan,
-        highlight = BF.white,
-        query   = BF.lightgreen,
-    }
-
-    enum DefaultBright : BashForeground
-    {
-        timestamp = BF.black,
-        type    = BF.blue,
-        error   = BF.red,
-        sender  = BF.green,
-        special = BF.yellow,
-        target  = BF.cyan,
-        channel = BF.yellow,
-        content = BF.default_,
-        aux     = BF.black,
-        count   = BF.lightgreen,
-        num     = BF.lightgrey,
-        badge   = BF.black,
-        emote   = BF.lightcyan,
-        highlight = BF.black,
-        query   = BF.green,
-    }
 
     immutable bright = settings.brightTerminal;
 

@@ -36,3 +36,48 @@ enum Timeout
     whoisRetry = 15,
     titleCache = 600,
 }
+
+version(Colours)
+{
+    import kameloso.bash : BashForeground;
+
+    alias BF = BashForeground;
+
+    enum DefaultDark : BashForeground
+    {
+        timestamp = BF.white,
+        type    = BF.lightblue,
+        error   = BF.lightred,
+        sender  = BF.lightgreen,
+        special = BF.lightyellow,
+        target  = BF.cyan,
+        channel = BF.yellow,
+        content = BF.default_,
+        aux     = BF.white,
+        count   = BF.green,
+        num     = BF.darkgrey,
+        badge   = BF.white,
+        emote   = BF.cyan,
+        highlight = BF.white,
+        query   = BF.lightgreen,
+    }
+
+    enum DefaultBright : BashForeground
+    {
+        timestamp = BF.black,
+        type    = BF.blue,
+        error   = BF.red,
+        sender  = BF.green,
+        special = BF.yellow,
+        target  = BF.cyan,
+        channel = BF.yellow,
+        content = BF.default_,
+        aux     = BF.black,
+        count   = BF.lightgreen,
+        num     = BF.lightgrey,
+        badge   = BF.black,
+        emote   = BF.lightcyan,
+        highlight = BF.black,
+        query   = BF.green,
+    }
+}
