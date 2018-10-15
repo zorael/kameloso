@@ -10,7 +10,7 @@
 module kameloso.string;
 
 import std.range.primitives : ElementEncodingType, ElementType, isOutputRange;
-import std.traits : isMutable, isSomeString;
+import std.traits : isIntegral, isMutable, isSomeString;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -244,8 +244,8 @@ unittest
  +      The singular string if num is 1 or -1, otherwise the plural string.
  +/
 pragma(inline)
-T plurality(T)(const int num, const T singular, const T plural) pure nothrow @nogc
-if (isSomeString!T)
+T plurality(Num, T)(const Num num, const T singular, const T plural) pure nothrow @nogc
+if (isIntegral!Num && isSomeString!T)
 {
     return ((num == 1) || (num == -1)) ? singular : plural;
 }
