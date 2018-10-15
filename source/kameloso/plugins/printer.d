@@ -1709,11 +1709,9 @@ unittest
 
     immutable line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
     immutable line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bResetAll;
+    immutable mapped = mapEffects(line1);
 
-    IRCEvent event;
-    event.content = line1;
-    event.mapEffects();
-    assert((event.content == line2), event.content);
+    assert((mapped == line2), mapped);
 }
 
 
