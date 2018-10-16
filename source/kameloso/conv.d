@@ -26,12 +26,15 @@ if (is(E == enum))
      +  It lowers to a big switch of the enum member strings. It is faster than
      +  `std.conv.to` and generates less template bloat.
      +
+     +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+     +  written by Stephan Koch (https://github.com/UplinkCoder).
+     +
      +  Example:
      +  ---
      +  enum SomeEnum { one, two, three };
      +
-     +  SomeEnum foo = Enum!someEnum.fromString("one");
-     +  SomeEnum bar = Enum!someEnum.fromString("three");
+     +  SomeEnum foo = Enum!SomeEnum.fromString("one");
+     +  SomeEnum bar = Enum!SomeEnum.fromString("three");
      +
      +  assert(foo == SomeEnum.one);
      +  assert(bar == SomeEnum.three);
@@ -77,6 +80,7 @@ if (is(E == enum))
      +  `std.conv.to` and generates less template bloat.
      +
      +  Taken from: https://forum.dlang.org/post/bfnwstkafhfgihavtzsz@forum.dlang.org
+     +  written by Stephan Koch (https://github.com/UplinkCoder).
      +
      +  Example:
      +  ---
