@@ -211,6 +211,8 @@ Next printHelp(GetoptResult results) @system
     import std.getopt : defaultGetoptPrinter;
     defaultGetoptPrinter(headline, results.options);
     writeln();
+    writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account, etc.");
+    writeln();
     return Next.returnSuccess;
 }
 
