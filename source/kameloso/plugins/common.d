@@ -1903,7 +1903,10 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-     +  Replays any queued requests awaiting the result of a WHOIS.
+     +  Replays any queued requests awaiting the result of a WHOIS. Before that,
+     +  records the user's services account by saving it to the user's
+     +  `kameloso.irc.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  associative array.
      +
      +  This function was part of `UserAwareness` but triggering queued requests
      +  is too common to conflate with it.
@@ -1925,6 +1928,9 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     {
         with (plugin.state)
         {
+            // Catch the user here, before replaying anything.
+            users[event.target.nickname] = event.target;
+
             string[] garbageNicknames;
 
             // See if there are any queued WHOIS requests to trigger
@@ -2181,22 +2187,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             plugin.catchUser(event.sender);
         }
 
-    }
-
-
-    // onUserAwarenessAccountInfoTargetMixin
-    /++
-     +  Records a user's services account by saving it to the user's
-     +  `kameloso.irc.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
-     +  associative array.
-     +/
-    @(AwarenessEarly)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_WHOISACCOUNT)
-    @(IRCEvent.Type.RPL_WHOISREGNICK)
-    void onUserAwarenessAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
-    {
-        plugin.state.users[event.target.nickname] = event.target;
     }
 
 
