@@ -2120,7 +2120,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                 state.users.remove(event.sender.nickname);
             }
 
-            foreach (channel; state.channels)
+            foreach (ref channel; state.channels)
             {
                 import std.algorithm.searching : countUntil;
                 import std.algorithm.mutation : SwapStrategy, remove;
