@@ -2403,15 +2403,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        {
-            state.channels[event.channel].users ~= event.sender.nickname;
-
-            if (event.sender.nickname !in state.users)
-            {
-                state.users[event.sender.nickname] = event.sender;
-            }
-        }
+        plugin.state.channels[event.channel].users ~= event.sender.nickname;
     }
 
 
