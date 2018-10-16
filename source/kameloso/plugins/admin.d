@@ -146,7 +146,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandShowOneUser
+// onCommandShowUser
 /++
  +  Prints the details of one or more specific, supplied users to the local
  +  terminal.
@@ -160,7 +160,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "user")
 @Description("[debug] Prints out information about one or more specific users " ~
-    "to the local terminal.", "$command [nickname]")
+    "to the local terminal.", "$command [nickname] [nickname] ...")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
@@ -186,7 +186,7 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Saves current configuration to disk.
  +
- +  This saves all plugins' configuration, not just this plugin's.
+ +  This saves all plugins' settings, not just this plugin's.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)

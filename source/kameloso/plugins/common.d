@@ -2211,7 +2211,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         {
             plugin.catchUser(event.sender);
         }
-
     }
 
 
@@ -2373,9 +2372,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Removes an `kameloso.ircdefs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
-     +  Additionally decrements the reference count of all known
-     +  `kameloso.ircdefs.IRCUser`s that was in that channel, to keep track of
-     +  when a user runs out of scope.
+     +  Remove the user from the `plugin.state.users` array if, by leaving, it
+     +  left the last channel we can observe it from, so as not to leak users.
+     +  It can be argued that this should be part of user awareness, however
+     +  this would not be possible if it were not for channel-tracking. As such
+     +  keep the behaviour in channel awareness.
      +/
     @(AwarenessLate)
     @(Chainable)
@@ -2434,9 +2435,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     /++
      +  Removes a user from being part of a channel when they leave one.
      +
-     +  Decrements the user's reference count, so we know that it is in one
-     +  channel less now (and should possibly be removed if it is no longer in
-     +  any we're tracking).
+     +  Remove the user from the `plugin.state.users` array if, by leaving, it
+     +  left the last channel we can observe it from, so as not to leak users.
+     +  It can be argued that this should be part of user awareness, however
+     +  this would not be possible if it were not for channel-tracking. As such
+     +  keep the behaviour in channel awareness.
      +/
     @(AwarenessLate)
     @(Chainable)
@@ -2637,10 +2640,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +
      +  On some servers this does not include information about the users, only
      +  their nickname and their channel mode (e.g. `@` for operator), but other
-     +  servers express the users in the full `user!ident@address` form. It's
-     +  not the job of `ChannelAwareness` to create `kameloso.ircdefs.IRCUser`s
-     +  out of them, but we need a skeletal `kameloso.ircdefs.IRCUser` at least,
-     +  to increment the refcount of.
+     +  servers express the users in the full `user!ident@address` form.
      +/
     @(AwarenessEarly)
     @(Chainable)
