@@ -2091,7 +2091,23 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        plugin.state.users.remove(event.sender.nickname);
+        with (plugin)
+        {
+            foreach (channel; state.channels)
+            {
+                import std.algorithm.searching : countUntil;
+                import std.algorithm.mutation : SwapStrategy, remove;
+
+                immutable userIndex = channel.users.countUntil(event.sender.nickname);
+
+                if (userIndex != -1)
+                {
+                    channel.users = channel.users.remove!(SwapStrategy.unstable)(userIndex);
+                }
+            }
+
+            state.users.remove(event.sender.nickname);
+        }
     }
 
 
@@ -2112,13 +2128,25 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin.state)
+        with (plugin)
         {
-            if (auto oldUser = event.sender.nickname in users)
+            if (auto oldUser = event.sender.nickname in state.users)
             {
-                // Does this work?
-                users[event.target.nickname] = *oldUser;
-                users.remove(event.sender.nickname);
+                state.users[event.target.nickname] = *oldUser;
+                state.users.remove(event.sender.nickname);
+            }
+
+            foreach (channel; state.channels)
+            {
+                import std.algorithm.searching : countUntil;
+                import std.algorithm.mutation : SwapStrategy, remove;
+
+                immutable userIndex = channel.users.countUntil(event.sender.nickname);
+
+                if (userIndex != -1)
+                {
+                    channel.users[userIndex] = event.target.nickname;  // not sender
+                }
             }
         }
     }
@@ -2168,17 +2196,14 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             // ACCOUNT events don't carry a channel, so check our channel user
             // lists to see if we should catch this one or not.
 
-            foreach (immutable channame, const channel; plugin.state.channels)
+            foreach (const channel; plugin.state.channels)
             {
                 import std.algorithm.searching : canFind;
 
-                // Only process channels that are homes
-                if (!plugin.state.bot.homes.canFind(channame)) continue;
-
                 if (channel.users.canFind(event.sender.nickname))
                 {
-                    plugin.catchUser(event.sender);
-                    return;
+                    // ACCOUNT of a user that's in a relevant channel
+                    return plugin.catchUser(event.sender);
                 }
             }
         }
@@ -2211,28 +2236,31 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
         auto names = event.content.splitter(" ");
 
-        if (names.empty || !names.front.contains('!') || !names.front.contains('@'))
+        with (plugin)
         {
-            // Empty or Freenode-like, where the list is just of nicknames with
-            // possible mode prefix
-            return;
-        }
-
-        with (plugin.state)
-        {
-            // SpotChat-like, names are in full nick!ident@address form
             foreach (immutable userstring; names)
             {
                 string slice = userstring;
-                immutable signed = slice.nom('!');
+                IRCUser newUser;
 
-                // UserAwareness doesn't care about the modes
-                immutable nickname = bot.server.stripModesign(signed);
-                if (nickname == bot.nickname) continue;
+                if (!slice.contains('!') || !slice.contains('@'))
+                {
+                    // Freenode-like, only nicknames with possible modesigns
+                    immutable nickname = state.bot.server.stripModesign(slice);
+                    if (nickname == state.bot.nickname) continue;
+                    newUser.nickname = nickname;
+                }
+                else
+                {
+                    // SpotChat-like, names are in full nick!ident@address form
+                    immutable signed = slice.nom('!');
+                    immutable nickname = state.bot.server.stripModesign(signed);
+                    if (nickname == state.bot.nickname) continue;
 
-                immutable ident = slice.nom('@');
-                immutable address = slice;
-                immutable newUser = IRCUser(nickname, ident, address);
+                    immutable ident = slice.nom('@');
+                    immutable address = slice;
+                    newUser = IRCUser(nickname, ident, address);
+                }
 
                 plugin.catchUser(newUser);
             }
@@ -2356,41 +2384,33 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        // Decrement user refcounts before destroying channel
-
-        with (plugin.state)
+        with (plugin)
         {
             // On Twitch SELFPART may occur on untracked channels
-            auto channel = event.channel in channels;
+            auto channel = event.channel in state.channels;
             if (!channel) return;
 
+            nickloop:
             foreach (immutable nickname; channel.users)
             {
-                // users array may not contain the user
-                auto user = nickname in users;
-                if (!user)
+                foreach (const channel; state.channels)
                 {
-                    users[nickname] = event.sender;
-                    user = nickname in users;
+                    import std.algorithm.searching : canFind;
+                    if (channel.users.canFind(nickname)) continue nickloop;
                 }
 
-                if (--(*user).refcount == 0)
-                {
-                    users.remove(nickname);
-                }
+                // nickname is not in any of our other tracked channels; remove
+                state.users.remove(nickname);
             }
 
-            channels.remove(event.channel);
+            state.channels.remove(event.channel);
         }
     }
 
 
-    // onChannelAwarenessChannelAwarenessJoinMixin
+    // onChannelAwarenessJoinMixin
     /++
      +  Adds a user as being part of a channel when they join one.
-     +
-     +  Increments the `kameloso.ircdefs.IRCUser`'s reference count, so that we
-     +  know the user is in one more channel that we're monitoring.
      +/
     @(AwarenessEarly)
     @(Chainable)
@@ -2398,18 +2418,14 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin.state)
+        with (plugin)
         {
-            channels[event.channel].users ~= event.sender.nickname;
+            state.channels[event.channel].users ~= event.sender.nickname;
 
-            auto user = event.sender.nickname in users;
-            if (!user)
+            if (event.sender.nickname !in state.users)
             {
-                users[event.sender.nickname] = event.sender;
-                user = event.sender.nickname in users;
+                state.users[event.sender.nickname] = event.sender;
             }
-
-            ++(*user).refcount;
         }
     }
 
@@ -2431,9 +2447,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        with (plugin.state)
+        with (plugin)
         {
-            immutable userIndex = channels[event.channel].users
+            immutable userIndex = state.channels[event.channel].users
                 .countUntil(event.sender.nickname);
 
             if (userIndex == -1)
@@ -2443,20 +2459,17 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 return;
             }
 
-            channels[event.channel].users = channels[event.channel].users
+            state.channels[event.channel].users = state.channels[event.channel].users
                 .remove!(SwapStrategy.unstable)(userIndex);
 
-            auto user = event.sender.nickname in users;
-            if (!user)
+            foreach (const channel; state.channels)
             {
-                users[event.sender.nickname] = event.sender;
-                user = event.sender.nickname in users;
+                import std.algorithm.searching : canFind;
+                if (channel.users.canFind(event.sender.nickname)) return;
             }
 
-            if (--(*user).refcount == 0)
-            {
-                users.remove(event.sender.nickname);
-            }
+            // event.sender is not in any of our tracked channels; remove
+            state.users.remove(event.sender.nickname);
         }
     }
 
@@ -2481,7 +2494,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         {
             immutable userIndex = channel.users.countUntil(event.sender.nickname);
             if (userIndex == -1) continue;
-            channel.users[userIndex] = event.target.nickname;
+            channel.users[userIndex] = event.target.nickname;  // not sender
         }
     }
 
@@ -2577,7 +2590,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import std.string : representation;
 
         // User awareness bits add the IRCUser
-        with (plugin.state)
+        with (plugin)
         {
             if (event.aux.length)
             {
@@ -2587,12 +2600,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 // by char
                 foreach (immutable modesign; event.aux.representation)
                 {
-                    if (auto modechar = modesign in bot.server.prefixchars)
+                    if (auto modechar = modesign in state.bot.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
-                        channels[event.channel].setMode(modestring, event.target.nickname, bot.server);
+                        state.channels[event.channel].setMode(modestring,
+                            event.target.nickname, state.bot.server);
                     }
                     /*else
                     {
@@ -2602,24 +2616,16 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 }
             }
 
-            if (event.target.nickname == bot.nickname) return;
+            if (event.target.nickname == state.bot.nickname) return;
 
             import std.algorithm.searching : canFind;
-            if (channels[event.channel].users.canFind(event.target.nickname))
+            if (state.channels[event.channel].users.canFind(event.target.nickname))
             {
+                // Already registered
                 return;
             }
 
-            channels[event.channel].users ~= event.target.nickname;
-
-            auto user = event.target.nickname in users;
-            if (!user)
-            {
-                users[event.target.nickname] = event.target;
-                user = event.target.nickname in users;
-            }
-
-            ++(*user).refcount;
+            state.channels[event.channel].users ~= event.target.nickname;
         }
     }
 
@@ -2649,7 +2655,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         auto names = event.content.splitter(" ");
 
-        with (plugin.state)
+        with (plugin)
         {
             foreach (immutable userstring; names)
             {
@@ -2671,7 +2677,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 import kameloso.irc : stripModesign;
 
                 string modesigns;
-                nickname = bot.server.stripModesign(nickname, modesigns);
+                nickname = state.bot.server.stripModesign(nickname, modesigns);
 
                 // Register operators, half-ops, voiced etc
                 // Can be more than one if multi-prefix capability is enabled
@@ -2680,12 +2686,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 import std.string : representation;
                 foreach (immutable modesign; modesigns.representation)
                 {
-                    if (auto modechar = modesign in bot.server.prefixchars)
+                    if (auto modechar = modesign in state.bot.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
-                        channels[event.channel].setMode(modestring, nickname, bot.server);
+                        state.channels[event.channel].setMode(modestring, nickname, state.bot.server);
                     }
                     else
                     {
@@ -2693,31 +2699,16 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     }
                 }
 
-                if (nickname == bot.nickname) continue;
+                if (nickname == state.bot.nickname) continue;
 
                 import std.algorithm.searching : canFind;
-                if (channels[event.channel].users.canFind(nickname))
+                if (state.channels[event.channel].users.canFind(nickname))
                 {
+                    // Already registered
                     continue;
                 }
 
-                channels[event.channel].users ~= nickname;
-
-                auto user = nickname in users;
-                if (!user)
-                {
-                    /++
-                     +  Creating the IRCUser is not in scope for
-                     +  ChannelAwareness, but we need one in place to
-                     +  increment the refcount. Add an IRCUser.init and let
-                     +  UserAwareness flesh it out.
-                     +/
-                    users[nickname] = IRCUser.init;
-                    user = nickname in users;
-                    user.nickname = nickname;
-                }
-
-                ++(*user).refcount;
+                state.channels[event.channel].users ~= nickname;
             }
         }
     }
