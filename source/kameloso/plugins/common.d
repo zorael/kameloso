@@ -2091,23 +2091,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
-        {
-            foreach (channel; state.channels)
-            {
-                import std.algorithm.searching : countUntil;
-                import std.algorithm.mutation : SwapStrategy, remove;
-
-                immutable userIndex = channel.users.countUntil(event.sender.nickname);
-
-                if (userIndex != -1)
-                {
-                    channel.users = channel.users.remove!(SwapStrategy.unstable)(userIndex);
-                }
-            }
-
-            state.users.remove(event.sender.nickname);
-        }
+        plugin.state.users.remove(event.sender.nickname);
     }
 
 
