@@ -1926,114 +1926,112 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     @(IRCEvent.Type.RPL_WHOISREGNICK)
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin.state)
+        // Catch the user here, before replaying anything.
+        // No need to catchUser; just inherit
+        plugin.state.users[event.target.nickname] = event.target;
+
+        string[] garbageNicknames;
+
+        // See if there are any queued WHOIS requests to trigger
+        if (auto requestsForNickname = event.target.nickname in plugin.state.whoisQueue)
         {
-            // Catch the user here, before replaying anything.
-            users[event.target.nickname] = event.target;
+            size_t[] garbageIndexes;
 
-            string[] garbageNicknames;
-
-            // See if there are any queued WHOIS requests to trigger
-            if (auto requestsForNickname = event.target.nickname in whoisQueue)
+            foreach (immutable i, request; *requestsForNickname)
             {
-                size_t[] garbageIndexes;
+                import kameloso.constants : Timeout;
+                import std.algorithm.searching : canFind;
+                import std.datetime.systime : Clock;
 
-                foreach (immutable i, request; *requestsForNickname)
+                immutable now = Clock.currTime.toUnixTime;
+                immutable then = request.when;
+
+                if ((now - then) > Timeout.whoisRetry)
                 {
-                    import kameloso.constants : Timeout;
-                    import std.algorithm.searching : canFind;
-                    import std.datetime.systime : Clock;
-
-                    immutable now = Clock.currTime.toUnixTime;
-                    immutable then = request.when;
-
-                    if ((now - then) > Timeout.whoisRetry)
-                    {
-                        // Entry is too old, request timed out. Flag it for removal.
-                        garbageIndexes ~= i;
-                        continue;
-                    }
-
-                    void explainReplay()
-                    {
-                        import kameloso.common : logger, settings;
-                        import kameloso.conv : Enum;
-
-                        string infotint, logtint;
-
-                        version(Colours)
-                        {
-                            if (!settings.monochrome)
-                            {
-                                import kameloso.logger : KamelosoLogger;
-
-                                infotint = (cast(KamelosoLogger)logger).infotint;
-                                logtint = (cast(KamelosoLogger)logger).logtint;
-                            }
-                        }
-
-                        logger.logf("%s%s%s plugin replaying %1$s%4$s%3$s-tier event " ~
-                            "based on WHOIS results (user is %1$s%5$s%3$s class)",
-                            infotint, plugin.name, logtint,
-                            Enum!PrivilegeLevel.toString(request.privilegeLevel),
-                            Enum!(IRCUser.Class).toString(event.target.class_));
-                    }
-
-                    with (PrivilegeLevel)
-                    final switch (request.privilegeLevel)
-                    {
-                    case admin:
-                        if (event.target.class_ == IRCUser.Class.admin)
-                        {
-                            explainReplay();
-                            request.trigger();
-                            garbageIndexes ~= i;
-                        }
-                        break;
-
-                    case whitelist:
-                        if ((event.target.class_ == IRCUser.Class.admin) ||
-                            (event.target.class_ == IRCUser.Class.whitelist))
-                        {
-                            explainReplay();
-                            request.trigger();
-                            garbageIndexes ~= i;
-                        }
-                        break;
-
-                    case anyone:
-                        if (event.target.class_ != IRCUser.Class.blacklist)
-                        {
-                            explainReplay();
-                            request.trigger();
-                        }
-
-                        // Always remove queued request even if blacklisted
-                        garbageIndexes ~= i;
-                        break;
-
-                    case ignore:
-                        break;
-                    }
+                    // Entry is too old, request timed out. Flag it for removal.
+                    garbageIndexes ~= i;
+                    continue;
                 }
 
-                foreach_reverse (immutable i; garbageIndexes)
+                void explainReplay()
                 {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    whoisQueue[event.target.nickname].remove!(SwapStrategy.unstable)(i);
+                    import kameloso.common : logger, settings;
+                    import kameloso.conv : Enum;
+
+                    string infotint, logtint;
+
+                    version(Colours)
+                    {
+                        if (!settings.monochrome)
+                        {
+                            import kameloso.logger : KamelosoLogger;
+
+                            infotint = (cast(KamelosoLogger)logger).infotint;
+                            logtint = (cast(KamelosoLogger)logger).logtint;
+                        }
+                    }
+
+                    logger.logf("%s%s%s plugin replaying %1$s%4$s%3$s-tier event " ~
+                        "based on WHOIS results (user is %1$s%5$s%3$s class)",
+                        infotint, plugin.name, logtint,
+                        Enum!PrivilegeLevel.toString(request.privilegeLevel),
+                        Enum!(IRCUser.Class).toString(event.target.class_));
                 }
 
-                if (!whoisQueue[event.target.nickname].length)
+                with (PrivilegeLevel)
+                final switch (request.privilegeLevel)
                 {
-                    // All requests were processed, flag for removal
-                    garbageNicknames ~= event.target.nickname;
+                case admin:
+                    if (event.target.class_ == IRCUser.Class.admin)
+                    {
+                        explainReplay();
+                        request.trigger();
+                        garbageIndexes ~= i;
+                    }
+                    break;
+
+                case whitelist:
+                    if ((event.target.class_ == IRCUser.Class.admin) ||
+                        (event.target.class_ == IRCUser.Class.whitelist))
+                    {
+                        explainReplay();
+                        request.trigger();
+                        garbageIndexes ~= i;
+                    }
+                    break;
+
+                case anyone:
+                    if (event.target.class_ != IRCUser.Class.blacklist)
+                    {
+                        explainReplay();
+                        request.trigger();
+                    }
+
+                    // Always remove queued request even if blacklisted
+                    garbageIndexes ~= i;
+                    break;
+
+                case ignore:
+                    break;
                 }
             }
 
-            foreach (immutable garbageNick; garbageNicknames)
+            foreach_reverse (immutable i; garbageIndexes)
             {
-                whoisQueue.remove(garbageNick);
+                import std.algorithm.mutation : SwapStrategy, remove;
+                plugin.state.whoisQueue[event.target.nickname].remove!(SwapStrategy.unstable)(i);
             }
+
+            if (!plugin.state.whoisQueue[event.target.nickname].length)
+            {
+                // All requests were processed, flag for removal
+                garbageNicknames ~= event.target.nickname;
+            }
+        }
+
+        foreach (immutable garbageNick; garbageNicknames)
+        {
+            plugin.state.whoisQueue.remove(garbageNick);
         }
     }
 
