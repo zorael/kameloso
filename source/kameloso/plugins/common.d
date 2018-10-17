@@ -2134,7 +2134,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
-    // onUserAwarenessCatchSenderMixin
+    // onUserAwarenessCatchTargetMixin
     /++
      +  Catches a user's information and saves it in the plugin's
      +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s.
@@ -2151,13 +2151,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.RPL_WHOREPLY)
     @(IRCEvent.Type.CHGHOST)
     @channelPolicy
-    void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const IRCEvent event)
     {
         plugin.catchUser(event.target);
     }
 
 
-    // onUserAwarenessCatchSenderInHomeMixin
+    // onUserAwarenessCatchSenderMixin
     /++
      +  Adds a user to the `IRCPlugin`'s `IRCPluginState.users` array,
      +  potentially including their services account name.
@@ -2171,7 +2171,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
     @channelPolicy
-    void onUserAwarenessCatchSenderInHomeMixin(IRCPlugin plugin, const IRCEvent event)
+    void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event)
     {
         if (event.type == IRCEvent.Type.ACCOUNT)
         {
@@ -2243,16 +2243,17 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                     newUser = IRCUser(nickname, ident, address);
                 }
 
+                writefln("%s: userNames %s catching %s", module_, event.type, newUser.nickname);
                 plugin.catchUser(newUser);
             }
         }
     }
 
 
-    // onUserAwarenessEndOfWhoNames
+    // onUserAwarenessEndOfListMixin
     /++
      +  Rehashes, or optimises, the `IRCPlugin`'s `IRCPluginState.users`
-     +  associative array upon the end of a `WHO` or a `NAMES` reply.
+     +  associative array upon the end of a `WHO` or a `NAMES` list.
      +
      +  These replies can list hundreds of users depending on the size of the
      +  channel. Once an associative array has grown sufficiently, it becomes
@@ -2354,11 +2355,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Removes an `kameloso.ircdefs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
-     +  Remove the user from the `plugin.state.users` array if, by leaving, it
-     +  left the last channel we can observe it from, so as not to leak users.
-     +  It can be argued that this should be part of user awareness, however
-     +  this would not be possible if it were not for channel-tracking. As such
-     +  keep the behaviour in channel awareness.
+     +  Remove users from the `plugin.state.users` array if, by leaving, it left
+     +  the last channel we can observe it from, so as not to leak users. It can
+     +  be argued that this should be part of user awareness, however this would
+     +  not be possible if it were not for channel-tracking. As such keep the
+     +  behaviour in channel awareness.
      +/
     @(AwarenessLate)
     @(Chainable)
@@ -2516,7 +2517,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
 
 
-    // onChannelAwarenessCreationTime
+    // onChannelAwarenessCreationTimeMixin
     /++
      +  Stores the timestamp of when a channel was created.
      +/
@@ -2524,7 +2525,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     @channelPolicy
-    void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.conv : to;
         plugin.state.channels[event.channel].created = event.aux.to!long;
@@ -2550,7 +2551,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
 
 
-    // onChannelAwarenessWHOReplyMixin
+    // onChannelAwarenessWhoReplyMixin
     /++
      +  Adds a user as being part of a channel upon receiving the reply from the
      +  request for info on all the participants.
@@ -2562,7 +2563,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @channelPolicy
-    void onChannelAwarenessWHOReplyMixin(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessWhoReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.string : representation;
 
@@ -2732,7 +2733,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     }
 
 
-    // onChannelAwarenessChannelModeIs
+    // onChannelAwarenessChannelModeIsMixin
     /++
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
@@ -2740,7 +2741,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     @channelPolicy
-    void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
+    void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
 
