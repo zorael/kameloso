@@ -2217,34 +2217,31 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
         auto names = event.content.splitter(" ");
 
-        with (plugin)
+        foreach (immutable userstring; names)
         {
-            foreach (immutable userstring; names)
+            string slice = userstring;
+            IRCUser newUser;
+
+            if (!slice.contains('!') || !slice.contains('@'))
             {
-                string slice = userstring;
-                IRCUser newUser;
-
-                if (!slice.contains('!') || !slice.contains('@'))
-                {
-                    // Freenode-like, only nicknames with possible modesigns
-                    immutable nickname = state.bot.server.stripModesign(slice);
-                    if (nickname == state.bot.nickname) continue;
-                    newUser.nickname = nickname;
-                }
-                else
-                {
-                    // SpotChat-like, names are in full nick!ident@address form
-                    immutable signed = slice.nom('!');
-                    immutable nickname = state.bot.server.stripModesign(signed);
-                    if (nickname == state.bot.nickname) continue;
-
-                    immutable ident = slice.nom('@');
-                    immutable address = slice;
-                    newUser = IRCUser(nickname, ident, address);
-                }
-
-                plugin.catchUser(newUser);
+                // Freenode-like, only nicknames with possible modesigns
+                immutable nickname = plugin.state.bot.server.stripModesign(slice);
+                if (nickname == plugin.state.bot.nickname) continue;
+                newUser.nickname = nickname;
             }
+            else
+            {
+                // SpotChat-like, names are in full nick!ident@address form
+                immutable signed = slice.nom('!');
+                immutable nickname = plugin.state.bot.server.stripModesign(signed);
+                if (nickname == plugin.state.bot.nickname) continue;
+
+                immutable ident = slice.nom('@');
+                immutable address = slice;
+                newUser = IRCUser(nickname, ident, address);
+            }
+
+            plugin.catchUser(newUser);
         }
     }
 
@@ -2714,7 +2711,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
 
         with (IRCEvent.Type)
-        with (plugin.state)
         {
             // Map known list types to their modechars
             immutable ubyte[IRCEvent.Type.RPL_QUIETLIST+1] modecharsByType =
@@ -2726,7 +2722,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 RPL_QUIETLIST : 'q',
             ];
 
-            channels[event.channel].setMode((cast(char)modecharsByType[event.type]).to!string,
+            plugin.state.channels[event.channel].setMode((cast(char)modecharsByType[event.type]).to!string,
                 event.content, plugin.state.bot.server);
         }
     }
