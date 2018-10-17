@@ -2243,7 +2243,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                     newUser = IRCUser(nickname, ident, address);
                 }
 
-                writefln("%s: userNames %s catching %s", module_, event.type, newUser.nickname);
                 plugin.catchUser(newUser);
             }
         }
