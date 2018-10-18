@@ -1066,6 +1066,10 @@ Next tryConnect(ref Client client)
             logger.warning("Could not connect to server!");
             return Next.returnFailure;
 
+        case ipv6Failure:
+            logger.warning("IPv6 connection failed. Disabling IPv6.");
+            continue;
+
         case error:
             logger.error("Failed to connect: ", attempt.error);
             return Next.returnFailure;

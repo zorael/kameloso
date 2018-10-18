@@ -337,6 +337,7 @@ struct ConnectionAttempt
         delayThenReconnect, /// Failed to connect; should delay and retry.
         delayThenNextIP,    /// Failed to reconnect several times; next IP.
         noMoreIPs,          /// Exhausted all IPs anc could not connect.
+        ipv6Failure,        /// IPv6 connection failed.
         error,              /// Error connecting; should abort.
     }
 
@@ -380,13 +381,17 @@ void connectFiber(ref Connection conn, ref bool abort)
     alias State = ConnectionAttempt.State;
     ConnectionAttempt attempt;
 
+    bool ipv6IsFailing;
+
     yield(attempt);
 
     foreach (immutable i, ip; conn.ips)
     {
         attempt.ip = ip;
+        immutable isIPv6 = (ip.addressFamily == AddressFamily.INET6);
+        if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
 
-        conn.socket = (ip.addressFamily == AddressFamily.INET6) ? &conn.socket6 : &conn.socket4;
+        conn.socket = isIPv6 ? &conn.socket6 : &conn.socket4;
 
         enum connectionRetries = 3;
 
@@ -422,11 +427,21 @@ void connectFiber(ref Connection conn, ref bool abort)
                 {
                 //case "Unable to connect socket: Connection refused":
                 case "Unable to connect socket: Address family not supported by protocol":
-                    attempt.state = State.error;
-                    attempt.error = e.msg;
-                    yield(attempt);
-                    // Should never get here
-                    assert(0, "Dead connectFiber resumed after yield");
+                    if (isIPv6)
+                    {
+                        attempt.state = State.ipv6Failure;
+                        attempt.error = e.msg;
+                        yield(attempt);
+                    }
+                    else
+                    {
+                        attempt.state = State.error;
+                        attempt.error = e.msg;
+                        yield(attempt);
+                        // Should never get here
+                        assert(0, "Dead connectFiber resumed after yield");
+                    }
+                    break;
 
                 //case "Unable to connect socket: Network is unreachable":
                 default:
