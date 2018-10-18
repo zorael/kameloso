@@ -2778,7 +2778,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
     final switch (policy)
     {
     case ignored:
-        break;
+        return true;
 
     case direct:
         if (settings.prefix.length && content.beginsWith(settings.prefix))
