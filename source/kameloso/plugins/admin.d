@@ -370,21 +370,24 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
                 return;
 
             case ERR_LINKCHANNEL:
-                import std.algorithm.mutation : SwapStrategy, remove;
-                import std.algorithm.searching : countUntil;
-
                 // We were redirected. Still assume we wanted to add this one?
                 logger.log("Redirected!");
-                immutable oldIndex = bot.homes.countUntil(followupEvent.channel);
-                bot.homes = bot.homes.remove!(SwapStrategy.unstable)(oldIndex);
                 bot.homes ~= followupEvent.content;
-                bot.updated = true;
-                return;
+                // Drop down and undo original addition
+                break;
 
             default:
                 logger.error("Failed to join home channel.");
                 break;
             }
+
+            // Undo original addition
+            import std.algorithm.mutation : SwapStrategy, remove;
+            import std.algorithm.searching : countUntil;
+
+            immutable homeIndex = bot.homes.countUntil(followupEvent.channel);
+            bot.homes = bot.homes.remove!(SwapStrategy.unstable)(homeIndex);
+            bot.updated = true;
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&dg);
