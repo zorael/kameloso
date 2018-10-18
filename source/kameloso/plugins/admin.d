@@ -436,7 +436,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         if (homeIndex == -1)
         {
-            logger.warningf("Channel %s was not in bot.homes", channel);
+            logger.warningf("Channel %s was not listed as a home", channel);
             return;
         }
 
