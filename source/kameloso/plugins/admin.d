@@ -437,7 +437,6 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             const whoisEvent = thisFiber.payload;
-            writeln(whoisEvent.type);
             IRCUser whoisUser;
 
             with (IRCEvent.Type)

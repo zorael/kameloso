@@ -2121,7 +2121,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             foreach (ref channel; state.channels)
             {
                 import std.algorithm.searching : countUntil;
-                import std.algorithm.mutation : SwapStrategy, remove;
 
                 immutable userIndex = channel.users.countUntil(event.sender.nickname);
 
