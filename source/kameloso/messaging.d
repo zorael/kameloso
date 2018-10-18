@@ -30,8 +30,6 @@ void chan(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "chan was passed invalid channel: " ~ channel);
-
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -114,14 +112,10 @@ void privmsg(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priori
 
     if (channel.length)
     {
-        assert(channel.beginsWithOneOf(state.bot.server.chantypes),
-            "privmsg was passed invalid channel: " ~ channel);
         return chan!quiet(state, channel, content);
     }
     else if (nickname.length)
     {
-        assert(!nickname.beginsWithOneOf(state.bot.server.chantypes),
-            "privmsg was passed a channel for nick: " ~ channel);
         return query!quiet(state, nickname, content);
     }
     else
@@ -233,8 +227,6 @@ void mode(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "mode was passed invalid channel: " ~ channel);
-
     IRCEvent event;
     event.type = IRCEvent.Type.MODE;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -275,8 +267,6 @@ void topic(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "topic was passed invalid channel: " ~ channel);
-
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -314,8 +304,6 @@ void invite(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priorit
     (IRCPluginState state, const string channel, const string nickname)
 {
     static if (priority) import std.concurrency : send = prioritySend;
-
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "invite was passed invalid channel: " ~ channel);
 
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
@@ -355,8 +343,6 @@ void join(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "join was passed invalid channel: " ~ channel);
-
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
     static if (quiet) event.target.class_ = IRCUser.Class.special;
@@ -392,11 +378,6 @@ void kick(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string nickname, const string reason = string.init)
 {
     static if (priority) import std.concurrency : send = prioritySend;
-
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes),
-        "kick was passed invalid channel: " ~ channel);
-    assert(!nickname.beginsWithOneOf(state.bot.server.chantypes),
-        "kick was passed channel as nickname: " ~ nickname);
 
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
@@ -437,8 +418,6 @@ void part(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string reason = string.init)
 {
     static if (priority) import std.concurrency : send = prioritySend;
-
-    assert(channel.beginsWithOneOf(state.bot.server.chantypes), "part was passed invalid channel: " ~ channel);
 
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
