@@ -42,7 +42,6 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 
 # Table of contents
 
-* [News](#news)
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
@@ -64,14 +63,6 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 * [Acknowledgements](#acknowledgements)
 
 ---
-
-# News
-
-* compiler segfaults are back; dmd, ldc, gdc.
-* experimental `automodes` plugin, please test.
-* the `printer` plugin can now save logs to disk. Regenerate your configuration file and enable it with `logs` set to `true`. By default only home channels are logged; configurable with the `logAllChannels` knob. Needs testing and feedback.
-* `--asserts` vastly improved.
-* Twitch emote highlighting now uses a `dstring` and is seemingly fully accurate.
 
 # Getting started
 
@@ -286,6 +277,7 @@ If more state is necessary to replicate the environment, such as needing things 
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * automode channel awareness boost
 * private notes
+* Fiberify `connect.d`
 
 # Built with
 
