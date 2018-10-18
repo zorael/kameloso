@@ -297,6 +297,8 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
  +  Adds a channel to the list of currently active home channels, in the
  +  `kameloso.irc.IRCBot.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
+ +
+ +  Follows up with a Fiber to verify that the channel was actually joined.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -312,23 +314,93 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
 
-    immutable channel = event.content.stripped;
+    immutable channelToAdd = event.content.stripped;
 
-    if (!channel.isValidChannel(plugin.state.bot.server))
+    if (!channelToAdd.isValidChannel(plugin.state.bot.server))
     {
-        logger.warning("Invalid channel: ", channel);
+        logger.warning("Invalid channel: ", channelToAdd);
         return;
     }
 
     with (plugin.state)
     {
-        if (!bot.homes.canFind(channel))
+        if (bot.homes.canFind(channelToAdd))
         {
-            plugin.state.join(channel);
-            logger.info("Adding home: ", channel);
-            bot.homes ~= channel;
-            bot.updated = true;
+            logger.warning("We are already in that home channel.");
+            return;
         }
+
+        logger.info("Adding home: ", channelToAdd);
+
+        // We need to add it to the homes array so as to get ChannelPolicy.home
+        // ChannelAwareness to pick up the SELFJOIN.
+        bot.homes ~= channelToAdd;
+        bot.updated = true;
+        plugin.state.join(channelToAdd);
+
+        // We have to follow up and see if we actually managed to join the channel
+        // There are plenty ways for it to fail.
+
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
+
+        void dg()
+        {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+            const followupEvent = thisFiber.payload;
+
+            if (followupEvent.channel != channelToAdd)
+            {
+                // Different channel; yield and reset fiber, wait for another event
+                thisFiber.payload = IRCEvent.init;
+                Fiber.yield();
+                return dg();
+            }
+
+            with (IRCEvent.Type)
+            switch (followupEvent.type)
+            {
+            case SELFJOIN:
+                // Success!
+                /*bot.homes ~= followupEvent.channel;
+                bot.updated = true;*/
+                return;
+
+            case ERR_LINKCHANNEL:
+                import std.algorithm.mutation : SwapStrategy, remove;
+                import std.algorithm.searching : countUntil;
+
+                // We were redirected. Still assume we wanted to add this one?
+                logger.log("Redirected!");
+                immutable oldIndex = bot.homes.countUntil(followupEvent.channel);
+                bot.homes = bot.homes.remove!(SwapStrategy.unstable)(oldIndex);
+                bot.homes ~= followupEvent.content;
+                bot.updated = true;
+                return;
+
+            default:
+                logger.error("Failed to join home channel.");
+                break;
+            }
+        }
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BANNEDFROMCHAN] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_INVITEONLYCHAN] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNAME] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_LINKCHANNEL] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_TOOMANYCHANNELS] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_FORBIDDENCHANNEL] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_CHANNELISFULL] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNELKEY] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNAME] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.RPL_BADCHANPASS] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_SECUREONLYCHAN] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.ERR_SSLONLYCHAN] ~= fiber;
+        plugin.state.awaitingFibers[IRCEvent.Type.SELFJOIN] ~= fiber;
     }
 }
 
