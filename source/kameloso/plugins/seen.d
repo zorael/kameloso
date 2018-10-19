@@ -478,6 +478,7 @@ void onPing(SeenPlugin plugin)
         if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
         {
             nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
+            plugin.updateAllUsers();
             seenUsers.rehash().saveSeen(seenFile);
         }
     }
@@ -875,6 +876,7 @@ void onEndOfMotd(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
+    plugin.updateAllUsers();
     plugin.seenUsers.saveSeen(plugin.seenFile);
 }
 
