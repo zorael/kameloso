@@ -704,6 +704,42 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
 }
 
 
+// updateAllUsers
+/++
+ +  Updates all currently observed users.
+ +
+ +  This allows us to update users that don't otherwise trigger events that
+ +  would register activity, such as silent participants.
+ +
+ +  Params:
+ +      plugin = Current `SeenPlugin`.
+ +/
+void updateAllUsers(SeenPlugin plugin)
+{
+    import std.algorithm.searching : canFind;
+
+    bool[string] uniqueUsers;
+
+    foreach (const channel; plugin.state.channels)
+    {
+        if (!plugin.state.bot.homes.canFind(channel.name)) continue;
+
+        foreach (const nickname; channel.users)
+        {
+            uniqueUsers[nickname] = true;
+        }
+    }
+
+    import std.datetime.systime : Clock;
+    immutable now = Clock.currTime.toUnixTime;
+
+    foreach (const nickname, const nil; uniqueUsers)
+    {
+        plugin.updateUser(nickname, now);
+    }
+}
+
+
 // loadSeen
 /++
  +  Given a filename, reads the contents and load it into a `long[string]`
