@@ -74,11 +74,18 @@ void onPing(ChanQueriesService service)
 
     void fiberFn()
     {
-        foreach (immutable channelName; querylist)
+        foreach (immutable i, immutable channelName; querylist)
         {
             import kameloso.messaging : raw;
             import core.thread : Fiber;
             import std.string : representation;
+
+            if (i > 0)
+            {
+                // Delay between runs after first since aMode probes don't delay at end
+                service.delayFiber(service.secondsBetween);
+                Fiber.yield();  // delay
+            }
 
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
