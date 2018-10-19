@@ -609,12 +609,9 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         foreach (const channel; state.channels)
         {
-            // Already checked this channel
-            //if (event.channel == channel) continue;
-
             if (channel.users.canFind(event.content))
             {
-                immutable line = (channel.name == event.channel) ?
+                immutable line = event.channel.length && (channel.name == event.channel) ?
                     " is here right now!" : " is online right now.";
                 privmsg(event.channel, event.sender.nickname, event.content ~ line);
                 return;
