@@ -304,7 +304,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
      +  the `SeenPlugin plugin`; it is top-/module-level. Virtually the entirety
      +  of our implementation will rely on UFCS.
      +/
-    plugin.updateUser(event.sender.nickname);
+    import std.datetime.systime : Clock;
+    plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
 }
 
 
@@ -352,7 +353,8 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
     if (!plugin.seenSettings.enabled) return;
 
     // Update the user's entry
-    plugin.updateUser(event.target.nickname);
+    import std.datetime.systime : Clock;
+    plugin.updateUser(event.target.nickname, Clock.currTime.toUnixTime);
 }
 
 
@@ -372,12 +374,15 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
     if (!plugin.seenSettings.enabled) return;
 
     import std.algorithm.iteration : splitter;
+    import std.datetime.systime : Clock;
 
     /++
      +  Use a `std.algorithm.iteration.splitter` to iterate each name and call
      +  `updateUser` to update (or create) their entry in the `seenUsers`
      +  associative array.
      +/
+
+    immutable now = Clock.currTime.toUnixTime;
 
     foreach (const signed; event.content.splitter(" "))
     {
@@ -395,7 +400,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
         nickname = plugin.state.bot.server.stripModesign(nickname);
         if (nickname == plugin.state.bot.nickname) continue;
 
-        plugin.updateUser(nickname);
+        plugin.updateUser(nickname, now);
     }
 }
 
@@ -662,8 +667,9 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +      plugin = Current `SeenPlugin`.
  +      signedNickname = Nickname to update, potentially prefixed with a
  +          modesign (@, +, %, ...).
+ +      time = UNIX timestamp of when the user was seen.
  +/
-void updateUser(SeenPlugin plugin, const string signed)
+void updateUser(SeenPlugin plugin, const string signed, const long time)
 {
     import kameloso.irc : stripModesign;
     import std.algorithm.searching : canFind;
@@ -681,8 +687,7 @@ void updateUser(SeenPlugin plugin, const string signed)
 
         if (channel.users.canFind(nickname))
         {
-            import std.datetime.systime : Clock;
-            plugin.seenUsers[nickname] = Clock.currTime.toUnixTime;
+            plugin.seenUsers[nickname] = time;
             return;
         }
     }
