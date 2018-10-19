@@ -605,12 +605,22 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             privmsg(event.channel, event.sender.nickname, "That's you!");
             return;
         }
-        else if (event.channel.length && state.channels[event.channel].users.canFind(event.content))
+
+        foreach (const channel; state.channels)
         {
-            // Channel message and the user is in the channel
-            chan(event.channel, event.content ~ " is here right now!");
-            return;
+            // Already checked this channel
+            //if (event.channel == channel) continue;
+
+            if (channel.users.canFind(event.content))
+            {
+                immutable line = (channel.name == event.channel) ?
+                    " is here right now!" : " is online right now.";
+                privmsg(event.channel, event.sender.nickname, event.content ~ line);
+                return;
+            }
         }
+
+        // No matches
 
         const userTimestamp = event.content in seenUsers;
 
