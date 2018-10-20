@@ -413,7 +413,7 @@ unittest
  +/
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string;
+    import kameloso.string : beginsWith;
 
     with (parser)
     with (IRCEvent.Type)
@@ -454,6 +454,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
         if (slice.contains(' '))
         {
+            import kameloso.string : unquoted;
+
             event.channel = slice.nom(" :");
             event.content = slice;
             event.content = event.content.unquoted;
@@ -480,6 +482,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case QUIT:
+        import kameloso.string : unquoted;
+
         // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
         event.type = (event.sender.nickname == bot.nickname) ? SELFQUIT : QUIT;
         event.content = slice[1..$].unquoted;
@@ -573,6 +577,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             event.aux = hg[1..$];
         }
 
+        import kameloso.string : strippedLeft;
         slice.nom(' ');  // hopcount
         event.content = slice.strippedLeft;
         break;
@@ -671,6 +676,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_WHOISUSER: // 311
+        import kameloso.string : strippedLeft;
+
         // :orwell.freenode.net 311 kameloso^ kameloso ~NaN ns3363704.ip-94-23-253.eu * : kameloso
         slice.nom(' ');  // bot nickname
         event.target.nickname = slice.nom(' ');
@@ -1000,6 +1007,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         break;
 
     case RPL_WHOWASUSER: // 314
+        import kameloso.string : stripped;
+
         // :irc.uworld.se 314 kameloso^^ kameloso ~NaN C2802314.E23AD7D8.E9841504.IP * : kameloso!
         slice.nom(' '); // bot nickname
         event.target.nickname = slice.nom(' ');
@@ -1062,7 +1071,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +/
 void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
-    import kameloso.string;
+    import kameloso.string : beginsWithOneOf;
 
     with (parser)
     {
