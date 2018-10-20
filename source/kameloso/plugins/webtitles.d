@@ -342,7 +342,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
             titleReq.url = rewriteDirectImgurURL(titleReq.url);
         }
 
-        auto lookup = state.lookupTitle(titleReq.url);
+        auto lookup = lookupTitle(titleReq.url);
         state.reportURL(lookup, titleReq.event);
         cache[titleReq.url] = lookup;
     }
@@ -455,13 +455,12 @@ void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCE
  +  Given an URL, tries to look up the web page title of it.
  +
  +  Params:
- +      state = Current `kameloso.plugins.common.IRCPluginState`.
  +      url = URL string to look up.
  +
  +  Returns:
  +      A finished `TitleLookup`.
  +/
-TitleLookup lookupTitle(IRCPluginState state, const string url)
+TitleLookup lookupTitle(const string url)
 {
     import kameloso.constants : BufferSize;
     import arsd.dom : Document;
