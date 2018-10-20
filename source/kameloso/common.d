@@ -513,12 +513,12 @@ struct Client
         foreach (plugin; plugins)
         {
             plugin.start();
-            auto pluginBot = plugin.state.bot;
 
-            if (pluginBot.updated)
+            if (plugin.state.bot.updated)
             {
                 // start changed the bot; propagate
-                parser.bot = pluginBot;
+                parser.bot = plugin.state.bot;
+                parser.bot.updated = false; // all plugins' state.bot will be overwritten with this
                 propagateBot(parser.bot);
             }
         }
