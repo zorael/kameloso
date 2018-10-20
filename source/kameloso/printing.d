@@ -107,7 +107,6 @@ void formatObjects(Flag!"printAll" printAll = No.printAll,
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.common : settings;
-    import kameloso.traits;
     import std.algorithm.comparison : max;
 
     static if (coloured)
@@ -126,11 +125,13 @@ if (isOutputRange!(Sink, char[]))
 
     static if (printAll)
     {
+        import kameloso.traits : longestUnconfigurableMemberName, longestUnconfigurableMemberTypeName;
         enum typewidth = max(minimumTypeWidth, (longestUnconfigurableMemberTypeName!Things.length + 1));
         enum initialWidth = !widthArg ? longestUnconfigurableMemberName!Things.length : widthArg;
     }
     else
     {
+        import kameloso.traits : longestMemberName, longestMemberTypeName;
         enum typewidth = max(minimumTypeWidth, (longestMemberTypeName!Things.length + 1));
         enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
@@ -167,6 +168,7 @@ if (isOutputRange!(Sink, char[]))
 
         foreach (immutable i, member; thing.tupleof)
         {
+            import kameloso.traits : isConfigurableVariable;
             import kameloso.uda : Hidden, Unconfigurable;
             import std.traits : hasUDA, isAssociativeArray, isType;
 
@@ -179,6 +181,7 @@ if (isOutputRange!(Sink, char[]))
 
             static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
             {
+                import kameloso.traits : isTrulyString;
                 import std.traits : isArray, isSomeString;
 
                 alias T = Unqual!(typeof(member));
@@ -236,6 +239,8 @@ if (isOutputRange!(Sink, char[]))
                         immutable lengthCode = bright ? B.lightgrey : B.darkgrey;
                         immutable typeCode = bright ? B.lightcyan : B.cyan;
 
+                        import kameloso.traits : UnqualArray;
+
                         sink.formattedWrite(arrayPattern,
                             typeCode.colour, typewidth, UnqualArray!T.stringof,
                             memberCode.colour, thisWidth, memberstring,
@@ -252,6 +257,8 @@ if (isOutputRange!(Sink, char[]))
                         {
                             enum arrayPattern = "%*s %-*s%s(%d)\n";
                         }
+
+                        import kameloso.traits : UnqualArray;
 
                         sink.formattedWrite(arrayPattern,
                             typewidth, UnqualArray!T.stringof,
