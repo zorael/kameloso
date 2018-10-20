@@ -53,14 +53,16 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
 
         if (!settings.monochrome)
         {
-            formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter, things);
+            formatObjects!(printAll, Yes.coloured, widthArg)(stdout.lockingTextWriter,
+                settings.brightTerminal, things);
             printed = true;
         }
     }
 
     if (!printed)
     {
-        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, things);
+        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter,
+            settings.brightTerminal, things);
     }
 
     version(Cygwin_) stdout.flush();
@@ -99,19 +101,20 @@ alias printObject = printObjects;
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
  +      sink = Output range to write to.
+ +      bright = Whether or not to format for a bright terminal background.
  +      things = Variadic list of structs to enumerate and format.
  +/
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
-    (auto ref Sink sink, Things things) @trusted
+    (auto ref Sink sink, const bool bright, Things things) @trusted
 if (isOutputRange!(Sink, char[]))
 {
-    import kameloso.common : settings;
     import std.algorithm.comparison : max;
 
     static if (coloured)
     {
-        import kameloso.bash : colour;
+        import kameloso.bash : BashForeground, colour;
+        alias B = BashForeground;
     }
 
     static if (__VERSION__ < 2076L)
@@ -139,14 +142,6 @@ if (isOutputRange!(Sink, char[]))
     enum compensatedWidth = (typewidth > minimumTypeWidth) ?
         (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
     enum namewidth = max(minimumNameWidth, compensatedWidth);
-
-    immutable bright = settings.brightTerminal;
-
-    static if (coloured)
-    {
-        import kameloso.bash : BashForeground;
-        alias B = BashForeground;
-    }
 
     foreach (immutable n, thing; things)
     {
@@ -369,7 +364,7 @@ if (isOutputRange!(Sink, char[]))
     Appender!(char[]) sink;
 
     sink.reserve(512);  // ~323
-    sink.formatObjects!(No.printAll, No.coloured)(s);
+    sink.formatObjects!(No.printAll, No.coloured)(false, s);
 
     enum structNameSerialised =
 `-- StructName
@@ -393,7 +388,7 @@ if (isOutputRange!(Sink, char[]))
     alias StructNameSettings = StructName;
     StructNameSettings so = s;
     sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(so);
+    sink.formatObjects!(No.printAll, No.coloured)(false, so);
 
     assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
@@ -419,7 +414,7 @@ if (isOutputRange!(Sink, char[]))
     st2.fdsa = -1;
 
     sink.clear();
-    sink.formatObjects!(No.printAll, No.coloured)(st1, st2);
+    sink.formatObjects!(No.printAll, No.coloured)(false, st1, st2);
     enum st1st2Formatted =
 `-- Struct1
    string members                "harbl"(5)
@@ -447,7 +442,7 @@ if (isOutputRange!(Sink, char[]))
 
         sink.clear();
         sink.reserve(256);  // ~239
-        sink.formatObjects!(No.printAll, Yes.coloured)(s2);
+        sink.formatObjects!(No.printAll, Yes.coloured)(false, s2);
 
         assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -473,7 +468,7 @@ if (isOutputRange!(Sink, char[]))
         StructName2Settings s2o;
 
         sink.clear();
-        sink.formatObjects!(No.printAll, Yes.coloured)(s2o);
+        sink.formatObjects!(No.printAll, Yes.coloured)(false, s2o);
         assert((sink.data == sinkCopy), sink.data);
     }
 }
@@ -506,11 +501,12 @@ if (isOutputRange!(Sink, char[]))
  +  Params:
  +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
+ +      bright = Whether or not to format for a bright terminal background.
  +      things = Variadic list of structs to enumerate and format.
  +/
 string formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
-    (Things things) @trusted
+    (const bool bright, Things things) @trusted
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
     import std.array : Appender;
@@ -518,7 +514,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
     Appender!string sink;
     sink.reserve(1024);
 
-    sink.formatObjects!(printAll, coloured, widthArg)(things);
+    sink.formatObjects!(printAll, coloured, widthArg)(bright, things);
     return sink.data;
 }
 
@@ -537,7 +533,7 @@ unittest
     s.members = "foo";
     s.asdf = 42;
 
-    immutable formatted = formatObjects!(No.printAll, No.coloured)(s);
+    immutable formatted = formatObjects!(No.printAll, No.coloured)(false, s);
     assert((formatted ==
 `-- Struct
    string members                "foo"(3)
