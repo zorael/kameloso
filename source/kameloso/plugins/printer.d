@@ -345,36 +345,36 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event);
+                    errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event);
 
                     if (event.sender != IRCUser.init)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
                     }
 
                     if (event.target != IRCUser.init)
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(event.target);
+                        errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.target);
                     }
                 }
                 else
                 {
                     File(errBuffer.path, "a")
                         .lockingTextWriter
-                        .formatObjects!(Yes.printAll, No.coloured)(event);
+                        .formatObjects!(Yes.printAll, No.coloured)(false, event);
 
                     if (event.sender != IRCUser.init)
                     {
                         File(errBuffer.path, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.printAll, No.coloured)(event.sender);
+                            .formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
                     }
 
                     if (event.target != IRCUser.init)
                     {
                         File(errBuffer.path, "a")
                             .lockingTextWriter
-                            .formatObjects!(Yes.printAll, No.coloured)(event.target);
+                            .formatObjects!(Yes.printAll, No.coloured)(false, event.target);
                     }
                 }
             }
