@@ -65,7 +65,6 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event)
 {
-    import kameloso.common;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;
