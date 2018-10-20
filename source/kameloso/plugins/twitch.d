@@ -740,21 +740,24 @@ unittest
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         line.highlightEmotesImpl(sink, emotes, BashForeground.white, BashForeground.default_);
-        assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
+        assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m " ~
+            "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "822112:0-6,8-14,16-22";
         immutable line = "FortOne FortOne FortOne";
         line.highlightEmotesImpl(sink, emotes, BashForeground.white, BashForeground.default_);
-        assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m \033[97mFortOne\033[39m"), sink.data);
+        assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
+            "\033[97mFortOne\033[39m"), sink.data);
     }
     {
         sink.clear();
         immutable emotes = "141844:17-24,26-33,35-42/141073:9-15";
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
         line.highlightEmotesImpl(sink, emotes, BashForeground.white, BashForeground.default_);
-        assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
+        assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
+            "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
     }
     {
         sink.clear();
