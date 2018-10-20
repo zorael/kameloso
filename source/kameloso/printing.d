@@ -61,8 +61,8 @@ void printObjects(Flag!"printAll" printAll = No.printAll, uint widthArg = 0, Thi
 
     if (!printed)
     {
-        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter,
-            settings.brightTerminal, things);
+        // Brightness setting is irrelevant; pass false
+        formatObjects!(printAll, No.coloured, widthArg)(stdout.lockingTextWriter, false, things);
     }
 
     version(Cygwin_) stdout.flush();
