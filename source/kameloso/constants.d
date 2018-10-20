@@ -43,6 +43,7 @@ version(Colours)
 
     alias BF = BashForeground;
 
+    /// Default colours for a dark terminal background.
     enum DefaultDark : BashForeground
     {
         timestamp = BF.white,
@@ -62,6 +63,7 @@ version(Colours)
         query   = BF.lightgreen,
     }
 
+    /// Default colours for a bright terminal background.
     enum DefaultBright : BashForeground
     {
         timestamp = BF.black,
