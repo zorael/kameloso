@@ -429,6 +429,7 @@ void connectFiber(ref Connection conn, ref bool abort)
                 case "Unable to connect socket: Address family not supported by protocol":
                     if (isIPv6)
                     {
+                        ipv6IsFailing = true;
                         attempt.state = State.ipv6Failure;
                         attempt.error = e.msg;
                         yield(attempt);
