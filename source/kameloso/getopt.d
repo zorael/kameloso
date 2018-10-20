@@ -318,7 +318,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 {
     import kameloso.common : printVersionInfo, settings;
     import std.format : format;
-    import std.getopt;
+    import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
 
     version(Cygwin_)
