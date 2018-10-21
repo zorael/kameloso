@@ -408,17 +408,20 @@ class Document : FileResource {
 			throw new MarkupException(format("char %d (line %d): %s", pos, getLineNumber(pos), message));
 		}
 
-		void eatWhitespace() {
-			while(pos < data.length && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\t' || data[pos] == '\r'))
+		bool eatWhitespace() {
+			bool ateAny = false;
+			while(pos < data.length && data[pos].isSimpleWhite) {
 				pos++;
+				ateAny = true;
+			}
+			return ateAny;
 		}
 
 		string readTagName() {
 			// remember to include : for namespaces
 			// basically just keep going until >, /, or whitespace
 			auto start = pos;
-			while(  data[pos] != '>' && data[pos] != '/' &&
-				data[pos] != ' ' && data[pos] != '\n' && data[pos] != '\t' && data[pos] != '\r')
+			while(data[pos] != '>' && data[pos] != '/' && !data[pos].isSimpleWhite)
 			{
 				pos++;
 				if(pos == data.length) {
@@ -439,8 +442,7 @@ class Document : FileResource {
 			// remember to include : for namespaces
 			// basically just keep going until >, /, or whitespace
 			auto start = pos;
-			while(  data[pos] != '>' && data[pos] != '/'  && data[pos] != '=' &&
-				data[pos] != ' ' && data[pos] != '\n' && data[pos] != '\t' && data[pos] != '\r')
+			while(data[pos] != '>' && data[pos] != '/'  && data[pos] != '=' && !data[pos].isSimpleWhite)
 			{
 				if(data[pos] == '<') {
 					if(strict)
@@ -487,15 +489,15 @@ class Document : FileResource {
 				default:
 					if(strict)
 						parseError("Attributes must be quoted");
-					// read until whitespace or terminator (/ or >)
+					// read until whitespace or terminator (/> or >)
 					auto start = pos;
 					while(
 						pos < data.length &&
 						data[pos] != '>' &&
 						// unquoted attributes might be urls, so gotta be careful with them and self-closed elements
 						!(data[pos] == '/' && pos + 1 < data.length && data[pos+1] == '>') &&
-						data[pos] != ' ' && data[pos] != '\n' && data[pos] != '\t')
-					      	pos++;
+						!data[pos].isSimpleWhite)
+							pos++;
 
 					string v = htmlEntitiesDecode(data[start..pos], strict);
 					// don't skip the end - we'll need it later
@@ -1000,6 +1002,11 @@ class Document : FileResource {
 								default: // it is an attribute
 									string attrName = readAttributeName();
 									string attrValue = attrName;
+
+									bool ateAny = eatWhitespace();
+									if(strict && ateAny)
+										throw new MarkupException("inappropriate whitespace after attribute name");
+
 									if(pos >= data.length) {
 										if(strict)
 											assert(0, "this should have thrown in readAttributeName");
@@ -1010,7 +1017,14 @@ class Document : FileResource {
 									}
 									if(data[pos] == '=') {
 										pos++;
+
+										ateAny = eatWhitespace();
+										if(strict && ateAny)
+											throw new MarkupException("inappropriate whitespace after attribute equals");
+
 										attrValue = readAttributeValue();
+
+										eatWhitespace();
 									}
 
 									blankValue:
@@ -1323,16 +1337,16 @@ class Document : FileResource {
 		Do NOT use for anything other than eyeball debugging,
 		because whitespace may be significant content in XML.
 	+/
-	string toPrettyString(bool insertComments = false) const {
+	string toPrettyString(bool insertComments = false, int indentationLevel = 0, string indentWith = "\t") const {
 		string s = prolog;
 
 		if(insertComments) s ~= "<!--";
 		s ~= "\n";
 		if(insertComments) s ~= "-->";
 
-		s ~= root.toPrettyString(insertComments);
+		s ~= root.toPrettyString(insertComments, indentationLevel, indentWith);
 		foreach(a; piecesAfterRoot)
-			s ~= a.toPrettyString(insertComments);
+			s ~= a.toPrettyString(insertComments, indentationLevel, indentWith);
 		return s;
 	}
 
@@ -3090,13 +3104,13 @@ class Element {
 		return writeToAppender();
 	}
 
-	protected string toPrettyStringIndent(bool insertComments, int indentationLevel) const {
+	protected string toPrettyStringIndent(bool insertComments, int indentationLevel, string indentWith) const {
 		string s;
 
 		if(insertComments) s ~= "<!--";
 		s ~= "\n";
 		foreach(indent; 0 .. indentationLevel)
-			s ~= "\t";
+			s ~= indentWith;
 		if(insertComments) s ~= "-->";
 
 		return s;
@@ -3106,13 +3120,63 @@ class Element {
 		Writes out with formatting. Be warned: formatting changes the contents. Use ONLY
 		for eyeball debugging.
 	+/
-	string toPrettyString(bool insertComments = false, int indentationLevel = 0) const {
-		string s = toPrettyStringIndent(insertComments, indentationLevel);
+	string toPrettyString(bool insertComments = false, int indentationLevel = 0, string indentWith = "\t") const {
+
+		// first step is to concatenate any consecutive text nodes to simplify
+		// the white space analysis. this changes the tree! but i'm allowed since
+		// the comment always says it changes the comments
+		//
+		// actually i'm not allowed cuz it is const so i will cheat and lie
+		/+
+		TextNode lastTextChild = null;
+		for(int a = 0; a < this.children.length; a++) {
+			auto child = this.children[a];
+			if(auto tn = cast(TextNode) child) {
+				if(lastTextChild) {
+					lastTextChild.contents ~= tn.contents;
+					for(int b = a; b < this.children.length - 1; b++)
+						this.children[b] = this.children[b + 1];
+					this.children = this.children[0 .. $-1];
+				} else {
+					lastTextChild = tn;
+				}
+			} else {
+				lastTextChild = null;
+			}
+		}
+		+/
+
+		const(Element)[] children;
+
+		TextNode lastTextChild = null;
+		for(int a = 0; a < this.children.length; a++) {
+			auto child = this.children[a];
+			if(auto tn = cast(const(TextNode)) child) {
+				if(lastTextChild !is null) {
+					lastTextChild.contents ~= tn.contents;
+				} else {
+					lastTextChild = new TextNode("");
+					lastTextChild.parentNode = cast(Element) this;
+					lastTextChild.contents ~= tn.contents;
+					children ~= lastTextChild;
+				}
+			} else {
+				lastTextChild = null;
+				children ~= child;
+			}
+		}
+
+		string s = toPrettyStringIndent(insertComments, indentationLevel, indentWith);
 
 		s ~= "<";
 		s ~= tagName;
 
-		foreach(n, v ; attributes) {
+		// i sort these for consistent output. might be more legible
+		// but especially it keeps it the same for diff purposes.
+		import std.algorithm : sort;
+		auto keys = sort(attributes.keys);
+		foreach(n; keys) {
+			auto v = attributes[n];
 			s ~= " ";
 			s ~= n;
 			s ~= "=\"";
@@ -3129,18 +3193,19 @@ class Element {
 
 		// for simple `<collection><item>text</item><item>text</item></collection>`, let's
 		// just keep them on the same line
-		if(children.length == 1 && children[0].nodeType == NodeType.Text)
-			s ~= children[0].toString();
-		else
-		foreach(child; children) {
-			assert(child !is null);
+		if(tagName.isInArray(inlineElements) || allAreInlineHtml(children)) {
+			foreach(child; children) {
+				s ~= child.toString();
+			}
+		} else {
+			foreach(child; children) {
+				assert(child !is null);
 
-			s ~= child.toPrettyString(insertComments, indentationLevel + 1);
+				s ~= child.toPrettyString(insertComments, indentationLevel + 1, indentWith);
+			}
+
+			s ~= toPrettyStringIndent(insertComments, indentationLevel, indentWith);
 		}
-
-		// see comment above
-		if(!(children.length == 1 && children[0].nodeType == NodeType.Text))
-			s ~= toPrettyStringIndent(insertComments, indentationLevel);
 
 		s ~= "</";
 		s ~= tagName;
@@ -3697,15 +3762,26 @@ class DocumentFragment : Element {
 		super(_parentDocument);
 	}
 
+	/++
+		Creates a document fragment from the given HTML. Note that the HTML is assumed to close all tags contained inside it.
+
+		Since: March 29, 2018 (or git tagged v2.1.0)
+	+/
+	this(Html html) {
+		this(null);
+
+		this.innerHTML = html.source;
+	}
+
 	///.
 	override string writeToAppender(Appender!string where = appender!string()) const {
 		return this.innerHTML(where);
 	}
 
-	override string toPrettyString(bool insertComments, int indentationLevel) const {
+	override string toPrettyString(bool insertComments, int indentationLevel, string indentWith) const {
 		string s;
 		foreach(child; children)
-			s ~= child.toPrettyString(insertComments, indentationLevel);
+			s ~= child.toPrettyString(insertComments, indentationLevel, indentWith);
 		return s;
 	}
 
@@ -4069,7 +4145,7 @@ class RawSource : SpecialElement {
 		return source;
 	}
 
-	override string toPrettyString(bool, int) const {
+	override string toPrettyString(bool, int, string) const {
 		return source;
 	}
 
@@ -4097,7 +4173,7 @@ abstract class ServerSideCode : SpecialElement {
 		return where.data[start .. $];
 	}
 
-	override string toPrettyString(bool, int) const {
+	override string toPrettyString(bool, int, string) const {
 		return "<" ~ source ~ ">";
 	}
 
@@ -4146,7 +4222,7 @@ class BangInstruction : SpecialElement {
 		return where.data[start .. $];
 	}
 
-	override string toPrettyString(bool, int) const {
+	override string toPrettyString(bool, int, string) const {
 		string s;
 		s ~= "<!";
 		s ~= source;
@@ -4181,7 +4257,7 @@ class QuestionInstruction : SpecialElement {
 		return where.data[start .. $];
 	}
 
-	override string toPrettyString(bool, int) const {
+	override string toPrettyString(bool, int, string) const {
 		string s;
 		s ~= "<";
 		s ~= source;
@@ -4217,7 +4293,7 @@ class HtmlComment : SpecialElement {
 		return where.data[start .. $];
 	}
 
-	override string toPrettyString(bool, int) const {
+	override string toPrettyString(bool, int, string) const {
 		string s;
 		s ~= "<!--";
 		s ~= source;
@@ -4285,14 +4361,39 @@ class TextNode : Element {
 		return s;
 	}
 
-	override string toPrettyString(bool insertComments = false, int indentationLevel = 0) const {
+	override string toPrettyString(bool insertComments = false, int indentationLevel = 0, string indentWith = "\t") const {
 		string s;
+
+		string contents = this.contents;
+		// we will first collapse the whitespace per html
+		// sort of. note this can break stuff yo!!!!
+		if(this.parentNode is null || this.parentNode.tagName != "pre") {
+			string n = "";
+			bool lastWasWhitespace = indentationLevel > 0;
+			foreach(char c; contents) {
+				if(c.isSimpleWhite) {
+					if(!lastWasWhitespace)
+						n ~= ' ';
+					lastWasWhitespace = true;
+				} else {
+					n ~= c;
+					lastWasWhitespace = false;
+				}
+			}
+
+			contents = n;
+		}
+
+		if(this.parentNode !is null && this.parentNode.tagName != "p") {
+			contents = contents.strip;
+		}
+
 		auto e = htmlEntitiesEncode(contents);
 		import std.algorithm.iteration : splitter;
 		bool first = true;
 		foreach(line; splitter(e, "\n")) {
 			if(first) {
-				s ~= toPrettyStringIndent(insertComments, indentationLevel);
+				s ~= toPrettyStringIndent(insertComments, indentationLevel, indentWith);
 				first = false;
 			} else {
 				s ~= "\n";
@@ -4303,7 +4404,7 @@ class TextNode : Element {
 				if(insertComments)
 					s ~= "-->";
 			}
-			s ~= line;
+			s ~= line.stripRight;
 		}
 		return s;
 	}
@@ -4720,7 +4821,7 @@ class Table : Element {
 		tagName = "table";
 	}
 
-	///.
+	/// Creates an element with the given type and content.
 	Element th(T)(T t) {
 		Element e;
 		if(parentDocument !is null)
@@ -4734,7 +4835,7 @@ class Table : Element {
 		return e;
 	}
 
-	///.
+	/// ditto
 	Element td(T)(T t) {
 		Element e;
 		if(parentDocument !is null)
@@ -5044,11 +5145,16 @@ struct DomMutationEvent {
 }
 
 
-private enum static string[] selfClosedElements = [
+private immutable static string[] selfClosedElements = [
 	// html 4
 	"img", "hr", "input", "br", "col", "link", "meta",
 	// html 5
 	"source" ];
+
+private immutable static string[] inlineElements = [
+	"span", "strong", "em", "b", "i", "a"
+];
+
 
 static import std.conv;
 
@@ -6971,6 +7077,25 @@ unittest {
 	assert(stringplate.expand.innerHTML == `<div id="bar"><div class="foo">$foo</div><div class="baz">$baz</div></div>`);
 }
 +/
+
+bool allAreInlineHtml(const(Element)[] children) {
+	foreach(child; children) {
+		if(child.nodeType == NodeType.Text && child.nodeValue.strip.length) {
+			// cool
+		} else if(child.tagName.isInArray(inlineElements) && allAreInlineHtml(child.children)) {
+			// cool
+		} else {
+			// prolly block
+			return false;
+		}
+	}
+	return true;
+}
+
+private bool isSimpleWhite(dchar c) {
+	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
+}
+
 /*
 Copyright: Adam D. Ruppe, 2010 - 2017
 License:   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
