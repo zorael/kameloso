@@ -319,7 +319,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
             if (slice[0] == 's') slice = slice[1..$];
             slice = slice[3..$];  // ://
 
-            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)("www.");
+            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
 
             if (slice.beginsWith("youtube.com/watch?v=") ||
                 slice.beginsWith("youtu.be/"))
@@ -503,7 +503,7 @@ TitleLookup lookupTitle(const string url)
     lookup.domain = res.finalURI.original_host;  // thanks to ikod
 
     import kameloso.string : beginsWith;
-    if (lookup.domain.beginsWith("www"))
+    if (lookup.domain.beginsWith("www."))
     {
         import kameloso.string : nom;
         lookup.domain.nom('.');
