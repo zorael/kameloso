@@ -497,70 +497,51 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
     else if (!specified.isValidNickname(plugin.state.bot.server))
     {
         logger.warning("Invalid nickname/account: ", specified);
+        return;
     }
-    else
+
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+
+    // User not on record or on record but no account; WHOIS and try based on results
+
+    void dg()
     {
-        import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-        // User not on record or on record but no account; WHOIS and try based on results
+        const whoisEvent = thisFiber.payload;
 
-        void dg()
+        immutable m = plugin.state.bot.server.caseMapping;
+        if (IRCUser.toLowercase(specified, m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
-
-            const whoisEvent = thisFiber.payload;
-            IRCUser whoisUser;
-
-            with (IRCEvent.Type)
-            switch (whoisEvent.type)
-            {
-            case RPL_WHOISACCOUNT:
-            case RPL_WHOISREGNICK:
-                whoisUser = whoisEvent.target;
-                break;
-
-            case ACCOUNT:
-                whoisUser = whoisEvent.sender;
-                break;
-
-            case RPL_ENDOFWHOIS:
-                logger.logf("%s is not logged onto a service account.", specified);
-                return;  // End fiber
-
-            case ERR_NOSUCHNICK:
-                whoisUser = whoisEvent.target;
-                break;  // Drop down
-
-            default:
-                assert(0, "addToList delegate received unwanted IRCEvent type");
-            }
-
-            immutable m = plugin.state.bot.server.caseMapping;
-            if (IRCUser.toLowercase(specified, m) != IRCUser.toLowercase(whoisUser.nickname, m))
-            {
-                // wrong WHOIS; reset and await a new one
-                thisFiber.payload = IRCEvent.init;
-                Fiber.yield();
-                return dg();
-            }
-
-            immutable endAccount = whoisUser.account.length ? whoisUser.account : specified;
-            plugin.alterAccountClassifier(Yes.add, list, endAccount);
+            // wrong WHOIS; reset and await a new one
+            thisFiber.payload = IRCEvent.init;
+            Fiber.yield();
+            return dg();  // Recurse
+        }
+        else if (whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS)
+        {
+            // Correct user but no account info received
+            logger.logf("%s is not logged onto a service account.", specified);
+            return;  // End fiber
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&dg);
-        plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
+        immutable endAccount = whoisEvent.target.account.length ? whoisEvent.target.account : specified;
 
-        import kameloso.messaging : raw;
-        import std.typecons : Flag, No, Yes;
-        plugin.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ specified);
+        plugin.alterAccountClassifier(Yes.add, list, endAccount);
     }
+
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+    plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
+    plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
+    plugin.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
+    plugin.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
+
+    import kameloso.messaging : raw;
+    import std.typecons : Flag, No, Yes;
+    plugin.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ specified);
 }
 
 
