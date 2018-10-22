@@ -3093,3 +3093,177 @@ final class IRCPluginInitialisationException : Exception
         super(message, file, line);
     }
 }
+
+
+// WHOISFiberDelegate
+/++
+ +  Functionality for catching WHOIS results and calling passed function aliases
+ +  with the resulting account information that was divined from it, in the form
+ +  of the actual `IRCEvent`, the target `IRCUser` within it, the user's
+ +  `account` field, or merely alone as an arity-0 function.
+ +
+ +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
+ +  the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
+ +  WHOIS request.
+ +
+ +  Example:
+ +  ---
+ +  void onSuccess(const IRCEvent successEvent) { /* ... */ }
+ +  void onFailure(const IRCUser failureUser) { /* .. */ }
+ +
+ +  mixin WHOISFiberDelegate!(onSuccess, onFailure);
+ +
+ +  enqueueAndWHOIS(specifiedNickname);
+ +  ---
+ +
+ +  Params:
+ +      onSuccess = Function alias to call when successfully having received
+ +          account information from the server's WHOIS response.
+ +      onFailure = Function alias to call when the server didn't respond with
+ +          account information, or when the user is offline.
+ +/
+import std.traits : isSomeFunction;
+mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null)
+if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
+{
+    static assert((__traits(compiles, plugin) || __traits(compiles, service)),
+        "WHOISFiberDelegate should be mixed into the context of a plugin. " ~
+        "(Could not access neither plugin nor service)");
+
+    string _carriedNickname;
+
+    /// Reusable mixin that catches WHOIS results.
+    void whoisFiberDelegate()
+    {
+        import kameloso.ircdefs : IRCEvent, IRCUser;
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
+
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+        const whoisEvent = thisFiber.payload;
+
+        with (IRCEvent.Type)
+        with (whoisEvent)
+        {
+            import kameloso.conv : Enum;
+            assert(((type == RPL_WHOISACCOUNT) || (type == RPL_WHOISREGNICK) ||
+                (type == RPL_ENDOFWHOIS) || (type == ERR_NOSUCHNICK)),
+                "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
+                Enum!(IRCEvent.Type).toString(type));
+        }
+
+        immutable m = plugin.state.bot.server.caseMapping;
+
+        if (IRCUser.toLowercase(_carriedNickname, m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
+        {
+            // Wrong WHOIS; reset and await a new one
+            thisFiber.payload = IRCEvent.init;
+            Fiber.yield();
+            return whoisFiberDelegate();  // Recurse
+        }
+
+        import std.meta : AliasSeq;
+        import std.traits : Parameters, Unqual, arity, staticMap;
+
+        if ((whoisEvent.type == IRCEvent.Type.RPL_WHOISACCOUNT) ||
+            (whoisEvent.type == IRCEvent.Type.RPL_WHOISREGNICK))
+        {
+            alias Params = staticMap!(Unqual, Parameters!onSuccess);
+
+            static if (is(Params : AliasSeq!IRCEvent))
+            {
+                return onSuccess(whoisEvent);
+            }
+            else static if (is(Params : AliasSeq!IRCUser))
+            {
+                return onSuccess(whoisEvent.target);
+            }
+            else static if (is(Params : AliasSeq!string))
+            {
+                return onSuccess(whoisEvent.target.account);
+            }
+            else static if (arity!onSuccess == 0)
+            {
+                return onSuccess();
+            }
+            else
+            {
+                pragma(msg, typeof(onSuccess).stringof ~ "  " ~ __traits(identifier, onSuccess));
+                pragma(msg, Params);
+                static assert(0, "Unexpected signature of success function " ~
+                    "alias passed to mixin WHOISFiberDelegate");
+            }
+        }
+        else /* if ((whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS) ||
+            (whoisEvent.type == IRCEvent.Type.ERR_NOSUCHNICK)) */
+        {
+            static if (!is(typeof(onFailure) == typeof(null)))
+            {
+                alias Params = staticMap!(Unqual, Parameters!onFailure);
+
+                static if (is(Params : AliasSeq!IRCEvent))
+                {
+                    return onFailure(whoisEvent);
+                }
+                else static if (is(Params : AliasSeq!IRCUser))
+                {
+                    return onFailure(whoisEvent.target);
+                }
+                else static if (is(Params : AliasSeq!string))
+                {
+                    return onFailure(whoisEvent.target.account);
+                }
+                else static if (arity!onFailure == 0)
+                {
+                    return onFailure();
+                }
+                else
+                {
+                    pragma(msg, typeof(onFailure).stringof ~ "  " ~ __traits(identifier, onFailure));
+                    pragma(msg, Params);
+                    static assert(0, "Unexpected signature of failure function " ~
+                        "alias passed to mixin WHOISFiberDelegate");
+                }
+            }
+        }
+    }
+
+    /++
+     +  Constructs a `CarryingFiber!IRCEvent` and enqueues it into the
+     +  `awaitingFibers` associative array, then issues a `WHOIS` call.
+     +/
+    void enqueueAndWHOIS(const string nickname)
+    {
+        import kameloso.messaging : raw;
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
+        import std.typecons : Flag, No, Yes;
+
+        Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate);
+
+        static if (__traits(compiles, plugin))
+        {
+            alias context = plugin;
+        }
+        else static if (__traits(compiles, service))
+        {
+            alias context = service;
+        }
+        else
+        {
+            assert(0, "WHOISFiberDelegate mixed in into incorrect context; " ~
+                "neither plugin nor service visible");
+        }
+
+        context.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
+        context.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
+        context.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
+        context.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
+
+        context.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ nickname);
+        _carriedNickname = nickname;
+    }
+}
