@@ -244,66 +244,35 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         return;
     }
 
-    void onSuccess(const string endAccount)
+    void onSuccess(const string id)
     {
-        plugin.automodes[channel][endAccount] = mode;
-        immutable verb = endAccount in plugin.automodes[channel] ? "updated" : "added";
-        logger.logf("Automode %s! %s on %s: +%s", verb, endAccount, channel, mode);
+        immutable verb = (channel in plugin.automodes) && (id in plugin.automodes[channel]) ? "updated" : "added";
+        plugin.automodes[channel][id] = mode;
+        logger.logf("Automode %s! %s on %s: +%s", verb, id, channel, mode);
         plugin.saveAutomodes();
+    }
+
+    void onFailure(const IRCUser failureUser)
+    {
+        logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+        return onSuccess(failureUser.nickname);
     }
 
     if (const userOnRecord = specified in plugin.state.users)
     {
         if (userOnRecord.account.length)
         {
-            return onSuccess(userOnRecord.account);
+            return onSuccess(userOnRecord.nickname);
         }
     }
-
-    import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
 
     // WHOIS the supplied nickname and get its account, then add it.
     // Assume the supplied nickname *is* the account if no match, error out if
     // there is a match but the user isn't logged onto services.
 
-    void dg()
-    {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+    mixin WHOISFiberDelegate!(onSuccess, onFailure);
 
-        const whoisEvent = thisFiber.payload;
-
-        immutable m = plugin.state.bot.server.caseMapping;
-        if (IRCUser.toLowercase(specified, m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
-        {
-            // wrong WHOIS; reset and await a new one
-            thisFiber.payload = IRCEvent.init;
-            Fiber.yield();
-            return dg();  // Recurse
-        }
-        else if (whoisEvent.type == IRCEvent.Type.RPL_ENDOFWHOIS)
-        {
-            // Correct user but no account info received
-            logger.logf("%s is not logged onto a service account.", specified);
-            return;  // End fiber
-        }
-
-        immutable endAccount = whoisEvent.target.account.length ? whoisEvent.target.account : specified;
-
-        onSuccess(endAccount);
-    }
-
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
-    plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
-    plugin.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
-    plugin.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
-    plugin.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
-
-    import kameloso.messaging : raw;
-    import std.typecons : Flag, No, Yes;
-    plugin.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ specified);
+    enqueueAndWHOIS(specified);
 }
 
 

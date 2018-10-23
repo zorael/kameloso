@@ -124,34 +124,61 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     // stripModesign to allow for quotes from @nickname and +dudebro
     immutable signed = event.content.stripped;
-    immutable nickname = plugin.state.bot.server.stripModesign(signed);
+    immutable specified = plugin.state.bot.server.stripModesign(signed);
 
-    if (!nickname.isValidNickname(plugin.state.bot.server))
+    if (!specified.isValidNickname(plugin.state.bot.server))
     {
-        logger.warningf("Invalid nickname: '%s'", nickname);
+        logger.warningf("Invalid account/nickname: '%s'", specified);
         return;
+    }
+
+    void report(const string nickname, const string endQuote)
+    {
+        import std.format : format;
+        plugin.privmsg(event.channel, event.sender.nickname,
+            "%s | %s".format(nickname, endQuote));
     }
 
     try
     {
-        import std.format : format;
+        void onSuccess(const IRCUser replyUser)
+        {
+            immutable endAccount = replyUser.account.length ? replyUser.account : replyUser.nickname;
+            immutable quote = plugin.getQuote(endAccount);
 
-        immutable quote = plugin.getQuote(nickname);
+            if (quote.length)
+            {
+                return report(endAccount, quote);
+            }
+            else
+            {
+                import std.format : format;
+                plugin.privmsg(event.channel, event.sender.nickname,
+                    "No quote on record for %s".format(replyUser.nickname));
+            }
+        }
+
+        void onFailure(const IRCUser failureUser)
+        {
+            logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+            return onSuccess(failureUser);
+        }
+
+        immutable quote = plugin.getQuote(specified);
 
         if (quote.length)
         {
-            plugin.privmsg(event.channel, event.sender.nickname,
-                "%s | %s".format(nickname, quote));
+            return report(specified, quote);
         }
-        else
-        {
-            plugin.privmsg(event.channel, event.sender.nickname,
-                "No quote on record for %s".format(nickname));
-        }
+
+        mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+        enqueueAndWHOIS(specified);
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not quote '%s': %s", nickname, e.msg);
+        logger.errorf("Could not quote '%s': %s", specified, e.msg);
+        return;
     }
 }
 
@@ -181,31 +208,44 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     string slice = event.content;  // need mutable
     immutable signed = slice.nom!(Yes.decode)(' ');
-    immutable nickname = plugin.state.bot.server.stripModesign(signed);
+    immutable specified = plugin.state.bot.server.stripModesign(signed);
 
-    if (!nickname.length || !slice.length) return;
+    if (!specified.length || !slice.length) return;
 
-    if (!nickname.isValidNickname(plugin.state.bot.server))
+    if (!specified.isValidNickname(plugin.state.bot.server))
     {
-        logger.warningf("Invalid nickname: '%s'", nickname);
+        logger.warningf("Invalid account/nickname: '%s'", specified);
         return;
     }
 
-    try
+    void onSuccess(const string id)
     {
-        import std.format : format;
+        try
+        {
+            import std.format : format;
 
-        plugin.addQuote(nickname, slice);
-        plugin.quotes.save(plugin.quotesFile);
+            plugin.addQuote(id, slice);
+            plugin.quotes.save(plugin.quotesFile);
 
-        plugin.privmsg(event.channel, event.sender.nickname,
-            "Quote for %s saved (%d on record)"
-            .format(nickname, plugin.quotes[nickname].array.length));
+            plugin.privmsg(event.channel, event.sender.nickname,
+                "Quote for %s saved (%d on record)"
+                .format(event.sender.nickname, plugin.quotes[id].array.length));
+        }
+        catch (const JSONException e)
+        {
+            logger.errorf("Could not add quote for %s: %s", id, e.msg);
+        }
     }
-    catch (const JSONException e)
+
+    void onFailure(const IRCUser failureUser)
     {
-        logger.errorf("Could not add quote for '%s': %s", nickname, e.msg);
+        logger.log("(Assuming unauthenticated nickname or offline account was specified)");
+        return onSuccess(failureUser.nickname);
     }
+
+    mixin WHOISFiberDelegate!(onSuccess, onFailure);
+
+    enqueueAndWHOIS(specified);
 }
 
 
