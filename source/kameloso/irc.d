@@ -1344,7 +1344,15 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         case JOIN:
         case SELFNICK:
         case RPL_WHOREPLY:
+        case RPL_WHOISUSER:
+        case RPL_WHOISCHANNELS:
+        case RPL_WHOISSERVER:
+        case RPL_WHOISHOST:
+        case RPL_WHOISIDLE:
         case RPL_LOGGEDIN:
+        case RPL_WHOISACCOUNT:
+        case RPL_WHOISREGNICK:
+        case RPL_ENDOFWHOIS:
             break;
 
         default:
