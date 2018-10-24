@@ -170,7 +170,7 @@ void emote(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority
     static if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = content;
 
-    if (emoteTarget.beginsWithOneOf(state.bot.server.chantypes))
+    if (emoteTarget.beginsWithOneOf(state.client.server.chantypes))
     {
         event.channel = emoteTarget;
     }

@@ -157,7 +157,7 @@ File createFIFO(IRCPluginState state)
     import std.file : FileException, exists, isDir;
     import std.format : format;
 
-    immutable filename = state.bot.nickname ~ "@" ~ state.bot.server.address;
+    immutable filename = state.client.nickname ~ "@" ~ state.client.server.address;
 
     if (!filename.exists)
     {
@@ -227,7 +227,7 @@ void teardown(PipelinePlugin plugin)
         fifoThread.send(ThreadMessage.Teardown());
         fifoThread = Tid.init;
 
-        immutable filename = bot.nickname ~ "@" ~ bot.server.address;
+        immutable filename = client.nickname ~ "@" ~ client.server.address;
 
         if (filename.exists && !filename.isDir)
         {

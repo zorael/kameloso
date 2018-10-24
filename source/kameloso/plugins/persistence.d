@@ -71,9 +71,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                 lastWhois = Clock.currTime.toUnixTime;
 
-                if (service.state.bot.admins.canFind(account))
+                if (service.state.client.admins.canFind(account))
                 {
-                    // Admins are (currently) stored in an array IRCBot.admins
+                    // Admins are (currently) stored in an array Client.admins
                     class_ = Class.admin;
                 }
                 else if (const classifier = account in service.userClasses)

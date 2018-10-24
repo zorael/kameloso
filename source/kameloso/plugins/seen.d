@@ -72,7 +72,7 @@ public:
  +  ---
  +  struct IRCPluginState
  +  {
- +      IRCBot bot;
+ +      Client client;
  +      CoreSettings settings;
  +      Tid mainThread;
  +      IRCUser[string] users;
@@ -81,7 +81,7 @@ public:
  +  }
  +  ---
  +
- +  * `bot` houses information about the bot itself, and the server you're
+ +  * `client` houses information about the client itself, and the server you're
  +     connected to.
  +
  +  * `settings` contains a few program-wide settings, not specific to a plugin.
@@ -397,8 +397,8 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
             nickname = nickname.nom('!');
         }
 
-        nickname = plugin.state.bot.server.stripModesign(nickname);
-        if (nickname == plugin.state.bot.nickname) continue;
+        nickname = plugin.state.client.server.stripModesign(nickname);
+        if (nickname == plugin.state.client.nickname) continue;
 
         plugin.updateUser(nickname, now);
     }
@@ -588,13 +588,13 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             // No nickname supplied...
             return;
         }
-        else if (!event.content.isValidNickname(plugin.state.bot.server))
+        else if (!event.content.isValidNickname(plugin.state.client.server))
         {
             // Nickname contained a space
             privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content);
             return;
         }
-        else if (state.bot.nickname == event.content)
+        else if (state.client.nickname == event.content)
         {
             // The requested nick is the bot's.
             privmsg(event.channel, event.sender.nickname, "T-that's me though...");
@@ -686,12 +686,12 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
      +  Make sure to strip the modesign, so `@foo` is the same person as
      +  `foo`.
      +/
-    immutable nickname = plugin.state.bot.server.stripModesign(signed);
+    immutable nickname = plugin.state.client.server.stripModesign(signed);
 
     // Only update the user if he/she is in a home channel.
     foreach (const channel; plugin.state.channels)
     {
-        if (!plugin.state.bot.homes.canFind(channel.name)) continue;
+        if (!plugin.state.client.homes.canFind(channel.name)) continue;
 
         if (channel.users.canFind(nickname))
         {
@@ -720,7 +720,7 @@ void updateAllUsers(SeenPlugin plugin)
 
     foreach (const channel; plugin.state.channels)
     {
-        if (!plugin.state.bot.homes.canFind(channel.name)) continue;
+        if (!plugin.state.client.homes.canFind(channel.name)) continue;
 
         foreach (const nickname; channel.users)
         {
@@ -916,5 +916,5 @@ mixin ChannelAwareness;
 
 
 /++
- +  This full plugin is 132 source lines of code. (`dscanner --sloc seen.d`)
+ +  This full plugin is 160 source lines of code. (`dscanner --sloc seen.d`)
  +/

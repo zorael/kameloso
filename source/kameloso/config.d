@@ -20,7 +20,7 @@ import std.typecons : Flag, No, Yes;
  +  Example:
  +  ---
  +  Appender!string sink;
- +  sink.serialise(bot, bot.server, settings);
+ +  sink.serialise(client, client.server, settings);
  +  immutable configText = sink.data.justifiedConfigurationText;
  +  writeToDisk!(Yes.addBanner)("kameloso.conf", configText);
  +  ---
@@ -131,10 +131,10 @@ final class FileIsNotAFileException : Exception
  +
  +  Example:
  +  ---
- +  IRCBot bot;
+ +  Client client;
  +  IRCServer server;
  +
- +  "kameloso.conf".readConfigInto(bot, server);
+ +  "kameloso.conf".readConfigInto(client, server);
  +  ---
  +
  +  Params:
@@ -166,9 +166,9 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
  +  Example:
  +  ---
  +  Appender!string sink;
- +  IRCBot bot;
+ +  Client client;
  +  IRCServer server;
- +  sink.serialise(bot, server);
+ +  sink.serialise(client, server);
  +  assert(!sink.data.empty);
  +  ---
  +
@@ -197,9 +197,9 @@ if (Things.length > 1)
  +  Example:
  +  ---
  +  Appender!string sink;
- +  IRCBot bot;
+ +  Client client;
  +
- +  sink.serialise(bot);
+ +  sink.serialise(client);
  +  assert(!sink.data.empty);
  +  ---
  +
@@ -393,13 +393,13 @@ pipyon 3
  +
  +  Example:
  +  ---
- +  IRCBot bot;
+ +  Client client;
  +  IRCServer server;
  +
  +  "kameloso.conf"
  +      .configReader
  +      .splitter("\n")
- +      .applyConfiguration(bot, server);
+ +      .applyConfiguration(client, server);
  +  ---
  +
  +  Params:
@@ -633,11 +633,11 @@ naN     !"¤%&/`;
  +
  +  Example:
  +  ---
- +  IRCBot bot;
+ +  Client client;
  +  IRCServer server;
  +  Appender!string sink;
  +
- +  sink.serialise(bot, server);
+ +  sink.serialise(client, server);
  +  immutable justified = sink.data.justifiedConfigurationText;
  +  ---
  +

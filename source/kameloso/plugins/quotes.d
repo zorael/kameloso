@@ -58,7 +58,7 @@ struct QuotesSettings
  +/
 string getQuote(QuotesPlugin plugin, const string nickname)
 {
-    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
     if (const nicknameQuotes = lowercased in plugin.quotes)
     {
@@ -87,7 +87,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 {
     import std.json : JSONValue;
 
-    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
     if (lowercased in plugin.quotes)
     {
@@ -127,9 +127,9 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     // stripModesign to allow for quotes from @nickname and +dudebro
     immutable signed = event.content.stripped;
-    immutable specified = plugin.state.bot.server.stripModesign(signed);
+    immutable specified = plugin.state.client.server.stripModesign(signed);
 
-    if (!specified.isValidNickname(plugin.state.bot.server))
+    if (!specified.isValidNickname(plugin.state.client.server))
     {
         logger.warning("Invalid account/nickname: ", specified);
         return;
@@ -211,11 +211,11 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     string slice = event.content;  // need mutable
     immutable signed = slice.nom!(Yes.decode)(' ');
-    immutable specified = plugin.state.bot.server.stripModesign(signed);
+    immutable specified = plugin.state.client.server.stripModesign(signed);
 
     if (!specified.length || !slice.length) return;
 
-    if (!specified.isValidNickname(plugin.state.bot.server))
+    if (!specified.isValidNickname(plugin.state.client.server))
     {
         logger.warning("Invalid account/nickname: ", specified);
         return;

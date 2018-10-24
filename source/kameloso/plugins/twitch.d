@@ -17,6 +17,8 @@ module kameloso.plugins.twitch;
 version(WithPlugins):
 version(TwitchSupport):
 
+version = TwitchWarnings;
+
 private:
 
 import kameloso.plugins.common;
@@ -34,7 +36,7 @@ import kameloso.ircdefs;
  +/
 void postprocess(TwitchService service, ref IRCEvent event)
 {
-    if (service.state.bot.server.daemon != IRCServer.Daemon.twitch) return;
+    if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     service.parseTwitchTags(event);
 
@@ -299,7 +301,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 // USERSTATE describes the bot in the context of a specific channel,
                 // such as what badges are available. It's *always* about the bot,
                 // so expose the display name in event.target and let Persistence store it.
-                event.target.nickname = service.state.bot.nickname;
+                event.target.nickname = service.state.client.nickname;
                 event.target.alias_ = alias_;
             }
             else

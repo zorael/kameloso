@@ -51,7 +51,7 @@ void onPing(ChanQueriesService service)
 {
     import core.thread : Fiber;
 
-    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
     if (service.querying) return;  // Try again next PING
 
     service.querying = true;  // "Lock"
@@ -105,7 +105,7 @@ void onPing(ChanQueriesService service)
             raw!(Yes.quiet)(service.state, "MODE " ~ channelName);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
-            foreach (immutable modechar; service.state.bot.server.aModes.representation)
+            foreach (immutable modechar; service.state.client.server.aModes.representation)
             {
                 import std.format : format;
                 // Cannot await by event type; there are too many types,
@@ -152,7 +152,7 @@ void onPing(ChanQueriesService service)
 @(ChannelPolicy.any)
 void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
-    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     service.channelStates[event.channel] = ChannelState.unset;
 }
@@ -168,7 +168,7 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 @(ChannelPolicy.any)
 void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
-    if (service.state.bot.server.daemon == IRCServer.Daemon.twitch) return;
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     service.channelStates.remove(event.channel);
 }

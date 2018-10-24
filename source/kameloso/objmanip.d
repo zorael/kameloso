@@ -20,7 +20,7 @@ public import kameloso.meld;
  +
  +  Example:
  +  ---
- +  IRCBot bot;
+ +  IRCUser bot;
  +
  +  bot.setMemberByName("nickname", "kameloso");
  +  bot.setMemberByName("address", "blarbh.hlrehg.org");

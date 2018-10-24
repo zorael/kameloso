@@ -7,7 +7,7 @@
  +/
 module kameloso.plugins.common;
 
-import kameloso.irc : IRCBot;
+import kameloso.irc : Client;
 import kameloso.ircdefs;
 
 import core.thread : Fiber;
@@ -351,10 +351,10 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `kameloso.irc.IRCBot`, containing information pertaining to
+     +  The current `kameloso.irc.Client`, containing information pertaining to
      +  the bot in the context of the current (alive) connection.
      +/
-    IRCBot bot;
+    Client client;
 
     /// The current settings of the bot, non-specific to any plugins.
     CoreSettings settings;
@@ -866,7 +866,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     {
                         // it is a non-channel event, like a `QUERY`
                     }
-                    else if (!privateState.bot.homes.canFind(event.channel))
+                    else if (!privateState.client.homes.canFind(event.channel))
                     {
                         static if (verbose)
                         {
@@ -1905,7 +1905,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `kameloso.irc.IRCBot` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `kameloso.irc.Client` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
      +  This function was part of `UserAwareness` but triggering queued requests
@@ -2224,16 +2224,16 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
             if (!slice.contains('!') || !slice.contains('@'))
             {
                 // Freenode-like, only nicknames with possible modesigns
-                immutable nickname = plugin.state.bot.server.stripModesign(slice);
-                if (nickname == plugin.state.bot.nickname) continue;
+                immutable nickname = plugin.state.client.server.stripModesign(slice);
+                if (nickname == plugin.state.client.nickname) continue;
                 newUser.nickname = nickname;
             }
             else
             {
                 // SpotChat-like, names are in full nick!ident@address form
                 immutable signed = slice.nom('!');
-                immutable nickname = plugin.state.bot.server.stripModesign(signed);
-                if (nickname == plugin.state.bot.nickname) continue;
+                immutable nickname = plugin.state.client.server.stripModesign(signed);
+                if (nickname == plugin.state.client.nickname) continue;
 
                 immutable ident = slice.nom('@');
                 immutable address = slice;
@@ -2542,7 +2542,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc : setMode;
-        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.bot.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
     }
 
 
@@ -2573,13 +2573,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 // by char
                 foreach (immutable modesign; event.aux.representation)
                 {
-                    if (auto modechar = modesign in state.bot.server.prefixchars)
+                    if (auto modechar = modesign in state.client.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
                         state.channels[event.channel].setMode(modestring,
-                            event.target.nickname, state.bot.server);
+                            event.target.nickname, state.client.server);
                     }
                     /*else
                     {
@@ -2589,7 +2589,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 }
             }
 
-            if (event.target.nickname == state.bot.nickname) return;
+            if (event.target.nickname == state.client.nickname) return;
 
             import std.algorithm.searching : canFind;
             if (state.channels[event.channel].users.canFind(event.target.nickname))
@@ -2647,7 +2647,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 import kameloso.irc : stripModesign;
 
                 string modesigns;
-                nickname = state.bot.server.stripModesign(nickname, modesigns);
+                nickname = state.client.server.stripModesign(nickname, modesigns);
 
                 // Register operators, half-ops, voiced etc
                 // Can be more than one if multi-prefix capability is enabled
@@ -2656,12 +2656,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 import std.string : representation;
                 foreach (immutable modesign; modesigns.representation)
                 {
-                    if (auto modechar = modesign in state.bot.server.prefixchars)
+                    if (auto modechar = modesign in state.client.server.prefixchars)
                     {
                         import kameloso.irc : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
-                        state.channels[event.channel].setMode(modestring, nickname, state.bot.server);
+                        state.channels[event.channel].setMode(modestring, nickname, state.client.server);
                     }
                     else
                     {
@@ -2669,7 +2669,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     }
                 }
 
-                if (nickname == state.bot.nickname) continue;
+                if (nickname == state.client.nickname) continue;
 
                 import std.algorithm.searching : canFind;
                 if (state.channels[event.channel].users.canFind(nickname))
@@ -2715,14 +2715,14 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             immutable ubyte[IRCEvent.Type.RPL_QUIETLIST+1] modecharsByType =
             [
                 RPL_BANLIST : 'b',
-                RPL_EXCEPTLIST : plugin.state.bot.server.exceptsChar,
-                RPL_INVITELIST : plugin.state.bot.server.invexChar,
+                RPL_EXCEPTLIST : plugin.state.client.server.exceptsChar,
+                RPL_INVITELIST : plugin.state.client.server.invexChar,
                 RPL_REOPLIST : 'R',
                 RPL_QUIETLIST : 'q',
             ];
 
             plugin.state.channels[event.channel].setMode((cast(char)modecharsByType[event.type]).to!string,
-                event.content, plugin.state.bot.server);
+                event.content, plugin.state.client.server);
         }
     }
 
@@ -2740,7 +2740,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import kameloso.irc : setMode;
 
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.bot.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
     }
 }
 
@@ -2803,9 +2803,9 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
             content = content[1..$];
         }
 
-        if (content.beginsWith(bot.nickname))
+        if (content.beginsWith(client.nickname))
         {
-            content = content.stripPrefix(bot.nickname);
+            content = content.stripPrefix(client.nickname);
         }
         break;
 
@@ -2827,14 +2827,14 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
             content = content[1..$];
         }
 
-        if (content.beginsWith(bot.nickname) && (content.length > bot.nickname.length))
+        if (content.beginsWith(client.nickname) && (content.length > client.nickname.length))
         {
             /*static if (verbose)
             {
-                writefln("%s trailing character '%s'", name, content[bot.nickname.length]);
+                writefln("%s trailing character '%s'", name, content[client.nickname.length]);
             }*/
 
-            switch (content[bot.nickname.length])
+            switch (content[client.nickname.length])
             {
             case ':':
             case ' ':
@@ -2862,8 +2862,8 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
         }
 
         // Event.content *guaranteed* to begin with
-        // privateState.bot.nickname here
-        content = content.stripPrefix(bot.nickname);
+        // privateState.client.nickname here
+        content = content.stripPrefix(client.nickname);
         break;
     }
 
@@ -2884,7 +2884,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
 {
-    if (!newUser.nickname.length || (newUser.nickname == plugin.state.bot.nickname))
+    if (!newUser.nickname.length || (newUser.nickname == plugin.state.client.nickname))
     {
         return;
     }
@@ -2896,7 +2896,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
             // Twitch nicknames are always the same as the user accounts; the
             // displayed name/alias is sent separately as a "display-name" IRCv3 tag
 
-            if (state.bot.server.daemon == IRCServer.Daemon.twitch)
+            if (state.client.server.daemon == IRCServer.Daemon.twitch)
             {
                 newUser.account = newUser.nickname;
             }
@@ -3158,7 +3158,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 Enum!(IRCEvent.Type).toString(type));
         }
 
-        immutable m = plugin.state.bot.server.caseMapping;
+        immutable m = plugin.state.client.server.caseMapping;
 
         if (IRCUser.toLowercase(mixin(carriedVariableName), m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
         {

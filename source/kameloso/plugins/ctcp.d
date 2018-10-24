@@ -143,7 +143,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Query:     USERINFO
             Response:  USERINFO fred (Fred Foobar)
          */
-        line = "USERINFO %s (%s)".format(bot.nickname, bot.user);
+        line = "USERINFO %s (%s)".format(client.nickname, client.user);
         break;
 
     case CTCP_DCC:

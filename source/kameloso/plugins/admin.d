@@ -43,7 +43,7 @@ private:
 
 import kameloso.common : logger;
 import kameloso.plugins.common;
-import kameloso.irc : IRCBot;
+import kameloso.irc : Client;
 import kameloso.ircdefs;
 import kameloso.messaging;
 
@@ -295,7 +295,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddChan
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.irc.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.Client.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a Fiber to verify that the channel was actually joined.
@@ -316,7 +316,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     immutable channelToAdd = event.content.stripped;
 
-    if (!channelToAdd.isValidChannel(plugin.state.bot.server))
+    if (!channelToAdd.isValidChannel(plugin.state.client.server))
     {
         logger.warning("Invalid channel: ", channelToAdd);
         return;
@@ -324,7 +324,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     with (plugin.state)
     {
-        if (bot.homes.canFind(channelToAdd))
+        if (client.homes.canFind(channelToAdd))
         {
             logger.warning("We are already in that home channel.");
             return;
@@ -334,8 +334,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
         // We need to add it to the homes array so as to get ChannelPolicy.home
         // ChannelAwareness to pick up the SELFJOIN.
-        bot.homes ~= channelToAdd;
-        bot.updated = true;
+        client.homes ~= channelToAdd;
+        client.updated = true;
         plugin.state.join(channelToAdd);
 
         // We have to follow up and see if we actually managed to join the channel
@@ -365,14 +365,14 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             {
             case SELFJOIN:
                 // Success!
-                /*bot.homes ~= followupEvent.channel;
-                bot.updated = true;*/
+                /*client.homes ~= followupEvent.channel;
+                client.updated = true;*/
                 return;
 
             case ERR_LINKCHANNEL:
                 // We were redirected. Still assume we wanted to add this one?
                 logger.log("Redirected!");
-                bot.homes ~= followupEvent.content;
+                client.homes ~= followupEvent.content;
                 // Drop down and undo original addition
                 break;
 
@@ -385,9 +385,9 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             import std.algorithm.mutation : SwapStrategy, remove;
             import std.algorithm.searching : countUntil;
 
-            immutable homeIndex = bot.homes.countUntil(followupEvent.channel);
-            bot.homes = bot.homes.remove!(SwapStrategy.unstable)(homeIndex);
-            bot.updated = true;
+            immutable homeIndex = client.homes.countUntil(followupEvent.channel);
+            client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
+            client.updated = true;
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&dg);
@@ -411,7 +411,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.irc.IRCBot.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.Client.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -432,7 +432,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
     with (plugin.state)
     {
-        immutable homeIndex = bot.homes.countUntil(channel);
+        immutable homeIndex = client.homes.countUntil(channel);
 
         if (homeIndex == -1)
         {
@@ -440,8 +440,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
             return;
         }
 
-        bot.homes = bot.homes.remove!(SwapStrategy.unstable)(homeIndex);
-        bot.updated = true;
+        client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
+        client.updated = true;
         plugin.state.part(channel);
     }
 }
@@ -450,7 +450,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.Client.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
@@ -494,7 +494,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
         // user.nickname == specified
         return plugin.alterAccountClassifier(Yes.add, list, user.account);
     }
-    else if (!specified.isValidNickname(plugin.state.bot.server))
+    else if (!specified.isValidNickname(plugin.state.client.server))
     {
         logger.warning("Invalid nickname/account: ", specified);
         return;
@@ -522,7 +522,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.IRCBot.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.Client.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.
@@ -772,9 +772,9 @@ void onCommandAsserts(AdminPlugin plugin)
 
     if (plugin.adminSettings.printAsserts)
     {
-        import kameloso.debugging : formatBotAssignment;
+        import kameloso.debugging : formatClientAssignment;
         // Print the bot assignment but only if we're toggling it on
-        formatBotAssignment(stdout.lockingTextWriter, plugin.state.bot);
+        formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
     }
 
     version(Cygwin_) stdout.flush();
@@ -902,7 +902,7 @@ void onCommandStatus(AdminPlugin plugin)
     import std.stdio : writeln, stdout;
 
     logger.log("Current state:");
-    printObjects!(Yes.printAll)(plugin.state.bot, plugin.state.bot.server);
+    printObjects!(Yes.printAll)(plugin.state.client, plugin.state.client.server);
     writeln();
 
     logger.log("Channels:");

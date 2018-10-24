@@ -3,8 +3,8 @@
  +/
 module kameloso.getopt;
 
-import kameloso.common : CoreSettings, Client, Next;
-import kameloso.irc : IRCBot;
+import kameloso.common : CoreSettings, IRCBot, Next;
+import kameloso.irc : Client;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -14,42 +14,42 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `kameloso.common.CoreSettings` and `kameloso.irc.IRCBot` from file into
+ +  Read `kameloso.common.CoreSettings` and `kameloso.irc.Client` from file into
  +  temporaries, then meld them into the real ones, into which the command-line
  +  arguments will have been applied.
  +
  +  Example:
  +  ---
- +  IRCBot bot;
+ +  Client client;
  +  CoreSettings settings;
  +
- +  meldSettingsFromFile(bot, settings);
+ +  meldSettingsFromFile(client, settings);
  +  ---
  +
  +  Params:
- +      bot = Reference `kameloso.irc.IRCBot` to apply changes to.
+ +      client = Reference `kameloso.irc.Client` to apply changes to.
  +      setttings = Reference `kameloso.common.CoreSettings` to apply changes
  +          to.
  +/
-void meldSettingsFromFile(ref IRCBot bot, ref CoreSettings settings)
+void meldSettingsFromFile(ref Client client, ref CoreSettings settings)
 {
     import kameloso.config : readConfigInto;
     import kameloso.meld : MeldingStrategy, meldInto;
 
-    IRCBot tempBot;
+    Client tempClient;
     CoreSettings tempSettings;
 
     // These arguments are by reference.
-    // 1. Read arguments into bot
-    // 2. Read settings into temporary bot
-    // 3. Meld arguments *into* temporary bot, overwriting
-    // 4. Inherit temporary bot into bot
-    settings.configFile.readConfigInto(tempBot, tempBot.server, tempSettings);
+    // 1. Read arguments into client
+    // 2. Read settings into temporary client
+    // 3. Meld arguments *into* temporary client, overwriting
+    // 4. Inherit temporary client into client
+    settings.configFile.readConfigInto(tempClient, tempClient.server, tempSettings);
 
-    bot.meldInto!(MeldingStrategy.aggressive)(tempBot);
+    client.meldInto!(MeldingStrategy.aggressive)(tempClient);
     settings.meldInto!(MeldingStrategy.aggressive)(tempSettings);
 
-    bot = tempBot;
+    client = tempClient;
     settings = tempSettings;
 }
 
@@ -224,15 +224,15 @@ Next printHelp(GetoptResult results) @system
  +  The filename is read from `kameloso.common.settings`.
  +
  +  Params:
- +      client = Reference to the current `kameloso.common.Client`.
- +      bot = Reference to the current `kameloso.irc.IRCBot`.
+ +      bot = Reference to the current `kameloso.common.IRCBot`.
+ +      client = Reference to the current `kameloso.irc.Client`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
  +  Returns:
  +      `Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings) @system
+Next writeConfig(ref IRCBot bot, ref Client client, ref string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
     import kameloso.printing : printObjects;
@@ -262,18 +262,18 @@ Next writeConfig(ref Client client, ref IRCBot bot, ref string[] customSettings)
     writeln();
 
     // If we don't initialise the plugins there'll be no plugins array
-    client.initPlugins(customSettings);
+    bot.initPlugins(customSettings);
 
-    client.writeConfigurationFile(settings.configFile);
+    bot.writeConfigurationFile(settings.configFile);
 
     // Reload saved file
-    meldSettingsFromFile(bot, settings);
+    meldSettingsFromFile(client, settings);
 
-    printObjects(bot, bot.server, settings);
+    printObjects(client, client.server, settings);
 
     logger.logf("Configuration written to %s%s", infotint, settings.configFile);
 
-    if (!bot.admins.length && !bot.homes.length)
+    if (!client.admins.length && !client.homes.length)
     {
         import kameloso.common : complainAboutIncompleteConfiguration;
         logger.log("Edit it and make sure it has entries for at least one of the following:");
@@ -297,15 +297,15 @@ public:
  +
  +  Example:
  +  ---
- +  Client client;
- +  Next next = client.handleGetopt(args);
+ +  IRCBot bot;
+ +  Next next = bot.handleGetopt(args);
  +
  +  if (next == Next.returnSuccess) return 0;
  +  // ...
  +  ---
  +
  +  Params:
- +      client = Reference to the current `kameloso.common.Client`.
+ +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      args = The `string[]` args the program was called with.
  +      customSettings = Refernce array of custom settings to apply on top of
  +          the settings read from the configuration file.
@@ -314,7 +314,7 @@ public:
  +      `Next.continue_` or `Next.returnSuccess` depending on whether the
  +      arguments chosen mean the program should proceed or not.
  +/
-Next handleGetopt(ref Client client, string[] args, ref string[] customSettings) @system
+Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @system
 {
     import kameloso.common : printVersionInfo, settings;
     import std.format : format;
@@ -346,29 +346,29 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
     arraySep = ",";
 
-    with (client.parser)
+    with (bot.parser)
     {
         auto results = args.getopt(
             config.caseSensitive,
             config.bundling,
             "n|nickname",   "Bot nickname",
-                            &bot.nickname,
+                            &client.nickname,
             "s|server",     "Server address",
-                            &bot.server.address,
+                            &client.server.address,
             "P|port",       "Server port",
-                            &bot.server.port,
+                            &client.server.port,
             "6|ipv6",       "Use IPv6 when available",
                             &settings.ipv6,
             "A|account",    "Services account login name, if applicable",
-                            &bot.authLogin,
-            "auth",         &bot.authLogin,
+                            &client.authLogin,
+            "auth",         &client.authLogin,
             "p|password",   "Services account password",
-                            &bot.authPassword,
-            "authPassword", &bot.authPassword,
+                            &client.authPassword,
+            "authPassword", &client.authPassword,
             "pass",         "Registration password (not auth or services)",
-                            &bot.pass,
+                            &client.pass,
             "admins",       "Services accounts of the bot's administrators",
-                            &bot.admins,
+                            &client.admins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
                             "(remember to escape or enquote the octothorpe #s!)",
                             &inputHomes,
@@ -407,7 +407,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         );
 
         /+
-            1. Populate `bot` and `settings` with getopt (above)
+            1. Populate `client` and `settings` with getopt (above)
             2. Meld with settings from file
             3. Adjust members `monochrome` and `brightTerminal` to counter the
                fact that melding doesn't work well with bools that don't have
@@ -415,7 +415,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             4. Reinitialise the logger with new settings
          +/
 
-        meldSettingsFromFile(bot, settings);
+        meldSettingsFromFile(client, settings);
         adjustGetopt(argsBackup,
             "--bright", &settings.brightTerminal,
             "--brightTerminal", &settings.brightTerminal,
@@ -439,21 +439,21 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         // 7. Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
-            if (inputHomes.length) bot.homes ~= inputHomes;
-            if (inputChannels.length) bot.channels ~= inputChannels;
+            if (inputHomes.length) client.homes ~= inputHomes;
+            if (inputChannels.length) client.channels ~= inputChannels;
         }
         else
         {
-            if (inputHomes.length) bot.homes = inputHomes;
-            if (inputChannels.length) bot.channels = inputChannels;
+            if (inputHomes.length) client.homes = inputHomes;
+            if (inputChannels.length) client.channels = inputChannels;
         }
 
         // 8. Clear entries that are dashes
         import kameloso.objmanip : zeroMembers;
-        zeroMembers!"-"(bot);
+        zeroMembers!"-"(client);
 
-        // 7. `bot` finished; inherit into `client`
-        client.parser.bot = bot;
+        // 7. `client` finished; inherit into `client`
+        bot.parser.client = client;
 
         // 9. Handle showstopper arguments (that display something and then exits)
         if (shouldShowVersion)
@@ -466,7 +466,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
-            return writeConfig(client, bot, customSettings);
+            return writeConfig(bot, client, customSettings);
         }
 
         if (shouldShowSettings)
@@ -492,11 +492,11 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
             printVersionInfo(pre, post);
             writeln();
 
-            printObjects!(No.printAll)(bot, bot.server, settings);
+            printObjects!(No.printAll)(client, client.server, settings);
 
-            client.initPlugins(customSettings);
+            bot.initPlugins(customSettings);
 
-            foreach (plugin; client.plugins) plugin.printSettings();
+            foreach (plugin; bot.plugins) plugin.printSettings();
 
             return Next.returnSuccess;
         }
@@ -505,7 +505,7 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
         {
             // --gen|--generate was passed, enter assert generation
             import kameloso.debugging : generateAsserts;
-            client.generateAsserts();
+            bot.generateAsserts();
             return Next.returnSuccess;
         }
 

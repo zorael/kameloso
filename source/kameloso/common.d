@@ -308,15 +308,15 @@ unittest
 @system:
 
 
-// Client
+// IRCBot
 /++
  +  State needed for the kameloso bot, aggregated in a struct for easier passing
  +  by reference.
  +/
-struct Client
+struct IRCBot
 {
     import kameloso.connection : Connection;
-    import kameloso.irc : IRCBot, IRCParser;
+    import kameloso.irc : Client, IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
@@ -400,7 +400,7 @@ struct Client
         teardownPlugins();
 
         IRCPluginState state;
-        state.bot = parser.bot;
+        state.client = parser.client;
         state.settings = settings;
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
@@ -514,32 +514,32 @@ struct Client
         {
             plugin.start();
 
-            if (plugin.state.bot.updated)
+            if (plugin.state.client.updated)
             {
-                // start changed the bot; propagate
-                parser.bot = plugin.state.bot;
-                parser.bot.updated = false; // all plugins' state.bot will be overwritten with this
-                propagateBot(parser.bot);
+                // start changed the client; propagate
+                parser.client = plugin.state.client;
+                parser.client.updated = false; // all plugins' state.client will be overwritten with this
+                propagateClient(parser.client);
             }
         }
     }
 
 
-    // propagateBot
+    // propagateClient
     /++
-    +  Takes a bot and passes it out to all plugins.
+    +  Takes a client and passes it out to all plugins.
     +
-    +  This is called when a change to the bot has occured and we want to update
-    +  all plugins to have an updated copy of it.
+    +  This is called when a change to the client has occured and we want to
+    +  update all plugins to have an updated copy of it.
     +
     +  Params:
-    +      bot = `kameloso.irc.IRCBot` to propagate to all plugins.
+    +      client = `kameloso.irc.Client` to propagate to all plugins.
     +/
-    void propagateBot(IRCBot bot) pure nothrow @nogc @safe
+    void propagateClient(Client client) pure nothrow @nogc @safe
     {
         foreach (plugin; plugins)
         {
-            plugin.state.bot = bot;
+            plugin.state.client = client;
         }
     }
 }
@@ -612,15 +612,15 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +
  +  Example:
  +  ---
- +  Client client;
- +  client.writeConfigurationFile(client.settings.configFile);
+ +  IRCBot bot;
+ +  bot.writeConfigurationFile(bot.settings.configFile);
  +  ---
  +
  +  Params:
- +      client = Refrence to the current `Client`, with all its settings.
+ +      IRCBot = Refrence to the current `IRCBot`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref Client client, const string filename)
+void writeConfigurationFile(ref IRCBot bot, const string filename)
 {
     import kameloso.config : justifiedConfigurationText, serialise, writeToDisk;
     import kameloso.string : beginsWith, encode64;
@@ -629,15 +629,15 @@ void writeConfigurationFile(ref Client client, const string filename)
     Appender!string sink;
     sink.reserve(1536);  // ~1097
 
-    with (client)
-    with (client.parser)
+    with (bot)
+    with (bot.parser)
     {
-        if (bot.authPassword.length && !bot.authPassword.beginsWith("base64:"))
+        if (client.authPassword.length && !client.authPassword.beginsWith("base64:"))
         {
-            bot.authPassword = "base64:" ~ encode64(bot.authPassword);
+            client.authPassword = "base64:" ~ encode64(client.authPassword);
         }
 
-        sink.serialise(bot, bot.server, settings);
+        sink.serialise(client, client.server, settings);
 
         foreach (plugin; plugins)
         {
@@ -1051,7 +1051,7 @@ void complainAboutMissingConfiguration(const string[] args)
 /++
  +  Displays an error on how to complete a minimal configuration file.
  +
- +  It assumes that the bot's `admins` and `homes` are both empty.
+ +  It assumes that the client's `admins` and `homes` are both empty.
  +/
 void complainAboutIncompleteConfiguration()
 {

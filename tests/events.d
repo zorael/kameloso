@@ -5,7 +5,7 @@ import std.conv : to;
 unittest
 {
     IRCParser parser;
-    parser.bot.nickname = "kameloso";
+    parser.client.nickname = "kameloso";
 
     /+
     [NOTICE] tepper.freenode.net (*): "*** Checking Ident"
@@ -32,7 +32,7 @@ unittest
         assert((num == 433), num.to!string);
     }
 
-    parser.bot.nickname = "kameloso^";
+    parser.client.nickname = "kameloso^";
 
     /+
     [RPL_WELCOME] tepper.freenode.net (kameloso^): "Welcome to the freenode Internet Relay Chat Network kameloso^" (#1)
@@ -296,7 +296,7 @@ unittest
         assert((sender.address == "81-233-105-62-no80.tbcn.telia.com"), sender.address);
         assert((type == IRCEvent.Type.SELFNICK), Enum!(IRCEvent.Type).toString(type));
         assert((target.nickname == "kameloso_"), target.nickname);
-        assert((parser.bot.nickname == "kameloso_"), parser.bot.nickname);
+        assert((parser.client.nickname == "kameloso_"), parser.client.nickname);
     }
     /+
      [17:10:44] [NUMERIC] irc.uworld.se (kameloso): "To connect type /QUOTE PONG 3705964477" (#513)
@@ -312,7 +312,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso^";
+        parser.client.nickname = "kameloso^";
         immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: KICK #flerrp kameloso^ :kameloso^");
 
         with (event)
@@ -544,7 +544,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso^";
+        parser.client.nickname = "kameloso^";
         immutable event = parser.toIRCEvent(":tolkien.freenode.net 301 kameloso^ jcjordyn120 :Idle");
         with (IRCEvent.Type)
         with (event)
@@ -582,7 +582,7 @@ unittest
             assert((content == "EXCEPTS INVEX MODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=freenode STATUSMSG=@+ CALLERID=g CASEMAPPING=rfc1459"), content);
             assert((num == 5), num.to!string);
         }
-        assert((parser.bot.server.network == "freenode"), parser.bot.server.network);
+        assert((parser.client.server.network == "freenode"), parser.client.server.network);
     }
 
     {
@@ -597,13 +597,13 @@ unittest
             assert((aux == "ircd-seven-1.1.4"), aux);
             assert((num == 4), num.to!string);
         }
-        assert(parser.bot.server.daemon == IRCServer.daemon.ircdseven);
+        assert(parser.client.server.daemon == IRCServer.daemon.ircdseven);
     }
 
     version(TwitchSupport)
     {
         {
-            parser.bot.server.address = "tmi.twitch.tv";
+            parser.client.server.address = "tmi.twitch.tv";
             immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 zorael :-");
             with (IRCEvent.Type)
             with (event)
@@ -613,8 +613,8 @@ unittest
                 assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
                 assert((num == 4), num.to!string);
             }
-            assert((parser.bot.server.network == "Twitch"), parser.bot.server.network);
-            assert(parser.bot.server.daemon == IRCServer.daemon.twitch);
+            assert((parser.client.server.network == "Twitch"), parser.client.server.network);
+            assert(parser.client.server.daemon == IRCServer.daemon.twitch);
         }
     }
 
@@ -635,7 +635,7 @@ unittest
     }
 
     {
-        assert((parser.bot.nickname == "kameloso^"), parser.bot.nickname);
+        assert((parser.client.nickname == "kameloso^"), parser.client.nickname);
         immutable event = parser.toIRCEvent(":wilhelm.freenode.net 378 kameloso^ kameloso^ :is connecting from *@81-233-105-62-no80.tbcn.telia.com 81.233.105.62");
         with (IRCEvent.Type)
         with (event)
@@ -900,7 +900,7 @@ unittest
     }
 
     {
-        assert((parser.bot.nickname == "kameloso^"), parser.bot.nickname);
+        assert((parser.client.nickname == "kameloso^"), parser.client.nickname);
         immutable event = parser.toIRCEvent(":asimov.freenode.net 433 kameloso^ kameloso :Nickname is already in use.");
         with (IRCEvent.Type)
         with (event)
@@ -1351,7 +1351,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso";
+        parser.client.nickname = "kameloso";
         immutable event = parser.toIRCEvent(":wolfe.freenode.net 470 kameloso #linux ##linux :Forwarding to another channel");
         with (IRCEvent.Type)
         with (event)
@@ -1393,7 +1393,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso^";
+        parser.client.nickname = "kameloso^";
         immutable event = parser.toIRCEvent(":orwell.freenode.net 443 kameloso^ kameloso #flerrp :is already on channel");
         with (IRCEvent.Type)
         with (event)
@@ -1535,7 +1535,7 @@ unittest
         }
     }
 
-    parser.bot.nickname = "kameloso^";
+    parser.client.nickname = "kameloso^";
 
     {
         immutable event = parser.toIRCEvent(":kameloso^ MODE kameloso^ :+i");
@@ -1619,7 +1619,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso";
+        parser.client.nickname = "kameloso";
         immutable event = parser.toIRCEvent(":kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521");
         with (IRCEvent.Type)
         with (event)
@@ -1749,7 +1749,7 @@ unittest
     }
 
     {
-        parser.bot.nickname = "kameloso^";
+        parser.client.nickname = "kameloso^";
         immutable event = parser.toIRCEvent(":niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089");
         with (IRCEvent.Type)
         with (event)
@@ -1901,7 +1901,7 @@ unittest
 unittest
 {
     IRCParser parser;
-    parser.bot.nickname = "kameloso";
+    parser.client.nickname = "kameloso";
     parser.setDaemon(IRCServer.Daemon.ircdseven, "freenode");
 
     {
@@ -1933,7 +1933,7 @@ unittest
         }
     }
 
-    parser.bot.nickname = "kameloso^";
+    parser.client.nickname = "kameloso^";
 
     {
         immutable event = parser.toIRCEvent(":verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -");
@@ -2060,7 +2060,7 @@ unittest
         }
     }
 
-    with (parser.bot)
+    with (parser.client)
     {
         assert(updated);
         assert((server.resolvedAddress == "irc.portlane.se"), server.resolvedAddress);
@@ -2071,7 +2071,7 @@ unittest
 {
     IRCParser parser;
 
-    with (parser.bot)
+    with (parser.client)
     {
         server.daemon = IRCServer.Daemon.inspircd;
         server.network = "SpotChat";
@@ -2093,7 +2093,7 @@ unittest
     }
 
     /*
-    with (parser.bot)
+    with (parser.client)
     {
         server.maxChannelLength = 64;
         server.aModes = "Ibeg";
@@ -2104,7 +2104,7 @@ unittest
     }
     */
 
-    with (parser.bot)
+    with (parser.client)
     {
         assert((server.maxChannelLength == 64), server.maxChannelLength.to!string);
         assert((server.aModes == "Ibeg"), server.aModes);
@@ -2119,7 +2119,7 @@ version(TwitchSupport)
 unittest
 {
     IRCParser parser;
-    with (parser.bot)
+    with (parser.client)
     {
         server.daemon = IRCServer.Daemon.twitch;
         server.network = "Twitch";

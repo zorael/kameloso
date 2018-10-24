@@ -249,7 +249,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     import std.algorithm.searching : canFind;
     if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && !plugin.state.bot.homes.canFind(event.channel))
+        event.channel.length && !plugin.state.client.homes.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
@@ -323,7 +323,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 if (!errBuffer)
                 {
                     plugin.buffers[errorLabel] = LogLineBuffer(buildNormalizedPath(logLocation,
-                        plugin.state.bot.server.address ~ ".err.log"));
+                        plugin.state.client.server.address ~ ".err.log"));
                     errBuffer = errorLabel in plugin.buffers;
 
                     import std.file : exists;
@@ -397,7 +397,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     {
         // No need to sanitise the server address; it's ASCII
         writeToPath(string.init, buildNormalizedPath(logLocation,
-            plugin.state.bot.server.address ~ ".raw.log"), false);
+            plugin.state.client.server.address ~ ".raw.log"), false);
     }
 
     with (IRCEvent.Type)
@@ -417,7 +417,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         // channels this user is in (that the bot is also in)
         foreach (immutable channelName, const thisChannel; state.channels)
         {
-            if (!printerSettings.logAllChannels && !state.bot.homes.canFind(channelName))
+            if (!printerSettings.logAllChannels && !state.client.homes.canFind(channelName))
             {
                 // Not logging all channels and this is not a home.
                 continue;
@@ -453,8 +453,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         else if (!sender.nickname.length && sender.address.length)
         {
             // Server
-            writeToPath(state.bot.server.address, buildNormalizedPath(logLocation,
-                state.bot.server.address.sanitisedPath ~ ".log"));
+            writeToPath(state.client.server.address, buildNormalizedPath(logLocation,
+                state.client.server.address.sanitisedPath ~ ".log"));
         }
         else
         {
@@ -601,7 +601,7 @@ void commitLogs(PrinterPlugin plugin)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
-    if (plugin.printedISUPPORT || !plugin.state.bot.server.network.length)
+    if (plugin.printedISUPPORT || !plugin.state.client.server.network.length)
     {
         // We already printed this information, or we havent yet seen NETWORK
         return;
@@ -609,7 +609,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    with (plugin.state.bot.server)
+    with (plugin.state.client.server)
     {
         import std.string : capitalize;
         import std.uni : isLower;
@@ -818,7 +818,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case EMOTE:
                 case TWITCH_CHEER:
                     import kameloso.irc : containsNickname;
-                    if (content.containsNickname(bot.nickname))
+                    if (content.containsNickname(client.nickname))
                     {
                         // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
@@ -853,7 +853,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
+            (type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1187,11 +1187,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     import kameloso.bash : invert;
                     import kameloso.irc : containsNickname;
 
-                    if (!content.containsNickname(bot.nickname)) goto default;
+                    if (!content.containsNickname(client.nickname)) goto default;
 
                     // Nick was mentioned (certain)
                     shouldBell = bellOnMention;
-                    put(sink, content.invert(bot.nickname));
+                    put(sink, content.invert(client.nickname));
                     break;
 
                 default:
@@ -1240,7 +1240,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         sink.colour(BashForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (type == IRCEvent.Type.QUERY) && (target.nickname == bot.nickname))
+            (type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);

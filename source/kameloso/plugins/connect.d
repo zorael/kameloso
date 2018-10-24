@@ -16,7 +16,7 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc : IRCBot;
+import kameloso.irc : Client;
 import kameloso.ircdefs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
@@ -74,16 +74,16 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        immutable index = bot.channels.countUntil(event.channel);
+        immutable index = client.channels.countUntil(event.channel);
 
         if (index != -1)
         {
-            bot.channels = bot.channels.remove!(SwapStrategy.unstable)(index);
-            bot.updated = true;
+            client.channels = client.channels.remove!(SwapStrategy.unstable)(index);
+            client.updated = true;
         }
         else
         {
-            immutable homeIndex = bot.homes.countUntil(event.channel);
+            immutable homeIndex = client.homes.countUntil(event.channel);
 
             if (homeIndex != -1)
             {
@@ -101,7 +101,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `kameloso.irc.IRCBot` of
+ +  Records a channel in the `channels` array in the `kameloso.irc.Client` of
  +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon
  +  joining it.
  +/
@@ -113,11 +113,11 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     with (service.state)
     {
-        if (!bot.channels.canFind(event.channel) && !bot.homes.canFind(event.channel))
+        if (!client.channels.canFind(event.channel) && !client.homes.canFind(event.channel))
         {
             // Track new channel in the channels array
-            bot.channels ~= event.channel;
-            bot.updated = true;
+            client.channels ~= event.channel;
+            client.updated = true;
         }
     }
 }
@@ -126,14 +126,14 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `kameloso.ircd.IRCBot` of the current `ConnectService`'s
+ +  `kameloso.ircd.Client` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void joinChannels(ConnectService service)
 {
     with (service.state)
     {
-        if (!bot.homes.length && !bot.channels.length)
+        if (!client.homes.length && !client.channels.length)
         {
             logger.warning("No channels, no purpose...");
             return;
@@ -160,7 +160,7 @@ void joinChannels(ConnectService service)
 
         // FIXME: line should split if it reaches 512 characters
         // Needs .array or .dup, sort() will sort in-place and reorder homes
-        auto chanlist = chain(bot.homes, bot.channels)
+        auto chanlist = chain(client.homes, client.channels)
             .array
             .sort()
             .uniq;
@@ -238,11 +238,11 @@ void tryAuth(ConnectService service)
     with (service.state)
     {
         import kameloso.string : beginsWith, decode64;
-        immutable password = bot.authPassword.beginsWith("base64:") ?
-            decode64(bot.authPassword[7..$]) : bot.authPassword;
+        immutable password = client.authPassword.beginsWith("base64:") ?
+            decode64(client.authPassword[7..$]) : client.authPassword;
 
         // Specialcase networks
-        switch (bot.server.network)
+        switch (client.server.network)
         {
         case "DALnet":
             serviceNick = "NickServ@services.dal.net";
@@ -269,17 +269,17 @@ void tryAuth(ConnectService service)
         service.authentication = Progress.started;
 
         with (IRCServer.Daemon)
-        switch (bot.server.daemon)
+        switch (client.server.daemon)
         {
         case rizon:
         case unreal:
         case hybrid:
         case bahamut:
             // Only accepts password, no auth nickname
-            if (bot.nickname != bot.origNickname)
+            if (client.nickname != client.origNickname)
             {
                 logger.warningf("Cannot auth when you have changed your nickname " ~
-                    "(%s != %s)", bot.nickname, bot.origNickname);
+                    "(%s != %s)", client.nickname, client.origNickname);
 
                 service.authentication = Progress.finished;
                 return;
@@ -294,12 +294,12 @@ void tryAuth(ConnectService service)
         case u2:
             // Accepts auth login
             // GameSurge is AuthServ
-            string account = bot.authLogin;
+            string account = client.authLogin;
 
-            if (!bot.authLogin.length)
+            if (!client.authLogin.length)
             {
-                logger.log("No account specified! Trying ", bot.origNickname);
-                account = bot.origNickname;
+                logger.log("No account specified! Trying ", client.origNickname);
+                account = client.origNickname;
             }
 
             service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, password));
@@ -321,7 +321,7 @@ void tryAuth(ConnectService service)
             logger.warning("Unsure of what AUTH approach to use.");
             logger.info("Need information about what approach succeeded!");
 
-            if (bot.authLogin.length)
+            if (client.authLogin.length)
             {
                 goto case ircdseven;
             }
@@ -346,13 +346,13 @@ void tryAuth(ConnectService service)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
 {
-    if (service.state.bot.authPassword.length && (service.authentication == Progress.notStarted))
+    if (service.state.client.authPassword.length && (service.authentication == Progress.notStarted))
     {
         service.tryAuth();
     }
 
     if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.bot.authPassword.length || (service.state.bot.server.daemon == IRCServer.Daemon.twitch)))
+        !service.state.client.authPassword.length || (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
@@ -373,9 +373,9 @@ void onEndOfMotd(ConnectService service)
 
                 immutable processed = line
                     .stripped
-                    .replace("$nickname", service.state.bot.nickname)
-                    .replace("$origserver", service.state.bot.server.address)
-                    .replace("$server", service.state.bot.server.resolvedAddress);
+                    .replace("$nickname", service.state.client.nickname)
+                    .replace("$origserver", service.state.client.server.address)
+                    .replace("$server", service.state.client.server.resolvedAddress);
 
                 service.raw(processed);
             }
@@ -415,7 +415,7 @@ void onAuthEnd(ConnectService service)
 /++
  +  Modifies the nickname by appending characters to the end of it.
  +
- +  Flags the bot as updated, so as to propagate the change to all other
+ +  Flags the client as updated, so as to propagate the change to all other
  +  plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
@@ -428,17 +428,17 @@ void onNickInUse(ConnectService service)
             import std.conv : text;
             import std.random : uniform;
 
-            service.state.bot.nickname ~= uniform(0, 10).text;
+            service.state.client.nickname ~= uniform(0, 10).text;
         }
         else
         {
             import kameloso.constants : altNickSign;
-            service.state.bot.nickname ~= altNickSign;
+            service.state.client.nickname ~= altNickSign;
             service.renamedDuringRegistration = true;
         }
 
-        service.state.bot.updated = true;
-        service.raw("NICK " ~ service.state.bot.nickname);
+        service.state.client.updated = true;
+        service.raw("NICK " ~ service.state.client.nickname);
     }
 }
 
@@ -529,7 +529,7 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (!service.connectSettings.sasl || !service.state.bot.authPassword.length) continue;
+                if (!service.connectSettings.sasl || !service.state.client.authPassword.length) continue;
                 service.raw!(Yes.quiet)("CAP REQ :sasl");
                 tryingSASL = true;
                 break;
@@ -603,20 +603,20 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.irc.IRCBot.authLogin` and `kameloso.irc.IRCBot.authPassword`, then
+ +  `kameloso.irc.Client.authLogin` and `kameloso.irc.Client.authPassword`, then
  +  sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(authLogin \0 authLogin \0 authPassword)`
  +
- +  ...where `kameloso.irc.IRCBot.authLogin` is the services account name and
- +  `kameloso.irc.IRCBot.authPassword` is the account password.
+ +  ...where `kameloso.irc.Client.authLogin` is the services account name and
+ +  `kameloso.irc.Client.authPassword` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
 {
-    with (service.state.bot)
+    with (service.state.client)
     {
         import kameloso.string : beginsWith, decode64;
         import std.base64 : Base64;
@@ -639,8 +639,8 @@ void onSASLAuthenticate(ConnectService service)
  +  On SASL authentication success, calls a `CAP END` to finish the `CAP`
  +  negotiations.
  +
- +  Flags the bot as having finished registering and authing, allowing the main
- +  loop to pick it up and propagate it to all other plugins.
+ +  Flags the client as having finished registering and authing, allowing the
+ +  main loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
 void onSASLSuccess(ConnectService service)
@@ -668,7 +668,7 @@ void onSASLSuccess(ConnectService service)
  +  On SASL authentication failure, calls a `CAP END` to finish the `CAP`
  +  negotiations and finish registration.
  +
- +  Flags the bot as having finished registering, allowing the main loop to
+ +  Flags the client as having finished registering, allowing the main loop to
  +  pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
@@ -712,7 +712,7 @@ void onWelcome(ConnectService service)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(ConnectService service)
 {
-    if (service.state.bot.server.daemon == IRCServer.Daemon.rusnet)
+    if (service.state.client.server.daemon == IRCServer.Daemon.rusnet)
     {
         service.raw!(Yes.quiet)("CODEPAGE UTF-8");
     }
@@ -750,16 +750,16 @@ void register(ConnectService service)
 
         service.raw!(Yes.quiet)("CAP LS 302");
 
-        if (bot.pass.length)
+        if (client.pass.length)
         {
-            service.raw!(Yes.quiet)("PASS " ~ bot.pass);
+            service.raw!(Yes.quiet)("PASS " ~ client.pass);
 
             // fake it
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");
         }
         else
         {
-            if (bot.server.daemon == IRCServer.Daemon.twitch)
+            if (client.server.daemon == IRCServer.Daemon.twitch)
             {
                 logger.error("You *need* a password to join this server");
                 service.quit();
@@ -767,8 +767,8 @@ void register(ConnectService service)
             }
         }
 
-        service.raw("USER %s * 8 : %s".format(bot.ident, bot.user));
-        service.raw("NICK " ~ bot.nickname);
+        service.raw("USER %s * 8 : %s".format(client.ident, client.user));
+        service.raw("NICK " ~ client.nickname);
     }
 }
 

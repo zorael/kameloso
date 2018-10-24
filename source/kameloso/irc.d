@@ -27,16 +27,16 @@ version(AsAnApplication)
     version = PrintSanityFailures;
 
     /++
-     +  Have the `IRCBot` struct house extra things needed for an IRC *bot*, as
+     +  Have the `Client` struct house extra things needed for an IRC *bot*, as
      +  opposed the absolute minimum needed for an IRC *client*.
      +/
-    version = FullIRCBot;
+    version = RichClient;
 
     /++
-     +  Flag the bot as updated after parsing incurred some change to it (or
+     +  Flag the client as updated after parsing incurred some change to it (or
      +  nested things like its server).
      +/
-    version = FlagUpdatedBot;
+    version = FlagUpdatedClient;
 }
 
 
@@ -105,11 +105,11 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         event.type = NOTICE;
         event.content = slice;
 
-        if (bot.server.address != IRCServer.init.address)
+        if (client.server.address != IRCServer.init.address)
         {
             // No sender known and the address has been set to something
             // Inherit that as sender
-            event.sender.address = bot.server.address;
+            event.sender.address = client.server.address;
         }
         break;
 
@@ -129,7 +129,7 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 
         if (event.raw.beginsWith("NOTICE"))
         {
-            // Probably NOTICE <bot.nickname>
+            // Probably NOTICE <client.nickname>
             // NOTICE kameloso :*** If you are having problems connecting due to ping timeouts, please type /notice F94828E6 nospoof now.
             goto case "NOTICE";
         }
@@ -439,7 +439,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :nick!~identh@unaffiliated/nick JOIN #freenode login :realname
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com JOIN #flerrp
         // :kameloso^^!~NaN@C2802314.E23AD7D8.E9841504.IP JOIN :#flerrp
-        event.type = (event.sender.nickname == bot.nickname) ? SELFJOIN : JOIN;
+        event.type = (event.sender.nickname == client.nickname) ? SELFJOIN : JOIN;
 
         if (slice.contains(' '))
         {
@@ -462,7 +462,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com PART #flerrp
         // :Swatas!~4--Uos3UH@9e19ee35.915b96ad.a7c9320c.IP4 PART :#cncnet-mo
         // :gallon!~MO.11063@482c29a5.e510bf75.97653814.IP4 PART :#cncnet-yr
-        event.type = (event.sender.nickname == bot.nickname) ? SELFPART : PART;
+        event.type = (event.sender.nickname == client.nickname) ? SELFPART : PART;
 
         if (slice.contains(' '))
         {
@@ -485,11 +485,11 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :kameloso^!~NaN@81-233-105-62-no80.tbcn.telia.com NICK :kameloso_
         event.target.nickname = slice[1..$];
 
-        if (event.sender.nickname == bot.nickname)
+        if (event.sender.nickname == client.nickname)
         {
             event.type = SELFNICK;
-            bot.nickname = event.target.nickname;
-            version(FlagUpdatedBot) bot.updated = true;
+            client.nickname = event.target.nickname;
+            version(FlagUpdatedClient) client.updated = true;
         }
         break;
 
@@ -497,7 +497,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         import kameloso.string : unquoted;
 
         // :g7zon!~gertsson@178.174.245.107 QUIT :Client Quit
-        event.type = (event.sender.nickname == bot.nickname) ? SELFQUIT : QUIT;
+        event.type = (event.sender.nickname == client.nickname) ? SELFQUIT : QUIT;
         event.content = slice[1..$].unquoted;
 
         if (event.content.beginsWith("Quit: "))
@@ -518,7 +518,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu KICK #flerrp kameloso^ :this is a reason
         event.channel = slice.nom(' ');
         event.target.nickname = slice.nom(" :");
-        event.type = (event.target.nickname == bot.nickname) ? SELFKICK : KICK;
+        event.type = (event.target.nickname == client.nickname) ? SELFKICK : KICK;
         event.content = slice;
         break;
 
@@ -1040,8 +1040,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :irc.portlane.se 020 * :Please wait while we process your connection.
         slice.nom(" :");
         event.content = slice;
-        parser.bot.server.resolvedAddress = event.sender.address;
-        version(FlagUpdatedBot) parser.bot.updated = true;
+        parser.client.server.resolvedAddress = event.sender.address;
+        version(FlagUpdatedClient) parser.client.updated = true;
         break;
 
     case SPAMFILTERLIST: // 941
@@ -1097,12 +1097,12 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 // More than one target
                 immutable firstTarget = targets.nom(' ');
 
-                if ((firstTarget == bot.nickname) || (firstTarget == "*"))
+                if ((firstTarget == client.nickname) || (firstTarget == "*"))
                 {
                     // More than one target, first is bot
                     // Can't use isChan here since targets may contain spaces
 
-                    if (targets.beginsWithOneOf(parser.bot.server.chantypes))
+                    if (targets.beginsWithOneOf(parser.client.server.chantypes))
                     {
                         // More than one target, first is bot
                         // Second target is/begins with a channel
@@ -1120,7 +1120,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                             // More than one target, first is bot
                             // Only one second
 
-                            if (targets.beginsWithOneOf(parser.bot.server.chantypes))
+                            if (targets.beginsWithOneOf(parser.client.server.chantypes))
                             {
                                 // First is bot, second is chanenl
                                 event.channel = targets;
@@ -1159,7 +1159,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         {
                             // Only one second target
 
-                            if (targets.beginsWithOneOf(parser.bot.server.chantypes))
+                            if (targets.beginsWithOneOf(parser.client.server.chantypes))
                             {
                                 // Second is a channel
                                 event.channel = targets;
@@ -1181,7 +1181,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 {
                     // More than one target, first is not bot
 
-                    if (firstTarget.beginsWithOneOf(parser.bot.server.chantypes))
+                    if (firstTarget.beginsWithOneOf(parser.client.server.chantypes))
                     {
                         // First target is a channel
                         // Assume second is a nickname
@@ -1197,7 +1197,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     }
                 }
             }
-            else if (targets.beginsWithOneOf(parser.bot.server.chantypes))
+            else if (targets.beginsWithOneOf(parser.client.server.chantypes))
             {
                 // Only one target, it is a channel
                 event.channel = targets;
@@ -1216,7 +1216,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                 // More than one target
                 immutable target = slice.nom(' ');
 
-                if (target.beginsWithOneOf(parser.bot.server.chantypes))
+                if (target.beginsWithOneOf(parser.client.server.chantypes))
                 {
                     // More than one target, first is a channel
                     // Assume second is content
@@ -1229,7 +1229,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                     // Assume first is nickname and second is aux
                     event.target.nickname = target;
 
-                    if ((target == parser.bot.nickname) && slice.contains(' '))
+                    if ((target == parser.client.nickname) && slice.contains(' '))
                     {
                         // First target is bot, and there is more
                         // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
@@ -1238,7 +1238,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
                         // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
                         // :irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org
 
-                        if (slice.beginsWithOneOf(parser.bot.server.chantypes) && slice.contains(' '))
+                        if (slice.beginsWithOneOf(parser.client.server.chantypes) && slice.contains(' '))
                         {
                             // Second target is channel
                             event.channel = slice.nom(' ');
@@ -1275,7 +1275,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
             {
                 // Only one target
 
-                if (slice.beginsWithOneOf(parser.bot.server.chantypes))
+                if (slice.beginsWithOneOf(parser.client.server.chantypes))
                 {
                     // Target is a channel
                     event.channel = slice;
@@ -1328,14 +1328,14 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         sink.put("Spaces in target nickname or channel");
     }
 
-    if (event.target.nickname.length && parser.bot.server.chantypes.contains(event.target.nickname[0]))
+    if (event.target.nickname.length && parser.client.server.chantypes.contains(event.target.nickname[0]))
     {
         if (sink.data.length) sink.put(". ");
         sink.put("Target nickname is a channel");
     }
 
     if (event.channel.length &&
-        !parser.bot.server.chantypes.contains(event.channel[0]) &&
+        !parser.client.server.chantypes.contains(event.channel[0]) &&
         (event.type != IRCEvent.Type.ERR_NOSUCHCHANNEL) &&
         (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
         (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
@@ -1346,7 +1346,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         sink.put("Channel is not a channel");
     }
 
-    if (event.target.nickname == parser.bot.nickname)
+    if (event.target.nickname == parser.client.nickname)
     {
         with (IRCEvent.Type)
         switch (event.type)
@@ -1385,7 +1385,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         logger.warning(sink.data);
         printObject(event);
 
-        with (parser.bot.server)
+        with (parser.client.server)
         {
             import kameloso.conv : Enum;
             logger.warningf("daemon:%s (%s), network:%s",
@@ -1417,8 +1417,8 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
     with (parser)
     {
         if (sender.isServer || (sender.address.length &&
-            ((sender.address == bot.server.address) ||
-            (sender.address == bot.server.resolvedAddress) ||
+            ((sender.address == client.server.address) ||
+            (sender.address == client.server.resolvedAddress) ||
             (sender.address == "services."))))
         {
             return true;
@@ -1482,9 +1482,9 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
             break;
         }
 
-        if ((parser.bot.server.daemon != IRCServer.Daemon.twitch) &&
-            ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
-            (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2)))
+        if ((parser.client.server.daemon != IRCServer.Daemon.twitch) &&
+            ((sharedDomains(event.sender.address, parser.client.server.address) >= 2) ||
+            (sharedDomains(event.sender.address, parser.client.server.resolvedAddress) >= 2)))
         {
             return true;
         }
@@ -1526,7 +1526,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     immutable channelOrNickname = slice.nom(" :");
     event.content = slice;
 
-    if (channelOrNickname.length && channelOrNickname.beginsWithOneOf(parser.bot.server.chantypes))
+    if (channelOrNickname.length && channelOrNickname.beginsWithOneOf(parser.client.server.chantypes))
     {
         event.channel = channelOrNickname;
     }
@@ -1535,12 +1535,12 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     {
         if (parser.isSpecial(event)) event.sender.class_ = IRCUser.Class.special;
 
-        if (!bot.server.resolvedAddress.length && event.content.beginsWith("***"))
+        if (!client.server.resolvedAddress.length && event.content.beginsWith("***"))
         {
             // This is where we catch the resolved address
             assert(!event.sender.nickname.length, "Unexpected nickname: " ~ event.sender.nickname);
-            bot.server.resolvedAddress = event.sender.address;
-            version(FlagUpdatedBot) bot.updated = true;
+            client.server.resolvedAddress = event.sender.address;
+            version(FlagUpdatedClient) client.updated = true;
         }
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
@@ -1653,17 +1653,17 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         (common requested cap: znc.in/self-message)
      */
 
-    if (target.isValidChannel(parser.bot.server))
+    if (target.isValidChannel(parser.client.server))
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG #flerrp :test test content
-        event.type = (event.sender.nickname == parser.bot.nickname) ?
+        event.type = (event.sender.nickname == parser.client.nickname) ?
             IRCEvent.Type.SELFCHAN : IRCEvent.Type.CHAN;
         event.channel = target;
     }
     else
     {
         // :zorael!~NaN@ns3363704.ip-94-23-253.eu PRIVMSG kameloso^ :test test content
-        event.type = (event.sender.nickname == parser.bot.nickname) ?
+        event.type = (event.sender.nickname == parser.client.nickname) ?
             IRCEvent.Type.SELFQUERY : IRCEvent.Type.QUERY;
         event.target.nickname = target;
     }
@@ -1711,7 +1711,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         case "ACTION":
             // We already sliced away the control characters and nommed the
             // "ACTION" ctcpEvent string, so just set the type and break.
-            event.type = (event.sender.nickname == parser.bot.nickname) ?
+            event.type = (event.sender.nickname == parser.client.nickname) ?
                 IRCEvent.Type.SELFEMOTE : IRCEvent.Type.EMOTE;
             break;
 
@@ -1754,7 +1754,7 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     immutable target = slice.nom(' ');
 
-    if (target.isValidChannel(parser.bot.server))
+    if (target.isValidChannel(parser.client.server))
     {
         event.channel = target;
 
@@ -1809,8 +1809,8 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         if (subtractive)
         {
-            // Remove the mode from bot.modes
-            auto mutModes  = parser.bot.modes.dup.representation;
+            // Remove the mode from client.modes
+            auto mutModes  = parser.client.modes.dup.representation;
 
             foreach (immutable modechar; slice.representation)
             {
@@ -1818,7 +1818,7 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 mutModes = mutModes.remove!((listedModechar => listedModechar == modechar), SwapStrategy.unstable);
             }
 
-            parser.bot.modes = cast(string)mutModes.idup;
+            parser.client.modes = cast(string)mutModes.idup;
         }
         else
         {
@@ -1826,17 +1826,17 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             import std.algorithm.sorting : sort;
             import std.array : array;
 
-            // Add the new mode to bot.modes
-            auto modes = parser.bot.modes.dup.representation;
+            // Add the new mode to client.modes
+            auto modes = parser.client.modes.dup.representation;
             modes ~= slice;
-            parser.bot.modes = cast(string)modes
+            parser.client.modes = cast(string)modes
                 .sort()
                 .uniq
                 .array
                 .idup;
         }
 
-        version(FlagUpdatedBot) parser.bot.updated = true;
+        version(FlagUpdatedClient) parser.client.updated = true;
     }
 }
 
@@ -1844,32 +1844,32 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 unittest
 {
     IRCParser parser;
-    parser.bot.nickname = "kameloso^";
-    parser.bot.modes = "x";
+    parser.client.nickname = "kameloso^";
+    parser.client.modes = "x";
 
     {
         IRCEvent event;
         string slice = /*":kameloso^ MODE */"kameloso^ :+i";
         parser.onMode(event, slice);
-        assert((parser.bot.modes == "ix"), parser.bot.modes);
+        assert((parser.client.modes == "ix"), parser.client.modes);
     }
     {
         IRCEvent event;
         string slice = /*":kameloso^ MODE */"kameloso^ :-i";
         parser.onMode(event, slice);
-        assert((parser.bot.modes == "x"), parser.bot.modes);
+        assert((parser.client.modes == "x"), parser.client.modes);
     }
     {
         IRCEvent event;
         string slice = /*":kameloso^ MODE */"kameloso^ :+abc";
         parser.onMode(event, slice);
-        assert((parser.bot.modes == "abcx"), parser.bot.modes);
+        assert((parser.client.modes == "abcx"), parser.client.modes);
     }
     {
         IRCEvent event;
         string slice = /*":kameloso^ MODE */"kameloso^ :-bx";
         parser.onMode(event, slice);
-        assert((parser.bot.modes == "ac"), parser.bot.modes);
+        assert((parser.client.modes == "ac"), parser.client.modes);
     }
 }
 
@@ -1919,7 +1919,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
             /// http://www.irc.org/tech_docs/005.html
 
-            with (parser.bot.server)
+            with (parser.client.server)
             switch (key)
             {
             case "PREFIX":
@@ -2017,7 +2017,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             }
         }
 
-        version(FlagUpdatedBot) parser.bot.updated = true;
+        version(FlagUpdatedClient) parser.client.updated = true;
     }
     catch (const ConvException e)
     {
@@ -2094,11 +2094,11 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     version(TwitchSupport)
     {
-        if ((slice == ":-") && (parser.bot.server.address.contains(".twitch.tv")))
+        if ((slice == ":-") && (parser.client.server.address.contains(".twitch.tv")))
         {
             parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
-            parser.bot.server.network = "Twitch";
-            version(FlagUpdatedBot) parser.bot.updated = true;
+            parser.client.server.network = "Twitch";
+            version(FlagUpdatedClient) parser.client.updated = true;
             return;
         }
     }
@@ -2115,7 +2115,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
     {
         IRCServer.Daemon daemon;
 
-        if (parser.bot.server.daemon != IRCServer.Daemon.init)
+        if (parser.client.server.daemon != IRCServer.Daemon.init)
         {
             // Daemon remained from previous connects.
             // Trust that the typenums did as well.
@@ -2143,7 +2143,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         }
         else if (daemonstring_.contains("hybrid"))
         {
-            if (parser.bot.server.address.contains(".rizon."))
+            if (parser.client.server.address.contains(".rizon."))
             {
                 daemon = rizon;
             }
@@ -2472,8 +2472,8 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
         return false;
     }
 
-    if ((sharedDomains(event.sender.address, parser.bot.server.address) >= 2) ||
-        (sharedDomains(event.sender.address, parser.bot.server.resolvedAddress) >= 2))
+    if ((sharedDomains(event.sender.address, parser.client.server.address) >= 2) ||
+        (sharedDomains(event.sender.address, parser.client.server.resolvedAddress) >= 2))
     {
         return true;
     }
@@ -2508,8 +2508,8 @@ unittest
     IRCEvent e3;
     with (e3)
     {
-        parser.bot.server.address = "irc.rizon.net";
-        parser.bot.server.resolvedAddress = "irc.uworld.se";
+        parser.client.server.address = "irc.rizon.net";
+        parser.client.server.resolvedAddress = "irc.uworld.se";
         raw = ":NickServ!service@rizon.net NOTICE kameloso^^ :nick, type /msg NickServ IDENTIFY password. Otherwise,";
         string slice = raw[1..$];
         parser.parsePrefix(e3, slice);
@@ -2970,8 +2970,8 @@ struct IRCParser
     alias Type = IRCEvent.Type;
     alias Daemon = IRCServer.Daemon;
 
-    /// The current `IRCBot` with all the state needed for parsing.
-    IRCBot bot;
+    /// The current `Client` with all the state needed for parsing.
+    Client client;
 
     /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
     Type[1024] typenums = Typenums.base;
@@ -2987,10 +2987,10 @@ struct IRCParser
         return .toIRCEvent(this, raw);
     }
 
-    /// Create a new `IRCParser` with the passed `IRCBot` as base.
-    this(IRCBot bot) pure
+    /// Create a new `IRCParser` with the passed `Client` as base.
+    this(Client client) pure
     {
-        this.bot = bot;
+        this.client = client;
     }
 
     /// Disallow copying of this struct.
@@ -3015,15 +3015,15 @@ struct IRCParser
         // Reset
         typenums = Typenums.base;
 
-        bot.server.daemon = daemon;
-        bot.server.daemonstring = daemonstring;
-        version(FlagUpdatedBot) bot.updated = true;
+        client.server.daemon = daemon;
+        client.server.daemonstring = daemonstring;
+        version(FlagUpdatedClient) client.updated = true;
 
         alias strategy = MeldingStrategy.aggressive;
 
         with (Typenums)
         with (Daemon)
-        final switch (bot.server.daemon)
+        final switch (client.server.daemon)
         {
         case unreal:
             Typenums.unreal.meldInto!strategy(typenums);
@@ -3702,25 +3702,25 @@ enum IRCControlCharacter
 }
 
 
-// IRCBot
+// Client
 /++
  +  Aggregate collecting all the relevant settings, options and state needed for
- +  an IRC bot. Many fields are transient and unfit to be saved to disk, and
+ +  an IRC client. Many fields are transient and unfit to be saved to disk, and
  +  some are simply too sensitive for it.
  +/
-struct IRCBot
+struct Client
 {
-    version(FullIRCBot)
+    version(RichClient)
     {
         import kameloso.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
 
-        /// Bot nickname.
+        /// Client nickname.
         string nickname = "kameloso";
 
-        /// Bot "user" or full name.
+        /// Client "user" or full name.
         string user = "kameloso!";
 
-        /// Bot IDENT identifier.
+        /// Client IDENT identifier.
         string ident = "NaN";
 
         /// Default reason given when quitting without specifying one.
@@ -3758,38 +3758,38 @@ struct IRCBot
             /// The current `IRCServer` we're connected to.
             IRCServer server;
 
-            /// The original bot nickname before connecting, in case it changed.
+            /// The original client nickname before connecting, in case it changed.
             string origNickname;
 
-            /// The current modechars active on the bot (e.g. "ix");
+            /// The current modechars active on the client (e.g. "ix");
             string modes;
 
-            version(FlagUpdatedBot)
+            version(FlagUpdatedClient)
             {
-                /// Whether or not the bot was altered.
+                /// Whether or not the client was altered.
                 bool updated;
             }
         }
     }
     else
     {
-        // Minimal bot for library use.
+        // Minimal client for library use.
 
-        /// Bot nickname.
+        /// Client nickname.
         string nickname;
 
         /// The current `IRCServer` we're connected to.
         IRCServer server;
 
-        /// The original bot nickname before connecting, in case it changed.
+        /// The original client nickname before connecting, in case it changed.
         string origNickname;
 
-        /// The current modechars active on the bot (e.g. "ix");
+        /// The current modechars active on the client (e.g. "ix");
         string modes;
 
-        version(FlagUpdatedBot)
+        version(FlagUpdatedClient)
         {
-            /// Whether or not the bot was altered.
+            /// Whether or not the client was altered.
             bool updated;
         }
     }

@@ -132,7 +132,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +  To work around this we save the initial requesting
  +  `kameloso.ircdefs.IRCEvent`, then send a concurrency message to the main
  +  thread asking for a const reference to the main
- +  `kameloso.common.Client.plugins` array of
+ +  `kameloso.common.IRCBot.plugins` array of
  +  `kameloso.plugins.common.IRCPlugin`s. We create a function in interface
  +  `kameloso.plugins.common.IRCPlugin` that passes said array on to the top-
  +  level `peekPlugins`, wherein we process the list and collect the bot command

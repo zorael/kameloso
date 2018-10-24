@@ -4,8 +4,8 @@
  +/
 module kameloso.debugging;
 
-import kameloso.common : Client;
-import kameloso.irc : IRCBot;
+import kameloso.common : IRCBot;
+import kameloso.irc : Client;
 import kameloso.ircdefs;
 
 import std.typecons : Flag, No, Yes;
@@ -14,29 +14,29 @@ import std.typecons : Flag, No, Yes;
 debug:
 
 
-// formatBotAssignment
+// formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `kameloso.irc.IRCBot`, including instantiating a fresh one.
+ +  `kameloso.irc.Client`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
- +  IRCCBot bot;
+ +  Client client;
  +  Appender!string sink;
  +
- +  sink.formatBotAssignment(bot);
+ +  sink.formatClientAssignment(client);
  +  ---
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      bot = `kameloso.irc.IRCBot` to simulate the assignment of.
+ +      client = `kameloso.irc.Client` to simulate the assignment of.
  +/
-void formatBotAssignment(Sink)(auto ref Sink sink, IRCBot bot)
+void formatClientAssignment(Sink)(auto ref Sink sink, Client client)
 {
     sink.put("IRCParser parser;\n");
-    sink.put("with (parser.bot)\n");
+    sink.put("with (parser.client)\n");
     sink.put("{\n");
-    sink.formatDelta(IRCBot.init, bot, 1);
+    sink.formatDelta(Client.init, client, 1);
     sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -53,8 +53,8 @@ unittest
     Appender!string sink;
     sink.reserve(128);
 
-    IRCBot bot;
-    with (bot)
+    Client client;
+    with (client)
     {
         nickname = "NICKNAME";
         user = "UUUUUSER";
@@ -64,11 +64,11 @@ unittest
         server.aModes = string.init;
     }
 
-    sink.formatBotAssignment(bot);
+    sink.formatClientAssignment(client);
 
     assert(sink.data ==
 `IRCParser parser;
-with (parser.bot)
+with (parser.client)
 {
     nickname = "NICKNAME";
     user = "UUUUUSER";
@@ -199,8 +199,8 @@ unittest
     Appender!string sink;
     sink.reserve(128);
 
-    IRCBot bot;
-    with (bot)
+    Client client;
+    with (client)
     {
         nickname = "NICKNAME";
         user = "UUUUUSER";
@@ -210,7 +210,7 @@ unittest
         server.aModes = string.init;
     }
 
-    sink.formatDelta(IRCBot.init, bot);
+    sink.formatDelta(Client.init, client);
 
     assert(sink.data ==
 `nickname = "NICKNAME";
@@ -223,7 +223,7 @@ server.aModes = "";
 
     sink = typeof(sink).init;
 
-    sink.formatDelta!(Yes.asserts)(IRCBot.init, bot);
+    sink.formatDelta!(Yes.asserts)(Client.init, client);
 
 assert(sink.data ==
 `assert((nickname == "NICKNAME"), nickname);
@@ -267,7 +267,7 @@ assert(!b);
 `, '\n' ~ sink.data);
 
     sink = typeof(sink).init;
-    auto parser = IRCParser(bot);
+    auto parser = IRCParser(client);
 
     auto event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
     event.sender.class_ = IRCUser.Class.special;
@@ -333,8 +333,8 @@ unittest
     Appender!string sink;
     sink.reserve(1024);
 
-    IRCBot bot;
-    auto parser = IRCParser(bot);
+    Client client;
+    auto parser = IRCParser(client);
 
     immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
 
@@ -370,14 +370,14 @@ unittest
  +
  +  Example:
  +  ---
- +  Client client;
- +  client.generateAsserts();
+ +  IRCBot bot;
+ +  bot.generateAsserts();
  +  ---
  +
  +  Params:
- +      client = Reference to the current Client, with all its settings.
+ +      bot = Reference to the current `IRCBot`, with all its settings.
  +/
-void generateAsserts(ref Client client) @system
+void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
     import kameloso.ircdefs : IRCServer;
@@ -386,7 +386,7 @@ void generateAsserts(ref Client client) @system
     import std.typecons : Flag, No, Yes;
 
     with (IRCServer)
-    with (client)
+    with (bot)
     {
         import kameloso.string : contains, nom, stripped;
         import kameloso.irc : IRCParser;
@@ -420,21 +420,21 @@ void generateAsserts(ref Client client) @system
 
         write("Enter network (freenode): ");
         immutable network = readln().stripped;
-        parser.bot.server.network = network.length ? network : "freenode";
+        parser.client.server.network = network.length ? network : "freenode";
 
         writeln();
-        printObjects!(Yes.printAll)(parser.bot, parser.bot.server);
+        printObjects!(Yes.printAll)(parser.client, parser.client.server);
         writeln();
 
-        parser.bot.updated = false;
-        stdout.lockingTextWriter.formatBotAssignment(parser.bot);
+        parser.client.updated = false;
+        stdout.lockingTextWriter.formatClientAssignment(parser.client);
 
         writeln();
         writeln("// Paste raw event strings and hit Enter to generate an assert block.");
         writeln();
 
         string input;
-        IRCBot old = parser.bot;
+        Client old = parser.client;
 
         while ((input = readln()) !is null)
         {
@@ -466,25 +466,25 @@ void generateAsserts(ref Client client) @system
                 stdout.lockingTextWriter.formatEventAssertBlock(event);
                 writeln();
 
-                if (parser.bot.updated)
+                if (parser.client.updated)
                 {
-                    parser.bot.updated = false;
+                    parser.client.updated = false;
 
                     writeln("/*");
-                    writeln("with (parser.bot)");
+                    writeln("with (parser.client)");
                     writeln("{");
-                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.bot, 1);
+                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.client, 1);
                     writeln("}");
                     writeln("*/");
                     writeln();
 
-                    writeln("with (parser.bot)");
+                    writeln("with (parser.client)");
                     writeln("{");
 
-                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(old, parser.bot, 1);
+                    stdout.lockingTextWriter.formatDelta!(Yes.asserts)(old, parser.client, 1);
                     writeln("}\n");
 
-                    old = parser.bot;
+                    old = parser.client;
                 }
             }
             catch (const IRCParseException e)

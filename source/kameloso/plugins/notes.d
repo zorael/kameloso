@@ -125,8 +125,8 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     foreach (immutable signed; event.content.splitter)
     {
-        immutable nickname = plugin.state.bot.server.stripModesign(signed);
-        if (nickname == plugin.state.bot.nickname) continue;
+        immutable nickname = plugin.state.client.server.stripModesign(signed);
+        if (nickname == plugin.state.client.nickname) continue;
 
         IRCEvent fakeEvent;
 
@@ -299,7 +299,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
             "Invalid channel notes list type for %s: %s"
             .format(channel, channelNotes.type));
 
-        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
         if (const nickNotes = lowercased in channelNotes.object)
         {
@@ -340,7 +340,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
 
     try
     {
-        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
         if (lowercased in plugin.notes[channel])
         {
@@ -432,7 +432,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
         plugin.notes[channel].object = null;
     }
 
-    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
     if (lowercased !in plugin.notes[channel])
     {
