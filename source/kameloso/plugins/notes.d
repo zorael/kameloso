@@ -32,9 +32,6 @@ struct NotesSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
-
-    /// Whether or not to replay notes when the bot joins.
-    bool replayOnSelfjoin = false;
 }
 
 
@@ -123,8 +120,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import kameloso.irc : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
-
-    if (!plugin.notesSettings.replayOnSelfjoin) return;
 
     if (event.channel !in plugin.notes) return;
 
