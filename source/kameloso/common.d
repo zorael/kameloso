@@ -617,7 +617,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +  ---
  +
  +  Params:
- +      IRCBot = Refrence to the current `IRCBot`, with all its settings.
+ +      bot = Refrence to the current `IRCBot`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(ref IRCBot bot, const string filename)
