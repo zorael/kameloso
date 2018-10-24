@@ -92,7 +92,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not fetch and/or replay notes for '%s' on '%s': %s",
+        logger.errorf("Could not fetch and/or replay notes for %s on %s: %s",
             event.sender.nickname, event.channel, e.msg);
 
         if (e.msg == "JSONValue is not an object")

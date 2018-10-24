@@ -131,7 +131,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.bot.server))
     {
-        logger.warningf("Invalid account/nickname: '%s'", specified);
+        logger.warning("Invalid account/nickname: ", specified);
         return;
     }
 
@@ -180,7 +180,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not quote '%s': %s", specified, e.msg);
+        logger.errorf("Could not quote %s: %s", specified, e.msg);
         return;
     }
 }
@@ -217,7 +217,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.bot.server))
     {
-        logger.warningf("Invalid account/nickname: '%s'", specified);
+        logger.warning("Invalid account/nickname: ", specified);
         return;
     }
 
