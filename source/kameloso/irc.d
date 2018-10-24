@@ -1085,215 +1085,212 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
 {
     import kameloso.string : beginsWithOneOf;
 
-    with (parser)
+    if (slice.contains(" :"))
     {
-        if (slice.contains(" :"))
+        // Has colon-content
+        string targets = slice.nom(" :");
+
+        if (targets.contains(' '))
         {
-            // Has colon-content
-            string targets = slice.nom(" :");
+            // More than one target
+            immutable firstTarget = targets.nom(' ');
 
-            if (targets.contains(' '))
+            if ((firstTarget == parser.client.nickname) || (firstTarget == "*"))
             {
-                // More than one target
-                immutable firstTarget = targets.nom(' ');
+                // More than one target, first is bot
+                // Can't use isChan here since targets may contain spaces
 
-                if ((firstTarget == client.nickname) || (firstTarget == "*"))
+                if (targets.beginsWithOneOf(parser.client.server.chantypes))
                 {
                     // More than one target, first is bot
-                    // Can't use isChan here since targets may contain spaces
+                    // Second target is/begins with a channel
 
-                    if (targets.beginsWithOneOf(parser.client.server.chantypes))
+                    if (targets.contains(' '))
                     {
                         // More than one target, first is bot
-                        // Second target is/begins with a channel
-
-                        if (targets.contains(' '))
-                        {
-                            // More than one target, first is bot
-                            // Second target is more than one, first is channel
-                            // assume third is content
-                            event.channel = targets.nom(' ');
-                            event.content = targets;
-                        }
-                        else
-                        {
-                            // More than one target, first is bot
-                            // Only one second
-
-                            if (targets.beginsWithOneOf(parser.client.server.chantypes))
-                            {
-                                // First is bot, second is chanenl
-                                event.channel = targets;
-                            }
-                            else
-                            {
-                                /*logger.warning("Non-channel second target. Report this.");
-                                logger.trace(event.raw);*/
-                                event.target.nickname = targets;
-                            }
-                        }
+                        // Second target is more than one, first is channel
+                        // assume third is content
+                        event.channel = targets.nom(' ');
+                        event.content = targets;
                     }
                     else
                     {
                         // More than one target, first is bot
-                        // Second is not a channel
+                        // Only one second
 
-                        if (targets.contains(' '))
+                        if (targets.beginsWithOneOf(parser.client.server.chantypes))
                         {
-                            // More than one target, first is bot
-                            import std.algorithm.searching : count;
-
-                            if (targets.count(' ') == 1)
-                            {
-                                // Two extra targets; assume nickname and channel
-                                event.target.nickname = targets.nom(' ');
-                                event.channel = targets;
-                            }
-                            else
-                            {
-                                // A lot of spaces; cannot say for sure what is what
-                                event.aux = targets;
-                            }
+                            // First is bot, second is chanenl
+                            event.channel = targets;
                         }
                         else
                         {
-                            // Only one second target
-
-                            if (targets.beginsWithOneOf(parser.client.server.chantypes))
-                            {
-                                // Second is a channel
-                                event.channel = targets;
-                            }
-                            else if (targets == event.sender.address)
-                            {
-                                // Second is sender's address, probably server
-                                event.aux = targets;
-                            }
-                            else
-                            {
-                                // Second is not a channel
-                                event.target.nickname = targets;
-                            }
+                            /*logger.warning("Non-channel second target. Report this.");
+                            logger.trace(event.raw);*/
+                            event.target.nickname = targets;
                         }
                     }
                 }
                 else
                 {
-                    // More than one target, first is not bot
+                    // More than one target, first is bot
+                    // Second is not a channel
 
-                    if (firstTarget.beginsWithOneOf(parser.client.server.chantypes))
+                    if (targets.contains(' '))
                     {
-                        // First target is a channel
-                        // Assume second is a nickname
-                        event.channel = firstTarget;
-                        event.target.nickname = targets;
+                        // More than one target, first is bot
+                        import std.algorithm.searching : count;
+
+                        if (targets.count(' ') == 1)
+                        {
+                            // Two extra targets; assume nickname and channel
+                            event.target.nickname = targets.nom(' ');
+                            event.channel = targets;
+                        }
+                        else
+                        {
+                            // A lot of spaces; cannot say for sure what is what
+                            event.aux = targets;
+                        }
                     }
                     else
                     {
-                        // First target is not channel, assume nick
-                        // Assume second is channel
-                        event.target.nickname = firstTarget;
-                        event.channel = targets;
+                        // Only one second target
+
+                        if (targets.beginsWithOneOf(parser.client.server.chantypes))
+                        {
+                            // Second is a channel
+                            event.channel = targets;
+                        }
+                        else if (targets == event.sender.address)
+                        {
+                            // Second is sender's address, probably server
+                            event.aux = targets;
+                        }
+                        else
+                        {
+                            // Second is not a channel
+                            event.target.nickname = targets;
+                        }
                     }
                 }
-            }
-            else if (targets.beginsWithOneOf(parser.client.server.chantypes))
-            {
-                // Only one target, it is a channel
-                event.channel = targets;
             }
             else
             {
-                // Only one target, not a channel
-                event.target.nickname = targets;
-            }
-        }
-        else
-        {
-            // Does not have colon-content
-            if (slice.contains(' '))
-            {
-                // More than one target
-                immutable target = slice.nom(' ');
+                // More than one target, first is not bot
 
-                if (target.beginsWithOneOf(parser.client.server.chantypes))
+                if (firstTarget.beginsWithOneOf(parser.client.server.chantypes))
                 {
-                    // More than one target, first is a channel
-                    // Assume second is content
-                    event.channel = target;
-                    event.content = slice;
+                    // First target is a channel
+                    // Assume second is a nickname
+                    event.channel = firstTarget;
+                    event.target.nickname = targets;
                 }
                 else
                 {
-                    // More than one target, first is not a channel
-                    // Assume first is nickname and second is aux
-                    event.target.nickname = target;
+                    // First target is not channel, assume nick
+                    // Assume second is channel
+                    event.target.nickname = firstTarget;
+                    event.channel = targets;
+                }
+            }
+        }
+        else if (targets.beginsWithOneOf(parser.client.server.chantypes))
+        {
+            // Only one target, it is a channel
+            event.channel = targets;
+        }
+        else
+        {
+            // Only one target, not a channel
+            event.target.nickname = targets;
+        }
+    }
+    else
+    {
+        // Does not have colon-content
+        if (slice.contains(' '))
+        {
+            // More than one target
+            immutable target = slice.nom(' ');
 
-                    if ((target == parser.client.nickname) && slice.contains(' '))
+            if (target.beginsWithOneOf(parser.client.server.chantypes))
+            {
+                // More than one target, first is a channel
+                // Assume second is content
+                event.channel = target;
+                event.content = slice;
+            }
+            else
+            {
+                // More than one target, first is not a channel
+                // Assume first is nickname and second is aux
+                event.target.nickname = target;
+
+                if ((target == parser.client.nickname) && slice.contains(' '))
+                {
+                    // First target is bot, and there is more
+                    // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
+                    // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
+                    // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
+                    // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
+                    // :irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org
+
+                    if (slice.beginsWithOneOf(parser.client.server.chantypes))
                     {
-                        // First target is bot, and there is more
-                        // :asimov.freenode.net 333 kameloso^ #garderoben klarrt!~bsdrouter@h150n13-aahm-a11.ias.bredband.telia.com 1476294377
-                        // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
-                        // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
-                        // :irc.run.net 367 kameloso #Help *!*@broadband-5-228-255-*.moscow.rt.ru
-                        // :irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org
+                        // Second target is channel
+                        event.channel = slice.nom(' ');
 
-                        if (slice.beginsWithOneOf(parser.client.server.chantypes) && slice.contains(' '))
+                        if (slice.contains(' '))
                         {
-                            // Second target is channel
-                            event.channel = slice.nom(' ');
-
-                            if (slice.contains(' '))
-                            {
-                                // Remaining slice has at least two fields;
-                                // separate into content and aux
-                                event.content = slice.nom(' ');
-                                event.aux = slice;
-                            }
-                            else
-                            {
-                                // Remaining slice is one bit of text
-                                event.content = slice;
-                            }
+                            // Remaining slice has at least two fields;
+                            // separate into content and aux
+                            event.content = slice.nom(' ');
+                            event.aux = slice;
                         }
                         else
                         {
-                            // No-channel second target
-                            // When does this happen?
+                            // Remaining slice is one bit of text
                             event.content = slice;
                         }
                     }
                     else
                     {
-                        // No second target
-                        // :port80b.se.quakenet.org 221 kameloso +i
-                        event.aux = slice;
+                        // No-channel second target
+                        // When does this happen?
+                        event.content = slice;
                     }
-                }
-            }
-            else
-            {
-                // Only one target
-
-                if (slice.beginsWithOneOf(parser.client.server.chantypes))
-                {
-                    // Target is a channel
-                    event.channel = slice;
                 }
                 else
                 {
-                    // Target is a nickname
-                    event.target.nickname = slice;
+                    // No second target
+                    // :port80b.se.quakenet.org 221 kameloso +i
+                    event.aux = slice;
                 }
             }
         }
-
-        // If content is empty and slice hasn't already been used, assign it
-        if (!event.content.length && (slice != event.channel) &&
-            (slice != event.target.nickname))
+        else
         {
-            event.content = slice;
+            // Only one target
+
+            if (slice.beginsWithOneOf(parser.client.server.chantypes))
+            {
+                // Target is a channel
+                event.channel = slice;
+            }
+            else
+            {
+                // Target is a nickname
+                event.target.nickname = slice;
+            }
         }
+    }
+
+    // If content is empty and slice hasn't already been used, assign it
+    if (!event.content.length && (slice != event.channel) &&
+        (slice != event.target.nickname))
+    {
+        event.content = slice;
     }
 }
 
