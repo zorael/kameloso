@@ -1020,11 +1020,16 @@ struct IRCUser
     /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc).
     string account;
 
-    /// The highest priority "badge" the sender contains, in this context.
-    string badge;
+    version(TwitchSupport)
+    {
+        // Twitch has some extra features.
 
-    /// The colour (RRGGBB) to tint the user's nickname with.
-    string colour;
+        /// The highest priority "badge" the sender contains, in this context.
+        string badge;
+
+        /// The colour (RRGGBB) to tint the user's nickname with.
+        string colour;
+    }
 
     /// User classifier.
     Class class_;

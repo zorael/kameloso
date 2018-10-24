@@ -735,22 +735,25 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 if (sender.class_ == IRCUser.Class.special) sink.put('*');
             }
 
-            if (sender.badge.length && (event.type != IRCEvent.Type.JOIN))
+            version(TwitchSupport)
             {
-                import kameloso.string : contains, nom;
-                immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
-                put(sink, " [");
-
-                if (plugin.printerSettings.uppercaseTypes)
+                if (sender.badge.length && (event.type != IRCEvent.Type.JOIN))
                 {
-                    put(sink, badgefront.asUpperCase);
-                }
-                else
-                {
-                    put(sink, badgefront);
-                }
+                    import kameloso.string : contains, nom;
+                    immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
+                    put(sink, " [");
 
-                put(sink, ']');
+                    if (plugin.printerSettings.uppercaseTypes)
+                    {
+                        put(sink, badgefront.asUpperCase);
+                    }
+                    else
+                    {
+                        put(sink, badgefront);
+                    }
+
+                    put(sink, ']');
+                }
             }
         }
 
@@ -775,16 +778,19 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 if (target.class_ == IRCUser.Class.special) sink.put('*');
             }
 
-            if (target.badge.length)
+            version(TwitchSupport)
             {
-                import kameloso.string : contains, nom;
-                immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
-                put(sink, " [");
+                if (target.badge.length)
+                {
+                    import kameloso.string : contains, nom;
+                    immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
+                    put(sink, " [");
 
-                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                else put(sink, badgefront);
+                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
+                    else put(sink, badgefront);
 
-                put(sink, ']');
+                    put(sink, ']');
+                }
             }
         }
 
@@ -946,21 +952,28 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
      +/
     void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
     {
-        if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
+        version(TwitchSupport)
         {
-            import kameloso.bash : truecolour;
-            import kameloso.conv : numFromHex;
-
-            int r, g, b;
-            user.colour.numFromHex(r, g, b);
-
-            if (plugin.printerSettings.normaliseTruecolour)
+            if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
-                sink.truecolour!(Yes.normalise)(r, g, b, settings.brightTerminal);
+                import kameloso.bash : truecolour;
+                import kameloso.conv : numFromHex;
+
+                int r, g, b;
+                user.colour.numFromHex(r, g, b);
+
+                if (plugin.printerSettings.normaliseTruecolour)
+                {
+                    sink.truecolour!(Yes.normalise)(r, g, b, settings.brightTerminal);
+                }
+                else
+                {
+                    sink.truecolour!(No.normalise)(r, g, b, settings.brightTerminal);
+                }
             }
             else
             {
-                sink.truecolour!(No.normalise)(r, g, b, settings.brightTerminal);
+                sink.colour(colourByHash(user.isServer ? user.address : user.nickname));
             }
         }
         else
@@ -1054,19 +1067,22 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 }
             }
 
-            if (sender.badge.length && (type != IRCEvent.Type.JOIN))
+            version(TwitchSupport)
             {
-                import kameloso.string : contains, nom;
-                import std.uni : asUpperCase;
+                if (sender.badge.length && (type != IRCEvent.Type.JOIN))
+                {
+                    import kameloso.string : contains, nom;
+                    import std.uni : asUpperCase;
 
-                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
-                put(sink, " [");
+                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                    immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
+                    put(sink, " [");
 
-                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                else put(sink, badgefront);
+                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
+                    else put(sink, badgefront);
 
-                put(sink, ']');
+                    put(sink, ']');
+                }
             }
         }
 
@@ -1116,19 +1132,22 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 }
             }
 
-            if (target.badge.length)
+            version(TwitchSupport)
             {
-                import kameloso.string : contains, nom;
-                import std.uni : asUpperCase;
+                if (target.badge.length)
+                {
+                    import kameloso.string : contains, nom;
+                    import std.uni : asUpperCase;
 
-                sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
-                put(sink, " [");
+                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                    immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
+                    put(sink, " [");
 
-                if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                else put(sink, badgefront);
+                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
+                    else put(sink, badgefront);
 
-                put(sink, ']');
+                    put(sink, ']');
+                }
             }
         }
 
