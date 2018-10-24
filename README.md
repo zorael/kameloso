@@ -30,10 +30,9 @@ If nothing else it makes for a good read-only lurkbot.
 
 ## Current limitations:
 
-* **the dmd and ldc compilers will segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
+* **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. On the other hand, the development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
 * some plugins don't (yet) differentiate between different home channels if there is more than one.
-* nicknames are not case-insensitive. The `lowercaseNickname` function is written and in place; it's just not yet seeing use. It is a very invasive change, so holding out until we find a compelling use-case.
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -245,7 +244,7 @@ port                6667
 
 Mind that in some cases Twitch does not behave as a conventional IRC server. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at regular intervals. It is also possible to leave a channel that you aren't in, and you cannot join a channel if that corresponding user doesn't exist.
 
-Also, due to current design user badges are not per channel as they should be.
+Known bug: A user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one badge at a time per the current implementation. It's not an unsolvable problem but it would need some redesigning.
 
 ## Use as a library
 
@@ -254,10 +253,12 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d)
 * [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
 * [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
+* [`conv.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/conv.d)
 * [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
+* [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project.
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser`.
 
 # Debugging and generating unit tests
 
