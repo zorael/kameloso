@@ -137,12 +137,9 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
         with (fakeEvent)
         {
-            import std.datetime.systime : Clock;
-
             type = IRCEvent.Type.JOIN;
             sender.nickname = nickname;
             channel = event.channel;
-            time = Clock.currTime.toUnixTime;
         }
 
         plugin.onReplayEvent(fakeEvent);
