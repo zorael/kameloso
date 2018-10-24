@@ -478,17 +478,14 @@ Next handleGetopt(ref Client client, string[] args, ref string[] customSettings)
 
             version(Colours)
             {
-                version(Colours)
-                {
-                    import kameloso.bash : BashForeground, colour;
+                import kameloso.bash : BashForeground, colour;
 
-                    if (!settings.monochrome)
-                    {
-                        immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
-                        immutable defaulttint = BashForeground.default_;
-                        pre = headertint.colour;
-                        post = defaulttint.colour;
-                    }
+                if (!settings.monochrome)
+                {
+                    immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
+                    immutable defaulttint = BashForeground.default_;
+                    pre = headertint.colour;
+                    post = defaulttint.colour;
                 }
             }
 
