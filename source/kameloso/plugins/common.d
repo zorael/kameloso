@@ -3130,7 +3130,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         "WHOISFiberDelegate should be mixed into the context of a plugin. " ~
         "(Could not access neither plugin nor service)");
 
-    string _carriedNickname;
+    import std.conv : text;
+
+    enum carriedVariableName = text("_carriedNickname", hashOf(__FUNCTION__) % 100);
+    mixin("string " ~ carriedVariableName ~ ';');
 
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
@@ -3157,7 +3160,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable m = plugin.state.bot.server.caseMapping;
 
-        if (IRCUser.toLowercase(_carriedNickname, m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
+        if (IRCUser.toLowercase(mixin(carriedVariableName), m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
         {
             // Wrong WHOIS; reset and await a new one
             thisFiber.payload = IRCEvent.init;
@@ -3264,6 +3267,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         context.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
 
         context.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ nickname);
-        _carriedNickname = nickname;
+        mixin(carriedVariableName) = nickname;
     }
 }
