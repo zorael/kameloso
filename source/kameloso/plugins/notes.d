@@ -40,15 +40,12 @@ struct NotesSettings
 
 // onReplayEvent
 /++
- +  Sends notes queued for a user to a channel when they speak up or when they
- +  join.
+ +  Sends notes queued for a user to a channel when they join.
  +
  +  Nothing is sent if no notes are stored.
  +/
 @(Chainable)
 @(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
@@ -143,7 +140,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
         {
             import std.datetime.systime : Clock;
 
-            type = IRCEvent.Type.CHAN;
+            type = IRCEvent.Type.JOIN;
             sender.nickname = nickname;
             channel = event.channel;
             time = Clock.currTime.toUnixTime;
@@ -250,7 +247,7 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "fakechan")
 @BotCommand(NickPolicy.required, "fakejoin")
-@Description("[debug] Fakes a user being active in a channel.",
+@Description("[debug] Fakes a user joining a channel.",
     "$command [nickname to fake a join for]")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
@@ -262,7 +259,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     logger.info("Faking an event");
 
     IRCEvent newEvent = event;
-    newEvent.type = IRCEvent.Type.CHAN;
+    newEvent.type = IRCEvent.Type.JOIN;
     string nickname = event.content;
 
     if (nickname.contains!(Yes.decode)(' '))
