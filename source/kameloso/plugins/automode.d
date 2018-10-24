@@ -175,7 +175,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     {
         if (!plugin.state.client.homes.canFind(channel)) continue;
 
-        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
+        immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
         const appliedAccounts = channel in plugin.appliedAutomodes;
 
         if (appliedAccounts && lowercased in *appliedAccounts)
