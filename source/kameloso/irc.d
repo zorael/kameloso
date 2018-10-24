@@ -15,16 +15,28 @@ import kameloso.string : contains, nom;
 version(AsAnApplication)
 {
     /+
-        As an application; log sanity check failures to screen. Parsing proceeds
-        and plugins are processed after some verbose debug output. The error
-        text will be stored in `IRCEvent.errors`.
+        The bot will be compiled as an application, with support for bot-like
+        behaviour. The alternative is as a library.
+     +/
 
-        The alternative (!AsAnApplication) is as-a-library; silently let errors
-        pass, only storing them in the `IRCEvent.errors` field. No Logger will
-        be imported, giving no debug output to the screen and leaving the
-        library headless.
+    /++
+     +  Log sanity check failures to screen. Parsing proceeds and plugins are
+     +  processed after some verbose debug output. The error text will be stored
+     +  in `IRCEvent.errors`.
      +/
     version = PrintSanityFailures;
+
+    /++
+     +  Have the `IRCBot` struct house extra things needed for an IRC *bot*, as
+     +  opposed the absolute minimum needed for an IRC *client*.
+     +/
+    version = FullIRCBot;
+
+    /++
+     +  Flag the bot as updated after parsing incurred some change to it (or
+     +  nested things like its server).
+     +/
+    version = FlagUpdatedBot;
 }
 
 
@@ -477,7 +489,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         {
             event.type = SELFNICK;
             bot.nickname = event.target.nickname;
-            bot.updated = true;
+            version(FlagUpdatedBot) bot.updated = true;
         }
         break;
 
@@ -1029,7 +1041,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         slice.nom(" :");
         event.content = slice;
         parser.bot.server.resolvedAddress = event.sender.address;
-        parser.bot.updated = true;
+        version(FlagUpdatedBot) parser.bot.updated = true;
         break;
 
     case SPAMFILTERLIST: // 941
@@ -1528,7 +1540,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             // This is where we catch the resolved address
             assert(!event.sender.nickname.length, "Unexpected nickname: " ~ event.sender.nickname);
             bot.server.resolvedAddress = event.sender.address;
-            bot.updated = true;
+            version(FlagUpdatedBot) bot.updated = true;
         }
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
@@ -1824,7 +1836,7 @@ void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 .idup;
         }
 
-        parser.bot.updated = true;
+        version(FlagUpdatedBot) parser.bot.updated = true;
     }
 }
 
@@ -2005,7 +2017,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
             }
         }
 
-        parser.bot.updated = true;
+        version(FlagUpdatedBot) parser.bot.updated = true;
     }
     catch (const ConvException e)
     {
@@ -2086,7 +2098,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         {
             parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
             parser.bot.server.network = "Twitch";
-            parser.bot.updated = true;
+            version(FlagUpdatedBot) parser.bot.updated = true;
             return;
         }
     }
@@ -3005,7 +3017,7 @@ struct IRCParser
 
         bot.server.daemon = daemon;
         bot.server.daemonstring = daemonstring;
-        bot.updated = true;
+        version(FlagUpdatedBot) bot.updated = true;
 
         alias strategy = MeldingStrategy.aggressive;
 
@@ -3698,59 +3710,87 @@ enum IRCControlCharacter
  +/
 struct IRCBot
 {
-    import kameloso.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
-
-    /// Bot nickname.
-    string nickname = "kameloso";
-
-    /// Bot "user" or full name.
-    string user = "kameloso!";
-
-    /// Bot IDENT identifier.
-    string ident = "NaN";
-
-    /// Default reason given when quitting without specifying one.
-    string quitReason = "beep boop I am a bot";
-
-    /// Username to use for services account.
-    string authLogin;
-
-    @Hidden
+    version(FullIRCBot)
     {
-        /// Password for services account.
-        string authPassword;
+        import kameloso.uda : CannotContainComments, Hidden, Separator, Unconfigurable;
 
-        /// Login `PASS`, different from `SASL` and services.
-        string pass;
+        /// Bot nickname.
+        string nickname = "kameloso";
+
+        /// Bot "user" or full name.
+        string user = "kameloso!";
+
+        /// Bot IDENT identifier.
+        string ident = "NaN";
+
+        /// Default reason given when quitting without specifying one.
+        string quitReason = "beep boop I am a bot";
+
+        /// Username to use for services account.
+        string authLogin;
+
+        @Hidden
+        {
+            /// Password for services account.
+            string authPassword;
+
+            /// Login `PASS`, different from `SASL` and services.
+            string pass;
+        }
+
+        @Separator(",")
+        @Separator(" ")
+        {
+            /// The nickname services accounts of the bot's *administrators*.
+            string[] admins;
+
+            /// List of homes, where the bot should be active.
+            @CannotContainComments
+            string[] homes;
+
+            /// Currently inhabited channels (though not neccessarily homes).
+            @CannotContainComments
+            string[] channels;
+        }
+
+        @Unconfigurable
+        {
+            /// The current `IRCServer` we're connected to.
+            IRCServer server;
+
+            /// The original bot nickname before connecting, in case it changed.
+            string origNickname;
+
+            /// The current modechars active on the bot (e.g. "ix");
+            string modes;
+
+            version(FlagUpdatedBot)
+            {
+                /// Whether or not the bot was altered.
+                bool updated;
+            }
+        }
     }
-
-    @Separator(",")
-    @Separator(" ")
+    else
     {
-        /// The nickname services accounts of the bot's *administrators*.
-        string[] admins;
+        // Minimal bot for library use.
 
-        /// List of homes, where the bot should be active.
-        @CannotContainComments
-        string[] homes;
+        /// Bot nickname.
+        string nickname;
 
-        /// Currently inhabited channels (though not neccessarily homes).
-        @CannotContainComments
-        string[] channels;
-    }
-
-    @Unconfigurable
-    {
         /// The current `IRCServer` we're connected to.
         IRCServer server;
 
         /// The original bot nickname before connecting, in case it changed.
         string origNickname;
 
-        /// Whether or not the bot was altered.
-        bool updated;
-
         /// The current modechars active on the bot (e.g. "ix");
         string modes;
+
+        version(FlagUpdatedBot)
+        {
+            /// Whether or not the bot was altered.
+            bool updated;
+        }
     }
 }
