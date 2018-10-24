@@ -139,8 +139,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         assert(0, "Invalid IRCEvent annotation on " ~ __FUNCTION__);
     }
 
-    immutable lowercased = IRCUser.toLowercase(account, plugin.state.bot.server.caseMapping);
-    plugin.applyAutomodes(nickname, lowercased);
+    plugin.applyAutomodes(nickname, account);
 }
 
 
@@ -150,8 +149,6 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
  +
  +  It applies any and all defined modestrings for said user, in any and all
  +  channels the bot is operator in.
- +
- +  The passed `account` is expected to be lowercased.
  +
  +  Params:
  +      plugin = The current `AutomodePlugin`
@@ -170,14 +167,16 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     {
         if (!plugin.state.bot.homes.canFind(channel)) continue;
 
+        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
         const appliedAccounts = channel in plugin.appliedAutomodes;
-        if (appliedAccounts && account in *appliedAccounts)
+
+        if (appliedAccounts && lowercased in *appliedAccounts)
         {
             // Already applied modes to this account in this channel
             continue;
         }
 
-        const modes = account in channelAccounts;
+        const modes = lowercased in channelAccounts;
         if (!modes || !modes.length) continue;
 
         auto occupiedChannel = channel in plugin.state.channels;
@@ -190,7 +189,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
         plugin.state.raw!(No.quiet)("MODE %s %s%s %s"
             .format(channel, "+".repeat(modes.length).join, *modes, nickname));
-        plugin.appliedAutomodes[channel][account] = true;
+        plugin.appliedAutomodes[channel][lowercased] = true;
     }
 }
 
@@ -368,8 +367,7 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 {
     if (event.sender.account.length)
     {
-        immutable lowercased = IRCUser.toLowercase(event.sender.account, plugin.state.bot.server.caseMapping);
-        plugin.applyAutomodes(event.sender.nickname, lowercased);
+        plugin.applyAutomodes(event.sender.nickname, event.sender.account);
     }
 }
 
