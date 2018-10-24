@@ -10,24 +10,23 @@
  +
  +  It has a few command, whose names should be fairly self-explanatory:
  +
+ +  `user`<br>
+ +  `save` | `writeconfig`<br>
+ +  `users`<br>
+ +  `sudo`<br>
+ +  `quit`<br>
  +  `addhome`<br>
  +  `delhome`<br>
- +  `join`<br>
- +  `part`<br>
- +  `users`<br>
- +  `user`<br>
- +  `printraw`<br>
- +  `printbytes`<br>
- +  `resetterm`<br>
- +  `sudo`<br>
- +  `printasserts`<br>
- +  `forgetaccounts`<br>
  +  `whitelist`<br>
  +  `dewhitelist`<br>
  +  `blacklist`<br>
- +  `dewblacklist`<br>
- +  `writeconfig` | `save`<br>
- +  `quit`<br>
+ +  `deblacklist`<br>
+ +  `resetterm`<br>
+ +  `printraw`<br>
+ +  `printbytes`<br>
+ +  `printasserts`<br>
+ +  `join`<br>
+ +  `part`<br>
  +  `set`<br>
  +  `auth`<br>
  +  `status`

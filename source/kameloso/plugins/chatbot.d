@@ -5,9 +5,9 @@
  +
  +  It has a few commands:
  +
+ +  `say`<br>
  +  `8ball`<br>
- +  `help`<br>
- +  `say` | `säg`
+ +  `help`
  +
  +  It is very optional.
  +/

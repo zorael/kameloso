@@ -9,8 +9,8 @@
  +
  +  `quote`<br>
  +  `addquote`<br>
- +  `reloadquotes`<br>
- +  `printquotes`
+ +  `printquotes`<br>
+ +  `reloadquotes`
  +
  +  It is very optional.
  +/

@@ -4,11 +4,11 @@
  +
  +  It has a few commands:
  +
- +  `note` | `addnote`<br>
- +  `fakejoin`<br>
- +  `fakechan`<br>
+ +  `addnote` | `note`<br>
  +  `printnotes`<br>
  +  `reloadnotes`<br>
+ +  `fakechan`<br>
+ +  `fakejoin`
  +
  +  It is vey optional.
  +/
