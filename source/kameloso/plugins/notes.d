@@ -158,7 +158,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @BotCommand("note")
 @BotCommand(NickPolicy.required, "addnote")
 @BotCommand(NickPolicy.required, "note")
-@Description("Adds a note and saves it to disk.", "$command [account] [note text]")
+@Description("Adds a note and saves it to disk.", "$command [nickname] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
@@ -304,7 +304,9 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
             "Invalid channel notes list type for %s: %s"
             .format(channel, channelNotes.type));
 
-        if (const nickNotes = nickname in channelNotes.object)
+        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+
+        if (const nickNotes = lowercased in channelNotes.object)
         {
             assert((nickNotes.type == JSON_TYPE.ARRAY),
                 "Invalid notes list type for %s on %s: %s"
@@ -343,14 +345,16 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
 
     try
     {
-        if (nickname in plugin.notes[channel])
+        immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+
+        if (lowercased in plugin.notes[channel])
         {
             assert((plugin.notes[channel].type == JSON_TYPE.OBJECT),
                 "Invalid channel notes list type for %s: %s"
                 .format(channel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s in %s", nickname, channel);
-            plugin.notes[channel].object.remove(nickname);
+            plugin.notes[channel].object.remove(lowercased);
             plugin.pruneNotes();
         }
     }
@@ -383,7 +387,7 @@ void pruneNotes(NotesPlugin plugin)
 {
     foreach (immutable channel, channelNotes; plugin.notes.object)
     {
-        if (channelNotes.object.length == 0)
+        if (!channelNotes.object.length)
         {
             // Dead channel
             plugin.notes.object.remove(channel);
@@ -433,13 +437,15 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
         plugin.notes[channel].object = null;
     }
 
-    if (nickname !in plugin.notes[channel])
+    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.bot.server.caseMapping);
+
+    if (lowercased !in plugin.notes[channel])
     {
-        plugin.notes[channel][nickname] = null;
-        plugin.notes[channel][nickname].array = null;
+        plugin.notes[channel][lowercased] = null;
+        plugin.notes[channel][lowercased].array = null;
     }
 
-    plugin.notes[channel][nickname].array ~= asJSON;
+    plugin.notes[channel][lowercased].array ~= asJSON;
 }
 
 
