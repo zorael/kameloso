@@ -115,6 +115,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
  +  get notes. This may be extended to trigger when they say something, too.
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
+@(ChannelPolicy.home)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
@@ -124,8 +125,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : canFind;
 
     if (!plugin.notesSettings.replayOnSelfjoin) return;
-
-    if (!plugin.state.bot.homes.canFind(event.channel)) return;
 
     if (event.channel !in plugin.notes) return;
 
