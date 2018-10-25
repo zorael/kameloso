@@ -468,6 +468,12 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 {
                     import kameloso.string : stripSuffix;
 
+                    if (section == "IRCBot")
+                    {
+                        // Compatibility with old configuration files pre IRCBot <-> Client swap
+                        section = "Client";
+                    }
+
                     if (section != T.stringof.stripSuffix("Settings")) continue;
 
                     immutable entry = hits["entry"];
