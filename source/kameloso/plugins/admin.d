@@ -175,7 +175,9 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
         }
         else
         {
-            logger.trace("No such user: ", username);
+            import std.conv : text;
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                text("No such user: ", username));
         }
     }
 }
@@ -194,13 +196,13 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.required, "save")
 @BotCommand(NickPolicy.required, "writeconfig")
 @Description("Saves current configuration to disk.")
-void onCommandSave(AdminPlugin plugin)
+void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.thread : ThreadMessage;
 
-    logger.info("Saving configuration to disk.");
+    plugin.state.privmsg(event.channel, event.sender.nickname, "Saving configuration to disk.");
     plugin.state.mainThread.send(ThreadMessage.Save());
 }
 
@@ -224,11 +226,9 @@ void onCommandShowUsers(AdminPlugin plugin)
     import kameloso.printing : printObject;
     import kameloso.objmanip : deepSizeof;
 
-    logger.trace("Printing Admin's users");
-
-    foreach (key, value; plugin.state.users)
+    foreach (user; plugin.state.users)
     {
-        printObject(value);
+        printObject(user);
     }
 
     writefln("%d bytes from %d users (deep size %d bytes)",
@@ -317,7 +317,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
     if (!channelToAdd.isValidChannel(plugin.state.client.server))
     {
-        logger.warning("Invalid channel: ", channelToAdd);
+        plugin.state.privmsg(event.channel, event.sender.nickname, "Invalid channel name.");
         return;
     }
 
@@ -325,17 +325,18 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     {
         if (client.homes.canFind(channelToAdd))
         {
-            logger.warning("We are already in that home channel.");
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "We are already in that home channel.");
             return;
         }
-
-        logger.info("Adding home: ", channelToAdd);
 
         // We need to add it to the homes array so as to get ChannelPolicy.home
         // ChannelAwareness to pick up the SELFJOIN.
         client.homes ~= channelToAdd;
         client.updated = true;
         plugin.state.join(channelToAdd);
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, "Home added.");
 
         // We have to follow up and see if we actually managed to join the channel
         // There are plenty ways for it to fail.
@@ -376,7 +377,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
                 break;
 
             default:
-                logger.error("Failed to join home channel.");
+                plugin.state.privmsg(event.channel, event.sender.nickname,
+                    "Failed to join home channel.");
                 break;
             }
 
@@ -435,7 +437,10 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
         if (homeIndex == -1)
         {
-            logger.warningf("Channel %s was not listed as a home", channel);
+            import std.format : format;
+
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "Channel %s was not listed as a home.".format(channel));
             return;
         }
 
@@ -466,7 +471,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    return plugin.addToList(event.content.stripped, "whitelist");
+    plugin.addToList(event.content.stripped, "whitelist");
 }
 
 
@@ -561,7 +566,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    return plugin.addToList(event.content.stripped, "blacklist");
+    plugin.addToList(event.content.stripped, "blacklist");
 }
 
 
@@ -718,12 +723,15 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printraw")
 @Description("[debug] Toggles a flag to print all incoming events raw.")
-void onCommandprintRaw(AdminPlugin plugin)
+void onCommandprintRaw(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import std.conv : text;
+
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-    logger.info("Printing all: ", plugin.adminSettings.printRaw);
+    plugin.state.privmsg(event.channel, event.sender.nickname,
+        text("Printing all: ", plugin.adminSettings.printRaw));
 }
 
 
@@ -740,12 +748,15 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printbytes")
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
-void onCommandPrintBytes(AdminPlugin plugin)
+void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import std.conv : text;
+
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-    logger.info("Printing bytes: ", plugin.adminSettings.printBytes);
+    plugin.state.privmsg(event.channel, event.sender.nickname,
+        text("Printing bytes: ", plugin.adminSettings.printBytes));
 }
 
 
@@ -762,12 +773,15 @@ debug
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "printasserts")
 @Description("[debug] Toggles a flag to generate assert statements for incoming events")
-void onCommandAsserts(AdminPlugin plugin)
+void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
+    import std.conv : text;
+
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
-    logger.info("Printing asserts: ", plugin.adminSettings.printAsserts);
+    plugin.state.privmsg(event.channel, event.sender.nickname,
+        text("Printing asserts: ", plugin.adminSettings.printAsserts));
 
     if (plugin.adminSettings.printAsserts)
     {
@@ -802,7 +816,8 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        logger.warning("No channels supplied...");
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "No channels supplied ...");
         return;
     }
 
@@ -849,11 +864,13 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         try
         {
             thisFiber.payload.applyCustomSettings([ event.content ]);
-            logger.info("Setting changed.");
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "Setting changed.");
         }
         catch (const ConvException e)
         {
-            logger.warning("Invalid setting.");
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "Invalid setting.");
         }
     }
 

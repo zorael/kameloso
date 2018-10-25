@@ -87,7 +87,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
             if (homeIndex != -1)
             {
-                logger.warning("Leaving a home...");
+                logger.warning("Leaving a home ...");
             }
             else
             {
@@ -135,7 +135,7 @@ void joinChannels(ConnectService service)
     {
         if (!client.homes.length && !client.channels.length)
         {
-            logger.warning("No channels, no purpose...");
+            logger.warning("No channels, no purpose ...");
             return;
         }
 
@@ -278,7 +278,7 @@ void tryAuth(ConnectService service)
             // Only accepts password, no auth nickname
             if (client.nickname != client.origNickname)
             {
-                logger.warningf("Cannot auth when you have changed your nickname " ~
+                logger.warningf("Cannot auth when you have changed your nickname. " ~
                     "(%s != %s)", client.nickname, client.origNickname);
 
                 service.authentication = Progress.finished;
@@ -298,7 +298,7 @@ void tryAuth(ConnectService service)
 
             if (!client.authLogin.length)
             {
-                logger.log("No account specified! Trying ", client.origNickname);
+                logger.log("No account specified! Trying ", client.origNickname, " ...");
                 account = client.origNickname;
             }
 
@@ -319,7 +319,7 @@ void tryAuth(ConnectService service)
 
         default:
             logger.warning("Unsure of what AUTH approach to use.");
-            logger.info("Need information about what approach succeeded!");
+            logger.info("Please report information about what approach succeeded!");
 
             if (client.authLogin.length)
             {
@@ -456,7 +456,7 @@ void onBadNick(ConnectService service)
     if (service.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
-        logger.error("Your nickname is too long or contains invalid characters");
+        logger.error("Your nickname is too long or contains invalid characters.");
         service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Invalid nickname");
     }
 }
@@ -488,7 +488,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.log("Invited, but joinOnInvite is false so not joining");
+        logger.log("Invited, but joinOnInvite is false so not joining.");
         return;
     }
 
@@ -761,7 +761,7 @@ void register(ConnectService service)
         {
             if (client.server.daemon == IRCServer.Daemon.twitch)
             {
-                logger.error("You *need* a password to join this server");
+                logger.error("You *need* a pass to join this server.");
                 service.quit();
                 return;
             }

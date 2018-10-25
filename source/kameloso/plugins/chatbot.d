@@ -57,7 +57,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        logger.error("No text to send...");
+        plugin.state.privmsg(event.channel, event.sender.nickname, "Say what?");
         return;
     }
 

@@ -131,7 +131,9 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        logger.warning("Invalid account/nickname: ", specified);
+        import std.format : format;
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            `"%s" is not a valid account or nickname.`.format(specified));
         return;
     }
 
@@ -217,7 +219,9 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        logger.warning("Invalid account/nickname: ", specified);
+        import std.format : format;
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            `"%s" is not a valid account or nickname.`.format(specified));
         return;
     }
 
@@ -289,11 +293,11 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "reloadquotes")
 @Description("Reloads quotes from disk.")
-void onCommandReloadQuotes(QuotesPlugin plugin)
+void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    logger.log("Reloading quotes");
+    plugin.state.privmsg(event.channel, event.sender.nickname, "Reloading quotes.");
     plugin.quotes.load(plugin.quotesFile);
 }
 

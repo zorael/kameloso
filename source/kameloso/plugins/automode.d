@@ -20,6 +20,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger;
+import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
 
@@ -223,7 +224,8 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 2)
     {
-        logger.log("Usage: addmode [channel] [account/nickname] [mode]");
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Usage: addmode [channel] [account/nickname] [mode]");
         return;
     }
 
@@ -241,27 +243,33 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (!channel.isValidChannel(plugin.state.client.server))
     {
-        logger.warning("Invalid channel: ", channel);
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Invalid channel: " ~ channel);
         return;
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
     {
-        logger.warning("Invalid account or nickname: ", specified);
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Invalid account or nickname: " ~ specified);
         return;
     }
     else if (!mode.length)
     {
-        logger.warning("Empty mode");
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "You must supply a mode.");
         return;
     }
 
     void onSuccess(const string id)
     {
+        import std.format : format;
+
         immutable verb = (channel in plugin.automodes) && (id in plugin.automodes[channel]) ? "updated" : "added";
         immutable lowercased = IRCUser.toLowercase(id, plugin.state.client.server.caseMapping);
 
         plugin.automodes[channel][lowercased] = mode;
-        logger.logf("Automode %s! %s (%s) on %s: +%s", verb, specified, id, channel, mode);
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Automode %s! %s (%s) on %s: +%s".format(verb, specified, id, channel, mode));
         plugin.saveAutomodes();
     }
 
@@ -310,7 +318,8 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 1)
     {
-        logger.log("Usage: clearmode [channel] [account]");
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Usage: clearmode [channel] [account]");
         return;
     }
 
@@ -320,16 +329,20 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (auto channelAutomodes = channel in plugin.automodes)
     {
+        import std.format : format;
+
         immutable account = line;
         immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
 
         (*channelAutomodes).remove(lowercased);
-        logger.logf("Automode cleared: %s on %s", account, channel);
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "Automode cleared: %s on %s".format(account, channel));
         plugin.saveAutomodes();
     }
     else
     {
-        logger.log("No automodes defined for channel ", channel);
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "No automodes defined for channel " ~ channel);
     }
 }
 
