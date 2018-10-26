@@ -907,7 +907,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations
                         mutEvent = event;
 
-                        if (!privateState.nickPolicyMatches(commandUDA.policy, mutEvent))
+                        if (!privateState.client.nickPolicyMatches(commandUDA.policy, mutEvent))
                         {
                             static if (verbose)
                             {
@@ -972,7 +972,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static assert((regexUDA.ending == Regex!char.init),
                                 name ~ " has an incomplete BotRegex");
 
-                            if (!privateState.nickPolicyMatches(regexUDA.policy, event))
+                            if (!privateState.client.nickPolicyMatches(regexUDA.policy, event))
                             {
                                 static if (verbose)
                                 {
@@ -2751,7 +2751,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  matching and continue with the next one.
  +
  +  Params:
- +      privateState = `IRCPluginState` of the calling `IRCPlugin`.
+ +      client = `Client` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `kameloso.ircdefs.IRCEvent` we're
  +          considering.
@@ -2763,7 +2763,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const IRCPluginState state, const NickPolicy policy, ref IRCEvent mutEvent)
+bool nickPolicyMatches(const Client client, const NickPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;
@@ -2800,9 +2800,9 @@ bool nickPolicyMatches(const IRCPluginState state, const NickPolicy policy, ref 
             content = content[1..$];
         }
 
-        if (content.beginsWith(state.client.nickname))
+        if (content.beginsWith(client.nickname))
         {
-            content = content.stripPrefix(state.client.nickname);
+            content = content.stripPrefix(client.nickname);
         }
         break;
 
@@ -2824,14 +2824,14 @@ bool nickPolicyMatches(const IRCPluginState state, const NickPolicy policy, ref 
             content = content[1..$];
         }
 
-        if (content.beginsWith(state.client.nickname) && (content.length > state.client.nickname.length))
+        if (content.beginsWith(client.nickname) && (content.length > client.nickname.length))
         {
             /*static if (verbose)
             {
-                writefln("%s trailing character '%s'", name, content[state.client.nickname.length]);
+                writefln("%s trailing character '%s'", name, content[client.nickname.length]);
             }*/
 
-            switch (content[state.client.nickname.length])
+            switch (content[client.nickname.length])
             {
             case ':':
             case ' ':
@@ -2859,8 +2859,8 @@ bool nickPolicyMatches(const IRCPluginState state, const NickPolicy policy, ref 
         }
 
         // Event.content *guaranteed* to begin with
-        // privateState.client.nickname here
-        content = content.stripPrefix(state.client.nickname);
+        // client.nickname here
+        content = content.stripPrefix(client.nickname);
         break;
     }
 
