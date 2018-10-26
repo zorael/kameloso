@@ -195,7 +195,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             }
         }
 
-        logger.errorf("Could not quote %s%s%s: %$1s%$4s", logtint, specified, errortint, e.msg);
+        logger.errorf("Could not quote %s%s%s: %1$s%4$s", logtint, specified, errortint, e.msg);
     }
 }
 
@@ -265,7 +265,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
                 }
             }
 
-            logger.errorf("Could not add quote for %s%s%s: %$1s%$4s", logtint, id, errortint, e.msg);
+            logger.errorf("Could not add quote for %s%s%s: %1$s%4$s", logtint, id, errortint, e.msg);
         }
     }
 

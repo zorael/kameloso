@@ -105,7 +105,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
             }
         }
 
-        logger.errorf("Could not fetch and/or replay notes for %s%s%s on %$1s%$4s%$3s: %$1s%$5s",
+        logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
             logtint, event.sender.nickname, errortint, event.channel, e.msg);
 
         if (e.msg == "JSONValue is not an object")
@@ -385,7 +385,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
                 "Invalid channel notes list type for %s: %s"
                 .format(channel, plugin.notes[channel].type));
 
-            logger.logf("Clearing stored notes for %s%s%s in %$1s%$4s%$3s.",
+            logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
                 infotint, nickname, logtint, channel);
             plugin.notes[channel].object.remove(lowercased);
             plugin.pruneNotes();
