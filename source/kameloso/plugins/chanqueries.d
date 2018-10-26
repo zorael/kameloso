@@ -72,7 +72,7 @@ void onPing(ChanQueriesService service)
 
     if (!querylist.length) return;
 
-    void fiberFn()
+    void dg()
     {
         foreach (immutable i, immutable channelName; querylist)
         {
@@ -127,16 +127,20 @@ void onPing(ChanQueriesService service)
         service.querying = false;  // "Unlock"
     }
 
-    auto fiber = new Fiber(&fiberFn);
+    Fiber fiber = new Fiber(&dg);
 
+    // Enlist the fiber *ONCE*
     with (IRCEvent.Type)
-    with (service.state)
     {
-        // Append the fiber *ONCE*
-        awaitingFibers[RPL_TOPIC] ~= fiber;
-        awaitingFibers[RPL_NOTOPIC] ~= fiber;
-        awaitingFibers[RPL_ENDOFWHO] ~= fiber;
-        awaitingFibers[RPL_CHANNELMODEIS] ~= fiber;
+        static immutable types =
+        [
+            RPL_TOPIC,
+            RPL_NOTOPIC,
+            RPL_ENDOFWHO,
+            RPL_CHANNELMODEIS,
+        ];
+
+        service.awaitEvents(fiber, types);
     }
 
     fiber.call();

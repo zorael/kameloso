@@ -392,19 +392,28 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&dg);
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BANNEDFROMCHAN] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_INVITEONLYCHAN] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNAME] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_LINKCHANNEL] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_TOOMANYCHANNELS] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_FORBIDDENCHANNEL] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_CHANNELISFULL] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNELKEY] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_BADCHANNAME] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.RPL_BADCHANPASS] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_SECUREONLYCHAN] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.ERR_SSLONLYCHAN] ~= fiber;
-        plugin.state.awaitingFibers[IRCEvent.Type.SELFJOIN] ~= fiber;
+
+        with (IRCEvent.Type)
+        {
+            static immutable types =
+            [
+                ERR_BANNEDFROMCHAN,
+                ERR_INVITEONLYCHAN,
+                ERR_BADCHANNAME,
+                ERR_LINKCHANNEL,
+                ERR_TOOMANYCHANNELS,
+                ERR_FORBIDDENCHANNEL,
+                ERR_CHANNELISFULL,
+                ERR_BADCHANNELKEY,
+                ERR_BADCHANNAME,
+                RPL_BADCHANPASS,
+                ERR_SECUREONLYCHAN,
+                ERR_SSLONLYCHAN,
+                SELFJOIN,
+            ];
+
+            plugin.awaitEvents(fiber, types);
+        }
     }
 }
 

@@ -3341,10 +3341,18 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 "neither plugin nor service visible");
         }
 
-        context.state.awaitingFibers[IRCEvent.Type.RPL_WHOISACCOUNT] ~= fiber;
-        context.state.awaitingFibers[IRCEvent.Type.RPL_WHOISREGNICK] ~= fiber;
-        context.state.awaitingFibers[IRCEvent.Type.RPL_ENDOFWHOIS] ~= fiber;
-        context.state.awaitingFibers[IRCEvent.Type.ERR_NOSUCHNICK] ~= fiber;
+        with (IRCEvent.Type)
+        {
+            static immutable types =
+            [
+                RPL_WHOISACCOUNT,
+                RPL_WHOISREGNICK,
+                RPL_ENDOFWHOIS,
+                ERR_NOSUCHNICK,
+            ];
+
+            context.awaitEvents(fiber, types);
+        }
 
         context.state.raw!(Yes.quiet, Yes.priority)("WHOIS " ~ nickname);
         mixin(carriedVariableName) = nickname;
