@@ -32,7 +32,7 @@ If nothing else it makes for a good read-only lurkbot.
 
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. On the other hand, the development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
-* some plugins don't (yet) differentiate between different home channels if there is more than one.
+* so far outgoing IRC messages are uncoloured. There's nothing preventing it, we just need to implement it.
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -258,7 +258,7 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of `irc.d`.
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
 
 # Debugging and generating unit tests
 
