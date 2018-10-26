@@ -78,7 +78,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 
     if (!url.length || url.contains(' '))
     {
-        logger.error("Cannot look up Reddit post; invalid URL");
+        logger.error("Cannot look up Reddit post; invalid URL.");
         return;
     }
 
@@ -90,7 +90,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
     if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when)
         < Timeout.titleCache))
     {
-        logger.log("Found Reddit lookup in cache");
+        logger.log("Found Reddit lookup in cache.");
         plugin.state.reportReddit(cachedLookup.url, event);
         return;
     }

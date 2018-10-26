@@ -22,7 +22,7 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
+import kameloso.common : logger, settings;
 import kameloso.messaging;
 
 
@@ -182,8 +182,20 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not quote %s: %s", specified, e.msg);
-        return;
+        string logtint, errortint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                errortint = (cast(KamelosoLogger)logger).errortint;
+            }
+        }
+
+        logger.errorf("Could not quote %s%s%s: %$1s%$4s", logtint, specified, errortint, e.msg);
     }
 }
 
@@ -240,7 +252,20 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
         }
         catch (const JSONException e)
         {
-            logger.errorf("Could not add quote for %s: %s", id, e.msg);
+            string logtint, errortint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                    errortint = (cast(KamelosoLogger)logger).errortint;
+                }
+            }
+
+            logger.errorf("Could not add quote for %s%s%s: %$1s%$4s", logtint, id, errortint, e.msg);
         }
     }
 

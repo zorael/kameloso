@@ -2662,7 +2662,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     }
                     else
                     {
-                        logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
+                        //logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
                     }
                 }
 
@@ -2763,12 +2763,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy policy, ref IRCEvent mutEvent) @safe
+bool nickPolicyMatches(const IRCPluginState state, const NickPolicy policy, ref IRCEvent mutEvent)
 {
+    import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;
     import std.typecons : Flag, No, Yes;
 
-    with (privateState)
     with (mutEvent)
     with (NickPolicy)
     final switch (policy)
@@ -2800,9 +2800,9 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
             content = content[1..$];
         }
 
-        if (content.beginsWith(client.nickname))
+        if (content.beginsWith(state.client.nickname))
         {
-            content = content.stripPrefix(client.nickname);
+            content = content.stripPrefix(state.client.nickname);
         }
         break;
 
@@ -2824,14 +2824,14 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
             content = content[1..$];
         }
 
-        if (content.beginsWith(client.nickname) && (content.length > client.nickname.length))
+        if (content.beginsWith(state.client.nickname) && (content.length > state.client.nickname.length))
         {
             /*static if (verbose)
             {
-                writefln("%s trailing character '%s'", name, content[client.nickname.length]);
+                writefln("%s trailing character '%s'", name, content[state.client.nickname.length]);
             }*/
 
-            switch (content[client.nickname.length])
+            switch (content[state.client.nickname.length])
             {
             case ':':
             case ' ':
@@ -2860,7 +2860,7 @@ bool nickPolicyMatches(const IRCPluginState privateState, const NickPolicy polic
 
         // Event.content *guaranteed* to begin with
         // privateState.client.nickname here
-        content = content.stripPrefix(client.nickname);
+        content = content.stripPrefix(state.client.nickname);
         break;
     }
 
@@ -2969,9 +2969,22 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
  +/
 void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
-    import kameloso.common : logger;
+    import kameloso.common : logger, settings;
     import kameloso.string : contains, nom;
     import std.string : toLower;
+
+    string logtint, warningtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
+        }
+    }
 
     top:
     foreach (immutable line; customSettings)
@@ -2983,7 +2996,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
         if (!slice.contains!(Yes.decode)("."))
         {
-            logger.warning("Bad plugin.setting=value format");
+            logger.warningf("Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format.", logtint, warningtint);
             continue;
         }
 
@@ -3029,14 +3042,15 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
                 if (!success)
                 {
-                    logger.warningf("No such %s plugin setting: %s", plugin.name, setting);
+                    logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
+                        logtint, plugin.name, warningtint, setting);
                 }
 
                 continue top;
             }
         }
 
-        logger.warning("Invalid plugin: ", pluginstring);
+        logger.warning("Invalid plugin: ", logtint, pluginstring);
     }
 }
 

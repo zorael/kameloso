@@ -155,7 +155,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 
         if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
         {
-            logger.log("Found title lookup in cache");
+            logger.log("Found title lookup in cache.");
             plugin.state.reportURL(*cachedLookup, event);
             continue;
         }

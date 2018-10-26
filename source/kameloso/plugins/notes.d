@@ -92,8 +92,21 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.errorf("Could not fetch and/or replay notes for %s on %s: %s",
-            event.sender.nickname, event.channel, e.msg);
+        string logtint, errortint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                errortint = (cast(KamelosoLogger)logger).errortint;
+            }
+        }
+
+        logger.errorf("Could not fetch and/or replay notes for %s%s%s on %$1s%$4s%$3s: %$1s%$5s",
+            logtint, event.sender.nickname, errortint, event.channel, e.msg);
 
         if (e.msg == "JSONValue is not an object")
         {
@@ -176,7 +189,18 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     }
     catch (const JSONException e)
     {
-        logger.error("Failed to add note: ", e.msg);
+        string logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.error("Failed to add note: ", logtint, e.msg);
     }
 }
 
@@ -221,7 +245,7 @@ void onCommandReloadQuotes(NotesPlugin plugin)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    logger.log("Reloading notes");
+    logger.log("Reloading notes.");
     plugin.notes.load(plugin.notesFile);
 }
 
@@ -247,7 +271,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
     import kameloso.string : contains, nom;
     import std.typecons : No, Yes;
 
-    logger.info("Faking an event");
+    logger.info("Faking an event.");
 
     IRCEvent newEvent = event;
     newEvent.type = IRCEvent.Type.JOIN;
@@ -338,6 +362,19 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
     import std.exception : ErrnoException;
     import std.json : JSONException, JSON_TYPE;
 
+    string infotint, logtint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
+        }
+    }
+
     try
     {
         immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
@@ -348,22 +385,23 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
                 "Invalid channel notes list type for %s: %s"
                 .format(channel, plugin.notes[channel].type));
 
-            logger.logf("Clearing stored notes for %s in %s", nickname, channel);
+            logger.logf("Clearing stored notes for %s%s%s in %$1s%$4s%$3s.",
+                infotint, nickname, logtint, channel);
             plugin.notes[channel].object.remove(lowercased);
             plugin.pruneNotes();
         }
     }
     catch (const JSONException e)
     {
-        logger.error("Failed to clear notes: ", e.msg);
+        logger.error("Failed to clear notes: ", logtint, e.msg);
     }
     catch (const FileException e)
     {
-        logger.error("Failed to save notes: ", e.msg);
+        logger.error("Failed to save notes: ", logtint, e.msg);
     }
     catch (const ErrnoException e)
     {
-        logger.error("Failed to open/close notes file: ", e.msg);
+        logger.error("Failed to open/close notes file: ", logtint, e.msg);
     }
 }
 
@@ -409,7 +447,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 
     if (!line.length)
     {
-        logger.warning("No message to create note from");
+        logger.warning("No message to create note from.");
         return;
     }
 

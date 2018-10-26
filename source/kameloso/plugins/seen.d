@@ -745,21 +745,20 @@ void updateAllUsers(SeenPlugin plugin)
  +  returns an empty array for a fresh start.
  +
  +  Params:
- +      plugin = The current `SeenPlugin`.
  +      filename = Filename of the file to read from.
  +
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname
  +          strings.
  +/
-long[string] loadSeen(SeenPlugin plugin, const string filename)
+long[string] loadSeen(const string filename)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
-    long[string] aa;
+    string infotint, logtint, warningtint;
 
-    scope(exit)
+    version(Colours)
     {
         if (!settings.monochrome)
         {
@@ -769,16 +768,20 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
             logtint = (cast(KamelosoLogger)logger).logtint;
             warningtint = (cast(KamelosoLogger)logger).warningtint;
         }
+    }
 
+    long[string] aa;
+
+    scope(exit)
+    {
         import kameloso.string : plurality;
-
         logger.logf("Seen users loaded, currently %s%d%s %s seen.",
             infotint, aa.length, logtint, aa.length.plurality("user", "users"));
     }
 
     if (!filename.exists || !filename.isFile)
     {
-        logger.info(filename, " does not exist or is not a file");
+        logger.warningf("%s%s%s does not exist or is not a file", logtint, filename, warningtint);
         return aa;
     }
 
@@ -794,7 +797,7 @@ long[string] loadSeen(SeenPlugin plugin, const string filename)
     }
     catch (const JSONException e)
     {
-        logger.error("Could not load seen JSON from file: ", e.msg);
+        logger.error("Could not load seen JSON from file: ", logtint, e.msg);
     }
 
     // Rehash the AA, since we potentially added a *lot* of users.
@@ -840,12 +843,23 @@ void onEndOfMotd(SeenPlugin plugin)
 
     with (plugin)
     {
-        seenUsers = plugin.loadSeen(seenFile);
+        seenUsers = loadSeen(seenFile);
 
         if ((seenSettings.hoursBetweenSaves > 24) ||
             (seenSettings.hoursBetweenSaves < 0))
         {
-            logger.warning("Invalid setting for hours between saves: ",
+            string logtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            logger.warning("Invalid setting for hours between saves: ", logtint,
                 seenSettings.hoursBetweenSaves);
             logger.warning("It must be a number between 1 and 24 (0 disables)");
 

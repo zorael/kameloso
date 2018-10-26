@@ -488,6 +488,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +/
 void addToList(AdminPlugin plugin, const string specified, const string list)
 {
+    import kameloso.common : settings;
     import kameloso.irc : isValidNickname;
     import kameloso.string : contains, stripped;
 
@@ -500,7 +501,18 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
     {
-        logger.warning("Invalid nickname/account: ", specified);
+        string logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.warning("Invalid nickname/account: ", logtint, specified);
         return;
     }
 

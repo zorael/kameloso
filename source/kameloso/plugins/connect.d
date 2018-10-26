@@ -266,6 +266,20 @@ void tryAuth(ConnectService service)
             break;
         }
 
+        string infotint, logtint, warningtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                warningtint = (cast(KamelosoLogger)logger).warningtint;
+            }
+        }
+
         service.authentication = Progress.started;
 
         with (IRCServer.Daemon)
@@ -279,7 +293,7 @@ void tryAuth(ConnectService service)
             if (client.nickname != client.origNickname)
             {
                 logger.warningf("Cannot auth when you have changed your nickname. " ~
-                    "(%s != %s)", client.nickname, client.origNickname);
+                    "(%s%s%s != %1$s%4$s%3$s)", logtint, client.nickname, warningtint, client.origNickname);
 
                 service.authentication = Progress.finished;
                 return;
@@ -298,7 +312,7 @@ void tryAuth(ConnectService service)
 
             if (!client.authLogin.length)
             {
-                logger.log("No account specified! Trying ", client.origNickname, " ...");
+                logger.logf("No account specified! Trying %s%s%s ...", infotint, client.origNickname, logtint);
                 account = client.origNickname;
             }
 
@@ -488,7 +502,20 @@ void onInvite(ConnectService service, const IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.log("Invited, but joinOnInvite is false so not joining.");
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        logger.logf("Invited, but the %sjoinOnInvite%s setting is false so not joining.", infotint, logtint);
         return;
     }
 

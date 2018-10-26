@@ -487,23 +487,21 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            string infotint, warningtint;
+            string logtint, warningtint;
 
             version(Colours)
             {
                 if (!settings.monochrome)
                 {
-                    import kameloso.bash : colour;
                     import kameloso.logger : KamelosoLogger;
-                    import std.experimental.logger : LogLevel;
 
-                    infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
-                    warningtint = KamelosoLogger.tint(LogLevel.warning, settings.brightTerminal).colour;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                    warningtint = (cast(KamelosoLogger)logger).warningtint;
                 }
             }
 
             logger.warningf("Specified log directory (%s%s%s) is not a directory.",
-                infotint, logLocation, warningtint);
+                logtint, logLocation, warningtint);
 
             plugin.naggedAboutDir = true;
         }
@@ -522,11 +520,9 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
         {
             if (!settings.monochrome)
             {
-                import kameloso.bash : colour;
                 import kameloso.logger : KamelosoLogger;
-                import std.experimental.logger : LogLevel;
 
-                infotint = KamelosoLogger.tint(LogLevel.info, settings.brightTerminal).colour;
+                infotint = (cast(KamelosoLogger)logger).infotint;
             }
         }
 
@@ -1692,12 +1688,11 @@ string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)(const str
         case 3:
         ..
         case 5:
-            sink.put(TerminalToken.bashFormat ~ "[2" ~
-                bashEffectCode.to!string ~ "m");
+            sink.put(TerminalToken.bashFormat ~ "[2" ~ bashEffectCode.to!string ~ "m");
             break;
 
         default:
-            logger.warning("Unknown Bash effect code: ", bashEffectCode);
+            //logger.warning("Unknown Bash effect code: ", bashEffectCode);
             sink.colour(BashReset.all);
             break;
         }

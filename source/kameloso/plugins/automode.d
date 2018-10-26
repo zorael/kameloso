@@ -189,10 +189,28 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
         if (!modes || !modes.length) continue;
 
         auto occupiedChannel = channel in plugin.state.channels;
-        if (!occupiedChannel || !occupiedChannel.ops.canFind(plugin.state.client.nickname))
+
+        if (!occupiedChannel) continue;
+
+        if (!occupiedChannel.ops.canFind(plugin.state.client.nickname))
         {
-            logger.log("We aren't in or we aren't op in the channel we have this automode definition for");
-            logger.logf("...on %s: +%s %s", channel, *modes, nickname);
+            string infotint, logtint;
+
+            version(Colours)
+            {
+                import kameloso.common : settings;
+
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    infotint = (cast(KamelosoLogger)logger).infotint;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            logger.log("Could not apply this automode because we are not an operator in the channel:");
+            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s", infotint, channel, logtint, *modes, nickname);
             continue;
         }
 

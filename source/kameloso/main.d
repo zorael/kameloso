@@ -952,7 +952,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
     }
     catch (const FileIsNotAFileException e)
     {
-        string infotint, errortint;
+        string logtint, errortint;
 
         version(Colours)
         {
@@ -960,13 +960,13 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
             {
                 import kameloso.logger : KamelosoLogger;
 
-                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
                 errortint = (cast(KamelosoLogger)logger).errortint;
             }
         }
 
         logger.errorf("Specified configuration file %s%s%s is not a file!",
-            infotint, e.filename, errortint);
+            logtint, e.filename, errortint);
     }
     catch (const Exception e)
     {
