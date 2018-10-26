@@ -3087,6 +3087,76 @@ void delayFiber(IRCPlugin plugin, const long secs)
 }
 
 
+// awaitEvent
+/++
+ +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  triggering `kameloso.ircdefs.IRCEvent` matches the passed
+ +  `kameloso.ircdefs.IRCEvent.Type` type.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +/
+void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+{
+    plugin.state.awaitingFibers[type] ~= fiber;
+}
+
+
+// awaitEvent
+/++
+ +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  triggering `kameloso.ircdefs.IRCEvent` matches the passed
+ +  `kameloso.ircdefs.IRCEvent.Type` type.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Overload that implicitly queues `Fiber.getThis`.
+ +/
+void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
+{
+    plugin.state.awaitingFibers[type] ~= Fiber.getThis;
+}
+
+
+// awaitEvents
+/++
+ +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  triggering `kameloso.ircdefs.IRCEvent` matches all of the passed
+ +  `kameloso.ircdefs.IRCEvent.Type` types.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +/
+void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+{
+    foreach (immutable type; types)
+    {
+        plugin.state.awaitingFibers[type] ~= fiber;
+    }
+}
+
+
+// awaitEvents
+/++
+ +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
+ +  triggering `kameloso.ircdefs.IRCEvent` matches all of the passed
+ +  `kameloso.ircdefs.IRCEvent.Type` types.
+ +
+ +  Not necessarily related to the `async/await` pattern in more than by name.
+ +  Naming is hard.
+ +
+ +  Overload that implicitly queues `Fiber.getThis`.
+ +/
+void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
+{
+    foreach (immutable type; types)
+    {
+        plugin.state.awaitingFibers[type] ~= Fiber.getThis;
+    }
+}
+
+
 // IRCPluginInitialisationException
 /++
  +  Exception thrown when an IRC plugin failed to initialise itself or its
