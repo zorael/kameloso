@@ -28,7 +28,7 @@ version(AsAnApplication)
 
     /++
      +  Have the `Client` struct house extra things needed for an IRC *bot*, as
-     +  opposed the absolute minimum needed for an IRC *client*.
+     +  opposed the absolute minimum needed for an IRC *client* (or library).
      +/
     version = RichClient;
 
@@ -1362,6 +1362,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trust
         case RPL_WHOISACCOUNT:
         case RPL_WHOISREGNICK:
         case RPL_ENDOFWHOIS:
+            // Keep bot's nickname as target for these event types.
             break;
 
         default:
