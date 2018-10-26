@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-It is written in [**D**](https://www.dlang.org). A variety of features comes bundled in the form of compile-time plugins, some of which are toys, proofs of concepts and examples. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, some of which are proofs of concepts and examples. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy case of specialcasing for that kind of event on that particular IRC network or server daemon.
 
@@ -94,7 +94,7 @@ This will compile it in the default `debug` *build type*, which adds some extra 
 
 > You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above will currently not work, as the compiler will crash on some build configurations under anything other than `debug` mode. [Bug reported.](https://issues.dlang.org/show_bug.cgi?id=18026)
+The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. [Bug reported.](https://issues.dlang.org/show_bug.cgi?id=18026)
 
 Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
 
@@ -248,7 +248,7 @@ Known bug: A user that is in more than one observed channel can be displayed wit
 
 ## Use as a library
 
-The IRC event parsing bits are largely decoupled from the bot parts of the program, needing only some helper modules.
+The IRC event parsing bits are largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
 
 * [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d)
 * [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
@@ -258,7 +258,7 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser`.
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of `irc.d`.
 
 # Debugging and generating unit tests
 
