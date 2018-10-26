@@ -131,7 +131,7 @@ final class FileIsNotAFileException : Exception
  +
  +  Example:
  +  ---
- +  Client client;
+ +  IRCClient client;
  +  IRCServer server;
  +
  +  "kameloso.conf".readConfigInto(client, server);
@@ -166,7 +166,7 @@ string[][string] readConfigInto(T...)(const string configFile, ref T things)
  +  Example:
  +  ---
  +  Appender!string sink;
- +  Client client;
+ +  IRCClient client;
  +  IRCServer server;
  +  sink.serialise(client, server);
  +  assert(!sink.data.empty);
@@ -197,7 +197,7 @@ if (Things.length > 1)
  +  Example:
  +  ---
  +  Appender!string sink;
- +  Client client;
+ +  IRCClient client;
  +
  +  sink.serialise(client);
  +  assert(!sink.data.empty);
@@ -393,7 +393,7 @@ pipyon 3
  +
  +  Example:
  +  ---
- +  Client client;
+ +  IRCClient client;
  +  IRCServer server;
  +
  +  "kameloso.conf"
@@ -470,8 +470,8 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                     if (section == "IRCBot")
                     {
-                        // Compatibility with old configuration files pre IRCBot <-> Client swap
-                        section = "Client";
+                        // Compatibility with old configuration files pre IRCBot <-> IRCClient swap
+                        section = "IRCClient";
                     }
 
                     if (section != T.stringof.stripSuffix("Settings")) continue;
@@ -639,7 +639,7 @@ naN     !"¤%&/`;
  +
  +  Example:
  +  ---
- +  Client client;
+ +  IRCClient client;
  +  IRCServer server;
  +  Appender!string sink;
  +

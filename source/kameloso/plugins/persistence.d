@@ -73,7 +73,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                 if (service.state.client.admins.canFind(account))
                 {
-                    // Admins are (currently) stored in an array Client.admins
+                    // Admins are (currently) stored in an array IRCClient.admins
                     class_ = Class.admin;
                 }
                 else if (const classifier = account in service.userClasses)

@@ -42,7 +42,7 @@ private:
 
 import kameloso.common : logger;
 import kameloso.plugins.common;
-import kameloso.irc : Client;
+import kameloso.irc : IRCClient;
 import kameloso.ircdefs;
 import kameloso.messaging;
 
@@ -294,7 +294,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddChan
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.irc.Client.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a Fiber to verify that the channel was actually joined.
@@ -412,7 +412,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.irc.Client.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -454,7 +454,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.Client.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
@@ -538,7 +538,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.Client.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.

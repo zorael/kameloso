@@ -4,7 +4,7 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot, Next;
-import kameloso.irc : Client;
+import kameloso.irc : IRCClient;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -14,29 +14,29 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `kameloso.common.CoreSettings` and `kameloso.irc.Client` from file into
- +  temporaries, then meld them into the real ones, into which the command-line
- +  arguments will have been applied.
+ +  Read `kameloso.common.CoreSettings` and `kameloso.irc.IRCClient` from file
+ +  into temporaries, then meld them into the real ones, into which the
+ +  command-line arguments will have been applied.
  +
  +  Example:
  +  ---
- +  Client client;
+ +  IRCClient client;
  +  CoreSettings settings;
  +
  +  meldSettingsFromFile(client, settings);
  +  ---
  +
  +  Params:
- +      client = Reference `kameloso.irc.Client` to apply changes to.
+ +      client = Reference `kameloso.irc.IRCClient` to apply changes to.
  +      setttings = Reference `kameloso.common.CoreSettings` to apply changes
  +          to.
  +/
-void meldSettingsFromFile(ref Client client, ref CoreSettings settings)
+void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
     import kameloso.config : readConfigInto;
     import kameloso.meld : MeldingStrategy, meldInto;
 
-    Client tempClient;
+    IRCClient tempClient;
     CoreSettings tempSettings;
 
     // These arguments are by reference.
@@ -225,14 +225,14 @@ Next printHelp(GetoptResult results) @system
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      client = Reference to the current `kameloso.irc.Client`.
+ +      client = Reference to the current `kameloso.irc.IRCClient`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
  +  Returns:
  +      `Next.returnSuccess` so the caller knows to return and exit.
  +/
-Next writeConfig(ref IRCBot bot, ref Client client, ref string[] customSettings) @system
+Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettings) @system
 {
     import kameloso.common : logger, printVersionInfo, settings, writeConfigurationFile;
     import kameloso.printing : printObjects;

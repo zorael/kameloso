@@ -1304,7 +1304,7 @@ int main(string[] args)
     bot.parser.client.origNickname = bot.parser.client.nickname;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
-    Client backupClient = bot.parser.client;
+    IRCClient backupClient = bot.parser.client;
 
     /// Enum denoting what we should do next loop.
     Next next;

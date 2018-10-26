@@ -7,7 +7,7 @@
  +/
 module kameloso.plugins.common;
 
-import kameloso.irc : Client;
+import kameloso.irc : IRCClient;
 import kameloso.ircdefs;
 
 import core.thread : Fiber;
@@ -351,10 +351,10 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `kameloso.irc.Client`, containing information pertaining to
-     +  the bot in the context of the current (alive) connection.
+     +  The current `kameloso.irc.IRCClient`, containing information pertaining
+     +  to the bot in the context of the current (alive) connection.
      +/
-    Client client;
+    IRCClient client;
 
     /// Thread ID to the main thread.
     Tid mainThread;
@@ -1902,7 +1902,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `kameloso.irc.Client` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `kameloso.irc.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
      +  This function was part of `UserAwareness` but triggering queued requests
@@ -2751,7 +2751,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `Client` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      client = `IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `kameloso.ircdefs.IRCEvent` we're
  +          considering.
@@ -2763,7 +2763,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const Client client, const NickPolicy policy, ref IRCEvent mutEvent)
+bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;

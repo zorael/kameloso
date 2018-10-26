@@ -27,7 +27,7 @@ version(AsAnApplication)
     version = PrintSanityFailures;
 
     /++
-     +  Have the `Client` struct house extra things needed for an IRC *bot*, as
+     +  Have the `IRCClient` struct house extra things needed for an IRC *bot*, as
      +  opposed the absolute minimum needed for an IRC *client* (or library).
      +/
     version = RichClient;
@@ -2968,8 +2968,8 @@ struct IRCParser
     alias Type = IRCEvent.Type;
     alias Daemon = IRCServer.Daemon;
 
-    /// The current `Client` with all the state needed for parsing.
-    Client client;
+    /// The current `IRCClient` with all the state needed for parsing.
+    IRCClient client;
 
     /// An `IRCEvent.Type[1024]` reverse lookup table for fast numeric lookups.
     Type[1024] typenums = Typenums.base;
@@ -2985,8 +2985,8 @@ struct IRCParser
         return .toIRCEvent(this, raw);
     }
 
-    /// Create a new `IRCParser` with the passed `Client` as base.
-    this(Client client) pure
+    /// Create a new `IRCParser` with the passed `IRCClient` as base.
+    this(IRCClient client) pure
     {
         this.client = client;
     }
@@ -3700,13 +3700,13 @@ enum IRCControlCharacter
 }
 
 
-// Client
+// IRCClient
 /++
  +  Aggregate collecting all the relevant settings, options and state needed for
  +  an IRC client. Many fields are transient and unfit to be saved to disk, and
  +  some are simply too sensitive for it.
  +/
-struct Client
+struct IRCClient
 {
     version(RichClient)
     {
@@ -3792,3 +3792,6 @@ struct Client
         }
     }
 }
+
+deprecated("Client is now IRCClient")
+alias Client = IRCClient;

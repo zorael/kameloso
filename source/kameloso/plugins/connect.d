@@ -16,7 +16,7 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc : Client;
+import kameloso.irc : IRCClient;
 import kameloso.ircdefs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
@@ -101,7 +101,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `kameloso.irc.Client` of
+ +  Records a channel in the `channels` array in the `kameloso.irc.IRCClient` of
  +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon
  +  joining it.
  +/
@@ -126,7 +126,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `kameloso.ircd.Client` of the current `ConnectService`'s
+ +  `kameloso.irc.IRCClient` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 void joinChannels(ConnectService service)
@@ -630,15 +630,15 @@ void onRegistrationEvent(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.irc.Client.authLogin` and `kameloso.irc.Client.authPassword`, then
- +  sends it to the server, during registration.
+ +  `kameloso.irc.IRCClient.authLogin` and `kameloso.irc.IRCClient.authPassword`,
+ +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(authLogin \0 authLogin \0 authPassword)`
  +
- +  ...where `kameloso.irc.Client.authLogin` is the services account name and
- +  `kameloso.irc.Client.authPassword` is the account password.
+ +  ...where `kameloso.irc.IRCClient.authLogin` is the services account name and
+ +  `kameloso.irc.IRCClient.authPassword` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)

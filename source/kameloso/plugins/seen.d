@@ -72,8 +72,7 @@ public:
  +  ---
  +  struct IRCPluginState
  +  {
- +      Client client;
- +      CoreSettings settings;
+ +      IRCClient client;
  +      Tid mainThread;
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;

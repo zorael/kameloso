@@ -316,7 +316,7 @@ unittest
 struct IRCBot
 {
     import kameloso.connection : Connection;
-    import kameloso.irc : Client, IRCParser;
+    import kameloso.irc : IRCClient, IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
@@ -532,9 +532,9 @@ struct IRCBot
     +  update all plugins to have an updated copy of it.
     +
     +  Params:
-    +      client = `kameloso.irc.Client` to propagate to all plugins.
+    +      client = `kameloso.irc.IRCClient` to propagate to all plugins.
     +/
-    void propagateClient(Client client) pure nothrow @nogc @safe
+    void propagateClient(IRCClient client) pure nothrow @nogc @safe
     {
         foreach (plugin; plugins)
         {

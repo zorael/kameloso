@@ -5,7 +5,7 @@
 module kameloso.debugging;
 
 import kameloso.common : IRCBot;
-import kameloso.irc : Client;
+import kameloso.irc : IRCClient;
 import kameloso.ircdefs;
 
 import std.typecons : Flag, No, Yes;
@@ -17,11 +17,11 @@ debug:
 // formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `kameloso.irc.Client`, including instantiating a fresh one.
+ +  `kameloso.irc.IRCClient`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
- +  Client client;
+ +  IRCClient client;
  +  Appender!string sink;
  +
  +  sink.formatClientAssignment(client);
@@ -29,14 +29,14 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      client = `kameloso.irc.Client` to simulate the assignment of.
+ +      client = `kameloso.irc.IRCClient` to simulate the assignment of.
  +/
-void formatClientAssignment(Sink)(auto ref Sink sink, Client client)
+void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 {
     sink.put("IRCParser parser;\n");
     sink.put("with (parser.client)\n");
     sink.put("{\n");
-    sink.formatDelta(Client.init, client, 1);
+    sink.formatDelta(IRCClient.init, client, 1);
     sink.put('}');
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -53,7 +53,7 @@ unittest
     Appender!string sink;
     sink.reserve(128);
 
-    Client client;
+    IRCClient client;
     with (client)
     {
         nickname = "NICKNAME";
@@ -199,7 +199,7 @@ unittest
     Appender!string sink;
     sink.reserve(128);
 
-    Client client;
+    IRCClient client;
     with (client)
     {
         nickname = "NICKNAME";
@@ -210,7 +210,7 @@ unittest
         server.aModes = string.init;
     }
 
-    sink.formatDelta(Client.init, client);
+    sink.formatDelta(IRCClient.init, client);
 
     assert(sink.data ==
 `nickname = "NICKNAME";
@@ -223,7 +223,7 @@ server.aModes = "";
 
     sink = typeof(sink).init;
 
-    sink.formatDelta!(Yes.asserts)(Client.init, client);
+    sink.formatDelta!(Yes.asserts)(IRCClient.init, client);
 
 assert(sink.data ==
 `assert((nickname == "NICKNAME"), nickname);
@@ -333,7 +333,7 @@ unittest
     Appender!string sink;
     sink.reserve(1024);
 
-    Client client;
+    IRCClient client;
     auto parser = IRCParser(client);
 
     immutable event = parser.toIRCEvent(":zorael!~NaN@2001:41d0:2:80b4:: PRIVMSG #flerrp :kameloso: 8ball");
@@ -434,7 +434,7 @@ void generateAsserts(ref IRCBot bot) @system
         writeln();
 
         string input;
-        Client old = parser.client;
+        IRCClient old = parser.client;
 
         while ((input = readln()) !is null)
         {
