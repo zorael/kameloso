@@ -7,6 +7,10 @@ install_deps() {
         -O /etc/apt/sources.list.d/d-apt.list
     sudo apt update
 
+    # E: The method driver /usr/lib/apt/methods/https could not be found.
+    # N: Is the package apt-transport-https installed?
+    sudo apt-get -y apt-transport-https
+
     # fingerprint 0xEBCF975E5BA24D5E
     sudo apt-get -y --allow-unauthenticated install --reinstall d-apt-keyring
     sudo apt update
