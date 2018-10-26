@@ -40,6 +40,7 @@ enum Timeout
 version(Colours)
 {
     import kameloso.bash : BashForeground;
+    import std.experimental.logger : LogLevel;
 
     alias BF = BashForeground;
 
@@ -82,4 +83,26 @@ version(Colours)
         highlight = BF.black,
         query   = BF.green,
     }
+
+    /// Logger colours to use with a bright terminal background.
+    static immutable BashForeground[193] logcoloursBright  =
+    [
+        LogLevel.all     : BF.black,
+        LogLevel.trace   : BF.default_,
+        LogLevel.info    : BF.green,
+        LogLevel.warning : BF.red,
+        LogLevel.error   : BF.red,
+        LogLevel.fatal   : BF.red,
+    ];
+
+    /// Logger colours to use with a dark terminal background.
+    static immutable BashForeground[193] logcoloursDark  =
+    [
+        LogLevel.all     : BF.white,
+        LogLevel.trace   : BF.default_,
+        LogLevel.info    : BF.lightgreen,
+        LogLevel.warning : BF.lightred,
+        LogLevel.error   : BF.red,
+        LogLevel.fatal   : BF.red,
+    ];
 }
