@@ -183,7 +183,7 @@ File createFIFO(IRCPluginState state)
         if (!settings.monochrome)
         {
             import kameloso.bash : colour;
-            import kameloso.logger : KamelosoLogger;
+            import kameloso.constants : logcoloursBright, logcoloursDark;
             import std.experimental.logger : LogLevel;
 
             // We don't have a logger instance so we have to access the
@@ -191,13 +191,13 @@ File createFIFO(IRCPluginState state)
 
             if (settings.brightTerminal)
             {
-                infotint = KamelosoLogger.logcoloursBright[LogLevel.info].colour;
-                logtint = KamelosoLogger.logcoloursBright[LogLevel.all].colour;
+                infotint = logcoloursBright[LogLevel.info].colour;
+                logtint = logcoloursBright[LogLevel.all].colour;
             }
             else
             {
-                infotint = KamelosoLogger.logcoloursDark[LogLevel.info].colour;
-                logtint = KamelosoLogger.logcoloursDark[LogLevel.all].colour;
+                infotint = logcoloursDark[LogLevel.info].colour;
+                logtint = logcoloursDark[LogLevel.all].colour;
             }
         }
     }
