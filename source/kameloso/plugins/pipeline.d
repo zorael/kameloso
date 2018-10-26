@@ -172,8 +172,8 @@ File createFIFO(IRCPluginState state)
     }
     else if (filename.isDir)
     {
-        throw new FileException("Wanted to create FIFO %s but a directory " ~
-            "exists with the same name".format(filename));
+        throw new FileException(("Wanted to create FIFO %s but a directory " ~
+            "exists with the same name").format(filename));
     }
 
     string infotint, logtint;
