@@ -103,11 +103,12 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.webtitlesSettings.enabled) return;
 
-    import kameloso.common : logger;
+    import kameloso.common : logger, settings;
     import kameloso.string : beginsWith, contains;
     import std.typecons : No, Yes;
 
-    immutable prefix = plugin.state.settings.prefix;
+    immutable prefix = settings.prefix;
+
     if (event.content.beginsWith(prefix) && (event.content.length > prefix.length) &&
         (event.content[prefix.length] != ' '))
     {

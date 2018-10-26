@@ -401,7 +401,6 @@ struct IRCBot
 
         IRCPluginState state;
         state.client = parser.client;
-        state.settings = settings;
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
 
@@ -418,7 +417,7 @@ struct IRCBot
 
         foreach (plugin; plugins)
         {
-            auto theseInvalidEntries = plugin.deserialiseConfigFrom(state.settings.configFile);
+            auto theseInvalidEntries = plugin.deserialiseConfigFrom(settings.configFile);
 
             if (theseInvalidEntries.length)
             {

@@ -491,7 +491,7 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
             version(Colours)
             {
-                if (!plugin.state.settings.monochrome)
+                if (!settings.monochrome)
                 {
                     import kameloso.bash : colour;
                     import kameloso.logger : KamelosoLogger;
@@ -520,7 +520,7 @@ bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
 
         version(Colours)
         {
-            if (!plugin.state.settings.monochrome)
+            if (!settings.monochrome)
             {
                 import kameloso.bash : colour;
                 import kameloso.logger : KamelosoLogger;

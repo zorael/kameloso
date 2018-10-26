@@ -356,9 +356,6 @@ struct IRCPluginState
      +/
     Client client;
 
-    /// The current settings of the bot, non-specific to any plugins.
-    CoreSettings settings;
-
     /// Thread ID to the main thread.
     Tid mainThread;
 
@@ -3015,10 +3012,9 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
                 initLogger(settings.monochrome, settings.brightTerminal);
             }
 
-            // FIXME: Re-evaluate whether plugins should keep a copy of the settings
             foreach (plugin; plugins)
             {
-                plugin.state.settings.setMemberByName(setting, value);
+                settings.setMemberByName(setting, value);
             }
 
             continue top;

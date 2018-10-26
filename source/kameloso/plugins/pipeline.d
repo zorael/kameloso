@@ -180,7 +180,7 @@ File createFIFO(IRCPluginState state)
 
     version(Colours)
     {
-        if (!state.settings.monochrome)
+        if (!settings.monochrome)
         {
             import kameloso.bash : colour;
             import kameloso.logger : KamelosoLogger;
