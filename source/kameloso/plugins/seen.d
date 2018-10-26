@@ -77,6 +77,8 @@ public:
  +      IRCUser[string] users;
  +      IRCChannel[string] channels;
  +      WHOISRequest[string] whoisQueue;
+ +      Fiber[][IRCEvent.Type] awaitingFibers;
+ +      Labeled!(Fiber, long)[] timedFibers;
  +  }
  +  ---
  +
@@ -108,6 +110,17 @@ public:
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
  +     queue management handled behind the scenes.
+ +
+ +  * `awaitingFibers` is an associative array of `core.thread.Fiber`s keyed by
+ +     `kamelos.ircdefs.IRCEvent.Type`s. Fibers in the array of a particular
+ +     event type will be executed the next time such an event is incoming.
+ +     Think of it as Fiber callbacks.
+ +
+ +  * `timedFibers` is also an array of `core.thread.Fiber`s, but not an
+ +     associative one keyed on event types. Instead they are wrapped in a
+ +     `kameloso.typecons.Labeled` emplate and marked with a UNIX timestamp of
+ +     when they should be run. Use `kameloso.plugins.common.delayFiber` to
+ +     enqueue.
  +/
 final class SeenPlugin : IRCPlugin
 {
