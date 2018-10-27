@@ -37,15 +37,23 @@ enum Timeout
     titleCache = 600,
 }
 
+
+// DefaultColours
+/++
+ +  Default colours gathered in one struct namespace.
+ +
+ +  This makes it easier to compile-time customise colours to your liking.
+ +/
 version(Colours)
+struct DefaultColours
 {
     import kameloso.bash : BashForeground;
     import std.experimental.logger : LogLevel;
 
     alias BF = BashForeground;
 
-    /// Default colours for a dark terminal background.
-    enum DefaultDark : BashForeground
+    /// Default colours for printing events on a dark terminal background.
+    enum EventPrintingDark : BashForeground
     {
         timestamp = BF.white,
         type    = BF.lightblue,
@@ -64,8 +72,8 @@ version(Colours)
         query   = BF.lightgreen,
     }
 
-    /// Default colours for a bright terminal background.
-    enum DefaultBright : BashForeground
+    /// Default colours for printing events on a bright terminal background.
+    enum EventPrintingBright : BashForeground
     {
         timestamp = BF.black,
         type    = BF.blue,
@@ -84,17 +92,6 @@ version(Colours)
         query   = BF.green,
     }
 
-    /// Logger colours to use with a bright terminal background.
-    static immutable BashForeground[193] logcoloursBright  =
-    [
-        LogLevel.all     : BF.black,
-        LogLevel.trace   : BF.default_,
-        LogLevel.info    : BF.green,
-        LogLevel.warning : BF.red,
-        LogLevel.error   : BF.red,
-        LogLevel.fatal   : BF.red,
-    ];
-
     /// Logger colours to use with a dark terminal background.
     static immutable BashForeground[193] logcoloursDark  =
     [
@@ -102,6 +99,17 @@ version(Colours)
         LogLevel.trace   : BF.default_,
         LogLevel.info    : BF.lightgreen,
         LogLevel.warning : BF.lightred,
+        LogLevel.error   : BF.red,
+        LogLevel.fatal   : BF.red,
+    ];
+
+    /// Logger colours to use with a bright terminal background.
+    static immutable BashForeground[193] logcoloursBright  =
+    [
+        LogLevel.all     : BF.black,
+        LogLevel.trace   : BF.default_,
+        LogLevel.info    : BF.green,
+        LogLevel.warning : BF.red,
         LogLevel.error   : BF.red,
         LogLevel.fatal   : BF.red,
     ];

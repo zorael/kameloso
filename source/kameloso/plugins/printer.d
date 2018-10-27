@@ -880,11 +880,14 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
     import kameloso.bash : BashForeground, colour;
-    import kameloso.constants : DefaultBright, DefaultDark;
+    import kameloso.constants : DefaultColours;
     import kameloso.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+
+    alias DefaultBright = DefaultColours.EventPrintingBright;
+    alias DefaultDark = DefaultColours.EventPrintingDark;
 
     immutable timestamp = (cast(DateTime)SysTime
         .fromUnixTime(event.time))

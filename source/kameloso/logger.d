@@ -35,8 +35,11 @@ final class KamelosoLogger : Logger
     version(Colours)
     {
         import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
-        import kameloso.constants : logcoloursBright, logcoloursDark;
+        import kameloso.constants : DefaultColours;
     }
+
+    alias logcoloursBright = DefaultColours.logcoloursBright;
+    alias logcoloursDark = DefaultColours.logcoloursDark;
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;   /// Whether to use colours for a bright background.

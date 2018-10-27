@@ -581,9 +581,12 @@ void highlightEmotes(ref IRCEvent event)
 {
     import kameloso.bash : BashForeground, colour;
     import kameloso.common : settings;
-    import kameloso.constants : DefaultBright, DefaultDark;
+    import kameloso.constants : DefaultColours;
     import kameloso.string : contains;
     import std.array : Appender;
+
+    alias DefaultBright = DefaultColours.EventPrintingBright;
+    alias DefaultDark = DefaultColours.EventPrintingDark;
 
     if (!event.aux.length) return;
 
