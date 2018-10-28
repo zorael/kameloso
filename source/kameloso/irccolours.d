@@ -421,7 +421,12 @@ unittest
  +  Maps mIRC effect colour tokens to Bash ones.
  +
  +  Params:
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
+ +      line = String line with IRC colours to translate.
+ +      fgReset = Bash foreground code to reset to after colour default tokens.
+ +      bgReset = Bash backgroudn code to reset to after colour default tokens.
+ +
+ +  Returns:
+ +      The passed `line`, now with Bash colouring.
  +/
 version(Colours)
 string mapColours(const string line, const uint fgReset = BashForeground.default_,
@@ -563,6 +568,9 @@ unittest
  +
  +  Params:
  +      line = String to strip of IRC colour tags.
+ +
+ +  Returns:
+ +      The passed `line`, now stripped of IRC colours.
  +/
 string stripColours(const string line)
 {
@@ -640,7 +648,10 @@ unittest
  +  Params:
  +      mircToken = mIRC token for a particular text effect.
  +      bashEffectCode = Bash equivalent of the mircToken effect.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
+ +      line = The mIRC-formatted string to translate.
+ +
+ +  Returns:
+ +      The passed `line`, now with Bash formatting.
  +/
 version(Colours)
 private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const string line)
