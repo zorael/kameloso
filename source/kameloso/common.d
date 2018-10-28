@@ -107,6 +107,9 @@ struct CoreSettings
     /// Whether to print outgoing messages or not.
     bool hideOutgoing = false;
 
+    /// Whether to add colours to outgoing messages or not.
+    bool colouredOutgoing = true;
+
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
