@@ -40,6 +40,81 @@ version(AsAnApplication)
 }
 
 
+// toIRCEvent
+/++
+ +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
+ +
+ +  Parsing goes through several phases (prefix, typestring, specialcases) and
+ +  this is the function that calls them, in order.
+ +
+ +  Params:
+ +      parser = Reference to the current `IRCParser`.
+ +      raw = Raw IRC string to parse.
+ +
+ +  Returns:
+ +      A finished `kameloso.ircdefs.IRCEvent`.
+ +/
+IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
+{
+    import kameloso.string : strippedRight;
+    import std.datetime.systime : Clock;
+
+    if (!raw.length) throw new IRCParseException("Tried to parse empty string");
+
+    IRCEvent event;
+
+    event.time = Clock.currTime.toUnixTime;
+
+    // We don't need to .idup here; it has already been done in the Generator
+    // when yielding
+    event.raw = raw;
+
+    if (raw[0] != ':')
+    {
+        if (raw[0] == '@')
+        {
+            // IRCv3 tags
+            // @badges=broadcaster/1;color=;display-name=Zorael;emote-sets=0;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zorael
+            // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
+            // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
+
+            // Get rid of the prepended @
+            auto newRaw = event.raw[1..$];
+            immutable tags = newRaw.nom(' ');
+            event = parser.toIRCEvent(newRaw);
+            event.tags = tags;
+            return event;
+        }
+        else
+        {
+            parser.parseBasic(event);
+            return event;
+        }
+    }
+
+    auto slice = event.raw[1..$]; // advance past first colon
+
+    // First pass: prefixes. This is the sender
+    parser.parsePrefix(event, slice);
+
+    // Second pass: typestring. This is what kind of action the event is of
+    parser.parseTypestring(event, slice);
+
+    // Third pass: specialcases. This splits up the remaining bits into
+    // useful strings, like sender, target and content
+    parser.parseSpecialcases(event, slice);
+
+    // Final cosmetic touches
+    event.content = event.content.strippedRight;
+
+    // Final pass: sanity check. This verifies some fields and gives
+    // meaningful error messages if something doesn't look right.
+    parser.postparseSanityCheck(event);
+
+    return event;
+}
+
+
 // parseBasic
 /++
  +  Parses the most basic of IRC events; `PING`, `ERROR`, `PONG`, `NOTICE`
@@ -2169,81 +2244,6 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         parser.setDaemon(daemon, daemonstringRaw);
     }
-}
-
-
-// toIRCEvent
-/++
- +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
- +
- +  Parsing goes through several phases (prefix, typestring, specialcases) and
- +  this is the function that calls them, in order.
- +
- +  Params:
- +      parser = Reference to the current `IRCParser`.
- +      raw = Raw IRC string to parse.
- +
- +  Returns:
- +      A finished `kameloso.ircdefs.IRCEvent`.
- +/
-IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
-{
-    import kameloso.string : strippedRight;
-    import std.datetime.systime : Clock;
-
-    if (!raw.length) throw new IRCParseException("Tried to parse empty string");
-
-    IRCEvent event;
-
-    event.time = Clock.currTime.toUnixTime;
-
-    // We don't need to .idup here; it has already been done in the Generator
-    // when yielding
-    event.raw = raw;
-
-    if (raw[0] != ':')
-    {
-        if (raw[0] == '@')
-        {
-            // IRCv3 tags
-            // @badges=broadcaster/1;color=;display-name=Zorael;emote-sets=0;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zorael
-            // @broadcaster-lang=;emote-only=0;followers-only=-1;mercury=0;r9k=0;room-id=22216721;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #zorael
-            // @badges=subscriber/3;color=;display-name=asdcassr;emotes=560489:0-6,8-14,16-22,24-30/560510:39-46;id=4d6bbafb-427d-412a-ae24-4426020a1042;mod=0;room-id=23161357;sent-ts=1510059590512;subscriber=1;tmi-sent-ts=1510059591528;turbo=0;user-id=38772474;user-type= :asdcsa!asdcss@asdcsd.tmi.twitch.tv PRIVMSG #lirik :lirikFR lirikFR lirikFR lirikFR :sled: lirikLUL
-
-            // Get rid of the prepended @
-            auto newRaw = event.raw[1..$];
-            immutable tags = newRaw.nom(' ');
-            event = parser.toIRCEvent(newRaw);
-            event.tags = tags;
-            return event;
-        }
-        else
-        {
-            parser.parseBasic(event);
-            return event;
-        }
-    }
-
-    auto slice = event.raw[1..$]; // advance past first colon
-
-    // First pass: prefixes. This is the sender
-    parser.parsePrefix(event, slice);
-
-    // Second pass: typestring. This is what kind of action the event is of
-    parser.parseTypestring(event, slice);
-
-    // Third pass: specialcases. This splits up the remaining bits into
-    // useful strings, like sender, target and content
-    parser.parseSpecialcases(event, slice);
-
-    // Final cosmetic touches
-    event.content = event.content.strippedRight;
-
-    // Final pass: sanity check. This verifies some fields and gives
-    // meaningful error messages if something doesn't look right.
-    parser.postparseSanityCheck(event);
-
-    return event;
 }
 
 
