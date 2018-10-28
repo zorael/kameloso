@@ -321,6 +321,7 @@ char ircReset()
  +  Returns:
  +      A new string based on `origLine` with mIRC tokens mapped to Bash ones.
  +/
+version(Colours)
 string mapEffects(const string origLine, const uint fgBase = BashForeground.default_,
     const uint bgBase = BashBackground.default_)
 {
