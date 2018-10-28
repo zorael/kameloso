@@ -37,6 +37,9 @@ import kameloso.plugins.common;
 /// Likewise `kameloso.ircdefs`, for the definitions of an IRC event.
 import kameloso.ircdefs;
 
+/// `kameloso.irccolours` for some IRC colouring and formatting.
+import kameloso.irccolours : ircBold, ircColourNick;
+
 /// `kameloso.common` for some globals.
 import kameloso.common;
 
@@ -603,7 +606,18 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         else if (!event.content.isValidNickname(plugin.state.client.server))
         {
             // Nickname contained a space
-            privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content);
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content.ircBold);
+            }
+            else
+            {
+                privmsg(event.channel, event.sender.nickname, "Invalid user: " ~ event.content);
+            }
+
+            privmsg(event.channel, event.sender.nickname, message);
             return;
         }
         else if (state.client.nickname == event.content)
@@ -625,7 +639,18 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             {
                 immutable line = event.channel.length && (channel.name == event.channel) ?
                     " is here right now!" : " is online right now.";
-                privmsg(event.channel, event.sender.nickname, event.content ~ line);
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = event.content.ircColourNick.ircBold ~ line;
+                }
+                else
+                {
+                    message = event.content ~ line;
+                }
+
+                privmsg(event.channel, event.sender.nickname, message);
                 return;
             }
         }
@@ -637,16 +662,36 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         if (!userTimestamp)
         {
             // No matches for nickname `event.content` in `plugin.seenUsers`.
-            privmsg(event.channel, event.sender.nickname,
-                "I have never seen %s.".format(event.content));
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "I have never seen %s.".format(event.content.ircColourNick.ircBold);
+            }
+            else
+            {
+                message = "I have never seen %s.".format(event.content);
+            }
+
+            privmsg(event.channel, event.sender.nickname, message);
             return;
         }
 
         const timestamp = SysTime.fromUnixTime(*userTimestamp);
         immutable elapsed = timeSince(Clock.currTime - timestamp);
 
-        privmsg(event.channel, event.sender.nickname,
-            "I last saw %s %s ago.".format(event.content, elapsed));
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "I last saw %s %s ago.".format(event.content.ircColourNick.ircBold, elapsed);
+        }
+        else
+        {
+            message = "I last saw %s %s ago.".format(event.content, elapsed);
+        }
+
+        privmsg(event.channel, event.sender.nickname, message);
     }
 }
 
@@ -936,5 +981,6 @@ mixin ChannelAwareness;
 
 
 /++
- +  This full plugin is 163 source lines of code. (`dscanner --sloc seen.d`)
+ +  This full plugin is 184 source lines of code. (`dscanner --sloc seen.d`)
+ +  This includes outgoing colouring.
  +/

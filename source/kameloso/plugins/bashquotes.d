@@ -16,6 +16,7 @@ version(Web):
 
 private:
 
+import kameloso.common : settings;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.messaging;
@@ -52,7 +53,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event);
+    spawn(&worker, cast(shared)plugin.state, event, settings.colouredOutgoing);
 }
 
 
@@ -63,8 +64,9 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +
  +  Supposed to be run in its own, shortlived thread.
  +/
-void worker(shared IRCPluginState sState, const IRCEvent event)
+void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
 {
+    import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;
@@ -88,8 +90,18 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
 
         if (!numBlock.length)
         {
-            state.privmsg(event.channel, event.sender.nickname,
-                "No such bash.org quote: " ~ event.content);
+            string message;
+
+            if (colouredOutgoing)
+            {
+                message = "No such bash.org quote: " ~ event.content.ircBold;
+            }
+            else
+            {
+                message = "No such bash.org quote: " ~ event.content;
+            }
+
+            state.privmsg(event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -107,10 +119,20 @@ void worker(shared IRCPluginState sState, const IRCEvent event)
             .replace(`<br />`, string.init)
             .splitter("\n");
 
-        state.privmsg(event.channel, event.sender.nickname,
-            "[bash.org] #%s".format(num));
+        string message;
 
-        foreach (line; range)
+        if (colouredOutgoing)
+        {
+            message = "%s #%s".format("[bash.org]".ircBold, num);
+        }
+        else
+        {
+            message = "[bash.org] #%s".format(num);
+        }
+
+        state.privmsg(event.channel, event.sender.nickname, message);
+
+        foreach (const line; range)
         {
             state.privmsg(event.channel, event.sender.nickname, line);
         }

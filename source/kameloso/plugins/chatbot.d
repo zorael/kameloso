@@ -19,7 +19,8 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
+import kameloso.common : logger, settings;
+import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 
 
@@ -179,52 +180,128 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 
                     if (auto description = specifiedCommand in p.commands)
                     {
-                        plugin.state.query(sender.nickname, "[%s] %s: %s"
-                            .format(p.name, specifiedCommand, description.string_));
+                        string message;
+
+                        if (settings.colouredOutgoing)
+                        {
+                            message = "[%s] %s: %s"
+                                .format(p.name.ircBold, specifiedCommand.ircBold, description.string_);
+                        }
+                        else
+                        {
+                            message = "[%s] %s: %s"
+                                .format(p.name, specifiedCommand, description.string_);
+                        }
+
+                        plugin.state.query(sender.nickname, message);
 
                         if (description.syntax.length)
                         {
                             import std.array : replace;
-                            immutable syntax = "Usage: " ~ description.syntax
-                                .replace("$command", specifiedCommand);
+
+                            string syntax;
+
+                            if (settings.colouredOutgoing)
+                            {
+                                syntax = "Usage".ircBold ~ ": " ~ description.syntax
+                                    .replace("$command", specifiedCommand);
+                            }
+                            else
+                            {
+                                syntax = "Usage: " ~ description.syntax
+                                    .replace("$command", specifiedCommand);
+                            }
+
                             plugin.state.query(sender.nickname, syntax);
                         }
                     }
                     else
                     {
-                        plugin.state.query(sender.nickname, "No help available for command %s of plugin %s"
-                            .format(specifiedCommand, specifiedPlugin));
+                        string message;
+
+                        if (settings.colouredOutgoing)
+                        {
+                            message = "No help available for command %s of plugin %s"
+                                .format(specifiedCommand.ircBold, specifiedPlugin.ircBold);
+                        }
+                        else
+                        {
+                            message = "No help available for command %s of plugin %s"
+                                .format(specifiedCommand, specifiedPlugin);
+                        }
+
+                        plugin.state.query(sender.nickname, message);
                     }
 
                     return;
                 }
 
-                plugin.state.query(sender.nickname, "No such plugin: " ~ specifiedPlugin);
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = "No such plugin: " ~ specifiedPlugin.ircBold;
+                }
+                else
+                {
+                    message = "No such plugin: " ~ specifiedPlugin;
+                }
+
+                plugin.state.query(sender.nickname, message);
                 return;
             }
             else
             {
                 foreach (p; plugins)
                 {
-                    if (p.name != content) continue;
+                    if ((p.name != content) || !p.commands.length || p.name.endsWith("Service"))  continue;
 
                     enum width = 11;
+                    enum pattern = "* %-*s %-([%s]%| %)";
 
-                    plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
-                        .format(width, p.name, p.commands.keys.sort()));
+                    string message;
+
+                    if (settings.colouredOutgoing)
+                    {
+                        // FIXME: Can we bold the commands too?
+                        message = pattern.format(width, p.name.ircBold, p.commands.keys.sort());
+                    }
+                    else
+                    {
+                        message = pattern.format(width, p.name, p.commands.keys.sort());
+                    }
+
+                    plugin.state.query(sender.nickname, message);
                     return;
                 }
 
-                plugin.state.query(sender.nickname, "No such plugin: " ~ content);
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = "No such plugin: " ~ content.ircBold;
+                }
+                else
+                {
+                    message = "No such plugin: " ~ content;
+                }
+
+                plugin.state.query(sender.nickname, message);
             }
         }
         else
         {
             import kameloso.constants : KamelosoInfo;
-            enum banner = "kameloso IRC bot v%s, built %s"
+
+            enum bannerUncoloured = "kameloso IRC bot v%s, built %s"
                 .format(cast(string)KamelosoInfo.version_,
                 cast(string)KamelosoInfo.built);
 
+            enum bannerColoured = "kameloso IRC bot".ircBold ~ " v%s, built %s"
+                .format(cast(string)KamelosoInfo.version_.ircBold,
+                cast(string)KamelosoInfo.built);
+
+            immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
             plugin.state.query(sender.nickname, banner);
             plugin.state.query(sender.nickname, "Available bot commands per plugin:");
 
@@ -233,12 +310,36 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                 if (!p.commands.length || p.name.endsWith("Service")) continue;
 
                 enum width = 11;
+                enum pattern = "* %-*s %-([%s]%| %)";
 
-                plugin.state.query(sender.nickname, "* %-*s %-([%s]%| %)"
-                    .format(width, p.name, p.commands.keys.sort()));
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    // FIXME: Can we bold the commands too?
+                    message = pattern.format(width, p.name.ircBold, p.commands.keys.sort());
+                }
+                else
+                {
+                    message = pattern.format(width, p.name, p.commands.keys.sort());
+                }
+
+                plugin.state.query(sender.nickname, message);
             }
 
-            plugin.state.query(sender.nickname, "Use help [plugin] [command] for information about a command.");
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "Use %s [%s] [%s] for information about a command."
+                    .format("help".ircBold, "plugin".ircBold, "command".ircBold);
+            }
+            else
+            {
+                message = "Use help [plugin] [command] for information about a command.";
+            }
+
+            plugin.state.query(sender.nickname, message);
             plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }

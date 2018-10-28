@@ -40,9 +40,10 @@ version(WithPlugins):
 
 private:
 
-import kameloso.common : logger;
+import kameloso.common : logger, settings;
 import kameloso.plugins.common;
 import kameloso.irc : IRCClient;
+import kameloso.irccolours : IRCColour, ircBold, ircColour;
 import kameloso.ircdefs;
 import kameloso.messaging;
 
@@ -175,9 +176,18 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
         }
         else
         {
-            import std.conv : text;
-            plugin.state.privmsg(event.channel, event.sender.nickname,
-                text("No such user: ", username));
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "No such user: " ~ username.ircColour(IRCColour.red).ircBold;
+            }
+            else
+            {
+                message = "No such user: " ~ username;
+            }
+
+            plugin.state.privmsg(event.channel, event.sender.nickname, message);
         }
     }
 }
@@ -448,8 +458,18 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
         {
             import std.format : format;
 
-            plugin.state.privmsg(event.channel, event.sender.nickname,
-                "Channel %s was not listed as a home.".format(channel));
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "Channel %s was not listed as a home.".format(channel.ircBold);
+            }
+            else
+            {
+                message = "Channel %s was not listed as a home.".format(channel);
+            }
+
+            plugin.state.privmsg(event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -751,8 +771,19 @@ void onCommandprintRaw(AdminPlugin plugin, const IRCEvent event)
     import std.conv : text;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-    plugin.state.privmsg(event.channel, event.sender.nickname,
-        text("Printing all: ", plugin.adminSettings.printRaw));
+
+    string message;
+
+    if (settings.colouredOutgoing)
+    {
+        message = "Printing all: " ~ plugin.adminSettings.printRaw.text.ircBold;
+    }
+    else
+    {
+        message = "Printing all: " ~ plugin.adminSettings.printRaw.text;
+    }
+
+    plugin.state.privmsg(event.channel, event.sender.nickname, message);
 }
 
 
@@ -776,8 +807,19 @@ void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
     import std.conv : text;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-    plugin.state.privmsg(event.channel, event.sender.nickname,
-        text("Printing bytes: ", plugin.adminSettings.printBytes));
+
+    string message;
+
+    if (settings.colouredOutgoing)
+    {
+        message = "Printing bytes: " ~ plugin.adminSettings.printBytes.text.ircBold;
+    }
+    else
+    {
+        message = "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
+    }
+
+    plugin.state.privmsg(event.channel, event.sender.nickname, message);
 }
 
 
@@ -801,8 +843,19 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
     import std.conv : text;
 
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
-    plugin.state.privmsg(event.channel, event.sender.nickname,
-        text("Printing asserts: ", plugin.adminSettings.printAsserts));
+
+    string message;
+
+    if (settings.colouredOutgoing)
+    {
+        message = "Printing asserts: " ~ plugin.adminSettings.printAsserts.text.ircBold;
+    }
+    else
+    {
+        message = "Printing asserts: " ~ plugin.adminSettings.printAsserts.text;
+    }
+
+    plugin.state.privmsg(event.channel, event.sender.nickname, message);
 
     if (plugin.adminSettings.printAsserts)
     {
@@ -837,8 +890,7 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "No channels supplied ...");
+        plugin.state.privmsg(event.channel, event.sender.nickname, "No channels supplied ...");
         return;
     }
 
@@ -885,13 +937,11 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         try
         {
             thisFiber.payload.applyCustomSettings([ event.content ]);
-            plugin.state.privmsg(event.channel, event.sender.nickname,
-                "Setting changed.");
+            plugin.state.privmsg(event.channel, event.sender.nickname, "Setting changed.");
         }
         catch (const ConvException e)
         {
-            plugin.state.privmsg(event.channel, event.sender.nickname,
-                "Invalid setting.");
+            plugin.state.privmsg(event.channel, event.sender.nickname, "Invalid setting.");
         }
     }
 

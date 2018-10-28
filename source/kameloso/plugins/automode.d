@@ -19,7 +19,8 @@ private:
 
 import kameloso.plugins.common;
 import kameloso.ircdefs;
-import kameloso.common : logger;
+import kameloso.common : logger, settings;
+import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourNick;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
@@ -261,14 +262,34 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (!channel.isValidChannel(plugin.state.client.server))
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "Invalid channel: " ~ channel);
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "Invalid channel: " ~ channel.ircColour(IRCColour.red).ircBold;
+        }
+        else
+        {
+            message = "Invalid channel: " ~ channel;
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "Invalid account or nickname: " ~ specified);
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "Invalid account or nickname: " ~ specified.ircColour(IRCColour.red).ircBold;
+        }
+        else
+        {
+            message = "Invalid account or nickname: " ~ specified;
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
     else if (!mode.length)
@@ -286,8 +307,21 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         immutable lowercased = IRCUser.toLowercase(id, plugin.state.client.server.caseMapping);
 
         plugin.automodes[channel][lowercased] = mode;
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "Automode %s! %s (%s) on %s: +%s".format(verb, specified, id, channel, mode));
+
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "Automode %s! %s (%s) on %s: +%s"
+                .format(verb.ircBold, specified.ircColourNick.ircBold,
+                id.ircColourNick.ircBold, channel.ircBold, mode.ircBold);
+        }
+        else
+        {
+            message = "Automode %s! %s (%s) on %s: +%s".format(verb, specified, id, channel, mode);
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
 
@@ -353,14 +387,35 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
         immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
 
         (*channelAutomodes).remove(lowercased);
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "Automode cleared: %s on %s".format(account, channel));
+
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "Automode cleared: %s on %s".format(account.ircColourNick.ircBold, channel.ircBold);
+        }
+        else
+        {
+            message = "Automode cleared: %s on %s".format(account, channel);
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
     else
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "No automodes defined for channel " ~ channel);
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "No automodes defined for channel " ~ channel.ircBold;
+        }
+        else
+        {
+            message = "No automodes defined for channel " ~ channel;
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
     }
 }
 

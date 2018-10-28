@@ -20,6 +20,7 @@ import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
 import kameloso.plugins.common;
 import kameloso.ircdefs;
+import kameloso.irccolours : ircBold;
 
 import std.concurrency;
 
@@ -156,7 +157,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         if (cachedLookup && ((Clock.currTime.toUnixTime - cachedLookup.when) < Timeout.titleCache))
         {
             logger.log("Found title lookup in cache.");
-            plugin.state.reportURL(*cachedLookup, event);
+            plugin.state.reportURL(*cachedLookup, event, settings.colouredOutgoing);
             continue;
         }
 
@@ -167,7 +168,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         titleReq.url = url;
 
         shared IRCPluginState sState = cast(shared)plugin.state;
-        spawn(&worker, sState, plugin.cache, titleReq);
+        spawn(&worker, sState, plugin.cache, titleReq, settings.colouredOutgoing);
     }
 }
 
@@ -302,7 +303,8 @@ unittest
  +      cache = Reference to the cache of previous `TitleLookup`s.
  +      titleReq = Current title request.
  +/
-void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, TitleRequest titleReq)
+void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
+    TitleRequest titleReq, const bool colouredOutgoing)
 {
     auto state = cast(IRCPluginState)sState;
 
@@ -327,7 +329,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
             {
                 // Don't cache it for now
                 auto info = getYouTubeInfo(titleReq.url);
-                state.reportYouTube(info, titleReq.event);
+                state.reportYouTube(info, titleReq.event, colouredOutgoing);
                 return;
             }
             else
@@ -344,7 +346,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache, 
         }
 
         auto lookup = lookupTitle(titleReq.url);
-        state.reportURL(lookup, titleReq.event);
+        state.reportURL(lookup, titleReq.event, colouredOutgoing);
         cache[titleReq.url] = lookup;
     }
     catch (const Exception e)
@@ -414,14 +416,23 @@ unittest
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
-void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event)
+void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event,
+    const bool colouredOutput)
 {
     string line;
 
     if (lookup.domain.length)
     {
         import std.format : format;
-        line = "[%s] %s".format(lookup.domain, lookup.title);
+
+        if (colouredOutput)
+        {
+            line = "[%s] %s".format(lookup.domain.ircBold, lookup.title);
+        }
+        else
+        {
+            line = "[%s] %s".format(lookup.domain, lookup.title);
+        }
     }
     else
     {
@@ -442,11 +453,22 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +/
-void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event)
+void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event,
+    const bool colouredOutput)
 {
     import std.format : format;
 
-    immutable line = "[youtube.com] %s (uploaded by %s)".format(info.title, info.author);
+    string line;
+
+    if (colouredOutput)
+    {
+        line = "[%s] %s (uploaded by %s)".format("youtube.com".ircBold, info.title, info.author.ircBold);
+    }
+    else
+    {
+        line = "[youtube.com] %s (uploaded by %s)".format(info.title, info.author);
+    }
+
     state.privmsg(event.channel, event.sender.nickname, line);
 }
 

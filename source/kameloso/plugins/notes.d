@@ -21,6 +21,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common;
+import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 
 
@@ -66,13 +67,39 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-                plugin.chan(event.channel, "%s! %s left note %s ago: %s"
-                    .format(event.sender.nickname, note.sender, timestamp, note.line));
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = "%s! %s left note %s ago: %s"
+                        .format(event.sender.nickname.ircBold, note.sender.ircBold,
+                        timestamp.ircBold, note.line);
+                }
+                else
+                {
+                    message = "%s! %s left note %s ago: %s"
+                        .format(event.sender.nickname, note.sender, timestamp, note.line);
+                }
+
+                plugin.chan(event.channel, message);
             }
             else
             {
-                plugin.chan(event.channel, "%s! You have %d notes."
-                    .format(event.sender.nickname, noteArray.length));
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    import std.conv : text;
+                    message = "%s! You have %s notes."
+                        .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
+                }
+                else
+                {
+                    message = "%s! You have %d notes."
+                        .format(event.sender.nickname, noteArray.length);
+                }
+
+                plugin.chan(event.channel, message);
 
                 foreach (const note; noteArray)
                 {
@@ -81,8 +108,18 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     immutable timestamp = (Clock.currTime - note.when)
                         .timeSince!(Yes.abbreviate);
 
-                    plugin.chan(event.channel, "%s %s ago: %s"
-                        .format(note.sender, timestamp, note.line));
+                    string report;
+
+                    if (settings.colouredOutgoing)
+                    {
+                        report = "%s %s ago: %s".format(note.sender.ircBold, timestamp, note.line);
+                    }
+                    else
+                    {
+                        report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
+                    }
+
+                    plugin.chan(event.channel, report);
                 }
             }
         }

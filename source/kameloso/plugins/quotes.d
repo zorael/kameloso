@@ -23,6 +23,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 import kameloso.common : logger, settings;
+import kameloso.irccolours : ircBold, ircColour, ircColourNick;
 import kameloso.messaging;
 
 
@@ -123,6 +124,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : stripped;
+    import std.format : format;
     import std.json : JSONException;
 
     // stripModesign to allow for quotes from @nickname and +dudebro
@@ -131,17 +133,35 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        import std.format : format;
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            `"%s" is not a valid account or nickname.`.format(specified));
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = `"%s" is not a valid account or nickname.`.format(specified.ircBold);
+        }
+        else
+        {
+            message = `"%s" is not a valid account or nickname.`.format(specified);
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
 
     void report(const string nickname, const string endQuote)
     {
-        import std.format : format;
-        plugin.privmsg(event.channel, event.sender.nickname,
-            "%s | %s".format(nickname, endQuote));
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = "%s | %s".format(nickname.ircColourNick.ircBold, endQuote);
+        }
+        else
+        {
+            message = "%s | %s".format(nickname, endQuote);
+        }
+
+        plugin.privmsg(event.channel, event.sender.nickname, message);
     }
 
     try
@@ -155,12 +175,19 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             {
                 return report(endAccount, quote);
             }
+
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "No quote on record for %s".format(replyUser.nickname.ircColourNick.ircBold);
+            }
             else
             {
-                import std.format : format;
-                plugin.privmsg(event.channel, event.sender.nickname,
-                    "No quote on record for %s".format(replyUser.nickname));
+                message = "No quote on record for %s".format(replyUser.nickname);
             }
+
+            plugin.privmsg(event.channel, event.sender.nickname, message);
         }
 
         void onFailure(const IRCUser failureUser)
@@ -221,6 +248,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     import kameloso.irc : isValidNickname, stripModesign;
     import kameloso.string : nom;
     import std.json : JSONException;
+    import std.format : format;
     import std.typecons : No, Yes;
 
     string slice = event.content;  // need mutable
@@ -231,9 +259,18 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
     if (!specified.isValidNickname(plugin.state.client.server))
     {
-        import std.format : format;
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            `"%s" is not a valid account or nickname.`.format(specified));
+        string message;
+
+        if (settings.colouredOutgoing)
+        {
+            message = `"%s" is not a valid account or nickname.`.format(specified.ircBold);
+        }
+        else
+        {
+            message = `"%s" is not a valid account or nickname.`.format(specified);
+        }
+
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -241,14 +278,25 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         try
         {
-            import std.format : format;
-
             plugin.addQuote(id, slice);
             plugin.quotes.save(plugin.quotesFile);
 
-            plugin.privmsg(event.channel, event.sender.nickname,
-                "Quote for %s saved (%d on record)"
-                .format(event.sender.nickname, plugin.quotes[id].array.length));
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                import std.conv : text;
+                message = "Quote for %s saved (%d on record)"
+                    .format(event.sender.nickname.ircColourNick.ircBold,
+                    plugin.quotes[id].array.length.text.ircBold);
+            }
+            else
+            {
+                message = "Quote for %s saved (%d on record)"
+                    .format(event.sender.nickname, plugin.quotes[id].array.length);
+            }
+
+            plugin.privmsg(event.channel, event.sender.nickname, message);
         }
         catch (const JSONException e)
         {
