@@ -365,12 +365,12 @@ string mapEffects(const string origLine, const uint fgBase = BashForeground.defa
  +  from an `kameloso.ircdefs.IRCEvent`.
  +
  +  Params:
- +      content = String to strip effects from.
+ +      line = String to strip effects from.
  +
  +  Returns:
  +      A string devoid of effects.
  +/
-string stripEffects(const string content)
+string stripEffects(const string line)
 {
     import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : contains;
@@ -380,9 +380,9 @@ string stripEffects(const string content)
     enum italicsCode = "" ~ I.italics;
     enum underlinedCode = "" ~ I.underlined;
 
-    if (!content.length) return string.init;
+    if (!line.length) return string.init;
 
-    return content
+    return line
         .stripColours
         .replace(boldCode, string.init)
         .replace(italicsCode, string.init)
