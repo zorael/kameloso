@@ -11,6 +11,7 @@ version(Colours)
     import kameloso.bash : BashBackground, BashForeground;
 }
 
+@safe:
 
 /// Official mIRC colour table.
 enum IRCColour
@@ -50,7 +51,7 @@ enum IRCColour
  +      bg = Background `IRCColour`.
  +/
 void ircColour(Sink)(auto ref Sink sink, const string line, const IRCColour fg,
-    const IRCColour bg = IRCColour.unset)
+    const IRCColour bg = IRCColour.unset) pure
 {
     import std.conv : to;
     import std.format : formattedWrite;
@@ -86,7 +87,7 @@ void ircColour(Sink)(auto ref Sink sink, const string line, const IRCColour fg,
  +  Returns:
  +      The passed line, encased within IRC colour tags.
  +/
-string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset)
+string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
     if (!line.length) return string.init;
 
@@ -116,7 +117,7 @@ string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRC
  +  Returns:
  +      An opening IRC colour token with the passed colours.
  +/
-string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset)
+string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
     import std.format : format;
 
@@ -192,7 +193,7 @@ unittest
  +  Returns:
  +      The passed nickname encased within IRC colour coding.
  +/
-string ircColourNick(const string nickname)
+string ircColourNick(const string nickname) pure
 {
     if (!nickname.length) return string.init;
 
@@ -227,7 +228,7 @@ unittest
  +  Returns:
  +      The passed line, in IRC bold.
  +/
-string ircBold(const string line)
+string ircBold(const string line) pure
 {
     return IRCControlCharacter.bold ~ line ~ IRCControlCharacter.bold;
 }
@@ -253,7 +254,7 @@ unittest
  +  Returns:
  +      The passed line, in IRC italics.
  +/
-string ircItalics(const string line)
+string ircItalics(const string line) pure
 {
     return IRCControlCharacter.italics ~ line ~ IRCControlCharacter.italics;
 }
@@ -280,7 +281,7 @@ unittest
  +  Returns:
  +      The passed line, in IRC italics.
  +/
-string ircUnderlined(const string line)
+string ircUnderlined(const string line) pure
 {
     return IRCControlCharacter.underlined ~ line ~ IRCControlCharacter.underlined;
 }
