@@ -3695,6 +3695,8 @@ enum IRCControlCharacter
     ctcp = 1,
     bold = 2,
     colour = 3,
+    reset = 15,
+    invert = 22,
     italics = 29,
     underlined = 31,
 }
