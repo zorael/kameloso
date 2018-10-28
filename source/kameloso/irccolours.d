@@ -340,19 +340,19 @@ string mapEffects(const string origLine, const uint fgBase = BashForeground.defa
     if (line.contains(I.bold))
     {
         // Bold is bash 1, mIRC 2
-        line = mapAlternatingEffectImpl!(I.bold, B.bold)(line);
+        line = mapEffectsImpl!(I.bold, B.bold)(line);
     }
 
     if (line.contains(I.italics))
     {
         // Italics is bash 3 (not really), mIRC 29
-        line = mapAlternatingEffectImpl!(I.italics, B.italics)(line);
+        line = mapEffectsImpl!(I.italics, B.italics)(line);
     }
 
     if (line.contains(I.underlined))
     {
         // Underlined is bash 4, mIRC 31
-        line = mapAlternatingEffectImpl!(I.underlined, B.underlined)(line);
+        line = mapEffectsImpl!(I.underlined, B.underlined)(line);
     }
 
     return line;
@@ -623,7 +623,7 @@ unittest
 }
 
 
-// mapAlternatingEffectImpl
+// mapEffectsImpl
 /++
  +  Replaces mIRC tokens with Bash effect codes, in an alternating fashion so as
  +  to support repeated effects toggling behaviour.
@@ -643,7 +643,7 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 version(Colours)
-string mapAlternatingEffectImpl(ubyte mircToken, ubyte bashEffectCode)(const string line)
+private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const string line)
 {
     import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
