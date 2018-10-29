@@ -161,16 +161,57 @@ Next checkMessages(ref IRCBot bot)
     /// Send a message to the server bypassing throttling.
     void immediateline(ThreadMessage.Immediateline, string line)
     {
-        // FIXME: quiet?
-        if (!settings.hideOutgoing) logger.trace("--> ", line);
-        bot.conn.sendline(line);
+        if (!settings.hideOutgoing)
+        {
+            version(Colours)
+            {
+                import kameloso.irccolours : mapEffects;
+                import kameloso.bash : BashForeground, BashBackground;
+
+                logger.trace("--> ", line.mapEffects);
+                bot.conn.sendline(line);
+            }
+            else
+            {
+                import kameloso.irccolours : stripEffects;
+
+                immutable noEffects = line.stripEffects;
+                logger.trace("--> ", noEffects);
+                bot.conn.sendline(noEffects);
+            }
+        }
+        else
+        {
+            bot.conn.sendline(line);
+        }
     }
 
     /// Echo a line to the terminal and send it to the server.
     void sendline(ThreadMessage.Sendline, string line)
     {
-        if (!settings.hideOutgoing) logger.trace("--> ", line);
-        bot.throttleline(line);
+        if (!settings.hideOutgoing)
+        {
+            version(Colours)
+            {
+                import kameloso.irccolours : mapEffects;
+                import kameloso.bash : BashForeground, BashBackground;
+
+                logger.trace("--> ", line.mapEffects);
+                bot.throttleline(line);
+            }
+            else
+            {
+                import kameloso.irccolours : stripEffects;
+
+                immutable noEffects = line.stripEffects;
+                logger.trace("--> ", noEffects);
+                bot.throttleline(noEffects);
+            }
+        }
+        else
+        {
+            bot.throttleline(line);
+        }
     }
 
     /// Send a line to the server without echoing it.
