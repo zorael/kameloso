@@ -312,13 +312,18 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "Automode %s! %s (%s) on %s: +%s"
-                .format(verb.ircBold, specified.ircColourNick.ircBold,
-                id.ircColourNick.ircBold, channel.ircBold, mode.ircBold);
+            immutable maybeAccount = (specified != id) ?
+                " (" ~ id.ircColourNick.ircBold ~ ')' : string.init;
+            message = "Automode %s! %s%s on %s: +%s"
+                .format(verb, specified.ircColourNick.ircBold,
+                maybeAccount, channel.ircBold, mode.ircBold);
         }
         else
         {
-            message = "Automode %s! %s (%s) on %s: +%s".format(verb, specified, id, channel, mode);
+            immutable maybeAccount = (specified != id) ?
+                " (" ~ id ~ ')' : string.init;
+            message = "Automode %s! %s%s on %s: +%s"
+                .format(verb, specified, maybeAccount, channel, mode);
         }
 
         plugin.state.privmsg(event.channel, event.sender.nickname, message);
