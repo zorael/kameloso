@@ -2,9 +2,9 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, some of which are proofs of concepts and examples. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work it's most often an easy case of specialcasing for that kind of event on that particular IRC network or server daemon.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's because we simply haven't encountered that type of event before. It's then an easy case of creating rules for that kind of event on that particular IRC network or server daemon.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -32,7 +32,6 @@ If nothing else it makes for a good read-only lurkbot.
 
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. On the other hand, the development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
-* so far outgoing IRC messages are uncoloured. There's nothing preventing it, we just need to implement it.
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -69,7 +68,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## Prerequisites
 
-You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires over 4Gb.
+You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires over 4 Gb.
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used, and the development release crashes when trying.
 
@@ -82,7 +81,7 @@ $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 ```
 
-Do not use `dub fetch` until we have released **v1.0.0**; it will download an ancient version.
+Do not use `dub fetch` until we have released **v1.0.0**. It will download an ancient version.
 
 ## Compiling
 
@@ -163,7 +162,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Repeated calls of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will remove any lines not corresponding to a valid setting, which includes old settings no longer in use *and comments*.
+Repeated calls of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will remove any lines not corresponding to a valid setting, which includes old settings no longer in use as well as comments.
 
 ### Display settings
 
