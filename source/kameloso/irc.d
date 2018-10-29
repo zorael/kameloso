@@ -27,8 +27,8 @@ version(AsAnApplication)
     version = PrintSanityFailures;
 
     /++
-     +  Have the `IRCClient` struct house extra things needed for an IRC *bot*, as
-     +  opposed the absolute minimum needed for an IRC *client* (or library).
+     +  Have the `IRCClient` struct house extra things needed for an IRC *bot*,
+     +  as opposed the absolute minimum needed for an IRC *client* (or library).
      +/
     version = RichClient;
 
@@ -1376,12 +1376,8 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +  `kameloso.ircdefs.IRCEvent`, complains about all of them and corrects some.
  +
  +  If version `PrintSanityFailures` it will print warning messages to the
- +  screen. If version `ThrowSanityFailures` it will throw an
- +  `IRCParseException` instead. If neither versions it will silently let the
- +  event pass on.
- +
- +  Unsure if it's wrong to mark as trusted, but we're only using
- +  `stdout.flush`, which surely *must* be trusted if `writeln` to `stdout` is?
+ +  screen, otherwise it will throw an `IRCParseException` instead. It will save
+ +  the error messages in `event.errors` in either case.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
