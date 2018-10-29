@@ -1384,7 +1384,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +/
-void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event) @trusted
+void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 {
     import std.array : Appender;
 
