@@ -577,7 +577,7 @@ string stripColours(const string line)
 {
     import kameloso.irc : I = IRCControlCharacter;
     import std.array : replace;
-    import std.regex : matchAll, regex, replaceAll;
+    import std.regex : matchAll, regex;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
@@ -599,10 +599,8 @@ string stripColours(const string line)
 
     if (strippedSomething)
     {
-        enum endPattern = I.colour ~ ""; // ~ "(?:[0-9])?";
-        auto endEngine = endPattern.regex;
-
-        slice = slice.replaceAll(endEngine, string.init);
+        // Remove ending tokens
+        slice = slice.replace("" ~ I.colour, string.init);
     }
 
     return slice;
