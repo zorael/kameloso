@@ -214,9 +214,8 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         }
         else
         {
-            import std.conv : text;
-            throw new IRCParseException(text("Unknown basic type: ",
-                typestring, " : please report this"), event);
+            throw new IRCParseException("Unknown basic type: " ~
+                typestring ~ ": please report this", event);
         }
     }
 
