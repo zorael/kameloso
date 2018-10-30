@@ -53,6 +53,8 @@ version(AsAnApplication)
  +
  +  Returns:
  +      A finished `kameloso.ircdefs.IRCEvent`.
+ +
+ +  Throws: `IRCParseException` if an empty string was passed.
  +/
 IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
@@ -129,6 +131,8 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
  +      parser = Reference to the current `IRCParser`.
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to start working
  +          on.
+ +
+ +  Throws: `IRCParseException` if an unknown type was encountered.
  +/
 void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
 {
@@ -383,6 +387,9 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
+ +
+ +  Throws: `IRCParseException` if conversion from typestring to `IRCEvent.Type`
+ +      or typestring to a number failed.
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -497,6 +504,10 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
+ +
+ +  Throws: `IRCParseException` if an unknown to-connect-type event was
+ +      encountered, or if the event was not recognised at all, as neither a
+ +      normal type nor a numeric.
  +/
 void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1698,6 +1709,8 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
+ +
+ +  Throws: `IRCParseException` on unknown CTCP types.
  +/
 void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -1957,6 +1970,8 @@ unittest
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
+ +
+ +  Throws: `IRCParseException` if something could not be parsed or converted.
  +/
 void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {

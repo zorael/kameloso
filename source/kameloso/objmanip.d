@@ -39,6 +39,10 @@ public import kameloso.meld;
  +
  +  Returns:
  +      `true` if a member was found and set, `false` if not.
+ +
+ +  Throws: `std.conv.ConvException` if a string could not be converted into an
+ +      array, if a passed string could not be converted into a bool, or if
+ +      `std.conv.to` failed to convert a string into wanted type T.
  +/
 bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const string valueToSet)
 {

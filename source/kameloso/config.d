@@ -72,6 +72,9 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
  +
  +  Returns:
  +      The contents of the supplied file.
+ +
+ +  Throws: `FileIsNotAFileException` if the configuration file is a directory,
+ +      a character file or any other non-file type we can't write to.
  +/
 string configReader(const string configFile)
 {

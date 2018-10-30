@@ -151,6 +151,8 @@ void pipereader(shared IRCPluginState newState)
  +
  +  Returns:
  +      A `std.stdio.File` repersenting the named FIFO we want to read from.
+ +
+ +  Throws: `std.file.FileException` if FIFO could not be created.
  +/
 File createFIFO(IRCPluginState state)
 {

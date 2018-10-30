@@ -276,6 +276,9 @@ void reloadClassifiersFromDisk(PersistenceService service)
  +  if one doesn't exist.
  +
  +  This ensures there will be a `"whitelist"` and `"blacklist"` array in it.
+ +
+ +  Throws: `kameloso.plugins.common.IRCPluginInitialisationException` on
+ +      failure loading the `user.json` file.
  +/
 void initResources(PersistenceService service)
 {

@@ -482,6 +482,9 @@ void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCE
  +
  +  Returns:
  +      A finished `TitleLookup`.
+ +
+ +  Throws: `Exception` if URL could not be fetched, or if no title could be
+ +      divined from it.
  +/
 TitleLookup lookupTitle(const string url)
 {
@@ -555,6 +558,8 @@ TitleLookup lookupTitle(const string url)
  +
  +  Returns:
  +      A `YouTubeVideoInfo` with members describing the looked-up video.
+ +
+ +  Throws: `Exception` if the YouTube ID was invalid and could not be queried.
  +/
 YouTubeVideoInfo getYouTubeInfo(const string url)
 {

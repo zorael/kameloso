@@ -53,6 +53,8 @@ import std.typecons : Flag, No, Yes;
  +  Returns:
  +      The string `line` from the start up to the separator token. The original
  +      variable is advanced to after the token.
+ +
+ +  Throws: `Exception` if the separator could not be found in the string.
  +/
 pragma(inline)
 T nom(Flag!"decode" decode = No.decode, T, C)(auto ref T line, const C separator,

@@ -73,6 +73,9 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
  +          dashes, with an equals sign between option name and value if
  +          applicable (in all cases except bools).
  +      rest = Remaining `args` and `option` s to call recursively.
+ +
+ +  Throws: `std.getopt.GetOptException` if no value of type T was passed to
+ +      option taking type T.
  +/
 void adjustGetopt(T, Rest...)(const string[] args, const string option, T* ptr, Rest rest)
 {

@@ -46,6 +46,9 @@ if (is(E == enum))
      +  Returns:
      +      The enum member whose name matches the enumstring string (not whose
      +      *value* matches the string).
+     +
+     +  Throws: `std.conv.ConvException` if no matching enum member with the
+     +      passed name could be found.
      +/
     E fromString(const string enumstring) pure
     {
@@ -183,6 +186,8 @@ unittest
  +
  +  Returns:
  +      An integer equalling the value of the passed hexadecimal string.
+ +
+ +  Throws: `std.conv.ConvException` if the hex string was malformed.
  +/
 uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(const string hex) pure
 {
