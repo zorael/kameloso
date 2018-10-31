@@ -38,13 +38,13 @@ struct QuotesSettings
 }
 
 
-// getQuote
+// getRandomQuote
 /++
  +  Fetches a quote for the specified nickname from the in-memory JSON array.
  +
  +  Example:
  +  ---
- +  string quote = plugin.getQuote(event.sender.nickame);
+ +  string quote = plugin.getRandomQuote(event.sender.nickame);
  +  if (!quote.length) return;
  +  // ...
  +  ---
@@ -57,7 +57,7 @@ struct QuotesSettings
  +      Random quote string. If no quote is available it returns an empty string
  +      instead.
  +/
-string getQuote(QuotesPlugin plugin, const string nickname)
+string getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
     immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
@@ -169,7 +169,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         void onSuccess(const IRCUser replyUser)
         {
             immutable endAccount = replyUser.account.length ? replyUser.account : replyUser.nickname;
-            immutable quote = plugin.getQuote(endAccount);
+            immutable quote = plugin.getRandomQuote(endAccount);
 
             if (quote.length)
             {
@@ -196,7 +196,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             return onSuccess(failureUser);
         }
 
-        immutable quote = plugin.getQuote(specified);
+        immutable quote = plugin.getRandomQuote(specified);
 
         if (quote.length)
         {
