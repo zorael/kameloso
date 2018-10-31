@@ -79,6 +79,13 @@ string getRandomQuote(QuotesPlugin plugin, const string nickname)
  +
  +  It does not save it to disk; this has to be done separately.
  +
+ +  Example:
+ +  ---
+ +  string nickname = "kameloso";
+ +  string line = "This is a line";
+ +  plugin.addQuote(nickname, line);
+ +  ---
+ +
  +  Params:
  +      plugin = Current `QuotesPlugin`.
  +      nickname = Nickname of the quoted user.

@@ -1351,6 +1351,11 @@ unittest
 /++
  +  Returns a string with the current date.
  +
+ +  Example:
+ +  ---
+ +  writeln("Current date ", datestamp);
+ +  ---
+ +
  +  Returns:
  +      A string with the current date.
  +/
@@ -1390,6 +1395,13 @@ void periodically(PrinterPlugin plugin)
 /++
  +  Returns a `std.datetime.systime.SysTime` of the following midnight, for use
  +  with setting the periodical timestamp.
+ +
+ +  Example:
+ +  ---
+ +  const now = Clock.currTime;
+ +  const midnight = getNextMidnight(now);
+ +  writeln("Time until next midnight: ", (midnight - now));
+ +  ---
  +
  +  Params:
  +      now = UNIX timestamp of the base date from which to proceed to the next

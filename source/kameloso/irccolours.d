@@ -351,6 +351,12 @@ char ircReset()
 /++
  +  Maps mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
  +
+ +  Example:
+ +  ---
+ +  string mIRCEffectString = "...";
+ +  string bashEffectString = mapEffects(mIRCEffectString);
+ +  ---
+ +
  +  Params:
  +      origLine = String line to map effects of.
  +      fgBase = Foreground base code to reset to after end colour tags.

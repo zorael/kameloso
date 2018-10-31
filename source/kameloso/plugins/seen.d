@@ -157,6 +157,7 @@ final class SeenPlugin : IRCPlugin
      +  users' nicknames and with values that are UNIX timetamps, denoting when
      +  that user was last *seen* online.
      +
+     +  Example:
      +  ---
      +  seenUsers["joe"] = Clock.currTime.toUnixTime;
      +  auto now = Clock.currTime.toUnixTime;
@@ -727,6 +728,13 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +
  +  This is not annotated with an IRC event type and will merely be invoked from
  +  elsewhere, like any normal function.
+ +
+ +  Example:
+ +  ---
+ +  string potentiallySignedNickname = "@kameloso";
+ +  const now = Clock.currTime;
+ +  plugin.updateUser(potentiallySignedNickname, now);
+ +  ---
  +
  +  Params:
  +      plugin = Current `SeenPlugin`.

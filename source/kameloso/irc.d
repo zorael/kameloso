@@ -3045,6 +3045,7 @@ struct IRCParser
     /++
      +  Sets the server daemon and melds together the needed typenums.
      +
+     +  Example:
      +  ---
      +  IRCParser parser;
      +  parser.setDaemon(IRCServer.Daemon.unreal, daemonstring);

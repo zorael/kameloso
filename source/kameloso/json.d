@@ -13,6 +13,7 @@ module kameloso.json;
  +
  +  This deduplicates some code currently present in more than one plugin.
  +
+ +  Example:
  +  ---
  +  JSONStorage s;
  +  s.reset();  // not always neccessary

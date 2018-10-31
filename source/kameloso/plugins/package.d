@@ -16,6 +16,16 @@ public import kameloso.plugins.common;
  +  This allows us to import modules if they exist but otherwise silently still
  +  let it work without them.
  +
+ +  Example:
+ +  ---
+ +  mixin(tryImportMixin("proj.some.module_", "SymbolInside"));"
+ +  assert(__traits(compiles, SymbolInside));  // normal import
+ +
+ +  mixin(tryImportMixin("proj.some.invalidmodule", "FakeSymbol"));"  // failed import
+ +  assert(__traits(compiles, FakeSymbol));  // visible despite that
+ +  assert(is(FakeSymbol == AliasSeq!()));  // ...because it's aliased to nothing
+ +  ---
+ +
  +  Params:
  +      module_ = Fully qualified string name of the module to evaluate and
  +          potentially import.

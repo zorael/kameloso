@@ -71,6 +71,13 @@ struct Line
  +
  +  This clones the behaviour of the UNIX-like `echo "foo" | sed 's/foo/bar'`.
  +
+ +  Example:
+ +  ---
+ +  string line = "This is a line";
+ +  string expression = "s/s/z/g";
+ +  assert(line.sedReplace(expression) == "Thiz iz a line");
+ +  ---
+ +
  +  Params:
  +      originalLine = Line to apply the `sed`-replace pattern to.
  +      expression = Replacement pattern to apply.
