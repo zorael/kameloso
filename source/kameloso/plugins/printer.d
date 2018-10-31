@@ -669,6 +669,17 @@ void put(Sink, Args...)(auto ref Sink sink, Args args)
     }
 }
 
+///
+unittest
+{
+    import std.array : Appender;
+
+    Appender!string sink;
+
+    .put(sink, "abc", 123, "def", 456, true);
+    assert((sink.data == "abc123def456true"), sink.data);
+}
+
 
 // formatMessageMonochrome
 /++

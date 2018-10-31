@@ -70,6 +70,22 @@ void ircColour(Sink)(auto ref Sink sink, const string line, const IRCColour fg,
     sink.put(cast(char)IRCControlCharacter.colour);
 }
 
+///
+unittest
+{
+    import std.array : Appender;
+
+    alias I = IRCControlCharacter;
+    Appender!(char[]) sink;
+
+    sink.ircColour("kameloso", IRCColour.red, IRCColour.white);
+    assert((sink.data == I.colour ~ "04,00kameloso" ~ I.colour), sink.data);
+    sink.clear();
+
+    sink.ircColour("harbl", IRCColour.green);
+    assert((sink.data == I.colour ~ "03harbl" ~ I.colour), sink.data);
+}
+
 
 // ircColour
 /++
@@ -99,6 +115,18 @@ string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRC
     sink.ircColour(line, fg, bg);
 
     return sink.data;
+}
+
+///
+unittest
+{
+    alias I = IRCControlCharacter;
+
+    immutable redwhite = "kameloso".ircColour(IRCColour.red, IRCColour.white);
+    assert((redwhite == I.colour ~ "04,00kameloso" ~ I.colour), redwhite);
+
+    immutable green = "harbl".ircColour(IRCColour.green);
+    assert((green == I.colour ~ "03harbl" ~ I.colour), green);
 }
 
 
@@ -134,9 +162,6 @@ string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 ///
 unittest
 {
-    import std.string;
-    import std.stdio;
-
     alias I = IRCControlCharacter;
 
     with (IRCColour)
@@ -210,9 +235,21 @@ unittest
 {
     alias I = IRCControlCharacter;
 
+    // Colour based on hash
+
     {
         immutable actual = "kameloso".ircColourNick;
         immutable expected = I.colour ~ "01kameloso" ~ I.colour;
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = "kameloso^".ircColourNick;
+        immutable expected = I.colour ~ "09kameloso^" ~ I.colour;
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = "kameloso^11".ircColourNick;
+        immutable expected = I.colour ~ "05kameloso^11" ~ I.colour;
         assert((actual == expected), actual);
     }
 }
