@@ -966,6 +966,8 @@ unittest
  +  Displays an error on how to complete a minimal configuration file.
  +
  +  It assumes that the client's `admins` and `homes` are both empty.
+ +
+ +  Used in both `kameloso.getopt` and `kameloso.main`, so place it here.
  +/
 void complainAboutIncompleteConfiguration()
 {
