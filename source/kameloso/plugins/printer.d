@@ -246,7 +246,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     }
 
     immutable logLocation = plugin.logDirectory.expandTilde;
-    if (!plugin.verifyLogLocation(logLocation)) return;
+    if (!plugin.establishLogLocation(logLocation)) return;
 
     import std.algorithm.searching : canFind;
     if (!plugin.printerSettings.logAllChannels &&
@@ -467,10 +467,17 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 }
 
 
-// verifyLogLocation
+// establishLogLocation
 /++
  +  Verifies that a log directory exists, complaining if it's invalid, creating
  +  it if it doesn't exist.
+ +
+ +  Example:
+ +  ---
+ +  assert(!("~/logs".isDir));
+ +  bool locationIsOkay = establishLogLocation("~/logs");
+ +  assert("~/logs".isDir);
+ +  ---
  +
  +  Params:
  +      logLocation = String of the location directory we want to store logs in.
@@ -478,7 +485,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
  +  Returns:
  +      A bool whether or not the log location is valid.
  +/
-bool verifyLogLocation(PrinterPlugin plugin, const string logLocation)
+bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 {
     import std.file : exists, isDir;
 
