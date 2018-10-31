@@ -24,6 +24,11 @@ private:
 import kameloso.plugins.common;
 import kameloso.ircdefs;
 
+version(Colours)
+{
+    import kameloso.bash : BashForeground;
+}
+
 
 // postprocess
 /++
@@ -579,7 +584,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 version(Colours)
 void highlightEmotes(ref IRCEvent event)
 {
-    import kameloso.bash : BashForeground, colour;
+    import kameloso.bash : colour;
     import kameloso.common : settings;
     import kameloso.constants : DefaultColours;
     import kameloso.string : contains;
@@ -648,75 +653,72 @@ void highlightEmotes(ref IRCEvent event)
  +      post = Bash foreground tint to reset to after colouring an emote.
  +/
 version(Colours)
+void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
+    const string emotes, const BashForeground pre, const BashForeground post)
 {
-    import kameloso.bash : BashForeground;
-    void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
-        const string emotes, const BashForeground pre, const BashForeground post)
+    import std.algorithm.iteration : splitter;
+    import std.conv : to;
+
+    struct Highlight
     {
-        import std.algorithm.iteration : splitter;
-        import std.conv : to;
-
-        struct Highlight
-        {
-            size_t start;
-            size_t end;
-        }
-
-        // max encountered emotes so far: 46
-        // Severely pathological let's-crash-the-bot case: max possible ~161 emotes
-        // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
-        // Highlight[162].sizeof == 2592, manageable stack size.
-        enum maxHighlights = 162;
-
-        Highlight[maxHighlights] highlights;
-
-        size_t numHighlights;
-        size_t pos;
-
-        foreach (emote; emotes.splitter("/"))
-        {
-            import kameloso.string : nom;
-            emote.nom(':');
-
-            foreach (location; emote.splitter(","))
-            {
-                import std.string : indexOf;
-
-                if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
-
-                immutable dashPos = location.indexOf('-');
-                immutable start = location[0..dashPos].to!size_t;
-                immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
-
-                highlights[numHighlights++] = Highlight(start, end);
-            }
-        }
-
-        import std.algorithm.sorting : sort;
-        highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
-
-        // We need a dstring since we're slicing something that isn't neccessarily ASCII
-        // Without this highlights become offset a few characters depnding on the text
-        immutable dline = line.to!dstring;
-
-        foreach (immutable i; 0..numHighlights)
-        {
-            import kameloso.bash : colour;
-
-            immutable start = highlights[i].start;
-            immutable end = highlights[i].end;
-
-            sink.put(dline[pos..start]);
-            sink.colour(pre);
-            sink.put(dline[start..end]);
-            sink.colour(post);
-
-            pos = end;
-        }
-
-        // Add the remaining tail from after the last emote
-        sink.put(dline[pos..$]);
+        size_t start;
+        size_t end;
     }
+
+    // max encountered emotes so far: 46
+    // Severely pathological let's-crash-the-bot case: max possible ~161 emotes
+    // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
+    // Highlight[162].sizeof == 2592, manageable stack size.
+    enum maxHighlights = 162;
+
+    Highlight[maxHighlights] highlights;
+
+    size_t numHighlights;
+    size_t pos;
+
+    foreach (emote; emotes.splitter("/"))
+    {
+        import kameloso.string : nom;
+        emote.nom(':');
+
+        foreach (location; emote.splitter(","))
+        {
+            import std.string : indexOf;
+
+            if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
+
+            immutable dashPos = location.indexOf('-');
+            immutable start = location[0..dashPos].to!size_t;
+            immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
+
+            highlights[numHighlights++] = Highlight(start, end);
+        }
+    }
+
+    import std.algorithm.sorting : sort;
+    highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
+
+    // We need a dstring since we're slicing something that isn't neccessarily ASCII
+    // Without this highlights become offset a few characters depnding on the text
+    immutable dline = line.to!dstring;
+
+    foreach (immutable i; 0..numHighlights)
+    {
+        import kameloso.bash : colour;
+
+        immutable start = highlights[i].start;
+        immutable end = highlights[i].end;
+
+        sink.put(dline[pos..start]);
+        sink.colour(pre);
+        sink.put(dline[start..end]);
+        sink.colour(post);
+
+        pos = end;
+    }
+
+    // Add the remaining tail from after the last emote
+    sink.put(dline[pos..$]);
 }
 
 ///
