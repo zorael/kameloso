@@ -334,7 +334,7 @@ struct IRCBot
      +  Aggregate of values and state needed to throttle messages without
      +  polluting namespace too much.
      +/
-    struct ThrottleValues
+    private struct ThrottleValues
     {
         /// Graph constant modifier (inclination, MUST be negative).
         enum k = -1.2;
