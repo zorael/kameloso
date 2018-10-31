@@ -302,6 +302,8 @@ unittest
  +          (between multiple threads).
  +      cache = Reference to the cache of previous `TitleLookup`s.
  +      titleReq = Current title request.
+ +      colouredOutgoing = Whether or not to include mIRC colours in outgoing
+ +          messages.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     TitleRequest titleReq, const bool colouredOutgoing)
@@ -415,6 +417,8 @@ unittest
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      colouredOutput = Whether or not to include mIRC colours in outgoing
+ +          messages.
  +/
 void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event,
     const bool colouredOutput)
@@ -452,6 +456,8 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      lookup = Finished title lookup.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      colouredOutput = Whether or not to include mIRC colours in outgoing
+ +          messages.
  +/
 void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event,
     const bool colouredOutput)
