@@ -12,6 +12,11 @@ import std.experimental.logger : Logger;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
+version(Colours)
+{
+    private import kameloso.bash : BashForeground;
+}
+
 @safe:
 
 version(unittest)
@@ -560,15 +565,12 @@ struct IRCBot
  +  Params:
  +      colourCode = Bash foreground colour to display the text in.
  +/
-version(Colours)
-{
-    import kameloso.bash : BashForeground;
 
-    void printVersionInfo(BashForeground colourCode)
-    {
-        import kameloso.bash : colour;
-        return printVersionInfo(colourCode.colour, BashForeground.default_.colour);
-    }
+version(Colours)
+void printVersionInfo(BashForeground colourCode)
+{
+    import kameloso.bash : colour;
+    return printVersionInfo(colourCode.colour, BashForeground.default_.colour);
 }
 
 
