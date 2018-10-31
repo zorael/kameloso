@@ -47,6 +47,8 @@ version(AsAnApplication)
  +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them, in order.
  +
+ +  See `tests/events.d` for unittest examples.
+ +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
  +      raw = Raw IRC string to parse.
@@ -114,6 +116,41 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
     parser.postparseSanityCheck(event);
 
     return event;
+}
+
+///
+unittest
+{
+    IRCParser parser;
+
+    // parser.toIRCEvent technically calls IRCParser.toIRCEvent, but it in turn
+    // just passes on to this .toIRCEvent
+
+    // See tests/events.d for more
+
+    {
+        immutable event = parser.toIRCEvent(":adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert(type == RPL_WELCOME);
+            assert(sender.address == "adams.freenode.net"),
+            assert(target.nickname == "kameloso^");
+            assert(content == "Welcome to the freenode Internet Relay Chat Network kameloso^");
+            assert(num == 1);
+        }
+    }
+    {
+        immutable event = parser.toIRCEvent(":irc.portlane.se 020 * :Please wait while we process your connection.");
+        with (IRCEvent.Type)
+        with (event)
+        {
+            assert(type == RPL_HELLO);
+            assert(sender.address == "irc.portlane.se");
+            assert(content == "Please wait while we process your connection.");
+            assert(num == 20);
+        }
+    }
 }
 
 
