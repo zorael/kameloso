@@ -401,7 +401,7 @@ unittest
  +      The calculated *minimum* number of bytes allocated for the passed
  +      object.
  +/
-uint deepSizeof(T)(const T thing) pure @nogc @safe @property
+uint deepSizeof(T)(const T thing) pure @nogc @safe
 {
     import std.traits : isArray, isAssociativeArray;
 

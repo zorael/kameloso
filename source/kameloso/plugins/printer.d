@@ -1336,7 +1336,7 @@ unittest
  +  Returns:
  +      A string with the current date.
  +/
-string datestamp() @property
+string datestamp()
 {
     import std.format : format;
     import std.datetime.systime : Clock;

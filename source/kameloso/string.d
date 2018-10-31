@@ -276,7 +276,7 @@ unittest
  +  Returns:
  +      A slice of the passed string line without enclosing tokens.
  +/
-private T unenclosed(char token = '"', T)(const T line) pure nothrow @nogc @property
+private T unenclosed(char token = '"', T)(const T line) pure nothrow @nogc
 if (isSomeString!T)
 {
     enum escaped = "\\" ~ token;
@@ -322,7 +322,7 @@ if (isSomeString!T)
  +      A slice of the `line` argument that excludes the quotes.
  +/
 pragma(inline)
-T unquoted(T)(const T line) pure nothrow @nogc @property
+T unquoted(T)(const T line) pure nothrow @nogc
 {
     return unenclosed!'"'(line);
 }
@@ -360,7 +360,7 @@ unittest
  +      A slice of the `line` argument that excludes the single-quotes.
  +/
 pragma(inline)
-T unsinglequoted(T)(const T line) pure nothrow @nogc @property
+T unsinglequoted(T)(const T line) pure nothrow @nogc
 {
     return unenclosed!'\''(line);
 }
@@ -787,7 +787,7 @@ unittest
  +  Returns:
  +      Whitespace equalling (`num` * `spaces`) spaces.
  +/
-auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc @property
+auto tabs(uint spaces = 4)(const int num) pure nothrow @nogc
 {
     import std.range : repeat, takeExactly;
     import std.algorithm.iteration : joiner;
@@ -922,7 +922,7 @@ unittest
  +  Returns:
  +      The passed line without any trailing whitespace or linebreaks.
  +/
-string strippedRight(const string line) pure nothrow @nogc @property
+string strippedRight(const string line) pure nothrow @nogc
 {
     if (!line.length) return line;
 
@@ -993,7 +993,7 @@ unittest
  +  Returns:
  +      The passed line without any preceding whitespace or linebreaks.
  +/
-string strippedLeft(const string line) pure nothrow @nogc @property
+string strippedLeft(const string line) pure nothrow @nogc
 {
     if (!line.length) return line;
 
@@ -1065,7 +1065,7 @@ unittest
  +  Returns:
  +      The passed line, stripped of surrounding whitespace.
  +/
-string stripped(const string line) pure nothrow @nogc @property
+string stripped(const string line) pure nothrow @nogc
 {
     return line.strippedLeft.strippedRight;
 }

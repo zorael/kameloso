@@ -1030,7 +1030,7 @@ else version(FreeBSD)
  +  Returns:
  +      A string path to the default configuration file.
  +/
-string defaultConfigurationPrefix() @property
+string defaultConfigurationPrefix()
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
@@ -1104,7 +1104,7 @@ unittest
  +  Returns:
  +      A string path to the default resource directory.
  +/
-string defaultResourcePrefix() @property
+string defaultResourcePrefix()
 {
     import std.path : buildNormalizedPath;
     import std.process : environment;
