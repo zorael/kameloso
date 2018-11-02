@@ -1347,6 +1347,177 @@ unittest
 }
 
 
+// abbreviateBadges
+/++
+ +  Abbreviates a string of Twitch badges, to summarise all of them instead of
+ +  picking the dominant one and just displaying that.
+ +
+ +  Most are just summarised by the first letter in the badge (lowercase), but
+ +  there would be collisions (subscriber vs sub-gifter, etc), so we make some
+ +  exceptions by capitalising some common ones and rewriting others. Leave as
+ +  many lowercase characters open as possible for unexpected badges.
+ +
+ +  It's a bit more confusing this way but it's a solid fact that users often
+ +  have more than one badge, and we were singling out just one.
+ +
+ +  Using an associative array is an alternative approach. It's faster, but uses
+ +  the heap. From the documentation:
+ +
+ +      The following constructs may allocate memory using the garbage
+ +      collector:
+ +          [...]
+ +          * Any insertion, removal, or lookups in an associative array
+ +
+ +  It would look like the following:
+ +  ---
+ +  version(TwitchSupport)
+ +  static immutable char[string] stringBadgeMap;
+ +
+ +  version(TwitchSupport)
+ +  shared static this()
+ +  {
+ +      stringBadgeMap =
+ +      [
+ +          "subscriber"    : 'S',
+ +          "bits"          : 'C',
+ +          "sub-gifter"    : 'G',
+ +          "premium"       : 'P',
+ +          "turbo"         : 'T',
+ +          "moderator"     : 'M',
+ +          "partner"       : '+',
+ +          "broadcaster"   : 'B',
+ +          "twitchcon2017" : '7',
+ +          "twitchcon2018" : '8',
+ +          "bits-leader"   : 'L',
+ +          "staff"         : '*',
+ +          "admin"         : 'A',
+ +      ];
+ +  }
+ + ---
+ +
+ +  Use the string switch for now. It's still plenty fast.
+ +
+ +  Params:
+ +      badgestring = Badges from a Twitch `badges=` IRCv3 tag.
+ +
+ +  Returns:
+ +      A string with the passed badges abbreviated, one character per badge.
+ +/
+version(TwitchSupport)
+string abbreviateBadges(const string badgestring)
+{
+    import std.algorithm.iteration : splitter;
+    import std.array : Appender;
+
+    Appender!string abbreviated;
+    abbreviated.reserve(8);  // most are 1-2
+
+    foreach (immutable badgeAndNum; badgestring.splitter(","))
+    {
+        import kameloso.string : nom;
+
+        string slice = badgeAndNum;
+        immutable badge = slice.nom('/');
+
+        char badgechar;
+
+        switch (badge)
+        {
+        case "subscriber":
+            badgechar = 'S';
+            break;
+
+        case "bits":
+            // rewrite to the cheer it is represented as in the normal chat
+            badgechar = 'C';
+            break;
+
+        case "sub-gifter":
+            badgechar = 'G';
+            break;
+
+        case "premium":
+            badgechar = 'P';
+            break;
+
+        case "turbo":
+            badgechar = 'T';
+            break;
+
+        case "moderator":
+            badgechar = 'M';
+            break;
+
+        case "partner":
+            badgechar = '+';
+            break;
+
+        case "broadcaster":
+            badgechar = 'B';
+            break;
+
+        case "twitchcon2017":
+            badgechar = '7';
+            break;
+
+        case "twitchcon2018":
+            badgechar = '8';
+            break;
+
+        case "bits-leader":
+            badgechar = 'L';
+            break;
+
+        case "staff":
+            badgechar = '*';
+            break;
+
+        case "admin":
+            badgechar ='A';
+            break;
+
+        default:
+            badgechar = badge[0];
+            break;
+        }
+
+        abbreviated.put(badgechar);
+    }
+
+    return abbreviated.data;
+}
+
+///
+unittest
+{
+    {
+        immutable badges = "subscriber/24,bits/1000";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "SC"), abbreviated);
+    }
+    {
+        immutable badges = "moderator/1,subscriber/24";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "MS"), abbreviated);
+    }
+    {
+        immutable badges = "subscriber/72,premium/1,twitchcon2017/1,bits/1000";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "SP7C"), abbreviated);
+    }
+    {
+        immutable badges = "broadcaster/0";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "B"), abbreviated);
+    }
+    {
+        immutable badges = "harbl/42,snarbl/99,subscriber/4,bits/10000";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "hsSC"), abbreviated);
+    }
+}
+
+
 // datestamp
 /++
  +  Returns a string with the current date.
