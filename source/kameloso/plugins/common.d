@@ -217,13 +217,6 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
             static assert(0, "Unknown function signature in WHOISRequestImpl: " ~ typeof(fn).stringof);
         }
     }
-
-    /// Identify the queue entry, in case we ever need that.
-    void toString(scope void delegate(const(char)[]) @safe sink) const
-    {
-        import std.format : format;
-        sink("[%s] @ %s".format(event.type, event.sender.nickname));
-    }
 }
 
 unittest
