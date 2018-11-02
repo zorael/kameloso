@@ -272,12 +272,10 @@ If more state is necessary to replicate the environment, such as needing things 
 * pipedream zero: **no compiler segfaults**
 * pipedream: DCC
 * pipedream two: `ncurses`?
-* optional formatting in IRC output? (later if at all)
 * notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
-* automode channel awareness boost
-* private notes
-* Fiberify `connect.d`
+* private notes (later)
+* Fiberify `connect.d` (later)
 
 # Built with
 
