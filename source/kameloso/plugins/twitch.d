@@ -321,8 +321,8 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // badge (each in the format <badge>/<version>, such as admin/1).
             // Valid badge values: admin, bits, broadcaster, global_mod,
             // moderator, subscriber, staff, turbo.
-            // Save the whole list, let the printer single out the prominent one
-            event.sender.badge = value;
+            // Save the whole list, let the printer deal with which to display
+            event.sender.badges = value;
             break;
 
         case "mod":
