@@ -1024,8 +1024,8 @@ struct IRCUser
     {
         // Twitch has some extra features.
 
-        /// The highest priority "badge" the sender contains, in this context.
-        string badge;
+        /// The badges this user has.
+        string badges;
 
         /// The colour (RRGGBB) to tint the user's nickname with.
         string colour;
