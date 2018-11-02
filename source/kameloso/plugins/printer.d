@@ -752,21 +752,10 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badge.length && (event.type != IRCEvent.Type.JOIN))
+                if (sender.badges.length && (event.type != IRCEvent.Type.JOIN))
                 {
-                    import kameloso.string : contains, nom;
-                    immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
                     put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes)
-                    {
-                        put(sink, badgefront.asUpperCase);
-                    }
-                    else
-                    {
-                        put(sink, badgefront);
-                    }
-
+                    put(sink, abbreviateBadges(sender.badges));
                     put(sink, ']');
                 }
             }
@@ -795,15 +784,10 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (target.badge.length)
+                if (target.badges.length)
                 {
-                    import kameloso.string : contains, nom;
-                    immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
                     put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                    else put(sink, badgefront);
-
+                    put(sink, abbreviateBadges(target.badges));
                     put(sink, ']');
                 }
             }
@@ -1087,18 +1071,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badge.length && (type != IRCEvent.Type.JOIN))
+                if (sender.badges.length && (type != IRCEvent.Type.JOIN))
                 {
-                    import kameloso.string : contains, nom;
-                    import std.uni : asUpperCase;
-
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                    immutable badgefront = sender.badge.contains('/') ? sender.badge.nom('/') : sender.badge;
+
                     put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                    else put(sink, badgefront);
-
+                    put(sink, abbreviateBadges(sender.badges));
                     put(sink, ']');
                 }
             }
@@ -1152,18 +1130,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (target.badge.length)
+                if (target.badges.length)
                 {
-                    import kameloso.string : contains, nom;
-                    import std.uni : asUpperCase;
-
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
-                    immutable badgefront = target.badge.contains('/') ? target.badge.nom('/') : target.badge;
+
                     put(sink, " [");
-
-                    if (plugin.printerSettings.uppercaseTypes) put(sink, badgefront.asUpperCase);
-                    else put(sink, badgefront);
-
+                    put(sink, abbreviateBadges(target.badges));
                     put(sink, ']');
                 }
             }
