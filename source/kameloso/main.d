@@ -372,7 +372,11 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         default:
-            logger.warning("No outgoing event case for type ", type);
+            import kameloso.conv : Enum;
+
+            // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
+            logger.warning("No outgoing event case for type ",
+                Enum!(IRCEvent.Type).toString(type));
             line = content;
             break;
         }
