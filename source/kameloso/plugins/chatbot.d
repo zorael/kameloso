@@ -297,7 +297,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                 .format(cast(string)KamelosoInfo.version_,
                 cast(string)KamelosoInfo.built);
 
-            enum bannerColoured = "kameloso IRC bot".ircBold ~ " v%s, built %s"
+            enum bannerColoured = ("kameloso IRC bot v%s".ircBold ~ ", built %s")
                 .format(cast(string)KamelosoInfo.version_.ircBold,
                 cast(string)KamelosoInfo.built);
 
