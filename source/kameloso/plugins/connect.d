@@ -322,7 +322,7 @@ void tryAuth(ConnectService service)
 
         case rusnet:
             // Doesn't want a PRIVMSG
-            service.raw!(No.quiet)("NICKSERV IDENTIFY " ~ password);
+            service.raw!(Yes.quiet)("NICKSERV IDENTIFY " ~ password);
             if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
