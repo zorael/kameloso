@@ -1072,17 +1072,15 @@ struct IRCUser
                 case '\\':
                     lowercased[i] = '|';
                     continue;
-                default:
-                    break;
-                }
-
-                if (caseMapping == IRCServer.CaseMapping.rfc1459)
-                {
-                    if (c == '^')
+                case '^':
+                    if (caseMapping == IRCServer.CaseMapping.rfc1459)
                     {
                         lowercased[i] = '~';
                         continue;
                     }
+                    break;
+                default:
+                    break;
                 }
             }
 
