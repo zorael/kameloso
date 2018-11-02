@@ -540,5 +540,3 @@ unittest
       int asdf                    42
 `), '\n' ~ formatted);
 }
-
-
