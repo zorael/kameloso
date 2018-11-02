@@ -121,23 +121,18 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
 // onCommandHelp
 /++
- +  Starts the process of echoing all available bot commands to a user (in a
- +  private query). A hack.
+ +  Sends a list of all plugins' commands to the requesting user.
  +
  +  Plugins don't know about other plugins; the only thing they know of the
- +  outside world is the thread ID of the main thread `mainThread` of
- +  (`kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
+ +  outside world is the thread ID of the main thread `mainThread` (stored in
+ +  `kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
  +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated
  +  functions.
  +
- +  To work around this we save the initial requesting
- +  `kameloso.ircdefs.IRCEvent`, then send a concurrency message to the main
- +  thread asking for a const reference to the main
- +  `kameloso.common.IRCBot.plugins` array of
- +  `kameloso.plugins.common.IRCPlugin`s. We create a function in interface
- +  `kameloso.plugins.common.IRCPlugin` that passes said array on to the top-
- +  level `peekPlugins`, wherein we process the list and collect the bot command
- +  strings.
+ +  To work around this we construct a `CarryingFiber!(IRCPlugin[])` and send it
+ +  to the main thread. It will attach the client-global `plugins` array of
+ +  `IRCPlugin`s to it, and invoke the Fiber. The delegate inside will then
+ +  process the list as if it had taken the array as an argument.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
  +  which we remember since we saved the original `kameloso.ircdefs.IRCEvent`.
