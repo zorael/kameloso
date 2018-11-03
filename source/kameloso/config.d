@@ -394,6 +394,11 @@ pipyon 3
  +  Takes an input range containing configuration text and applies the contents
  +  therein to one or more passed struct/class objects.
  +
+ +  This is one of our last few uses of regex, but the use case lends itself to
+ +  it for separating values with the [ \t] deliminator. While slicing would
+ +  probably lower compilation memory use considerably, it becomes very tricky
+ +  as we're supporting both spaces and tabs.
+ +
  +  Example:
  +  ---
  +  IRCClient client;
@@ -417,12 +422,16 @@ pipyon 3
  +/
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
-    import kameloso.string : stripped;
+    import kameloso.string : stripSuffix, stripped;
+    import std.regex : matchFirst, regex;
+
+    enum pattern = r"^(\w+)\s+(.+)";
+    auto engine = pattern.regex;
 
     string section;
     string[][string] invalidEntries;
 
-    foreach (rawline; range)
+    foreach (const rawline; range)
     {
         string line = rawline.stripped;
         if (!line.length) continue;
@@ -440,47 +449,52 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             {
                 import std.format : formattedRead;
                 line.formattedRead("[%s]", section);
+
+                if (section == "IRCBot")
+                {
+                    // Compatibility with old configuration files pre IRCBot <-> IRCClient swap
+                    section = "IRCClient";
+                }
             }
             catch (const Exception e)
             {
-                logger.warningf(`Malformed configuration line "%s": %s`, line, e.msg);
+                logger.warningf(`Malformed configuration section header "%s": %s`, line, e.msg);
             }
-            break;
+            continue;
 
         default:
             // entry-value line
             if (!section.length)
             {
-                logger.warningf(`Malformed configuration line, orphan "%s"`, line);
+                logger.warningf(`Malformed configuration line, sectionless orphan "%s"`, line);
                 continue;
             }
 
-            import std.regex : matchFirst, regex;
+            static if (Things.length == 1)
+            {
+                import std.traits : Unqual;
 
-            enum pattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-            auto engine = pattern.regex;
+                enum settingslessThing = Unqual!Things.stringof.stripSuffix("Settings");
+                // Early continue if there's only one Thing and we're in the wrong section
+                if (section != settingslessThing) continue;
+            }
+
             auto hits = line.matchFirst(engine);
+
+            immutable entry = hits[1];
+            if (!entry.length) continue;  // both fields will be zero-length if bad match
+            string value = hits[2];  // mutable for later slicing
 
             thingloop:
             foreach (immutable i, thing; things)
             {
                 import std.traits : Unqual, hasUDA, isType;
                 alias T = Unqual!(typeof(thing));
+                enum settingslessT = T.stringof.stripSuffix("Settings");
+                if (section != settingslessT) continue;
 
                 static if (!is(T == enum))
                 {
-                    import kameloso.string : stripSuffix;
-
-                    if (section == "IRCBot")
-                    {
-                        // Compatibility with old configuration files pre IRCBot <-> IRCClient swap
-                        section = "IRCClient";
-                    }
-
-                    if (section != T.stringof.stripSuffix("Settings")) continue;
-
-                    immutable entry = hits["entry"];
-
                     switch (entry)
                     {
                         static foreach (immutable n; 0..things[i].tupleof.length)
@@ -495,14 +509,13 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                                     static if (hasUDA!(Things[i].tupleof[n], CannotContainComments))
                                     {
-                                        things[i].setMemberByName(entry, hits["value"]);
+                                        things[i].setMemberByName(entry, value);
                                     }
                                     else
                                     {
                                         import kameloso.string : contains, nom;
 
                                         // Slice away any comments
-                                        string value = hits["value"];
                                         value = value.contains('#') ? value.nom('#') : value;
                                         value = value.contains(';') ? value.nom(';') : value;
                                         things[i].setMemberByName(entry, value);
