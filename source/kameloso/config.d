@@ -73,8 +73,11 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
  +  Returns:
  +      The contents of the supplied file.
  +
- +  Throws: `FileIsNotAFileException` if the configuration file is a directory,
- +      a character file or any other non-file type we can't write to.
+ +  Throws:
+ +      `FileIsNotAFileException` if the configuration file is a directory, a
+ +      character file or any other non-file type we can't write to.
+ +      `ConfigurationFileReadFailureException` if the reading and decoding of
+ +      the configuration file failed.
  +/
 string configReader(const string configFile)
 {
@@ -84,12 +87,23 @@ string configReader(const string configFile)
     if (!configFile.exists) return string.init;
     else if (!configFile.isFile)
     {
-        throw new FileIsNotAFileException("Configuration file is not a file", configFile, __FILE__);
+        throw new FileIsNotAFileException("Configuration file is not a file",
+            configFile, __FILE__);
     }
 
-    return configFile
-        .readText
-        .chomp;
+    try
+    {
+        return configFile
+            .readText
+            .chomp;
+    }
+    catch (const Exception e)
+    {
+        // catch Exception instead of UTFException, just in case there are more
+        // kinds of error than the normal "Invalid UTF-8 sequence".
+        throw new ConfigurationFileReadFailureException(e.msg, configFile,
+            __FILE__, __LINE__);
+    }
 }
 
 
