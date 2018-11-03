@@ -200,7 +200,6 @@ import core.time : Duration;
 void interruptibleSleep(const Duration dur, const ref bool abort) @system
 {
     import core.thread : Thread, msecs, seconds;
-    import std.algorithm.comparison : min;
 
     static immutable step = 250.msecs;
     static immutable nothing = 0.seconds;
@@ -211,7 +210,7 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
     {
         if (abort) return;
 
-        immutable nextStep = min((left-step), step);
+        immutable nextStep = (left > step) ? step : left;
 
         if (nextStep <= nothing) break;
 
