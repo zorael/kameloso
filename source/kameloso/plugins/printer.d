@@ -1351,18 +1351,18 @@ unittest
  +      stringBadgeMap =
  +      [
  +          "subscriber"    : 'S',
- +          "bits"          : 'C',
+ +          "bits"          : 'C',  // cheer
  +          "sub-gifter"    : 'G',
- +          "premium"       : 'P',
+ +          "premium"       : 'P',  // prime
  +          "turbo"         : 'T',
  +          "moderator"     : 'M',
- +          "partner"       : '+',
+ +          "partner"       : 'V',  // verified
  +          "broadcaster"   : 'B',
  +          "twitchcon2017" : '7',
  +          "twitchcon2018" : '8',
  +          "bits-leader"   : 'L',
  +          "staff"         : '*',
- +          "admin"         : 'A',
+ +          "admin"         : '+',
  +      ];
  +  }
  + ---
@@ -1409,6 +1409,7 @@ string abbreviateBadges(const string badgestring)
             break;
 
         case "premium":
+            // prime
             badgechar = 'P';
             break;
 
@@ -1421,7 +1422,8 @@ string abbreviateBadges(const string badgestring)
             break;
 
         case "partner":
-            badgechar = '+';
+            // verified
+            badgechar = 'V';
             break;
 
         case "broadcaster":
@@ -1445,7 +1447,7 @@ string abbreviateBadges(const string badgestring)
             break;
 
         case "admin":
-            badgechar ='A';
+            badgechar ='+';
             break;
 
         default:
