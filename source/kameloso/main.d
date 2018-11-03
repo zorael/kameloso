@@ -977,9 +977,22 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import kameloso.config : FileIsNotAFileException;
+    import kameloso.config : ConfigurationFileReadFailureException, FileIsNotAFileException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
+
+    string logtint, errortint;
+
+    version(Colours)
+    {
+        if (!settings.monochrome)
+        {
+            import kameloso.logger : KamelosoLogger;
+
+            logtint = (cast(KamelosoLogger)logger).logtint;
+            errortint = (cast(KamelosoLogger)logger).errortint;
+        }
+    }
 
     try
     {
@@ -989,33 +1002,25 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
     }
     catch (const GetOptException e)
     {
-        logger.error("Error parsing command-line arguments: ", e.msg);
+        logger.error("Error parsing command-line arguments: ", logtint, e.msg);
     }
     catch (const ConvException e)
     {
-        logger.error("Error converting command-line arguments: ", e.msg);
+        logger.error("Error converting command-line arguments: ", logtint, e.msg);
     }
     catch (const FileIsNotAFileException e)
     {
-        string logtint, errortint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                errortint = (cast(KamelosoLogger)logger).errortint;
-            }
-        }
-
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             logtint, e.filename, errortint);
     }
+    catch (const ConfigurationFileReadFailureException e)
+    {
+        logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
+            logtint, e.filename, errortint, e.msg);
+    }
     catch (const Exception e)
     {
-        logger.error("Unhandled exception handling command-line arguments: ", e.msg);
+        logger.error("Unhandled exception handling command-line arguments: ", logtint, e.msg);
     }
 
     return Next.returnFailure;
