@@ -273,7 +273,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 {
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        pathBuffer.lines.put("\n");  // two lines
+                        pathBuffer.lines.put(string.init);  // one empty line
                         pathBuffer.lines.put(datestamp);
                     }
                     else
@@ -332,7 +332,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                     {
                         if (plugin.printerSettings.bufferedWrites)
                         {
-                            errBuffer.lines.put("\n");  // two lines
+                            errBuffer.lines.put(string.init);  // one empty line
                             errBuffer.lines.put(datestamp);
                         }
                         else
