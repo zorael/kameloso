@@ -649,7 +649,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
         }
 
         immutable justified = sink.data.justifiedConfigurationText;
-        writeToDisk!(Yes.addBanner)(filename, justified);
+        writeToDisk(filename, justified, Yes.addBanner);
     }
 }
 

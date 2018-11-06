@@ -22,7 +22,7 @@ import std.typecons : Flag, No, Yes;
  +  Appender!string sink;
  +  sink.serialise(client, client.server, settings);
  +  immutable configText = sink.data.justifiedConfigurationText;
- +  writeToDisk!(Yes.addBanner)("kameloso.conf", configText);
+ +  writeToDisk("kameloso.conf", configText, Yes.addBanner);
  +  ---
  +
  +  Params:
@@ -31,8 +31,8 @@ import std.typecons : Flag, No, Yes;
  +      filename = Filename of file to write to.
  +      configurationText = Content to write to file.
  +/
-void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
-    (const string filename, const string configurationText)
+void writeToDisk(const string filename, const string configurationText,
+    Flag!"addBanner" banner = Yes.addBanner)
 {
     import std.file : mkdirRecurse;
     import std.path : dirName;
@@ -43,7 +43,7 @@ void writeToDisk(Flag!"addBanner" banner = Yes.addBanner)
 
     auto file = File(filename, "w");
 
-    static if (banner)
+    if (banner)
     {
         import core.time : msecs;
         import std.datetime.systime : Clock;
