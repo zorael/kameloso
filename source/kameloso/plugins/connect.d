@@ -425,6 +425,34 @@ void onAuthEnd(ConnectService service)
 }
 
 
+// onAuthEndNotice
+/++
+ +  Flags authentication as finished and join channels.
+ +
+ +  Some networks/daemons (like RusNet) send the "authentication complete"
+ +  message as a `IRCEvent.Type.NOTICE` from `NickServ`, not a
+ +  `IRCEvent.Type.PRIVMSG`.
+ +
+ +  Whitelist more nicknames as we discover them. Also English only for now but
+ +  can be easily extended.
+ +/
+@(IRCEvent.Type.NOTICE)
+void onAuthEndNotice(ConnectService service, const IRCEvent event)
+{
+    import kameloso.string : beginsWith;
+
+    if ((event.sender.nickname == "NickServ") &&
+        event.content.beginsWith("Password accepted for nick"))
+    {
+        if (!service.joinedChannels)
+        {
+            service.joinChannels();
+            service.joinedChannels = true;
+        }
+    }
+}
+
+
 // onNickInUse
 /++
  +  Modifies the nickname by appending characters to the end of it.
