@@ -1020,6 +1020,12 @@ struct IRCUser
     /// Services account name (to `NickServ`, `AuthServ`, `Q`, etc).
     string account;
 
+    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
+    long lastWhois;
+
+    /// User classifier.
+    Class class_;
+
     version(TwitchSupport)
     {
         // Twitch has some extra features.
@@ -1030,9 +1036,6 @@ struct IRCUser
         /// The colour (RRGGBB) to tint the user's nickname with.
         string colour;
     }
-
-    /// User classifier.
-    Class class_;
 
 
     // toLowercase
@@ -1130,9 +1133,6 @@ struct IRCUser
             assert((lowercase == "^{0v0}^"), lowercase);
         }
     }
-
-    /// Timestamp when the user was last `WHOIS`ed, so it's not done too often.
-    long lastWhois;
 
     /// Create a new `IRCUser` based on a `*!*@*` mask string.
     this(string userstring) pure
