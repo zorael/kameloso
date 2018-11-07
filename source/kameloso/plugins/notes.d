@@ -170,8 +170,11 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
     import kameloso.irc : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
+    import std.uni : toLower;
 
-    if (event.channel !in plugin.notes) return;
+    immutable lowercaseChannel = event.channel.toLower;
+
+    if (lowercaseChannel !in plugin.notes) return;
 
     foreach (immutable signed; event.content.splitter)
     {
@@ -184,7 +187,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
         {
             type = IRCEvent.Type.JOIN;
             sender.nickname = nickname;
-            channel = event.channel;
+            channel = lowercaseChannel;
         }
 
         plugin.onReplayEvent(fakeEvent);
@@ -340,11 +343,12 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +      a Voldemort `Note[]` array, where `Note` is a struct containing a note
  +      and metadata thereto.
  +/
-auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
+auto getNotes(NotesPlugin plugin, const string casedChannel, const string nickname)
 {
     import std.datetime.systime : SysTime;
     import std.format : format;
     import std.json : JSON_TYPE;
+    import std.uni : toLower;
 
     struct Note
     {
@@ -353,12 +357,13 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
     }
 
     Note[] noteArray;
+    immutable channel = casedChannel.toLower;
 
     if (const channelNotes = channel in plugin.notes)
     {
         assert((channelNotes.type == JSON_TYPE.OBJECT),
             "Invalid channel notes list type for %s: %s"
-            .format(channel, channelNotes.type));
+            .format(casedChannel, channelNotes.type));
 
         immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
 
@@ -366,7 +371,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
         {
             assert((nickNotes.type == JSON_TYPE.ARRAY),
                 "Invalid notes list type for %s on %s: %s"
-                .format(nickname, channel, nickNotes.type));
+                .format(nickname, casedChannel, nickNotes.type));
 
             noteArray.length = nickNotes.array.length;
 
@@ -392,12 +397,13 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
  +      plugins = Current `NotesPlugin`.
  +      nickname = Nickname whose notes to clear.
  +/
-void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
+void clearNotes(NotesPlugin plugin, const string nickname, const string casedChannel)
 {
     import std.file : FileException;
     import std.format : format;
     import std.exception : ErrnoException;
     import std.json : JSONException, JSON_TYPE;
+    import std.uni : toLower;
 
     string infotint, logtint;
 
@@ -412,6 +418,8 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
         }
     }
 
+    immutable channel = casedChannel.toLower;
+
     try
     {
         immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
@@ -420,10 +428,10 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
         {
             assert((plugin.notes[channel].type == JSON_TYPE.OBJECT),
                 "Invalid channel notes list type for %s: %s"
-                .format(channel, plugin.notes[channel].type));
+                .format(casedChannel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-                infotint, nickname, logtint, channel);
+                infotint, nickname, logtint, casedChannel);
             plugin.notes[channel].object.remove(lowercased);
             plugin.pruneNotes();
         }
@@ -477,10 +485,11 @@ void pruneNotes(NotesPlugin plugin)
  +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
-    const string channel, const string line)
+    const string casedChannel, const string line)
 {
     import std.datetime.systime : Clock;
     import std.json : JSONValue;
+    import std.uni : toLower;
 
     if (!line.length)
     {
@@ -499,6 +508,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 
     auto asJSON = JSONValue(senderAndLine);
     asJSON["when"] = Clock.currTime.toUnixTime;  // workaround to the above
+    immutable channel = casedChannel.toLower;
 
     // If there is no channel in the JSON, add it
     if (channel !in plugin.notes)
