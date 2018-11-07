@@ -235,9 +235,11 @@ void onCommandShowUsers(AdminPlugin plugin)
 
     import kameloso.printing : printObject;
     import kameloso.objmanip : deepSizeof;
+    import std.stdio : stdout, writeln;
 
-    foreach (user; plugin.state.users)
+    foreach (immutable name, const user; plugin.state.users)
     {
+        writeln(name);
         printObject(user);
     }
 
@@ -1001,8 +1003,9 @@ void onCommandStatus(AdminPlugin plugin)
     //writeln();
 
     /*logger.log("Users:");
-    foreach (immutable nickname, const user; plugin.state.users)
+    foreach (immutable name, const user; plugin.state.users)
     {
+        writeln(name);
         printObject(user);
     }*/
 }
