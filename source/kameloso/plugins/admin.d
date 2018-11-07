@@ -1011,6 +1011,56 @@ void onCommandStatus(AdminPlugin plugin)
 }
 
 
+// onBusMessage
+/++
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`admin verb`"
+ +  header, and calls functions based on the payload message.
+ +
+ +  This is used in the Pipeline plugin, to allow us to trigger admin verbs via
+ +  the command-line pipe.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
+ +/
+import kameloso.thread : Sendable;
+void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
+{
+    if (header == "piped verb")
+    {
+        import kameloso.thread : BusMessage;
+
+        auto message = cast(BusMessage!string)content;
+        assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+        switch (message.payload)
+        {
+        case "status":
+            return plugin.onCommandStatus();
+
+        case "users":
+            return plugin.onCommandShowUsers();
+
+        case "printraw":
+            plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+            return;
+
+        case "printbytes":
+            plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+            return;
+
+        case "printasserts":
+            plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+            return;
+
+        default:
+            break;
+        }
+    }
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 
