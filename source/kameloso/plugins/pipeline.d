@@ -212,7 +212,7 @@ File createFIFO(IRCPluginState state)
         }
     }
 
-    state.askToLog("Pipe text to %s%s%s to send raw commands to the server."
+    state.askToLog("Pipe text to the [%s%s%s] file to send raw commands to the server."
         .format(infotint, filename, logtint));
 
     return File(filename, "r");
