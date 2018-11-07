@@ -756,9 +756,7 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
     // Only update the user if he/she is in a home channel.
     foreach (const channel; plugin.state.channels)
     {
-        import std.uni : toLower;
-
-        if (!plugin.state.client.homes.canFind(channel.name.toLower)) continue;
+        if (!plugin.state.client.homes.canFind(channel.name)) continue;
 
         if (channel.users.canFind(nickname))
         {
@@ -787,9 +785,7 @@ void updateAllUsers(SeenPlugin plugin)
 
     foreach (const channel; plugin.state.channels)
     {
-        import std.uni : toLower;
-
-        if (!plugin.state.client.homes.canFind(channel.name.toLower)) continue;
+        if (!plugin.state.client.homes.canFind(channel.name)) continue;
 
         foreach (const nickname; channel.users)
         {

@@ -232,7 +232,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     import std.file : FileException;
     import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : File, writeln;
-    import std.uni : toLower;
 
     // Ignore some types that would only show up in the log with the bot's name.
     with (IRCEvent.Type)
@@ -251,7 +250,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     import std.algorithm.searching : canFind;
     if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && !plugin.state.client.homes.canFind(event.channel.toLower))
+        event.channel.length && !plugin.state.client.homes.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;

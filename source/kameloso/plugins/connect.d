@@ -71,13 +71,10 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
-    import std.uni : toLower;
 
     with (service.state)
     {
-        immutable channel = event.channel.toLower;
-
-        immutable index = client.channels.countUntil(channel);
+        immutable index = client.channels.countUntil(event.channel);
 
         if (index != -1)
         {
@@ -86,7 +83,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
         }
         else
         {
-            immutable homeIndex = client.homes.countUntil(channel);
+            immutable homeIndex = client.homes.countUntil(event.channel);
 
             if (homeIndex != -1)
             {
@@ -113,15 +110,13 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 void onSelfjoin(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
-    import std.uni : toLower;
 
     with (service.state)
     {
-        immutable channel = event.channel.toLower;
-        if (!client.channels.canFind(channel) && !client.homes.canFind(channel))
+        if (!client.channels.canFind(event.channel) && !client.homes.canFind(event.channel))
         {
             // Track new channel in the channels array
-            client.channels ~= channel;
+            client.channels ~= event.channel;
             client.updated = true;
         }
     }

@@ -324,9 +324,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
-    import std.uni : toLower;
 
-    immutable channelToAdd = event.content.stripped.toLower;
+    immutable channelToAdd = event.content.stripped;
 
     if (!channelToAdd.isValidChannel(plugin.state.client.server))
     {
@@ -364,9 +363,8 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             const followupEvent = thisFiber.payload;
-            immutable followupChannel = followupEvent.channel.toLower;
 
-            if (followupChannel != channelToAdd)
+            if (followupEvent.channel != channelToAdd)
             {
                 // Different channel; yield and reset fiber, wait for another event
                 thisFiber.payload = IRCEvent.init;
@@ -386,7 +384,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             case ERR_LINKCHANNEL:
                 // We were redirected. Still assume we wanted to add this one?
                 logger.log("Redirected!");
-                client.homes ~= followupChannel;
+                client.homes ~= followupEvent.content;
                 // Drop down and undo original addition
                 break;
 
@@ -400,16 +398,9 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             import std.algorithm.mutation : SwapStrategy, remove;
             import std.algorithm.searching : countUntil;
 
-            immutable homeIndex = client.homes.countUntil(followupChannel);
-            if (homeIndex > 0)
-            {
-                client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
-                client.updated = true;
-            }
-            else
-            {
-                logger.error("Tried to remove a non-existent home channel");
-            }
+            immutable homeIndex = client.homes.countUntil(followupEvent.channel);
+            client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
+            client.updated = true;
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&dg);
@@ -458,10 +449,8 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     import kameloso.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.uni : toLower;
 
-    immutable channelCased = event.content.stripped;
-    immutable channel = channelCased.toLower;
+    immutable channel = event.content.stripped;
 
     with (plugin.state)
     {
@@ -475,11 +464,11 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 
             if (settings.colouredOutgoing)
             {
-                message = "Channel %s was not listed as a home.".format(channelCased.ircBold);
+                message = "Channel %s was not listed as a home.".format(channel.ircBold);
             }
             else
             {
-                message = "Channel %s was not listed as a home.".format(channelCased);
+                message = "Channel %s was not listed as a home.".format(channel);
             }
 
             plugin.state.privmsg(event.channel, event.sender.nickname, message);

@@ -51,17 +51,14 @@ void populateAutomodes(AutomodePlugin plugin)
     import kameloso.string : contains;
     import std.conv : text;
     import std.json : JSON_TYPE;
-    import std.uni : toLower;
 
-    JSONStorage automodesJSON;
-    automodesJSON.load(plugin.automodeFile);
+    JSONStorage automodes;
+    automodes.load(plugin.automodeFile);
     plugin.automodes = typeof(plugin.automodes).init;
 
-    foreach (immutable casedChannel, const modesignsJSON; automodesJSON.object)
+    foreach (immutable channel, const modesigns; automodes.object)
     {
-        immutable channel = casedChannel.toLower;
-
-        foreach (immutable account, const modesign; modesignsJSON.object)
+        foreach (immutable account, const modesign; modesigns.object)
         {
             // Lowercase it, just in case an account was manually added cased.
             // Only done once at plugin load anyway, so not expensive.
@@ -175,13 +172,9 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     import std.array : array, join;
     import std.format : format;
     import std.range : repeat;
-    import std.uni : toLower;
 
-    foreach (immutable casedChannel, const channelAccounts; plugin.automodes)
+    foreach (immutable channel, const channelAccounts; plugin.automodes)
     {
-        immutable channel = casedChannel.toLower;
-
-        // channel always lowercase since in plugin.automodes
         if (!plugin.state.client.homes.canFind(channel)) continue;
 
         immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
@@ -218,12 +211,12 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
             }
 
             logger.log("Could not apply this automode because we are not an operator in the channel:");
-            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s", infotint, casedChannel, logtint, *modes, nickname);
+            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s", infotint, channel, logtint, *modes, nickname);
             continue;
         }
 
         plugin.state.raw!(No.quiet)("MODE %s %s%s %s"
-            .format(casedChannel, "+".repeat(modes.length).join, *modes, nickname));
+            .format(channel, "+".repeat(modes.length).join, *modes, nickname));
         plugin.appliedAutomodes[channel][lowercased] = true;
     }
 }
@@ -257,7 +250,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     string line = event.content;  // need mutable
 
-    immutable casedChannel = line.nom!(Yes.decode)(" ");
+    immutable channel = line.nom!(Yes.decode)(" ");
     immutable specified = line.nom!(Yes.decode)(" ");
 
     while (line.beginsWith("+"))
@@ -267,17 +260,17 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     immutable mode = line;
 
-    if (!casedChannel.isValidChannel(plugin.state.client.server))
+    if (!channel.isValidChannel(plugin.state.client.server))
     {
         string message;
 
         if (settings.colouredOutgoing)
         {
-            message = "Invalid channel: " ~ casedChannel.ircColour(IRCColour.red).ircBold;
+            message = "Invalid channel: " ~ channel.ircColour(IRCColour.red).ircBold;
         }
         else
         {
-            message = "Invalid channel: " ~ casedChannel;
+            message = "Invalid channel: " ~ channel;
         }
 
         plugin.state.privmsg(event.channel, event.sender.nickname, message);
@@ -309,9 +302,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     void onSuccess(const string id)
     {
         import std.format : format;
-        import std.uni : toLower;
 
-        immutable channel = casedChannel.toLower;
         immutable verb = (channel in plugin.automodes) && (id in plugin.automodes[channel]) ? "updated" : "added";
         immutable lowercased = IRCUser.toLowercase(id, plugin.state.client.server.caseMapping);
 
@@ -325,14 +316,14 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
                 " (" ~ id.ircColourNick.ircBold ~ ')' : string.init;
             message = "Automode %s! %s%s on %s: +%s"
                 .format(verb, specified.ircColourNick.ircBold,
-                maybeAccount, casedChannel.ircBold, mode.ircBold);
+                maybeAccount, channel.ircBold, mode.ircBold);
         }
         else
         {
             immutable maybeAccount = (specified != id) ?
                 " (" ~ id ~ ')' : string.init;
             message = "Automode %s! %s%s on %s: +%s"
-                .format(verb, specified, maybeAccount, casedChannel, mode);
+                .format(verb, specified, maybeAccount, channel, mode);
         }
 
         plugin.state.privmsg(event.channel, event.sender.nickname, message);
@@ -381,7 +372,6 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     import kameloso.string : nom;
     import std.algorithm.searching : count;
-    import std.uni : toLower;
 
     if (event.content.count(" ") != 1)
     {
@@ -392,8 +382,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     string line = event.content;  // need mutable
 
-    immutable casedChannel = line.nom!(Yes.decode)(" ");
-    immutable channel = casedChannel.toLower;
+    immutable channel = line.nom!(Yes.decode)(" ");
 
     if (auto channelAutomodes = channel in plugin.automodes)
     {
@@ -408,11 +397,11 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "Automode cleared: %s on %s".format(account.ircColourNick.ircBold, casedChannel.ircBold);
+            message = "Automode cleared: %s on %s".format(account.ircColourNick.ircBold, channel.ircBold);
         }
         else
         {
-            message = "Automode cleared: %s on %s".format(account, casedChannel);
+            message = "Automode cleared: %s on %s".format(account, channel);
         }
 
         plugin.state.privmsg(event.channel, event.sender.nickname, message);
@@ -424,11 +413,11 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "No automodes defined for channel " ~ casedChannel.ircBold;
+            message = "No automodes defined for channel " ~ channel.ircBold;
         }
         else
         {
-            message = "No automodes defined for channel " ~ casedChannel;
+            message = "No automodes defined for channel " ~ channel;
         }
 
         plugin.state.privmsg(event.channel, event.sender.nickname, message);
@@ -494,9 +483,7 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
 
-    import std.uni : toLower;
-
-    if (auto channelApplications = event.channel.toLower in plugin.appliedAutomodes)
+    if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
         immutable lowercased = IRCUser.toLowercase(event.sender.account, plugin.state.client.server.caseMapping);
         (*channelApplications).remove(lowercased);
