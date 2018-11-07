@@ -136,6 +136,7 @@ struct ListenAttempt
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
+        timeout,    /// Connecion read timed out.
         warning,    /// Recoverable exception thrown; warn and continue.
         error,      /// Unrecoverable exception thrown; abort.
     }
@@ -243,13 +244,13 @@ void listenFiber(Connection conn, ref bool abort)
                 yield(attempt);
                 continue;
             }
-
-            if (elapsed > Timeout.connectionLost.seconds)
+            else if (elapsed > Timeout.connectionLost.seconds)
             {
-                attempt.state = State.error;
+                attempt.state = State.timeout;
                 yield(attempt);
                 // Should never get here
-                assert(0, "Dead listenFiber resumed after yield (received error, elapsed > timeout)");
+                assert(0, "Timed out listenFiber resumed after yield " ~
+                    "(received error, elapsed > timeout)");
             }
 
             attempt.lastSocketError_ = lastSocketError;
