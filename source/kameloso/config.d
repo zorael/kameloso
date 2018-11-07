@@ -445,6 +445,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
     string section;
     string[][string] invalidEntries;
 
+    lineloop:
     foreach (const rawline; range)
     {
         string line = rawline.stripped;
@@ -490,7 +491,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
 
                 enum settingslessThing = Unqual!Things.stringof.stripSuffix("Settings");
                 // Early continue if there's only one Thing and we're in the wrong section
-                if (section != settingslessThing) continue;
+                if (section != settingslessThing) continue lineloop;
             }
 
             auto hits = line.matchFirst(engine);
@@ -499,13 +500,15 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
             if (!entry.length) continue;  // both fields will be zero-length if bad match
             string value = hits[2];  // mutable for later slicing
 
+
             thingloop:
             foreach (immutable i, thing; things)
             {
                 import std.traits : Unqual, hasUDA, isType;
                 alias T = Unqual!(typeof(thing));
+
                 enum settingslessT = T.stringof.stripSuffix("Settings");
-                if (section != settingslessT) continue;
+                if (section != settingslessT) continue thingloop;
 
                 static if (!is(T == enum))
                 {
@@ -534,7 +537,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                                         value = value.contains(';') ? value.nom(';') : value;
                                         things[i].setMemberByName(entry, value);
                                     }
-                                    continue thingloop;
+                                    continue lineloop;
                             }
                         }}
 
@@ -543,7 +546,6 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                         invalidEntries[section] ~= entry.length ? entry : line;
                         break;
                     }
-
                 }
             }
 
