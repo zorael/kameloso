@@ -1002,17 +1002,17 @@ void onCommandStatus(AdminPlugin plugin)
     writeln();
 
     logger.log("Channels:");
-    foreach (immutable name, const channel; plugin.state.channels)
+    foreach (immutable channelName, const channel; plugin.state.channels)
     {
-        writeln(name);
+        writeln(channelName);
         printObjects(channel);
     }
     //writeln();
 
     /*logger.log("Users:");
-    foreach (immutable name, const user; plugin.state.users)
+    foreach (immutable nickname, const user; plugin.state.users)
     {
-        writeln(name);
+        writeln(nickname);
         printObject(user);
     }*/
 }
