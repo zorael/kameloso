@@ -385,6 +385,7 @@ void connectFiber(ref Connection conn, ref bool abort)
 
     yield(attempt);
 
+    iploop:
     foreach (immutable i, ip; conn.ips)
     {
         attempt.ip = ip;
@@ -433,6 +434,7 @@ void connectFiber(ref Connection conn, ref bool abort)
                         attempt.state = State.ipv6Failure;
                         attempt.error = e.msg;
                         yield(attempt);
+                        continue iploop;
                     }
                     else
                     {
@@ -442,7 +444,6 @@ void connectFiber(ref Connection conn, ref bool abort)
                         // Should never get here
                         assert(0, "Dead connectFiber resumed after yield");
                     }
-                    break;
 
                 //case "Unable to connect socket: Network is unreachable":
                 default:
