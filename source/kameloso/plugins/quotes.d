@@ -59,12 +59,10 @@ struct QuotesSettings
  +/
 string getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
-    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
-
-    if (const nicknameQuotes = lowercased in plugin.quotes)
+    if (const arr = nickname in plugin.quotes)
     {
         import std.random : uniform;
-        return nicknameQuotes.array[uniform(0, nicknameQuotes.array.length)].str;
+        return arr.array[uniform(0, arr.array.length)].str;
     }
     else
     {
@@ -95,16 +93,15 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 {
     import std.json : JSONValue;
 
-    immutable lowercased = IRCUser.toLowercase(nickname, plugin.state.client.server.caseMapping);
-
-    if (lowercased in plugin.quotes)
+    if (nickname in plugin.quotes)
     {
-        plugin.quotes[lowercased].array ~= JSONValue(line);
+        // cannot modify const expression (*nickquotes).array
+        plugin.quotes[nickname].array ~= JSONValue(line);
     }
     else
     {
         // No quotes for nickname
-        plugin.quotes[lowercased] = JSONValue([ line ]);
+        plugin.quotes[nickname] = JSONValue([ line ]);
     }
 }
 
@@ -124,7 +121,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 @BotCommand("quote")
 @BotCommand(NickPolicy.required, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname.",
-    "$command [nickname]")
+    "$command [nickname of user to quote]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
