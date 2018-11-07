@@ -52,13 +52,13 @@ void populateAutomodes(AutomodePlugin plugin)
     import std.conv : text;
     import std.json : JSON_TYPE;
 
-    JSONStorage automodes;
-    automodes.load(plugin.automodeFile);
+    JSONStorage automodesJSON;
+    automodesJSON.load(plugin.automodeFile);
     plugin.automodes = typeof(plugin.automodes).init;
 
-    foreach (immutable channel, const modesigns; automodes.object)
+    foreach (immutable channel, const modesignsJSON; automodesJSON.object)
     {
-        foreach (immutable account, const modesign; modesigns.object)
+        foreach (immutable account, const modesign; modesignsJSON.object)
         {
             plugin.automodes[channel][account] = modesign.str;
         }
@@ -70,7 +70,7 @@ void populateAutomodes(AutomodePlugin plugin)
 /++
  +  Saves automode definitions to disk.
  +
- +  Use JSON to get a pretty-printed list, then write it.
+ +  Use JSON to get a pretty-printed list, then write it to disk.
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {

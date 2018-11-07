@@ -418,7 +418,8 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
                 "Invalid channel notes list type for %s: %s"
                 .format(channel, plugin.notes[channel].type));
 
-            logger.logf("Clearing stored notes for %s in %s", nickname, channel);
+            logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
+                infotint, nickname, logtint, channel);
             plugin.notes[channel].object.remove(nickname);
             plugin.pruneNotes();
         }
@@ -452,7 +453,7 @@ void pruneNotes(NotesPlugin plugin)
 {
     foreach (immutable channel, channelNotes; plugin.notes.object)
     {
-        if (channelNotes.object.length == 0)
+        if (!channelNotes.object.length)
         {
             // Dead channel
             plugin.notes.object.remove(channel);

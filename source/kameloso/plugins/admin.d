@@ -399,8 +399,15 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             import std.algorithm.searching : countUntil;
 
             immutable homeIndex = client.homes.countUntil(followupEvent.channel);
-            client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
-            client.updated = true;
+            if (homeIndex != -1)
+            {
+                client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
+                client.updated = true;
+            }
+            else
+            {
+                logger.error("Tried to remove non-existent home channel.");
+            }
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&dg);

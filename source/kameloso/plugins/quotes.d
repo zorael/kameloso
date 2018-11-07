@@ -121,7 +121,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
 @BotCommand("quote")
 @BotCommand(NickPolicy.required, "quote")
 @Description("Fetches and repeats a random quote of a supplied nickname.",
-    "$command [nickname of user to quote]")
+    "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
