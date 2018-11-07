@@ -420,6 +420,25 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-promo-name":
             // Promotion name
             // msg-param-promo-name = Subtember
+        case "msg-param-min-cheer-amount":
+            // REWARDGIFT; of interest?
+            // msg-param-min-cheer-amount = '150'
+        case "emotes":
+            /++ Information to replace text in the message with emote images.
+                This can be empty. Syntax:
+
+                <emote ID>:<first index>-<last index>,
+                <another first index>-<another last index>/
+                <another emote ID>:<first index>-<last index>...
+
+                * emote ID – The number to use in this URL:
+                      http://static-cdn.jtvnw.net/emoticons/v1/:<emote ID>/:<size>
+                  (size is 1.0, 2.0 or 3.0.)
+                * first index, last index – Character indexes. \001ACTION does
+                  not count. Indexing starts from the first character that is
+                  part of the user’s actual message. See the example (normal
+                  message) below.
+            +/
             event.aux = value;
             break;
 
@@ -454,25 +473,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.count = value.to!int;
             break;
 
-        case "emotes":
-            /++ Information to replace text in the message with emote images.
-                This can be empty. Syntax:
-
-                <emote ID>:<first index>-<last index>,
-                <another first index>-<another last index>/
-                <another emote ID>:<first index>-<last index>...
-
-                * emote ID – The number to use in this URL:
-                      http://static-cdn.jtvnw.net/emoticons/v1/:<emote ID>/:<size>
-                  (size is 1.0, 2.0 or 3.0.)
-                * first index, last index – Character indexes. \001ACTION does
-                  not count. Indexing starts from the first character that is
-                  part of the user’s actual message. See the example (normal
-                  message) below.
-            +/
-            event.aux = value;
-            break;
-
         case "msg-param-asin":
             // PURCHASE
             //msg-param-asin = 'B07DBTZZTH'
@@ -482,9 +482,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-imageURL":
             // PURCHASE
             //msg-param-imageURL = 'https://images-na.ssl-images-amazon.com/images/I/31PzvL+AidL.jpg'
-        case "msg-param-min-cheer-amount":
-            // REWARDGIFT; of interest?
-            // msg-param-min-cheer-amount = '150'
         case "msg-param-sub-plan-name":
             // The display name of the subscription plan. This may be a default
             // name or one created by the channel owner.
