@@ -1487,7 +1487,7 @@ int main(string[] args)
     }
     while (!*(bot.abort) && ((next == Next.continue_) || settings.reconnectOnFailure));
 
-    if (*bot.abort || (next == Next.returnFailure))
+    if (*bot.abort || ((next == Next.returnFailure) && !settings.reconnectOnFailure))
     {
         // *bot.abort or returnFailure and implicit !reconnectOnFailure
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
