@@ -153,6 +153,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         case "true":
                         case "yes":
                         case "on":
+                        case "1":
                             thing.tupleof[i] = true;
                             success = true;
                             break;
@@ -160,6 +161,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                         case "false":
                         case "no":
                         case "off":
+                        case "0":
                             thing.tupleof[i] = false;
                             success = true;
                             break;
