@@ -535,7 +535,7 @@ Next mainLoop(ref IRCBot bot)
 
         if (listener.state == Fiber.State.TERM)
         {
-            // Listening Generator disconnected; reconnect
+            // Listening Generator disconnected by itself; reconnect
             listener.reset();
             return Next.continue_;
         }
@@ -607,6 +607,10 @@ Next mainLoop(ref IRCBot bot)
                 Thread.sleep(1.seconds);
                 break listenerloop;
 
+            case timeout:
+                logger.error("Read timed out.");
+                return Next.returnFailure;
+
             case error:
                 import kameloso.constants : Timeout;
                 import std.socket : Socket;
@@ -615,11 +619,12 @@ Next mainLoop(ref IRCBot bot)
                 {
                     logger.errorf("Empty response from server! (%s%s%s)", logtint,
                         attempt.lastSocketError_, errortint);
-                    return Next.continue_;
                 }
-
-                logger.errorf("Failed to read from server! (%s%s%s)", logtint,
-                    attempt.lastSocketError_, errortint);
+                else
+                {
+                    logger.errorf("Failed to read from server! (%s%s%s)", logtint,
+                        attempt.lastSocketError_, errortint);
+                }
 
                 return Next.returnFailure;
             }
@@ -1299,18 +1304,22 @@ int main(string[] args)
         return 1;
     }
 
-    string pre, post;
+    string pre, post, infotint, logtint;
 
     version(Colours)
     {
-        import kameloso.bash : BashForeground, colour;
-
         if (!settings.monochrome)
         {
+            import kameloso.bash : BashForeground, colour;
+            import kameloso.logger : KamelosoLogger;
+
             immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
             immutable defaulttint = BashForeground.default_;
             pre = headertint.colour;
             post = defaulttint.colour;
+
+            infotint = (cast(KamelosoLogger)logger).infotint;
+            logtint = (cast(KamelosoLogger)logger).logtint;
         }
     }
 
@@ -1328,11 +1337,20 @@ int main(string[] args)
         return 1;
     }
 
-    // Resolve the resource directory
+    // Resolve and create the resource directory
+    import std.file : exists;
     import std.path : dirName;
+
     settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
         "server", bot.parser.client.server.address);
     settings.configDirectory = settings.configFile.dirName;
+
+    if (!settings.resourceDirectory.exists)
+    {
+        import std.file : mkdirRecurse;
+        mkdirRecurse(settings.resourceDirectory);
+        logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
+    }
 
     // Initialise plugins outside the loop once, for the error messages
     import std.conv : ConvException;
@@ -1380,7 +1398,7 @@ int main(string[] args)
             backupClient.channels = client.channels;
             client = backupClient;
 
-            logger.log("Please wait a few seconds...");
+            logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
 
             // Reinit plugins here so it isn't done on the first connect attempt
@@ -1409,28 +1427,6 @@ int main(string[] args)
             return 1;
         }
 
-        string infotint, logtint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-
-                infotint = (cast(KamelosoLogger)logger).infotint;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
-
-        import std.file : exists;
-
-        if (!settings.resourceDirectory.exists)
-        {
-            import std.file : mkdirRecurse;
-            mkdirRecurse(settings.resourceDirectory);
-            logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
-        }
-
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         // Ensure initialised resources after resolve so we know we have a
@@ -1441,8 +1437,9 @@ int main(string[] args)
         }
         catch (const IRCPluginInitialisationException e)
         {
+
             logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
-            return Next.returnFailure;
+            return 1;
         }
 
         immutable actionAfterConnect = tryConnect(bot);
@@ -1478,24 +1475,29 @@ int main(string[] args)
         catch (const IRCPluginInitialisationException e)
         {
             logger.warningf("A plugin failed to start: %s%s", logtint, e.msg);
-            return Next.returnFailure;
+            return 1;
         }
 
         // Start the main loop
         next = bot.mainLoop();
         firstConnect = false;
 
-        // Save if we're exiting and configuration says we should.
-        if (((next == Next.returnSuccess) || *bot.abort) && settings.saveOnExit)
-        {
-            bot.writeConfigurationFile(settings.configFile);
-        }
-
         // Always teardown after connection ends in case we just drop down
         bot.teardownPlugins();
     }
-    while (!(*bot.abort) && ((next == Next.retry) ||
-        ((next == Next.continue_) && settings.reconnectOnFailure)));
+    while (!*(bot.abort) && ((next == Next.continue_) || settings.reconnectOnFailure));
+
+    if (*bot.abort || (next == Next.returnFailure))
+    {
+        // *bot.abort or returnFailure and implicit !reconnectOnFailure
+        logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
+    }
+
+    // Save if we're exiting and configuration says we should.
+    if (settings.saveOnExit)
+    {
+        bot.writeConfigurationFile(settings.configFile);
+    }
 
     if (*bot.abort)
     {
