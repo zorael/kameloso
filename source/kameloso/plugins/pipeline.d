@@ -84,6 +84,14 @@ void pipereader(shared IRCPluginState newState)
 
                 if (!line.length) break eofLoop;
 
+                if (line[0] == ':')
+                {
+                    import kameloso.thread : ThreadMessage, busMessage;
+                    state.mainThread.send(ThreadMessage.BusMessage(),
+                        "piped verb", busMessage(line[1..$]));
+                    continue eofLoop;
+                }
+
                 if (line.toLower.beginsWith("quit"))
                 {
                     if ((line.length > 6) && (line[4..6] == " :"))
