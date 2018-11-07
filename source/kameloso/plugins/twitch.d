@@ -17,7 +17,7 @@ module kameloso.plugins.twitch;
 version(WithPlugins):
 version(TwitchSupport):
 
-version = TwitchWarnings;
+// version = TwitchWarnings;
 
 private:
 
