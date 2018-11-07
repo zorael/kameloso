@@ -278,10 +278,12 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
             case "submysterygift":
                 event.type = Type.TWITCH_SUBGIFT;
+                resetUser(event.sender);
                 break;
 
             case "giftpaidupgrade":
                 event.type = Type.TWITCH_GIFTUPGRADE;
+                resetUser(event.sender);
                 break;
 
             default:
