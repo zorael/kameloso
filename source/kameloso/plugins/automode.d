@@ -60,10 +60,7 @@ void populateAutomodes(AutomodePlugin plugin)
     {
         foreach (immutable account, const modesign; modesigns.object)
         {
-            // Lowercase it, just in case an account was manually added cased.
-            // Only done once at plugin load anyway, so not expensive.
-            immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
-            plugin.automodes[channel][lowercased] = modesign.str;
+            plugin.automodes[channel][account] = modesign.str;
         }
     }
 }
@@ -73,7 +70,7 @@ void populateAutomodes(AutomodePlugin plugin)
 /++
  +  Saves automode definitions to disk.
  +
- +  Use JSON to get a pretty-printed list, then write it to disk.
+ +  Use JSON to get a pretty-printed list, then write it.
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
@@ -173,23 +170,27 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     import std.format : format;
     import std.range : repeat;
 
-    foreach (immutable channel, const channelAccounts; plugin.automodes)
+    foreach (immutable channelName, const channelaccounts; plugin.appliedAutomodes)
     {
-        if (!plugin.state.client.homes.canFind(channel)) continue;
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
 
-        immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
-        const appliedAccounts = channel in plugin.appliedAutomodes;
+        const appliedAccounts = channelName in plugin.appliedAutomodes;
 
-        if (appliedAccounts && lowercased in *appliedAccounts)
+        if (appliedAccounts && account in *appliedAccounts)
         {
-            // Already applied modes to this account in this channel
-            continue;
+            logger.log("Already applied modes to ", nickname);
+            return;
         }
+    }
 
-        const modes = lowercased in channelAccounts;
+    foreach (immutable channelName, const channelaccounts; plugin.automodes)
+    {
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
+
+        const modes = account in channelaccounts;
         if (!modes || !modes.length) continue;
 
-        auto occupiedChannel = channel in plugin.state.channels;
+        auto occupiedChannel = channelName in plugin.state.channels;
 
         if (!occupiedChannel) continue;
 
@@ -211,13 +212,14 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
             }
 
             logger.log("Could not apply this automode because we are not an operator in the channel:");
-            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s", infotint, channel, logtint, *modes, nickname);
+            logger.logf("...on %s%s%s: %1$s+%4$s%3$s %1$s%5$s",
+                infotint, channelName, logtint, *modes, nickname);
             continue;
         }
 
         plugin.state.raw!(No.quiet)("MODE %s %s%s %s"
-            .format(channel, "+".repeat(modes.length).join, *modes, nickname));
-        plugin.appliedAutomodes[channel][lowercased] = true;
+            .format(channelName, "+".repeat(modes.length).join, *modes, nickname));
+        plugin.appliedAutomodes[channelName][account] = true;
     }
 }
 
@@ -304,9 +306,8 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
         import std.format : format;
 
         immutable verb = (channel in plugin.automodes) && (id in plugin.automodes[channel]) ? "updated" : "added";
-        immutable lowercased = IRCUser.toLowercase(id, plugin.state.client.server.caseMapping);
 
-        plugin.automodes[channel][lowercased] = mode;
+        plugin.automodes[channel][id] = mode;
 
         string message;
 
@@ -372,6 +373,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     import kameloso.string : nom;
     import std.algorithm.searching : count;
+    import std.format : format;
 
     if (event.content.count(" ") != 1)
     {
@@ -383,16 +385,11 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
     string line = event.content;  // need mutable
 
     immutable channel = line.nom!(Yes.decode)(" ");
+    immutable account = line;
 
     if (auto channelAutomodes = channel in plugin.automodes)
     {
-        import std.format : format;
-
-        immutable account = line;
-        immutable lowercased = IRCUser.toLowercase(account, plugin.state.client.server.caseMapping);
-
-        (*channelAutomodes).remove(lowercased);
-
+        (*channelAutomodes).remove(account);
         string message;
 
         if (settings.colouredOutgoing)
@@ -485,8 +482,7 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
-        immutable lowercased = IRCUser.toLowercase(event.sender.account, plugin.state.client.server.caseMapping);
-        (*channelApplications).remove(lowercased);
+        (*channelApplications).remove(event.sender.account);
     }
 }
 
@@ -503,11 +499,9 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 
     if (!event.sender.account.length) return;
 
-    immutable lowercased = IRCUser.toLowercase(event.sender.account, plugin.state.client.server.caseMapping);
-
     foreach (ref channelApplications; plugin.appliedAutomodes)
     {
-        channelApplications.remove(lowercased);
+        channelApplications.remove(event.sender.account);
     }
 }
 
