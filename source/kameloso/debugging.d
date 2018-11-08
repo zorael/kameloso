@@ -422,6 +422,17 @@ void generateAsserts(ref IRCBot bot) @system
         immutable network = readln().stripped;
         parser.client.server.network = network.length ? network : "freenode";
 
+        // Provide Freenode defaults here, now that they're no longer in IRCServer.init
+        with (parser.client.server)
+        {
+            aModes = "eIbq";
+            bModes = "k";
+            cModes = "flj";
+            dModes = "CFLMPQScgimnprstz";
+            prefixes = "ov";
+            prefixchars = [ 'o' : '@', 'v' : '+' ];
+        }
+
         writeln();
         printObjects!(Yes.printAll)(parser.client, parser.client.server);
         writeln();
