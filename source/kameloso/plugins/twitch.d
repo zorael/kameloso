@@ -419,9 +419,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "msg-param-promo-name":
             // Promotion name
             // msg-param-promo-name = Subtember
-        case "msg-param-min-cheer-amount":
-            // REWARDGIFT; of interest?
-            // msg-param-min-cheer-amount = '150'
+            event.aux = value;
+            break;
+
         case "emotes":
             /++ Information to replace text in the message with emote images.
                 This can be empty. Syntax:
@@ -438,7 +438,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                   part of the user’s actual message. See the example (normal
                   message) below.
             +/
-            event.aux = value;
+            event.emotes = value;
             break;
 
         case "msg-param-title":
@@ -464,6 +464,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // Number of gift subs a user has given in the channel, on a SUBGIFT event
         case "msg-param-selected-count":
             // REWARDGIFT; of interest?
+        case "msg-param-min-cheer-amount":
+            // REWARDGIFT; of interest?
+            // msg-param-min-cheer-amount = '150'
         case "msg-param-mass-gift-count":  // Collides with something else
             // Number of subs being gifted
         case "msg-param-promo-gift-total":
@@ -591,7 +594,7 @@ void highlightEmotes(ref IRCEvent event)
     alias DefaultBright = DefaultColours.EventPrintingBright;
     alias DefaultDark = DefaultColours.EventPrintingDark;
 
-    if (!event.aux.length) return;
+    if (!event.emotes.length) return;
 
     Appender!string sink;
     sink.reserve(event.content.length + 60);  // mostly +10
@@ -618,7 +621,7 @@ void highlightEmotes(ref IRCEvent event)
         else
         {
             // Emote but mixed text and emotes
-            event.content.highlightEmotesImpl(sink, event.aux, highlight, emoteFgBase);
+            event.content.highlightEmotesImpl(sink, event.emotes, highlight, emoteFgBase);
         }
         break;
 
@@ -626,7 +629,7 @@ void highlightEmotes(ref IRCEvent event)
     case SELFCHAN:
         // Normal content, normal text, normal emotes
         //sink.colour(contentFgBase);
-        event.content.highlightEmotesImpl(sink, event.aux, highlight, contentFgBase);
+        event.content.highlightEmotesImpl(sink, event.emotes, highlight, contentFgBase);
         break;
 
     default:
