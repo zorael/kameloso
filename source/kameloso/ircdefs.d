@@ -977,16 +977,16 @@ struct IRCServer
         CaseMapping caseMapping;
 
         /// `EXTBAN` prefix character.
-        char extbanPrefix = '$';
+        char extbanPrefix; // = '$';
 
         /// `EXTBAN` types.
         string extbanTypes;
 
         /// The modechar for mode exceptions.
-        char exceptsChar = 'e';
+        char exceptsChar; // = 'e';
 
         /// The modechar for invite exceptions.
-        char invexChar = 'I';
+        char invexChar; // = 'I';
     }
 }
 
