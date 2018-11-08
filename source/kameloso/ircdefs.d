@@ -1032,8 +1032,11 @@ struct IRCUser
         /// The badges this user has.
         string badges;
 
-        /// The colour (RRGGBB) to tint the user's nickname with.
-        string colour;
+        version(Colours)
+        {
+            /// The colour (RRGGBB) to tint the user's nickname with.
+            string colour;
+        }
     }
 
 
