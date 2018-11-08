@@ -845,6 +845,12 @@ struct IRCEvent
 
     /// What errors occured during parsing, if any.
     string errors;
+
+    version(TwitchSupport)
+    {
+        /// The Twitch emotes in the message.
+        string emotes;
+    }
 }
 
 
