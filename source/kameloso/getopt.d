@@ -405,12 +405,25 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
                             &shouldShowVersion,
         );
 
+        if (shouldShowVersion)
+        {
+            // --version was passed; show version info and quit
+            printVersionInfo();
+            return Next.returnSuccess;
+        }
+        else if (results.helpWanted)
+        {
+            // --help|-h was passed; show the help table and quit
+            printHelp(results);
+            return Next.returnSuccess;
+        }
+
         /+
             1. Populate `client` and `settings` with getopt (above)
             2. Meld with settings from file
             3. Adjust members `monochrome` and `brightTerminal` to counter the
                fact that melding doesn't work well with bools that don't have
-               an "unset" state
+               an "unset"/null state
             4. Reinitialise the logger with new settings
          +/
 
@@ -424,18 +437,11 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         import kameloso.common : initLogger;
         initLogger(settings.monochrome, settings.brightTerminal);
 
-        // 5. Give common.d a copy of `settings` for `printObject`
+        // 5. Give common.d a copy of `settings`, for `printObject` and for plugins
         static import kameloso.common;
         kameloso.common.settings = settings;
 
-        // 6. Maybe show help
-        if (results.helpWanted)
-        {
-            // --help|-h was passed; show the help table and quit
-            return printHelp(results);
-        }
-
-        // 7. Manually override or append channels, depending on `shouldAppendChannels`
+        // 6. Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendChannels)
         {
             if (inputHomes.length) client.homes ~= inputHomes;
@@ -447,21 +453,19 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             if (inputChannels.length) client.channels = inputChannels;
         }
 
-        // 8. Clear entries that are dashes
+        // 7. Clear entries that are dashes
         import kameloso.objmanip : zeroMembers;
         zeroMembers!"-"(client);
 
-        // 7. `client` finished; inherit into `client`
-        bot.parser.client = client;
+        // 8. Make channels lowercase
+        import std.algorithm.iteration : map;
+        import std.array : array;
+        import std.uni : toLower;
+
+        client.homes = client.homes.map!(channelName => channelName.toLower).array;
+        client.channels = client.channels.map!(channelName => channelName.toLower).array;
 
         // 9. Handle showstopper arguments (that display something and then exits)
-        if (shouldShowVersion)
-        {
-            // --version was passed; show info and quit
-            printVersionInfo();
-            return Next.returnSuccess;
-        }
-
         if (shouldWriteConfig)
         {
             // --writeconfig was passed; write configuration to file and quit
@@ -508,7 +512,9 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             return Next.returnSuccess;
         }
 
-        // No showstopper arguments passed; return and continue connecting
+        // 10. `client` finished; inherit into `client`
+        bot.parser.client = client;
+
         return Next.continue_;
     }
 }
