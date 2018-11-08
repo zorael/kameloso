@@ -378,8 +378,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             break;
 
         case "color":
-            // Hexadecimal RGB colour code. This is empty if it is never set.
-            if (value.length) event.sender.colour = value[1..$];
+            version(Colours)
+            {
+                // Hexadecimal RGB colour code. This is empty if it is never set.
+                if (value.length) event.sender.colour = value[1..$];
+            }
             break;
 
         case "bits":
