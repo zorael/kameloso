@@ -20,13 +20,13 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch support; Twitch bot is now easy (see [notes on connecting](#twitch) below)
+* Twitch support; see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration stored on file; generate one and edit it to get an idea of the features available to toggle (see [notes on generating](#configuration) below)
+* configuration stored on file; generate one and edit it to get an idea of the settings available to toggle (see [notes on generating](#configuration) below)
 
-If nothing else it makes for a good read-only lurkbot.
+If nothing else it makes for a good read-only terminal lurkbot.
 
 ## Current limitations:
 
@@ -242,9 +242,11 @@ port                6667
 
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
-Mind that in some cases Twitch does not behave as a conventional IRC server. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at regular intervals. It is also possible to leave a channel that you aren't in, and you cannot join a channel if that corresponding user doesn't exist.
+Mind that in many ways Twitch does not behave as a conventional IRC server. Many common IRC commands go unrecognised. Joins and parts are not advertised. You cannot query a channel for the list of participants, and you cannot query the server for information about a user. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
 
-Known bug: A user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one badge at a time per the current implementation. It's not an unsolvable problem but it would need some redesigning.
+See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
+
+Known limitation: a user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation, and it carries across channels.
 
 ## Use as a library
 
