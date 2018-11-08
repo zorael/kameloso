@@ -324,8 +324,9 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
     import kameloso.irc : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
+    import std.uni : toLower;
 
-    immutable channelToAdd = event.content.stripped;
+    immutable channelToAdd = event.content.stripped.toLower;
 
     if (!channelToAdd.isValidChannel(plugin.state.client.server))
     {
@@ -363,6 +364,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             const followupEvent = thisFiber.payload;
+            immutable followupChannel = followupEvent.channel.toLower;
 
             if (followupEvent.channel != channelToAdd)
             {
@@ -377,14 +379,14 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             {
             case SELFJOIN:
                 // Success!
-                /*client.homes ~= followupEvent.channel;
+                /*client.homes ~= followupChannel;
                 client.updated = true;*/
                 return;
 
             case ERR_LINKCHANNEL:
                 // We were redirected. Still assume we wanted to add this one?
                 logger.log("Redirected!");
-                client.homes ~= followupEvent.content;
+                client.homes ~= followupEvent.content.toLower;
                 // Drop down and undo original addition
                 break;
 
@@ -398,7 +400,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             import std.algorithm.mutation : SwapStrategy, remove;
             import std.algorithm.searching : countUntil;
 
-            immutable homeIndex = client.homes.countUntil(followupEvent.channel);
+            immutable homeIndex = client.homes.countUntil(followupChannel);
             if (homeIndex != -1)
             {
                 client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);

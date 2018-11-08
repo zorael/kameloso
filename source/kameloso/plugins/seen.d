@@ -754,9 +754,9 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
     immutable nickname = plugin.state.client.server.stripModesign(signed);
 
     // Only update the user if he/she is in a home channel.
-    foreach (const channel; plugin.state.channels)
+    foreach (immutable channelName, const channel; plugin.state.channels)
     {
-        if (!plugin.state.client.homes.canFind(channel.name)) continue;
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
 
         if (channel.users.canFind(nickname))
         {
@@ -783,9 +783,9 @@ void updateAllUsers(SeenPlugin plugin)
 
     bool[string] uniqueUsers;
 
-    foreach (const channel; plugin.state.channels)
+    foreach (immutable channelName, const channel; plugin.state.channels)
     {
-        if (!plugin.state.client.homes.canFind(channel.name)) continue;
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
 
         foreach (const nickname; channel.users)
         {

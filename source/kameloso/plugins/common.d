@@ -851,12 +851,13 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                 case home:
                     import std.algorithm.searching : canFind;
+                    import std.uni : toLower;
 
                     if (!event.channel.length)
                     {
                         // it is a non-channel event, like a `QUERY`
                     }
-                    else if (!privateState.client.homes.canFind(event.channel))
+                    else if (!privateState.client.homes.canFind(event.channel.toLower))
                     {
                         static if (verbose)
                         {
