@@ -3557,21 +3557,28 @@ unittest
 
     IRCServer server;
     // Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
-    server.aModes = "eIbq";
-    server.bModes = "k";
-    server.cModes = "flj";
-    server.dModes = "CFLMPQScgimnprstz";
+    with (server)
+    {
+        aModes = "eIbq";
+        bModes = "k";
+        cModes = "flj";
+        dModes = "CFLMPQScgimnprstz";
 
-    // SpotChat: PREFIX=(Yqaohv)!~&@%+
-    server.prefixes = "Yaohv";
-    server.prefixchars =
-    [
-        '!' : 'Y',
-        '&' : 'a',
-        '@' : 'o',
-        '%' : 'h',
-        '+' : 'v',
-    ];
+        // SpotChat: PREFIX=(Yqaohv)!~&@%+
+        prefixes = "Yaohv";
+        prefixchars =
+        [
+            '!' : 'Y',
+            '&' : 'a',
+            '@' : 'o',
+            '%' : 'h',
+            '+' : 'v',
+        ];
+
+        extbanPrefix = '$';
+        exceptsChar = 'e';
+        invexChar = 'I';
+    }
 
     {
         IRCChannel chan;
