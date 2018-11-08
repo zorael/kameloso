@@ -59,6 +59,11 @@ void pipereader(shared IRCPluginState newState)
         state.askToError("Failed to create pipeline FIFO: " ~ e.msg);
         return;
     }
+    catch (const FIFOAlreadyExistsException e)
+    {
+        state.askToError("Failed to create pipeline FIFO: " ~ e.msg);
+        return;
+    }
     catch (const Exception e)
     {
         state.askToError("Unhandled exception creating pipeline FIFO: " ~ e.msg);
@@ -187,6 +192,10 @@ File createFIFO(IRCPluginState state)
     {
         throw new FileException(("Wanted to create FIFO %s but a directory " ~
             "exists with the same name").format(filename));
+    }
+    else /* if (filename.isFile || filename.isSymlink) */
+    {
+        throw new FIFOAlreadyExistsException(filename ~ " already exists");
     }
 
     string infotint, logtint;
