@@ -443,7 +443,7 @@ void generateAsserts(ref IRCBot bot) @system
 
             if (*abort) return;
 
-            scope(exit) version(Cygwin_) stdout.flush();
+            version(FlushStdout) scope(exit) stdout.flush();
 
             string raw = input[0..$-1];  // mutable, slice away linebreak
             while (raw.beginsWithOneOf(" /"))

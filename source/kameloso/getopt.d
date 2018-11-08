@@ -320,8 +320,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
     import std.getopt : arraySep, config, getopt;
     import std.stdio : stdout, writeln;
 
-    version(Cygwin_)
-    scope(exit) stdout.flush();
+    version(FlushStdout) scope(exit) stdout.flush();
 
     bool shouldWriteConfig;
     bool shouldShowVersion;

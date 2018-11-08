@@ -603,7 +603,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
         cast(string)KamelosoInfo.source,
         post);
 
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 

@@ -262,7 +262,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
     import std.stdio : stdout, writeln;
 
     writeln(plugin.notes.toPrettyString);
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 

@@ -717,7 +717,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
     import std.stdio : stdout, writeln;
 
     writeln(JSONValue(plugin.seenUsers).toPrettyString);
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 

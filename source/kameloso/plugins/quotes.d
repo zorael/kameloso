@@ -353,7 +353,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
     import std.stdio : writeln, stdout;
 
     writeln(plugin.quotes.toPrettyString);
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 

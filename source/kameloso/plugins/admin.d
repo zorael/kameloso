@@ -114,7 +114,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
     {
         if (event.tags.length) writeln(event.tags, '$');
         writeln(event.raw, '$');
-        version(Cygwin_) stdout.flush();
+        version(FlushStdout) stdout.flush();
     }
 
     if (plugin.adminSettings.printBytes)
@@ -126,7 +126,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
 
-        version(Cygwin_) stdout.flush();
+        version(FlushStdout) stdout.flush();
     }
 
     debug if (plugin.adminSettings.printAsserts)
@@ -141,7 +141,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
         writeln();
-        version(Cygwin_) stdout.flush();
+        version(FlushStdout) stdout.flush();
     }
 }
 
@@ -247,7 +247,7 @@ void onCommandShowUsers(AdminPlugin plugin)
         (IRCUser.sizeof * plugin.state.users.length), plugin.state.users.length,
         plugin.state.users.deepSizeof);
 
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 
@@ -758,7 +758,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
 
     import kameloso.bash : TerminalToken;
     write(TerminalToken.reset);
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 
@@ -875,7 +875,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
         formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
     }
 
-    version(Cygwin_) stdout.flush();
+    version(FlushStdout) stdout.flush();
 }
 
 

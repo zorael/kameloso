@@ -33,7 +33,7 @@
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
-            "versions": [ "WithPlugins", "Cygwin_", "Web", "Colours" ],
+            "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours" ],
             "dependencies-windows": { "requests": "~>1.0.0" }
         },
         {

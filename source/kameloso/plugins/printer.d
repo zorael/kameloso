@@ -186,7 +186,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
                 printerSettings.bellOnMention);
         }
 
-        version(Cygwin_) stdout.flush();
+        version(FlushStdout) stdout.flush();
         break;
     }
 }
