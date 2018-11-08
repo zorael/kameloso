@@ -165,12 +165,8 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             switch (value)
             {
             case "sub":
-                event.type = Type.TWITCH_SUB;
-                resetUser(event.sender);
-                break;
-
             case "resub":
-                event.type = Type.TWITCH_RESUB;
+                event.type = Type.TWITCH_SUB;
                 resetUser(event.sender);
                 break;
 
