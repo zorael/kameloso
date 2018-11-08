@@ -62,22 +62,6 @@ void postprocess(TwitchService service, ref IRCEvent event)
             highlightEmotes(event);
         }
     }
-
-    // Reset event.aux on events which only used it to carry information for highlighting
-    with (IRCEvent.Type)
-    switch (event.type)
-    {
-    case CHAN:
-    case EMOTE:
-    case TWITCH_CHEER:
-    case SELFCHAN:
-    case SELFEMOTE:
-        event.aux = string.init;
-        break;
-
-    default:
-        break;
-    }
 }
 
 
