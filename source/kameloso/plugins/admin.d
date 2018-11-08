@@ -1039,18 +1039,34 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 {
     if (header == "piped verb")
     {
+        import kameloso.string : contains, nom;
         import kameloso.thread : BusMessage;
 
         auto message = cast(BusMessage!string)content;
         assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-        switch (message.payload)
+        string slice = message.payload;
+        immutable verb = slice.contains(' ') ? slice.nom(' ') : slice;
+
+        switch (verb)
         {
         case "status":
             return plugin.onCommandStatus();
 
         case "users":
             return plugin.onCommandShowUsers();
+
+        case "user":
+            if (const user = slice in plugin.state.users)
+            {
+                import kameloso.printing : printObject;
+                printObject(*user);
+            }
+            else
+            {
+                logger.error("No such user: ", slice);
+            }
+            break;
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
@@ -1065,6 +1081,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return;
 
         default:
+            logger.error("Unimplemented piped verb: ", verb);
             break;
         }
     }
