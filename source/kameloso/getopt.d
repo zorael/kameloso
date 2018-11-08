@@ -170,12 +170,9 @@ unittest
  +
  +  Params:
  +      results = Results from a `getopt` call, usually with `.helpWanted` true.
- +
- +  Returns:
- +      `Next.returnSuccess` to make sure the calling function returns.
  +/
 import std.getopt : GetoptResult;
-Next printHelp(GetoptResult results) @system
+void printHelp(GetoptResult results) @system
 {
     import kameloso.common : printVersionInfo, settings;
     import std.stdio : writeln;
@@ -216,7 +213,6 @@ Next printHelp(GetoptResult results) @system
     writeln();
     writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account, etc.");
     writeln();
-    return Next.returnSuccess;
 }
 
 
