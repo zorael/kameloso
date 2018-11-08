@@ -88,8 +88,8 @@ struct IRCEvent
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
         TWITCH_SUB,       /// Twitch subscription event, including resubs.
-        TWITCH_TEMPBAN,   /// Twitch temporary ban (seconds in `aux`).
-        TWITCH_PERMBAN,   /// Twitch permanent ban.
+        TWITCH_TIMEOUT,   /// Twitch temporary ban (seconds in `aux`).
+        TWITCH_BAN,       /// Twitch permanent ban.
         TWITCH_SUBGIFT,   /// Twitch subscription gift event.
         TWITCH_CHEER,     /// Twitch "bits" donation.
         TWITCH_RITUAL,    /// Twitch Ritual event.

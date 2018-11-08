@@ -50,7 +50,7 @@ void postprocess(TwitchService service, ref IRCEvent event)
         if ((event.type == CLEARCHAT) && event.target.nickname.length && event.sender.isServer)
         {
             // Stay CLEARCHAT if no target nickname
-            event.type = (event.count > 0) ? TWITCH_TEMPBAN : TWITCH_PERMBAN;
+            event.type = (event.count > 0) ? TWITCH_TIMEOUT : TWITCH_BAN;
         }
     }
 
