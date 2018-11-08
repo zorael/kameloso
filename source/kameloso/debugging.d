@@ -61,7 +61,7 @@ unittest
         server.address = "something.freenode.net";
         server.port = 0;
         server.daemon = IRCServer.Daemon.unreal;
-        server.aModes = string.init;
+        server.aModes = "eIbq";
     }
 
     sink.formatClientAssignment(client);
@@ -75,7 +75,7 @@ with (parser.client)
     server.address = "something.freenode.net";
     server.port = 0;
     server.daemon = IRCServer.Daemon.unreal;
-    server.aModes = "";
+    server.aModes = "eIbq";
 }`, '\n' ~ sink.data);
 }
 
@@ -207,7 +207,7 @@ unittest
         server.address = "something.freenode.net";
         server.port = 0;
         server.daemon = IRCServer.Daemon.unreal;
-        server.aModes = string.init;
+        server.aModes = "eIbq";
     }
 
     sink.formatDelta(IRCClient.init, client);
@@ -218,7 +218,7 @@ user = "UUUUUSER";
 server.address = "something.freenode.net";
 server.port = 0;
 server.daemon = IRCServer.Daemon.unreal;
-server.aModes = "";
+server.aModes = "eIbq";
 `, '\n' ~ sink.data);
 
     sink = typeof(sink).init;
@@ -231,7 +231,7 @@ assert((user == "UUUUUSER"), user);
 assert((server.address == "something.freenode.net"), server.address);
 assert((server.port == 0), server.port.to!string);
 assert((server.daemon == IRCServer.Daemon.unreal), Enum!(IRCServer.Daemon).toString(server.daemon));
-assert((server.aModes == ""), server.aModes);
+assert((server.aModes == "eIbq"), server.aModes);
 `, '\n' ~ sink.data);
 
     struct Foo
