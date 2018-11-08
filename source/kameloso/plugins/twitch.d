@@ -551,7 +551,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             {
                 import kameloso.bash : TerminalToken;
                 import kameloso.common : logger;
-                logger.warningf("Unknown Twitch tag: %s = %s%s", key, value, cast(char)TerminalToken.bell);
+                logger.warningf("Unknown Twitch tag: %s = %s%c", key, value, cast(char)TerminalToken.bell);
             }
             break;
         }
