@@ -950,16 +950,16 @@ struct IRCServer
          +  A = Mode that adds or removes a nick or address to a list.
          +      Always has a parameter.
          +/
-        string aModes = "eIbq";
+        string aModes; // = "eIbq";
 
         /// B = Mode that changes a setting and always has a parameter.
-        string bModes = "k";
+        string bModes; // = "k";
 
         /// C = Mode that changes a setting and only has a parameter when set.
-        string cModes = "flj";
+        string cModes; // = "flj";
 
         /// D = Mode that changes a setting and never has a parameter.
-        string dModes = "CFLMPQScgimnprstz";
+        string dModes; // = "CFLMPQScgimnprstz";
 
         /// Prefix characters by mode character; o by @, v by +, etc.
         char[char] prefixchars;
