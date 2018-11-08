@@ -533,12 +533,19 @@ void onEndOfMotd(AutomodePlugin plugin)
  +/
 void pruneChannels(ref string[string][string] automodes)
 {
-    foreach (channel, channelAutomodes; automodes)
+    string[] garbageKeys;
+
+    foreach (immutable channelName, channelAutomodes; automodes)
     {
         if (!channelAutomodes.length)
         {
-            automodes.remove(channel);
+            garbageKeys ~= channelName;
         }
+    }
+
+    foreach (immutable key; garbageKeys)
+    {
+        automodes.remove(key);
     }
 }
 
