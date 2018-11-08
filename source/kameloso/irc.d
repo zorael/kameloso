@@ -2216,7 +2216,15 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
         if ((slice == ":-") && (parser.client.server.address.contains(".twitch.tv")))
         {
             parser.setDaemon(IRCServer.Daemon.twitch, "Twitch");
-            parser.client.server.network = "Twitch";
+
+            // Twitch doesn't seem to support any modes other than normal prefix op
+            with (parser.client.server)
+            {
+                network = "Twitch";
+                prefixes = "o";
+                prefixchars = [ '@' : 'o' ];
+            }
+
             version(FlagUpdatedClient) parser.client.updated = true;
             return;
         }
