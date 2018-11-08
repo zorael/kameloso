@@ -87,8 +87,7 @@ struct IRCEvent
         RECONNECT,  /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
-        TWITCH_SUB,       /// Twitch subscription event.
-        TWITCH_RESUB,     /// Twitch resub event.
+        TWITCH_SUB,       /// Twitch subscription event, including resubs.
         TWITCH_TEMPBAN,   /// Twitch temporary ban (seconds in `aux`).
         TWITCH_PERMBAN,   /// Twitch permanent ban.
         TWITCH_SUBGIFT,   /// Twitch subscription gift event.
