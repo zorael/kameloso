@@ -2201,7 +2201,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : stripModesign;
+        import kameloso.irc : IRCControlCharacter, stripModesign;
+        import kameloso.irccolours : stripColours;
         import kameloso.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
@@ -2227,7 +2228,11 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
                 if (nickname == plugin.state.client.nickname) continue;
 
                 immutable ident = slice.nom('@');
-                immutable address = slice;
+
+                // Do addresses ever contain bold, italics, underlined?
+                immutable address = slice.contains(IRCControlCharacter.colour) ?
+                    stripColours(slice) : slice;
+
                 newUser = IRCUser(nickname, ident, address);
             }
 
