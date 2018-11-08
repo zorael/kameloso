@@ -416,7 +416,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
         with (IRCEvent.Type)
         {
-            static immutable types =
+            static immutable IRCEvent.Type[13] types =
             [
                 ERR_BANNEDFROMCHAN,
                 ERR_INVITEONLYCHAN,
