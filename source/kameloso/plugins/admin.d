@@ -1032,6 +1032,7 @@ void onCommandStatus(AdminPlugin plugin)
  +      content = Message content.
  +/
 import kameloso.thread : Sendable;
+debug
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
     if (header == "piped verb")
