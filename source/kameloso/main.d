@@ -608,7 +608,7 @@ Next mainLoop(ref IRCBot bot)
                 break listenerloop;
 
             case timeout:
-                logger.error("Read timed out.");
+                logger.error("Connection timed out.");
                 return Next.returnFailure;
 
             case error:
