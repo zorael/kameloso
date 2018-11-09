@@ -2792,6 +2792,75 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 }
 
 
+// TwitchAwareness
+/++
+ +  Implements scraping of Twitch message events for user details in a module.
+ +
+ +  Twitch doesn't always enumerate channel participants upon joining a channel.
+ +  It seems to mostly be done on larger channels, and only rarely when the
+ +  channel is small.
+ +
+ +  There is a chance of a user leak, if parting users are not broadcast. As
+ +  such we mark when the user was last seen in the
+ +  `kameloso.ircdefs.IRCUser.lastWhois` member, which opens up the possibility
+ +  of pruning the plugin's `IRCPluginState.users` array of old entries.
+ +
+ +  Twitch awareness needs channel awareness, or it is meaningless.
+ +/
+version(WithPlugins)
+version(TwitchSupport)
+mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+    bool debug_ = false, string module_ = __MODULE__)
+{
+    static assert(__traits(compiles, .hasChannelAwareness), module_ ~
+        " is missing ChannelAwareness mixin (needed for TwitchAwareness).");
+
+    static if (__traits(compiles, .hasTwitchAwareness))
+    {
+        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+    }
+    else
+    {
+        enum hasTwitchAwareness = true;
+    }
+
+
+    // onTwitchAwarenessSenderCarryingEvent
+    /++
+     +  Catch senders from normal Twitch events.
+     +/
+    @(Awareness.early)
+    @(Chainable)
+    @(IRCEvent.Type.CHAN)
+    @(IRCEvent.Type.EMOTE)
+    @(IRCEvent.Type.TWITCH_SUB)
+    @(IRCEvent.Type.TWITCH_SUBGIFT)
+    @(IRCEvent.Type.TWITCH_REWARDGIFT)
+    @(IRCEvent.Type.TWITCH_GIFTUPGRADE)
+    @(IRCEvent.Type.TWITCH_CHEER)
+    @(IRCEvent.Type.TWITCH_PURCHASE)
+    @(IRCEvent.Type.TWITCH_RAID)
+    @(IRCEvent.Type.TWITCH_RITUAL)
+    @channelPolicy
+    void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const IRCEvent event)
+    {
+        if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+
+        import std.algorithm.searching : canFind;
+        import std.uni : toLower;
+
+        immutable channelName = event.channel.toLower;
+
+        if (!plugin.state.channels[channelName].users.canFind(event.sender.nickname))
+        {
+            plugin.state.channels[channelName].users ~= event.sender.nickname;
+        }
+
+        plugin.catchUser(event.sender);
+    }
+}
+
+
 // nickPolicyMatches
 /++
  +  Evaluates whether the message in an event satisfies the `NickPolicy`
