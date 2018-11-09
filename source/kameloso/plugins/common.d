@@ -551,17 +551,16 @@ struct Verbose;
 
 
 /++
- +  Annotation denoting that a function is part of an awareness mixin that
- +  should be processed *before* normal plugin functions.
+ +  Annotation denoting that a function is part of an awareness mixin, and at
+ +  what point it should be processed.
  +/
-struct AwarenessEarly;
-
-
-/++
- +  Annotation denoting that a function is part of an awareness mixin that
- +  should be processed *after* normal plugin functions.
- +/
-struct AwarenessLate;
+enum Awareness
+{
+    setup,
+    early,
+    late,
+    cleanup,
+}
 
 
 /++
@@ -767,9 +766,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
 
-        alias earlyAwareness(alias T) = hasUDA!(T, AwarenessEarly);
-        alias lateAwareness(alias T) = hasUDA!(T, AwarenessLate);
-        alias isAwarenessFunction = templateOr!(earlyAwareness, lateAwareness);
+        alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
+        alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
+        alias lateAwareness(alias T) = hasUDA!(T, Awareness.late);
+        alias cleanupAwareness(alias T) = hasUDA!(T, Awareness.cleanup);
+        alias isAwarenessFunction = templateOr!(setupAwareness, earlyAwareness,
+            lateAwareness, cleanupAwareness);
         alias isNormalPluginFunction = templateNot!isAwarenessFunction;
 
         alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
@@ -1186,8 +1188,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             return Next.continue_;
         }
 
+        alias setupFuns = Filter!(setupAwareness, funs);
         alias earlyFuns = Filter!(earlyAwareness, funs);
         alias lateFuns = Filter!(lateAwareness, funs);
+        alias cleanupFuns = Filter!(cleanupAwareness, funs);
         alias pluginFuns = Filter!(isNormalPluginFunction, funs);
 
         // Sanitise and try again once on UTF/Unicode exceptions
@@ -1256,9 +1260,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
+        tryCatchHandle!setupFuns(event);
         tryCatchHandle!earlyFuns(event);
         tryCatchHandle!pluginFuns(event);
         tryCatchHandle!lateFuns(event);
+        tryCatchHandle!cleanupFuns(event);
     }
 
 
@@ -1911,7 +1917,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
      +  General rule: if a plugin doesn't access `state.users`, it's probably
      +  going to be enough with only `MinimalAuthentication`.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISACCOUNT)
     @(IRCEvent.Type.RPL_WHOISREGNICK)
@@ -2031,7 +2037,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Removes an exhausted `WHOIS` request from the queue upon end of `WHOIS`.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFWHOIS)
     void onMinimalAuthenticationEndOfWHOISMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2075,7 +2081,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Removes a user's `kameloso.ircdefs.IRCUser` entry from a plugin's user
      +  list upon them disconnecting.
      +/
-    @(AwarenessLate)
+    @(Awareness.cleanup)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2096,7 +2102,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  Removes the old entry after assigning it to the new key.
      +/
-    @(AwarenessEarly)  // late?
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2135,7 +2141,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  `IRCEvent.Type.CHGHOST` occurs when a user changes host on some servers
      +  that allow for custom host addresses.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOISUSER)
     @(IRCEvent.Type.RPL_WHOREPLY)
@@ -2156,7 +2162,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  account name of whoever joins in the event string. If it's there, catch
      +  the user into the user array so we don't have to `WHOIS` them later.
      +/
-    @(AwarenessEarly)
+    @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @(IRCEvent.Type.ACCOUNT)
@@ -2195,7 +2201,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Freenode only sends a list of the nicknames but SpotChat sends the full
      +  information.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @channelPolicy
@@ -2251,7 +2257,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  inefficient. Rehashing it makes it take its new size into account and
      +  makes lookup faster.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_ENDOFNAMES)
     @(IRCEvent.Type.RPL_ENDOFWHO)
@@ -2275,7 +2281,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  This reimplements `IRCPlugin.periodically`.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.PING)
     void onUserAwarenessPingMixin(IRCPlugin plugin)
@@ -2330,7 +2336,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  `IRCPluginState.channels` associative array when the bot joins a
      +  channel.
      +/
-    @(AwarenessEarly)
+    @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.SELFJOIN)
     @channelPolicy
@@ -2355,7 +2361,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  not be possible if it were not for channel-tracking. As such keep the
      +  behaviour in channel awareness.
      +/
-    @(AwarenessLate)
+    @(Awareness.cleanup)
     @(Chainable)
     @(IRCEvent.Type.SELFPART)
     @(IRCEvent.Type.SELFKICK)
@@ -2393,7 +2399,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     /++
      +  Adds a user as being part of a channel when they join one.
      +/
-    @(AwarenessEarly)
+    @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.JOIN)
     @channelPolicy
@@ -2416,7 +2422,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  this would not be possible if it were not for channel-tracking. As such
      +  keep the behaviour in channel awareness.
      +/
-    @(AwarenessLate)
+    @(Awareness.late)
     @(Chainable)
     @(IRCEvent.Type.PART)
     @channelPolicy
@@ -2461,7 +2467,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +
      +  Removes the old entry.
      +/
-    @(AwarenessEarly)
+    @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2486,7 +2492,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Does not touch the internal list of users; the user awareness bits are
      +  expected to take care of that.
      +/
-    @(AwarenessLate)
+    @(Awareness.late)
     @(Chainable)
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
@@ -2508,7 +2514,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Update the entry for an `kameloso.ircdefs.IRCChannel` if someone changes
      +  the topic of it.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.TOPIC)
     @(IRCEvent.Type.RPL_TOPIC)
@@ -2524,7 +2530,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     /++
      +  Stores the timestamp of when a channel was created.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_CREATIONTIME)
     @channelPolicy
@@ -2545,7 +2551,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  bans and mode exemptions. We let `kameloso.irc.setMode` take care of
      +  that.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.MODE)
     @channelPolicy
@@ -2565,7 +2571,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  This events includes all normal fields like ident and address, but not
      +  their channel modes (e.g. `@` for operator).
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_WHOREPLY)
     @channelPolicy
@@ -2627,7 +2633,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  their nickname and their channel mode (e.g. `@` for operator), but other
      +  servers express the users in the full `user!ident@address` form.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_NAMREPLY)
     @channelPolicy
@@ -2708,7 +2714,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Bans are just normal A-mode channel modes that are paired with a user
      +  and that don't overwrite other bans (can be stacked).
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_BANLIST)
     @(IRCEvent.Type.RPL_EXCEPTLIST)
@@ -2750,7 +2756,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     /++
      +  Adds the modes of a channel to a tracked channel's mode list.
      +/
-    @(AwarenessEarly)
+    @(Awareness.early)
     @(Chainable)
     @(IRCEvent.Type.RPL_CHANNELMODEIS)
     @channelPolicy
