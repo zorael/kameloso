@@ -1485,7 +1485,8 @@ int main(string[] args)
         // Always teardown after connection ends in case we just drop down
         bot.teardownPlugins();
     }
-    while (!*(bot.abort) && ((next == Next.continue_) || settings.reconnectOnFailure));
+    while (!*(bot.abort) && ((next == Next.continue_) ||
+        ((next == Next.returnFailure) && settings.reconnectOnFailure)));
 
     if (!(*bot.abort) && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {
