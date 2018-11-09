@@ -2044,6 +2044,27 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     {
         plugin.state.whoisQueue.remove(event.target.nickname);
     }
+
+
+    // onMinimalAuthenticationUnknownCommandWHOIS
+    /++
+     +  Clears all queued `WHOIS` requests if the server says it doesn't support
+     +  `WHOIS` at all.
+     +
+     +  This is the case with Twitch servers.
+     +/
+    @(Awareness.early)
+    @(Chainable)
+    @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+    void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const IRCEvent event)
+    {
+        if (event.aux == "WHOIS")
+        {
+            // We're on a server that doesn't support WHOIS
+            // --> clear WHOIS queue and pretend like nothing happened
+            plugin.state.whoisQueue.clear();
+        }
+    }
 }
 
 
