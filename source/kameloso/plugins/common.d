@@ -2998,7 +2998,7 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
  +      plugin = Current `IRCPlugin`.
  +      newUser = The `kameloso.ircdefs.IRCUser` to catch.
  +/
-void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
+void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
     if (!newUser.nickname.length || (newUser.nickname == plugin.state.client.nickname))
     {
@@ -3011,6 +3011,8 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
         {
             if (state.client.server.daemon == IRCServer.Daemon.twitch)
             {
+                import std.datetime.systime : Clock;
+                newUser.lastWhois = Clock.currTime.toUnixTime;
             }
         }
 
