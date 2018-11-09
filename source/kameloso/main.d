@@ -241,8 +241,8 @@ Next checkMessages(ref IRCBot bot)
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
         immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
-        if (!settings.hideOutgoing) logger.tracef(`--> QUIT :"%s"`, reason);
-        bot.conn.sendline("QUIT :\"", reason, "\"");
+        if (!settings.hideOutgoing) logger.tracef(`--> QUIT :%s`, reason);
+        bot.conn.sendline("QUIT :", reason);
         next = Next.returnSuccess;
     }
 
