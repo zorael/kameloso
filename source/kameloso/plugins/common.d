@@ -2919,12 +2919,8 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) pure nothrow @safe
     {
         version(TwitchSupport)
         {
-            // Twitch nicknames are always the same as the user accounts; the
-            // displayed name/alias is sent separately as a "display-name" IRCv3 tag
-
             if (state.client.server.daemon == IRCServer.Daemon.twitch)
             {
-                newUser.account = newUser.nickname;
             }
         }
 

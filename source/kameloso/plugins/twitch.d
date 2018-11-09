@@ -63,6 +63,13 @@ void postprocess(TwitchService service, ref IRCEvent event)
             highlightEmotes(event);
         }
     }
+
+    if (event.sender.nickname)
+    {
+        // Twitch nicknames are always the same as the user accounts; the
+        // displayed name/alias is sent separately as a "display-name" IRCv3 tag
+        event.sender.account = event.sender.nickname;
+    }
 }
 
 
