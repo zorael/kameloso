@@ -1039,6 +1039,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 {
     if (header == "piped verb")
     {
+        import kameloso.printing : printObject;
         import kameloso.string : contains, nom;
         import kameloso.thread : BusMessage;
 
@@ -1059,13 +1060,16 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         case "user":
             if (const user = slice in plugin.state.users)
             {
-                import kameloso.printing : printObject;
                 printObject(*user);
             }
             else
             {
                 logger.error("No such user: ", slice);
             }
+            break;
+
+        case "state":
+            printObject(plugin.state);
             break;
 
         case "printraw":
@@ -1078,7 +1082,43 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         case "printasserts":
             plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+
+            if (plugin.adminSettings.printAsserts)
+            {
+                import kameloso.debugging : formatClientAssignment;
+                // Print the bot assignment but only if we're toggling it on
+                formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+            }
             return;
+
+        case "resetterm":
+            return plugin.onCommandResetTerminal();
+
+        case "set":
+            import kameloso.thread : CarryingFiber, ThreadMessage;
+
+            void dg()
+            {
+                import core.thread : Fiber;
+                import std.conv : ConvException;
+
+                auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+                assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+                try
+                {
+                    thisFiber.payload.applyCustomSettings([ slice ]);
+                    logger.log("Setting changed.");
+                }
+                catch (const ConvException e)
+                {
+                    logger.error("Invalid setting.");
+                }
+            }
+
+            auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+            plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+            break;
 
         default:
             logger.error("Unimplemented piped verb: ", verb);
