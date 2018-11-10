@@ -61,10 +61,17 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 auto stored = user.nickname in service.state.users;
 
-                if (!stored || !stored.address.length)
+                if (!stored)
                 {
                     service.state.users[user.nickname] = *user;
                     stored = user.nickname in service.state.users;
+                }
+                else if (!stored.address.length)
+                {
+                    import kameloso.meld : MeldingStrategy, meldInto;
+                    (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
+                    applyClassifiersDg(stored);
+                    continue;
                 }
 
                 if (stored.class_ == IRCUser.Class.unset)
