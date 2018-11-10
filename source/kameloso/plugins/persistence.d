@@ -40,18 +40,18 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         if (!user.nickname.length) continue;
 
         /// Apply user class if we have one stored.
-        void applyClassifiersDg()
+        void applyClassifiersDg(ref IRCUser userToClassify)
         {
             import std.algorithm.searching : canFind;
 
-            if (service.state.client.admins.canFind(user.account))
+            if (service.state.client.admins.canFind(userToClassify.account))
             {
                 // Admins are (currently) stored in an array IRCClient.admins
-                user.class_ = IRCUser.Class.admin;
+                userToClassify.class_ = IRCUser.Class.admin;
             }
-            else if (const classifier = user.account in service.userClasses)
+            else if (const classifier = userToClassify.account in service.userClasses)
             {
-                user.class_ = *classifier;
+                userToClassify.class_ = *classifier;
             }
         }
 
@@ -84,7 +84,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 import std.datetime.systime : Clock;
 
                 user.lastWhois = Clock.currTime.toUnixTime;
-                applyClassifiersDg();
+                applyClassifiersDg(user);
                 break;
 
             default:
@@ -114,7 +114,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             if (user.account.length)
             {
                 // Initial user already has account info
-                applyClassifiersDg();
+                applyClassifiersDg(user);
             }
 
             service.state.users[user.nickname] = *user;
