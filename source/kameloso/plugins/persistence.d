@@ -55,6 +55,23 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             }
         }
 
+        version(TwitchSupport)
+        {
+            if (service.state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                auto stored = user.nickname in service.state.users;
+
+                if (!stored)
+                {
+                    service.state.users[user.nickname] = user;
+                    stored = user.nickname in serivce.state.users;
+                }
+
+                applyClassifiersDg(*stored);
+                return;
+            }
+        }
+
         if (auto stored = user.nickname in service.state.users)
         {
             with (IRCEvent.Type)
