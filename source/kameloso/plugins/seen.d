@@ -840,7 +840,7 @@ long[string] loadSeen(const string filename)
     scope(exit)
     {
         import kameloso.string : plurality;
-        logger.logf("Seen users loaded, currently %s%d%s %s seen.",
+        logger.logf("Currently %s%d%s %s seen.",
             infotint, aa.length, logtint, aa.length.plurality("user", "users"));
     }
 
