@@ -155,7 +155,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             case "sub":
             case "resub":
                 event.type = Type.TWITCH_SUB;
-                resetUser(event.sender);
                 break;
 
             case "subgift":
@@ -163,13 +162,11 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 // [21:33:48] msg-param-recipient-id = '125985061'
                 // [21:33:48] msg-param-recipient-user-name = 'emilypiee'
                 event.type = Type.TWITCH_SUBGIFT;
-                resetUser(event.sender);
                 break;
 
             case "ritual":
                 // unhandled message: ritual
                 event.type = Type.TWITCH_RITUAL;
-                resetUser(event.sender);
                 break;
 
             case "rewardgift":
@@ -177,7 +174,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-min-cheer-amount = '150'
                 //msg-param-selected-count = '60'
                 event.type = Type.TWITCH_REWARDGIFT;
-                resetUser(event.sender);
                 break;
 
             case "purchase":
@@ -189,7 +185,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-userID = '182815893'
                 //[usernotice] tmi.twitch.tv [#drdisrespectlive]: "Purchased Speed & Momentum Crate (Steam Version) in channel."
                 event.type = Type.TWITCH_PURCHASE;
-                resetUser(event.sender);
                 break;
 
             case "raid":
@@ -201,7 +196,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
                 //msg-param-viewerCount=9
                 //system-msg=9\sraiders\sfrom\sVHSGlitch\shave\sjoined\n!
                 event.type = Type.TWITCH_RAID;
-                resetUser(event.sender);
                 break;
 
             case "ban_success":
@@ -262,12 +256,10 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
             case "submysterygift":
                 event.type = Type.TWITCH_SUBGIFT;
-                resetUser(event.sender);
                 break;
 
             case "giftpaidupgrade":
                 event.type = Type.TWITCH_GIFTUPGRADE;
-                resetUser(event.sender);
                 break;
 
             default:
@@ -362,7 +354,9 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
         case "login":
             // RAID; real sender nickname and thus raiding channel lowercased
             // also PURCHASE. The sender's user login (real nickname)
+            // CLEARMSG, SUBGIFT, lots
             event.sender.nickname = value;
+            resetUser(event.sender);
             break;
 
         case "color":
