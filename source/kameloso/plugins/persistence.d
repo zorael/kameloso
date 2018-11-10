@@ -39,22 +39,37 @@ void postprocess(PersistenceService service, ref IRCEvent event)
     {
         if (!user.nickname.length) continue;
 
+        /// Apply user class if we have one stored.
+        void applyClassifiersDg()
+        {
+            import std.algorithm.searching : canFind;
+
+            if (service.state.client.admins.canFind(user.account))
+            {
+                // Admins are (currently) stored in an array IRCClient.admins
+                user.class_ = IRCUser.Class.admin;
+            }
+            else if (const classifier = user.account in service.userClasses)
+            {
+                user.class_ = *classifier;
+            }
+        }
+
         if (auto stored = user.nickname in service.state.users)
         {
-            with (user)
             with (IRCEvent.Type)
             switch (event.type)
             {
             case JOIN:
-                if (account.length) goto case RPL_WHOISACCOUNT;
+                if (user.account.length) goto case RPL_WHOISACCOUNT;
                 break;
 
             case ACCOUNT:
-                if (account == "*")
+                if (user.account == "*")
                 {
                     // User logged out, reset lastWhois so it can be triggered again later
                     // A value of 0L won't be melded...
-                    lastWhois = 1L;
+                    user.lastWhois = 1L;
                 }
                 else
                 {
@@ -66,24 +81,14 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             case RPL_WHOISUSER:
             case RPL_WHOISREGNICK:
                 // Record WHOIS if we have new account information
-                import std.algorithm.searching : canFind;
                 import std.datetime.systime : Clock;
 
-                lastWhois = Clock.currTime.toUnixTime;
-
-                if (service.state.client.admins.canFind(account))
-                {
-                    // Admins are (currently) stored in an array IRCClient.admins
-                    class_ = Class.admin;
-                }
-                else if (const classifier = account in service.userClasses)
-                {
-                    class_ = *classifier;
-                }
+                user.lastWhois = Clock.currTime.toUnixTime;
+                applyClassifiersDg();
                 break;
 
             default:
-                if (account.length && (account != "*") && !stored.account.length)
+                if (user.account.length && (user.account != "*") && !stored.account.length)
                 {
                     goto case RPL_WHOISACCOUNT;
                 }
@@ -104,6 +109,14 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         else
         {
             // New entry
+            if (user.account == "*") user.account = string.init;
+
+            if (user.account.length)
+            {
+                // Initial user already has account info
+                applyClassifiersDg();
+            }
+
             service.state.users[user.nickname] = *user;
         }
     }
