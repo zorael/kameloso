@@ -100,7 +100,7 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
     static void resetUser(ref IRCUser user)
     {
         user.address = string.init;  // Clear server address
-        user.class_ = IRCUser.Class.anyone;
+        user.class_ = IRCUser.Class.unset;
     }
 
     with (IRCEvent)
