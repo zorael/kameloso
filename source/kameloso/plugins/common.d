@@ -2851,11 +2851,11 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         import std.algorithm.searching : canFind;
         import std.uni : toLower;
 
-        immutable channelName = event.channel.toLower;
+        auto channel = event.channel.toLower in plugin.state.channels;
 
-        if (!plugin.state.channels[channelName].users.canFind(event.sender.nickname))
+        if (!channel.users.canFind(event.sender.nickname))
         {
-            plugin.state.channels[channelName].users ~= event.sender.nickname;
+            channel.users ~= event.sender.nickname;
         }
 
         plugin.catchUser(event.sender);
