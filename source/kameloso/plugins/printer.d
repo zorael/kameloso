@@ -441,13 +441,13 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (thisChannel.users.canFind(sender.nickname))
             {
                 // Channel message
-                writeToPath(channelName, buildNormalizedPath(logLocation, channelName.sanitisedPath ~ ".log"));
+                writeToPath(channelName, buildNormalizedPath(logLocation, channelName.escapedPath ~ ".log"));
             }
         }
 
         if (sender.nickname.length && sender.nickname in plugin.buffers)
         {
-            immutable queryPath = buildNormalizedPath(logLocation, sender.nickname.sanitisedPath ~ ".log");
+            immutable queryPath = buildNormalizedPath(logLocation, sender.nickname.escapedPath ~ ".log");
             // There is an open query buffer; write to it too
             writeToPath(sender.nickname, queryPath);
         }
@@ -457,19 +457,19 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (channel.length && (sender.nickname.length || type == MODE))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeToPath(channel, buildNormalizedPath(logLocation, channel.sanitisedPath ~ ".log"));
+            writeToPath(channel, buildNormalizedPath(logLocation, channel.escapedPath ~ ".log"));
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
             writeToPath(sender.nickname, buildNormalizedPath(logLocation,
-                sender.nickname.sanitisedPath ~ ".log"));
+                sender.nickname.escapedPath ~ ".log"));
         }
         else if (!sender.nickname.length && sender.address.length)
         {
             // Server
             writeToPath(state.client.server.address, buildNormalizedPath(logLocation,
-                state.client.server.address.sanitisedPath ~ ".log"));
+                state.client.server.address.escapedPath ~ ".log"));
         }
         else
         {
@@ -1626,7 +1626,7 @@ unittest
 }
 
 
-// sanitisedPath
+// escapedPath
 /++
  +  Replaces some characters in a string that don't translate well to paths.
  +
@@ -1640,7 +1640,7 @@ unittest
  +  Returns:
  +      The passed path with some characters replaced.
  +/
-string sanitisedPath(const string path)
+string escapedPath(const string path)
 {
     import std.array : replace;
 
@@ -1665,7 +1665,7 @@ string sanitisedPath(const string path)
 unittest
 {
     {
-        immutable before = sanitisedPath("unchanged");
+        immutable before = escapedPath("unchanged");
         immutable after = "unchanged";
         assert((before == after), after);
     }
@@ -1673,12 +1673,12 @@ unittest
     version(Windows)
     {
         {
-            immutable before = sanitisedPath("a\\b");
+            immutable before = escapedPath("a\\b");
             immutable after = "a_b";
             assert((before == after), after);
         }
         {
-            immutable before = sanitisedPath("a%PATH%b");
+            immutable before = escapedPath("a%PATH%b");
             immutable after = "a_PATH_b";
             assert((before == after), after);
         }
@@ -1686,12 +1686,12 @@ unittest
     else /*version(Posix)*/
     {
         {
-            immutable before = sanitisedPath("a/b");
+            immutable before = escapedPath("a/b");
             immutable after = "a_b";
             assert((before == after), after);
         }
         {
-            immutable before = sanitisedPath("a${PATH}b");
+            immutable before = escapedPath("a${PATH}b");
             immutable after = "a__PATH_b";
             assert((before == after), after);
         }
