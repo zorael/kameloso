@@ -13,6 +13,8 @@ import kameloso.ircdefs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
+// version = TwitchWarnings;
+
 
 // 2.079.0 getSymolsByUDA
 /++
@@ -3048,6 +3050,19 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event,
     PrivilegeLevel privilegeLevel, F fn)
 {
+    version(TwitchWarnings)
+    {
+        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.common : logger;
+            import kameloso.printing : printObject;
+
+            logger.warning("Tried to WHOIS on Twitch");
+            printObject(event);
+            return;
+        }
+    }
+
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in doWhois (no nickname.length)");
 
