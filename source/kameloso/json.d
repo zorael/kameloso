@@ -34,7 +34,7 @@ struct JSONStorage
 
     alias storage this;
 
-    //reset
+    // reset
     /++
      +  Initialises and clears the `JSONValue`, preparing it for object storage.
      +/
@@ -44,7 +44,7 @@ struct JSONStorage
     }
 
     // load
-    /++saveSeen
+    /++
      +  Loads JSON from disk.
      +
      +  In the case where the file doesn't exist or is otherwise invalid, then
