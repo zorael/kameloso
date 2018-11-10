@@ -31,8 +31,8 @@ If nothing else it makes for a good read-only terminal lurkbot.
 ## Current limitations:
 
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
-* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. On the other hand, the development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
-* nicknames are case-sensitive, while channels are largely not. Making them all case-insensitive made things really gnarly. There are corner cases where things might break; please file bugs.
+* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
+* nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the change was reverted. There are corner cases where things might break; please file bugs.
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -69,9 +69,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## Prerequisites
 
-You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires some 3.8 Gb to build all features (excluding tests).
+You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires some 3.9 Gb to build all features (linux, excluding tests).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used, and the development release crashes when trying.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
 It's *possible* to build it manually without dub, but it is non-trivial if you want the web-related plugins to work. Your best bet is to first build it with dub in verbose mode, then copy the actual command it runs and modify it to suit your needs.
 
@@ -242,11 +242,11 @@ port                6667
 
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
-Mind that in many ways Twitch does not behave as a conventional IRC server. Many common IRC commands go unrecognised. Joins and parts are not advertised. You cannot query a channel for the list of participants, and you cannot query the server for information about a user. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
+Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot query the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
 
 See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
 
-Known limitation: a user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation, and it carries across channels.
+Known limitation: a user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation, and it is persistent and carries across channels.
 
 ## Use as a library
 
@@ -275,10 +275,8 @@ If more state is necessary to replicate the environment, such as needing things 
 * pipedream zero: **no compiler segfaults**
 * pipedream: DCC
 * pipedream two: `ncurses`?
-* notes triggers? (later)
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * private notes (later)
-* Fiberify `connect.d` (later)
 
 # Built with
 
