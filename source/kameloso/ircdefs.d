@@ -82,6 +82,7 @@ struct IRCEvent
         ROOMSTATE,  /// Twitch channel information.
         GLOBALUSERSTATE,/// Twitch information about self upon login.
         CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user.
+        CLEARMSG,   /// Twitch `CLEARMSG` event, deletes a sent message.
         USERNOTICE, /// Twitch subscription or resubscription event.
         HOSTTARGET, /// Twitch channel hosting target.
         RECONNECT,  /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
