@@ -139,9 +139,9 @@ if (isOutputRange!(Sink, char[]))
         enum initialWidth = !widthArg ? longestMemberName!Things.length : widthArg;
     }
 
-    enum compensatedWidth = (typewidth > minimumTypeWidth) ?
+    enum ptrdiff_t compensatedWidth = (typewidth > minimumTypeWidth) ?
         (initialWidth - typewidth + minimumTypeWidth) : initialWidth;
-    enum namewidth = max(minimumNameWidth, compensatedWidth);
+    enum ptrdiff_t namewidth = max(minimumNameWidth, compensatedWidth);
 
     foreach (immutable n, thing; things)
     {
