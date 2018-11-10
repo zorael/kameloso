@@ -67,11 +67,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     stored = user.nickname in service.state.users;
                 }
 
-                if (user.class_ == IRCUser.Class.unset)
+                if (stored.class_ == IRCUser.Class.unset)
                 {
                     applyClassifiersDg(stored);
                 }
-                return;
+                continue;
             }
         }
 
