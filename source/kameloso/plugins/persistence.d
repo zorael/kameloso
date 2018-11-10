@@ -61,7 +61,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
             {
                 auto stored = user.nickname in service.state.users;
 
-                if (!stored)
+                if (!stored || !stored.address.length)
                 {
                     service.state.users[user.nickname] = *user;
                     stored = user.nickname in service.state.users;
