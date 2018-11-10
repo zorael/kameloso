@@ -40,7 +40,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         if (!user.nickname.length) continue;
 
         /// Apply user class if we have one stored.
-        void applyClassifiersDg(ref IRCUser userToClassify)
+        void applyClassifiersDg(IRCUser* userToClassify)
         {
             import std.algorithm.searching : canFind;
 
@@ -63,11 +63,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
                 if (!stored)
                 {
-                    service.state.users[user.nickname] = user;
-                    stored = user.nickname in serivce.state.users;
+                    service.state.users[user.nickname] = *user;
+                    stored = user.nickname in service.state.users;
                 }
 
-                applyClassifiersDg(*stored);
+                applyClassifiersDg(stored);
                 return;
             }
         }
