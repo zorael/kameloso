@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's designed to be easy to write your own. API documentation is [available](https://zorael.github.io/kameloso) [online](http://kameloso.dpldocs.info/kameloso.html). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's designed to be easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas for inclusion welcome.
 
 It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's because we simply haven't encountered that type of event before. It's then an easy case of creating rules for that kind of event on that particular IRC network or server daemon.
 
@@ -37,7 +37,7 @@ If nothing else it makes for a good read-only terminal lurkbot.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client lurking channels and less as a bot offering functionality.
 
 # Table of contents
 
