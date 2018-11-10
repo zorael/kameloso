@@ -494,6 +494,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
  +  ---
  +
  +  Params:
+ +      plugin = The current `PrinterPlugin`.
  +      logLocation = String of the location directory we want to store logs in.
  +
  +  Returns:
@@ -566,6 +567,9 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
  +  In order to not accumulate a boundless amount of buffers, keep a counter of
  +  how many PINGs a buffer has been empty. When the counter reaches zero (value
  +  hardcoded in struct `LogLineBuffer`), remove the dead buffer from the array.
+ +
+ +  Params:
+ +      plugin = The current `PrinterPlugin`.
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -707,7 +711,8 @@ unittest
  +      plugin = Current `PrinterPlugin`.
  +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
  +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
- +      monochrome = Whether to print text monochrome or coloured.
+ +      bellOnMention = Whether or not to emit a terminal bell when the bot's
+ +          nickname is mentioned in chat.
  +/
 void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
@@ -891,6 +896,8 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
  +      plugin = Current `PrinterPlugin`.
  +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
  +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
+ +      bellOnMention = Whether or not to emit a terminal bell when the bot's
+ +          nickname is mentioned in chat.
  +/
 version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,

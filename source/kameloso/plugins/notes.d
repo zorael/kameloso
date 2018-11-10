@@ -334,6 +334,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +
  +  Params:
  +      plugin = Current `NotesPlugin`.
+ +      channel = Channel for which the notes were stored.
  +      nickname = Nickname of user whose notes to fetch.
  +
  +  Returns:
@@ -389,6 +390,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
  +  Params:
  +      plugins = Current `NotesPlugin`.
  +      nickname = Nickname whose notes to clear.
+ +      channel = Channel for which the notes were stored.
  +/
 void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
 {
@@ -470,6 +472,7 @@ void pruneNotes(NotesPlugin plugin)
  +      plugin = Current `NotesPlugin`.
  +      nickname = Nickname for whom the note is meant.
  +      sender = Originating user who places the note.
+ +      content = Channel for which we should save the note.
  +      line = Note text.
  +/
 void addNote(NotesPlugin plugin, const string nickname, const string sender,

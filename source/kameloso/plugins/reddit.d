@@ -147,6 +147,9 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
  +  Given an URL, looks it up on Reddit to see if it has been posted there.
  +
  +  Params:
+ +      state = The current plugin instance's
+ +          `kameloso.plugin.common.IRCPluginState`, for use to send text to the
+ +          local terminal.
  +      url = URL to query Reddit for.
  +
  +  Returns:

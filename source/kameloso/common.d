@@ -451,7 +451,8 @@ struct IRCBot
     /++
      +  Initialises all plugins' resource files.
      +
-     +  This merely calls `IRCPlugin.initResources()` on each plugin.
+     +  This merely calls `kameloso.plugins.common.IRCPlugin.initResources()` on
+     +  each plugin.
      +/
     void initPluginResources()
     {
@@ -778,6 +779,8 @@ unittest
  +  ---
  +
  +  Params:
+ +      abbreviate = Whether or not to abbreviate the output, using `h` instead
+ +          of `hours`, `m` instead of `minutes`, etc.
  +      sink = Output buffer sink to write to.
  +      duration = A period of time.
  +/
@@ -907,10 +910,12 @@ unittest
  +  ---
  +
  +  Params:
+ +      abbreviate = Whether or not to abbreviate the output, using `h` instead
+ +          of `hours`, `m` instead of `minutes`, etc.
  +      duration = A period of time.
  +
  +  Returns:
- +      The passed duration expressed in natural English language.
+ +      A string with the passed duration expressed in natural English language.
  +/
 string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration duration)
 {

@@ -59,7 +59,12 @@ interface IRCPlugin
 {
     @safe:
 
-    /// Returns a reference to the current `IRCPluginState` of the plugin.
+    /++
+     +  Returns a reference to the current `IRCPluginState` of the plugin.
+     +
+     +  Returns:
+     +      Reference to an `IRCPluginState`.
+     +/
     ref IRCPluginState state() pure nothrow @nogc @property;
 
     /// Executed to let plugins modify an event mid-parse.
@@ -78,7 +83,12 @@ interface IRCPlugin
     import std.array : Appender;
     void serialiseConfigInto(ref Appender!string) const;
 
-    /// Executed during start if we want to change a setting by its string name.
+    /++
+     +  Executed during start if we want to change a setting by its string name.
+     +
+     +  Returns:
+     +      Boolean of whether the set succeded or not.
+     +/
     bool setSettingByName(const string, const string);
 
     /// Executed when connection has been established.
@@ -90,10 +100,20 @@ interface IRCPlugin
     /// Executed during shutdown or plugin restart.
     void teardown() @system;
 
-    /// Returns the name of the plugin, sliced off the module name.
+    /++
+     +  Returns the name of the plugin, sliced off the module name.
+     +
+     +  Returns:
+     +      The string name of the plugin.
+     +/
     string name() @property const;
 
-    /// Returns an array of the descriptions of the commands a plugin offers.
+    /++
+     +  Returns an array of the descriptions of the commands a plugin offers.
+     +
+     +  Returns:
+     +      An associative `Description[string]` array.
+     +/
     Description[string] commands() pure nothrow @property const;
 
     /++
@@ -161,7 +181,19 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
         /// Command payload aside from the `kameloso.ircdefs.IRCEvent`.
         Payload payload;
 
-        /// Create a new `WHOISRequestImpl` with the passed variables.
+        /++
+         +  Create a new `WHOISRequestImpl` with the passed variables.
+         +
+         +  Params:
+         +      payload = Payload of templated type `Payload` to attach to this
+         +          `WHOISRequestImpl`.
+         +      event = `kameloso.ircdefs.IRCEvent` to attach to this
+         +          `WHOISRequestImpl`.
+         +      privilegeLevel = The privilege level required to trigger the
+         +          passed function.
+         +      fn = Function pointer to call with the attached payloads when
+         +          the request is triggered.
+         +/
         this(Payload payload, IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
             super();
@@ -174,7 +206,15 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
     }
     else
     {
-        /// Create a new `WHOISRequestImpl` with the passed variables.
+        /++
+         +  Create a new `WHOISRequestImpl` with the passed variables.
+         +
+         +  Params:
+         +      payload = Payload of templated type `Payload` to attach to this
+         +          `WHOISRequestImpl`.
+         +      fn = Function pointer to call with the attached payloads when
+         +          the request is triggered.
+         +/
         this(IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
         {
             super();
@@ -1196,8 +1236,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         alias cleanupFuns = Filter!(cleanupAwareness, funs);
         alias pluginFuns = Filter!(isNormalPluginFunction, funs);
 
-        // Sanitise and try again once on UTF/Unicode exceptions
-
+        /// Sanitise and try again once on UTF/Unicode exceptions
         static void sanitizeEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
@@ -1212,6 +1251,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             }
         }
 
+        /// Wrap all the functions in the passed `funlist` in try-catch blocks.
         void tryCatchHandle(funlist...)(const IRCEvent event)
         {
             import core.exception : UnicodeException;
@@ -2158,11 +2198,11 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Catches a user's information and saves it in the plugin's
      +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s.
      +
-     +  `IRCEvent.Type.RPL_WHOISUSER` events carry values in the
-     +  `IRCUser.lastWhois` field that we want to store.
+     +  `kameloso.ircdefs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
+     +  the `kameloso.ircdefs.IRCUser.lastWhois` field that we want to store.
      +
-     +  `IRCEvent.Type.CHGHOST` occurs when a user changes host on some servers
-     +  that allow for custom host addresses.
+     +  `kameloso.ircdefs.IRCEvent.Type.CHGHOST` occurs when a user changes host
+     +  on some servers that allow for custom host addresses.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -2830,6 +2870,16 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onTwitchAwarenessSenderCarryingEvent
     /++
      +  Catch senders from normal Twitch events.
+     +
+     +  This has to be done on certain Twitch channels whose participants are
+     +  not enumerated upon joining it, nor joins or parts announced. By
+     +  listening for any message and catching the user that way we ensure we
+     +  scrape the channel for everyone that's actively chatting.
+     +
+     +  The users array will only grow and grow. Special care has to be manually
+     +  taken to prune old users, ideally by periodically comparing their
+     +  `kameloso.ircdefs.IRCUser.lastWhois` timestamps and removing those that
+     +  are too old.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -2872,7 +2922,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
+ +      client = `kameloso.irc.IRCClient` of the calling `IRCPlugin`'s
+ +          `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `kameloso.ircdefs.IRCEvent` we're
  +          considering.
@@ -3206,6 +3257,12 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
  +  It only supports a precision of a *worst* case of
  +  `kameloso.constants.Timeout.receive` * 3 + 1 seconds, but generally less
  +  than that. See the main loop for more information.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point
+ +          in time.
+ +      secs = Number of seconds to delay the `fiber`.
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
 {
@@ -3223,6 +3280,11 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
  +  appending it to `timedFibers`.
  +
  +  Overload that implicitly queues `Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      secs = Number of seconds to delay the implicit fiber in the current
+ +          context.
  +/
 void delayFiber(IRCPlugin plugin, const long secs)
 {
@@ -3238,6 +3300,13 @@ void delayFiber(IRCPlugin plugin, const long secs)
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
+ +          `kameloso.ircdefs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `kameloso.ircdefs.IRCEvent` that should trigger the
+ +          passed awaiting fiber.
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 {
@@ -3255,6 +3324,11 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +  Naming is hard.
  +
  +  Overload that implicitly queues `Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      type = The kind of `kameloso.ircdefs.IRCEvent` that should trigger this
+ +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
 {
@@ -3270,6 +3344,14 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
+ +          `kameloso.ircdefs.IRCEvent` of type `type` comes along.
+ +      types = The kinds of `kameloso.ircdefs.IRCEvent` that should trigger
+ +          the passed awaiting fiber, in an array with elements of type
+ +          `kameloso.ircdefs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -3290,6 +3372,12 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +  Naming is hard.
  +
  +  Overload that implicitly queues `Fiber.getThis`.
+ +
+ +  Params:
+ +      plugin = The current `IRCPlugin`.
+ +      types = The kinds of `kameloso.ircdefs.IRCEvent` that should trigger
+ +          this implicit awaiting fiber (in the current context), in an array
+ +          with elements of type `kameloso.ircdefs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -3322,8 +3410,9 @@ final class IRCPluginInitialisationException : Exception
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
  +  with the resulting account information that was divined from it, in the form
- +  of the actual `IRCEvent`, the target `IRCUser` within it, the user's
- +  `account` field, or merely alone as an arity-0 function.
+ +  of the actual `kameloso.ircdefs.IRCEvent`, the target
+ +  `kameloso.ircdefs.IRCUser` within it, the user's `account` field, or merely
+ +  alone as an arity-0 function.
  +
  +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
  +  the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
@@ -3460,6 +3549,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /++
      +  Constructs a `CarryingFiber!IRCEvent` and enqueues it into the
      +  `awaitingFibers` associative array, then issues a `WHOIS` call.
+     +
+     +  Params:
+     +      nickname = Nickname to issue a `WHOIS` query for.
      +/
     void enqueueAndWHOIS(const string nickname)
     {

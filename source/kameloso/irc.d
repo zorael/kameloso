@@ -22,7 +22,7 @@ version(AsAnApplication)
     /++
      +  Log sanity check failures to screen. Parsing proceeds and plugins are
      +  processed after some verbose debug output. The error text will be stored
-     +  in `IRCEvent.errors`.
+     +  in `kameloso.ircdefs.IRCEvent.errors`.
      +/
     version = PrintSanityFailures;
 
@@ -424,8 +424,8 @@ unittest
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +
- +  Throws: `IRCParseException` if conversion from typestring to `IRCEvent.Type`
- +      or typestring to a number failed.
+ +  Throws: `IRCParseException` if conversion from typestring to
+ +      `kameloso.ircdefs.IRCEvent.Type` or typestring to a number failed.
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -3057,6 +3057,12 @@ struct IRCParser
      +  IRCParser parser;
      +  parser.setDaemon(IRCServer.Daemon.unreal, daemonstring);
      +  ---
+     +
+     +  Params:
+     +      daemon = The `kameloso.ircdefs.IRCServer.Daemon` to assign to this
+     +          `IRCParser`.
+     +      daemonstring = The raw string with which the server announced its
+     +          daemon.
      +/
     void setDaemon(const Daemon daemon, const string daemonstring) pure nothrow @nogc
     {
@@ -3817,7 +3823,7 @@ struct IRCClient
 
         @Unconfigurable
         {
-            /// The current `IRCServer` we're connected to.
+            /// The current `kameloso.ircdefs.IRCServer` we're connected to.
             IRCServer server;
 
             /// The original client nickname before connecting, in case it changed.
@@ -3840,7 +3846,7 @@ struct IRCClient
         /// Client nickname.
         string nickname;
 
-        /// The current `IRCServer` we're connected to.
+        /// The current `kameloso.ircdefs.IRCServer` we're connected to.
         IRCServer server;
 
         /// The original client nickname before connecting, in case it changed.

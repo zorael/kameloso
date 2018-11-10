@@ -34,10 +34,6 @@ version(Colours)
 /++
  +  Handle Twitch specifics, modifying the `kameloso.ircdefs.IRCEvent` to add
  +  things like `colour` and differentiate between temporary and permanent bans.
- +
- +  Params:
- +      service = Current `TwitchService`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to modify.
  +/
 void postprocess(TwitchService service, ref IRCEvent event)
 {
@@ -569,10 +565,13 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
 
 // highlightEmotes
 /++
- +  Tints emote strings and highlights Twitch emotes in a ref `IRCEvent`'s
- +  `content` member.
+ +  Tints emote strings and highlights Twitch emotes in a ref
+ +  `kameloso.ircdefs.IRCEvent`'s `content` member.
  +
  +  Wraps `higlightEmotesImpl`.
+ +
+ +  Params:
+ +      event = `kameloso.ircdefs.IRCEvent` whose content text to highlight.
  +/
 version(Colours)
 void highlightEmotes(ref IRCEvent event)
@@ -799,7 +798,7 @@ public:
  +  Twitch-specific service.
  +
  +  Twitch events are initially very basic with only skeletal functionality,
- +  until you enable capabilites that unlock their `IRCv3` tags, at which point
+ +  until you enable capabilites that unlock their IRCv3 tags, at which point
  +  events become a flood of information.
  +
  +  This service only postprocesses events and doesn't yet act on them in any

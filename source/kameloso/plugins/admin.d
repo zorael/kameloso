@@ -494,7 +494,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.IRCClient.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
@@ -578,7 +578,7 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.IRCClient.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.
@@ -649,6 +649,13 @@ void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Adds or removes an account from the file of user classifier definitions,
  +  and reloads all plugins to make them read the updated lists.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      add = Whether to add to or remove from lists.
+ +      section = Which list to add to or remove from; `whitelist` or
+ +          `blacklist`.
+ +      account = Services account name to add or remove.
  +/
 void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     const string section, const string account)

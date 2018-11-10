@@ -166,7 +166,7 @@ void pipereader(shared IRCPluginState newState)
  +          original `PipelinePlugin`.
  +
  +  Returns:
- +      A `std.stdio.File` repersenting the named FIFO we want to read from.
+ +      A `std.stdio.File` representing the named FIFO we want to read from.
  +
  +  Throws: `std.file.FileException` if FIFO could not be created.
  +/

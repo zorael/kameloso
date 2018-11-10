@@ -72,6 +72,7 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
  +      option = String option in long `--long` or short `-s` form, including
  +          dashes, with an equals sign between option name and value if
  +          applicable (in all cases except bools).
+ +      ptr = Pointer to the value to modify.
  +      rest = Remaining `args` and `option` s to call recursively.
  +
  +  Throws: `std.getopt.GetOptException` if no value of type T was passed to
@@ -229,7 +230,8 @@ void printHelp(GetoptResult results) @system
  +          via `getopt`, to apply to things before saving to disk.
  +
  +  Returns:
- +      `Next.returnSuccess` so the caller knows to return and exit.
+ +      `kameloso.common.Next.returnSuccess` so the caller knows to return and
+ +      exit.
  +/
 Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettings) @system
 {
@@ -310,8 +312,9 @@ public:
  +          the settings read from the configuration file.
  +
  +  Returns:
- +      `Next.continue_` or `Next.returnSuccess` depending on whether the
- +      arguments chosen mean the program should proceed or not.
+ +      `kameloso.common.Next.continue_` or `kameloso.common.Next.returnSuccess`
+ +      depending on whether the arguments chosen mean the program should
+ +      proceed or not.
  +/
 Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @system
 {

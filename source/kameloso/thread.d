@@ -155,7 +155,7 @@ final class CarryingFiber(T) : Fiber
 
     /++
      +  Constructor function merely taking a function/delgate pointer, to call
-     +  when invoking this `Fiber` (via `.call()`).
+     +  when invoking this `core.thread.Fiber` (via `.call()`).
      +/
     this(Fn, Args...)(Fn fn, Args args)
     {
@@ -166,7 +166,7 @@ final class CarryingFiber(T) : Fiber
     /++
      +  Constructor function taking a `T` `payload` to assign to its own
      +  internal `this.payload`, as well as a function/delegate pointer to call
-     +  when invoking this `Fiber` (via `.call()`).
+     +  when invoking this `core.thread.Fiber` (via `.call()`).
      +/
     this(Fn, Args...)(T payload, Fn fn, Args args)
     {

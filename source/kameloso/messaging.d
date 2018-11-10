@@ -24,6 +24,16 @@ version(unittest)
 // chan
 /++
  +  Sends a channel message.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel in which to send the message.
+ +      content = Message body content to send.
  +/
 void chan(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string content)
@@ -62,6 +72,16 @@ unittest
 // query
 /++
  +  Sends a private query message to a user.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      nickname = Nickname of user to which to send the private message.
+ +      content = Message body content to send.
  +/
 void query(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string nickname, const string content)
@@ -104,6 +124,17 @@ unittest
  +
  +  This reflects how channel messages and private messages are both the
  +  underlying same type; `PRIVMSG`.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel in which to send the message, if applicable.
+ +      nickname = Nickname of user to which to send the message, if applicable.
+ +      content = Message body content to send.
  +/
 void privmsg(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string nickname, const string content)
@@ -159,6 +190,17 @@ unittest
 // emote
 /++
  +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      emoteTarget = Target of the emote, either a nickname to be sent as a
+ +          private message, or a channel.
+ +      content = Message body content to send.
  +/
 void emote(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string emoteTarget, const string content)
@@ -221,6 +263,17 @@ unittest
  +
  +  This includes modes that pertain to a user in the context of a channel,
  +  like bans.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel to change the modes of.
+ +      modes = Mode characters to apply to the channel.
+ +      content = Target of mode change, if applicable.
  +/
 void mode(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string modes, const string content = string.init)
@@ -261,6 +314,16 @@ unittest
 // topic
 /++
  +  Sets the topic of a channel.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel whose topic to change.
+ +      content = Topic body text.
  +/
 void topic(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string content)
@@ -299,6 +362,16 @@ unittest
 // invite
 /++
  +  Invites a user to a channel.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel to which to invite the user.
+ +      nickname = Nickname of user to invite.
  +/
 void invite(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string nickname)
@@ -337,6 +410,15 @@ unittest
 // join
 /++
  +  Joins a channel.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel to join.
  +/
 void join(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel)
@@ -373,6 +455,17 @@ unittest
 // kick
 /++
  +  Kicks a user from a channel.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel from which to kick the user.
+ +      nickname = Nickname of user to kick.
+ +      reason = Optionally the reason behind the kick.
  +/
 void kick(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string nickname, const string reason = string.init)
@@ -413,6 +506,16 @@ unittest
 // part
 /++
  +  Leaves a channel.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      channel = Channel to leave.
+ +      reason = Optionally, reason behind leaving.
  +/
 void part(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string channel, const string reason = string.init)
@@ -451,6 +554,15 @@ unittest
 // quit
 /++
  +  Disconnects from the server, optionally with a quit reason.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      reason = Optionally, the reason for quitting.
  +/
 void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string reason = string.init)
@@ -489,6 +601,15 @@ unittest
  +
  +  This is used to send messages of types for which there exist no helper
  +  functions.
+ +
+ +  Params:
+ +      quiet = Whether or not to echo what was sent to the local terminal.
+ +      priority = Whether or not to send the message as a priority message,
+ +          skipping messages in the threshold queue and immediately sending it
+ +          to the server.
+ +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
+ +          which to send messages to the server.
+ +      line = Raw IRC string to send to the server.
  +/
 void raw(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
     (IRCPluginState state, const string line)
@@ -526,6 +647,11 @@ unittest
 /++
  +  Sends a concurrency message asking to print the supplied text to the local
  +  terminal, instead of doing it directly.
+ +
+ +  Params:
+ +      state = Current `kameloso.plugins.common.IRCPluginState`, used to send
+ +          the concurrency message to the main thread.
+ +      line = The text body to ask the main thread to display.
  +/
 void askToLogImpl(string logLevel)(IRCPluginState state, const string line)
 {

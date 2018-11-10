@@ -228,6 +228,9 @@ void periodically(PersistenceService service)
 // reloadClassifiersFromDisk
 /++
  +  Reloads admin/whitelist/blacklist classifier definitions from disk.
+ +
+ +  Params:
+ +      service = The current `PersistenceService`.
  +/
 void reloadClassifiersFromDisk(PersistenceService service)
 {

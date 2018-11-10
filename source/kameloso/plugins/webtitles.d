@@ -454,7 +454,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +
  +  Params:
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
- +      lookup = Finished title lookup.
+ +      info = `YouTubeVideoInfo` describing the lookup results.
  +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
  +      colouredOutput = Whether or not to include mIRC colours in outgoing
  +          messages.

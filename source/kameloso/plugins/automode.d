@@ -44,6 +44,9 @@ struct AutomodeSettings
  +
  +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
  +  it to populate a normal associative array for faster lookups.
+ +
+ +  Params:
+ +      plugin = The current `AutomodePlugin`.
  +/
 void populateAutomodes(AutomodePlugin plugin)
 {
@@ -72,6 +75,9 @@ void populateAutomodes(AutomodePlugin plugin)
  +  Saves automode definitions to disk.
  +
  +  Use JSON to get a pretty-printed list, then write it to disk.
+ +
+ +  Params:
+ +      plugin = The current `AutomodePlugin`.
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {

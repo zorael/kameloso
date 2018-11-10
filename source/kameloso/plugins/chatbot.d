@@ -131,8 +131,9 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +
  +  To work around this we construct a `CarryingFiber!(IRCPlugin[])` and send it
  +  to the main thread. It will attach the client-global `plugins` array of
- +  `IRCPlugin`s to it, and invoke the Fiber. The delegate inside will then
- +  process the list as if it had taken the array as an argument.
+ +  `kameloso.plugins.common.IRCPlugin`s to it, and invoke the Fiber.
+ +  The delegate inside will then process the list as if it had taken the array
+ +  as an argument.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
  +  which we remember since we saved the original `kameloso.ircdefs.IRCEvent`.

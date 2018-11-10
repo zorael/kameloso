@@ -152,6 +152,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
         return;
     }
 
+    /// Report success to IRC
     void report(const string nickname, const string endQuote)
     {
         string message;

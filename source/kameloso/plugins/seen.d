@@ -272,7 +272,7 @@ struct SeenSettings
  +  applicable. The two policies are `home`, in which only events in channels in
  +  the `homes` array will be allowed to trigger this; or `any`, in which case
  +  anywhere goes. For events that don't correspond to a channel (such as
- +  `IRCEvent.Type.QUERY`) the setting is ignored.
+ +  `kameloso.ircdefs.IRCEvent.Type.QUERY`) the setting is ignored.
  +
  +  Not all events relate to a particular channel, such as `QUIT` (quitting
  +  leaves every channel).
@@ -738,8 +738,8 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +
  +  Params:
  +      plugin = Current `SeenPlugin`.
- +      signedNickname = Nickname to update, potentially prefixed with a
- +          modesign (@, +, %, ...).
+ +      signed = Nickname to update, potentially prefixed with a modesign
+ +          (@, +, %, ...).
  +      time = UNIX timestamp of when the user was seen.
  +/
 void updateUser(SeenPlugin plugin, const string signed, const long time)

@@ -348,7 +348,7 @@ unittest
 /++
  +  True if a type is `string`, `dstring` or `wstring`; otherwise false.
  +
- +  Does not consider e.g. `char[]` a string, as `isSomeString` does.
+ +  Does not consider e.g. `char[]` a string, as `std.traits.isSomeString` does.
  +/
 enum isTrulyString(S) = is(S == string) || is(S == dstring) || is(S == wstring);
 

@@ -132,6 +132,9 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
  +  Joins all channels listed as homes *and* channels in the arrays in
  +  `kameloso.irc.IRCClient` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
  +/
 void joinChannels(ConnectService service)
 {
@@ -233,6 +236,9 @@ void onPing(ConnectService service, const IRCEvent event)
  +
  +  The command to send vary greatly between server daemons (and networks), so
  +  use some heuristics and try the best guess.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
  +/
 void tryAuth(ConnectService service)
 {
@@ -357,8 +363,8 @@ void tryAuth(ConnectService service)
  +  Joins channels at the end of the message of the day (`MOTD`), and tries to
  +  authenticate with services if applicable.
  +
- +  Some servers don't have a `MOTD`, so act on `IRCEvent.Type.ERR_NOMOTD` as
- +  well.
+ +  Some servers don't have a `MOTD`, so act on
+ +  `kameloso.ircdefs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -434,8 +440,8 @@ void onAuthEnd(ConnectService service)
  +  Flags authentication as finished and join channels.
  +
  +  Some networks/daemons (like RusNet) send the "authentication complete"
- +  message as a `IRCEvent.Type.NOTICE` from `NickServ`, not a
- +  `IRCEvent.Type.PRIVMSG`.
+ +  message as a `kameloso.ircdefs.IRCEvent.Type.NOTICE` from `NickServ`, not a
+ +  `kameloso.ircdefs.IRCEvent.Type.PRIVMSG`.
  +
  +  Whitelist more nicknames as we discover them. Also English only for now but
  +  can be easily extended.
@@ -800,6 +806,9 @@ void onReconnect(ConnectService service)
 // register
 /++
  +  Registers with/logs onto an IRC server.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
  +/
 void register(ConnectService service)
 {
@@ -854,6 +863,12 @@ void start(ConnectService service)
  +  Receives and handles a bus message from another plugin.
  +
  +  So far only reauthenticates with services, on demand.
+ +
+ +  Params:
+ +      service = The current `ConnectService`.
+ +      header = String header describing the message content.
+ +      content = Wrapped message content, may be anything. Cast and test for
+ +          null to find out.
  +/
 import kameloso.thread : Sendable;
 void onBusMessage(ConnectService service, const string header, shared Sendable content)

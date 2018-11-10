@@ -63,6 +63,14 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +  channel.
  +
  +  Supposed to be run in its own, shortlived thread.
+ +
+ +  Params:
+ +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
+ +          necessary information to pass messages to send messages to the main
+ +          thread, to send text to the srever or display text on the screen.
+ +      event = The `kameloso.ircdefs.IRCEvent` in flight.
+ +      colouredOutgoing = Whether or not to tint messages going to the server
+ +          with mIRC colouring.
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
 {

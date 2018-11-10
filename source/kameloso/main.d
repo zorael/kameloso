@@ -150,7 +150,8 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +
  +  Returns:
- +      `Next.*` depending on what course of action to take next.
+ +      `kameloso.common.Next`.* depending on what course of action to take
+ +      next.
  +/
 Next checkMessages(ref IRCBot bot)
 {
@@ -486,10 +487,11 @@ Next checkMessages(ref IRCBot bot)
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +
  +  Returns:
- +      `Next.returnFailure` if circumstances mean the bot should exit with
- +      a non-zero exit code, `Next.returnSuccess` if it should exit by
- +      returning `0`, `Next.continue_` if the bot should reconnect to the
- +      server. `Next.retry` is never returned.
+ +      `kameloso.common.Next.returnFailure` if circumstances mean the bot
+ +      should exit with a non-zero exit code,
+ +      `kameloso.common.Next.returnSuccess` if it should exit by returning `0`,
+ +      `kameloso.common.Next.continue_` if the bot should reconnect to the
+ +      server. `kameloso.common.Next.retry` is never returned.
  +/
 Next mainLoop(ref IRCBot bot)
 {
@@ -505,12 +507,12 @@ Next mainLoop(ref IRCBot bot)
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(bot.conn, *(bot.abort)));
 
-    /// How often to check for timed `Fiber`s, multiples of `Timeout.receive`.
+    /// How often to check for timed `core.thread.Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
 
     /++
      +  How many more receive passes until it should next check for timed
-     +  `Fiber`s.
+     +  `core.thread.Fiber`s.
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
@@ -754,12 +756,14 @@ Next mainLoop(ref IRCBot bot)
 
 // handleFibers
 /++
- +  Processes the awaiting `Fiber`s of an `IRCPlugin`.
+ +  Processes the awaiting `core.thread.Fiber`s of an
+ +  `kameloso.plugins.common.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `IRCPlugin` whose `IRCEvent.Type`-awaiting `Fiber`s to
+ +      plugin = The `kameloso.plugins.common.IRCPlugin` whose
+ +          `kameloso.ircdefs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
- +      event = The triggering `IRCEvent`.
+ +      event = The triggering `kameloso.ircdefs.IRCEvent`.
  +/
 import kameloso.plugins.common : IRCPlugin;
 void handleFibers(IRCPlugin plugin, const IRCEvent event)
@@ -833,12 +837,16 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
 
 // handleTimedFibers
 /++
- +  Processes the timed `Fiber`s of an `IRCPlugin`.
+ +  Processes the timed `core.thread.Fiber`s of an
+ +  `kameloso.plugins.common.IRCPlugin`.
  +
  +  Params:
- +      plugin = The `IRCPlugin` whose timed `Fiber`s to iterate and process.
+ +      plugin = The `kameloso.plugins.common.IRCPlugin` whose timed
+ +          `core.thread.Fiber`s to iterate and process.
  +      timedFiberCheckCounter = The ref timestamp at which to next check for
  +          timed fibers to process.
+ +      nowInUnix = Current UNIX timestamp to compare the timed
+ +          `core.thread.Fiber`'s timestamp with.
  +/
 void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const long nowInUnix)
 {
@@ -978,7 +986,8 @@ void resetSignals() nothrow @nogc
  +          defined with `--set plugin.setting=value` on the command lnie.
  +
  +  Returns:
- +      `Next.*` depending on what action the calling site should take.
+ +      `kameloso.common.Next`.* depending on what action the calling site
+ +      should take.
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
@@ -1034,8 +1043,8 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 
 // tryConnect
 /++
- +  Tries to connect to the IPs in `IRCBot.conn.ips` by leveraging
- +  `kameloso.connection.connectFiber`, reacting on the
+ +  Tries to connect to the IPs in `kameloso.common.IRCBot.conn.ips` by
+ +  leveraging `kameloso.connection.connectFiber`, reacting on the
  +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the
  +  user.
  +
@@ -1043,8 +1052,9 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +
  +  Returns:
- +      `Next.continue_` if connection succeeded, `Next.returnFaillure` if
- +      connection failed and the program should exit.
+ +      `kameloso.common.Next.continue_` if connection succeeded,
+ +      `kameloso.common.Next.returnFaillure` if connection failed and the
+ +      program should exit.
  +/
 Next tryConnect(ref IRCBot bot)
 {
@@ -1146,8 +1156,9 @@ Next tryConnect(ref IRCBot bot)
  +      bot = Reference to the current `kameloso.common.bot`.
  +
  +  Returns:
- +      `Next.continue_` if resolution succeeded, `Next.returnFaillure` if
- +      it failed and the program should exit.
+ +      `kameloso.common.Next.continue_` if resolution succeeded,
+ +      `kameloso.common.Next.returnFaillure` if it failed and the program
+ +      should exit.
  +/
 Next tryResolve(ref IRCBot bot)
 {
@@ -1564,10 +1575,6 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
  +
  +  Params:
  +      args = The command-line arguments passed to the program at start.
- +
- +  Returns:
- +      `true` if configuration is complete and nothing needs doing, `false` if
- +      incomplete and the program should exit.
  +/
 void complainAboutMissingConfiguration(const string[] args)
 {

@@ -26,10 +26,10 @@ import std.typecons : Flag, No, Yes;
  +  ---
  +
  +  Params:
- +      banner = Whether to add the "*kameloso bot*" banner at the head of the
- +          file.
  +      filename = Filename of file to write to.
  +      configurationText = Content to write to file.
+ +      banner = Whether to add the "*kameloso bot*" banner at the head of the
+ +          file.
  +/
 void writeToDisk(const string filename, const string configurationText,
     Flag!"addBanner" banner = Yes.addBanner)
