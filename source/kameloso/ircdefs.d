@@ -1003,6 +1003,7 @@ struct IRCUser
     /// Classifiers; roles which a user is one of.
     enum Class
     {
+        unset,
         anyone,
         blacklist,
         whitelist,
