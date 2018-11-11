@@ -872,16 +872,9 @@ void start(ConnectService service)
  +  Params:
  +      service = The current `ConnectService`.
  +      header = String header describing the message content.
- +      content = Wrapped message content, may be anything. Cast and test for
- +          null to find out.
  +/
-import kameloso.thread : Sendable;
-void onBusMessage(ConnectService service, const string header, shared Sendable content)
+void onBusMessage(ConnectService service, const string header)
 {
-    import kameloso.thread : BusMessage;
-
-    //logger.log("Connect received bus message: ", header);
-
     if (header == "auth")
     {
         service.tryAuth();
