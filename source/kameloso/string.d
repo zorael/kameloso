@@ -1177,3 +1177,126 @@ unittest
         assert(!decoded.length, decoded);
     }
 }
+
+
+// splitWords
+/++
+ +  Splits a string with a supplied separator, into one or more lines not longer
+ +  then the passed maximum length.
+ +
+ +  If a line cannot be split due to the line being too short or the separator
+ +  not occuring in the text, it is added to the returned array as-is and no
+ +  more splitting is done.
+ +
+ +  Example:
+ +  ---
+ +  string line = "I am a fish in a sort of long sentence~";
+ +  enum maxLineLength = 20;
+ +  auto splitLines = line.splitWords(' ', maxLineLength);
+ +
+ +  assert(splitLines[0] == "I am a fish in a");
+ +  assert(splitLines[1] == "sort of a long");
+ +  assert(splitLines[2] == "sentence~");
+ +  ---
+ +
+ +  Params:
+ +      line = String line to split.
+ +      separator = Separator character with which to split the `line`.
+ +      maxLength = Maximum length of the separated lines.
+ +
+ +  Returns:
+ +      A `string[]` array with lines split out of the passed `line`.
+ +/
+T[] splitWords(T,C)(const T line, const C separator, const size_t maxLength)
+if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+{
+    string[] lines;
+
+    if (!line.length) return lines;
+
+    string slice = line;
+    lines.reserve(cast(int)(line.length / maxLength) + 1);
+
+    whileloop:
+    while(true)
+    {
+        import std.algorithm.comparison : min;
+
+        for (size_t i = min(maxLength, slice.length); i > 0; --i)
+        {
+            if (slice[i-1] == separator)
+            {
+                lines ~= slice[0..i-1];
+                slice = slice[i..$];
+                continue whileloop;
+            }
+        }
+        break;
+    }
+
+    if (slice.length)
+    {
+        // Remnant
+
+        if (lines.length)
+        {
+            lines[lines.length-1] ~= separator ~ slice;
+        }
+        else
+        {
+            // Max line was too short to fit anything. Returning whole line
+            lines ~= slice;
+        }
+    }
+
+    return lines;
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        immutable prelude = "PRIVMSG #garderoben :";
+        immutable maxLength = 250 - prelude.length;
+
+        immutable rawLine = "Lorem ipsum dolor sit amet, ea has velit noluisse, " ~
+            "eos eius appetere constituto no, ad quas natum eos. Perpetua " ~
+            "electram mnesarchum usu ne, mei vero dolorem no. Ea quando scripta " ~
+            "quo, minim legendos ut vel. Ut usu graece equidem posidonium. Ius " ~
+            "denique ponderum verterem no, quo te mentitum officiis referrentur. " ~
+            "Sed an dolor iriure vocibus. " ~
+            "Lorem ipsum dolor sit amet, ea has velit noluisse, " ~
+            "eos eius appetere constituto no, ad quas natum eos. Perpetua " ~
+            "electram mnesarchum usu ne, mei vero dolorem no. Ea quando scripta " ~
+            "quo, minim legendos ut vel. Ut usu graece equidem posidonium. Ius " ~
+            "denique ponderum verterem no, quo te mentitum officiis referrentur. " ~
+            "Sed an dolor iriure vocibus. ssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "ssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
+        const splitLines = rawLine.splitWords(' ', maxLength);
+        assert((splitLines.length == 4), splitLines.length.text);
+    }
+    {
+        immutable prelude = "PRIVMSG #garderoben :";
+        immutable maxLength = 250 - prelude.length;
+
+        immutable rawLine = "ssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss" ~
+            "ssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
+        const splitLines = rawLine.splitWords(' ', maxLength);
+        assert((splitLines.length == 1), splitLines.length.text);
+        assert(splitLines[0] == rawLine);
+    }
+}
