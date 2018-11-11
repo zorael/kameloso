@@ -123,6 +123,7 @@ void initResources(AutomodePlugin plugin)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     string account, nickname;
 
@@ -246,6 +247,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     import kameloso.irc : isValidChannel, isValidNickname;
     import kameloso.string : beginsWith, nom;
@@ -380,6 +382,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     import kameloso.string : nom;
     import std.algorithm.searching : count;
@@ -474,6 +477,8 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @Description("Forces the bot to attempt to apply automodes.")
 void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     if (event.sender.account.length)
     {
         plugin.applyAutomodes(event.sender.nickname, event.sender.account);
@@ -491,6 +496,7 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
@@ -508,6 +514,7 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     if (!event.sender.account.length) return;
 
@@ -526,6 +533,8 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     plugin.populateAutomodes();
 }
 

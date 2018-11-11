@@ -220,6 +220,8 @@ void onPing(ConnectService service, const IRCEvent event)
     immutable target = event.content.length ? event.content : event.sender.address;
     service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
 
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     if (!service.joinedChannels && (service.authentication == Progress.started))
     {
         logger.log("Auth timed out.");
@@ -370,13 +372,16 @@ void tryAuth(ConnectService service)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(ConnectService service)
 {
-    if (service.state.client.authPassword.length && (service.authentication == Progress.notStarted))
+    if (service.state.client.authPassword.length &&
+        (service.authentication == Progress.notStarted) &&
+        (service.state.client.server.daemon != IRCServer.Daemon.twitch))
     {
         service.tryAuth();
     }
 
     if (!service.joinedChannels && ((service.authentication == Progress.finished) ||
-        !service.state.client.authPassword.length || (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
+        !service.state.client.authPassword.length ||
+        (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
@@ -449,6 +454,8 @@ void onAuthEnd(ConnectService service)
 @(IRCEvent.Type.NOTICE)
 void onAuthEndNotice(ConnectService service, const IRCEvent event)
 {
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     import kameloso.string : beginsWith;
 
     if ((event.sender.nickname == "NickServ") &&

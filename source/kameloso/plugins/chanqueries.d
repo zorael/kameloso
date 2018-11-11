@@ -188,6 +188,8 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
 @(ChannelPolicy.any)
 void onTopic(ChanQueriesService service, const IRCEvent event)
 {
+    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
 
