@@ -201,6 +201,14 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             return onSuccess(failureUser);
         }
 
+        version(TwitchSupport)
+        {
+            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                return onSuccess(event.sender);
+            }
+        }
+
         immutable quote = plugin.getRandomQuote(specified);
 
         if (quote.length)
@@ -326,6 +334,14 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         logger.log("(Assuming unauthenticated nickname or offline account was specified)");
         return onSuccess(failureUser.nickname);
+    }
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            return onSuccess(event.sender.nickname);
+        }
     }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);

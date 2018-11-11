@@ -567,6 +567,14 @@ void addToList(AdminPlugin plugin, const string specified, const string list)
         return onSuccess(failureUser.nickname);
     }
 
+    version(TwitchSupport)
+    {
+        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            return onSuccess(specified);
+        }
+    }
+
     // User not on record or on record but no account; WHOIS and try based on results
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
