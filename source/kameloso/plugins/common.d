@@ -66,7 +66,7 @@ interface IRCPlugin
      +  Returns:
      +      Reference to an `IRCPluginState`.
      +/
-    ref IRCPluginState state() pure nothrow @nogc @property;
+    ref inout(IRCPluginState) state() inout pure nothrow @nogc @property;
 
     /// Executed to let plugins modify an event mid-parse.
     void postprocess(ref IRCEvent) @system;
@@ -1713,7 +1713,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  so `main.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
-    ref IRCPluginState state() pure nothrow @nogc @property
+    ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
     {
         return this.privateState;
     }
