@@ -1372,6 +1372,14 @@ struct IRCUser
         return (this.nickname == that.nickname) &&
             (this.ident == that.ident) && (this.address == that.address);
     }
+
+    /++
+     +  Produces a hash for this `IRCUser`.
+     +/
+    size_t toHash() pure nothrow @safe const
+    {
+        return (nickname ~ ident ~ address).hashOf;
+    }
 }
 
 
@@ -2422,6 +2430,19 @@ struct IRCChannel
 
             immutable match = (charMatch && dataMatch && userMatch && chanMatch);
             return negated ? !match : match;
+        }
+
+        /++
+         +  Produces a hash for this `Mode`.
+         +
+         +  Use a scopeguard to keep it nothrow.
+         +/
+        size_t toHash() pure nothrow @safe const
+        {
+            import std.conv : text;
+
+            scope(failure) assert(0, "Logic error, could not get user.hashOf.text in Mode.toHash");
+            return (modechar ~ data ~ user.hashOf.text ~ channel ~ negated ? "negated" : "not").hashOf;
         }
     }
 
