@@ -3600,6 +3600,16 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import core.thread : Fiber;
         import std.typecons : Flag, No, Yes;
 
+        version(TwitchWarnings)
+        {
+            if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                import kameloso.common : logger;
+                logger.warning("Tried to enqueue and WHOIS on Twitch");
+                return;
+            }
+        }
+
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate);
 
         static if (__traits(compiles, plugin))
