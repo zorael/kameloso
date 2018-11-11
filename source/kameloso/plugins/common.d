@@ -3503,10 +3503,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         {
             import kameloso.conv : Enum;
             assert(((type == RPL_WHOISACCOUNT) || (type == RPL_WHOISREGNICK) ||
-                (type == RPL_ENDOFWHOIS) || (type == ERR_NOSUCHNICK)),
+                (type == RPL_ENDOFWHOIS) || (type == ERR_NOSUCHNICK) || (type == ERR_UNKNOWNCOMMAND)),
                 "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
                 Enum!(IRCEvent.Type).toString(type));
         }
+
+        if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND) return;
 
         immutable m = plugin.state.client.server.caseMapping;
 
@@ -3622,6 +3624,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 RPL_WHOISREGNICK,
                 RPL_ENDOFWHOIS,
                 ERR_NOSUCHNICK,
+                ERR_UNKNOWNCOMMAND,
             ];
 
             context.awaitEvents(fiber, types);
