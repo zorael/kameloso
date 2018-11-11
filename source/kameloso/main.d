@@ -308,9 +308,14 @@ Next checkMessages(ref IRCBot bot)
     /// Reverse-formats an event and sends it to the server.
     void eventToServer(IRCEvent event)
     {
+        import kameloso.string : splitWords;
         import std.format : format;
 
+        enum maxIRCLineLength = 512;
+
         string line;
+        string prelude;
+        string[] lines;
 
         with (IRCEvent.Type)
         with (event)
@@ -318,11 +323,13 @@ Next checkMessages(ref IRCBot bot)
         switch (event.type)
         {
         case CHAN:
-            line = "PRIVMSG %s :%s".format(channel, content);
+            prelude = "PRIVMSG %s :".format(channel);
+            lines = content.splitWords(' ', maxIRCLineLength-prelude.length);
             break;
 
         case QUERY:
-            line = "PRIVMSG %s :%s".format(target.nickname, content);
+            prelude = "PRIVMSG %s :".format(target.nickname);
+            lines = content.splitWords(' ', maxIRCLineLength-prelude.length);
             break;
 
         case EMOTE:
@@ -344,7 +351,8 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case JOIN:
-            line = "JOIN %s".format(channel);
+            prelude = "JOIN ";
+            lines = channel.splitWords(',', maxIRCLineLength-prelude.length);
             break;
 
         case KICK:
@@ -382,13 +390,28 @@ Next checkMessages(ref IRCBot bot)
             break;
         }
 
-        if (event.target.class_ == IRCUser.Class.special)
+        void appropriateline(const string finalLine)
         {
-            quietline(ThreadMessage.Quietline(), line);
+            if (event.target.class_ == IRCUser.Class.special)
+            {
+                quietline(ThreadMessage.Quietline(), finalLine);
+            }
+            else
+            {
+                sendline(ThreadMessage.Sendline(), finalLine);
+            }
+        }
+
+        if (lines.length)
+        {
+            foreach (immutable i, immutable splitLine; lines)
+            {
+                appropriateline(prelude ~ splitLine);
+            }
         }
         else
         {
-            sendline(ThreadMessage.Sendline(), line);
+            appropriateline(line);
         }
     }
 
