@@ -129,7 +129,8 @@ unittest
     // See tests/events.d for more
 
     {
-        immutable event = parser.toIRCEvent(":adams.freenode.net 001 kameloso^ :Welcome to the freenode Internet Relay Chat Network kameloso^");
+        immutable event = parser.toIRCEvent(":adams.freenode.net 001 kameloso^ " ~
+            ":Welcome to the freenode Internet Relay Chat Network kameloso^");
         with (IRCEvent.Type)
         with (event)
         {

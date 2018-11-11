@@ -78,8 +78,8 @@ enum MeldingStrategy
  +/
 void meldInto(MeldingStrategy strategy = MeldingStrategy.conservative, Thing)
     (Thing meldThis, ref Thing intoThis)
-if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
-    !is(intoThis == immutable))
+if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
+    !is(intoThis == immutable)))
 {
     import kameloso.traits : hasElaborateInit, isOfAssignableType;
     import std.traits : isArray, isSomeString, isType;
@@ -530,8 +530,8 @@ unittest
 import std.typecons : Flag;
 deprecated("Use meldInto!MeldingStrategy instead")
 void meldInto(Flag!"overwrite" overwrite, Thing)(Thing meldThis, ref Thing intoThis)
-if (is(Thing == struct) || is(Thing == class) && !is(intoThis == const) &&
-    !is(intoThis == immutable))
+if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
+    !is(intoThis == immutable)))
 {
     static if (overwrite)
     {

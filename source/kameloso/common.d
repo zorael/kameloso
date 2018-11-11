@@ -400,8 +400,8 @@ struct IRCBot
      +/
     string[][string] initPlugins(string[] customSettings)
     {
-        import kameloso.plugins;
-        import kameloso.plugins.common : IRCPluginState;
+        import kameloso.plugins : EnabledPlugins;
+        import kameloso.plugins.common : IRCPluginState, applyCustomSettings;
         import std.concurrency : thisTid;
         import std.datetime.systime : Clock;
 

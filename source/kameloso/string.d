@@ -854,8 +854,8 @@ unittest
  +      substring or token.
  +/
 bool contains(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure
-if (isSomeString!T && isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
-    is(C : ElementEncodingType!T)))
+if (isSomeString!T && (isSomeString!C || (is(C : T) || is(C : ElementType!T) ||
+    is(C : ElementEncodingType!T))))
 {
     static if (is(C : T)) if (haystack == needle) return true;
 
@@ -1240,7 +1240,7 @@ if (isSomeString!T && (is(C : ElementType!T) || is(C : ElementEncodingType!T)))
 
         if (lines.length)
         {
-            lines[lines.length-1] ~= separator ~ slice;
+            lines[$-1] ~= separator ~ slice;
         }
         else
         {

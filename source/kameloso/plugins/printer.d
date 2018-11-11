@@ -871,7 +871,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1251,7 +1251,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         sink.colour(BashForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            (type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
         {
             import kameloso.bash : TerminalToken;
             sink.put(TerminalToken.bell);
