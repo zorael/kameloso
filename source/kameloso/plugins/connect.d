@@ -162,21 +162,19 @@ void joinChannels(ConnectService service)
         import kameloso.string : plurality;
         import std.algorithm.iteration : uniq;
         import std.algorithm.sorting : sort;
-        import std.array : array, join;
-        import std.range : chain, walkLength;
+        import std.array : join;
+        import std.range : walkLength;
 
-        // FIXME: line should split if it reaches 512 characters
-        // Needs .array or .dup, sort() will sort in-place and reorder homes
-        auto chanlist = chain(client.homes, client.channels)
-            .array
-            .sort()
-            .uniq;
-
-        immutable numChans = chanlist.walkLength;
+        auto homelist = client.homes.sort().uniq;
+        auto chanlist = client.channels.sort().uniq;
+        immutable numChans = homelist.walkLength() + chanlist.walkLength();
 
         logger.logf("Joining %s%d%s %s ...", infotint, numChans, logtint,
             numChans.plurality("channel", "channels"));
 
+        // Join in two steps so homes don't get shoved away by the channels
+        // FIXME: line should split if it reaches 512 characters
+        service.join(homelist.join(","));
         service.join(chanlist.join(","));
     }
 }
