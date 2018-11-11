@@ -1759,7 +1759,25 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .onBusMessage))
         {
-            .onBusMessage(this, header, content);
+            import std.meta : AliasSeq;
+            import std.traits : Parameters, Unqual, staticMap;
+
+            alias Params = staticMap!(Unqual, Parameters!(.onBusMessage));
+            alias This = typeof(this);
+
+            static if (is(Params : AliasSeq!(This, string, Sendable)))
+            {
+                .onBusMessage(this, header, content);
+            }
+            else static if (is(Params : AliasSeq!(This, string)))
+            {
+                .onBusMessage(this, header);
+            }
+            else
+            {
+                static assert(0, "Invalid signature on " ~ module_ ~ ".onBusMessage");
+            }
+
         }
     }
 }
