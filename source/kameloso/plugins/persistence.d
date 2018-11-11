@@ -49,9 +49,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 // Admins are (currently) stored in an array IRCClient.admins
                 userToClassify.class_ = IRCUser.Class.admin;
             }
-            else if (const classifier = service.userClasses.get(userToClassify.account, IRCUser.Class.anyone))
+            else
             {
-                userToClassify.class_ = classifier;
+                userToClassify.class_ = service.userClasses.get(userToClassify.account, IRCUser.Class.anyone);
             }
         }
 
