@@ -70,14 +70,14 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 {
                     import kameloso.meld : MeldingStrategy, meldInto;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
-                    applyClassifiersDg(stored);
-                    continue;
                 }
 
                 if (stored.class_ == IRCUser.Class.unset)
                 {
                     applyClassifiersDg(stored);
                 }
+
+                *user = *stored;
                 continue;
             }
         }
