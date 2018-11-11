@@ -2914,6 +2914,25 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 }
 
 
+version(TwitchSupport) {}
+else
+/++
+ +  No-op mixin of version !TwitchSupport TwitchAwareness.
+ +/
+mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+    bool debug_ = false, string module_ = __MODULE__)
+{
+    static if (__traits(compiles, .hasTwitchAwareness))
+    {
+        static assert(0, "Double mixin of TwitchAwareness in module " ~ module_);
+    }
+    else
+    {
+        enum hasTwitchAwareness = true;
+    }
+}
+
+
 // nickPolicyMatches
 /++
  +  Evaluates whether the message in an event satisfies the `NickPolicy`
