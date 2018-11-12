@@ -65,7 +65,7 @@
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions": [ "WithPlugins", "Web", "Colours" ],
+            "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours", "TwitchBot" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dependencies": { "requests": "~>1.0.0" }
