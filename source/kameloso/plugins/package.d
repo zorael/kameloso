@@ -106,7 +106,7 @@ version(WithPlugins)
 
     version(TwitchSupport)
     {
-        mixin(tryImportMixin("kameloso.plugins.twitch", "TwitchService"));
+        mixin(tryImportMixin("kameloso.plugins.twitchsupport", "TwitchSupportService"));
     }
     else
     {
@@ -143,7 +143,7 @@ version(WithPlugins)
     );
 
     public alias EnabledPlugins = AliasSeq!(
-        TwitchService, // Must be before PersistenceService
+        TwitchSupportService, // Must be before PersistenceService
         PersistenceService, // Should be early
         PrinterPlugin,  // Might as well be early
         ConnectService,

@@ -1,10 +1,10 @@
 /++
- +  The Twitch service postprocesses `kameloso.ircdefs.IRCEvent`s after they are
- +  parsed but before they are sent to the plugins for handling, and deals with
- +  Twitch-specifics. Those include extracting the colour someone's name should
- +  be printed in, their alias/"display name" (generally their nickname
- +  capitalised), converting the event to some event types unique to Twitch,
- +  etc.
+ +  The Twitch Support service postprocesses `kameloso.ircdefs.IRCEvent`s after
+ +  they are parsed but before they are sent to the plugins for handling, and
+ +  deals with Twitch-specifics. Those include extracting the colour someone's
+ +  name should be printed in, their alias/"display name" (generally their
+ +  nickname capitalised), converting the event to some event types unique to
+ +  Twitch, etc.
  +
  +  It has no bot commands and no event handlers; it only postpocesses events.
  +
@@ -12,7 +12,7 @@
  +  it won't slow the bot down though, as the vey fist thing it does is to
  +  verify that it is on a Twitch server, and aborts and returns if not.
  +/
-module kameloso.plugins.twitch;
+module kameloso.plugins.twitchsupport;
 
 version(WithPlugins):
 version(TwitchSupport):
@@ -35,7 +35,7 @@ version(Colours)
  +  Handle Twitch specifics, modifying the `kameloso.ircdefs.IRCEvent` to add
  +  things like `colour` and differentiate between temporary and permanent bans.
  +/
-void postprocess(TwitchService service, ref IRCEvent event)
+void postprocess(TwitchSupportService service, ref IRCEvent event)
 {
     if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
@@ -76,11 +76,11 @@ void postprocess(TwitchService service, ref IRCEvent event)
  +  The event is passed by ref as many tags neccessitate changes to it.
  +
  +  Params:
- +      service = Current `TwitchService`.
+ +      service = Current `TwitchSupportService`.
  +      event = Reference to the `kameloso.ircdefs.IRCEvent` whose tags should
  +          be parsed.
  +/
-void parseTwitchTags(TwitchService service, ref IRCEvent event)
+void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 {
     import kameloso.irc : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
@@ -778,7 +778,7 @@ unittest
 public:
 
 
-// TwitchService
+// TwitchSupportService
 /++
  +  Twitch-specific service.
  +
@@ -789,7 +789,7 @@ public:
  +  This service only postprocesses events and doesn't yet act on them in any
  +  way.
  +/
-final class TwitchService : IRCPlugin
+final class TwitchSupportService : IRCPlugin
 {
     mixin IRCPluginImpl;
 }
