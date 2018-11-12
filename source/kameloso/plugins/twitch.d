@@ -303,22 +303,6 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             event.sender.badges = value;
             break;
 
-        case "mod":
-        case "subscriber":
-        case "turbo":
-            // 1 if the user has a (moderator|subscriber|turbo) badge;
-            // otherwise, 0.
-            // Not of interest currently; we just listen to the first badge.
-            //if (value == "0") break;
-            break;
-
-        case "user-type":
-            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
-            // The broadcaster can have any of these.
-            // Not of interest currently either.
-            //if (!value.length) break;
-            break;
-
         case "system-msg":
         case "ban-reason":
             // @ban-duration=<ban-duration>;ban-reason=<ban-reason> :tmi.twitch.tv CLEARCHAT #<channel> :<user>
@@ -526,16 +510,23 @@ void parseTwitchTags(TwitchService service, ref IRCEvent event)
             // banphrase
         case "msg-param-profileImageURL":
             // URL link to profile picture.
-
         case "flags":
             // Unsure.
             // flags =
             // flags = 4-11:P.5,40-46:P.6
-
         case "msg-param-domain":
             // msg-param-domain = owl2018
             // [rewardgift] [#overwatchleague] Asdf [bits]: "A Cheer shared Rewards to 35 others in Chat!" {35}
             // Unsure.
+        case "mod":
+        case "subscriber":
+        case "turbo":
+            // 1 if the user has a (moderator|subscriber|turbo) badge; otherwise, 0.
+            // Deprecated, use badges instead.
+        case "user-type":
+            // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
+            // Deprecated, use badges instead.
+
 
             // Ignore these events.
             break;
