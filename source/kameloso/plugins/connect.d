@@ -761,7 +761,7 @@ void onSASLFailure(ConnectService service)
 
 // onWelcome
 /++
- +  Marks registratino as completed upon `RPL_WELCOME` (numeric 001).
+ +  Marks registration as completed upon `RPL_WELCOME` (numeric 001).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(ConnectService service)

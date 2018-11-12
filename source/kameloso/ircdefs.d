@@ -2417,7 +2417,7 @@ struct IRCChannel
         bool negated;
 
         /++
-         +  Compare two `Mode`s with eachother to see if they are both of the
+         +  Compare two `Mode`s with each other to see if they are both of the
          +  same type, as well as having the same `data` and/or `user`.
          +/
         bool opEquals(const Mode that) pure nothrow @safe const
