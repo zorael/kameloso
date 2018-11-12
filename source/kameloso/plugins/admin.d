@@ -368,8 +368,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 
             if (followupEvent.channel != channelToAdd)
             {
-                // Different channel; yield and reset fiber, wait for another event
-                thisFiber.payload = IRCEvent.init;
+                // Different channel; yield fiber, wait for another event
                 Fiber.yield();
                 return dg();
             }

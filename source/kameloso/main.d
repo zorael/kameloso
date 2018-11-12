@@ -815,6 +815,9 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                             carryingFiber.payload = event;
                         }
                         carryingFiber.call();
+
+                        // Reset the payload so a new one will be attached next trigger
+                        carryingFiber.payload = IRCEvent.init;
                     }
                     else
                     {

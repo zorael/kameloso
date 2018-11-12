@@ -3514,8 +3514,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         if (IRCUser.toLowercase(mixin(carriedVariableName), m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
         {
-            // Wrong WHOIS; reset and await a new one
-            thisFiber.payload = IRCEvent.init;
+            // Wrong WHOIS; await a new one
             Fiber.yield();
             return whoisFiberDelegate();  // Recurse
         }
