@@ -20,7 +20,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch support; see [notes on connecting](#twitch) below
+* Twitch support (with default disabled example bot plugin); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
@@ -33,6 +33,7 @@ If nothing else it makes for a good read-only terminal lurkbot.
 * **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
 * nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the change was reverted. There are corner cases where things might break; please file bugs.
+* missing good how-to-use guide. Use the source, Luke!
 * IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
@@ -69,7 +70,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## Prerequisites
 
-You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires some 3.9 Gb to build all features (linux, excluding tests).
+You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires some 4 Gb to build all features (linux, excluding tests).
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
