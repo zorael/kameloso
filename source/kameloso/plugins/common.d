@@ -439,7 +439,7 @@ enum FilterResult { fail, pass, whois }
  +/
 enum NickPolicy
 {
-    ignored,     /// Any prefixes will be ignored.
+    ignore,      /// Any prefixes will be ignored.
     /++
      +  Message should begin with `kameloso.common.CoreSettings.prefix`
      +  (e.g. "`!`")
@@ -2983,7 +2983,7 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
     with (NickPolicy)
     final switch (policy)
     {
-    case ignored:
+    case ignore:
         return true;
 
     case direct:
