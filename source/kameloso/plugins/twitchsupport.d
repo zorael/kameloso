@@ -284,8 +284,11 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 // USERSTATE describes the bot in the context of a specific channel,
                 // such as what badges are available. It's *always* about the bot,
                 // so expose the display name in event.target and let Persistence store it.
+                event.target = event.sender;  // get badges etc
                 event.target.nickname = service.state.client.nickname;
+                event.target.class_ = IRCUser.Class.admin;
                 event.target.alias_ = alias_;
+                event.target.address = string.init;
             }
             else
             {
