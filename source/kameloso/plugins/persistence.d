@@ -66,7 +66,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     service.state.users[user.nickname] = *user;
                     stored = user.nickname in service.state.users;
                 }
-                else if (!stored.address.length)
+                else
                 {
                     import kameloso.meld : MeldingStrategy, meldInto;
                     (*user).meldInto!(MeldingStrategy.aggressive)(*stored);
