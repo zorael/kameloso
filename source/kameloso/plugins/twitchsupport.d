@@ -60,7 +60,7 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
         }
     }
 
-    if (event.sender.nickname)
+    if (event.sender.nickname.length)
     {
         // Twitch nicknames are always the same as the user accounts; the
         // displayed name/alias is sent separately as a "display-name" IRCv3 tag
