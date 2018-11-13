@@ -20,7 +20,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch support (with default disabled example bot plugin); see [notes on connecting](#twitch) below
+* Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitch.d)); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Posix only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
