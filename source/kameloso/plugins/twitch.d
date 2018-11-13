@@ -41,6 +41,7 @@ struct TwitchSettings
  +  Technically, how much time has passed since `!start` was issued.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "uptime")
@@ -76,7 +77,8 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 /++
  +  Marks the start of a broadcast, for later uptime queries.
  +/
-@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.ignore, "start")
@@ -96,7 +98,8 @@ void onCommandStart(TwitchPlugin plugin, const IRCEvent event)
 /++
  +  Marks the stop of a broadcast.
  +/
-@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.ignore, "stop")
@@ -120,6 +123,7 @@ void onCommandStop(TwitchPlugin plugin, const IRCEvent event)
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 void onOneliner(TwitchPlugin plugin, const IRCEvent event)
@@ -149,6 +153,7 @@ void onOneliner(TwitchPlugin plugin, const IRCEvent event)
  +  Implemented as a Fiber.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "startvote")
@@ -274,6 +279,7 @@ void onCommandStartVote(TwitchPlugin plugin, const IRCEvent event)
  +  Adds a oneliner to the list of oneliners, and saves it to disk.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "oneliner")
