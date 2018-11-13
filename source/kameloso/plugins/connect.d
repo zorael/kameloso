@@ -174,8 +174,8 @@ void joinChannels(ConnectService service)
 
         // Join in two steps so homes don't get shoved away by the channels
         // FIXME: line should split if it reaches 512 characters
-        service.join(homelist.join(","));
-        service.join(chanlist.join(","));
+        if (client.homes.length) service.join(homelist.join(","));
+        if (client.channels.length) service.join(chanlist.join(","));
     }
 }
 
