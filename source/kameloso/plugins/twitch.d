@@ -295,6 +295,23 @@ void onCommandAddOneliner(TwitchPlugin plugin, const IRCEvent event)
 }
 
 
+// onEndOfMotd
+/++
+ +  Populate the oneliners array after we have successfully logged onto the
+ +  server.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+@(IRCEvent.Type.ERR_NOMOTD)
+void onEndOfMotd(TwitchPlugin plugin)
+{
+    if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
+
+    plugin.populateOneliners();
+}
+
+
+
 // saveOneliners
 /++
  +  Saves the passed oneliner associative array to disk, but in `JSON` format.
@@ -316,6 +333,19 @@ void saveOneliners(const string[string] oneliners, const string filename)
 }
 
 
+// teardown
+/++
+ +  When closing the program or when crashing with grace, saves the oneliners
+ +  array to disk for later reloading.
+ +/
+void teardown(TwitchPlugin plugin)
+{
+    if (!plugin.twitchSettings.enabled) return;
+
+    saveOneliners(plugin.oneliners, plugin.onelinerFile);
+}
+
+
 // initResources
 /++
  +  Reads and writes the file of oneliners to disk, ensuring that it's there.
@@ -329,6 +359,32 @@ void initResources(TwitchPlugin plugin)
     JSONStorage json;
     json.load(plugin.onelinerFile);
     json.save(plugin.onelinerFile);
+}
+
+
+// populateOneliners
+/++
+ +  Reads oneliners from disk, populating a `string[string]` associative array;
+ +  `oneliner[trigger]`.
+ +
+ +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
+ +  it to populate a normal associative array for faster lookups.
+ +
+ +  Params:
+ +      plugin = The current `TwitchPlugin`.
+ +/
+void populateOneliners(TwitchPlugin plugin)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage onelinersJSON;
+    onelinersJSON.load(plugin.onelinerFile);
+    plugin.oneliners = typeof(plugin.oneliners).init;
+
+    foreach (immutable trigger, const stringJSON; onelinersJSON.object)
+    {
+        plugin.oneliners[trigger] = stringJSON.str;
+    }
 }
 
 
