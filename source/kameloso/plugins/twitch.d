@@ -47,6 +47,7 @@ struct TwitchSettings
 void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     if (plugin.broadcastStart > 0)
     {
@@ -76,6 +77,7 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 void onCommandStart(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import std.datetime.systime : Clock;
 
@@ -95,6 +97,7 @@ void onCommandStart(TwitchPlugin plugin, const IRCEvent event)
 void onCommandStop(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import std.datetime.systime : Clock;
 
@@ -116,6 +119,7 @@ void onCommandStop(TwitchPlugin plugin, const IRCEvent event)
 void onOneliner(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : beginsWith, nom;
 
@@ -145,6 +149,7 @@ void onOneliner(TwitchPlugin plugin, const IRCEvent event)
 void onCommandStartVote(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
     import std.algorithm.iteration : splitter;
@@ -269,6 +274,7 @@ void onCommandStartVote(TwitchPlugin plugin, const IRCEvent event)
 void onCommandAddOneliner(TwitchPlugin plugin, const IRCEvent event)
 {
     if (!plugin.twitchSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
     import std.typecons : Flag, No, Yes;
