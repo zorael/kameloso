@@ -3096,37 +3096,34 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
         return;
     }
 
-    with (plugin)
+    version(TwitchSupport)
     {
-        version(TwitchSupport)
+        if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (state.client.server.daemon == IRCServer.Daemon.twitch)
+            import std.datetime.systime : Clock;
+
+            // There's no need to meld Twitch users, they never change.
+            if (auto user = newUser.nickname in plugin.state.users)
             {
-                import std.datetime.systime : Clock;
-
-                // There's no need to meld Twitch users, they never change.
-                if (auto user = newUser.nickname in state.users)
-                {
-                    user.lastWhois = Clock.currTime.toUnixTime;
-                }
-                else
-                {
-                    newUser.lastWhois = Clock.currTime.toUnixTime;
-                    state.users[newUser.nickname] = newUser;
-                }
-                return;
+                user.lastWhois = Clock.currTime.toUnixTime;
             }
+            else
+            {
+                newUser.lastWhois = Clock.currTime.toUnixTime;
+                plugin.state.users[newUser.nickname] = newUser;
+            }
+            return;
         }
+    }
 
-        if (auto user = newUser.nickname in state.users)
-        {
-            import kameloso.meld : meldInto;
-            newUser.meldInto(*user);
-        }
-        else
-        {
-            state.users[newUser.nickname] = newUser;
-        }
+    if (auto user = newUser.nickname in plugin.state.users)
+    {
+        import kameloso.meld : meldInto;
+        newUser.meldInto(*user);
+    }
+    else
+    {
+        plugin.state.users[newUser.nickname] = newUser;
     }
 }
 
