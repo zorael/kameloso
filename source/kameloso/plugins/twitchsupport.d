@@ -526,6 +526,9 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
         case "user-type":
             // The user’s type. Valid values: empty, mod, global_mod, admin, staff.
             // Deprecated, use badges instead.
+        case "msg-param-origin-id":
+            // msg-param-origin-id = 6e\s15\s70\s6d\s34\s2a\s7e\s5b\sd9\s45\sd3\sd2\sce\s20\sd3\s4b\s9c\s07\s49\sc4
+            // [subgift] [#savjz] sender [SP] (target): "sender gifted a Tier 1 sub to target! This is their first Gift Sub in the channel!" (1000) {1}
 
 
             // Ignore these events.
