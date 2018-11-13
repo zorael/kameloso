@@ -51,10 +51,6 @@ struct AutomodeSettings
 void populateAutomodes(AutomodePlugin plugin)
 {
     import kameloso.json : JSONStorage;
-    import kameloso.string : contains;
-    import std.conv : text;
-    import std.json : JSON_TYPE;
-    import std.uni : toLower;
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);
@@ -64,6 +60,7 @@ void populateAutomodes(AutomodePlugin plugin)
     {
         foreach (immutable account, const modesign; modesignsJSON.object)
         {
+            import std.uni : toLower;
             plugin.automodes[channelName.toLower][account] = modesign.str;
         }
     }
