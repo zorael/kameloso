@@ -51,10 +51,16 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 
     if (plugin.broadcastStart > 0)
     {
-        import std.datetime.systime : Clock;
+        import core.time : msecs;
+        import std.datetime.systime : Clock, SysTime;
         import std.format : format;
 
-        immutable delta = Clock.currTime.toUnixTime - plugin.broadcastStart;
+        // Remove fractional seconds from the current timestamp
+        auto now = Clock.currTime;
+        now.fracSecs = 0.msecs;
+
+        immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
+
         plugin.state.chan(event.channel, "%s has been streaming for %s."
             .format(plugin.twitchSettings.owner, delta));
     }
