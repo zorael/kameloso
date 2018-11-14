@@ -1,10 +1,10 @@
 /++
- +  A collection of enums and functions that relate to a Bash shell.
+ +  A collection of enums and functions that relate to a terminal shell.
  +
  +  Much of this module has to do with terminal text colouring and is therefore
  +  version `Colours`.
  +/
-module kameloso.bash;
+module kameloso.terminal;
 
 import std.meta : allSatisfy;
 import std.typecons : Flag, No, Yes;
@@ -14,8 +14,8 @@ import std.typecons : Flag, No, Yes;
 /// Special terminal control characters.
 enum TerminalToken
 {
-    /// Character that preludes a Bash colouring code.
-    bashFormat = '\033',
+    /// Character that preludes a terminal colouring code.
+    format = '\033',
 
     /// Terminal bell/beep.
     bell = '\007',
@@ -27,10 +27,10 @@ enum TerminalToken
 version(Colours):
 
 /++
- +  Effect codes that work like Bash colouring does, except for formatting
+ +  Effect codes that work like terminal colouring does, except for formatting
  +  effects like bold, dim, italics, etc.
  +/
-enum BashEffect
+enum TerminalFormat
 {
     bold = 1,
     dim  = 2,
@@ -41,19 +41,8 @@ enum BashEffect
     hidden  = 8,
 }
 
-/// Format codes for Bash colouring.
-enum BashFormat
-{
-    bright      = 1,
-    dim         = 2,
-    underlined  = 4,
-    blink       = 5,
-    invert      = 6,
-    hidden      = 8,
-}
-
-/// Foreground colour codes for Bash colouring.
-enum BashForeground
+/// Foreground colour codes for terminal colouring.
+enum TerminalForeground
 {
     default_     = 39,
     black        = 30,
@@ -74,8 +63,8 @@ enum BashForeground
     white        = 97,
 }
 
-/// Background colour codes for Bash colouring.
-enum BashBackground
+/// Background colour codes for terminal colouring.
+enum TerminalBackground
 {
     default_     = 49,
     black        = 40,
@@ -96,8 +85,8 @@ enum BashBackground
     white        = 107,
 }
 
-/// Bash colour/effect reset codes.
-enum BashReset
+/// Terminal colour/format reset codes.
+enum TerminalReset
 {
     all         = 0,
     bright      = 21,
@@ -109,31 +98,31 @@ enum BashReset
 }
 
 /// Bool of whether a type is a colour code enum.
-enum isAColourCode(T) = is(T : BashForeground) || is(T : BashBackground) ||
-                        is(T : BashFormat) || is(T : BashReset) ||
+enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
+                        is(T : TerminalFormat) || is(T : TerminalReset) ||
                         is(T == int);  // FIXME
 
 
 // colour
 /++
- +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset` and composes them into a single Bash colour code token.
+ +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a `TerminalFormat` and/or
+ +  a `TerminalReset` and composes them into a single terminal colour code token.
  +
  +  This function creates an `std.array.Appender` and fills it with the return
  +  value of the output range version of `colour`.
  +
  +  Example:
  +  ---
- +  string blinkOn = colour(BashForeground.white, BashBackground.yellow, BashEffect.blink);
- +  string blinkOff = colour(BashForeground.default_, BashBackground.default_, BashReset.blink);
+ +  string blinkOn = colour(TerminalForeground.white, TerminalBackground.yellow, TerminalFormat.blink);
+ +  string blinkOff = colour(TerminalForeground.default_, TerminalBackground.default_, TerminalReset.blink);
  +  string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
  +  ---
  +
  +  Params:
- +      codes = Variadic list of Bash format codes.
+ +      codes = Variadic list of terminal format codes.
  +
  +  Returns:
- +      A Bash code sequence of the passed codes.
+ +      A terminal code sequence of the passed codes.
  +/
 version(Colours)
 string colour(Codes...)(const Codes codes) pure nothrow
@@ -151,29 +140,29 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
 // colour
 /++
- +  Takes a mix of a `BashForeground`, a `BashBackground`, a `BashFormat` and/or
- +  a `BashReset` and composes them into a colour code token.
+ +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a `TerminalFormat` and/or
+ +  a `TerminalReset` and composes them into a colour code token.
  +
  +  This is the composing function that fills its result into an output range.
  +
  +  Example:
  +  ---
  +  Appender!string sink;
- +  sink.colour(BashForeground.red, BashEffect.bold);
+ +  sink.colour(TerminalForeground.red, TerminalFormat.bold);
  +  sink.put("Foo");
- +  sink.colour(BashForeground.default_, BashReset.bold);
+ +  sink.colour(TerminalForeground.default_, TerminalReset.bold);
  +  ---
  +
  +  Params:
  +      sink = Output range to write output to.
- +      codes = Variadic list of Bash format codes.
+ +      codes = Variadic list of terminal format codes.
  +/
 import std.range : isOutputRange;
 version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.bashFormat);
+    sink.put(TerminalToken.effect);
     sink.put('[');
 
     uint numCodes;
@@ -198,15 +187,15 @@ if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, C
  +
  +  Example:
  +  ---
- +  string foo = "Foo Bar".colour(BashForeground.bold, BashEffect.reverse);
+ +  string foo = "Foo Bar".colour(TerminalForeground.bold, TerminalFormat.reverse);
  +  ---
  +
  +  Params:
  +      text = Text to format.
- +      codes = Bash formatting codes (colour, underscore, bold, ...) to apply.
+ +      codes = Terminal formatting codes (colour, underscore, bold, ...) to apply.
  +
  +  Returns:
- +      A Bash code sequence of the passed codes, encompassing the passed text.
+ +      A terminal code sequence of the passed codes, encompassing the passed text.
  +/
 version(Colours)
 string colour(Codes...)(const string text, const Codes codes) pure nothrow
@@ -219,7 +208,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
     sink.colour(codes);
     sink.put(text);
-    sink.colour(BashReset.all);
+    sink.colour(TerminalReset.all);
     return sink.data;
 }
 
@@ -455,7 +444,7 @@ unittest
 
 // truecolour
 /++
- +  Produces a Bash colour token for the colour passed, expressed in terms of
+ +  Produces a terminal colour token for the colour passed, expressed in terms of
  +  red, green and blue.
  +
  +  Example:
@@ -465,7 +454,7 @@ unittest
  +  numFromHex("3C507D", r, g, b);
  +  sink.truecolour(r, g, b);
  +  sink.put("Foo");
- +  sink.colour(BashReset.all);
+ +  sink.colour(TerminalReset.all);
  +  writeln(sink);  // "Foo" in #3C507D
  +  ---
  +
@@ -501,7 +490,7 @@ if (isOutputRange!(Sink, string))
         }
     }
 
-    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.bashFormat, r, g, b);
+    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.effect, r, g, b);
 }
 
 
@@ -528,7 +517,7 @@ if (isOutputRange!(Sink, string))
  +      bright = Whether the terminal has a bright background or not.
  +
  +  Returns:
- +      The passed string word encompassed by Bash colour tags.
+ +      The passed string word encompassed by terminal colour tags.
  +/
 version(Colours)
 string truecolour(Flag!"normalise" normalise = Yes.normalise)
@@ -543,7 +532,7 @@ string truecolour(Flag!"normalise" normalise = Yes.normalise)
 
     sink.truecolour!normalise(r, g, b, bright);
     sink.put(word);
-    sink.colour(BashReset.all);
+    sink.colour(TerminalReset.all);
     return sink.data;
 }
 
@@ -555,8 +544,8 @@ unittest
 
     immutable name = "blarbhl".truecolour!(No.normalise)(255,255,255);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
-        .format(cast(char)TerminalToken.bashFormat, 255, 255, 255,
-        "blarbhl", cast(char)TerminalToken.bashFormat);
+        .format(cast(char)TerminalToken.effect, 255, 255, 255,
+        "blarbhl", cast(char)TerminalToken.effect);
 
     assert((name == alsoName), alsoName);
 }
@@ -564,7 +553,7 @@ unittest
 
 // invert
 /++
- +  Bash-inverts the colours of a piece of text in a string.
+ +  Terminal-inverts the colours of a piece of text in a string.
  +
  +  Example:
  +  ---
@@ -588,8 +577,8 @@ string invert(const string line, const string toInvert)
     import std.format : format;
     import std.string : indexOf;
 
-    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.bashFormat,
-        BashEffect.reverse, toInvert, TerminalToken.bashFormat, BashReset.invert);
+    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.effect,
+        TerminalFormat.reverse, toInvert, TerminalToken.effect, TerminalReset.invert);
 
     Appender!string sink;
     sink.reserve(512);  // Maximum IRC message length by spec
@@ -651,8 +640,8 @@ unittest
 {
     import std.format : format;
 
-    immutable pre = "%c[%dm".format(TerminalToken.bashFormat, BashEffect.reverse);
-    immutable post = "%c[%dm".format(TerminalToken.bashFormat, BashReset.invert);
+    immutable pre = "%c[%dm".format(TerminalToken.effect, TerminalFormat.reverse);
+    immutable post = "%c[%dm".format(TerminalToken.effect, TerminalReset.invert);
 
     {
         immutable line = "abc".invert("abc");
