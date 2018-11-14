@@ -34,7 +34,7 @@ final class KamelosoLogger : Logger
 
     version(Colours)
     {
-        import kameloso.bash : BashForeground, BashFormat, BashReset, colour;
+        import kameloso.terminal : TerminalForeground, TerminalFormat, TerminalReset, colour;
         import kameloso.constants : DefaultColours;
 
         alias logcoloursBright = DefaultColours.logcoloursBright;
@@ -55,7 +55,7 @@ final class KamelosoLogger : Logger
 
     // tint
     /++
-     +  Returns the corresponding `BashForeground` for the supplied `LogLevel`,
+     +  Returns the corresponding `TerminalForeground` for the supplied `LogLevel`,
      +  taking into account whether the terminal is said to be bright or not.
      +
      +  This is merely a convenient wrapping for `logcoloursBright` and
@@ -63,7 +63,7 @@ final class KamelosoLogger : Logger
      +
      +  Example:
      +  ---
-     +  BashForeground errtint = KamelosoLogger.tint(LogLevel.error, false);  // false means dark terminal
+     +  TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, false);  // false means dark terminal
      +  immutable errtintString = errtint.colour;
      +  ---
      +
@@ -73,11 +73,11 @@ final class KamelosoLogger : Logger
      +          background or a dark one.
      +
      +  Returns:
-     +      A `BashForeground` of the right colour. Use with
-     +      `kameloso.bash.colour` to get a string.
+     +      A `TerminalForeground` of the right colour. Use with
+     +      `kameloso.terminal.colour` to get a string.
      +/
     version(Colours)
-    static BashForeground tint(const LogLevel level, const bool bright)
+    static TerminalForeground tint(const LogLevel level, const bool bright)
     {
         return bright ? logcoloursBright[level] : logcoloursDark[level];
     }
@@ -172,7 +172,7 @@ final class KamelosoLogger : Logger
         {
             if (!monochrome)
             {
-                sink.colour(brightTerminal ? BashForeground.black : BashForeground.white);
+                sink.colour(brightTerminal ? TerminalForeground.black : TerminalForeground.white);
             }
         }
 
@@ -219,7 +219,7 @@ final class KamelosoLogger : Logger
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                sink.colour(BashForeground.default_, BashReset.blink);
+                sink.colour(TerminalForeground.default_, TerminalReset.blink);
             }
         }
 

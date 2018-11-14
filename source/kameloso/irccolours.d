@@ -1,6 +1,6 @@
 /++
  +  This module contains functions for working with IRC colouring and
- +  formatting, mapping it to Bash such, stripping it, etc.
+ +  formatting, mapping it to terminal such, stripping it, etc.
  +/
 module kameloso.irccolours;
 
@@ -8,7 +8,7 @@ import kameloso.irc : IRCControlCharacter;
 
 version(Colours)
 {
-    import kameloso.bash : BashBackground, BashForeground;
+    import kameloso.terminal : TerminalBackground, TerminalForeground;
 }
 
 @safe:
@@ -349,12 +349,12 @@ char ircReset()
 
 // mapEffects
 /++
- +  Maps mIRC effect tokens (colour, bold, italics, underlined) to Bash ones.
+ +  Maps mIRC effect tokens (colour, bold, italics, underlined) to terminal ones.
  +
  +  Example:
  +  ---
  +  string mIRCEffectString = "...";
- +  string bashEffectString = mapEffects(mIRCEffectString);
+ +  string TerminalFormatString = mapEffects(mIRCEffectString);
  +  ---
  +
  +  Params:
@@ -363,13 +363,13 @@ char ircReset()
  +      bgBase = Backgrund base code to reset to after end colour tags.
  +
  +  Returns:
- +      A new string based on `origLine` with mIRC tokens mapped to Bash ones.
+ +      A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
-string mapEffects(const string origLine, const uint fgBase = BashForeground.default_,
-    const uint bgBase = BashBackground.default_)
+string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,
+    const uint bgBase = TerminalBackground.default_)
 {
-    import kameloso.bash : B = BashEffect;
+    import kameloso.terminal : TF = TerminalFormat;
     import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : contains;
 
@@ -383,20 +383,20 @@ string mapEffects(const string origLine, const uint fgBase = BashForeground.defa
 
     if (line.contains(I.bold))
     {
-        // Bold is bash 1, mIRC 2
-        line = mapEffectsImpl!(I.bold, B.bold)(line);
+        // Bold is terminal 1, mIRC 2
+        line = mapEffectsImpl!(I.bold, TF.bold)(line);
     }
 
     if (line.contains(I.italics))
     {
-        // Italics is bash 3 (not really), mIRC 29
-        line = mapEffectsImpl!(I.italics, B.italics)(line);
+        // Italics is terminal 3 (not really), mIRC 29
+        line = mapEffectsImpl!(I.italics, TF.italics)(line);
     }
 
     if (line.contains(I.underlined))
     {
-        // Underlined is bash 4, mIRC 31
-        line = mapEffectsImpl!(I.underlined, B.underlined)(line);
+        // Underlined is terminal 4, mIRC 31
+        line = mapEffectsImpl!(I.underlined, TF.underlined)(line);
     }
 
     return line;
@@ -462,21 +462,21 @@ unittest
 
 // mapColours
 /++
- +  Maps mIRC effect colour tokens to Bash ones.
+ +  Maps mIRC effect colour tokens to terminal ones.
  +
  +  Params:
  +      line = String line with IRC colours to translate.
- +      fgReset = Bash foreground code to reset to after colour default tokens.
- +      bgReset = Bash backgroudn code to reset to after colour default tokens.
+ +      fgReset = Terminal foreground code to reset to after colour default tokens.
+ +      bgReset = Terminal background code to reset to after colour default tokens.
  +
  +  Returns:
- +      The passed `line`, now with Bash colouring.
+ +      The passed `line`, now with terminal colouring.
  +/
 version(Colours)
-string mapColours(const string line, const uint fgReset = BashForeground.default_,
-    const uint bgReset = BashBackground.default_)
+string mapColours(const string line, const uint fgReset = TerminalForeground.default_,
+    const uint bgReset = TerminalBackground.default_)
 {
-    import kameloso.bash : colour;
+    import kameloso.terminal : colour;
     import kameloso.irc : I = IRCControlCharacter;
     import std.array : replace;
     import std.regex : matchAll, regex;
@@ -484,8 +484,8 @@ string mapColours(const string line, const uint fgReset = BashForeground.default
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
 
-    alias F = BashForeground;
-    BashForeground[16] weechatForegroundMap =
+    alias F = TerminalForeground;
+    TerminalForeground[16] weechatForegroundMap =
     [
          0 : F.white,
          1 : F.darkgrey,
@@ -505,8 +505,8 @@ string mapColours(const string line, const uint fgReset = BashForeground.default
         15 : F.lightgrey,
     ];
 
-    alias B = BashBackground;
-    BashBackground[16] weechatBackgroundMap =
+    alias B = TerminalBackground;
+    TerminalBackground[16] weechatBackgroundMap =
     [
          0 : B.white,
          1 : B.black,
@@ -675,8 +675,8 @@ unittest
 
 // mapEffectsImpl
 /++
- +  Replaces mIRC tokens with Bash effect codes, in an alternating fashion so as
- +  to support repeated effects toggling behaviour.
+ +  Replaces mIRC tokens with terminal effect codes, in an alternating fashion
+ +  so as to support repeated effects toggling behaviour.
  +
  +  It seems to be the case that a token for bold text will trigger bold text up
  +  until the next bold token. If we only naïvely replace all mIRC tokens for
@@ -689,23 +689,23 @@ unittest
  +
  +  Params:
  +      mircToken = mIRC token for a particular text effect.
- +      bashEffectCode = Bash equivalent of the mircToken effect.
+ +      TerminalFormatCode = Terminal equivalent of the mircToken effect.
  +      line = The mIRC-formatted string to translate.
  +
  +  Returns:
- +      The passed `line`, now with Bash formatting.
+ +      The passed `line`, now with terminal formatting.
  +/
 version(Colours)
-private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const string line)
+private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const string line)
 {
-    import kameloso.bash : B = BashEffect, BashReset, TerminalToken, colour;
+    import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colour;
     import kameloso.irc : I = IRCControlCharacter;
     import std.array : Appender, replace;
     import std.conv  : to;
     import std.regex : matchAll, regex;
 
-    enum bashToken = TerminalToken.bashFormat ~ "[" ~
-        (cast(ubyte)bashEffectCode).to!string ~ "m";
+    enum terminalToken = TerminalToken.format ~ "[" ~
+        (cast(ubyte)TerminalFormatCode).to!string ~ "m";
 
     enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
     auto engine = pattern.regex;
@@ -718,26 +718,26 @@ private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const strin
     while (hits.front.length)
     {
         sink.put(hits.front.pre);
-        sink.put(bashToken);
+        sink.put(terminalToken);
         sink.put(hits.front[1]);
 
-        switch (bashEffectCode)
+        switch (TerminalFormatCode)
         {
         case 1:
         case 2:
             // Both 1 and 2 seem to be reset by 22?
-            sink.put(TerminalToken.bashFormat ~ "[22m");
+            sink.put(TerminalToken.format ~ "[22m");
             break;
 
         case 3:
         ..
         case 5:
-            sink.put(TerminalToken.bashFormat ~ "[2" ~ bashEffectCode.to!string ~ "m");
+            sink.put(TerminalToken.format ~ "[2" ~ TerminalFormatCode.to!string ~ "m");
             break;
 
         default:
-            //logger.warning("Unknown Bash effect code: ", bashEffectCode);
-            sink.colour(BashReset.all);
+            //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
+            sink.colour(TerminalReset.all);
             break;
         }
 
@@ -746,10 +746,10 @@ private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const strin
 
     // We've gone through them pair-wise, now see if there are any singles left.
     enum singleToken = cast(char)mircToken ~ "";
-    sink.put(hits.post.replace(singleToken, bashToken));
+    sink.put(hits.post.replace(singleToken, terminalToken));
 
     // End tags and commit.
-    sink.colour(BashReset.all);
+    sink.colour(TerminalReset.all);
     return sink.data;
 }
 
@@ -757,13 +757,13 @@ private string mapEffectsImpl(ubyte mircToken, ubyte bashEffectCode)(const strin
 version(Colours)
 unittest
 {
-    import kameloso.bash : B = BashEffect, TerminalToken;
+    import kameloso.terminal : TF = TerminalFormat, TerminalToken;
     import kameloso.irc : I = IRCControlCharacter;
     import std.conv : to;
 
-    enum bBold = TerminalToken.bashFormat ~ "[" ~ (cast(ubyte)B.bold).to!string ~ "m";
-    enum bReset = TerminalToken.bashFormat ~ "[22m";
-    enum bResetAll = TerminalToken.bashFormat ~ "[0m";
+    enum bBold = TerminalToken.format ~ "[" ~ (cast(ubyte)TF.bold).to!string ~ "m";
+    enum bReset = TerminalToken.format ~ "[22m";
+    enum bResetAll = TerminalToken.format ~ "[0m";
 
     immutable line1 = "ABC"~I.bold~"DEF"~I.bold~"GHI"~I.bold~"JKL"~I.bold~"MNO";
     immutable line2 = "ABC"~bBold~"DEF"~bReset~"GHI"~bBold~"JKL"~bReset~"MNO"~bResetAll;

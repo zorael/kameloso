@@ -770,7 +770,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.bash : TerminalToken;
+    import kameloso.terminal : TerminalToken;
     write(TerminalToken.reset);
     version(FlushStdout) stdout.flush();
 }
@@ -1142,8 +1142,9 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
-mixin UserAwareness;
-mixin ChannelAwareness;
+mixin UserAwareness!(ChannelPolicy.any);
+mixin ChannelAwareness!(ChannelPolicy.any);
+mixin TwitchAwareness!(ChannelPolicy.any);
 
 public:
 

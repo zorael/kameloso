@@ -204,7 +204,7 @@ File createFIFO(IRCPluginState state)
     {
         if (!settings.monochrome)
         {
-            import kameloso.bash : colour;
+            import kameloso.terminal : colour;
             import kameloso.constants : DefaultColours;
             import std.experimental.logger : LogLevel;
 

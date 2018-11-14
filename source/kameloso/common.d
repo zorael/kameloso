@@ -14,7 +14,7 @@ import std.typecons : Flag, No, Yes;
 
 version(Colours)
 {
-    private import kameloso.bash : BashForeground;
+    private import kameloso.terminal : TerminalForeground;
 }
 
 @safe:
@@ -560,18 +560,18 @@ struct IRCBot
  +
  +  Example:
  +  ---
- +  printVersionInfo(BashForeground.white);
+ +  printVersionInfo(TerminalForeground.white);
  +  ---
  +
  +  Params:
- +      colourCode = Bash foreground colour to display the text in.
+ +      colourCode = Terminal foreground colour to display the text in.
  +/
 
 version(Colours)
-void printVersionInfo(BashForeground colourCode)
+void printVersionInfo(TerminalForeground colourCode)
 {
-    import kameloso.bash : colour;
-    return printVersionInfo(colourCode.colour, BashForeground.default_.colour);
+    import kameloso.terminal : colour;
+    return printVersionInfo(colourCode.colour, TerminalForeground.default_.colour);
 }
 
 
@@ -580,7 +580,7 @@ void printVersionInfo(BashForeground colourCode)
  +  Prints out the bot banner with the version number and GitHub URL, optionally
  +  with passed colouring in string format.
  +
- +  Overload that does not rely on `BashForeground` being available, yet takes
+ +  Overload that does not rely on `TerminalForeground` being available, yet takes
  +  the necessary parameters to allow the other overload to reuse this one.
  +
  +  Example:

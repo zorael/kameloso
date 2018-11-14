@@ -35,7 +35,7 @@ struct PrinterSettings
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
-    /// Whether to display advanced colours in RRGGBB rather than simple Bash.
+    /// Whether to display advanced colours in RRGGBB rather than simple Terminal.
     bool truecolour = true;
 
     /// Whether to normalise truecolours; make dark brighter and bright darker.
@@ -644,11 +644,11 @@ void onISUPPORT(PrinterPlugin plugin)
             if (!settings.monochrome)
             {
                 import kameloso.logger : KamelosoLogger;
-                import kameloso.bash : BashReset, colour;
+                import kameloso.terminal : TerminalReset, colour;
 
                 infotint = (cast(KamelosoLogger)logger).infotint;
                 logtint = (cast(KamelosoLogger)logger).logtint;
-                tintreset = BashReset.all.colour;
+                tintreset = TerminalReset.all.colour;
             }
         }
 
@@ -873,7 +873,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
         {
-            import kameloso.bash : TerminalToken;
+            import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
         }
     }
@@ -903,7 +903,7 @@ version(Colours)
 void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     IRCEvent event, const bool bellOnMention)
 {
-    import kameloso.bash : BashForeground, colour;
+    import kameloso.terminal : TerminalForeground, colour;
     import kameloso.constants : DefaultColours;
     import kameloso.conv : Enum;
     import std.datetime : DateTime;
@@ -926,20 +926,20 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     immutable bright = settings.brightTerminal;
 
     /++
-     +  Outputs a Bash ANSI colour token based on the hash of the passed
+     +  Outputs a terminal ANSI colour token based on the hash of the passed
      +  nickname.
      +
      +  It gives each user a random yet consistent colour to their name.
      +/
-    BashForeground colourByHash(const string nickname)
+    TerminalForeground colourByHash(const string nickname)
     {
         if (plugin.printerSettings.randomNickColours)
         {
             import std.algorithm.searching : countUntil;
             import std.traits : EnumMembers;
 
-            alias foregroundMembers = EnumMembers!BashForeground;
-            static immutable BashForeground[foregroundMembers.length] fg = [ foregroundMembers ];
+            alias foregroundMembers = EnumMembers!TerminalForeground;
+            static immutable TerminalForeground[foregroundMembers.length] fg = [ foregroundMembers ];
 
             enum chancodeBright = fg[].countUntil(cast(int)DefaultBright.channel);
             enum chancodeDark = fg[].countUntil(cast(int)DefaultDark.channel);
@@ -967,7 +967,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
     }
 
     /++
-     +  Outputs a Bash truecolour token based on the #RRGGBB value stored in
+     +  Outputs a terminal truecolour token based on the #RRGGBB value stored in
      +  `user.colour`.
      +
      +  This is for Twitch servers that assign such values to users' messages.
@@ -979,7 +979,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         {
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
-                import kameloso.bash : truecolour;
+                import kameloso.terminal : truecolour;
                 import kameloso.conv : numFromHex;
 
                 int r, g, b;
@@ -1018,7 +1018,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         }
         else
         {
-            BashForeground typeColour;
+            TerminalForeground typeColour;
 
             if (bright)
             {
@@ -1070,11 +1070,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (!sender.alias_.asLowerCase.equal(sender.nickname))
                 {
-                    sink.colour(BashForeground.default_);
+                    sink.colour(TerminalForeground.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.sender);
                     sink.put(sender.nickname);
-                    sink.colour(BashForeground.default_);
+                    sink.colour(TerminalForeground.default_);
                     sink.put('>');
                 }
             }
@@ -1106,7 +1106,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (target.nickname.length)
         {
             // No need to check isServer; target is never server
-            sink.colour(BashForeground.default_);
+            sink.colour(TerminalForeground.default_);
             sink.put(" (");
             colourUserTruecolour(sink, event.target);
 
@@ -1114,7 +1114,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             {
                 //put(sink, target.alias_, ')');
                 sink.put(target.alias_);
-                sink.colour(BashForeground.default_);
+                sink.colour(TerminalForeground.default_);
                 sink.put(')');
 
                 if (target.class_ == IRCUser.Class.special)
@@ -1128,18 +1128,18 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                 if (!target.alias_.asLowerCase.equal(target.nickname))
                 {
-                    //sink.colour(BashForeground.default_);
+                    //sink.colour(TerminalForeground.default_);
                     sink.put(" <");
                     colourUserTruecolour(sink, event.target);
                     sink.put(target.nickname);
-                    sink.colour(BashForeground.default_);
+                    sink.colour(TerminalForeground.default_);
                     sink.put('>');
                 }
             }
             else
             {
                 sink.put(target.nickname);
-                sink.colour(BashForeground.default_);
+                sink.colour(TerminalForeground.default_);
                 sink.put(')');
 
                 if (target.class_ == IRCUser.Class.special)
@@ -1164,9 +1164,9 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
         if (content.length)
         {
-            immutable BashForeground contentFgBase = bright ?
+            immutable TerminalForeground contentFgBase = bright ?
                 DefaultBright.content : DefaultDark.content;
-            immutable BashForeground emoteFgBase = bright ?
+            immutable TerminalForeground emoteFgBase = bright ?
                 DefaultBright.emote : DefaultDark.emote;
 
             immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
@@ -1195,7 +1195,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case CHAN:
                 case EMOTE:
                 case TWITCH_CHEER:
-                    import kameloso.bash : invert;
+                    import kameloso.terminal : invert;
                     import kameloso.irc : containsNickname;
 
                     if (!content.containsNickname(client.nickname)) goto default;
@@ -1211,10 +1211,10 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     break;
                 }
 
-                import kameloso.bash : BashBackground;
+                import kameloso.terminal : TerminalBackground;
 
                 // Reset the background to ward off bad backgrounds bleeding out
-                sink.colour(fgBase, BashBackground.default_);
+                sink.colour(fgBase, TerminalBackground.default_);
                 if (!isEmote) put(sink, '"');
             }
             else
@@ -1248,12 +1248,12 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             put(sink, " !", errors, '!');
         }
 
-        sink.colour(BashForeground.default_);  // same for bright and dark
+        sink.colour(TerminalForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
             ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
         {
-            import kameloso.bash : TerminalToken;
+            import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
         }
     }

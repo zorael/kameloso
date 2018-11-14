@@ -27,8 +27,8 @@ enum TerminalToken
 version(Colours):
 
 /++
- +  Effect codes that work like terminal colouring does, except for formatting
- +  effects like bold, dim, italics, etc.
+ +  Format codes that work like terminal colouring does, except here for formats
+ +  like bold, dim, italics, etc.
  +/
 enum TerminalFormat
 {
@@ -162,7 +162,7 @@ version(Colours)
 void colour(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, string) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
-    sink.put(TerminalToken.effect);
+    sink.put(TerminalToken.format);
     sink.put('[');
 
     uint numCodes;
@@ -490,7 +490,7 @@ if (isOutputRange!(Sink, string))
         }
     }
 
-    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.effect, r, g, b);
+    sink.formattedWrite("%c[38;2;%d;%d;%dm", cast(char)TerminalToken.format, r, g, b);
 }
 
 
@@ -544,8 +544,8 @@ unittest
 
     immutable name = "blarbhl".truecolour!(No.normalise)(255,255,255);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
-        .format(cast(char)TerminalToken.effect, 255, 255, 255,
-        "blarbhl", cast(char)TerminalToken.effect);
+        .format(cast(char)TerminalToken.format, 255, 255, 255,
+        "blarbhl", cast(char)TerminalToken.format);
 
     assert((name == alsoName), alsoName);
 }
@@ -577,8 +577,8 @@ string invert(const string line, const string toInvert)
     import std.format : format;
     import std.string : indexOf;
 
-    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.effect,
-        TerminalFormat.reverse, toInvert, TerminalToken.effect, TerminalReset.invert);
+    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
+        TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
 
     Appender!string sink;
     sink.reserve(512);  // Maximum IRC message length by spec
@@ -640,8 +640,8 @@ unittest
 {
     import std.format : format;
 
-    immutable pre = "%c[%dm".format(TerminalToken.effect, TerminalFormat.reverse);
-    immutable post = "%c[%dm".format(TerminalToken.effect, TerminalReset.invert);
+    immutable pre = "%c[%dm".format(TerminalToken.format, TerminalFormat.reverse);
+    immutable post = "%c[%dm".format(TerminalToken.format, TerminalReset.invert);
 
     {
         immutable line = "abc".invert("abc");

@@ -47,70 +47,70 @@ enum Timeout
 version(Colours)
 struct DefaultColours
 {
-    import kameloso.bash : BashForeground;
+    import kameloso.terminal : TerminalForeground;
     import std.experimental.logger : LogLevel;
 
-    alias BF = BashForeground;
+    alias TF = TerminalForeground;
 
     /// Default colours for printing events on a dark terminal background.
-    enum EventPrintingDark : BashForeground
+    enum EventPrintingDark : TerminalForeground
     {
-        timestamp = BF.white,
-        type    = BF.lightblue,
-        error   = BF.lightred,
-        sender  = BF.lightgreen,
-        special = BF.lightyellow,
-        target  = BF.cyan,
-        channel = BF.yellow,
-        content = BF.default_,
-        aux     = BF.white,
-        count   = BF.green,
-        num     = BF.darkgrey,
-        badge   = BF.white,
-        emote   = BF.cyan,
-        highlight = BF.white,
-        query   = BF.lightgreen,
+        timestamp = TF.white,
+        type    = TF.lightblue,
+        error   = TF.lightred,
+        sender  = TF.lightgreen,
+        special = TF.lightyellow,
+        target  = TF.cyan,
+        channel = TF.yellow,
+        content = TF.default_,
+        aux     = TF.white,
+        count   = TF.green,
+        num     = TF.darkgrey,
+        badge   = TF.white,
+        emote   = TF.cyan,
+        highlight = TF.white,
+        query   = TF.lightgreen,
     }
 
     /// Default colours for printing events on a bright terminal background.
-    enum EventPrintingBright : BashForeground
+    enum EventPrintingBright : TerminalForeground
     {
-        timestamp = BF.black,
-        type    = BF.blue,
-        error   = BF.red,
-        sender  = BF.green,
-        special = BF.yellow,
-        target  = BF.cyan,
-        channel = BF.yellow,
-        content = BF.default_,
-        aux     = BF.black,
-        count   = BF.lightgreen,
-        num     = BF.lightgrey,
-        badge   = BF.black,
-        emote   = BF.lightcyan,
-        highlight = BF.black,
-        query   = BF.green,
+        timestamp = TF.black,
+        type    = TF.blue,
+        error   = TF.red,
+        sender  = TF.green,
+        special = TF.yellow,
+        target  = TF.cyan,
+        channel = TF.yellow,
+        content = TF.default_,
+        aux     = TF.black,
+        count   = TF.lightgreen,
+        num     = TF.lightgrey,
+        badge   = TF.black,
+        emote   = TF.lightcyan,
+        highlight = TF.black,
+        query   = TF.green,
     }
 
     /// Logger colours to use with a dark terminal background.
-    static immutable BashForeground[193] logcoloursDark  =
+    static immutable TerminalForeground[193] logcoloursDark  =
     [
-        LogLevel.all     : BF.white,
-        LogLevel.trace   : BF.default_,
-        LogLevel.info    : BF.lightgreen,
-        LogLevel.warning : BF.lightred,
-        LogLevel.error   : BF.red,
-        LogLevel.fatal   : BF.red,
+        LogLevel.all     : TF.white,
+        LogLevel.trace   : TF.default_,
+        LogLevel.info    : TF.lightgreen,
+        LogLevel.warning : TF.lightred,
+        LogLevel.error   : TF.red,
+        LogLevel.fatal   : TF.red,
     ];
 
     /// Logger colours to use with a bright terminal background.
-    static immutable BashForeground[193] logcoloursBright  =
+    static immutable TerminalForeground[193] logcoloursBright  =
     [
-        LogLevel.all     : BF.black,
-        LogLevel.trace   : BF.default_,
-        LogLevel.info    : BF.green,
-        LogLevel.warning : BF.red,
-        LogLevel.error   : BF.red,
-        LogLevel.fatal   : BF.red,
+        LogLevel.all     : TF.black,
+        LogLevel.trace   : TF.default_,
+        LogLevel.info    : TF.green,
+        LogLevel.warning : TF.red,
+        LogLevel.error   : TF.red,
+        LogLevel.fatal   : TF.red,
     ];
 }

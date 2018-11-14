@@ -104,11 +104,11 @@ alias printObject = printObjects;
  +      printAll = Whether or not to also display members marked as
  +          `kameloso.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
- +      coloured = Whether to display in colours or not.
+ +      coloured = Whether to display in colours or noF.
  +      widthArg = The width with which to pad output columns.
  +      sink = Output range to write to.
  +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and format.
+ +      things = Variadic list of structs to enumerate and formaF.
  +/
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
@@ -119,8 +119,8 @@ if (isOutputRange!(Sink, char[]))
 
     static if (coloured)
     {
-        import kameloso.bash : BashForeground, colour;
-        alias B = BashForeground;
+        import kameloso.terminal : TerminalForeground, colour;
+        alias F = TerminalForeground;
     }
 
     static if (__VERSION__ < 2076L)
@@ -159,7 +159,7 @@ if (isOutputRange!(Sink, char[]))
 
         static if (coloured)
         {
-            immutable titleCode = bright ? B.black : B.white;
+            immutable titleCode = bright ? F.black : F.white;
             sink.formattedWrite("%s-- %s\n", titleCode.colour, Thing.stringof.stripSuffix("Settings"));
         }
         else
@@ -194,10 +194,10 @@ if (isOutputRange!(Sink, char[]))
                     static if (coloured)
                     {
                         enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
-                        immutable memberCode = bright ? B.black : B.white;
-                        immutable valueCode = bright ? B.green : B.lightgreen;
-                        immutable lengthCode = bright ? B.lightgrey : B.darkgrey;
-                        immutable typeCode = bright ? B.lightcyan : B.cyan;
+                        immutable memberCode = bright ? F.black : F.white;
+                        immutable valueCode = bright ? F.green : F.lightgreen;
+                        immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
+                        immutable typeCode = bright ? F.lightcyan : F.cyan;
 
                         sink.formattedWrite(stringPattern,
                             typeCode.colour, typewidth, T.stringof,
@@ -235,10 +235,10 @@ if (isOutputRange!(Sink, char[]))
                             enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
                         }
 
-                        immutable memberCode = bright ? B.black : B.white;
-                        immutable valueCode = bright ? B.green : B.lightgreen;
-                        immutable lengthCode = bright ? B.lightgrey : B.darkgrey;
-                        immutable typeCode = bright ? B.lightcyan : B.cyan;
+                        immutable memberCode = bright ? F.black : F.white;
+                        immutable valueCode = bright ? F.green : F.lightgreen;
+                        immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
+                        immutable typeCode = bright ? F.lightcyan : F.cyan;
 
                         import kameloso.traits : UnqualArray;
 
@@ -277,9 +277,9 @@ if (isOutputRange!(Sink, char[]))
                     static if (coloured)
                     {
                         enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
-                        immutable memberCode = bright ? B.black : B.white;
-                        immutable valueCode = bright ? B.green : B.lightgreen;
-                        immutable typeCode = bright ? B.lightcyan : B.cyan;
+                        immutable memberCode = bright ? F.black : F.white;
+                        immutable valueCode = bright ? F.green : F.lightgreen;
+                        immutable typeCode = bright ? F.lightcyan : F.cyan;
 
                         sink.formattedWrite(normalPattern,
                             typeCode.colour, typewidth, T.stringof,
@@ -298,9 +298,9 @@ if (isOutputRange!(Sink, char[]))
                     static if (coloured)
                     {
                         enum normalPattern = "%s%*s %s%-*s  %s%s\n";
-                        immutable memberCode = bright ? B.black : B.white;
-                        immutable valueCode = bright ? B.green : B.lightgreen;
-                        immutable typeCode = bright ? B.lightcyan : B.cyan;
+                        immutable memberCode = bright ? F.black : F.white;
+                        immutable valueCode = bright ? F.green : F.lightgreen;
+                        immutable typeCode = bright ? F.lightcyan : F.cyan;
 
                         sink.formattedWrite(normalPattern,
                             typeCode.colour, typewidth, T.stringof,
@@ -319,7 +319,7 @@ if (isOutputRange!(Sink, char[]))
 
         static if (coloured)
         {
-            enum defaultColour = B.default_.colour;
+            enum defaultColour = F.default_.colour;
             sink.put(defaultColour);
         }
 
@@ -508,10 +508,10 @@ if (isOutputRange!(Sink, char[]))
  +      printAll = Whether or not to also display members marked as
  +          `kameloso.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
- +      coloured = Whether to display in colours or not.
+ +      coloured = Whether to display in colours or noF.
  +      widthArg = The width with which to pad output columns.
  +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and format.
+ +      things = Variadic list of structs to enumerate and formaF.
  +/
 string formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)

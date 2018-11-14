@@ -182,12 +182,12 @@ void printHelp(GetoptResult results) @system
 
     version(Colours)
     {
-        import kameloso.bash : BashForeground, colour;
+        import kameloso.terminal : TerminalForeground, colour;
 
         if (!settings.monochrome)
         {
-            immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
-            immutable defaulttint = BashForeground.default_;
+            immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
+            immutable defaulttint = TerminalForeground.default_;
             pre = headertint.colour;
             post = defaulttint.colour;
         }
@@ -202,9 +202,9 @@ void printHelp(GetoptResult results) @system
     {
         if (!settings.monochrome)
         {
-            import kameloso.bash : BashForeground, colour;
+            import kameloso.terminal : TerminalForeground, colour;
 
-            immutable headlineTint = settings.brightTerminal ? BashForeground.green : BashForeground.lightgreen;
+            immutable headlineTint = settings.brightTerminal ? TerminalForeground.green : TerminalForeground.lightgreen;
             headline = headline.colour(headlineTint);
         }
     }
@@ -245,16 +245,16 @@ Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettin
 
     version(Colours)
     {
-        import kameloso.bash : BashForeground;
+        import kameloso.terminal : TerminalForeground;
 
         if (!settings.monochrome)
         {
             import kameloso.logger : KamelosoLogger;
-            import kameloso.bash : colour;
+            import kameloso.terminal : colour;
 
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
-            immutable defaulttint = BashForeground.default_;
+            immutable defaulttint = TerminalForeground.default_;
             post = defaulttint.colour;
         }
     }
@@ -483,12 +483,12 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
 
             version(Colours)
             {
-                import kameloso.bash : BashForeground, colour;
+                import kameloso.terminal : TerminalForeground, colour;
 
                 if (!settings.monochrome)
                 {
-                    immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
-                    immutable defaulttint = BashForeground.default_;
+                    immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
+                    immutable defaulttint = TerminalForeground.default_;
                     pre = headertint.colour;
                     post = defaulttint.colour;
                 }

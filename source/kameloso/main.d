@@ -167,7 +167,7 @@ Next checkMessages(ref IRCBot bot)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                import kameloso.bash : BashForeground, BashBackground;
+                import kameloso.terminal : TerminalForeground, TerminalBackground;
 
                 logger.trace("--> ", line.mapEffects);
                 bot.conn.sendline(line);
@@ -195,7 +195,7 @@ Next checkMessages(ref IRCBot bot)
             version(Colours)
             {
                 import kameloso.irccolours : mapEffects;
-                import kameloso.bash : BashForeground, BashBackground;
+                import kameloso.terminal : TerminalForeground, TerminalBackground;
 
                 logger.trace("--> ", line.mapEffects);
                 bot.throttleline(line);
@@ -1317,7 +1317,7 @@ int main(string[] args)
 
     scope(failure)
     {
-        import kameloso.bash : TerminalToken;
+        import kameloso.terminal : TerminalToken;
         logger.error("We just crashed!", cast(char)TerminalToken.bell);
         bot.teardownPlugins();
         resetSignals();
@@ -1347,11 +1347,11 @@ int main(string[] args)
     {
         if (!settings.monochrome)
         {
-            import kameloso.bash : BashForeground, colour;
+            import kameloso.terminal : TerminalForeground, colour;
             import kameloso.logger : KamelosoLogger;
 
-            immutable headertint = settings.brightTerminal ? BashForeground.black : BashForeground.white;
-            immutable defaulttint = BashForeground.default_;
+            immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
+            immutable defaulttint = TerminalForeground.default_;
             pre = headertint.colour;
             post = defaulttint.colour;
 
