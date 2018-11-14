@@ -13,7 +13,7 @@ import kameloso.ircdefs;
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
 
-version = TwitchWarnings;
+//version = TwitchWarnings;
 
 
 // 2.079.0 getSymolsByUDA
