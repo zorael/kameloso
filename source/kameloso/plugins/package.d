@@ -107,12 +107,20 @@ version(WithPlugins)
     version(TwitchSupport)
     {
         mixin(tryImportMixin("kameloso.plugins.twitchsupport", "TwitchSupportService"));
+
+        version(TwitchBot)
+        {
+            mixin(tryImportMixin("kameloso.plugins.twitch", "TwitchPlugin"));
+        }
+        else
+        {
+            public alias TwitchPlugin = AliasSeq!();
+        }
     }
     else
     {
-        // Likewise we need to do this so as to let `EnabledPlugins` below be able
-        // to resolve `TwitchService`.
         public alias TwitchService = AliasSeq!();
+        public alias TwitchPlugin = AliasSeq!();
     }
 }
 
@@ -156,6 +164,7 @@ version(WithPlugins)
         SeenPlugin,
         AutomodePlugin,
         QuotesPlugin,
+        TwitchPlugin,
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );
