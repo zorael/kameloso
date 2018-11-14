@@ -19,11 +19,11 @@ public import kameloso.plugins.common;
  +  Example:
  +  ---
  +  mixin(tryImportMixin("proj.some.module_", "SymbolInside"));"
- +  assert(__traits(compiles, SymbolInside));  // normal import
+ +  static assert(__traits(compiles, SymbolInside));  // normal import
  +
  +  mixin(tryImportMixin("proj.some.invalidmodule", "FakeSymbol"));"  // failed import
- +  assert(__traits(compiles, FakeSymbol));  // visible despite that
- +  assert(is(FakeSymbol == AliasSeq!()));  // ...because it's aliased to nothing
+ +  static assert(__traits(compiles, FakeSymbol));  // visible despite that
+ +  static assert(is(FakeSymbol == AliasSeq!()));  // ...because it's aliased to nothing
  +  ---
  +
  +  Params:
