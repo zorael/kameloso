@@ -124,6 +124,27 @@ shared(Sendable) busMessage(T)(T payload) @safe
     return new shared BusMessage!(Unqual!T)(payload);
 }
 
+///
+unittest
+{
+    {
+        auto msg = busMessage("asdf");
+        auto asCast = cast(BusMessage!string)msg;
+        assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+    }
+    {
+        auto msg = busMessage(12345);
+        auto asCast = cast(BusMessage!int)msg;
+        assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+    }
+    {
+        struct Foo {}
+        auto msg = busMessage(Foo());
+        auto asCast = cast(BusMessage!Foo)msg;
+        assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+    }
+}
+
 
 // CarryingFiber
 /++
