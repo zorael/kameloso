@@ -539,7 +539,7 @@ Next mainLoop(ref IRCBot bot)
      +/
     int timedFiberCheckCounter = checkTimedFibersEveryN;
 
-    string logtint, errortint;
+    string logtint, errortint, warningtint;
 
     version(Colours)
     {
@@ -549,6 +549,7 @@ Next mainLoop(ref IRCBot bot)
 
             logtint = (cast(KamelosoLogger)logger).logtint;
             errortint = (cast(KamelosoLogger)logger).errortint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
         }
     }
 
@@ -621,19 +622,21 @@ Next mainLoop(ref IRCBot bot)
                 break listenerloop;
 
             case hasString:
-                // hasString means we should drop down and continue
+                // hasString means we should drop down and continue processing
                 break;
 
             case warning:
                 // Benign socket error; break foreach and try again
                 import core.thread : Thread;
                 import core.time : seconds;
-                logger.warningf("Socket error! %s%s", logtint, attempt.lastSocketError_);
+
+                logger.warningf("Connection error! (%s%s%s)", logtint,
+                    attempt.lastSocketError_, warningtint);
                 Thread.sleep(1.seconds);
                 break listenerloop;
 
             case timeout:
-                logger.error("Connection timed out.");
+                logger.error("Connection lost.");
                 return Next.returnFailure;
 
             case error:
@@ -642,13 +645,13 @@ Next mainLoop(ref IRCBot bot)
 
                 if (attempt.bytesReceived == 0)
                 {
-                    logger.errorf("Empty response from server! (%s%s%s)", logtint,
-                        attempt.lastSocketError_, errortint);
+                    logger.errorf("Connection error: empty server response! (%s%s%s)",
+                        logtint, attempt.lastSocketError_, errortint);
                 }
                 else
                 {
-                    logger.errorf("Failed to read from server! (%s%s%s)", logtint,
-                        attempt.lastSocketError_, errortint);
+                    logger.errorf("Connection error: invalid server response! (%s%s%s)",
+                        logtint, attempt.lastSocketError_, errortint);
                 }
 
                 return Next.returnFailure;
