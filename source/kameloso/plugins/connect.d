@@ -873,9 +873,15 @@ void start(ConnectService service)
  +      service = The current `ConnectService`.
  +      header = String header describing the message content.
  +/
-void onBusMessage(ConnectService service, const string header)
+import kameloso.thread : BusMessage, Sendable;
+void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
-    if (header == "auth")
+    if (header != "connect") return;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (message.payload == "auth")
     {
         service.tryAuth();
     }

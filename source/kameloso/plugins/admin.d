@@ -988,10 +988,10 @@ void onCommandAuth(AdminPlugin plugin)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(), "auth");
+    plugin.state.mainThread.send(ThreadMessage.BusMessage(), "connect", busMessage("auth"));
 }
 
 
