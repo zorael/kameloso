@@ -580,8 +580,8 @@ void printVersionInfo(TerminalForeground colourCode)
  +  Prints out the bot banner with the version number and GitHub URL, optionally
  +  with passed colouring in string format.
  +
- +  Overload that does not rely on `TerminalForeground` being available, yet takes
- +  the necessary parameters to allow the other overload to reuse this one.
+ +  Overload that does not rely on `TerminalForeground` being available, yet
+ +  takes the necessary parameters to allow the other overload to reuse this one.
  +
  +  Example:
  +  ---

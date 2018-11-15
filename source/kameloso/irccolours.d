@@ -363,7 +363,8 @@ char ircReset()
  +      bgBase = Backgrund base code to reset to after end colour tags.
  +
  +  Returns:
- +      A new string based on `origLine` with mIRC tokens mapped to terminal ones.
+ +      A new string based on `origLine` with mIRC tokens mapped to terminal
+ +      ones.
  +/
 version(Colours)
 string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,
@@ -466,8 +467,8 @@ unittest
  +
  +  Params:
  +      line = String line with IRC colours to translate.
- +      fgReset = Terminal foreground code to reset to after colour default tokens.
- +      bgReset = Terminal background code to reset to after colour default tokens.
+ +      fgReset = Foreground code to reset to after colour-default tokens.
+ +      bgReset = Background code to reset to after colour-default tokens.
  +
  +  Returns:
  +      The passed `line`, now with terminal colouring.

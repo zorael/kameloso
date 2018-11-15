@@ -105,10 +105,11 @@ enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground)
 
 // colour
 /++
- +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a `TerminalFormat` and/or
- +  a `TerminalReset` and composes them into a single terminal colour code token.
+ +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
+ +  `TerminalFormat` and/or a `TerminalReset` and composes them into a single
+ +  terminal format code token.
  +
- +  This function creates an `std.array.Appender` and fills it with the return
+ +  This overload creates an `std.array.Appender` and fills it with the return
  +  value of the output range version of `colour`.
  +
  +  Example:
@@ -140,10 +141,11 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 
 // colour
 /++
- +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a `TerminalFormat` and/or
- +  a `TerminalReset` and composes them into a colour code token.
+ +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
+ +  `TerminalFormat` and/or a `TerminalReset` and composes them into a format
+ +  code token.
  +
- +  This is the composing function that fills its result into an output range.
+ +  This is the composing overload that fills its result into an output range.
  +
  +  Example:
  +  ---
@@ -444,8 +446,8 @@ unittest
 
 // truecolour
 /++
- +  Produces a terminal colour token for the colour passed, expressed in terms of
- +  red, green and blue.
+ +  Produces a terminal colour token for the colour passed, expressed in terms
+ +  of red, green and blue.
  +
  +  Example:
  +  ---
