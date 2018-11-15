@@ -93,9 +93,20 @@ void pipereader(shared IRCPluginState newState)
                 {
                     if (line[0] == ':')
                     {
+                        import kameloso.string : has, nom;
                         import kameloso.thread : ThreadMessage, busMessage;
-                        state.mainThread.send(ThreadMessage.BusMessage(),
-                            "piped verb", busMessage(line[1..$]));
+
+                        if (line.has(' '))
+                        {
+                            string slice = line[1..$];
+                            immutable header = slice.nom(' ');
+                            state.mainThread.send(ThreadMessage.BusMessage(),
+                                header, busMessage(slice));
+                        }
+                        else
+                        {
+                            state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
+                        }
                         continue eofLoop;
                     }
                 }
