@@ -1051,93 +1051,92 @@ import kameloso.thread : Sendable;
 debug
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
-    if (header == "piped verb")
+    if (header != "admin") return;
+
+    import kameloso.printing : printObject;
+    import kameloso.string : contains, nom;
+    import kameloso.thread : BusMessage;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    string slice = message.payload;
+    immutable verb = slice.contains(' ') ? slice.nom(' ') : slice;
+
+    switch (verb)
     {
-        import kameloso.printing : printObject;
-        import kameloso.string : contains, nom;
-        import kameloso.thread : BusMessage;
+    case "status":
+        return plugin.onCommandStatus();
 
-        auto message = cast(BusMessage!string)content;
-        assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+    case "users":
+        return plugin.onCommandShowUsers();
 
-        string slice = message.payload;
-        immutable verb = slice.contains(' ') ? slice.nom(' ') : slice;
-
-        switch (verb)
+    case "user":
+        if (const user = slice in plugin.state.users)
         {
-        case "status":
-            return plugin.onCommandStatus();
-
-        case "users":
-            return plugin.onCommandShowUsers();
-
-        case "user":
-            if (const user = slice in plugin.state.users)
-            {
-                printObject(*user);
-            }
-            else
-            {
-                logger.error("No such user: ", slice);
-            }
-            break;
-
-        case "state":
-            printObject(plugin.state);
-            break;
-
-        case "printraw":
-            plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-            return;
-
-        case "printbytes":
-            plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-            return;
-
-        case "printasserts":
-            plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
-
-            if (plugin.adminSettings.printAsserts)
-            {
-                import kameloso.debugging : formatClientAssignment;
-                // Print the bot assignment but only if we're toggling it on
-                formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
-            }
-            return;
-
-        case "resetterm":
-            return plugin.onCommandResetTerminal();
-
-        case "set":
-            import kameloso.thread : CarryingFiber, ThreadMessage;
-
-            void dg()
-            {
-                import core.thread : Fiber;
-                import std.conv : ConvException;
-
-                auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-                assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-
-                try
-                {
-                    thisFiber.payload.applyCustomSettings([ slice ]);
-                    logger.log("Setting changed.");
-                }
-                catch (const ConvException e)
-                {
-                    logger.error("Invalid setting.");
-                }
-            }
-
-            auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
-            plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
-            break;
-
-        default:
-            logger.error("Unimplemented piped verb: ", verb);
-            break;
+            printObject(*user);
         }
+        else
+        {
+            logger.error("No such user: ", slice);
+        }
+        break;
+
+    case "state":
+        printObject(plugin.state);
+        break;
+
+    case "printraw":
+        plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+        return;
+
+    case "printbytes":
+        plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+        return;
+
+    case "printasserts":
+        plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+
+        if (plugin.adminSettings.printAsserts)
+        {
+            import kameloso.debugging : formatClientAssignment;
+            // Print the bot assignment but only if we're toggling it on
+            formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+        }
+        return;
+
+    case "resetterm":
+        return plugin.onCommandResetTerminal();
+
+    case "set":
+        import kameloso.thread : CarryingFiber, ThreadMessage;
+
+        void dg()
+        {
+            import core.thread : Fiber;
+            import std.conv : ConvException;
+
+            auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+            try
+            {
+                thisFiber.payload.applyCustomSettings([ slice ]);
+                logger.log("Setting changed.");
+            }
+            catch (const ConvException e)
+            {
+                logger.error("Invalid setting.");
+            }
+        }
+
+        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+        plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+        break;
+
+    default:
+        logger.error("Unimplemented piped verb: ", verb);
+        break;
     }
 }
 
