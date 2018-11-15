@@ -221,13 +221,6 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         // NOTICE AUTH :*** Couldn't look up your hostname
         event.type = NOTICE;
         event.content = slice;
-
-        if (client.server.address != IRCServer.init.address)
-        {
-            // No sender known and the address has been set to something
-            // Inherit that as sender
-            event.sender.address = client.server.address;
-        }
         break;
 
     case "PONG":
@@ -257,6 +250,8 @@ void parseBasic(ref IRCParser parser, ref IRCEvent event) pure
         }
     }
 
+    // All but PING and PONG are sender-less.
+    if (!event.sender.address) event.sender.address = parser.client.server.address;
     event.sender.class_ = IRCUser.Class.special;
 }
 
