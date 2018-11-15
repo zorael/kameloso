@@ -1142,9 +1142,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
-mixin UserAwareness!(ChannelPolicy.any);
-mixin ChannelAwareness!(ChannelPolicy.any);
-mixin TwitchAwareness!(ChannelPolicy.any);
+mixin UserAwareness;
+mixin ChannelAwareness;
 
 public:
 
