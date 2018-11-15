@@ -18,9 +18,9 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourNick;
+import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourNick;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
@@ -108,7 +108,7 @@ void initResources(AutomodePlugin plugin)
  +  Potentially applies an automode, depending on the definitions and the user
  +  triggering the function.
  +
- +  Different `kameloso.ircdefs.IRCEvent.Type`s have to be handled differently,
+ +  Different `kameloso.irc.defs.IRCEvent.Type`s have to be handled differently,
  +  as the triggering user may be either the sender or the target.
  +/
 @(IRCEvent.Type.ACCOUNT)
@@ -246,7 +246,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     if (!plugin.automodeSettings.enabled) return;
     if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
-    import kameloso.irc : isValidChannel, isValidNickname;
+    import kameloso.irc.common : isValidChannel, isValidNickname;
     import kameloso.string : beginsWith, nom;
     import std.algorithm.searching : count;
     import std.uni : toLower;

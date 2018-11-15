@@ -5,7 +5,7 @@ module kameloso.main;
 
 import kameloso.common;
 import kameloso.irc;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 
@@ -166,7 +166,7 @@ Next checkMessages(ref IRCBot bot)
         {
             version(Colours)
             {
-                import kameloso.irccolours : mapEffects;
+                import kameloso.irc.colours : mapEffects;
                 import kameloso.terminal : TerminalForeground, TerminalBackground;
 
                 logger.trace("--> ", line.mapEffects);
@@ -174,7 +174,7 @@ Next checkMessages(ref IRCBot bot)
             }
             else
             {
-                import kameloso.irccolours : stripEffects;
+                import kameloso.irc.colours : stripEffects;
 
                 immutable noEffects = line.stripEffects;
                 logger.trace("--> ", noEffects);
@@ -194,7 +194,7 @@ Next checkMessages(ref IRCBot bot)
         {
             version(Colours)
             {
-                import kameloso.irccolours : mapEffects;
+                import kameloso.irc.colours : mapEffects;
                 import kameloso.terminal : TerminalForeground, TerminalBackground;
 
                 logger.trace("--> ", line.mapEffects);
@@ -202,7 +202,7 @@ Next checkMessages(ref IRCBot bot)
             }
             else
             {
-                import kameloso.irccolours : stripEffects;
+                import kameloso.irc.colours : stripEffects;
 
                 immutable noEffects = line.stripEffects;
                 logger.trace("--> ", noEffects);
@@ -503,7 +503,7 @@ Next checkMessages(ref IRCBot bot)
  +
  +  Full lines are stored in `kameloso.connection.ListenAttempt`s which are
  +  yielded in the `std.concurrency.Generator` to be caught here, consequently
- +  parsed into `kameloso.ircdefs.IRCEvent`s, and then dispatched to all the
+ +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all the
  +  plugins.
  +
  +  Params:
@@ -787,9 +787,9 @@ Next mainLoop(ref IRCBot bot)
  +
  +  Params:
  +      plugin = The `kameloso.plugins.common.IRCPlugin` whose
- +          `kameloso.ircdefs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
+ +          `kameloso.irc.defs.IRCEvent.Type`-awaiting `core.thread.Fiber`s to
  +          iterate and process.
- +      event = The triggering `kameloso.ircdefs.IRCEvent`.
+ +      event = The triggering `kameloso.irc.defs.IRCEvent`.
  +/
 import kameloso.plugins.common : IRCPlugin;
 void handleFibers(IRCPlugin plugin, const IRCEvent event)

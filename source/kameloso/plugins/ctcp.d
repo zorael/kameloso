@@ -15,8 +15,8 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
-import kameloso.irc : IRCControlCharacter;
+import kameloso.irc.defs;
+import kameloso.irc.common : IRCControlCharacter;
 
 
 // onCTCPs
@@ -210,7 +210,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 unittest
 {
     // Ensure onCTCPs implement cases for all its annotated
-    // `kameloso.ircdefs.IRCEvent.Type`s.
+    // `kameloso.irc.defs.IRCEvent.Type`s.
     import std.traits : getUDAs;
 
     auto service = new CTCPService(IRCPluginState.init);
@@ -228,7 +228,7 @@ unittest
 /++
  +  Sends a list of which `CTCP` events we understand.
  +
- +  This builds a string of the names of all `kameloso.ircdefs.IRCEvent.Type`s
+ +  This builds a string of the names of all `kameloso.irc.defs.IRCEvent.Type`s
  +  that begin with `CTCP_`, at compile-time. As such, as long as we name any
  +  new such types `CTCP_SOMETHING`, this list will always be correct.
  +/

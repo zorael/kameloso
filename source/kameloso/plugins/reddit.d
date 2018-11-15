@@ -18,7 +18,7 @@ version(Web):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.messaging;
 
 import std.concurrency;
@@ -116,7 +116,7 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
  +      cache = Cache of previous Reddit lookups, in an associative array keyed
  +          with the original URL.
  +      url = Current URL to look up.
- +      event = `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the lookup.
  +/
 void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
     const string url, const IRCEvent event)
@@ -203,7 +203,7 @@ string lookupReddit(IRCPluginState state, const string url)
  +      state = The current IRC plugin state, which includes the thread ID of
  +          the main thread to send the report to, to pass onto the server.
  +      reddit = URL of the Reddit post.
- +      event = `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the lookup.
  +/
 void reportReddit(IRCPluginState state, const string reddit, const IRCEvent event)
 {

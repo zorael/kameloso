@@ -19,8 +19,8 @@ private:
 import kameloso.thread : ThreadMessage;
 import kameloso.messaging;
 import kameloso.plugins.common;
-import kameloso.ircdefs;
-import kameloso.irccolours : ircBold;
+import kameloso.irc.defs;
+import kameloso.irc.colours : ircBold;
 
 import std.concurrency;
 
@@ -66,7 +66,7 @@ struct TitleLookup
  +/
 struct TitleRequest
 {
-    /// The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+    /// The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.
@@ -417,7 +417,7 @@ unittest
  +  Params:
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      lookup = Finished title lookup.
- +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
  +      colouredOutput = Whether or not to include mIRC colours in outgoing
  +          messages.
  +/
@@ -456,7 +456,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +  Params:
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      info = `YouTubeVideoInfo` describing the lookup results.
- +      event = The `kameloso.ircdefs.IRCEvent` that instigated the lookup.
+ +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
  +      colouredOutput = Whether or not to include mIRC colours in outgoing
  +          messages.
  +/

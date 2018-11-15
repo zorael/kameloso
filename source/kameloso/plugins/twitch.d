@@ -15,7 +15,7 @@ version(TwitchBot):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.messaging;
 import kameloso.common : logger;
 

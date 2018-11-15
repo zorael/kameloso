@@ -3,7 +3,7 @@
  +  which you can pipe text and have it be sent verbatim to the server.
  +
  +  It has no commands; indeed, it doesn't listen to
- +  `kameloso.ircdefs.IRCEvent`s at all, only to what is sent to it via the
+ +  `kameloso.irc.defs.IRCEvent`s at all, only to what is sent to it via the
  +  named FIFO pipe.
  +
  +  This requires version `Posix`, which is true for UNIX-like systems (like
@@ -21,7 +21,7 @@ private:
 import kameloso.common;
 import kameloso.thread : ThreadMessage;
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.messaging;
 
 import std.concurrency;

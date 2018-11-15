@@ -5,8 +5,8 @@
 module kameloso.debugging;
 
 import kameloso.common : IRCBot;
-import kameloso.irc : IRCClient;
-import kameloso.ircdefs;
+import kameloso.irc.common : IRCClient;
+import kameloso.irc.defs;
 
 import std.typecons : Flag, No, Yes;
 
@@ -193,7 +193,7 @@ if (is(QualThing == struct))
 ///
 unittest
 {
-    import kameloso.irc : IRCParser;
+    import kameloso.irc.common : IRCParser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -288,7 +288,7 @@ assert(!b);
 // formatEventAssertBlock
 /++
  +  Constructs assert statement blocks for each changed field of an
- +  `kameloso.ircdefs.IRCEvent`.
+ +  `kameloso.irc.defs.IRCEvent`.
  +
  +  Example:
  +  ---
@@ -299,7 +299,7 @@ assert(!b);
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      event = `kameloso.ircdefs.IRCEvent` to construct assert statements for.
+ +      event = `kameloso.irc.defs.IRCEvent` to construct assert statements for.
  +/
 void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 {
@@ -325,7 +325,7 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 
 unittest
 {
-    import kameloso.irc : IRCParser;
+    import kameloso.irc.common : IRCParser;
     import kameloso.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -366,7 +366,7 @@ unittest
 // generateAsserts
 /++
  +  Reads raw server strings from `stdin`, parses them into
- +  `kameloso.ircdefs.IRCEvent`s and constructs assert blocks of their contents.
+ +  `kameloso.irc.defs.IRCEvent`s and constructs assert blocks of their contents.
  +
  +  Example:
  +  ---
@@ -381,7 +381,7 @@ unittest
 void generateAsserts(ref IRCBot bot) @system
 {
     import kameloso.common : logger;
-    import kameloso.ircdefs : IRCServer;
+    import kameloso.irc.defs : IRCServer;
     import kameloso.printing : printObjects;
     import std.stdio : stdout, readln, write, writeln, writefln;
     import std.typecons : Flag, No, Yes;
@@ -390,7 +390,7 @@ void generateAsserts(ref IRCBot bot) @system
     with (bot)
     {
         import kameloso.string : contains, nom, stripped;
-        import kameloso.irc : IRCParser;
+        import kameloso.irc.common : IRCParser;
         import std.conv : ConvException;
         import std.range : chunks, only;
         import std.traits : EnumMembers;
@@ -450,7 +450,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         while ((input = readln()) !is null)
         {
-            import kameloso.irc : IRCParseException;
+            import kameloso.irc.common : IRCParseException;
             import kameloso.string : beginsWithOneOf;
 
             if (*abort) return;

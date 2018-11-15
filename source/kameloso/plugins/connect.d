@@ -16,8 +16,8 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.irc : IRCClient;
-import kameloso.ircdefs;
+import kameloso.irc.common : IRCClient;
+import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.thread : ThreadMessage;
 
@@ -183,7 +183,7 @@ void joinChannels(ConnectService service)
 // onToConnectType
 /++
  +  Responds to `ERR_BADPING` events by sending the text supplied as content in
- +  the `kameloso.ircdefs.IRCEvent` to the server.
+ +  the `kameloso.irc.defs.IRCEvent` to the server.
  +
  +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
  +  however it's not used in Unreal (and might not be used in Ultimate either)."
@@ -204,7 +204,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
  +  Pongs the server upon `PING`.
  +
  +  We make sure to ping with the sender as target, and not the neccessarily
- +  the server as saved in the `kameloso.ircdefs.IRCServer` struct. For
+ +  the server as saved in the `kameloso.irc.defs.IRCServer` struct. For
  +  example, `ERR_BADPING` (or is it `ERR_NEEDPONG`?) generally wants you to
  +  ping a random number or string.
  +/
@@ -364,7 +364,7 @@ void tryAuth(ConnectService service)
  +  authenticate with services if applicable.
  +
  +  Some servers don't have a `MOTD`, so act on
- +  `kameloso.ircdefs.IRCEvent.Type.ERR_NOMOTD` as well.
+ +  `kameloso.irc.defs.IRCEvent.Type.ERR_NOMOTD` as well.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -443,8 +443,8 @@ void onAuthEnd(ConnectService service)
  +  Flags authentication as finished and join channels.
  +
  +  Some networks/daemons (like RusNet) send the "authentication complete"
- +  message as a `kameloso.ircdefs.IRCEvent.Type.NOTICE` from `NickServ`, not a
- +  `kameloso.ircdefs.IRCEvent.Type.PRIVMSG`.
+ +  message as a `kameloso.irc.defs.IRCEvent.Type.NOTICE` from `NickServ`, not a
+ +  `kameloso.irc.defs.IRCEvent.Type.PRIVMSG`.
  +
  +  Whitelist more nicknames as we discover them. Also English only for now but
  +  can be easily extended.

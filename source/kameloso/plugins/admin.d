@@ -42,9 +42,9 @@ private:
 
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
-import kameloso.irc : IRCClient;
-import kameloso.irccolours : IRCColour, ircBold, ircColour;
-import kameloso.ircdefs;
+import kameloso.irc.common : IRCClient;
+import kameloso.irc.colours : IRCColour, ircBold, ircColour;
+import kameloso.irc.defs;
 import kameloso.messaging;
 
 import std.concurrency : send;
@@ -151,7 +151,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
  +  Prints the details of one or more specific, supplied users to the local
  +  terminal.
  +
- +  It basically prints the matching `kameloso.ircdefs.IRCUser`.
+ +  It basically prints the matching `kameloso.irc.defs.IRCUser`.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -321,7 +321,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
 
-    import kameloso.irc : isValidChannel;
+    import kameloso.irc.common : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
     import std.uni : toLower;
@@ -528,7 +528,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 void addToList(AdminPlugin plugin, const string specified, const string list)
 {
     import kameloso.common : settings;
-    import kameloso.irc : isValidNickname;
+    import kameloso.irc.common : isValidNickname;
     import kameloso.string : contains, stripped;
 
     const user = specified in plugin.state.users;

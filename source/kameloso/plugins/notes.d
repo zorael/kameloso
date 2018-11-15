@@ -19,9 +19,9 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.common;
-import kameloso.irccolours : ircBold;
+import kameloso.irc.colours : ircBold;
 import kameloso.messaging;
 
 
@@ -167,7 +167,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.notesSettings.enabled) return;
 
-    import kameloso.irc : stripModesign;
+    import kameloso.irc.common : stripModesign;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
 

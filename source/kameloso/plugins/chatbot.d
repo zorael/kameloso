@@ -18,9 +18,9 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irccolours : ircBold;
+import kameloso.irc.colours : ircBold;
 import kameloso.messaging;
 
 
@@ -136,7 +136,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +  as an argument.
  +
  +  Once we have the list we format it nicely and send it back to the requester,
- +  which we remember since we saved the original `kameloso.ircdefs.IRCEvent`.
+ +  which we remember since we saved the original `kameloso.irc.defs.IRCEvent`.
  +/
 @(IRCEvent.Type.QUERY)
 @(IRCEvent.Type.CHAN)

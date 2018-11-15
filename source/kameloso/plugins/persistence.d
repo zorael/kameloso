@@ -1,14 +1,14 @@
 /++
  +  The Persistence service keeps track of all seen users, gathering as much
  +  information about them as possible, then injects them into
- +  `kameloso.ircdefs.IRCEvent`s when such information is not present.
+ +  `kameloso.irc.defs.IRCEvent`s when such information is not present.
  +
  +  This means that even if a service only refers to a user by nickname, things
  +  like his ident and address will be available to plugins as well, assuming
  +  the Persistence service had seen that previously.
  +
  +  It has no commands. It only does postprocessing and doesn't handle
- +  `kameloso.ircdefs.IRCEvent`s in the normal sense at all.
+ +  `kameloso.irc.defs.IRCEvent`s in the normal sense at all.
  +
  +  It is mandatory for plugins to pick up user classes.
  +/
@@ -19,14 +19,14 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 
 
 // postprocess
 /++
- +  Hijacks a reference to a `kameloso.ircdefs.IRCEvent` after parsing and
- +  fleshes out the `kameloso.ircdefs.IRCEvent.sender` and/or
- +  `kameloso.ircdefs.IRCEvent.target` fields, so that things like account names
+ +  Hijacks a reference to a `kameloso.irc.defs.IRCEvent` after parsing and
+ +  fleshes out the `kameloso.irc.defs.IRCEvent.sender` and/or
+ +  `kameloso.irc.defs.IRCEvent.target` fields, so that things like account names
  +  that are only sent sometimes carry over.
  +/
 void postprocess(PersistenceService service, ref IRCEvent event)
@@ -152,7 +152,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
- +  Removes a user's `kameloso.ircdefs.IRCUser` entry from the `users`
+ +  Removes a user's `kameloso.irc.defs.IRCUser` entry from the `users`
  +  associative array of the current `PersistenceService`'s
  +  `kameloso.plugins.common.IRCPluginState` upon them disconnecting.
  +/
@@ -167,7 +167,7 @@ void onQuit(PersistenceService service, const IRCEvent event)
 /++
  +  Updates the entry of someone in the `users` associative array of the current
  +  `PersistenceService`'s `kameloso.plugins.common.IRCPluginState` when they
- +  change nickname, to point to the new `kameloso.ircdefs.IRCUser`.
+ +  change nickname, to point to the new `kameloso.irc.defs.IRCUser`.
  +
  +  Removes the old entry.
  +/
@@ -361,14 +361,14 @@ public:
 
 // PersistenceService
 /++
- +  The Persistence service melds new `kameloso.ircdefs.IRCUser`s (from
- +  postprocessing new `kameloso.ircdefs.IRCEvent`s) with old records of
+ +  The Persistence service melds new `kameloso.irc.defs.IRCUser`s (from
+ +  postprocessing new `kameloso.irc.defs.IRCEvent`s) with old records of
  +  themselves.
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in
- +  an `kameloso.ircdefs.IRCEvent` may be his/her nickname, even though the
+ +  an `kameloso.irc.defs.IRCEvent` may be his/her nickname, even though the
  +  event before detailed everything, even including their account name. With
- +  this service we aim to complete such `kameloso.ircdefs.IRCUser` entries as
+ +  this service we aim to complete such `kameloso.irc.defs.IRCUser` entries as
  +  the union of everything we know from previous events.
  +
  +  It only needs part of `kameloso.plugins.common.UserAwareness` for minimal

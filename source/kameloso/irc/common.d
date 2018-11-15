@@ -1,10 +1,10 @@
 /++
  +  Functions needed to parse raw IRC event strings into
- +  `kameloso.ircdefs.IRCEvent`s.
+ +  `kameloso.irc.defs.IRCEvent`s.
  +/
-module kameloso.irc;
+module kameloso.irc.common;
 
-public import kameloso.ircdefs;
+public import kameloso.irc.defs;
 
 private:
 
@@ -22,7 +22,7 @@ version(AsAnApplication)
     /++
      +  Log sanity check failures to screen. Parsing proceeds and plugins are
      +  processed after some verbose debug output. The error text will be stored
-     +  in `kameloso.ircdefs.IRCEvent.errors`.
+     +  in `kameloso.irc.defs.IRCEvent.errors`.
      +/
     version = PrintSanityFailures;
 
@@ -42,7 +42,7 @@ version(AsAnApplication)
 
 // toIRCEvent
 /++
- +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
+ +  Parses an IRC string into an `kameloso.irc.defs.IRCEvent`.
  +
  +  Parsing goes through several phases (prefix, typestring, specialcases) and
  +  this is the function that calls them, in order.
@@ -54,7 +54,7 @@ version(AsAnApplication)
  +      raw = Raw IRC string to parse.
  +
  +  Returns:
- +      A finished `kameloso.ircdefs.IRCEvent`.
+ +      A finished `kameloso.irc.defs.IRCEvent`.
  +
  +  Throws: `IRCParseException` if an empty string was passed.
  +/
@@ -163,11 +163,11 @@ unittest
  +  They syntactically differ from other events in that they are not prefixed
  +  by their sender.
  +
- +  The `kameloso.ircdefs.IRCEvent` is finished at the end of this function.
+ +  The `kameloso.irc.defs.IRCEvent` is finished at the end of this function.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to start working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working
  +          on.
  +
  +  Throws: `IRCParseException` if an unknown type was encountered.
@@ -299,16 +299,16 @@ unittest
 // parsePrefix
 /++
  +  Takes a slice of a raw IRC string and starts parsing it into an
- +  `kameloso.ircdefs.IRCEvent` struct.
+ +  `kameloso.irc.defs.IRCEvent` struct.
  +
  +  This function only focuses on the prefix; the sender, be it nickname and
  +  ident or server address.
  +
- +  The `kameloso.ircdefs.IRCEvent` is not finished at the end of this function.
+ +  The `kameloso.irc.defs.IRCEvent` is not finished at the end of this function.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to start working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working
  +          on.
  +      slice = Reference to the *slice* of the raw IRC string.
  +/
@@ -406,22 +406,22 @@ unittest
 // parseTypestring
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an
- +  `kameloso.ircdefs.IRCEvent` struct.
+ +  `kameloso.irc.defs.IRCEvent` struct.
  +
  +  This function only focuses on the *typestring*; the part that tells what
  +  kind of event happened, like `PRIVMSG` or `MODE` or `NICK` or `KICK`, etc;
  +  in string format.
  +
- +  The `kameloso.ircdefs.IRCEvent` is not finished at the end of this function.
+ +  The `kameloso.irc.defs.IRCEvent` is not finished at the end of this function.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +
  +  Throws: `IRCParseException` if conversion from typestring to
- +      `kameloso.ircdefs.IRCEvent.Type` or typestring to a number failed.
+ +      `kameloso.irc.defs.IRCEvent.Type` or typestring to a number failed.
  +/
 void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
@@ -521,7 +521,7 @@ unittest
 // parseSpecialcases
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an
- +  `kameloso.ircdefs.IRCEvent` struct.
+ +  `kameloso.irc.defs.IRCEvent` struct.
  +
  +  This function only focuses on specialcasing the remaining line, dividing it
  +  into fields like `target`, `channel`, `content`, etc.
@@ -529,11 +529,11 @@ unittest
  +  IRC events are *riddled* with inconsistencies and specialcasings, so this
  +  function is very very long, but by neccessity.
  +
- +  The `kameloso.ircdefs.IRCEvent` is finished at the end of this function.
+ +  The `kameloso.irc.defs.IRCEvent` is finished at the end of this function.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +
@@ -1185,17 +1185,17 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
 // parseGeneralCases
 /++
  +  Takes a slice of a raw IRC string and continues parsing it into an
- +  `kameloso.ircdefs.IRCEvent` struct.
+ +  `kameloso.irc.defs.IRCEvent` struct.
  +
  +  This function only focuses on applying general heuristics to the remaining
  +  line, dividing it into fields like `target`, `channel`, `content`, etc; not
  +  based by its type but rather by how the string looks.
  +
- +  The `kameloso.ircdefs.IRCEvent` is finished at the end of this function.
+ +  The `kameloso.irc.defs.IRCEvent` is finished at the end of this function.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
@@ -1416,7 +1416,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
 // postparseSanityCheck
 /++
  +  Checks for some specific erroneous edge cases in an
- +  `kameloso.ircdefs.IRCEvent`, complains about all of them and corrects some.
+ +  `kameloso.irc.defs.IRCEvent`, complains about all of them and corrects some.
  +
  +  If version `PrintSanityFailures` it will print warning messages to the
  +  screen, otherwise it will throw an `IRCParseException` instead. It will save
@@ -1424,7 +1424,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
@@ -1509,7 +1509,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 
 // isSpecial
 /++
- +  Judges whether the sender of an `kameloso.ircdefs.IRCEvent` is *special*.
+ +  Judges whether the sender of an `kameloso.irc.defs.IRCEvent` is *special*.
  +
  +  Special senders include services and staff, administrators and the like. The
  +  use of this is contested and the notion may be removed at a later date. For
@@ -1518,7 +1518,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event =  `kameloso.ircdefs.IRCEvent` to examine.
+ +      event =  `kameloso.irc.defs.IRCEvent` to examine.
  +/
 bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
@@ -1621,7 +1621,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
             on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
@@ -1738,7 +1738,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +
@@ -1804,10 +1804,10 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
         import std.traits : EnumMembers;
 
         /++
-         +  This iterates through all `kameloso.ircdefs.IRCEvent.Type`s that
+         +  This iterates through all `kameloso.irc.defs.IRCEvent.Type`s that
          +  begin with `CTCP_` and generates switch cases for the string of
          +  each. Inside it will assign `event.type` to the corresponding
-         +  `kameloso.ircdefs.IRCEvent.Type`.
+         +  `kameloso.irc.defs.IRCEvent.Type`.
          +
          +  Like so, except automatically generated through compile-time
          +  introspection:
@@ -1860,7 +1860,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
@@ -1993,13 +1993,13 @@ unittest
  +  Handles `ISUPPORT` events.
  +
  +  `ISUPPORT` contains a bunch of interesting information that changes how we
- +  look at the `kameloso.ircdefs.IRCServer`. Notably which *network* the server
+ +  look at the `kameloso.irc.defs.IRCServer`. Notably which *network* the server
  +  is of and its max channel and nick lengths, and available modes. Then much
  +  more that we're currently ignoring.
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +
@@ -2154,7 +2154,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` to continue working
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
  +          on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
@@ -2439,7 +2439,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = `kameloso.ircdefs.IRCEvent` to examine.
+ +      event = `kameloso.irc.defs.IRCEvent` to examine.
  +
  +  Returns:
  +      `true` if the sender is judged to be from nicknam services, `false` if
@@ -2580,9 +2580,9 @@ unittest
 /++
  +  Examines a string and decides whether it *looks* like a channel.
  +
- +  It needs to be passed an `kameloso.ircdefs.IRCServer` to know the max
+ +  It needs to be passed an `kameloso.irc.defs.IRCServer` to know the max
  +  channel name length. An alternative would be to change the
- +  `kameloso.ircdefs.IRCServer` parameter to be an `uint`.
+ +  `kameloso.irc.defs.IRCServer` parameter to be an `uint`.
  +
  +  Example:
  +  ---
@@ -2595,7 +2595,7 @@ unittest
  +
  +  Params:
  +      line = String of a potential channel name.
- +      server = The current `kameloso.ircdefs.IRCServer` with all its settings.
+ +      server = The current `kameloso.irc.defs.IRCServer` with all its settings.
  +
  +  Returns:
  +      `true` if the string content is judged to be a channel, `false` if not.
@@ -2691,7 +2691,7 @@ unittest
  +
  +  Params:
  +      nickname = String nickname.
- +      server = The current `kameloso.ircdefs.IRCServer` with all its settings.
+ +      server = The current `kameloso.irc.defs.IRCServer` with all its settings.
  +
  +  Returns:
  +      `true` if the nickname string is judged to be a nickname, `false` if
@@ -2905,7 +2905,7 @@ unittest
  +  ---
  +
  +  Params:
- +      server = `kameloso.ircdefs.IRCServer`, with all its settings.
+ +      server = `kameloso.irc.defs.IRCServer`, with all its settings.
  +      nickname = String with a signed nickname.
  +      modesigns = Reference string to write the stripped modesigns to.
  +
@@ -3026,7 +3026,7 @@ struct IRCParser
 
     // toIRCEvent
     /++
-    +  Parses an IRC string into an `kameloso.ircdefs.IRCEvent`.
+    +  Parses an IRC string into an `kameloso.irc.defs.IRCEvent`.
     +
     +  Proxies the call to the top-level `toIRCEvent(IRCParser, string)`.
     +/
@@ -3055,7 +3055,7 @@ struct IRCParser
      +  ---
      +
      +  Params:
-     +      daemon = The `kameloso.ircdefs.IRCServer.Daemon` to assign to this
+     +      daemon = The `kameloso.irc.defs.IRCServer.Daemon` to assign to this
      +          `IRCParser`.
      +      daemonstring = The raw string with which the server announced its
      +          daemon.
@@ -3255,12 +3255,12 @@ unittest
  +  ---
  +
  +  Params:
- +      channel = `kameloso.ircdefs.IRCChannel` whose modes are being set.
+ +      channel = `kameloso.irc.defs.IRCChannel` whose modes are being set.
  +      signedModestring = String of the raw mode command, including the
  +          prefixing sign (+ or -).
  +      data = Appendix to the signed modestring; arguments to the modes that
  +          are being set.
- +      server = The current `kameloso.ircdefs.IRCServer` with all its settings.
+ +      server = The current `kameloso.irc.defs.IRCServer` with all its settings.
  +/
 void setMode(ref IRCChannel channel, const string signedModestring,
     const string data, IRCServer server) pure
@@ -3700,16 +3700,16 @@ unittest
 /++
  +  IRC Parsing Exception, thrown when there were errors parsing.
  +
- +  It is a normal `Exception` but with an attached `kameloso.ircdefs.IRCEvent`.
+ +  It is a normal `Exception` but with an attached `kameloso.irc.defs.IRCEvent`.
  +/
 final class IRCParseException : Exception
 {
-    /// Bundled `kameloso.ircdefs.IRCEvent`, parsing which threw this exception.
+    /// Bundled `kameloso.irc.defs.IRCEvent`, parsing which threw this exception.
     IRCEvent event;
 
     /++
      +  Create a new `IRCParseException`, without attaching an
-     +  `kameloso.ircdefs.IRCEvent`.
+     +  `kameloso.irc.defs.IRCEvent`.
      +/
     this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
     {
@@ -3718,7 +3718,7 @@ final class IRCParseException : Exception
 
     /++
      +  Create a new `IRCParseException`, attaching an
-     +  `kameloso.ircdefs.IRCEvent` to it.
+     +  `kameloso.irc.defs.IRCEvent` to it.
      +/
     this(const string message, const IRCEvent event, const string file = __FILE__, const size_t line = __LINE__) pure
     {
@@ -3819,7 +3819,7 @@ struct IRCClient
 
         @Unconfigurable
         {
-            /// The current `kameloso.ircdefs.IRCServer` we're connected to.
+            /// The current `kameloso.irc.defs.IRCServer` we're connected to.
             IRCServer server;
 
             /// The original client nickname before connecting, in case it changed.
@@ -3842,7 +3842,7 @@ struct IRCClient
         /// Client nickname.
         string nickname;
 
-        /// The current `kameloso.ircdefs.IRCServer` we're connected to.
+        /// The current `kameloso.irc.defs.IRCServer` we're connected to.
         IRCServer server;
 
         /// The original client nickname before connecting, in case it changed.

@@ -21,9 +21,9 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.common : logger, settings;
-import kameloso.irccolours : ircBold, ircColour, ircColourNick;
+import kameloso.irc.colours : ircBold, ircColour, ircColourNick;
 import kameloso.messaging;
 
 
@@ -126,7 +126,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    import kameloso.irc : isValidNickname, stripModesign;
+    import kameloso.irc.common : isValidNickname, stripModesign;
     import kameloso.string : stripped;
     import std.format : format;
     import std.json : JSONException;
@@ -258,7 +258,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    import kameloso.irc : isValidNickname, stripModesign;
+    import kameloso.irc.common : isValidNickname, stripModesign;
     import kameloso.string : nom;
     import std.json : JSONException;
     import std.format : format;

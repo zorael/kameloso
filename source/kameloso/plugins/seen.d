@@ -22,7 +22,7 @@
  +  use. They can be registered to process on incoming events, or timed with a
  +  worst-case precision of roughly `kameloso.constants.Timeout.receive` *
  +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
- +  using `kameloso.ircdefs.IRCEvent` triggers they are expensive, in a
+ +  using `kameloso.irc.defs.IRCEvent` triggers they are expensive, in a
  +  micro-optimising sense.
  +/
 
@@ -34,11 +34,11 @@ version(WithPlugins):
 /// We need crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 
-/// Likewise `kameloso.ircdefs`, for the definitions of an IRC event.
-import kameloso.ircdefs;
+/// Likewise `kameloso.irc.defs`, for the definitions of an IRC event.
+import kameloso.irc.defs;
 
-/// `kameloso.irccolours` for some IRC colouring and formatting.
-import kameloso.irccolours : ircBold, ircColourNick;
+/// `kameloso.irc.colours` for some IRC colouring and formatting.
+import kameloso.irc.colours : ircBold, ircColourNick;
 
 /// `kameloso.common` for some globals.
 import kameloso.common;
@@ -96,7 +96,7 @@ public:
  +     directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
- +     that key is an `kameloso.ircdefs.IRCUser` representing that user in terms
+ +     that key is an `kameloso.irc.defs.IRCUser` representing that user in terms
  +     of nickname, address, ident, and services account name. This is a way to
  +     keep track of users by more than merely their name. It is however not
  +     saved at the end of the program; it is merely state and transient.
@@ -109,7 +109,7 @@ public:
  +    `kameloso.plugins.common.WHOISRequest`s. The main loop will pick up on
  +     these and call `WHOIS` on the nickname in the key. A
  +     `kameloso.plugins.common.WHOISRequest` is otherwise just an
- +     `kameloso.ircdefs.IRCEvent` to be played back when the `WHOIS` results
+ +     `kameloso.irc.defs.IRCEvent` to be played back when the `WHOIS` results
  +     return, as well as a function pointer to call with that event. This is
  +     all wrapped in a function `kameloso.plugins.common.doWhois`, with the
  +     queue management handled behind the scenes.
@@ -188,7 +188,7 @@ final class SeenPlugin : IRCPlugin
      +  other than call the module's functions.
      +
      +  As an exception, it mixes in the bits needed to automatically call
-     +  functions based on their `kameloso.ircdefs.IRCEvent.Type` annotations.
+     +  functions based on their `kameloso.irc.defs.IRCEvent.Type` annotations.
      +  It is mandatory, if you want things to work.
      +
      +  Seen from any other module, this module is a big block of private things
@@ -255,13 +255,13 @@ struct SeenSettings
  +  Whenever a user does something, record this user as having been seen at the
  +  current time.
  +
- +  This function will be called whenever an `kameloso.ircdefs.IRCEvent` is
- +  being processed of the `kameloso.ircdefs.IRCEvent.Type`s that we annotate
+ +  This function will be called whenever an `kameloso.irc.defs.IRCEvent` is
+ +  being processed of the `kameloso.irc.defs.IRCEvent.Type`s that we annotate
  +  the function with.
  +
  +  The `kameloso.plugins.common.Chainable` annotations mean that the plugin
  +  will also process other functions in this module with the same
- +  `kameloso.ircdefs.IRCEvent.Type` annotations, even if this one matched. The
+ +  `kameloso.irc.defs.IRCEvent.Type` annotations, even if this one matched. The
  +  default is otherwise that it will end early after one match, but this
  +  doesn't ring well with catch-all functions like these. It's sensible to save
  +  `kameloso.plugins.common.Chainable` for the modules and functions that
@@ -272,7 +272,7 @@ struct SeenSettings
  +  applicable. The two policies are `home`, in which only events in channels in
  +  the `homes` array will be allowed to trigger this; or `any`, in which case
  +  anywhere goes. For events that don't correspond to a channel (such as
- +  `kameloso.ircdefs.IRCEvent.Type.QUERY`) the setting is ignored.
+ +  `kameloso.irc.defs.IRCEvent.Type.QUERY`) the setting is ignored.
  +
  +  Not all events relate to a particular channel, such as `QUIT` (quitting
  +  leaves every channel).
@@ -402,7 +402,7 @@ void onNameReply(SeenPlugin plugin, const IRCEvent event)
 
     foreach (const signed; event.content.splitter(" "))
     {
-        import kameloso.irc : stripModesign;
+        import kameloso.irc.common : stripModesign;
         import kameloso.string : contains, nom;
 
         string nickname = signed;
@@ -450,7 +450,7 @@ void onEndOfList(SeenPlugin plugin)
  +
  +  An alternative to this would be to set up a timer `core.thread.Fiber`, to
  +  process once every *n* seconds. It would have to be placed elsewhere though,
- +  not in a UDA-annotated on-`kameloso.ircdefs.IRCEvent` function. Someplace
+ +  not in a UDA-annotated on-`kameloso.irc.defs.IRCEvent` function. Someplace
  +  only run once, like `start`, or at the end of the message of the day (event
  +  type `RPL_ENDOFMOTD`).
  +
@@ -532,7 +532,7 @@ void onPing(SeenPlugin plugin)
  +  omitted. In either case, we're left with only the parts we're interested in,
  +  and the rest sliced off.
  +
- +  As a result, the `kameloso.ircdefs.IRCEvent` `event` would look something
+ +  As a result, the `kameloso.irc.defs.IRCEvent` `event` would look something
  +  like this:
  +
  +  ---
@@ -560,7 +560,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     if (!plugin.seenSettings.enabled) return;
 
     import kameloso.common : timeSince;
-    import kameloso.irc : isValidNickname;
+    import kameloso.irc.common : isValidNickname;
     import kameloso.string : contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : Clock, SysTime;
@@ -744,7 +744,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
  +/
 void updateUser(SeenPlugin plugin, const string signed, const long time)
 {
-    import kameloso.irc : stripModesign;
+    import kameloso.irc.common : stripModesign;
     import std.algorithm.searching : canFind;
 
     /++

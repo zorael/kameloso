@@ -1,9 +1,9 @@
 /++
- +  The Printer plugin takes incoming `kameloso.ircdefs.IRCEvent`s, formats them
+ +  The Printer plugin takes incoming `kameloso.irc.defs.IRCEvent`s, formats them
  +  into being easily readable and prints them to the screen, optionally with
  +  colours.
  +
- +  It has no commands; all `kameloso.ircdefs.IRCEvent`s will be parsed and
+ +  It has no commands; all `kameloso.irc.defs.IRCEvent`s will be parsed and
  +  pinted, excluding certain types that were deemed too spammy. Print them as
  +  well by disabling `PrinterSettings.filterVerbose`.
  +
@@ -18,9 +18,9 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.common;
-import kameloso.irccolours;
+import kameloso.irc.colours;
 
 import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
@@ -141,7 +141,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_ENDOFEXCEPTLIST:
     case SPAMFILTERLIST:
     case ENDOFSPAMFILTERLIST:
-    case CAP:
+    //case CAP:
     case ERR_CHANOPRIVSNEEDED:
     case USERSTATE:
     case ROOMSTATE:
@@ -701,7 +701,7 @@ unittest
 
 // formatMessageMonochrome
 /++
- +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink, in
+ +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, in
  +  monochrome.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
@@ -709,8 +709,8 @@ unittest
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
- +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `kameloso.irc.defs.IRCEvent` into.
+ +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +/
@@ -835,7 +835,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case CHAN:
                 case EMOTE:
                 case TWITCH_CHEER:
-                    import kameloso.irc : containsNickname;
+                    import kameloso.irc.common : containsNickname;
                     if (content.containsNickname(client.nickname))
                     {
                         // Nick was mentioned (certain)
@@ -887,15 +887,15 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
 // formatMessageColoured
 /++
- +  Formats an `kameloso.ircdefs.IRCEvent` into an output range sink, coloured.
+ +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, coloured.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
  +
  +  Params:
  +      plugin = Current `PrinterPlugin`.
- +      sink = Output range to format the `kameloso.ircdefs.IRCEvent` into.
- +      event = The `kameloso.ircdefs.IRCEvent` that is to be formatted.
+ +      sink = Output range to format the `kameloso.irc.defs.IRCEvent` into.
+ +      event = The `kameloso.irc.defs.IRCEvent` that is to be formatted.
  +      bellOnMention = Whether or not to emit a terminal bell when the bot's
  +          nickname is mentioned in chat.
  +/
@@ -1196,7 +1196,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case EMOTE:
                 case TWITCH_CHEER:
                     import kameloso.terminal : invert;
-                    import kameloso.irc : containsNickname;
+                    import kameloso.irc.common : containsNickname;
 
                     if (!content.containsNickname(client.nickname)) goto default;
 
@@ -1268,7 +1268,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 // withoutTypePrefix
 /++
  +  Slices away any type prefixes from the string of a
- +  `kameloso.ircdefs.IRCEvent.Type`.
+ +  `kameloso.irc.defs.IRCEvent.Type`.
  +
  +  Only for shared use in `formatMessageMonochrome` and
  +  `formatMessageColoured`.
@@ -1286,7 +1286,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
  +  ---
  +
  +  Params:
- +      typestring = The string form of a `kameloso.ircdefs.IRCEvent.Type`.
+ +      typestring = The string form of a `kameloso.irc.defs.IRCEvent.Type`.
  +
  +  Returns:
  +      A slice of the passed `typestring`, excluding any prefixes if present.
@@ -1742,7 +1742,7 @@ public:
 
 // PrinterPlugin
 /++
- +  The Printer plugin takes all `kameloso.ircdefs.IRCEvent`s and prints them to
+ +  The Printer plugin takes all `kameloso.irc.defs.IRCEvent`s and prints them to
  +  the local terminal, formatted and optionally in colour.
  +
  +  This used to be part of the core program, but with UDAs it's easy to split

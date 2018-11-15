@@ -17,7 +17,7 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 
 import std.typecons : Flag, No, Yes;
 

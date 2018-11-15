@@ -18,7 +18,7 @@ private:
 
 import kameloso.common : settings;
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 import kameloso.messaging;
 
 
@@ -68,13 +68,13 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
  +          necessary information to pass messages to send messages to the main
  +          thread, to send text to the srever or display text on the screen.
- +      event = The `kameloso.ircdefs.IRCEvent` in flight.
+ +      event = The `kameloso.irc.defs.IRCEvent` in flight.
  +      colouredOutgoing = Whether or not to tint messages going to the server
  +          with mIRC colouring.
  +/
 void worker(shared IRCPluginState sState, const IRCEvent event, const bool colouredOutgoing)
 {
-    import kameloso.irccolours : ircBold;
+    import kameloso.irc.colours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import requests : getContent;
     import std.algorithm.iteration : splitter;

@@ -7,8 +7,8 @@
  +/
 module kameloso.plugins.common;
 
-import kameloso.irc : IRCClient;
-import kameloso.ircdefs;
+import kameloso.irc.common : IRCClient;
+import kameloso.irc.defs;
 
 import core.thread : Fiber;
 import std.typecons : Flag, No, Yes;
@@ -140,7 +140,7 @@ interface IRCPlugin
  +/
 abstract class WHOISRequest
 {
-    /// Stored `kameloso.ircdefs.IRCEvent` to replay.
+    /// Stored `kameloso.irc.defs.IRCEvent` to replay.
     IRCEvent event;
 
     /// `PrivilegeLevel` of the function to replay.
@@ -167,7 +167,7 @@ abstract class WHOISRequest
  +
  +  It functions like a Command pattern object in that it stores a payload and
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
- +  returns we trigger the object and the original `kameloso.ircdefs.IRCEvent`
+ +  returns we trigger the object and the original `kameloso.irc.defs.IRCEvent`
  +  is replayed.
  +/
 final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
@@ -179,7 +179,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the `kameloso.ircdefs.IRCEvent`.
+        /// Command payload aside from the `kameloso.irc.defs.IRCEvent`.
         Payload payload;
 
         /++
@@ -188,7 +188,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
          +  Params:
          +      payload = Payload of templated type `Payload` to attach to this
          +          `WHOISRequestImpl`.
-         +      event = `kameloso.ircdefs.IRCEvent` to attach to this
+         +      event = `kameloso.irc.defs.IRCEvent` to attach to this
          +          `WHOISRequestImpl`.
          +      privilegeLevel = The privilege level required to trigger the
          +          passed function.
@@ -228,7 +228,7 @@ final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 
     /++
      +  Call the passed function/delegate pointer, optionally with the stored
-     +  `kameloso.ircdefs.IRCEvent` and/or `Payload`.
+     +  `kameloso.irc.defs.IRCEvent` and/or `Payload`.
      +/
     override void trigger() @system
     {
@@ -332,7 +332,7 @@ unittest
  +
  +  Params:
  +      payload = Payload to attach to the `WHOISRequest`.
- +      event = `kameloso.ircdefs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
  +          results.
  +      fn = Function/delegate pointer to call upon receiving the results.
@@ -354,7 +354,7 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
  +  *without* a payload attached.
  +
  +  Params:
- +      event = `kameloso.ircdefs.IRCEvent` that instigated the `WHOIS` lookup.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
  +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
  +          results.
  +      fn = Function/delegate pointer to call upon receiving the results.
@@ -402,7 +402,7 @@ struct IRCPluginState
     IRCChannel[string] channels;
 
     /++
-     +  Queued `WHOIS` requests and pertaining `kameloso.ircdefs.IRCEvent`s to
+     +  Queued `WHOIS` requests and pertaining `kameloso.irc.defs.IRCEvent`s to
      +  replay.
      +
      +  The main loop iterates this after processing all on-event functions so
@@ -414,7 +414,7 @@ struct IRCPluginState
 
     /++
      +  The list of awaiting `core.thread.Fiber`s, keyed by
-     +  `kameloso.ircdefs.IRCEvent.Type`.
+     +  `kameloso.irc.defs.IRCEvent.Type`.
      +/
     Fiber[][IRCEvent.Type] awaitingFibers;
 
@@ -435,7 +435,7 @@ enum FilterResult { fail, pass, whois }
 
 /++
  +  To what extent the annotated function demands its triggering
- +  `kameloso.ircdefs.IRCEvent`'s contents be prefixed with the bot's nickname.
+ +  `kameloso.irc.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
  +/
 enum NickPolicy
 {
@@ -615,7 +615,7 @@ struct Settings;
 
 // Description
 /++
- +  Describes an `kameloso.ircdefs.IRCEvent`-annotated handler function.
+ +  Describes an `kameloso.irc.defs.IRCEvent`-annotated handler function.
  +
  +  This is used to describe functions triggered by `BotCommand`s, in the help
  +  listing routine in `kameloso.plugins.chatbot`.
@@ -663,7 +663,7 @@ struct Configuration;
  +  and deny use.
  +
  +  Params:
- +      event = `kameloso.ircdefs.IRCEvent` to filter.
+ +      event = `kameloso.irc.defs.IRCEvent` to filter.
  +      level = The `PrivilegeLevel` context in which this user should be
  +          filtered.
  +
@@ -791,14 +791,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // onEvent
     /++
-     +  Pass on the supplied `kameloso.ircdefs.IRCEvent` to functions annotated
-     +  with the right `kameloso.ircdefs.IRCEvent.Type`s.
+     +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to functions annotated
+     +  with the right `kameloso.irc.defs.IRCEvent.Type`s.
      +
      +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
      +  `NickPolicy` where such is appropriate.
      +
      +  Params:
-     +      event = Parsed `kameloso.ircdefs.IRCEvent` to dispatch to event
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event
      +          handlers.
      +/
     void onEvent(const IRCEvent event) @system
@@ -1356,7 +1356,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // postprocess
     /++
-     +  Lets a plugin modify an `kameloso.ircdefs.IRCEvent` while it's begin
+     +  Lets a plugin modify an `kameloso.irc.defs.IRCEvent` while it's begin
      +  constructed, before it's finalised and passed on to be handled.
      +/
     void postprocess(ref IRCEvent event) @system
@@ -1520,7 +1520,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  to suit all the other plugins' settings member name lengths, to date.
      +
      +  It both prints module-level structs as well as structs in the
-     +  `kameloso.ircdefs.IRCPlugin` (subtype) itself.
+     +  `kameloso.irc.defs.IRCPlugin` (subtype) itself.
      +/
     void printSettings() const
     {
@@ -1972,7 +1972,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
      +  Most of the time a plugin doesn't require a full `UserAwareness`; only
      +  those that need looking up users outside of the current event do. The
      +  persistency service allows for plugins to just read the information from
-     +  the `kameloso.ircdefs.IRCUser` embedded in th event directly, and that's
+     +  the `kameloso.irc.defs.IRCUser` embedded in th event directly, and that's
      +  often enough.
      +
      +  General rule: if a plugin doesn't access `state.users`, it's probably
@@ -2160,7 +2160,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
     // onUserAwarenessQuitMixin
     /++
-     +  Removes a user's `kameloso.ircdefs.IRCUser` entry from a plugin's user
+     +  Removes a user's `kameloso.irc.defs.IRCUser` entry from a plugin's user
      +  list upon them disconnecting.
      +/
     @(Awareness.cleanup)
@@ -2215,12 +2215,12 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessCatchTargetMixin
     /++
      +  Catches a user's information and saves it in the plugin's
-     +  `IRCPluginState.users` array of `kameloso.ircdefs.IRCUser`s.
+     +  `IRCPluginState.users` array of `kameloso.irc.defs.IRCUser`s.
      +
-     +  `kameloso.ircdefs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
-     +  the `kameloso.ircdefs.IRCUser.lastWhois` field that we want to store.
+     +  `kameloso.irc.defs.IRCEvent.Type.RPL_WHOISUSER` events carry values in
+     +  the `kameloso.irc.defs.IRCUser.lastWhois` field that we want to store.
      +
-     +  `kameloso.ircdefs.IRCEvent.Type.CHGHOST` occurs when a user changes host
+     +  `kameloso.irc.defs.IRCEvent.Type.CHGHOST` occurs when a user changes host
      +  on some servers that allow for custom host addresses.
      +/
     @(Awareness.early)
@@ -2289,8 +2289,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : IRCControlCharacter, stripModesign;
-        import kameloso.irccolours : stripColours;
+        import kameloso.irc.common : IRCControlCharacter, stripModesign;
+        import kameloso.irc.colours : stripColours;
         import kameloso.string : contains, nom;
         import std.algorithm.iteration : splitter;
 
@@ -2353,7 +2353,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     // onUserAwarenessPingMixin
     /++
      +  Rehash the internal `IRCPluginState.users` associative array of
-     +  `kameloso.ircdefs.IRCUser`s, once every `hoursBetweenRehashes` hours.
+     +  `kameloso.irc.defs.IRCUser`s, once every `hoursBetweenRehashes` hours.
      +
      +  We ride the periodicity of `PING` to get a natural cadence without
      +  having to resort to timed `core.thread.Fiber`s.
@@ -2414,7 +2414,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfjoinMixin
     /++
-     +  Create a new `kameloso.ircdefs.IRCChannel` in the the `IRCPlugin`'s
+     +  Create a new `kameloso.irc.defs.IRCChannel` in the the `IRCPlugin`'s
      +  `IRCPluginState.channels` associative array when the bot joins a
      +  channel.
      +/
@@ -2434,7 +2434,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessSelfpartMixin
     /++
-     +  Removes an `kameloso.ircdefs.IRCChannel` from the internal list when the
+     +  Removes an `kameloso.irc.defs.IRCChannel` from the internal list when the
      +  bot leaves it.
      +
      +  Remove users from the `plugin.state.users` array if, by leaving, it left
@@ -2593,7 +2593,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
     // onChannelAwarenessTopicMixin
     /++
-     +  Update the entry for an `kameloso.ircdefs.IRCChannel` if someone changes
+     +  Update the entry for an `kameloso.irc.defs.IRCChannel` if someone changes
      +  the topic of it.
      +/
     @(Awareness.early)
@@ -2639,7 +2639,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : setMode;
+        import kameloso.irc.common : setMode;
         import std.uni : toLower;
         plugin.state.channels[event.channel.toLower].setMode(event.aux, event.content, plugin.state.client.server);
     }
@@ -2677,7 +2677,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 {
                     if (const modechar = modesign in state.client.server.prefixchars)
                     {
-                        import kameloso.irc : setMode;
+                        import kameloso.irc.common : setMode;
                         import std.conv : to;
 
                         immutable modestring = (*modechar).to!string;
@@ -2749,7 +2749,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     nickname = userstring;
                 }
 
-                import kameloso.irc : stripModesign;
+                import kameloso.irc.common : stripModesign;
 
                 string modesigns;
                 nickname = state.client.server.stripModesign(nickname, modesigns);
@@ -2763,7 +2763,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 {
                     if (auto modechar = modesign in state.client.server.prefixchars)
                     {
-                        import kameloso.irc : setMode;
+                        import kameloso.irc.common : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
                         state.channels[channelName].setMode(modestring, nickname, state.client.server);
@@ -2806,7 +2806,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : setMode;
+        import kameloso.irc.common : setMode;
         import std.conv : to;
         import std.uni : toLower;
 
@@ -2844,7 +2844,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import kameloso.irc : setMode;
+        import kameloso.irc.common : setMode;
         import std.uni : toLower;
 
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
@@ -2863,7 +2863,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
  +
  +  There is a chance of a user leak, if parting users are not broadcast. As
  +  such we mark when the user was last seen in the
- +  `kameloso.ircdefs.IRCUser.lastWhois` member, which opens up the possibility
+ +  `kameloso.irc.defs.IRCUser.lastWhois` member, which opens up the possibility
  +  of pruning the plugin's `IRCPluginState.users` array of old entries.
  +
  +  Twitch awareness needs channel awareness, or it is meaningless.
@@ -2897,7 +2897,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +
      +  The users array will only grow and grow. Special care has to be manually
      +  taken to prune old users, ideally by periodically comparing their
-     +  `kameloso.ircdefs.IRCUser.lastWhois` timestamps and removing those that
+     +  `kameloso.irc.defs.IRCUser.lastWhois` timestamps and removing those that
      +  are too old.
      +/
     @(Awareness.early)
@@ -2963,7 +2963,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +      client = `kameloso.irc.IRCClient` of the calling `IRCPlugin`'s
  +          `IRCPluginState`.
  +      policy = Policy to apply.
- +      mutEvent = Reference to the mutable `kameloso.ircdefs.IRCEvent` we're
+ +      mutEvent = Reference to the mutable `kameloso.irc.defs.IRCEvent` we're
  +          considering.
  +
  +  Returns:
@@ -3080,14 +3080,14 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
 
 // catchUser
 /++
- +  Catch an `kameloso.ircdefs.IRCUser`, saving it to the `IRCPlugin`'s
+ +  Catch an `kameloso.irc.defs.IRCUser`, saving it to the `IRCPlugin`'s
  +  `IRCPluginState.users` array.
  +
  +  If a user already exists, meld the new information into the old one.
  +
  +  Params:
  +      plugin = Current `IRCPlugin`.
- +      newUser = The `kameloso.ircdefs.IRCUser` to catch.
+ +      newUser = The `kameloso.irc.defs.IRCUser` to catch.
  +/
 void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 {
@@ -3138,9 +3138,9 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +  Params:
  +      plugin = Current `IRCPlugin`.
  +      payload = Payload to attach to the `WHOISRequest`, generally an
- +          `kameloso.ircdefs.IRCEvent` to replay once the `WHOIS` result
+ +          `kameloso.irc.defs.IRCEvent` to replay once the `WHOIS` result
  +          return.
- +      event = `kameloso.ircdefs.IRCEvent` that instigated this `WHOIS` call.
+ +      event = `kameloso.irc.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
  +/
@@ -3330,8 +3330,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.ircdefs.IRCEvent` matches the passed
- +  `kameloso.ircdefs.IRCEvent.Type` type.
+ +  triggering `kameloso.irc.defs.IRCEvent` matches the passed
+ +  `kameloso.irc.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3339,8 +3339,8 @@ void delayFiber(IRCPlugin plugin, const long secs)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `kameloso.ircdefs.IRCEvent` of type `type` comes along.
- +      type = The kind of `kameloso.ircdefs.IRCEvent` that should trigger the
+ +          `kameloso.irc.defs.IRCEvent` of type `type` comes along.
+ +      type = The kind of `kameloso.irc.defs.IRCEvent` that should trigger the
  +          passed awaiting fiber.
  +/
 void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
@@ -3352,8 +3352,8 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 // awaitEvent
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.ircdefs.IRCEvent` matches the passed
- +  `kameloso.ircdefs.IRCEvent.Type` type.
+ +  triggering `kameloso.irc.defs.IRCEvent` matches the passed
+ +  `kameloso.irc.defs.IRCEvent.Type` type.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3362,7 +3362,7 @@ void awaitEvent(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      type = The kind of `kameloso.ircdefs.IRCEvent` that should trigger this
+ +      type = The kind of `kameloso.irc.defs.IRCEvent` that should trigger this
  +          implicit awaiting fiber (in the current context).
  +/
 void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
@@ -3374,8 +3374,8 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.ircdefs.IRCEvent` matches all of the passed
- +  `kameloso.ircdefs.IRCEvent.Type` types.
+ +  triggering `kameloso.irc.defs.IRCEvent` matches all of the passed
+ +  `kameloso.irc.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3383,10 +3383,10 @@ void awaitEvent(IRCPlugin plugin, const IRCEvent.Type type)
  +  Params:
  +      plugin = The current `IRCPlugin`.
  +      fiber = `core.thread.Fiber` to enqueue to be executed when the next
- +          `kameloso.ircdefs.IRCEvent` of type `type` comes along.
- +      types = The kinds of `kameloso.ircdefs.IRCEvent` that should trigger
+ +          `kameloso.irc.defs.IRCEvent` of type `type` comes along.
+ +      types = The kinds of `kameloso.irc.defs.IRCEvent` that should trigger
  +          the passed awaiting fiber, in an array with elements of type
- +          `kameloso.ircdefs.IRCEvent.Type`.
+ +          `kameloso.irc.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 {
@@ -3400,8 +3400,8 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 // awaitEvents
 /++
  +  Queues a `core.thread.Fiber` to be called whenever the next parsed and
- +  triggering `kameloso.ircdefs.IRCEvent` matches all of the passed
- +  `kameloso.ircdefs.IRCEvent.Type` types.
+ +  triggering `kameloso.irc.defs.IRCEvent` matches all of the passed
+ +  `kameloso.irc.defs.IRCEvent.Type` types.
  +
  +  Not necessarily related to the `async/await` pattern in more than by name.
  +  Naming is hard.
@@ -3410,9 +3410,9 @@ void awaitEvents(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      types = The kinds of `kameloso.ircdefs.IRCEvent` that should trigger
+ +      types = The kinds of `kameloso.irc.defs.IRCEvent` that should trigger
  +          this implicit awaiting fiber (in the current context), in an array
- +          with elements of type `kameloso.ircdefs.IRCEvent.Type`.
+ +          with elements of type `kameloso.irc.defs.IRCEvent.Type`.
  +/
 void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 {
@@ -3445,8 +3445,8 @@ final class IRCPluginInitialisationException : Exception
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
  +  with the resulting account information that was divined from it, in the form
- +  of the actual `kameloso.ircdefs.IRCEvent`, the target
- +  `kameloso.ircdefs.IRCUser` within it, the user's `account` field, or merely
+ +  of the actual `kameloso.irc.defs.IRCEvent`, the target
+ +  `kameloso.irc.defs.IRCUser` within it, the user's `account` field, or merely
  +  alone as an arity-0 function.
  +
  +  The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -3485,7 +3485,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     /// Reusable mixin that catches WHOIS results.
     void whoisFiberDelegate()
     {
-        import kameloso.ircdefs : IRCEvent, IRCUser;
+        import kameloso.irc.defs : IRCEvent, IRCUser;
         import kameloso.thread : CarryingFiber;
         import core.thread : Fiber;
 

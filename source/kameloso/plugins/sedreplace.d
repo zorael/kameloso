@@ -29,7 +29,7 @@ version(WithPlugins):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 
 /// Lifetime of a `Line` in `prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;

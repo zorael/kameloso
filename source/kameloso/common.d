@@ -324,7 +324,7 @@ unittest
 struct IRCBot
 {
     import kameloso.connection : Connection;
-    import kameloso.irc : IRCClient, IRCParser;
+    import kameloso.irc.common : IRCClient, IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;
@@ -363,7 +363,7 @@ struct IRCBot
 
     /++
      +  A runtime array of all plugins. We iterate these when we have finished
-     +  parsing an `kameloso.ircdefs.IRCEvent`, and call the relevant event
+     +  parsing an `kameloso.irc.defs.IRCEvent`, and call the relevant event
      +  handlers of each.
      +/
     IRCPlugin[] plugins;

@@ -2,7 +2,7 @@
  +  Definitions of struct aggregates used throughout the program, representing
  +  `IRCEvent`s and thereto related objects like `IRCServer` and `IRCUser`.
  +/
-module kameloso.ircdefs;
+module kameloso.irc.defs;
 
 import kameloso.uda;
 

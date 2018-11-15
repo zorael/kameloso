@@ -1,5 +1,5 @@
 /++
- +  The Twitch Support service postprocesses `kameloso.ircdefs.IRCEvent`s after
+ +  The Twitch Support service postprocesses `kameloso.irc.defs.IRCEvent`s after
  +  they are parsed but before they are sent to the plugins for handling, and
  +  deals with Twitch-specifics. Those include extracting the colour someone's
  +  name should be printed in, their alias/"display name" (generally their
@@ -22,7 +22,7 @@ version(TwitchSupport):
 private:
 
 import kameloso.plugins.common;
-import kameloso.ircdefs;
+import kameloso.irc.defs;
 
 version(Colours)
 {
@@ -32,7 +32,7 @@ version(Colours)
 
 // postprocess
 /++
- +  Handle Twitch specifics, modifying the `kameloso.ircdefs.IRCEvent` to add
+ +  Handle Twitch specifics, modifying the `kameloso.irc.defs.IRCEvent` to add
  +  things like `colour` and differentiate between temporary and permanent bans.
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
@@ -77,12 +77,12 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
  +
  +  Params:
  +      service = Current `TwitchSupportService`.
- +      event = Reference to the `kameloso.ircdefs.IRCEvent` whose tags should
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` whose tags should
  +          be parsed.
  +/
 void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 {
-    import kameloso.irc : decodeIRCv3String;
+    import kameloso.irc.common : decodeIRCv3String;
     import std.algorithm.iteration : splitter;
 
     // https://dev.twitch.tv/docs/v5/guides/irc/#twitch-irc-capability-tags
@@ -557,12 +557,12 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 // highlightEmotes
 /++
  +  Tints emote strings and highlights Twitch emotes in a ref
- +  `kameloso.ircdefs.IRCEvent`'s `content` member.
+ +  `kameloso.irc.defs.IRCEvent`'s `content` member.
  +
  +  Wraps `higlightEmotesImpl`.
  +
  +  Params:
- +      event = `kameloso.ircdefs.IRCEvent` whose content text to highlight.
+ +      event = `kameloso.irc.defs.IRCEvent` whose content text to highlight.
  +/
 version(Colours)
 void highlightEmotes(ref IRCEvent event)

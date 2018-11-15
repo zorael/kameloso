@@ -2,9 +2,9 @@
  +  This module contains functions for working with IRC colouring and
  +  formatting, mapping it to terminal such, stripping it, etc.
  +/
-module kameloso.irccolours;
+module kameloso.irc.colours;
 
-import kameloso.irc : IRCControlCharacter;
+import kameloso.irc.common : IRCControlCharacter;
 
 version(Colours)
 {
@@ -371,8 +371,9 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
     const uint bgBase = TerminalBackground.default_)
 {
     import kameloso.terminal : TF = TerminalFormat;
-    import kameloso.irc : I = IRCControlCharacter;
     import kameloso.string : contains;
+
+    alias I = IRCControlCharacter;
 
     string line = origLine;
 
@@ -407,7 +408,7 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
 // stripEffects
 /++
  +  Removes all form of mIRC formatting (colours, bold, italics, underlined)
- +  from an `kameloso.ircdefs.IRCEvent`.
+ +  from an `kameloso.irc.defs.IRCEvent`.
  +
  +  Params:
  +      line = String to strip effects from.
@@ -417,7 +418,7 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
  +/
 string stripEffects(const string line)
 {
-    import kameloso.irc : I = IRCControlCharacter;
+    import kameloso.irc.common : I = IRCControlCharacter;
     import kameloso.string : contains;
     import std.array : replace;
 
@@ -437,7 +438,7 @@ string stripEffects(const string line)
 ///
 unittest
 {
-    import kameloso.irc : I = IRCControlCharacter;
+    alias I = IRCControlCharacter;
 
     enum boldCode = "" ~ I.bold;
     enum italicsCode = "" ~ I.italics;
@@ -478,9 +479,10 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
     const uint bgReset = TerminalBackground.default_)
 {
     import kameloso.terminal : colour;
-    import kameloso.irc : I = IRCControlCharacter;
     import std.array : replace;
     import std.regex : matchAll, regex;
+
+    alias I = IRCControlCharacter;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
@@ -582,7 +584,7 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 version(Colours)
 unittest
 {
-    import kameloso.irc : I = IRCControlCharacter;
+    alias I = IRCControlCharacter;
 
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
@@ -619,9 +621,10 @@ unittest
  +/
 string stripColours(const string line)
 {
-    import kameloso.irc : I = IRCControlCharacter;
     import std.array : replace;
     import std.regex : matchAll, regex;
+
+    alias I = IRCControlCharacter;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
     auto engine = colourPattern.regex;
@@ -653,7 +656,7 @@ string stripColours(const string line)
 ///
 unittest
 {
-    import kameloso.irc : I = IRCControlCharacter;
+    alias I = IRCControlCharacter;
 
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
@@ -700,10 +703,11 @@ version(Colours)
 private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const string line)
 {
     import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colour;
-    import kameloso.irc : I = IRCControlCharacter;
     import std.array : Appender, replace;
     import std.conv  : to;
     import std.regex : matchAll, regex;
+
+    alias I = IRCControlCharacter;
 
     enum terminalToken = TerminalToken.format ~ "[" ~
         (cast(ubyte)TerminalFormatCode).to!string ~ "m";
@@ -759,8 +763,9 @@ version(Colours)
 unittest
 {
     import kameloso.terminal : TF = TerminalFormat, TerminalToken;
-    import kameloso.irc : I = IRCControlCharacter;
     import std.conv : to;
+
+    alias I = IRCControlCharacter;
 
     enum bBold = TerminalToken.format ~ "[" ~ (cast(ubyte)TF.bold).to!string ~ "m";
     enum bReset = TerminalToken.format ~ "[22m";
