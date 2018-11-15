@@ -323,16 +323,6 @@ void onEndOfMotd(TwitchPlugin plugin)
 }
 
 
-@(IRCEvent.Type.PING)
-void onPing(TwitchPlugin plugin, const IRCEvent event)
-{
-    import std.stdio;
-    writeln("--------------------------------------------------------------");
-    writeln(event.raw);
-    writeln("--------------------------------------------------------------");
-}
-
-
 // saveOneliners
 /++
  +  Saves the passed oneliner associative array to disk, but in `JSON` format.
