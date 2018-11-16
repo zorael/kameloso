@@ -193,7 +193,7 @@ if (is(QualThing == struct))
 ///
 unittest
 {
-    import kameloso.irc.common : IRCParser;
+    import kameloso.irc.parsing : IRCParser;
     import std.array : Appender;
 
     Appender!string sink;
@@ -325,7 +325,7 @@ void formatEventAssertBlock(Sink)(auto ref Sink sink, const IRCEvent event)
 
 unittest
 {
-    import kameloso.irc.common : IRCParser;
+    import kameloso.irc.parsing : IRCParser;
     import kameloso.string : tabs;
     import std.array : Appender;
     import std.format : formattedWrite;
@@ -383,17 +383,17 @@ void generateAsserts(ref IRCBot bot) @system
     import kameloso.common : logger;
     import kameloso.irc.defs : IRCServer;
     import kameloso.printing : printObjects;
+    import kameloso.string : contains, nom, stripped;
+    import std.conv : ConvException;
+    import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
+    import std.traits : EnumMembers;
     import std.typecons : Flag, No, Yes;
 
     with (IRCServer)
     with (bot)
     {
-        import kameloso.string : contains, nom, stripped;
-        import kameloso.irc.common : IRCParser;
-        import std.conv : ConvException;
-        import std.range : chunks, only;
-        import std.traits : EnumMembers;
+        import kameloso.irc.parsing : IRCParser;  // Must be here or shadows IRCBot : IRCParser
 
         parser = IRCParser.init;
 

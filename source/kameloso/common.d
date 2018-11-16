@@ -324,7 +324,8 @@ unittest
 struct IRCBot
 {
     import kameloso.connection : Connection;
-    import kameloso.irc.common : IRCClient, IRCParser;
+    import kameloso.irc.common : IRCClient;
+    import kameloso.irc.parsing : IRCParser;
     import kameloso.plugins.common : IRCPlugin;
 
     import std.datetime.systime : SysTime;

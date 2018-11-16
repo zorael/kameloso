@@ -1506,6 +1506,8 @@ int main(string[] args)
             return 1;
         }
 
+        import kameloso.irc.parsing : IRCParser;
+
         bot.parser = IRCParser(client);
 
         try
