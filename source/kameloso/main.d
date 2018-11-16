@@ -1483,7 +1483,6 @@ int main(string[] args)
      +/
     bool firstConnect = true;
 
-    with (bot.parser)
     do
     {
         if (!firstConnect)
@@ -1493,10 +1492,10 @@ int main(string[] args)
             import core.time : seconds;
 
             // Carry some values but otherwise restore the pristine client backup
-            backupClient.nickname = client.nickname;
-            backupClient.homes = client.homes;
-            backupClient.channels = client.channels;
-            client = backupClient;
+            backupClient.nickname = bot.parser.client.nickname;
+            backupClient.homes = bot.parser.client.homes;
+            backupClient.channels = bot.parser.client.channels;
+            //bot.parser.client = backupClient;  // Initialised below
 
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
@@ -1567,7 +1566,7 @@ int main(string[] args)
 
         import kameloso.irc.parsing : IRCParser;
 
-        bot.parser = IRCParser(client);
+        bot.parser = IRCParser(backupClient);
 
         try
         {
