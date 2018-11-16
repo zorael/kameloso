@@ -735,31 +735,35 @@ Next mainLoop(ref IRCBot bot)
                     }
                     catch (const UTFException e)
                     {
-                        logger.warningf("UTFException %s.onEvent: %s", plugin.name, e.msg);
+                        logger.warningf("UTFException %s.onEvent: %s%s",
+                            plugin.name, logtint, e.msg);
                     }
                     catch (const Exception e)
                     {
-                        logger.warningf("Exception %s.onEvent: %s", plugin.name, e.msg);
+                        logger.warningf("Exception %s.onEvent: %s%s",
+                            plugin.name, logtint, e.msg);
                         printObject(event);
                     }
                 }
             }
             catch (const IRCParseException e)
             {
-                logger.warningf("IRC Parse Exception at %s:%d: %s", e.file, e.line, e.msg);
+                logger.warningf("IRC Parse Exception: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                    logtint, e.msg, warningtint, e.file, e.line);
                 printObject(e.event);
             }
             catch (const UTFException e)
             {
-                logger.warning("UTFException: ", e.msg);
+                logger.warning("UTFException: ", logtint, e.msg);
             }
             catch (const UnicodeException e)
             {
-                logger.warning("UnicodeException: ", e.msg);
+                logger.warning("UnicodeException: ", logtint, e.msg);
             }
             catch (const Exception e)
             {
-                logger.warningf("Unhandled exception at %s:%d: %s", e.file, e.line, e.msg);
+                logger.warningf("Unhandled exception: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                    logtint, e.msg, warningtint, e.file, e.line);
 
                 if (event != IRCEvent.init)
                 {
@@ -767,7 +771,7 @@ Next mainLoop(ref IRCBot bot)
                 }
                 else
                 {
-                    logger.warningf(`Offending line: "%s"`, attempt.line);
+                    logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
                 }
             }
         }
@@ -835,14 +839,41 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
             }
             catch (const IRCParseException e)
             {
-                logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s",
-                    plugin.name, i, e.msg);
+                string logtint;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.terminal : TerminalForeground, colour;
+                        import kameloso.logger : KamelosoLogger;
+
+                        logtint = (cast(KamelosoLogger)logger).logtint;
+                    }
+                }
+
+                logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
+                    plugin.name, i, logtint, e.msg);
                 printObject(e.event);
                 toRemove ~= i;
             }
             catch (const Exception e)
             {
-                logger.warningf("Exception %s.awaitingFibers[%d]: %s", plugin.name, i, e.msg);
+                string logtint;
+
+                version(Colours)
+                {
+                    if (!settings.monochrome)
+                    {
+                        import kameloso.terminal : TerminalForeground, colour;
+                        import kameloso.logger : KamelosoLogger;
+
+                        logtint = (cast(KamelosoLogger)logger).logtint;
+                    }
+                }
+
+                logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
+                    plugin.name, i, logtint, e.msg);
                 printObject(event);
                 toRemove ~= i;
             }
@@ -912,13 +943,41 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
         }
         catch (const IRCParseException e)
         {
-            logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
+            string logtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.terminal : TerminalForeground, colour;
+                    import kameloso.logger : KamelosoLogger;
+
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s%s",
+                plugin.name, i, logtint, e.msg);
             printObject(e.event);
             toRemove ~= i;
         }
         catch (const Exception e)
         {
-            logger.warningf("Exception %s.timedFibers[%d]: %s", plugin.name, i, e.msg);
+            string logtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.terminal : TerminalForeground, colour;
+                    import kameloso.logger : KamelosoLogger;
+
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            logger.warningf("Exception %s.timedFibers[%d]: %s%s",
+                plugin.name, i, logtint, e.msg);
             toRemove ~= i;
         }
     }
@@ -1344,7 +1403,7 @@ int main(string[] args)
         return 1;
     }
 
-    string pre, post, infotint, logtint;
+    string pre, post, infotint, logtint, warningtint;
 
     version(Colours)
     {
@@ -1360,6 +1419,7 @@ int main(string[] args)
 
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
         }
     }
 
@@ -1477,7 +1537,6 @@ int main(string[] args)
         }
         catch (const IRCPluginInitialisationException e)
         {
-
             logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
             return 1;
         }
@@ -1516,7 +1575,8 @@ int main(string[] args)
         }
         catch (const IRCPluginInitialisationException e)
         {
-            logger.warningf("A plugin failed to start: %s%s", logtint, e.msg);
+            logger.warningf("A plugin failed to start: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                logtint, e.msg, warningtint, e.file, e.line);
             return 1;
         }
 
