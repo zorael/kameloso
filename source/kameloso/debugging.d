@@ -501,12 +501,13 @@ void generateAsserts(ref IRCBot bot) @system
             }
             catch (const IRCParseException e)
             {
-                logger.warning("IRC Parse Exception: ", e.msg);
-                printObjects(e.event);
+                import kameloso.printing : printObject;
+                logger.warningf("IRC Parse Exception at %s:%d: %s", e.file, e.line, e.msg);
+                printObject(e.event);
             }
             catch (const Exception e)
             {
-                logger.warning("Exception: ", e.msg);
+                logger.warningf("Exception at %s:%d: %s", e.file, e.line, e.msg);
             }
         }
     }
