@@ -483,10 +483,10 @@ void generateAsserts(ref IRCBot bot) @system
                     parser.client.updated = false;
 
                     writeln("/*");
-                    writeln("with (parser.client)");
-                    writeln("{");
-                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.client, 1);
-                    writeln("}");
+                    /+writeln("with (parser.client)");
+                    writeln("{");+/
+                    stdout.lockingTextWriter.formatDelta!(No.asserts)(old, parser.client, 0);
+                    /+writeln("}");+/
                     writeln("*/");
                     writeln();
 
