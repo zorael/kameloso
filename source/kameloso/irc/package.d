@@ -5,5 +5,6 @@
 module kameloso.irc;
 
 public import kameloso.irc.defs;
+public import kameloso.irc.parsing;
 public import kameloso.irc.common;
 public import kameloso.irc.colours;
