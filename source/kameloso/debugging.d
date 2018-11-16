@@ -410,8 +410,13 @@ void generateAsserts(ref IRCBot bot) @system
         try
         {
             import kameloso.conv : Enum;
+            import kameloso.irc.common : typenumsOf;
+
             immutable daemon = daemonstring.length ? Enum!Daemon.fromString(daemonstring) : Daemon.ircdseven;
-            parser.setDaemon(daemon, version_);
+            parser.typenums = typenumsOf(daemon);
+            parser.client.server.daemon = daemon;
+            parser.client.server.daemonstring = version_;
+            parser.client.updated = true;
         }
         catch (const ConvException e)
         {
