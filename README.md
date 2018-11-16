@@ -21,7 +21,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
 * Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitch.d)); see [notes on connecting](#twitch) below
-* piping text from the terminal to the server (Posix only)
+* piping text from the terminal to the server (Linux/OSX and other UNIX-likes only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; generate one and edit it to get an idea of the settings available to toggle (see [notes on generating](#configuration) below)
@@ -34,7 +34,7 @@ If nothing else it makes for a good read-only terminal lurkbot.
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
 * nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the change was reverted. There are corner cases where things might break; please file bugs.
 * missing good how-to-use guide. Use the source, Luke!
-* IRC server daemons that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
+* IRC server that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
@@ -115,7 +115,7 @@ The available *build configurations* are:
 * `windows`, default on Windows, equals `web`
 * `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
 
-You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
+List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
 ```bash
 $ dub build -c cygwin
@@ -126,8 +126,8 @@ $ dub build -c cygwin
 There are a few Windows caveats.
 
 * Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
-* Terminal colours may also not work, depending on your version of Windows and likely your terminal font. Unsure of how to fix this.
-* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Powershell consoles are not affected and can be used with any configuration, as can normal `cmd` ones, albeit with the previously mentioned colour issues.
+* Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
+* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
 
 # How to use
 
@@ -142,7 +142,7 @@ $ ./kameloso --writeconfig
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 * Linux: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
-* MacOS: `$HOME/Library/Application Support/kameloso`
+* OSX: `$HOME/Library/Application Support/kameloso`
 * Windows: `%LOCALAPPDATA%\kameloso`
 * Other unexpected platforms: fallback to current working directory
 
@@ -253,19 +253,20 @@ Known limitation: a user that is in more than one observed channel can be displa
 
 The IRC event parsing bits are largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
 
-* [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d)
-* [`ircdefs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/ircdefs.d)
+* [`irc/defs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/defs.d)
+* [`irc/parsing.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/parsing.d)
+* [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d)
 * [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
 * [`conv.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/conv.d)
 * [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
 * [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of [`irc.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
 
 # Debugging and generating unit tests
 
-Writing an IRC bot when servers all behave differently is a game of cat-and-mouse. You will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't -- or more likely there will be an error message. Please file an issue.
+Writing an IRC bot when servers all behave differently is difficult, and you will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't -- or more likely there will be an error message. Please file an issue.
 
 If you're working on developing the bot yourself, you can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
 
