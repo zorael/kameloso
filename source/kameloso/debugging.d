@@ -439,6 +439,9 @@ void generateAsserts(ref IRCBot bot) @system
             prefixchars = [ 'o' : '@', 'v' : '+' ];
         }
 
+        write("Enter server address (irc.freenode.net): ");
+        parser.client.server.address = readln().stripped;
+
         writeln();
         printObjects!(Yes.printAll)(parser.client, parser.client.server);
         writeln();
