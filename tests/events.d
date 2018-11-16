@@ -598,12 +598,14 @@ unittest
             assert((num == 4), num.to!string);
         }
         assert(parser.client.server.daemon == IRCServer.daemon.ircdseven);
+        assert(parser.client.server.daemonstring == "ircd-seven-1.1.4");
     }
 
     version(TwitchSupport)
     {
         {
-            parser.client.server.address = "tmi.twitch.tv";
+            parser.client.server = IRCServer.init;
+            parser.client.server.address = "irc.chat.twitch.tv";
             immutable event = parser.toIRCEvent(":tmi.twitch.tv 004 zorael :-");
             with (IRCEvent.Type)
             with (event)
@@ -1238,7 +1240,11 @@ unittest
 
 
     {
-        parser.setDaemon(IRCServer.Daemon.u2, "GameSurge");
+        immutable daemon = IRCServer.Daemon.u2;
+        parser.typenums = typenumsOf(daemon);
+        parser.client.server.daemon = daemon;
+        parser.client.server.daemonstring = "GameSurge";
+
         immutable event = parser.toIRCEvent(":TAL.DE.EU.GameSurge.net 396 kameloso ~NaN@1b24f4a7.243f02a4.5cd6f3e3.IP4 :is now your hidden host");
         with (IRCEvent.Type)
         with (event)
@@ -1825,7 +1831,11 @@ unittest
 unittest
 {
     IRCParser parser;
-    parser.setDaemon(IRCServer.Daemon.hybrid, "hybrid-oftc");
+
+    immutable daemon = IRCServer.Daemon.hybrid;
+    parser.typenums = typenumsOf(daemon);
+    parser.client.server.daemon = daemon;
+    parser.client.server.daemonstring = "hybrid-oftc";
 
     {
         immutable event = parser.toIRCEvent(":irc.oftc.net 344 kameloso #garderoben harbl!snarbl@* kameloso!~NaN@194.117.188.126 1515418362");
@@ -1846,7 +1856,11 @@ unittest
 unittest
 {
     IRCParser parser;
-    parser.setDaemon(IRCServer.Daemon.inspircd, "inspircd");
+
+    immutable daemon = IRCServer.Daemon.inspircd;
+    parser.typenums = typenumsOf(daemon);
+    parser.client.server.daemon = daemon;
+    parser.client.server.daemonstring = "inspircd";
 
     {
         immutable event = parser.toIRCEvent(":cadance.canternet.org 953 kameloso^ #flerrp :End of channel exemptchanops list");
@@ -1866,7 +1880,11 @@ unittest
 unittest
 {
     IRCParser parser;
-    parser.setDaemon(IRCServer.Daemon.ircnet, "IRCnet");
+
+    immutable daemon = IRCServer.Daemon.ircnet;
+    parser.typenums = typenumsOf(daemon);
+    parser.client.server.daemon = daemon;
+    parser.client.server.daemonstring = "IRCnet";
 
     {
         immutable event = parser.toIRCEvent(":irc.atw-inter.net 344 kameloso #debian.de towo!towo@littlelamb.szaf.org");
@@ -1901,8 +1919,13 @@ unittest
 unittest
 {
     IRCParser parser;
+
     parser.client.nickname = "kameloso";
-    parser.setDaemon(IRCServer.Daemon.ircdseven, "freenode");
+
+    immutable daemon = IRCServer.Daemon.ircdseven;
+    parser.typenums = typenumsOf(daemon);
+    parser.client.server.daemon = daemon;
+    parser.client.server.daemonstring = "freenode";
 
     {
         immutable event = parser.toIRCEvent(":livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)");
@@ -2024,7 +2047,11 @@ unittest
 unittest
 {
     IRCParser parser;
-    parser.setDaemon(IRCServer.Daemon.rusnet, "RusNet");
+
+    immutable daemon = IRCServer.Daemon.rusnet;
+    parser.typenums = typenumsOf(daemon);
+    parser.client.server.daemon = daemon;
+    parser.client.server.daemonstring = "RusNet";
 
     {
         immutable event = parser.toIRCEvent(":irc.run.net 222 kameloso KOI8-U :is your charset now");
