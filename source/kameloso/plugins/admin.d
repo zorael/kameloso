@@ -38,6 +38,8 @@ module kameloso.plugins.admin;
 
 version(WithPlugins):
 
+//version = OmniscientAdmin;
+
 private:
 
 import kameloso.common : logger, settings;
@@ -1141,8 +1143,17 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 }
 
 
-mixin UserAwareness;
-mixin ChannelAwareness;
+version(OmniscientAdmin)
+{
+    mixin UserAwareness!(ChannelPolicy.any);
+    mixin ChannelAwareness!(ChannelPolicy.any);
+    mixin TwitchAwareness!(ChannelPolicy.any);
+}
+else
+{
+    mixin UserAwareness;
+    mixin ChannelAwareness;
+}
 
 public:
 
