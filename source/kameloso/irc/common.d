@@ -231,7 +231,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
             return true;
         }
 
-        immutable service = event.sender.nickname.toLower();
+        immutable service = event.sender.nickname.toLower;
 
         switch (service)
         {
@@ -457,7 +457,7 @@ bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
     import kameloso.string : sharedDomains;
     import std.string : toLower;
 
-    immutable service = event.sender.nickname.toLower();
+    immutable service = event.sender.nickname.toLower;
 
     with (parser)
     with (event)

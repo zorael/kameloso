@@ -977,7 +977,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         // case-sensitive check goes here
-                        enum lowercaseUDAString = commandUDA.string_.toLower();
+                        enum lowercaseUDAString = commandUDA.string_.toLower;
 
                         if (thisCommand.toLower() == lowercaseUDAString)
                         {

@@ -2138,7 +2138,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
     slice.nom(' ');  // server address
     immutable daemonstring = slice.nom(' ');
-    immutable daemonstringLower = daemonstring.toLower();
+    immutable daemonstringLower = daemonstring.toLower;
     event.content = slice;
     event.aux = daemonstring;
 
