@@ -771,11 +771,22 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badges.length && (event.type != IRCEvent.Type.JOIN))
+                if (sender.badges.length)
                 {
-                    put(sink, " [");
-                    put(sink, abbreviateBadges(sender.badges));
-                    put(sink, ']');
+                    with (IRCEvent.Type)
+                    switch (type)
+                    {
+                    case JOIN:
+                    case SELFJOIN:
+                    case PART:
+                    case SELFPART:
+                        break;
+
+                    default:
+                        put(sink, " [");
+                        put(sink, abbreviateBadges(sender.badges));
+                        put(sink, ']');
+                    }
                 }
             }
         }
@@ -1092,13 +1103,23 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
             version(TwitchSupport)
             {
-                if (sender.badges.length && (type != IRCEvent.Type.JOIN))
+                if (sender.badges.length)
                 {
-                    sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                    with (IRCEvent.Type)
+                    switch (type)
+                    {
+                    case JOIN:
+                    case SELFJOIN:
+                    case PART:
+                    case SELFPART:
+                        break;
 
-                    put(sink, " [");
-                    put(sink, abbreviateBadges(sender.badges));
-                    put(sink, ']');
+                    default:
+                        sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
+                        put(sink, " [");
+                        put(sink, abbreviateBadges(sender.badges));
+                        put(sink, ']');
+                    }
                 }
             }
         }
