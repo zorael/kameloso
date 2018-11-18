@@ -958,7 +958,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         import kameloso.string : strippedLeft;
-                        import std.string : toLower;
                         import std.typecons : Flag, No, Yes;
 
                         string thisCommand;
@@ -976,10 +975,14 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             mutEvent.content = string.init;
                         }
 
-                        // case-sensitive check goes here
+                        import std.algorithm.comparison : equal;
+                        import std.string : toLower;
+                        import std.uni : asLowerCase;
+
                         enum lowercaseUDAString = commandUDA.string_.toLower;
 
-                        if (thisCommand.toLower() == lowercaseUDAString)
+                        if ((thisCommand.length == lowercaseUDAString.length) &&
+                            thisCommand.asLowerCase.equal(lowercaseUDAString))
                         {
                             static if (verbose)
                             {
