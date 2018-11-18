@@ -1301,21 +1301,21 @@ struct IRCUser
         // If no match and either is empty, that means they're *
 
         immutable matchNick = ((ourLower == theirLower) ||
+            !this.nickname.length || !other.nickname.length ||
             unpatternedGlobMatch(ourLower, theirLower) ||
-            unpatternedGlobMatch(theirLower, ourLower) ||
-            !this.nickname.length || !other.nickname.length);
+            unpatternedGlobMatch(theirLower, ourLower));
         if (!matchNick) return false;
 
         immutable matchIdent = ((this.ident == other.ident) ||
+            !this.ident.length || !other.ident.length ||
             unpatternedGlobMatch(this.ident, other.ident) ||
-            unpatternedGlobMatch(other.ident, this.ident) ||
-            !this.ident.length || !other.ident.length);
+            unpatternedGlobMatch(other.ident, this.ident));
         if (!matchIdent) return false;
 
         immutable matchAddress = ((this.address == other.address) ||
+            !this.address.length || !other.address.length ||
             unpatternedGlobMatch(this.address, other.address) ||
-            unpatternedGlobMatch(other.address, this.address) ||
-            !this.address.length || !other.address.length);
+            unpatternedGlobMatch(other.address, this.address));
         if (!matchAddress) return false;
 
         return true;
