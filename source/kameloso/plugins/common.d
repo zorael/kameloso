@@ -896,13 +896,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                 {
                 case home:
                     import std.algorithm.searching : canFind;
-                    import std.uni : toLower;
 
                     if (!event.channel.length)
                     {
                         // it is a non-channel event, like a `QUERY`
                     }
-                    else if (!privateState.client.homes.canFind(event.channel.toLower))
+                    else if (!privateState.client.homes.canFind(event.channel))
                     {
                         static if (verbose)
                         {
@@ -976,8 +975,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         import std.algorithm.comparison : equal;
-                        import std.string : toLower;
-                        import std.uni : asLowerCase;
+                        import std.uni : asLowerCase, toLower;
 
                         enum lowercaseUDAString = commandUDA.string_.toLower;
 
@@ -2427,11 +2425,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.uni : toLower;
-
-        immutable channelName = event.channel.toLower;
-        plugin.state.channels[channelName] = IRCChannel.init;
-        plugin.state.channels[channelName].name = event.channel;
+        plugin.state.channels[event.channel] = IRCChannel.init;
+        plugin.state.channels[event.channel].name = event.channel;
     }
 
 
@@ -2453,13 +2448,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.uni : toLower;
-
         with (plugin)
         {
             // On Twitch SELFPART may occur on untracked channels
-            immutable channelName = event.channel.toLower;
-            auto channel = channelName in state.channels;
+            auto channel = event.channel in state.channels;
             if (!channel) return;
 
             nickloop:
@@ -2475,7 +2467,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 state.users.remove(nickname);
             }
 
-            state.channels.remove(channelName);
+            state.channels.remove(event.channel);
         }
     }
 
@@ -2490,10 +2482,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.uni : toLower;
-
-        immutable channelName = event.channel.toLower;
-        plugin.state.channels[channelName].users ~= event.sender.nickname;
+        plugin.state.channels[event.channel].users ~= event.sender.nickname;
     }
 
 
@@ -2515,12 +2504,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
-        import std.uni : toLower;
 
         with (plugin)
         {
-            immutable channelName = event.channel.toLower;
-            immutable userIndex = state.channels[channelName].users
+            immutable userIndex = state.channels[event.channel].users
                 .countUntil(event.sender.nickname);
 
             if (userIndex == -1)
@@ -2530,7 +2517,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 return;
             }
 
-            state.channels[channelName].users = state.channels[channelName].users
+            state.channels[event.channel].users = state.channels[event.channel].users
                 .remove!(SwapStrategy.unstable)(userIndex);
 
             foreach (const channel; state.channels)
@@ -2606,8 +2593,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.uni : toLower;
-        plugin.state.channels[event.channel.toLower].topic = event.content;
+        plugin.state.channels[event.channel].topic = event.content;
     }
 
 
@@ -2622,9 +2608,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.conv : to;
-        import std.uni : toLower;
-
-        plugin.state.channels[event.channel.toLower].created = event.aux.to!long;
+        plugin.state.channels[event.channel].created = event.aux.to!long;
     }
 
 
@@ -2643,8 +2627,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc.common : setMode;
-        import std.uni : toLower;
-        plugin.state.channels[event.channel.toLower].setMode(event.aux, event.content, plugin.state.client.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
     }
 
 
@@ -2663,9 +2646,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessWhoReplyMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import std.string : representation;
-        import std.uni : toLower;
-
-        immutable channelName = event.channel.toLower;
 
         // User awareness bits add the IRCUser
         with (plugin)
@@ -2684,7 +2664,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                         import std.conv : to;
 
                         immutable modestring = (*modechar).to!string;
-                        state.channels[channelName].setMode(modestring,
+                        state.channels[event.channel].setMode(modestring,
                             event.target.nickname, state.client.server);
                     }
                     /*else
@@ -2698,13 +2678,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
             if (event.target.nickname == state.client.nickname) return;
 
             import std.algorithm.searching : canFind;
-            if (state.channels[channelName].users.canFind(event.target.nickname))
+            if (state.channels[event.channel].users.canFind(event.target.nickname))
             {
                 // Already registered
                 return;
             }
 
-            state.channels[channelName].users ~= event.target.nickname;
+            state.channels[event.channel].users ~= event.target.nickname;
         }
     }
 
@@ -2726,12 +2706,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         import kameloso.string : contains;
         import std.algorithm.iteration : splitter;
-        import std.uni : toLower;
 
         if (!event.content.length) return;
 
         auto names = event.content.splitter(" ");
-        immutable channelName = event.channel.toLower;
 
         with (plugin)
         {
@@ -2769,7 +2747,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                         import kameloso.irc.common : setMode;
                         import std.conv : to;
                         immutable modestring = (*modechar).to!string;
-                        state.channels[channelName].setMode(modestring, nickname, state.client.server);
+                        state.channels[event.channel].setMode(modestring, nickname, state.client.server);
                     }
                     else
                     {
@@ -2780,13 +2758,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 if (nickname == state.client.nickname) continue;
 
                 import std.algorithm.searching : canFind;
-                if (state.channels[channelName].users.canFind(nickname))
+                if (state.channels[event.channel].users.canFind(nickname))
                 {
                     // Already registered
                     continue;
                 }
 
-                state.channels[channelName].users ~= nickname;
+                state.channels[event.channel].users ~= nickname;
             }
         }
     }
@@ -2811,7 +2789,6 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     {
         import kameloso.irc.common : setMode;
         import std.conv : to;
-        import std.uni : toLower;
 
         // :kornbluth.freenode.net 367 kameloso #flerrp huerofi!*@* zorael!~NaN@2001:41d0:2:80b4:: 1513899527
         // :kornbluth.freenode.net 367 kameloso #flerrp harbl!harbl@snarbl.com zorael!~NaN@2001:41d0:2:80b4:: 1513899521
@@ -2830,7 +2807,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                 RPL_QUIETLIST : 'q',
             ];
 
-            plugin.state.channels[event.channel.toLower]
+            plugin.state.channels[event.channel]
                 .setMode((cast(char)modecharsByType[event.type]).to!string,
                 event.content, plugin.state.client.server);
         }
@@ -2848,10 +2825,9 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const IRCEvent event)
     {
         import kameloso.irc.common : setMode;
-        import std.uni : toLower;
 
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-        plugin.state.channels[event.channel.toLower].setMode(event.aux, event.content, plugin.state.client.server);
+        plugin.state.channels[event.channel].setMode(event.aux, event.content, plugin.state.client.server);
     }
 }
 
@@ -2921,9 +2897,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
         import std.algorithm.searching : canFind;
-        import std.uni : toLower;
 
-        auto channel = event.channel.toLower in plugin.state.channels;
+        auto channel = event.channel in plugin.state.channels;
 
         if (!channel.users.canFind(event.sender.nickname))
         {
@@ -3203,7 +3178,6 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
     import kameloso.common : logger, settings;
     import kameloso.string : contains, nom;
-    import std.string : toLower;
 
     string logtint, warningtint;
 
@@ -3232,6 +3206,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
             continue;
         }
 
+        import std.uni : toLower;
         pluginstring = slice.nom!(Yes.decode)(".").toLower;
 
         if (slice.contains!(Yes.decode)("="))
@@ -3512,7 +3487,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable m = plugin.state.client.server.caseMapping;
 
-        if (IRCUser.toLowercase(mixin(carriedVariableName), m) != IRCUser.toLowercase(whoisEvent.target.nickname, m))
+        if (IRCUser.toLowercase(mixin(carriedVariableName), m) !=
+            IRCUser.toLowercase(whoisEvent.target.nickname, m))
         {
             // Wrong WHOIS; await a new one
             Fiber.yield();

@@ -366,7 +366,6 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             const followupEvent = thisFiber.payload;
-            immutable followupChannel = followupEvent.channel.toLower;
 
             if (followupEvent.channel != channelToAdd)
             {
@@ -401,7 +400,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
             import std.algorithm.mutation : SwapStrategy, remove;
             import std.algorithm.searching : countUntil;
 
-            immutable homeIndex = client.homes.countUntil(followupChannel);
+            immutable homeIndex = client.homes.countUntil(followupEvent.channel);
             if (homeIndex != -1)
             {
                 client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);

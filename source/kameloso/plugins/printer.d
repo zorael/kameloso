@@ -261,10 +261,9 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (!plugin.establishLogLocation(logLocation)) return;
 
     import std.algorithm.searching : canFind;
-    import std.uni : toLower;
 
     if (!plugin.printerSettings.logAllChannels &&
-        event.channel.length && !plugin.state.client.homes.canFind(event.channel.toLower))
+        event.channel.length && !plugin.state.client.homes.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
