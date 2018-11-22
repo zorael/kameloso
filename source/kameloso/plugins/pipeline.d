@@ -260,25 +260,20 @@ void onWelcome(PipelinePlugin plugin)
 void teardown(PipelinePlugin plugin)
 {
     import std.file : exists, isDir;
+    import std.concurrency : Tid;
 
-    with (plugin)
-    with (plugin.state)
+    if (plugin.fifoThread == Tid.init) return;
+
+    plugin.fifoThread.send(ThreadMessage.Teardown());
+    plugin.fifoThread = Tid.init;
+
+    immutable filename = plugin.state.client.nickname ~ "@" ~ plugin.state.client.server.address;
+
+    if (filename.exists && !filename.isDir)
     {
-        import std.concurrency : Tid;
-
-        if (fifoThread == Tid.init) return;
-
-        fifoThread.send(ThreadMessage.Teardown());
-        fifoThread = Tid.init;
-
-        immutable filename = client.nickname ~ "@" ~ client.server.address;
-
-        if (filename.exists && !filename.isDir)
-        {
-            // Tell the reader of the pipe to exit
-            auto fifo = File(filename, "w");
-            fifo.writeln();
-        }
+        // Tell the reader of the pipe to exit
+        auto fifo = File(filename, "w");
+        fifo.writeln();
     }
 }
 
