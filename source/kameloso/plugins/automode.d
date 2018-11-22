@@ -174,11 +174,10 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     import std.array : array, join;
     import std.format : format;
     import std.range : repeat;
-    import std.uni : toLower;
 
     foreach (immutable channelName, const channelaccounts; plugin.appliedAutomodes)
     {
-        if (!plugin.state.client.homes.canFind(channelName.toLower)) continue;
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
 
         const appliedAccounts = channelName in plugin.appliedAutomodes;
 
@@ -191,7 +190,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 
     foreach (immutable channelName, const channelaccounts; plugin.automodes)
     {
-        if (!plugin.state.client.homes.canFind(channelName.toLower)) continue;
+        if (!plugin.state.client.homes.canFind(channelName)) continue;
 
         const modes = account in channelaccounts;
         if (!modes || !modes.length) continue;
