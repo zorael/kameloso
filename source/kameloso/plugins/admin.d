@@ -336,105 +336,102 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
         return;
     }
 
-    with (plugin.state)
+    if (plugin.state.client.homes.canFind(channelToAdd))
     {
-        if (client.homes.canFind(channelToAdd))
+        plugin.state.privmsg(event.channel, event.sender.nickname,
+            "We are already in that home channel.");
+        return;
+    }
+
+    // We need to add it to the homes array so as to get ChannelPolicy.home
+    // ChannelAwareness to pick up the SELFJOIN.
+    plugin.state.client.homes ~= channelToAdd;
+    plugin.state.client.updated = true;
+    plugin.state.join(channelToAdd);
+    plugin.state.privmsg(event.channel, event.sender.nickname, "Home added.");
+
+    // We have to follow up and see if we actually managed to join the channel
+    // There are plenty ways for it to fail.
+
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+
+    void dg()
+    {
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+        const followupEvent = thisFiber.payload;
+
+        if (followupEvent.channel != channelToAdd)
         {
-            plugin.state.privmsg(event.channel, event.sender.nickname,
-                "We are already in that home channel.");
-            return;
+            // Different channel; yield fiber, wait for another event
+            Fiber.yield();
+            return dg();
         }
-
-        // We need to add it to the homes array so as to get ChannelPolicy.home
-        // ChannelAwareness to pick up the SELFJOIN.
-        client.homes ~= channelToAdd;
-        client.updated = true;
-        plugin.state.join(channelToAdd);
-
-        plugin.state.privmsg(event.channel, event.sender.nickname, "Home added.");
-
-        // We have to follow up and see if we actually managed to join the channel
-        // There are plenty ways for it to fail.
-
-        import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
-
-        void dg()
-        {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
-            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
-
-            const followupEvent = thisFiber.payload;
-
-            if (followupEvent.channel != channelToAdd)
-            {
-                // Different channel; yield fiber, wait for another event
-                Fiber.yield();
-                return dg();
-            }
-
-            with (IRCEvent.Type)
-            switch (followupEvent.type)
-            {
-            case SELFJOIN:
-                // Success!
-                /*client.homes ~= followupChannel;
-                client.updated = true;*/
-                return;
-
-            case ERR_LINKCHANNEL:
-                // We were redirected. Still assume we wanted to add this one?
-                logger.log("Redirected!");
-                client.homes ~= followupEvent.content.toLower;
-                // Drop down and undo original addition
-                break;
-
-            default:
-                plugin.state.privmsg(event.channel, event.sender.nickname,
-                    "Failed to join home channel.");
-                break;
-            }
-
-            // Undo original addition
-            import std.algorithm.mutation : SwapStrategy, remove;
-            import std.algorithm.searching : countUntil;
-
-            immutable homeIndex = client.homes.countUntil(followupEvent.channel);
-            if (homeIndex != -1)
-            {
-                client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
-                client.updated = true;
-            }
-            else
-            {
-                logger.error("Tried to remove non-existent home channel.");
-            }
-        }
-
-        Fiber fiber = new CarryingFiber!IRCEvent(&dg);
 
         with (IRCEvent.Type)
+        switch (followupEvent.type)
         {
-            static immutable IRCEvent.Type[13] types =
-            [
-                ERR_BANNEDFROMCHAN,
-                ERR_INVITEONLYCHAN,
-                ERR_BADCHANNAME,
-                ERR_LINKCHANNEL,
-                ERR_TOOMANYCHANNELS,
-                ERR_FORBIDDENCHANNEL,
-                ERR_CHANNELISFULL,
-                ERR_BADCHANNELKEY,
-                ERR_BADCHANNAME,
-                RPL_BADCHANPASS,
-                ERR_SECUREONLYCHAN,
-                ERR_SSLONLYCHAN,
-                SELFJOIN,
-            ];
+        case SELFJOIN:
+            // Success!
+            /*client.homes ~= followupChannel;
+            client.updated = true;*/
+            return;
 
-            plugin.awaitEvents(fiber, types);
+        case ERR_LINKCHANNEL:
+            // We were redirected. Still assume we wanted to add this one?
+            logger.log("Redirected!");
+            plugin.state.client.homes ~= followupEvent.content.toLower;
+            // Drop down and undo original addition
+            break;
+
+        default:
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "Failed to join home channel.");
+            break;
         }
+
+        // Undo original addition
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import std.algorithm.searching : countUntil;
+
+        immutable homeIndex = plugin.state.client.homes.countUntil(followupEvent.channel);
+        if (homeIndex != -1)
+        {
+            plugin.state.client.homes = plugin.state.client.homes
+                .remove!(SwapStrategy.unstable)(homeIndex);
+            plugin.state.client.updated = true;
+        }
+        else
+        {
+            logger.error("Tried to remove non-existent home channel.");
+        }
+    }
+
+    Fiber fiber = new CarryingFiber!IRCEvent(&dg);
+
+    with (IRCEvent.Type)
+    {
+        static immutable IRCEvent.Type[13] types =
+        [
+            ERR_BANNEDFROMCHAN,
+            ERR_INVITEONLYCHAN,
+            ERR_BADCHANNAME,
+            ERR_LINKCHANNEL,
+            ERR_TOOMANYCHANNELS,
+            ERR_FORBIDDENCHANNEL,
+            ERR_CHANNELISFULL,
+            ERR_BADCHANNELKEY,
+            ERR_BADCHANNAME,
+            RPL_BADCHANPASS,
+            ERR_SECUREONLYCHAN,
+            ERR_SSLONLYCHAN,
+            SELFJOIN,
+        ];
+
+        plugin.awaitEvents(fiber, types);
     }
 }
 
@@ -460,34 +457,31 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     import std.algorithm.mutation : SwapStrategy, remove;
 
     immutable channel = event.content.stripped;
+    immutable homeIndex = plugin.state.client.homes.countUntil(channel);
 
-    with (plugin.state)
+    if (homeIndex == -1)
     {
-        immutable homeIndex = client.homes.countUntil(channel);
+        import std.format : format;
 
-        if (homeIndex == -1)
+        string message;
+
+        if (settings.colouredOutgoing)
         {
-            import std.format : format;
-
-            string message;
-
-            if (settings.colouredOutgoing)
-            {
-                message = "Channel %s was not listed as a home.".format(channel.ircBold);
-            }
-            else
-            {
-                message = "Channel %s was not listed as a home.".format(channel);
-            }
-
-            plugin.state.privmsg(event.channel, event.sender.nickname, message);
-            return;
+            message = "Channel %s was not listed as a home.".format(channel.ircBold);
+        }
+        else
+        {
+            message = "Channel %s was not listed as a home.".format(channel);
         }
 
-        client.homes = client.homes.remove!(SwapStrategy.unstable)(homeIndex);
-        client.updated = true;
-        plugin.state.part(channel);
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        return;
     }
+
+    plugin.state.client.homes = plugin.state.client.homes
+        .remove!(SwapStrategy.unstable)(homeIndex);
+    plugin.state.client.updated = true;
+    plugin.state.part(channel);
 }
 
 
