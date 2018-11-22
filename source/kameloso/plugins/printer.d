@@ -97,7 +97,6 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     IRCEvent mutEvent = event; // need a mutable copy
 
-    with (plugin)
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -146,7 +145,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case USERSTATE:
     case ROOMSTATE:
         // These event types are spammy; ignore if we're configured to
-        if (!printerSettings.filterVerbose) goto default;
+        if (!plugin.printerSettings.filterVerbose) goto default;
         break;
 
     case JOIN:
@@ -175,7 +174,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (!settings.monochrome)
             {
                 plugin.formatMessageColoured(stdout.lockingTextWriter, mutEvent,
-                    printerSettings.bellOnMention);
+                    plugin.printerSettings.bellOnMention);
                 printed = true;
             }
         }
@@ -183,7 +182,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (!printed)
         {
             plugin.formatMessageMonochrome(stdout.lockingTextWriter, mutEvent,
-                printerSettings.bellOnMention);
+                plugin.printerSettings.bellOnMention);
         }
 
         version(FlushStdout) stdout.flush();
@@ -731,7 +730,6 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
     bool shouldBell;
 
-    with (plugin.state)
     with (event)
     {
         event.content = stripEffects(event.content);
@@ -846,7 +844,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case EMOTE:
                 case TWITCH_CHEER:
                     import kameloso.irc.common : containsNickname;
-                    if (content.containsNickname(client.nickname))
+                    if (content.containsNickname(plugin.state.client.nickname))
                     {
                         // Nick was mentioned (certain)
                         shouldBell = bellOnMention;
@@ -881,7 +879,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         if (num > 0) sink.formattedWrite(" (#%03d)", num);
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
@@ -1015,7 +1013,6 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         }
     }
 
-    with (plugin.state)
     with (event)
     {
         sink.colour(bright ? DefaultBright.timestamp : DefaultDark.timestamp);
@@ -1218,11 +1215,11 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     import kameloso.terminal : invert;
                     import kameloso.irc.common : containsNickname;
 
-                    if (!content.containsNickname(client.nickname)) goto default;
+                    if (!content.containsNickname(plugin.state.client.nickname)) goto default;
 
                     // Nick was mentioned (certain)
                     shouldBell = bellOnMention;
-                    put(sink, content.invert(client.nickname));
+                    put(sink, content.invert(plugin.state.client.nickname));
                     break;
 
                 default:
@@ -1271,7 +1268,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
         sink.colour(TerminalForeground.default_);  // same for bright and dark
 
         if (shouldBell || (errors.length && plugin.printerSettings.bellOnError) ||
-            ((type == IRCEvent.Type.QUERY) && (target.nickname == client.nickname)))
+            ((type == IRCEvent.Type.QUERY) && (target.nickname == plugin.state.client.nickname)))
         {
             import kameloso.terminal : TerminalToken;
             sink.put(TerminalToken.bell);
