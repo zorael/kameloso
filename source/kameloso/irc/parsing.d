@@ -52,6 +52,7 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 {
     import kameloso.string : strippedRight;
     import std.datetime.systime : Clock;
+    import std.uni : toLower;
 
     if (!raw.length) throw new IRCParseException("Tried to parse empty string");
 
@@ -100,6 +101,7 @@ IRCEvent toIRCEvent(ref IRCParser parser, const string raw)
 
     // Final cosmetic touches
     event.content = event.content.strippedRight;
+    event.channel = event.channel.toLower;
 
     // Final pass: sanity check. This verifies some fields and gives
     // meaningful error messages if something doesn't look right.
