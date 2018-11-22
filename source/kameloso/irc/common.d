@@ -218,7 +218,7 @@ auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
 bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
     import kameloso.string : sharedDomains;
-    import std.string : toLower;
+    import std.uni : toLower;
 
     with (event)
     with (parser)
@@ -455,13 +455,10 @@ unittest
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
     import kameloso.string : sharedDomains;
-    import std.string : toLower;
+    import std.uni : toLower;
 
-    immutable service = event.sender.nickname.toLower;
-
-    with (parser)
     with (event)
-    switch (service)
+    switch (event.sender.nickname.toLower)
     {
     case "nickserv":
     case "saslserv":

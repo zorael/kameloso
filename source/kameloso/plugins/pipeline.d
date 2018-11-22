@@ -85,7 +85,7 @@ void pipereader(shared IRCPluginState newState)
                 import kameloso.messaging : raw, quit;
                 import kameloso.string : beginsWith;
                 import std.format : format;
-                import std.string : toLower;
+                import std.uni : toLower;
 
                 if (!line.length) break eofLoop;
 

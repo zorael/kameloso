@@ -1064,7 +1064,8 @@ struct IRCUser
      +/
     static string toLowercase(const string name, IRCServer.CaseMapping caseMapping) nothrow pure
     {
-        import std.string : representation, toLower;
+        import std.string : representation;
+        import std.uni : toLower;
 
         ubyte[] lowercased;
         lowercased.length = name.length;

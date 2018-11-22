@@ -1515,7 +1515,6 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.string : beginsWith, beginsWithOneOf;
-    import std.string : toLower;
 
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[##linux-overflow] Make sure your nick is registered, then please try again to join ##linux.
     // :ChanServ!ChanServ@services. NOTICE kameloso^ :[#ubuntu] Welcome to #ubuntu! Please read the channel topic.
@@ -1546,6 +1545,8 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         if (!event.sender.isServer && parser.isFromAuthService(event))
         {
+            import std.uni : toLower;
+
             //event.sender.class_ = IRCUser.Class.special; // by definition
 
             if (event.content.toLower.contains("/msg nickserv identify"))
@@ -2060,7 +2061,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 {
     import kameloso.irc.common : typenumsOf;
-    import std.string : toLower;
+    import std.uni : toLower;
 
     /*
     cadance.canternet.org                   InspIRCd-2.0

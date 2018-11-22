@@ -155,13 +155,13 @@ struct CoreSettings
 string scopeguard(const ubyte states = exit, const string scopeName = string.init)
 {
     import std.array : Appender;
+    import std.format : format;
+    import std.uni : toLower;
 
     Appender!string app;
 
     string scopeString(const string state)
     {
-        import std.string : format, toLower;
-
         if (scopeName.length)
         {
             return
@@ -191,8 +191,6 @@ string scopeguard(const ubyte states = exit, const string scopeName = string.ini
 
     string entryString(const string state)
     {
-        import std.string : format, toLower;
-
         if (scopeName.length)
         {
             return

@@ -146,7 +146,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                     }
                     else static if (is(T == bool))
                     {
-                        import std.string : toLower;
+                        import std.uni : toLower;
 
                         switch (valueToSet.stripped.unquoted.toLower)
                         {
