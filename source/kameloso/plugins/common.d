@@ -2711,61 +2711,59 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
         auto names = event.content.splitter(" ");
 
-        with (plugin)
+        foreach (immutable userstring; names)
         {
-            foreach (immutable userstring; names)
-            {
-                string slice = userstring;
-                string nickname;
+            string slice = userstring;
+            string nickname;
 
-                if (userstring.contains('!') && userstring.contains('@'))
+            if (userstring.contains('!') && userstring.contains('@'))
+            {
+                import kameloso.string : nom;
+                // SpotChat-like, names are in full nick!ident@address form
+                nickname = slice.nom('!');
+            }
+            else
+            {
+                // Freenode-like, only a nickname with possible @%+ prefix
+                nickname = userstring;
+            }
+
+            import kameloso.irc.common : stripModesign;
+
+            string modesigns;
+            nickname = plugin.state.client.server.stripModesign(nickname, modesigns);
+
+            // Register operators, half-ops, voiced etc
+            // Can be more than one if multi-prefix capability is enabled
+            // Server-sent string, can assume ASCII (@,%,+...) and go char
+            // by char
+            import std.string : representation;
+            foreach (immutable modesign; modesigns.representation)
+            {
+                if (auto modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    import kameloso.string : nom;
-                    // SpotChat-like, names are in full nick!ident@address form
-                    nickname = slice.nom('!');
+                    import kameloso.irc.common : setMode;
+                    import std.conv : to;
+                    immutable modestring = (*modechar).to!string;
+                    plugin.state.channels[event.channel]
+                        .setMode(modestring, nickname, plugin.state.client.server);
                 }
                 else
                 {
-                    // Freenode-like, only a nickname with possible @%+ prefix
-                    nickname = userstring;
+                    //logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
                 }
-
-                import kameloso.irc.common : stripModesign;
-
-                string modesigns;
-                nickname = state.client.server.stripModesign(nickname, modesigns);
-
-                // Register operators, half-ops, voiced etc
-                // Can be more than one if multi-prefix capability is enabled
-                // Server-sent string, can assume ASCII (@,%,+...) and go char
-                // by char
-                import std.string : representation;
-                foreach (immutable modesign; modesigns.representation)
-                {
-                    if (auto modechar = modesign in state.client.server.prefixchars)
-                    {
-                        import kameloso.irc.common : setMode;
-                        import std.conv : to;
-                        immutable modestring = (*modechar).to!string;
-                        state.channels[event.channel].setMode(modestring, nickname, state.client.server);
-                    }
-                    else
-                    {
-                        //logger.warning("Invalid modesign in RPL_NAMREPLY: ", modesign);
-                    }
-                }
-
-                if (nickname == state.client.nickname) continue;
-
-                import std.algorithm.searching : canFind;
-                if (state.channels[event.channel].users.canFind(nickname))
-                {
-                    // Already registered
-                    continue;
-                }
-
-                state.channels[event.channel].users ~= nickname;
             }
+
+            if (nickname == plugin.state.client.nickname) continue;
+
+            import std.algorithm.searching : canFind;
+            if (plugin.state.channels[event.channel].users.canFind(nickname))
+            {
+                // Already registered
+                continue;
+            }
+
+            plugin.state.channels[event.channel].users ~= nickname;
         }
     }
 
