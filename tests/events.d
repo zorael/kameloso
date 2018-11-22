@@ -1322,7 +1322,7 @@ unittest
             assert((type == RPL_LIST), Enum!(IRCEvent.Type).toString(type));
             assert((sender.address == "irc.RomaniaChat.eu"), sender.address);
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
-            assert((channel == "#GameOfThrones"), channel);
+            assert((channel == "#gameofthrones"), channel);
             assert((content == "[+ntTGfB]"), content);
             assert((aux == "1"), aux);
             assert((num == 322), num.to!string);
