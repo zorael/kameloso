@@ -2190,24 +2190,21 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        if (auto oldUser = event.sender.nickname in plugin.state.users)
         {
-            if (auto oldUser = event.sender.nickname in state.users)
+            plugin.state.users[event.target.nickname] = *oldUser;
+            plugin.state.users.remove(event.sender.nickname);
+        }
+
+        foreach (ref channel; plugin.state.channels)
+        {
+            import std.algorithm.searching : countUntil;
+
+            immutable userIndex = channel.users.countUntil(event.sender.nickname);
+
+            if (userIndex != -1)
             {
-                state.users[event.target.nickname] = *oldUser;
-                state.users.remove(event.sender.nickname);
-            }
-
-            foreach (ref channel; state.channels)
-            {
-                import std.algorithm.searching : countUntil;
-
-                immutable userIndex = channel.users.countUntil(event.sender.nickname);
-
-                if (userIndex != -1)
-                {
-                    channel.users[userIndex] = event.target.nickname;  // not sender
-                }
+                channel.users[userIndex] = event.target.nickname;  // not sender
             }
         }
     }
@@ -2448,27 +2445,24 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        with (plugin)
+        // On Twitch SELFPART may occur on untracked channels
+        auto channel = event.channel in plugin.state.channels;
+        if (!channel) return;
+
+        nickloop:
+        foreach (immutable nickname; channel.users)
         {
-            // On Twitch SELFPART may occur on untracked channels
-            auto channel = event.channel in state.channels;
-            if (!channel) return;
-
-            nickloop:
-            foreach (immutable nickname; channel.users)
+            foreach (const channel; plugin.state.channels)
             {
-                foreach (const channel; state.channels)
-                {
-                    import std.algorithm.searching : canFind;
-                    if (channel.users.canFind(nickname)) continue nickloop;
-                }
-
-                // nickname is not in any of our other tracked channels; remove
-                state.users.remove(nickname);
+                import std.algorithm.searching : canFind;
+                if (channel.users.canFind(nickname)) continue nickloop;
             }
 
-            state.channels.remove(event.channel);
+            // nickname is not in any of our other tracked channels; remove
+            plugin.state.users.remove(nickname);
         }
+
+        plugin.state.channels.remove(event.channel);
     }
 
 
@@ -2505,30 +2499,27 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        with (plugin)
+        immutable userIndex = plugin.state.channels[event.channel].users
+            .countUntil(event.sender.nickname);
+
+        if (userIndex == -1)
         {
-            immutable userIndex = state.channels[event.channel].users
-                .countUntil(event.sender.nickname);
-
-            if (userIndex == -1)
-            {
-                // On Twitch servers with no NAMES on joining a channel, users
-                // that you haven't seen may leave despite never having been seen
-                return;
-            }
-
-            state.channels[event.channel].users = state.channels[event.channel].users
-                .remove!(SwapStrategy.unstable)(userIndex);
-
-            foreach (const channel; state.channels)
-            {
-                import std.algorithm.searching : canFind;
-                if (channel.users.canFind(event.sender.nickname)) return;
-            }
-
-            // event.sender is not in any of our tracked channels; remove
-            state.users.remove(event.sender.nickname);
+            // On Twitch servers with no NAMES on joining a channel, users
+            // that you haven't seen may leave despite never having been seen
+            return;
         }
+
+        plugin.state.channels[event.channel].users = plugin.state.channels[event.channel].users
+            .remove!(SwapStrategy.unstable)(userIndex);
+
+        foreach (const channel; plugin.state.channels)
+        {
+            import std.algorithm.searching : canFind;
+            if (channel.users.canFind(event.sender.nickname)) return;
+        }
+
+        // event.sender is not in any of our tracked channels; remove
+        plugin.state.users.remove(event.sender.nickname);
     }
 
 
@@ -2648,44 +2639,41 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         import std.string : representation;
 
         // User awareness bits add the IRCUser
-        with (plugin)
+        if (event.aux.length)
         {
-            if (event.aux.length)
+            // Register operators, half-ops, voiced etc
+            // Can be more than one if multi-prefix capability is enabled
+            // Server-sent string, can assume ASCII (@,%,+...) and go char
+            // by char
+            foreach (immutable modesign; event.aux.representation)
             {
-                // Register operators, half-ops, voiced etc
-                // Can be more than one if multi-prefix capability is enabled
-                // Server-sent string, can assume ASCII (@,%,+...) and go char
-                // by char
-                foreach (immutable modesign; event.aux.representation)
+                if (const modechar = modesign in plugin.state.client.server.prefixchars)
                 {
-                    if (const modechar = modesign in state.client.server.prefixchars)
-                    {
-                        import kameloso.irc.common : setMode;
-                        import std.conv : to;
+                    import kameloso.irc.common : setMode;
+                    import std.conv : to;
 
-                        immutable modestring = (*modechar).to!string;
-                        state.channels[event.channel].setMode(modestring,
-                            event.target.nickname, state.client.server);
-                    }
-                    /*else
-                    {
-                        logger.warningf(`Invalid modesign in RPL_WHOREPLY: "%s" ` ~
-                            `The server did not advertise it!`, modesign);
-                    }*/
+                    immutable modestring = (*modechar).to!string;
+                    plugin.state.channels[event.channel].setMode(modestring,
+                        event.target.nickname, plugin.state.client.server);
                 }
+                /*else
+                {
+                    logger.warningf(`Invalid modesign in RPL_WHOREPLY: "%s" ` ~
+                        `The server did not advertise it!`, modesign);
+                }*/
             }
-
-            if (event.target.nickname == state.client.nickname) return;
-
-            import std.algorithm.searching : canFind;
-            if (state.channels[event.channel].users.canFind(event.target.nickname))
-            {
-                // Already registered
-                return;
-            }
-
-            state.channels[event.channel].users ~= event.target.nickname;
         }
+
+        if (event.target.nickname == plugin.state.client.nickname) return;
+
+        import std.algorithm.searching : canFind;
+        if (plugin.state.channels[event.channel].users.canFind(event.target.nickname))
+        {
+            // Already registered
+            return;
+        }
+
+        plugin.state.channels[event.channel].users ~= event.target.nickname;
     }
 
 
@@ -3139,16 +3127,13 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in doWhois (no nickname.length)");
 
-    with (plugin)
+    static if (!is(Payload == typeof(null)))
     {
-        static if (!is(Payload == typeof(null)))
-        {
-            state.whoisQueue[user.nickname] ~= whoisRequest(payload, event, privilegeLevel, fn);
-        }
-        else
-        {
-            state.whoisQueue[user.nickname] ~= whoisRequest(state, event, privilegeLevel, fn);
-        }
+        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(payload, event, privilegeLevel, fn);
+    }
+    else
+    {
+        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(state, event, privilegeLevel, fn);
     }
 }
 
