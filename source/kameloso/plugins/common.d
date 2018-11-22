@@ -3470,8 +3470,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         immutable m = plugin.state.client.server.caseMapping;
 
-        if (IRCUser.toLowercase(mixin(carriedVariableName), m) !=
-            IRCUser.toLowercase(whoisEvent.target.nickname, m))
+        if (IRCUser.toLowerCase(mixin(carriedVariableName), m) !=
+            IRCUser.toLowerCase(whoisEvent.target.nickname, m))
         {
             // Wrong WHOIS; await a new one
             Fiber.yield();

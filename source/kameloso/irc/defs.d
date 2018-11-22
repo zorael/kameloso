@@ -1048,7 +1048,7 @@ struct IRCUser
     }
 
 
-    // toLowercase
+    // toLowerCase
     /++
      +  Produces the passed string in lowercase as per the supplied case
      +  mappings.
@@ -1062,7 +1062,7 @@ struct IRCUser
      +      The passed `name` string with uppercase characters replaced as per
      +      the case mappings.
      +/
-    static string toLowercase(const string name, IRCServer.CaseMapping caseMapping) nothrow pure
+    static string toLowerCase(const string name, IRCServer.CaseMapping caseMapping) nothrow pure
     {
         import std.string : representation;
         import std.uni : toLower;
@@ -1110,37 +1110,37 @@ struct IRCUser
         IRCServer.CaseMapping m = IRCServer.CaseMapping.rfc1459;
 
         {
-            immutable lowercase = toLowercase("ABCDEF", m);
+            immutable lowercase = toLowerCase("ABCDEF", m);
             assert((lowercase == "abcdef"), lowercase);
         }
         {
-            immutable lowercase = toLowercase("123", m);
+            immutable lowercase = toLowerCase("123", m);
             assert((lowercase == "123"), lowercase);
         }
         {
-            immutable lowercase = toLowercase("^[0v0]^", m);
+            immutable lowercase = toLowerCase("^[0v0]^", m);
             assert((lowercase == "~{0v0}~"), lowercase);
         }
         {
-            immutable lowercase = toLowercase(`A|\|`, m);
+            immutable lowercase = toLowerCase(`A|\|`, m);
             assert((lowercase == "a|||"), lowercase);
         }
 
         m = IRCServer.caseMapping.ascii;
 
         {
-            immutable lowercase = toLowercase("^[0v0]^", m);
+            immutable lowercase = toLowerCase("^[0v0]^", m);
             assert((lowercase == "^[0v0]^"), lowercase);
         }
         {
-            immutable lowercase = toLowercase(`A|\|`, m);
+            immutable lowercase = toLowerCase(`A|\|`, m);
             assert((lowercase == `a|\|`), lowercase);
         }
 
         m = IRCServer.CaseMapping.strict_rfc1459;
 
         {
-            immutable lowercase = toLowercase("^[0v0]^", m);
+            immutable lowercase = toLowerCase("^[0v0]^", m);
             assert((lowercase == "^{0v0}^"), lowercase);
         }
     }
@@ -1295,8 +1295,8 @@ struct IRCUser
         }
 
         // Only ever compare nicknames case-insensitive
-        immutable ourLower = IRCUser.toLowercase(this.nickname, caseMapping);
-        immutable theirLower = IRCUser.toLowercase(other.nickname, caseMapping);
+        immutable ourLower = IRCUser.toLowerCase(this.nickname, caseMapping);
+        immutable theirLower = IRCUser.toLowerCase(other.nickname, caseMapping);
 
         // (unpatterned) globMatch in both directions
         // If no match and either is empty, that means they're *
