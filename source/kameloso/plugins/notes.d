@@ -59,68 +59,65 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     {
         const noteArray = plugin.getNotes(event.channel, event.sender.nickname);
 
-        with (plugin.state)
+        if (!noteArray.length) return;
+        else if (noteArray.length == 1)
         {
-            if (!noteArray.length) return;
-            else if (noteArray.length == 1)
+            const note = noteArray[0];
+            immutable timestamp = (Clock.currTime - note.when).timeSince;
+
+            string message;
+
+            if (settings.colouredOutgoing)
             {
-                const note = noteArray[0];
-                immutable timestamp = (Clock.currTime - note.when).timeSince;
-
-                string message;
-
-                if (settings.colouredOutgoing)
-                {
-                    message = "%s! %s left note %s ago: %s"
-                        .format(event.sender.nickname.ircBold, note.sender.ircBold,
-                        timestamp.ircBold, note.line);
-                }
-                else
-                {
-                    message = "%s! %s left note %s ago: %s"
-                        .format(event.sender.nickname, note.sender, timestamp, note.line);
-                }
-
-                plugin.chan(event.channel, message);
+                message = "%s! %s left note %s ago: %s"
+                    .format(event.sender.nickname.ircBold, note.sender.ircBold,
+                    timestamp.ircBold, note.line);
             }
             else
             {
-                string message;
+                message = "%s! %s left note %s ago: %s"
+                    .format(event.sender.nickname, note.sender, timestamp, note.line);
+            }
+
+            plugin.chan(event.channel, message);
+        }
+        else
+        {
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                import std.conv : text;
+                message = "%s! You have %s notes."
+                    .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
+            }
+            else
+            {
+                message = "%s! You have %d notes."
+                    .format(event.sender.nickname, noteArray.length);
+            }
+
+            plugin.chan(event.channel, message);
+
+            foreach (const note; noteArray)
+            {
+                import std.typecons : No, Yes;
+
+                immutable timestamp = (Clock.currTime - note.when)
+                    .timeSince!(Yes.abbreviate);
+
+                string report;
 
                 if (settings.colouredOutgoing)
                 {
-                    import std.conv : text;
-                    message = "%s! You have %s notes."
-                        .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
+                    report = "%s %s ago: %s".format(note.sender.ircBold, timestamp, note.line);
                 }
                 else
                 {
-                    message = "%s! You have %d notes."
-                        .format(event.sender.nickname, noteArray.length);
+                    report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
                 }
 
-                plugin.chan(event.channel, message);
-
-                foreach (const note; noteArray)
-                {
-                    import std.typecons : No, Yes;
-
-                    immutable timestamp = (Clock.currTime - note.when)
-                        .timeSince!(Yes.abbreviate);
-
-                    string report;
-
-                    if (settings.colouredOutgoing)
-                    {
-                        report = "%s %s ago: %s".format(note.sender.ircBold, timestamp, note.line);
-                    }
-                    else
-                    {
-                        report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
-                    }
-
-                    plugin.chan(event.channel, report);
-                }
+                plugin.chan(event.channel, report);
             }
         }
 
