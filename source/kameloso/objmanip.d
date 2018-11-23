@@ -55,150 +55,151 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
     top:
     switch (memberToSet)
     {
-        static foreach (immutable i; 0..thing.tupleof.length)
-        {{
-            import kameloso.traits : isConfigurableVariable;
-            import std.traits : Unqual, isType;
+    static foreach (immutable i; 0..thing.tupleof.length)
+    {{
+        import kameloso.traits : isConfigurableVariable;
+        import std.traits : Unqual, isType;
 
-            alias T = Unqual!(typeof(thing.tupleof[i]));
+        alias T = Unqual!(typeof(thing.tupleof[i]));
 
-            static if (!isType!(thing.tupleof[i]) &&
-                isConfigurableVariable!(thing.tupleof[i]))
+        static if (!isType!(thing.tupleof[i]) &&
+            isConfigurableVariable!(thing.tupleof[i]))
+        {
+            enum memberstring = __traits(identifier, thing.tupleof[i]);
+
+            case memberstring:
             {
-                enum memberstring = __traits(identifier, thing.tupleof[i]);
+                import std.traits : isArray, isAssociativeArray, isSomeString;
 
-                case memberstring:
+                static if (is(T == struct) || is(T == class))
                 {
-                    import std.traits : isArray, isAssociativeArray, isSomeString;
-                    static if (is(T == struct) || is(T == class))
+                    // can't assign whole structs or classes
+                }
+                else static if (!isSomeString!T && isArray!T)
+                {
+                    import std.array : replace;
+                    import std.traits : getUDAs, hasUDA;
+
+                    thing.tupleof[i].length = 0;
+
+                    static assert(hasUDA!(thing.tupleof[i], Separator),
+                        "%s.%s is missing a Separator annotation"
+                        .format(Thing.stringof, memberstring));
+
+                    alias separators = getUDAs!(thing.tupleof[i], Separator);
+                    enum escapedPlaceholder = "\0\0";  // anything really
+                    enum ephemeralSeparator = "\1\1";  // ditto
+                    enum doubleEphemeral = ephemeralSeparator ~ ephemeralSeparator;
+                    enum doubleEscapePlaceholder = "\2\2";
+
+                    string values = valueToSet.replace("\\\\", doubleEscapePlaceholder);
+
+                    foreach (separator; separators)
                     {
-                        // can't assign whole structs or classes
+                        enum escaped = '\\' ~ separator.token;
+                        values = values
+                            .replace(escaped, escapedPlaceholder)
+                            .replace(separator.token, ephemeralSeparator)
+                            .replace(escapedPlaceholder, separator.token);
                     }
-                    else static if (!isSomeString!T && isArray!T)
+
+                    import kameloso.string : contains;
+                    while (values.contains(doubleEphemeral))
                     {
-                        import std.array : replace;
-                        import std.traits : getUDAs, hasUDA;
-
-                        thing.tupleof[i].length = 0;
-
-                        static assert(hasUDA!(thing.tupleof[i], Separator),
-                            "%s.%s is missing a Separator annotation"
-                            .format(Thing.stringof, memberstring));
-
-                        alias separators = getUDAs!(thing.tupleof[i], Separator);
-                        enum escapedPlaceholder = "\0\0";  // anything really
-                        enum ephemeralSeparator = "\1\1";  // ditto
-                        enum doubleEphemeral = ephemeralSeparator ~ ephemeralSeparator;
-                        enum doubleEscapePlaceholder = "\2\2";
-
-                        string values = valueToSet.replace("\\\\", doubleEscapePlaceholder);
-
-                        foreach (separator; separators)
-                        {
-                            enum escaped = '\\' ~ separator.token;
-                            values = values
-                                .replace(escaped, escapedPlaceholder)
-                                .replace(separator.token, ephemeralSeparator)
-                                .replace(escapedPlaceholder, separator.token);
-                        }
-
-                        import kameloso.string : contains;
-                        while (values.contains(doubleEphemeral))
-                        {
-                            values = values.replace(doubleEphemeral, ephemeralSeparator);
-                        }
-
-                        values = values.replace(doubleEscapePlaceholder, "\\");
-
-                        import std.algorithm.iteration : splitter;
-                        auto range = values.splitter(ephemeralSeparator);
-
-                        foreach (immutable entry; range)
-                        {
-                            try
-                            {
-                                import std.range : ElementType;
-
-                                thing.tupleof[i] ~= entry
-                                    .stripped
-                                    .unquoted
-                                    .to!(ElementType!T);
-
-                                success = true;
-                            }
-                            catch (const ConvException e)
-                            {
-                                immutable message = `Could not convert %s.%s array entry "%s" into %s (%s)`
-                                    .format(Thing.stringof.stripSuffix("Settings"),
-                                    memberToSet, entry, T.stringof, e.msg);
-                                throw new ConvException(message);
-                            }
-                        }
+                        values = values.replace(doubleEphemeral, ephemeralSeparator);
                     }
-                    else static if (is(T : string))
-                    {
-                        thing.tupleof[i] = valueToSet.stripped.unquoted;
-                        success = true;
-                    }
-                    else static if (isAssociativeArray!T)
-                    {
-                        // Silently ignore AAs for now
-                    }
-                    else static if (is(T == bool))
-                    {
-                        import std.uni : toLower;
 
-                        switch (valueToSet.stripped.unquoted.toLower)
-                        {
-                        case "true":
-                        case "yes":
-                        case "on":
-                        case "1":
-                            thing.tupleof[i] = true;
-                            success = true;
-                            break;
+                    values = values.replace(doubleEscapePlaceholder, "\\");
 
-                        case "false":
-                        case "no":
-                        case "off":
-                        case "0":
-                            thing.tupleof[i] = false;
-                            success = true;
-                            break;
+                    import std.algorithm.iteration : splitter;
+                    auto range = values.splitter(ephemeralSeparator);
 
-                        default:
-                            immutable message = ("Invalid value for setting %s.%s: " ~
-                                `could not convert "%s" to a boolean value`)
-                                .format(Thing.stringof.stripSuffix("Settings"),
-                                memberToSet, valueToSet);
-                            throw new ConvException(message);
-                        }
-                    }
-                    else
+                    foreach (immutable entry; range)
                     {
                         try
                         {
-                            /*writefln("%s.%s = %s.to!%s", Thing.stringof,
-                                memberstring, valueToSet, T.stringof);*/
-                            thing.tupleof[i] = valueToSet
+                            import std.range : ElementType;
+
+                            thing.tupleof[i] ~= entry
                                 .stripped
                                 .unquoted
-                                .to!T;
+                                .to!(ElementType!T);
+
                             success = true;
                         }
                         catch (const ConvException e)
                         {
-                            immutable message = `Invalid value for setting %s.%s: " ~
-                                "could not convert "%s" to %s (%s)`
+                            immutable message = `Could not convert %s.%s array entry "%s" into %s (%s)`
                                 .format(Thing.stringof.stripSuffix("Settings"),
-                                memberToSet, valueToSet, T.stringof, e.msg);
+                                memberToSet, entry, T.stringof, e.msg);
                             throw new ConvException(message);
                         }
                     }
-                    break top;
                 }
+                else static if (is(T : string))
+                {
+                    thing.tupleof[i] = valueToSet.stripped.unquoted;
+                    success = true;
+                }
+                else static if (isAssociativeArray!T)
+                {
+                    // Silently ignore AAs for now
+                }
+                else static if (is(T == bool))
+                {
+                    import std.uni : toLower;
+
+                    switch (valueToSet.stripped.unquoted.toLower)
+                    {
+                    case "true":
+                    case "yes":
+                    case "on":
+                    case "1":
+                        thing.tupleof[i] = true;
+                        success = true;
+                        break;
+
+                    case "false":
+                    case "no":
+                    case "off":
+                    case "0":
+                        thing.tupleof[i] = false;
+                        success = true;
+                        break;
+
+                    default:
+                        immutable message = ("Invalid value for setting %s.%s: " ~
+                            `could not convert "%s" to a boolean value`)
+                            .format(Thing.stringof.stripSuffix("Settings"),
+                            memberToSet, valueToSet);
+                        throw new ConvException(message);
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        /*writefln("%s.%s = %s.to!%s", Thing.stringof,
+                            memberstring, valueToSet, T.stringof);*/
+                        thing.tupleof[i] = valueToSet
+                            .stripped
+                            .unquoted
+                            .to!T;
+                        success = true;
+                    }
+                    catch (const ConvException e)
+                    {
+                        immutable message = `Invalid value for setting %s.%s: " ~
+                            "could not convert "%s" to %s (%s)`
+                            .format(Thing.stringof.stripSuffix("Settings"),
+                            memberToSet, valueToSet, T.stringof, e.msg);
+                        throw new ConvException(message);
+                    }
+                }
+                break top;
             }
-        }}
+        }
+    }}
 
     default:
         break;

@@ -514,32 +514,32 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 {
                     switch (entry)
                     {
-                        static foreach (immutable n; 0..things[i].tupleof.length)
-                        {{
-                            static if (!isType!(Things[i].tupleof[n]) &&
-                                !hasUDA!(Things[i].tupleof[n], Unconfigurable))
-                            {
-                                enum memberstring = __traits(identifier, Things[i].tupleof[n]);
+                    static foreach (immutable n; 0..things[i].tupleof.length)
+                    {{
+                        static if (!isType!(Things[i].tupleof[n]) &&
+                            !hasUDA!(Things[i].tupleof[n], Unconfigurable))
+                        {
+                            enum memberstring = __traits(identifier, Things[i].tupleof[n]);
 
-                                case memberstring:
-                                    import kameloso.objmanip : setMemberByName;
+                            case memberstring:
+                                import kameloso.objmanip : setMemberByName;
 
-                                    static if (hasUDA!(Things[i].tupleof[n], CannotContainComments))
-                                    {
-                                        things[i].setMemberByName(entry, value);
-                                    }
-                                    else
-                                    {
-                                        import kameloso.string : contains, nom;
+                                static if (hasUDA!(Things[i].tupleof[n], CannotContainComments))
+                                {
+                                    things[i].setMemberByName(entry, value);
+                                }
+                                else
+                                {
+                                    import kameloso.string : contains, nom;
 
-                                        // Slice away any comments
-                                        value = value.contains('#') ? value.nom('#') : value;
-                                        value = value.contains(';') ? value.nom(';') : value;
-                                        things[i].setMemberByName(entry, value);
-                                    }
-                                    continue lineloop;
-                            }
-                        }}
+                                    // Slice away any comments
+                                    value = value.contains('#') ? value.nom('#') : value;
+                                    value = value.contains(';') ? value.nom(';') : value;
+                                    things[i].setMemberByName(entry, value);
+                                }
+                                continue lineloop;
+                        }
+                    }}
 
                     default:
                         // Unknown setting in known section
