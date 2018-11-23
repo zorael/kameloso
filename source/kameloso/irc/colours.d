@@ -485,7 +485,7 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
     alias I = IRCControlCharacter;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
-    auto engine = colourPattern.regex;
+    static engine = colourPattern.regex;
 
     alias F = TerminalForeground;
     TerminalForeground[16] weechatForegroundMap =
@@ -627,7 +627,7 @@ string stripColours(const string line)
     alias I = IRCControlCharacter;
 
     enum colourPattern = I.colour ~ "([0-9]{1,2})(?:,([0-9]{1,2}))?";
-    auto engine = colourPattern.regex;
+    static engine = colourPattern.regex;
 
     bool strippedSomething;
 
@@ -713,7 +713,7 @@ private string mapEffectsImpl(ubyte mircToken, ubyte TerminalFormatCode)(const s
         (cast(ubyte)TerminalFormatCode).to!string ~ "m";
 
     enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
-    auto engine = pattern.regex;
+    static engine = pattern.regex;
 
     Appender!string sink;
     sink.reserve(cast(size_t)(line.length * 1.1));

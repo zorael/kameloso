@@ -124,13 +124,16 @@ string sedReplace(const string originalLine, const string expression) @safe
     switch (expression[1])
     {
     case '/':
-        return doReplace(expression.matchAll(sedPattern.regex), originalLine);
+        static engine1 = sedPattern.regex;
+        return doReplace(expression.matchAll(engine1), originalLine);
 
     case '#':
-        return doReplace(expression.matchAll(sedPattern2.regex), originalLine);
+        static engine2 = sedPattern2.regex;
+        return doReplace(expression.matchAll(engine2), originalLine);
 
     case '|':
-        return doReplace(expression.matchAll(sedPattern3.regex), originalLine);
+        static engine3 = sedPattern3.regex;
+        return doReplace(expression.matchAll(engine3), originalLine);
 
     default:
         return string.init;

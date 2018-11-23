@@ -440,7 +440,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
     import std.regex : matchFirst, regex;
 
     enum pattern = r"^(\w+)\s+(.+)";
-    auto engine = pattern.regex;
+    auto engine = pattern.regex;  // FIXME: static makes compilation memory soar
 
     string section;
     string[][string] invalidEntries;
@@ -693,7 +693,7 @@ string justifiedConfigurationText(const string origLines)
     import std.regex : matchFirst, regex;
 
     enum entryValuePattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-    auto entryValueEngine = entryValuePattern.regex;
+    auto entryValueEngine = entryValuePattern.regex;  // FIMXE: static makes compilation memory soar
 
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
