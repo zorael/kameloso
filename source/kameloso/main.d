@@ -1306,7 +1306,7 @@ Next tryResolve(ref IRCBot bot)
             return Next.continue_;
 
         case exception:
-            logger.warning("Socket exception caught when resolving server adddress: ", attempt.error);
+            logger.warning("Socket exception caught when resolving server adddress: ", logtint, attempt.error);
 
             enum resolveAttempts = 15;  // FIXME
             if (attempt.numRetry+1 < resolveAttempts)
@@ -1322,7 +1322,7 @@ Next tryResolve(ref IRCBot bot)
             continue;
 
         case error:
-            logger.error("Socket exception caught when resolving server adddress: ", attempt.error);
+            logger.error("Socket exception caught when resolving server adddress: ", logtint, attempt.error);
             logger.log("Could not resolve address to IPs. Verify your server address.");
             return Next.returnFailure;
 
