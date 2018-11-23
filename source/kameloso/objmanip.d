@@ -4,8 +4,6 @@
  +/
 module kameloso.objmanip;
 
-import kameloso.uda;
-
 public import kameloso.meld;
 
 @safe:
@@ -77,6 +75,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                 }
                 else static if (!isSomeString!T && isArray!T)
                 {
+                    import kameloso.uda : Separator;
                     import std.array : replace;
                     import std.traits : getUDAs, hasUDA;
 
@@ -211,6 +210,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 ///
 unittest
 {
+    import kameloso.uda : Separator;
     import std.conv : to;
 
     struct Foo
