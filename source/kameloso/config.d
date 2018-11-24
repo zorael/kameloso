@@ -439,8 +439,9 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
     import kameloso.string : stripSuffix, stripped;
     import std.regex : matchFirst, regex;
 
-    enum pattern = r"^(\w+)\s+(.+)";
-    auto engine = pattern.regex;  // FIXME: static makes compilation memory soar
+    // r"^(\w+)\s+(.+)" but makes compilation memory soar
+    enum pattern = r"^([^ \t]+)[ \t]+(.+)";
+    static engine = pattern.regex;
 
     string section;
     string[][string] invalidEntries;
@@ -692,8 +693,9 @@ string justifiedConfigurationText(const string origLines)
     import std.array : Appender;
     import std.regex : matchFirst, regex;
 
-    enum entryValuePattern = r"^(?P<entry>\w+)\s+(?P<value>.+)";
-    auto entryValueEngine = entryValuePattern.regex;  // FIMXE: static makes compilation memory soar
+    // r"^(?P<entry>\w+)\s+(?P<value>.+)" but makes compilation memory soar
+    enum entryValuePattern = r"^(?P<entry>[^ \t]+)[ \t]+(?P<value>.+)";
+    static entryValueEngine = entryValuePattern.regex;
 
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
