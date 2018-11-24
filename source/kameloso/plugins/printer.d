@@ -1464,6 +1464,11 @@ string abbreviateBadges(const string badgestring)
             badgechar = 'V';
             break;
 
+        case "vip":
+            // V is taken, no obvious second choice
+            badgechar = '^';
+            break;
+
         case "broadcaster":
             badgechar = 'B';
             break;
