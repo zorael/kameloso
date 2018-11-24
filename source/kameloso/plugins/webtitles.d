@@ -200,6 +200,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
  +/
 string[] findURLs(const string line) @safe pure
 {
+    import kameloso.string : contains;
     import std.string : indexOf;
 
     string[] hits;
@@ -227,7 +228,7 @@ string[] findURLs(const string line) @safe pure
             // Not http or https, something else
             break;
         }
-        else if (slice[8..$].indexOf('.') == -1)
+        else if (!slice[8..$].contains('.'))
         {
             break;
         }
@@ -236,7 +237,7 @@ string[] findURLs(const string line) @safe pure
         if (spacePos == -1)
         {
             // Check if there's a second URL in the middle of this one
-            if (slice[10..$].indexOf("http") != -1) break;
+            if (!slice[10..$].contains("http")) break;
             // Line finishes with the URL
             hits ~= slice;
             break;
@@ -325,7 +326,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
             if (slice[0] == 's') slice = slice[1..$];
             slice = slice[3..$];  // ://
 
-            if (slice.beginsWith("www.")) slice.nom!(Yes.decode)('.');
+            if (slice.beginsWith("www.")) slice = slice[4..$];
 
             if (slice.beginsWith("youtube.com/watch?v=") ||
                 slice.beginsWith("youtu.be/"))

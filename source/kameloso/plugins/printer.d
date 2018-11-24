@@ -1395,6 +1395,7 @@ unittest
  +          "turbo"         : 'T',
  +          "moderator"     : 'M',
  +          "partner"       : 'V',  // verified
+ +          "vip"           : '^',  // V taken
  +          "broadcaster"   : 'B',
  +          "twitchcon2017" : '7',
  +          "twitchcon2018" : '8',
