@@ -123,7 +123,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
 {
     import std.datetime.systime : Clock;
 
-    auto state = cast(IRCPluginState)sState;
+    auto state = cast()sState;
 
     try
     {

@@ -133,7 +133,7 @@ if (is(E == enum))
                 val /= 10;
             }
 
-            return cast(string) result;
+            return result;
         }
     }
 }

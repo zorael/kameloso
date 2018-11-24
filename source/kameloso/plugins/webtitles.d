@@ -309,7 +309,7 @@ unittest
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     TitleRequest titleReq, const bool colouredOutgoing)
 {
-    auto state = cast(IRCPluginState)sState;
+    auto state = cast()sState;
 
     try
     {
@@ -523,7 +523,7 @@ TitleLookup lookupTitle(const string url)
     foreach (const part; stream)
     {
         sink.put(part);
-        doc.parseGarbage(cast(string)sink.data);
+        doc.parseGarbage(cast(string)sink.data.idup);
         if (doc.title.length) break;
     }
 

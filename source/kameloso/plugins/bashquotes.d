@@ -81,7 +81,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
     import std.array : replace;
     import std.format : format;
 
-    auto state = cast(IRCPluginState)sState;
+    auto state = cast()sState;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
         "http://bash.org/?" ~ event.content;

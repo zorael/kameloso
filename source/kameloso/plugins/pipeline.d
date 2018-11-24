@@ -45,7 +45,7 @@ void pipereader(shared IRCPluginState newState)
 {
     import std.file : FileException, remove;
 
-    auto state = cast(IRCPluginState)newState;
+    auto state = cast()newState;
 
     /// Named pipe (FIFO) to send messages to the server through.
     File fifo;
