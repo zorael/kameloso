@@ -186,7 +186,8 @@ void printHelp(GetoptResult results) @system
 
         if (!settings.monochrome)
         {
-            immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
+            immutable headertint = settings.brightTerminal ?
+                TerminalForeground.black : TerminalForeground.white;
             immutable defaulttint = TerminalForeground.default_;
             pre = headertint.colour;
             post = defaulttint.colour;
@@ -204,7 +205,8 @@ void printHelp(GetoptResult results) @system
         {
             import kameloso.terminal : TerminalForeground, colour;
 
-            immutable headlineTint = settings.brightTerminal ? TerminalForeground.green : TerminalForeground.lightgreen;
+            immutable headlineTint = settings.brightTerminal ?
+                TerminalForeground.green : TerminalForeground.lightgreen;
             headline = headline.colour(headlineTint);
         }
     }
@@ -487,7 +489,8 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
 
                 if (!settings.monochrome)
                 {
-                    immutable headertint = settings.brightTerminal ? TerminalForeground.black : TerminalForeground.white;
+                    immutable headertint = settings.brightTerminal ?
+                        TerminalForeground.black : TerminalForeground.white;
                     immutable defaulttint = TerminalForeground.default_;
                     pre = headertint.colour;
                     post = defaulttint.colour;
