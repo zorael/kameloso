@@ -1444,6 +1444,8 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
         (event.type != IRCEvent.Type.RPL_ENDOFWHO) &&
         (event.type != IRCEvent.Type.RPL_NAMREPLY) &&
         (event.type != IRCEvent.Type.RPL_ENDOFNAMES) &&
+        (event.type != IRCEvent.Type.SELFJOIN) &&  // Twitch
+        (event.type != IRCEvent.Type.SELFPART) &&  // Twitch
         (event.type != IRCEvent.Type.RPL_LIST))  // Some channels can be asterisks if they aren't public
     {
         if (sink.data.length) sink.put(". ");
