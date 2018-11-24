@@ -2162,4 +2162,28 @@ unittest
             assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":kameloso!kameloso@kameloso.tmi.twitch.tv JOIN p4wnyhof");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFJOIN), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "kameloso"), sender.nickname);
+            assert((sender.ident == "kameloso"), sender.ident);
+            assert((sender.address == "kameloso.tmi.twitch.tv"), sender.address);
+            assert((channel == "p4wnyhof"), channel);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":kameloso!kameloso@kameloso.tmi.twitch.tv PART p4wnyhof");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFPART), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "kameloso"), sender.nickname);
+            assert((sender.ident == "kameloso"), sender.ident);
+            assert((sender.address == "kameloso.tmi.twitch.tv"), sender.address);
+            assert((channel == "p4wnyhof"), channel);
+        }
+    }
 }
