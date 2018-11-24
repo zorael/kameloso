@@ -1006,7 +1006,7 @@ debug
 void onCommandStatus(AdminPlugin plugin)
 {
     import kameloso.printing : printObjects;
-    import std.stdio : writeln, stdout;
+    import std.stdio : stdout, writeln;
 
     logger.log("Current state:");
     printObjects!(Yes.printAll)(plugin.state.client, plugin.state.client.server);

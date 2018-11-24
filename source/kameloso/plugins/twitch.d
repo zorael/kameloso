@@ -336,7 +336,7 @@ void onEndOfMotd(TwitchPlugin plugin)
 void saveOneliners(const string[string] oneliners, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, write, writeln;
+    import std.stdio : File, writeln;
 
     auto file = File(filename, "w");
 

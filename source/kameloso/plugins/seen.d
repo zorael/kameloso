@@ -883,7 +883,7 @@ long[string] loadSeen(const string filename)
 void saveSeen(const long[string] seenUsers, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, write, writeln;
+    import std.stdio : File, writeln;
 
     auto file = File(filename, "w");
 

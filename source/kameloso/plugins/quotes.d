@@ -367,7 +367,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    import std.stdio : writeln, stdout;
+    import std.stdio : stdout, writeln;
 
     writeln(plugin.quotes.toPrettyString);
     version(FlushStdout) stdout.flush();
