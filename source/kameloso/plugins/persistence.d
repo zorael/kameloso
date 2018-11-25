@@ -77,6 +77,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                     applyClassifiersDg(stored);
                 }
 
+                // Clear badges if it has the empty placeholder asterisk
+                if (stored.badges == "*") stored.badges = string.init;
+
                 *user = *stored;
                 continue;
             }
