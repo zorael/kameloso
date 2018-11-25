@@ -119,7 +119,7 @@ version(WithPlugins)
     }
     else
     {
-        public alias TwitchService = AliasSeq!();
+        public alias TwitchSupportService = AliasSeq!();
         public alias TwitchPlugin = AliasSeq!();
     }
 }
