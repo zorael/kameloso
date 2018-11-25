@@ -1506,6 +1506,7 @@ string abbreviateBadges(const string badgestring)
 }
 
 ///
+version(TwitchSupport)
 unittest
 {
     {
