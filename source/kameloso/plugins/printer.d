@@ -1421,7 +1421,7 @@ string abbreviateBadges(const string badgestring)
     import std.array : Appender;
 
     Appender!string abbreviated;
-    abbreviated.reserve(8);  // most are 1-2
+    abbreviated.reserve(4);  // most are 1-2
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
