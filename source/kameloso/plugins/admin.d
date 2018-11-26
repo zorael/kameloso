@@ -1127,15 +1127,13 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         }
 
         auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
-        plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
-        break;
+        return plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 
     case "save":
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        plugin.state.mainThread.send(ThreadMessage.Save());
-        break;
+        return plugin.state.mainThread.send(ThreadMessage.Save());
 
     default:
         logger.error("Unimplemented piped verb: ", verb);
