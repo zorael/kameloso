@@ -1131,6 +1131,13 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
         break;
 
+    case "save":
+        import kameloso.thread : ThreadMessage;
+
+        logger.log("Saving configuration to disk.");
+        plugin.state.mainThread.send(ThreadMessage.Save());
+        break;
+
     default:
         logger.error("Unimplemented piped verb: ", verb);
         break;
