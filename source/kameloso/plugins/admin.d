@@ -944,6 +944,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.thread : CarryingFiber, ThreadMessage;
+    import core.thread : Fiber;
     import std.concurrency : send;
 
     void dg()
@@ -965,7 +966,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+    Fiber fiber = new CarryingFiber!(IRCPlugin[])(&dg);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 
@@ -1105,6 +1106,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
     case "set":
         import kameloso.thread : CarryingFiber, ThreadMessage;
+        import core.thread : Fiber;
 
         void dg()
         {
@@ -1125,7 +1127,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             }
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+        Fiber fiber = new CarryingFiber!(IRCPlugin[])(&dg);
         plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
         break;
 

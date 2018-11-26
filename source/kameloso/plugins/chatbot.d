@@ -146,12 +146,12 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage;
+    import core.thread : Fiber;
     import std.concurrency : send;
 
     void dg()
     {
         import kameloso.string : contains, nom;
-        import core.thread : Fiber;
         import std.algorithm.searching : endsWith;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -340,7 +340,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg);
+    Fiber fiber = new CarryingFiber!(IRCPlugin[])(&dg);
     plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
 }
 

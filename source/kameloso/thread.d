@@ -162,7 +162,7 @@ unittest
  +      assert(fiber.payload);
  +  }
  +
- +  auto fiber = new CarryingFiber!bool(true, &dg);
+ +  Fiber fiber = new CarryingFiber!bool(true, &dg);
  +  ---
  +/
 import core.thread : Fiber;
