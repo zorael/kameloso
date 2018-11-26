@@ -585,14 +585,12 @@ void commitLogs(PrinterPlugin plugin)
 
         try
         {
+            import std.algorithm.iteration : joiner;
             import std.stdio : File, writeln;
 
-            auto file = File(buffer.path, "a");
-
-            foreach (immutable line; buffer.lines.data)
-            {
-                file.writeln(line);
-            }
+            // FIXME: version Windows?
+            auto range = buffer.lines.data.joiner("\n");
+            File(buffer.path, "a").writeln(range);
         }
         catch (const FileException e)
         {
