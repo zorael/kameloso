@@ -1412,7 +1412,10 @@ unittest
  +      badgestring = Badges from a Twitch `badges=` IRCv3 tag.
  +
  +  Returns:
- +      A string with the passed badges abbreviated, one character per badge.
+ +      A string with the passed badges abbreviated, one character per badge,
+ +      separated into minor and major badges. Minor ones are ones that end with
+ +      "_1", which seem to be contextual to a channel's game theme, like
+ +      overwatch_league_insider_1, firewatch_1, cuphead_1, H1Z1_1, eso_1, ...
  +/
 version(TwitchSupport)
 string abbreviateBadges(const string badgestring)
@@ -1420,8 +1423,10 @@ string abbreviateBadges(const string badgestring)
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
-    Appender!string abbreviated;
-    abbreviated.reserve(4);  // most are 1-2
+    Appender!string major;
+    Appender!string minor;
+
+    major.reserve(8);  // reserve extra for minor badges
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
@@ -1491,18 +1496,32 @@ string abbreviateBadges(const string badgestring)
             break;
 
         case "admin":
-            badgechar ='+';
+            badgechar = '+';
             break;
 
         default:
+            import std.algorithm.searching : endsWith;
+
+            if (badge.endsWith("_1"))
+            {
+                minor.put(badge[0]);
+                continue;
+            }
+
             badgechar = badge[0];
             break;
         }
 
-        abbreviated.put(badgechar);
+        major.put(badgechar);
     }
 
-    return abbreviated.data;
+    if (minor.data.length)
+    {
+        major.put(':');
+        major.put(minor.data);
+    }
+
+    return major.data;
 }
 
 ///
