@@ -1135,6 +1135,14 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         logger.log("Saving configuration to disk.");
         return plugin.state.mainThread.send(ThreadMessage.Save());
 
+    case "whitelist":
+    case "blacklist":
+        return plugin.lookupEnlist(slice, verb);
+
+    case "dewhitelist":
+    case "deblacklist":
+        return plugin.alterAccountClassifier(No.add, verb, slice);
+
     default:
         logger.error("Unimplemented piped verb: ", verb);
         break;
