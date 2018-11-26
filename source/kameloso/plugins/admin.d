@@ -1044,6 +1044,7 @@ void onCommandStatus(AdminPlugin plugin)
  +/
 import kameloso.thread : Sendable;
 debug
+version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
     if (header != "admin") return;
