@@ -505,11 +505,11 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.addToList(event.content.stripped, "whitelist");
+    plugin.lookupEnlist(event.content.stripped, "whitelist");
 }
 
 
-// addToList
+// lookupEnlist
 /++
  +  Adds an account to either the whitelist or the blacklist.
  +
@@ -520,7 +520,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      specified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist" or "blacklist" to add to.
  +/
-void addToList(AdminPlugin plugin, const string specified, const string list)
+void lookupEnlist(AdminPlugin plugin, const string specified, const string list)
 {
     import kameloso.common : settings;
     import kameloso.irc.common : isValidNickname;
@@ -620,7 +620,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.addToList(event.content.stripped, "blacklist");
+    plugin.lookupEnlist(event.content.stripped, "blacklist");
 }
 
 
