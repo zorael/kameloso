@@ -22,6 +22,8 @@ import kameloso.irc.defs;
 import kameloso.common;
 import kameloso.irc.colours;
 
+version(Colours) import kameloso.terminal : TerminalForeground;
+
 import std.datetime.systime : SysTime;
 import std.typecons : No, Yes;
 
