@@ -1553,6 +1553,16 @@ unittest
         immutable abbreviated = abbreviateBadges(badges);
         assert((abbreviated == "hsSC"), abbreviated);
     }
+    {
+        immutable badges = "subscriber/4,H1Z1_1/1,cuphead_1/1";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == "S:Hc"), abbreviated);
+    }
+    {
+        immutable badges = "H1Z1_1/1";
+        immutable abbreviated = abbreviateBadges(badges);
+        assert((abbreviated == ":H"), abbreviated);
+    }
 }
 
 
