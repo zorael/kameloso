@@ -1516,6 +1516,9 @@ int main(string[] args)
             backupClient.channels = bot.parser.client.channels;
             //bot.parser.client = backupClient;  // Initialised below
 
+            // Exhaust leftover queued messages
+            exhaustMessages();
+
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
 
