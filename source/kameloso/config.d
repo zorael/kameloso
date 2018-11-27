@@ -437,11 +437,6 @@ pipyon 3
 string[][string] applyConfiguration(Range, Things...)(Range range, ref Things things)
 {
     import kameloso.string : stripSuffix, stripped;
-    import std.regex : matchFirst, regex;
-
-    // r"^(\w+)\s+(.+)" but makes compilation memory soar
-    enum pattern = r"^([^ \t]+)[ \t]+(.+)";
-    static engine = pattern.regex;
 
     string section;
     string[][string] invalidEntries;
@@ -495,12 +490,10 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 if (section != settingslessThing) continue lineloop;
             }
 
-            auto hits = line.matchFirst(engine);
-
-            immutable entry = hits[1];
-            if (!entry.length) continue;  // both fields will be zero-length if bad match
-            string value = hits[2];  // mutable for later slicing
-
+            auto result = splitEntryValue(line);
+            immutable entry = result.entry;
+            if (!entry.length) continue;
+            string value = result.value;  // mutable for later slicing
 
             thingloop:
             foreach (immutable i, thing; things)
@@ -691,11 +684,6 @@ string justifiedConfigurationText(const string origLines)
     import kameloso.string : stripped;
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
-    import std.regex : matchFirst, regex;
-
-    // r"^(?P<entry>\w+)\s+(?P<value>.+)" but makes compilation memory soar
-    enum entryValuePattern = r"^(?P<entry>[^ \t]+)[ \t]+(?P<value>.+)";
-    static entryValueEngine = entryValuePattern.regex;
 
     Appender!(string[]) unjustified;
     size_t longestEntryLength;
@@ -726,12 +714,12 @@ string justifiedConfigurationText(const string origLines)
         default:
             import std.format : format;
 
-            auto hits = line.matchFirst(entryValueEngine);
+            auto result = splitEntryValue(line);
 
-            longestEntryLength = (hits["entry"].length > longestEntryLength) ?
-                hits["entry"].length : longestEntryLength;
+            longestEntryLength = (result.entry.length > longestEntryLength) ?
+                result.entry.length : longestEntryLength;
 
-            unjustified.put("%s %s".format(hits["entry"], hits["value"]));
+            unjustified.put("%s %s".format(result.entry, result.value));
             break;
         }
     }
@@ -770,8 +758,8 @@ string justifiedConfigurationText(const string origLines)
         default:
             import std.format : formattedWrite;
 
-            auto hits = line.matchFirst(entryValueEngine);
-            justified.formattedWrite("%-*s%s\n", width, hits["entry"], hits["value"]);
+            auto result = splitEntryValue(line);
+            justified.formattedWrite("%-*s%s\n", width, result.entry, result.value);
             break;
         }
     }
