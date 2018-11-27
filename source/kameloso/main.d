@@ -493,6 +493,28 @@ Next checkMessages(ref IRCBot bot)
 }
 
 
+// exhaustMessages
+/++
+ +  Exhausts the concurrency message mailbox.
+ +/
+void exhaustMessages()
+{
+    import core.time : seconds;
+    import std.concurrency : receiveTimeout;
+
+    bool notEmpty;
+    static immutable instant = 0.seconds;
+
+    do
+    {
+        notEmpty = receiveTimeout(instant,
+            (Variant v) {}
+        );
+    }
+    while (notEmpty);
+}
+
+
 // mainLoop
 /++
  +  This loops creates a `std.concurrency.Generator` `core.thread.Fiber` to loop
