@@ -813,27 +813,24 @@ void onReconnect(ConnectService service)
  +/
 void register(ConnectService service)
 {
+    import std.algorithm.searching : endsWith;
+
     with (service.state)
     {
         service.registration = Progress.started;
-
         service.raw!(Yes.quiet)("CAP LS 302");
 
         if (client.pass.length)
         {
             service.raw!(Yes.quiet)("PASS " ~ client.pass);
-
-            // fake it
-            if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");
+            if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
-        else
+        else if (client.server.address.endsWith(".twitch.tv"))
         {
-            if (client.server.daemon == IRCServer.Daemon.twitch)
-            {
-                logger.error("You *need* a pass to join this server.");
-                service.quit();
-                return;
-            }
+            // client.server.daemon is always Daemon.unset at this point
+            logger.error("You *need* a pass to join this server.");
+            service.quit();
+            return;
         }
 
         service.raw("USER %s * 8 : %s".format(client.ident, client.user));
