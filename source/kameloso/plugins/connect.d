@@ -509,7 +509,7 @@ void onBadNick(ConnectService service)
     {
         // Mid-registration and invalid nickname; abort
         logger.error("Your nickname is too long or contains invalid characters.");
-        service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Invalid nickname");
+        service.quit("Invalid nickname");
     }
 }
 
@@ -526,7 +526,7 @@ void onBanned(ConnectService service)
     import std.concurrency : prioritySend;
 
     logger.error("You are banned!");
-    service.state.mainThread.prioritySend(ThreadMessage.Quit(), "Banned");
+    service.quit("Banned");
 }
 
 
