@@ -559,22 +559,18 @@ unittest
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
- +          to the server.
+ +          to the server. Default to `Yes.priority`, since we're quitting.
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      reason = Optionally, the reason for quitting.
  +/
-void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
+void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = Yes.priority)
     (IRCPluginState state, const string reason = string.init)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    IRCEvent event;
-    event.type = IRCEvent.Type.QUIT;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
-    event.content = reason;
-
-    state.mainThread.send(event);
+    import kameloso.thread : ThreadMessage;
+    state.mainThread.send(ThreadMessage.Quit(), reason);
 }
 
 ///
