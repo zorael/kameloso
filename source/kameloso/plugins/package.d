@@ -110,17 +110,17 @@ version(WithPlugins)
 
         version(TwitchBot)
         {
-            mixin(tryImportMixin("kameloso.plugins.twitch", "TwitchPlugin"));
+            mixin(tryImportMixin("kameloso.plugins.twitchbot", "TwitchBotPlugin"));
         }
         else
         {
-            public alias TwitchPlugin = AliasSeq!();
+            public alias TwitchBotPlugin = AliasSeq!();
         }
     }
     else
     {
         public alias TwitchSupportService = AliasSeq!();
-        public alias TwitchPlugin = AliasSeq!();
+        public alias TwitchBotPlugin = AliasSeq!();
     }
 }
 
@@ -164,7 +164,7 @@ version(WithPlugins)
         SeenPlugin,
         AutomodePlugin,
         QuotesPlugin,
-        TwitchPlugin,
+        TwitchBotPlugin,
         EnabledWebPlugins,  // Automatically expands
         EnabledPosixPlugins,  // Ditto
     );

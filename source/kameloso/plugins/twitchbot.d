@@ -1,12 +1,12 @@
 /++
- +  This is an example Twitch plugin. It is largely untested and mostly just
+ +  This is an example Twitch bot. It is largely untested and mostly just
  +  showcases how a Twitch plugin might be written. It is the product of a few
  +  hours of mostly brainstorming.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, contains banned words, etc.
  +/
-module kameloso.plugins.twitch;
+module kameloso.plugins.twitchbot;
 
 version(WithPlugins):
 version(TwitchSupport):
@@ -20,8 +20,8 @@ import kameloso.messaging;
 import kameloso.common : logger;
 
 
-/// All Twitch plugin runtime settings.
-struct TwitchSettings
+/// All Twitch bot plugin runtime settings.
+struct TwitchBotSettings
 {
     /// Whether or not this plugin should react to any events.
     bool enabled = false;
@@ -45,9 +45,9 @@ struct TwitchSettings
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "uptime")
-void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
+void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     if (plugin.broadcastStart > 0)
@@ -63,11 +63,11 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
         immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
 
         plugin.state.chan(event.channel, "%s has been streaming for %s."
-            .format(plugin.twitchSettings.owner, delta));
+            .format(plugin.twitchBotSettings.owner, delta));
     }
     else
     {
-        plugin.state.chan(event.channel, plugin.twitchSettings.owner ~
+        plugin.state.chan(event.channel, plugin.twitchBotSettings.owner ~
             " is currently not streaming.");
     }
 }
@@ -82,9 +82,9 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.ignore, "start")
-void onCommandStart(TwitchPlugin plugin, const IRCEvent event)
+void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import std.datetime.systime : Clock;
@@ -103,9 +103,9 @@ void onCommandStart(TwitchPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.ignore, "stop")
-void onCommandStop(TwitchPlugin plugin, const IRCEvent event)
+void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import std.datetime.systime : Clock;
@@ -119,24 +119,24 @@ void onCommandStop(TwitchPlugin plugin, const IRCEvent event)
 /++
  +  Responds to oneliners.
  +
- +  Responses are stored in `TwitchPlugin.oneliners`.
+ +  Responses are stored in `TwitchBotPlugin.oneliners`.
  +/
 @(Chainable)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
-void onOneliner(TwitchPlugin plugin, const IRCEvent event)
+void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : beginsWith, nom;
 
-    if (!event.content.beginsWith(plugin.twitchSettings.onelinerPrefix)) return;
+    if (!event.content.beginsWith(plugin.twitchBotSettings.onelinerPrefix)) return;
 
     string slice = event.content;
-    immutable oneliner = slice.nom(plugin.twitchSettings.onelinerPrefix);
+    immutable oneliner = slice.nom(plugin.twitchBotSettings.onelinerPrefix);
 
     if (const response = oneliner in plugin.oneliners)
     {
@@ -157,9 +157,9 @@ void onOneliner(TwitchPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "startvote")
-void onCommandStartVote(TwitchPlugin plugin, const IRCEvent event)
+void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
@@ -283,9 +283,9 @@ void onCommandStartVote(TwitchPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "oneliner")
-void onCommandAddOneliner(TwitchPlugin plugin, const IRCEvent event)
+void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
@@ -314,9 +314,9 @@ void onCommandAddOneliner(TwitchPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void onEndOfMotd(TwitchPlugin plugin)
+void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     plugin.populateOneliners();
@@ -349,9 +349,9 @@ void saveOneliners(const string[string] oneliners, const string filename)
  +  When closing the program or when crashing with grace, saves the oneliners
  +  array to disk for later reloading.
  +/
-void teardown(TwitchPlugin plugin)
+void teardown(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
 
     saveOneliners(plugin.oneliners, plugin.onelinerFile);
 }
@@ -361,9 +361,9 @@ void teardown(TwitchPlugin plugin)
 /++
  +  Reads and writes the file of oneliners to disk, ensuring that it's there.
  +/
-void initResources(TwitchPlugin plugin)
+void initResources(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchSettings.enabled) return;
+    if (!plugin.twitchBotSettings.enabled) return;
 
     import kameloso.json : JSONStorage;
 
@@ -382,9 +382,9 @@ void initResources(TwitchPlugin plugin)
  +  it to populate a normal associative array for faster lookups.
  +
  +  Params:
- +      plugin = The current `TwitchPlugin`.
+ +      plugin = The current `TwitchBotPlugin`.
  +/
-void populateOneliners(TwitchPlugin plugin)
+void populateOneliners(TwitchBotPlugin plugin)
 {
     import kameloso.json : JSONStorage;
 
@@ -407,12 +407,11 @@ mixin TwitchAwareness;
 public:
 
 
-// TwitchPlugin
+// TwitchBotPlugin
 /++
- +  The Twitch plugin is an example of how a plugin for Twitch servers may be
- +  written.
+ +  The Twitch plugin is an example of how a bot for Twitch servers may be written.
  +/
-final class TwitchPlugin : IRCPlugin
+final class TwitchBotPlugin : IRCPlugin
 {
     /// Flag for when voting is underway.
     bool voting;
@@ -427,7 +426,7 @@ final class TwitchPlugin : IRCPlugin
     @Resource string onelinerFile = "twitchliners.json";
 
     /// All Twitch plugin settings.
-    @Settings TwitchSettings twitchSettings;
+    @Settings TwitchBotSettings twitchBotSettings;
 
     mixin IRCPluginImpl;
 }
