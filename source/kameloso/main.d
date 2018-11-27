@@ -1524,6 +1524,9 @@ int main(string[] args)
 
             // Reinit plugins here so it isn't done on the first connect attempt
             bot.initPlugins(customSettings);
+
+            // Reset throttling, in case there were queued messages.
+            bot.throttling = typeof(bot.throttling).init;
         }
 
         bot.conn.reset();
