@@ -906,3 +906,77 @@ final class ConfigurationFileReadFailureException : Exception
         super(message, file, line);
     }
 }
+
+
+// splitEntryValue
+/++
+ +  Splits a line into an entry and a value component.
+ +
+ +  This drop-in-replaces the regex: r"^(?P<entry>[^ \t]+)[ \t]+(?P<value>.+)".
+ +
+ +  Params:
+ +      line = String to split up.
+ +
+ +  Returns:
+ +      A Voldemort struct with an `entry` and a `value` member.
+ +/
+auto splitEntryValue(const string line)
+{
+    import std.string : representation;
+    import std.ascii : isWhite;
+
+    struct EntryValue
+    {
+        string entry;
+        string value;
+    }
+
+    EntryValue result;
+
+    foreach (immutable i, immutable c; line.representation)
+    {
+        if (!c.isWhite)
+        {
+            if (result.entry.length)
+            {
+                result.value = line[i..$];
+                break;
+            }
+        }
+        else if (!result.entry.length)
+        {
+            result.entry = line[0..i];
+        }
+    }
+
+    return result;
+}
+
+///
+unittest
+{
+    {
+        immutable line = "monochrome            true";
+        auto result = splitEntryValue(line);
+        assert((result.entry == "monochrome"), result.entry);
+        assert((result.value == "true"), result.value);
+    }
+    {
+        immutable line = "monochrome\tfalse";
+        auto result = splitEntryValue(line);
+        assert((result.entry == "monochrome"), result.entry);
+        assert((result.value == "false"), result.value);
+    }
+    {
+        immutable line = "harbl                  ";
+        auto result = splitEntryValue(line);
+        assert((result.entry == "harbl"), result.entry);
+        assert(!result.value.length, result.value);
+    }
+    {
+        immutable line = "ha\t \t \t\t  \t  \t      \tha";
+        auto result = splitEntryValue(line);
+        assert((result.entry == "ha"), result.entry);
+        assert((result.value == "ha"), result.value);
+    }
+}
