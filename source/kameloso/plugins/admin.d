@@ -1050,13 +1050,13 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     if (header != "admin") return;
 
     import kameloso.printing : printObject;
-    import kameloso.string : contains, nom;
+    import kameloso.string : contains, nom, strippedRight;
     import kameloso.thread : BusMessage;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-    string slice = message.payload;
+    string slice = message.payload.strippedRight;
     immutable verb = slice.contains(' ') ? slice.nom(' ') : slice;
 
     switch (verb)
