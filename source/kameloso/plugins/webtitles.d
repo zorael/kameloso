@@ -377,7 +377,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
 string rewriteDirectImgurURL(const string url)
 {
     import kameloso.string : beginsWith, nom;
-    import std.typecons : Flag, No, Yes;
+    import std.typecons : No, Yes;
 
     if (url.beginsWith("https://i.imgur.com/"))
     {

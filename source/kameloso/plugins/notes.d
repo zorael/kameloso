@@ -166,7 +166,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 
     import kameloso.irc.common : stripModesign;
     import std.algorithm.iteration : splitter;
-    import std.algorithm.searching : canFind;
 
     if (event.channel !in plugin.notes) return;
 

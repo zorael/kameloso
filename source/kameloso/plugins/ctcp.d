@@ -250,7 +250,6 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
     enum string allCTCPTypes = ()
     {
         import kameloso.string : beginsWith, strippedRight;
-        import std.conv : to;
         import std.traits : getSymbolsByUDA, getUDAs, isSomeFunction;
 
         string allTypes;

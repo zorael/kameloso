@@ -3,7 +3,6 @@
  +/
 module kameloso.connection;
 
-import kameloso.common : logger;
 import kameloso.constants;
 
 

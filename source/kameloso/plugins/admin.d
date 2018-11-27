@@ -52,8 +52,6 @@ import kameloso.messaging;
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
 
-import std.stdio;
-
 
 // AdminSettings
 /++
@@ -111,6 +109,8 @@ debug
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
     if (!plugin.adminSettings.enabled) return;
+
+    import std.stdio : stdout, writefln, writeln;
 
     if (plugin.adminSettings.printRaw)
     {
@@ -237,7 +237,7 @@ void onCommandShowUsers(AdminPlugin plugin)
 
     import kameloso.printing : printObject;
     import kameloso.objmanip : deepSizeof;
-    import std.stdio : stdout, writeln;
+    import std.stdio : stdout, writefln, writeln;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -766,6 +766,8 @@ void onCommandResetTerminal(AdminPlugin plugin)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.terminal : TerminalToken;
+    import std.stdio : stdout, write;
+
     write(TerminalToken.reset);
     version(FlushStdout) stdout.flush();
 }
@@ -861,6 +863,7 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import std.conv : text;
+    import std.stdio : stdout;
 
     plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
 
@@ -1096,6 +1099,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (plugin.adminSettings.printAsserts)
         {
             import kameloso.debugging : formatClientAssignment;
+            import std.stdio : stdout;
+
             // Print the bot assignment but only if we're toggling it on
             formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
         }

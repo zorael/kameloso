@@ -388,7 +388,7 @@ void generateAsserts(ref IRCBot bot) @system
     import std.range : chunks, only;
     import std.stdio : stdout, readln, write, writeln, writefln;
     import std.traits : EnumMembers;
-    import std.typecons : Flag, No, Yes;
+    import std.typecons : No, Yes;
 
     with (IRCServer)
     with (bot)

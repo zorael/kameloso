@@ -9,8 +9,6 @@ import kameloso.irc.defs;
 import kameloso.printing;
 import kameloso.thread : ThreadMessage;
 
-import std.typecons : Flag, No, Yes;
-
 version(Windows)
 shared static this()
 {
@@ -641,7 +639,6 @@ Next mainLoop(ref IRCBot bot)
 
             case error:
                 import kameloso.constants : Timeout;
-                import std.socket : Socket;
 
                 if (attempt.bytesReceived == 0)
                 {

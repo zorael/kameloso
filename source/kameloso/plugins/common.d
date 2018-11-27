@@ -957,7 +957,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         }
 
                         import kameloso.string : strippedLeft;
-                        import std.typecons : Flag, No, Yes;
+                        import std.typecons : No, Yes;
 
                         string thisCommand;
 
@@ -1531,7 +1531,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import kameloso.traits : isStruct;
         import std.meta : Filter;
         import std.traits : getSymbolsByUDA, hasUDA;
-        import std.typecons : Flag, No, Yes;
+        import std.typecons : No, Yes;
 
         alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
 
@@ -2941,7 +2941,7 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
 {
     import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;
-    import std.typecons : Flag, No, Yes;
+    import std.typecons : No, Yes;
 
     with (mutEvent)
     with (NickPolicy)
@@ -3556,7 +3556,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import kameloso.messaging : raw;
         import kameloso.thread : CarryingFiber;
         import core.thread : Fiber;
-        import std.typecons : Flag, No, Yes;
+        import std.typecons : No, Yes;
 
         version(TwitchWarnings)
         {

@@ -19,7 +19,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 
-import std.typecons : Flag, No, Yes;
+import std.typecons : No, Yes;
 
 
 // ChannelState

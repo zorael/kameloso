@@ -2249,7 +2249,6 @@ struct IRCParser
 unittest
 {
     import kameloso.meld : MeldingStrategy, meldInto;
-    import std.typecons : Flag, No, Yes;
 
     IRCParser parser;
 

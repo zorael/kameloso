@@ -419,7 +419,6 @@ string mapEffects(const string origLine, const uint fgBase = TerminalForeground.
 string stripEffects(const string line)
 {
     import kameloso.irc.common : I = IRCControlCharacter;
-    import kameloso.string : contains;
     import std.array : replace;
 
     enum boldCode = "" ~ I.bold;

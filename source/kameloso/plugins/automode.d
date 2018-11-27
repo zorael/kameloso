@@ -23,7 +23,7 @@ import kameloso.common : logger, settings;
 import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourNick;
 import kameloso.messaging;
 
-import std.typecons : Flag, No, Yes;
+import std.typecons : No, Yes;
 
 
 // AutomodeSettings
@@ -171,7 +171,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 {
     import kameloso.messaging : raw;
     import std.algorithm.searching : canFind;
-    import std.array : array, join;
+    import std.array : join;
     import std.format : format;
     import std.range : repeat;
 

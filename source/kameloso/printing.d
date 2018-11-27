@@ -183,7 +183,7 @@ if (isOutputRange!(Sink, char[]))
             static if (shouldNormallyBePrinted || shouldMaybeBePrinted)
             {
                 import kameloso.traits : isTrulyString;
-                import std.traits : isArray, isSomeString;
+                import std.traits : isArray;
 
                 alias T = Unqual!(typeof(member));
 

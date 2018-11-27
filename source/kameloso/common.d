@@ -665,8 +665,6 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
 struct Labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
 {
 public:
-    import std.typecons : Proxy;
-
     /// The wrapped item.
     Thing thing;
 
@@ -929,7 +927,7 @@ string timeSince(Flag!"abbreviate" abbreviate = No.abbreviate)(const Duration du
 ///
 unittest
 {
-    import core.time : msecs, seconds;
+    import core.time : seconds;
 
     {
         immutable dur = 789_383.seconds;  // 1 week, 2 days, 3 hours, 16 minutes, and 23 secs

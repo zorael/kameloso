@@ -108,8 +108,6 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
-    import std.datetime.systime : Clock;
-
     plugin.broadcastStart = 0L;
     plugin.state.query(event.sender.nickname, "Broadcast set as ended.");
 }
@@ -203,7 +201,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         votes[option] = 0;
     }
 
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
     import std.format : format;
 
@@ -289,7 +287,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
-    import std.typecons : Flag, No, Yes;
+    import std.typecons : No, Yes;
 
     if (!event.content.contains!(Yes.decode)(" "))
     {
