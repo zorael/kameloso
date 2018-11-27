@@ -1244,7 +1244,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
             }
             else
             {
-                // PING or ERROR likely, or SASL +
+                // PING or ERROR likely
                 put(sink, content);  // No need for indenting space
             }
         }

@@ -1093,6 +1093,7 @@ struct IRCUser
                         continue;
                     }
                     break;
+
                 default:
                     break;
                 }

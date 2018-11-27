@@ -621,7 +621,7 @@ void printVersionInfo(const string pre = string.init, const string post = string
  +  ---
  +
  +  Params:
- +      bot = Refrence to the current `IRCBot`, with all its settings.
+ +      bot = Reference to the current `IRCBot`, with all its settings.
  +      filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(ref IRCBot bot, const string filename)
@@ -658,7 +658,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
 /++
  +  Labels an item by wrapping it in a struct with an `id` field.
  +
- +  Access to the `thing` is passed on by use of `std.typecons.Proxy`, so this
+ +  Access to the `thing` is passed on by use of `alias this` proxying, so this
  +  will transparently act like the original `thing` in most cases. The original
  +  object can be accessed via the `thing` member when it doesn't.
  +/
