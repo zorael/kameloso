@@ -65,7 +65,7 @@ struct PrinterSettings
     bool silentErrors = false;
 
     /// Whether to have the type (and badge) names be in capital letters.
-    bool uppercaseTypes = true;
+    bool uppercaseTypes = false;
 
     /// Whether to log events.
     bool logs = false;
