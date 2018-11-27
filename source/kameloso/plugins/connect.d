@@ -829,7 +829,7 @@ void register(ConnectService service)
         {
             // client.server.daemon is always Daemon.unset at this point
             logger.error("You *need* a pass to join this server.");
-            service.quit();
+            service.quit("Authentication failure (missing pass)");
             return;
         }
 
