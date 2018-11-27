@@ -501,6 +501,7 @@ void exhaustMessages()
 {
     import core.time : seconds;
     import std.concurrency : receiveTimeout;
+    import std.variant : Variant;
 
     bool notEmpty;
     static immutable instant = 0.seconds;
