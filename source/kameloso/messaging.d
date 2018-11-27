@@ -577,16 +577,22 @@ void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = Yes.priority
 unittest
 {
     import kameloso.conv : Enum;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : MessageMismatch;
+    import std.typecons : Tuple;
+
     IRCPluginState state;
     state.mainThread = thisTid;
 
     state.quit("reason");
 
-    immutable event = receiveOnly!IRCEvent;
-    with (event)
+    try
     {
-        assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
-        assert((content == "reason"), content);
+        receiveOnly!(Tuple!(ThreadMessage.Quit, string))();
+    }
+    catch (MessageMismatch e)
+    {
+        assert(0, "Message mismatch when unit testing messaging.quit");
     }
 }
 
