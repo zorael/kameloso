@@ -561,7 +561,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 }
 
 
-// onRegistrationEvent
+// onCapabilityNegotiation
 /++
  +  Handles server capability exchange.
  +
@@ -570,7 +570,7 @@ void onInvite(ConnectService service, const IRCEvent event)
  +  (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
-void onRegistrationEvent(ConnectService service, const IRCEvent event)
+void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 {
     /// http://ircv3.net/irc
     /// https://blog.irccloud.com/ircv3
