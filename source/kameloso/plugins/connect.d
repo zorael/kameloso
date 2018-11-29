@@ -799,7 +799,7 @@ version(TwitchSupport)
 void onReconnect(ConnectService service)
 {
     import std.concurrency : send;
-    logger.info("Reconnecting upon request.");
+    logger.info("Reconnecting upon server request.");
     service.state.mainThread.send(ThreadMessage.Reconnect());
 }
 
