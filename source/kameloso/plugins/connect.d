@@ -839,6 +839,21 @@ void register(ConnectService service)
 }
 
 
+// negotiateNick
+/++
+ +  Negotiate nickname and user with the server, during registration.
+ +/
+void negotiateNick(ConnectService service)
+{
+    if (service.registration == Progress.finished) return;
+
+    import std.format : format;
+
+    service.raw("USER %s * 8 : %s".format(service.state.client.ident, service.state.client.user));
+    service.raw("NICK " ~ service.state.client.nickname);
+}
+
+
 // initialise
 /++
  +  Registers with the server.
