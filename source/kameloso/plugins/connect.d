@@ -454,6 +454,8 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
     if ((event.sender.nickname == "NickServ") &&
         event.content.beginsWith("Password accepted for nick"))
     {
+        service.authentication = Progress.finished;
+
         if (!service.joinedChannels)
         {
             service.joinChannels();
@@ -581,6 +583,11 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         // this whole process anew. So stop if we have registered.
         return;
     }
+    else if (service.capabilityNegotiation == Progress.finished)
+    {
+        // If CAP LS is called after initial negotiation, leave it alone
+        return;
+    }
 
     switch (event.aux)
     {
@@ -642,6 +649,8 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
             service.raw!(Yes.quiet)("CAP END");
+            service.capabilityNegotiation = Progress.finished;
+            service.negotiateNick();
         }
         break;
 
@@ -723,9 +732,13 @@ void onSASLSuccess(ConnectService service)
      +  SHOULD send CAP END upon connection to the server.
      +
      +  http://ircv3.net/specs/core/capability-negotiation-3.1.html
+     +
+     +  Notes: Some servers don't ignore post-registration CAP.
      +/
 
     service.raw!(Yes.quiet)("CAP END");
+    service.capabilityNegotiation = Progress.finished;
+    service.negotiateNick();
 }
 
 
@@ -752,6 +765,8 @@ void onSASLFailure(ConnectService service)
 
     // See `onSASLSuccess` for info on `CAP END`
     service.raw!(Yes.quiet)("CAP END");
+    service.capabilityNegotiation = Progress.finished;
+    service.negotiateNick();
 }
 
 
@@ -818,6 +833,7 @@ void register(ConnectService service)
     with (service.state)
     {
         service.registration = Progress.started;
+        service.capabilityNegotiation = Progress.started;
         service.raw!(Yes.quiet)("CAP LS 302");
 
         if (client.pass.length)
@@ -917,6 +933,9 @@ final class ConnectService : IRCPlugin
 
     /// At what step we're currently at with regards to registration.
     Progress registration;
+
+    /// At what step we're currently at with regard to capabilities.
+    Progress capabilityNegotiation;
 
     /// Whether the server has sent at least one `PING`.
     bool serverPinged;
