@@ -849,8 +849,26 @@ void register(ConnectService service)
             return;
         }
 
-        service.raw("USER %s * 8 : %s".format(client.ident, client.user));
-        service.raw("NICK " ~ client.nickname);
+        // Nick negotiation after CAP END
+        // If CAP is not supported, go ahead and negotiate nick after n seconds
+
+        enum secsToWaitForCAP = 15;
+
+        void dg()
+        {
+            if (service.capabilityNegotiation == Progress.notStarted)
+            {
+                logger.log("Does the server not support capabilities?");
+                // Don't flag CAP as negotiated, let CAP triggers trigger late if they want to
+                //service.capabilityNegotiation = Progress.finished;
+                service.negotiateNick();
+            }
+        }
+
+        import core.thread : Fiber;
+
+        Fiber fiber = new Fiber(&dg);
+        service.delayFiber(fiber, secsToWaitForCAP);
     }
 }
 
