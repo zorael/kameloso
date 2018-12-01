@@ -144,6 +144,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ENDOFSPAMFILTERLIST:
     //case CAP:
     case ERR_CHANOPRIVSNEEDED:
+    case GLOBALUSERSTATE:
     case USERSTATE:
     case ROOMSTATE:
         // These event types are spammy; ignore if we're configured to
