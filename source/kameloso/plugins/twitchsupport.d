@@ -269,7 +269,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             import kameloso.string : strippedRight;
             immutable alias_ = value.contains('\\') ? decodeIRCv3String(value).strippedRight : value;
 
-            if (event.type == Type.USERSTATE)
+            if ((event.type == Type.USERSTATE) || (event.type == Type.GLOBALUSERSTATE))
             {
                 // USERSTATE describes the bot in the context of a specific channel,
                 // such as what badges are available. It's *always* about the bot,
