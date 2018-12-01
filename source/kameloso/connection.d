@@ -426,7 +426,6 @@ void connectFiber(ref Connection conn, ref bool abort)
             {
                 switch (e.msg)
                 {
-                //case "Unable to connect socket: Connection refused":
                 case "Unable to connect socket: Address family not supported by protocol":
                     if (isIPv6)
                     {
@@ -438,12 +437,17 @@ void connectFiber(ref Connection conn, ref bool abort)
                     }
                     else
                     {
-                        attempt.state = State.error;
-                        attempt.error = e.msg;
-                        yield(attempt);
-                        // Should never get here
-                        assert(0, "Dead connectFiber resumed after yield");
+                        // Just treat it as a normal error
+                        goto case "Unable to connect socket: Connection refused";
                     }
+
+                // Add more as necessary
+                case "Unable to connect socket: Connection refused":
+                    attempt.state = State.error;
+                    attempt.error = e.msg;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead connectFiber resumed after yield");
 
                 //case "Unable to connect socket: Network is unreachable":
                 default:
