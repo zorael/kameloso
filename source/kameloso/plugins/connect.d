@@ -589,6 +589,8 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         return;
     }
 
+    service.capabilityNegotiation = Progress.started;
+
     switch (event.aux)
     {
     case "LS":
@@ -833,7 +835,6 @@ void register(ConnectService service)
     with (service.state)
     {
         service.registration = Progress.started;
-        service.capabilityNegotiation = Progress.started;
         service.raw!(Yes.quiet)("CAP LS 302");
 
         if (client.pass.length)
