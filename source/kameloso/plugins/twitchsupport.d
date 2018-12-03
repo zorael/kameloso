@@ -287,8 +287,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "followers_onzero":
             case "host_on":
             case "host_off":
-            case "host_target_went_offline":
-            case "host_success":
                 // Generic Twitch settings change
                 event.type = Type.TWITCH_SETTING;
                 event.aux = value;
@@ -344,6 +342,8 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "commercial_success":
             case "delete_message_success":
             case "ban_success":
+            case "host_target_went_offline":
+            case "host_success":
                 // Generic Twitch server reply.
                 event.type = Type.TWITCH_REPLY;
                 event.aux = value;
