@@ -859,7 +859,7 @@ void register(ConnectService service)
         {
             if (service.capabilityNegotiation == Progress.notStarted)
             {
-                logger.log("Does the server not support capabilities?");
+                //logger.info("Does the server not support capabilities?");
                 // Don't flag CAP as negotiated, let CAP triggers trigger late if they want to
                 //service.capabilityNegotiation = Progress.finished;
                 service.negotiateNick();
