@@ -284,7 +284,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "subs_off":
             case "followers_on":
             case "followers_off":
-            case "followers_onzero":
+            case "followers_on_zero":
             case "host_on":
             case "host_off":
                 // Generic Twitch settings change
