@@ -1826,6 +1826,18 @@ unittest
             assert((channel == "#cncnet-yr"), channel);
         }
     }
+
+    {
+        immutable event = parser.toIRCEvent(":lamia.uk.SpotChat.org 926 kameloso #stuffwecantdiscuss :Channel #stuffwecantdiscuss is forbidden: This channel is closed by request of the channel operators.");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.CHANNELFORBIDDEN), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "lamia.uk.SpotChat.org"), sender.address);
+            assert((channel == "#stuffwecantdiscuss"), channel);
+            assert((content == "Channel #stuffwecantdiscuss is forbidden: This channel is closed by request of the channel operators."), content);
+            assert((num == 926), num.to!string);
+        }
+    }
 }
 
 unittest
