@@ -745,6 +745,7 @@ struct IRCEvent
         ERR_SASLALREADY, // = 907,
         RPL_SASLMECHS, // = 908,
         BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
+        CHANNELFORBIDDEN, // = 926,     // <nickname> <channel> :Channel <channel> is forbidden: This channel is closed by request of the channel operators.
         ERR_WORDFILTERED, // = 936,
         ENDOFSPAMFILTERLIST, // = 940,  // <nickname> <channel> :End of channel spamfilter list
         SPAMFILTERLIST, // = 941,
@@ -1857,6 +1858,7 @@ struct Typenums
         907 : Type.ERR_SASLALREADY,
         908 : Type.RPL_SASLMECHS,
         931 : Type.BOTSNOTWELCOME,
+        926 : Type.CHANNELFORBIDDEN,
         936 : Type.ERR_WORDFILTERED,
         940 : Type.ENDOFSPAMFILTERLIST,
         941 : Type.SPAMFILTERLIST,
