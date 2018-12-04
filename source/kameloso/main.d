@@ -1530,6 +1530,14 @@ int main(string[] args)
             bot.throttling = typeof(bot.throttling).init;
         }
 
+        scope(exit)
+        {
+            // Always teardown when exiting this loop (for whatever reason)
+            bot.teardownPlugins();
+        }
+
+        if (*bot.abort) break;
+
         bot.conn.reset();
 
         immutable actionAfterResolve = tryResolve(bot);
@@ -1585,7 +1593,6 @@ int main(string[] args)
                 bot.writeConfigurationFile(settings.configFile);
             }
 
-            bot.teardownPlugins();
             logger.info("Exiting...");
             return 1;
         }
@@ -1608,9 +1615,6 @@ int main(string[] args)
         // Start the main loop
         next = bot.mainLoop();
         firstConnect = false;
-
-        // Always teardown after connection ends in case we just drop down
-        bot.teardownPlugins();
     }
     while (!*(bot.abort) && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
