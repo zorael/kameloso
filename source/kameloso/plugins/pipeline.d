@@ -107,7 +107,7 @@ void pipereader(shared IRCPluginState newState)
                         {
                             state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
                         }
-                        continue eofLoop;
+                        break eofLoop;
                     }
                 }
 
