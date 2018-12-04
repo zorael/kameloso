@@ -1627,17 +1627,42 @@ int main(string[] args)
         bot.writeConfigurationFile(settings.configFile);
     }
 
+    if (bot.plugins.length)
+    {
+        logger.error("Plugins were not automatically torn down!");
+        bot.teardownPlugins();
+    }
+
+    version(Posix)
+    {
+        import std.file : exists, isDir;
+        import std.stdio : File;
+
+        immutable filename = bot.parser.client.nickname ~ "@" ~ bot.parser.client.server.address;
+
+        if (filename.exists && !filename.isDir)
+        {
+            // Pipeline is still around...
+            auto fifo = File(filename, "w");
+            fifo.writeln();
+        }
+    }
+
+    import core.thread : thread_joinAll;
+
     if (*bot.abort)
     {
         // Ctrl+C
         logger.error("Aborting...");
-        return 1;
     }
     else
     {
         logger.info("Exiting...");
-        return 0;
     }
+
+    thread_joinAll();
+
+    return *bot.abort ? 1 : 0;
 }
 
 
