@@ -1368,7 +1368,7 @@ unittest
 // abbreviateBadges
 /++
  +  Abbreviates a string of Twitch badges, to summarise all of them instead of
- +  picking the dominant one and just displaying that.
+ +  picking the dominant one and just displaying that. Takes an output range.
  +
  +  Most are just summarised by the first letter in the badge (lowercase), but
  +  there would be collisions (subscriber vs sub-gifter, etc), so we make some
@@ -1416,25 +1416,27 @@ unittest
  +
  +  Use the string switch for now. It's still plenty fast.
  +
- +  Params:
- +      badgestring = Badges from a Twitch `badges=` IRCv3 tag.
+ +  The result is a string with the passed badges abbreviated, one character per
+ +  badge, separated into minor and major badges. Minor ones are ones that end
+ +  with "_1", which seem to be contextual to a channel's game theme, like
+ +  overwatch_league_insider_1, firewatch_1, cuphead_1, H1Z1_1, eso_1, ...
  +
- +  Returns:
- +      A string with the passed badges abbreviated, one character per badge,
- +      separated into minor and major badges. Minor ones are ones that end with
- +      "_1", which seem to be contextual to a channel's game theme, like
- +      overwatch_league_insider_1, firewatch_1, cuphead_1, H1Z1_1, eso_1, ...
+ +  Params:
+ +      sink = Output range to store the abbreviated values in.
+ +      badgestring = Badges from a Twitch `badges=` IRCv3 tag.
  +/
 version(TwitchSupport)
-string abbreviateBadges(const string badgestring)
+void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
-    Appender!string major;
     Appender!string minor;
 
-    major.reserve(8);  // reserve extra for minor badges
+    static if (__traits(hasMember, Sink, "reserve"))
+    {
+        sink.reserve(8);  // reserve extra for minor badges
+    }
 
     foreach (immutable badgeAndNum; badgestring.splitter(","))
     {
@@ -1520,16 +1522,14 @@ string abbreviateBadges(const string badgestring)
             break;
         }
 
-        major.put(badgechar);
+        sink.put(badgechar);
     }
 
     if (minor.data.length)
     {
-        major.put(':');
-        major.put(minor.data);
+        sink.put(':');
+        sink.put(minor.data);
     }
-
-    return major.data;
 }
 
 ///
