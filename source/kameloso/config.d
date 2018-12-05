@@ -307,8 +307,8 @@ void serialise(Sink, QualThing)(ref Sink sink, QualThing thing)
             }
             else static if (is(T == enum))
             {
-                import std.conv : to;
-                immutable value = member.to!string;
+                import kameloso.conv : Enum;
+                immutable value = Enum!T.toString(member);
             }
             else
             {
