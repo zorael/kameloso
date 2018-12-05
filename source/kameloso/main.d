@@ -499,12 +499,12 @@ Next checkMessages(ref IRCBot bot)
  +/
 void exhaustMessages()
 {
-    import core.time : seconds;
+    import core.time : msecs;
     import std.concurrency : receiveTimeout;
     import std.variant : Variant;
 
     bool notEmpty;
-    static immutable instant = 0.seconds;
+    static immutable instant = 10.msecs;
 
     do
     {
