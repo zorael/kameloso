@@ -534,8 +534,8 @@ void exhaustMessages()
  +      `kameloso.common.Next.returnFailure` if circumstances mean the bot
  +      should exit with a non-zero exit code,
  +      `kameloso.common.Next.returnSuccess` if it should exit by returning `0`,
- +      `kameloso.common.Next.continue_` if the bot should reconnect to the
- +      server. `kameloso.common.Next.retry` is never returned.
+ +      `kameloso.common.Next.retry` if the bot should reconnect to the server.
+ +      `kameloso.common.Next.continue_` is never returned.
  +/
 Next mainLoop(ref IRCBot bot)
 {
@@ -584,7 +584,7 @@ Next mainLoop(ref IRCBot bot)
         {
             // Listening Generator disconnected by itself; reconnect
             listener.reset();
-            return Next.continue_;
+            return Next.retry;
         }
 
         import std.datetime.systime : Clock;
