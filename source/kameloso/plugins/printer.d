@@ -781,7 +781,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
 
                     default:
                         put(sink, " [");
-                        put(sink, abbreviateBadges(sender.badges));
+                        sink.abbreviateBadges(sender.badges);
                         put(sink, ']');
                     }
                 }
@@ -814,7 +814,7 @@ void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 if (target.badges.length)
                 {
                     put(sink, " [");
-                    put(sink, abbreviateBadges(target.badges));
+                    sink.abbreviateBadges(target.badges);
                     put(sink, ']');
                 }
             }
@@ -1113,7 +1113,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     default:
                         sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
                         put(sink, " [");
-                        put(sink, abbreviateBadges(sender.badges));
+                        sink.abbreviateBadges(sender.badges);
                         put(sink, ']');
                     }
                 }
@@ -1173,7 +1173,7 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                     sink.colour(bright ? DefaultBright.badge : DefaultDark.badge);
 
                     put(sink, " [");
-                    put(sink, abbreviateBadges(target.badges));
+                    sink.abbreviateBadges(target.badges);
                     put(sink, ']');
                 }
             }
