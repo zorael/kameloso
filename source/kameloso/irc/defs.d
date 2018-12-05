@@ -96,9 +96,8 @@ struct IRCEvent
         TWITCH_RITUAL,    /// Twitch Ritual event.
         TWITCH_REWARDGIFT,/// Twitch "reward gift".
         TWITCH_PURCHASE,  /// Twitch purchase(?).
-        TWITCH_REPLY,     /// Twitch generic server reply, see `event.aux`.
+        TWITCH_NOTICE,    /// Twitch generic server notice, see `event.aux`.
         TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
-        TWITCH_SETTING,   /// Twitch settings change.
         TWITCH_RAID,      /// Twitch raid.
         TWITCH_GIFTUPGRADE,/// Twitch "continuing the gift sub"
 
