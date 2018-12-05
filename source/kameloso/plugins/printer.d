@@ -1789,6 +1789,7 @@ unittest
  +      event = `kameloso.irc.defs.IRCEvent` whose content text to highlight.
  +/
 version(Colours)
+version(TwitchSupport)
 void highlightEmotes(ref IRCEvent event)
 {
     import kameloso.terminal : colour;
