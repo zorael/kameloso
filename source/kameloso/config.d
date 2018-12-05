@@ -490,7 +490,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                 if (section != settingslessThing) continue lineloop;
             }
 
-            auto result = splitEntryValue(line);
+            immutable result = splitEntryValue(line);
             immutable entry = result.entry;
             if (!entry.length) continue;
             string value = result.value;  // mutable for later slicing
