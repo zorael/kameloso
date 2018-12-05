@@ -1431,7 +1431,7 @@ void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
     import std.algorithm.iteration : splitter;
     import std.array : Appender;
 
-    Appender!string minor;
+    Appender!(ubyte[]) minor;
 
     static if (__traits(hasMember, Sink, "reserve"))
     {
