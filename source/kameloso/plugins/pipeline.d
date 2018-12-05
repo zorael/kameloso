@@ -121,13 +121,13 @@ void pipereader(shared IRCPluginState newState)
                     {
                         state.quit();
                     }
-
-                    break eofLoop;
                 }
                 else
                 {
                     state.raw(line);
                 }
+
+                break eofLoop;
             }
         }
 
