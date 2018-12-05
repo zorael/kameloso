@@ -319,7 +319,7 @@ void reloadClassifiersFromDisk(PersistenceService service)
 // initResources
 /++
  +  Reads, completes and saves the user classification JSON file, creating one
- +  if one doesn't exist.
+ +  if one doesn't exist. Removes any duplicate entries.
  +
  +  This ensures there will be a `"whitelist"` and `"blacklist"` array in it.
  +
@@ -329,7 +329,10 @@ void reloadClassifiersFromDisk(PersistenceService service)
 void initResources(PersistenceService service)
 {
     import kameloso.json : JSONStorage;
-    import std.json : JSONException;
+    import std.algorithm.iteration : filter, uniq;
+    import std.algorithm.sorting : sort;
+    import std.array : array;
+    import std.json : JSONException, JSONValue;
 
     JSONStorage json;
     json.reset();
@@ -348,14 +351,57 @@ void initResources(PersistenceService service)
         json["whitelist"] = null;
         json["whitelist"].array = null;
     }
+    else
+    {
+        auto deduplicated = json["whitelist"].array
+            .sort!((a,b) => a.str < b.str)
+            .uniq
+            .filter!((a) => a.str.length > 0)
+            .array;
+
+        json["whitelist"] = JSONValue(deduplicated);
+    }
 
     if ("blacklist" !in json)
     {
         json["blacklist"] = null;
         json["blacklist"].array = null;
     }
+    else
+    {
+        auto deduplicated = json["blacklist"].array
+            .sort!((a,b) => a.str < b.str)
+            .uniq
+            .filter!((a) => a.str.length > 0)
+            .array;
+
+        json["blacklist"] = JSONValue(deduplicated);
+    }
 
     json.save(service.userFile);
+}
+
+unittest
+{
+    // Test of the logic of initResources, not the function itself.
+
+    import std.algorithm.iteration : uniq;
+    import std.algorithm.sorting : sort;
+    import std.array : array;
+    import std.conv : text;
+    import std.json : JSONValue;
+
+    auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
+    assert((users.array.length == 5), users.array.length.text);
+
+    auto deduplicated = users.array
+        .sort!((a,b) => a.str < b.str)
+        .uniq
+        .array;
+
+    users = JSONValue(deduplicated);
+
+    assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
 }
 
 
