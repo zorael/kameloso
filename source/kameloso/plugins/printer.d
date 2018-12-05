@@ -1536,40 +1536,51 @@ void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
 version(TwitchSupport)
 unittest
 {
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
     {
         immutable badges = "subscriber/24,bits/1000";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "SC"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "SC"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "moderator/1,subscriber/24";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "MS"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "MS"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "subscriber/72,premium/1,twitchcon2017/1,bits/1000";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "SP7C"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "SP7C"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "broadcaster/0";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "B"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "B"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "harbl/42,snarbl/99,subscriber/4,bits/10000";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "hsSC"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "hsSC"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "subscriber/4,H1Z1_1/1,cuphead_1/1";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == "S:Hc"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "S:Hc"), sink.data);
+        sink.clear();
     }
     {
         immutable badges = "H1Z1_1/1";
-        immutable abbreviated = abbreviateBadges(badges);
-        assert((abbreviated == ":H"), abbreviated);
+        sink.abbreviateBadges(badges);
+        assert((sink.data == ":H"), sink.data);
+        sink.clear();
     }
 }
 
