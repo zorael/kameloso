@@ -22,7 +22,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * [`bash.org`](http://bash.org) quoting
 * Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitch.d)); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other UNIX-likes only)
-* mIRC colour coding and text effects (bold, underlined, ...), translated into Bash terminal formatting
+* mIRC colour coding and text effects (bold, underlined, ...), translated into ANSI terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; generate one and edit it to get an idea of the settings available to toggle (see [notes on generating](#configuration) below)
 
