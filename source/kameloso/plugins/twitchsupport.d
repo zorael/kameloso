@@ -287,10 +287,6 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "followers_on_zero":
             case "host_on":
             case "host_off":
-                // Generic Twitch settings change
-                event.type = Type.TWITCH_SETTING;
-                event.aux = value;
-                break;
 
             /*case "usage_ban":
             case "usage_clear":
@@ -345,7 +341,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             case "host_target_went_offline":
             case "host_success":
                 // Generic Twitch server reply.
-                event.type = Type.TWITCH_REPLY;
+                event.type = Type.TWITCH_NOTICE;
                 event.aux = value;
                 break;
 
@@ -369,7 +365,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 }
                 else if (value.beginsWith("usage_"))
                 {
-                    event.type = Type.TWITCH_REPLY;
+                    event.type = Type.TWITCH_NOTICE;
                     break;
                 }
 
