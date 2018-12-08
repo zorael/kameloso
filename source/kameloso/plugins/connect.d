@@ -772,6 +772,22 @@ void onSASLFailure(ConnectService service)
 }
 
 
+// onNoCapabilities
+/++
+ +  Ends capability negotiation and negotiates nick if the server doesn't seem
+ +  to support capabilities (e.g SwiftIRC).
+ +/
+@(IRCEvent.Type.ERR_NOTREGISTERED)
+void onNoCapabilities(ConnectService service, const IRCEvent event)
+{
+    if (event.aux == "CAP")
+    {
+        service.capabilityNegotiation = Progress.finished;
+        service.negotiateNick();
+    }
+}
+
+
 // onWelcome
 /++
  +  Marks registration as completed upon `RPL_WELCOME` (numeric 001).
