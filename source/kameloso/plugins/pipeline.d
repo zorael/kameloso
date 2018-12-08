@@ -233,12 +233,10 @@ void teardown(PipelinePlugin plugin)
     plugin.fifoThread.send(ThreadMessage.Teardown());
     plugin.fifoThread = Tid.init;
 
-    immutable filename = plugin.state.client.nickname ~ "@" ~ plugin.state.client.server.address;
-
-    if (filename.exists && !filename.isDir)
+    if (plugin.fifoFilename.exists && !plugin.fifoFilename.isDir)
     {
         // Tell the reader of the pipe to exit
-        auto fifo = File(filename, "w");
+        auto fifo = File(plugin.fifoFilename, "w");
         fifo.writeln();
     }
 }
