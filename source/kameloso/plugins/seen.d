@@ -160,7 +160,7 @@ final class SeenPlugin : IRCPlugin
      +  Example:
      +  ---
      +  seenUsers["joe"] = Clock.currTime.toUnixTime;
-     +  auto now = Clock.currTime.toUnixTime;
+     +  immutable now = Clock.currTime.toUnixTime;
      +  writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
      +  ---
      +/
@@ -344,7 +344,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
      +  the channel for some reason.
      +/
 
-    if (auto user = event.sender.nickname in plugin.seenUsers)
+    if (const user = event.sender.nickname in plugin.seenUsers)
     {
         plugin.seenUsers[event.target.nickname] = *user;
         plugin.seenUsers.remove(event.sender.nickname);

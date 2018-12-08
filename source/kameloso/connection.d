@@ -289,7 +289,7 @@ void listenFiber(Connection conn, ref bool abort)
         pingingToTestConnection = false;
 
         immutable ptrdiff_t end = (start + bytesReceived);
-        auto newline = (cast(char[])buffer[0..end]).indexOf('\n');
+        ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
         size_t pos;
 
         while (newline != -1)
