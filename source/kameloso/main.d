@@ -1631,34 +1631,6 @@ int main(string[] args)
         bot.writeConfigurationFile(settings.configFile);
     }
 
-    if (bot.plugins.length)
-    {
-        logger.error("Plugins were not automatically torn down!");
-        bot.teardownPlugins();
-    }
-
-    version(Posix)
-    {
-        import core.thread : Thread;
-        import core.time : msecs;
-        import std.file : exists, isDir;
-        import std.stdio : File;
-
-        immutable filename = bot.parser.client.nickname ~ "@" ~ bot.parser.client.server.address;
-
-        if (filename.exists && !filename.isDir)
-        {
-            Thread.sleep(50.msecs);
-
-            if (filename.exists && !filename.isDir)
-            {
-                // Pipeline is still around...
-                auto fifo = File(filename, "w");
-                fifo.writeln();
-            }
-        }
-    }
-
     import core.thread : thread_joinAll;
 
     if (*bot.abort)
