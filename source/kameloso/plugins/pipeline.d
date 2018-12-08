@@ -170,23 +170,20 @@ void pipereader(shared IRCPluginState newState)
 /++
  +  Creates a FIFO (named pipe) in the filesystem.
  +
- +  It will be named a hardcoded [bot nickname]@[server address].
+ +  It will be named a passed filename.
  +
  +  Params:
- +      state = The `kameloso.plugins.common.IRCPluginState` of the
- +          original `PipelinePlugin`.
+ +      state = String filename of FIFO to create.
  +
- +  Returns:
- +      A `std.stdio.File` representing the named FIFO we want to read from.
- +
- +  Throws: `std.file.FileException` if FIFO could not be created.
+ +  Throws:
+ +      `std.file.FileException` if FIFO could not be created.
+ +      `kameloso.plugins.pipeline.FIFOAlreadyExistsException` if a fifo with
+ +          the same filename already exists.
  +/
-File createFIFO(IRCPluginState state)
+void createFIFO(const string filename)
 {
     import std.file : FileException, exists, isDir;
     import std.format : format;
-
-    immutable filename = state.client.nickname ~ "@" ~ state.client.server.address;
 
     if (!filename.exists)
     {
@@ -196,7 +193,7 @@ File createFIFO(IRCPluginState state)
 
         if (mkfifo.status != 0)
         {
-            throw new FileException("Could not create FIFO (mkfio returned %d)".format(mkfifo));
+            throw new FileException("Could not create FIFO (mkfifo returned %d)".format(mkfifo.status));
         }
     }
     else if (filename.isDir)
@@ -208,37 +205,6 @@ File createFIFO(IRCPluginState state)
     {
         throw new FIFOAlreadyExistsException(filename ~ " already exists");
     }
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!settings.monochrome)
-        {
-            import kameloso.terminal : colour;
-            import kameloso.constants : DefaultColours;
-            import std.experimental.logger : LogLevel;
-
-            // We don't have a logger instance so we have to access the
-            // DefaultColours.logcolours{Bright,Dark} tables manually
-
-            if (settings.brightTerminal)
-            {
-                infotint = DefaultColours.logcoloursBright[LogLevel.info].colour;
-                logtint = DefaultColours.logcoloursBright[LogLevel.all].colour;
-            }
-            else
-            {
-                infotint = DefaultColours.logcoloursDark[LogLevel.info].colour;
-                logtint = DefaultColours.logcoloursDark[LogLevel.all].colour;
-            }
-        }
-    }
-
-    state.askToLog("Pipe text to the [%s%s%s] file to send raw commands to the server."
-        .format(infotint, filename, logtint));
-
-    return File(filename, "r");
 }
 
 
