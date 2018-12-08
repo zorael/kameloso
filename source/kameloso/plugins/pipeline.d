@@ -220,11 +220,21 @@ void createFIFO(const string filename)
 // onWelcome
 /++
  +  Spawns the pipereader thread.
+ +
+ +  Snapshots the filename to use, as we base it on the bot's nickname, which
+ +  may change during the connection's lifetime.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PipelinePlugin plugin)
 {
-    plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state);
+    with (plugin)
+    {
+        // Save the filename *once* so it persists across nick changes.
+        fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
+        createFIFO(fifoFilename);
+
+        fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename);
+    }
 }
 
 
