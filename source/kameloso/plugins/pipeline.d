@@ -309,5 +309,8 @@ final class PipelinePlugin : IRCPlugin
     /// Thread ID of the thread reading the named pipe.
     Tid fifoThread;
 
+    /// Filename of the created FIFO.
+    string fifoFilename;
+
     mixin IRCPluginImpl;
 }
