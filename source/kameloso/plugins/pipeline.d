@@ -40,41 +40,50 @@ import std.stdio : File;
  +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
  +          concurrency messages, made `shared` to allow being sent between
  +          threads.
+ +      filename = String filename if the fifo to read from.
  +/
-void pipereader(shared IRCPluginState newState)
+void pipereader(shared IRCPluginState newState, const string filename)
 {
     import std.file : FileException, remove;
 
     auto state = cast()newState;
 
-    /// Named pipe (FIFO) to send messages to the server through.
-    File fifo;
+    string infotint, logtint;
 
-    try
+    version(Colours)
     {
-        fifo = createFIFO(state);
-    }
-    catch (const FileException e)
-    {
-        state.askToError("Failed to create pipeline FIFO: " ~ e.msg);
-        return;
-    }
-    catch (const FIFOAlreadyExistsException e)
-    {
-        state.askToError("Failed to create pipeline FIFO: " ~ e.msg);
-        return;
-    }
-    catch (const Exception e)
-    {
-        state.askToError("Unhandled exception creating pipeline FIFO: " ~ e.msg);
-        return;
+        if (!settings.monochrome)
+        {
+            import kameloso.terminal : colour;
+            import kameloso.constants : DefaultColours;
+            import std.experimental.logger : LogLevel;
+
+            // We don't have a logger instance so we have to access the
+            // DefaultColours.logcolours{Bright,Dark} tables manually
+
+            if (settings.brightTerminal)
+            {
+                infotint = DefaultColours.logcoloursBright[LogLevel.info].colour;
+                logtint = DefaultColours.logcoloursBright[LogLevel.all].colour;
+            }
+            else
+            {
+                infotint = DefaultColours.logcoloursDark[LogLevel.info].colour;
+                logtint = DefaultColours.logcoloursDark[LogLevel.all].colour;
+            }
+        }
     }
 
-    scope(exit) remove(fifo.name);
+    import std.format : format;
+    state.askToLog("Pipe text to the [%s%s%s] file to send raw commands to the server."
+        .format(infotint, filename, logtint));
+
+    // Creating the File struct blocks, so do it after reporting.
+    File fifo = File(filename, "r");
+    scope(exit) remove(filename);
 
     bool halt;
 
-    with (state)
     while (!halt)
     {
         eofLoop:
