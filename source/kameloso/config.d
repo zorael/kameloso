@@ -89,7 +89,7 @@ string configReader(const string configFile)
     else if (!configFile.isFile)
     {
         throw new FileTypeMismatchException("Configuration file is not a file",
-            configFile, getAttributes(configFile), __FILE__);
+            configFile, cast(ushort)getAttributes(configFile), __FILE__);
     }
 
     try

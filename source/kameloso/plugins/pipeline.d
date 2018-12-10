@@ -214,7 +214,7 @@ void createFIFO(const string filename)
         import core.sys.posix.sys.stat : S_ISFIFO;
         import std.file : getAttributes, isDir;
 
-        immutable attrs = getAttributes(filename);
+        immutable attrs = cast(ushort)getAttributes(filename);
 
         if (S_ISFIFO(attrs))
         {
