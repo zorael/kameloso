@@ -44,7 +44,7 @@ import std.stdio : File;
  +/
 void pipereader(shared IRCPluginState newState, const string filename)
 {
-    import std.file : FileException, remove;
+    import std.file : FileException, exists, remove;
 
     auto state = cast()newState;
 
@@ -80,7 +80,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
     // Creating the File struct blocks, so do it after reporting.
     File fifo = File(filename, "r");
-    scope(exit) remove(filename);
+    scope(exit) if (filename.exists) remove(filename);
 
     toploop:
     while (true)
