@@ -1253,7 +1253,7 @@ final class FileTypeMismatchException : Exception
     string filename;
 
     /// File attributes.
-    uint attrs;
+    ushort attrs;
 
     /// Create a new `FileTypeMismatchException`, without embedding a filename.
     this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
@@ -1262,7 +1262,7 @@ final class FileTypeMismatchException : Exception
     }
 
     /// Create a new `FileTypeMismatchException`, embedding a filename.
-    this(const string message, const string filename, const uint attrs,
+    this(const string message, const string filename, const ushort attrs,
         const string file = __FILE__, const size_t line = __LINE__) pure
     {
         this.filename = filename;
