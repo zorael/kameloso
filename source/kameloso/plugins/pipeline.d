@@ -313,10 +313,14 @@ void teardown(PipelinePlugin plugin)
 // onBusMessage
 /++
  +  Receives a passed `kameloso.thread.BusMessage` with the "`pipeline`" header,
- +  and follows them accordingly.
+ +  and performs actions based on the payload message.
  +
- +  This is used to send messages from the worker thread to the main plugin
- +  context, to signal when the worker exited.
+ +  This is used to let the worker thread signal the main context that it halted.
+ +
+ +  Params:
+ +      plugin = The current `PipelinePlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
  +/
 import kameloso.thread : Sendable;
 void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)

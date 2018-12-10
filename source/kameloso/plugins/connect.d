@@ -924,13 +924,15 @@ void start(ConnectService service)
 
 // onBusMessage
 /++
- +  Receives and handles a bus message from another plugin.
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
+ +  and calls functions based on the payload message.
  +
- +  So far only reauthenticates with services, on demand.
+ +  This is used to let other plugins trigger reauthentication with services.
  +
  +  Params:
  +      service = The current `ConnectService`.
- +      header = String header describing the message content.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
  +/
 import kameloso.thread : BusMessage, Sendable;
 void onBusMessage(ConnectService service, const string header, shared Sendable content)

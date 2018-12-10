@@ -688,9 +688,15 @@ void start(WebtitlesPlugin plugin)
 
 // onBusMessage
 /++
- +  Receives and handles a bus message from another plugin.
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`reddit title`"
+ +  header, and calls functions based on the payload message.
  +
- +  So far used to let other plugins trigger lookups of web URLs.
+ +  This is used to let other plugins trigger web URL lookups.
+ +
+ +  Params:
+ +      plugin = The current `WebtitlesPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
  +/
 import kameloso.thread : Sendable;
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
