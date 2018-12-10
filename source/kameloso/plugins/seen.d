@@ -440,67 +440,6 @@ void onEndOfList(SeenPlugin plugin)
 }
 
 
-// onPing
-/++
- +  Saves seen files to disk once every `hoursBetweenSaves` hours.
- +
- +  If we ride the periodicity of `PING` (which is sent to us every few minutes)
- +  we can just keep track of when we last saved, and save anew after the set
- +  number of hours have passed.
- +
- +  An alternative to this would be to set up a timer `core.thread.Fiber`, to
- +  process once every *n* seconds. It would have to be placed elsewhere though,
- +  not in a UDA-annotated on-`kameloso.irc.defs.IRCEvent` function. Someplace
- +  only run once, like `start`, or at the end of the message of the day (event
- +  type `RPL_ENDOFMOTD`).
- +
- +  ---
- +  // The Fiber delegate must re-add its own Fiber
- +  // Declare it here before so it's visible from inide it
- +  Fiber fiber;
- +  enum secs = 3600 * seenSettings.hoursBetweenSaves;
- +
- +  void foo()
- +  {
- +      with (plugin)
- +      while (true)
- +      {
- +          seenUsers.saveSeen(seenFile);
- +          fiber.delayFiber(secs);  // <-- needs visibility of fiber
- +          Fiber.yield();
- +      }
- +  }
- +
- +  fiber = new Fiber(&foo);
- +  fiber.call();  // trigger once immediately and let it queue itelf
- +  ---
- +
- +  Mind that this approach is more expensive than relying on `PING`, as it
- +  incurs lots of array lookups. "Expensive" in a micro-optimising sense; it's
- +  still just array lookups.
- +/
-@(IRCEvent.Type.PING)
-void onPing(SeenPlugin plugin)
-{
-    if (!plugin.seenSettings.enabled) return;
-
-    with (plugin)
-    {
-        import std.datetime.systime : Clock;
-
-        immutable now = Clock.currTime;
-
-        /// Once every n hours, save the JSON storage to disk.
-        if ((seenSettings.hoursBetweenSaves > 0) && (now.hour == nextHour))
-        {
-            nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-            plugin.updateAllUsers();
-            seenUsers.rehash().saveSeen(seenFile);
-        }
-    }
-}
-
-
 // onCommandSeen
 /++
  +  Whenever someone says "seen" in a `CHAN` or a `QUERY`, and if `CHAN` then
