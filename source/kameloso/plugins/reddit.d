@@ -232,7 +232,7 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
  +/
 void prune(shared RedditLookup[string] cache)
 {
-    enum expireSeconds = 600;
+    import kameloso.constants : Timeout;
 
     string[] garbage;
 
@@ -241,7 +241,7 @@ void prune(shared RedditLookup[string] cache)
         import std.datetime : Clock;
         immutable now = Clock.currTime.toUnixTime;
 
-        if ((now - entry.when) > expireSeconds)
+        if ((now - entry.when) > Timeout.titleCache)
         {
             garbage ~= key;
         }
