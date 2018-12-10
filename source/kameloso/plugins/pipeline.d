@@ -244,13 +244,49 @@ void createFIFO(const string filename)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PipelinePlugin plugin)
 {
+    import std.format : format;
+
     with (plugin)
     {
+        string logtint, warningtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                warningtint = (cast(KamelosoLogger)logger).warningtint;
+            }
+        }
+
         // Save the filename *once* so it persists across nick changes.
         fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
-        createFIFO(fifoFilename);
 
-        fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename);
+        try
+        {
+            createFIFO(fifoFilename);
+            fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename);
+            workerRunning = true;
+        }
+        catch (const ReturnValueException e)
+        {
+            logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %$2s%$5d%4$s)",
+                e.msg, logtint, e.command, warningtint, e.retval);
+        }
+        catch (const FileExistsException e)
+        {
+            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]"
+                .format(e.msg, logtint, e.filename, warningtint));
+        }
+        catch (const FileTypeMismatchException e)
+        {
+            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]"
+                .format(e.msg, logtint, e.filename, warningtint));
+        }
+
+        // Let other Exceptions pass
     }
 }
 
