@@ -153,7 +153,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
             },
             (Variant v)
             {
-                state.askToWarn("pipeline received Variant: " ~ logtint ~ v.toString());
+                state.askToError("Pipeline plugin received Variant: " ~ logtint ~ v.toString());
                 state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halt"));
                 halt = true;
             }
