@@ -57,6 +57,7 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
   * [Twitch](#twitch)
   * [Use as a library](#use-as-a-library)
 * [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
+* [Known bugs](#known-bugs)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
   * [License](#license)
@@ -128,6 +129,7 @@ There are a few Windows caveats.
 * Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 * Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
 * Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
+* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations.
 
 # How to use
 
@@ -271,6 +273,10 @@ Writing an IRC bot when servers all behave differently is difficult, and you wil
 If you're working on developing the bot yourself, you can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
 
 If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/fake the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
+
+# Known bugs
+
+* (Posix) If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads.
 
 # Roadmap
 
