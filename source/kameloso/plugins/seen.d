@@ -805,10 +805,6 @@ void saveSeen(const long[string] seenUsers, const string filename)
 /++
  +  After we have registered on the server and seen the "message of the day"
  +  spam, loads our seen users from file.`
- +
- +  At the same time, zero out the periodic save schedule, so that the next
- +  save will be in `hoursBetweenSaves` hours from now. See `onPing` for
- +  details.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
@@ -950,6 +946,6 @@ mixin ChannelAwareness;
 
 
 /++
- +  This full plugin is 184 source lines of code. (`dscanner --sloc seen.d`)
- +  This includes outgoing colouring.
+ +  This full plugin is <200 source lines of code. (`dscanner --sloc seen.d`)
+ +  It could be made much smaller if we made it less feature-rich.
  +/
