@@ -165,7 +165,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
         try
         {
-            fifo.reopen(fifo.name);
+            fifo.reopen(filename);
         }
         catch (const ErrnoException e)
         {
