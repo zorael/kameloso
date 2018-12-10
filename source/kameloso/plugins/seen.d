@@ -244,9 +244,6 @@ struct SeenSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
-
-    /// How often to save seen users to disk (aside from program exit).
-    int hoursBetweenSaves = 6;
 }
 
 
