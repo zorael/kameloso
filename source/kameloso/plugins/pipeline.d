@@ -95,27 +95,24 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
             if (!line.length) break;
 
-            debug
+            if (line[0] == ':')
             {
-                if (line[0] == ':')
+                import kameloso.string : has, nom;
+                import kameloso.thread : ThreadMessage, busMessage;
+
+                if (line.has(' '))
                 {
-                    import kameloso.string : has, nom;
-                    import kameloso.thread : ThreadMessage, busMessage;
-
-                    if (line.has(' '))
-                    {
-                        string slice = line[1..$];
-                        immutable header = slice.nom(' ');
-                        state.mainThread.send(ThreadMessage.BusMessage(),
-                            header, busMessage(slice));
-                    }
-                    else
-                    {
-                        state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
-                    }
-
-                    break;
+                    string slice = line[1..$];
+                    immutable header = slice.nom(' ');
+                    state.mainThread.send(ThreadMessage.BusMessage(),
+                        header, busMessage(slice));
                 }
+                else
+                {
+                    state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
+                }
+
+                break;
             }
 
             if (line.toLower.beginsWith("quit"))

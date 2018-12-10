@@ -1046,7 +1046,6 @@ void onCommandStatus(AdminPlugin plugin)
  +      content = Message content.
  +/
 import kameloso.thread : Sendable;
-debug
 version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
@@ -1064,47 +1063,50 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
     switch (verb)
     {
-    case "status":
-        return plugin.onCommandStatus();
+    debug
+    {
+        case "status":
+            return plugin.onCommandStatus();
 
-    case "users":
-        return plugin.onCommandShowUsers();
+        case "users":
+            return plugin.onCommandShowUsers();
 
-    case "user":
-        if (const user = slice in plugin.state.users)
-        {
-            printObject(*user);
-        }
-        else
-        {
-            logger.error("No such user: ", slice);
-        }
-        break;
+        case "user":
+            if (const user = slice in plugin.state.users)
+            {
+                printObject(*user);
+            }
+            else
+            {
+                logger.error("No such user: ", slice);
+            }
+            break;
 
-    case "state":
-        printObject(plugin.state);
-        break;
+        case "state":
+            printObject(plugin.state);
+            break;
 
-    case "printraw":
-        plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
-        return;
+        case "printraw":
+            plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+            return;
 
-    case "printbytes":
-        plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
-        return;
+        case "printbytes":
+            plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+            return;
 
-    case "printasserts":
-        plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
+        case "printasserts":
+            plugin.adminSettings.printAsserts = !plugin.adminSettings.printAsserts;
 
-        if (plugin.adminSettings.printAsserts)
-        {
-            import kameloso.debugging : formatClientAssignment;
-            import std.stdio : stdout;
+            if (plugin.adminSettings.printAsserts)
+            {
+                import kameloso.debugging : formatClientAssignment;
+                import std.stdio : stdout;
 
-            // Print the bot assignment but only if we're toggling it on
-            formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
-        }
-        return;
+                // Print the bot assignment but only if we're toggling it on
+                formatClientAssignment(stdout.lockingTextWriter, plugin.state.client);
+            }
+            return;
+    }
 
     case "resetterm":
         return plugin.onCommandResetTerminal();
