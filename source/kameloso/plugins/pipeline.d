@@ -297,10 +297,9 @@ void teardown(PipelinePlugin plugin)
     import std.file : exists, isDir;
     import std.concurrency : Tid;
 
-    if (!plugin.workerRunning || plugin.fifoThread == Tid.init) return;
+    if (!plugin.workerRunning) return;
 
     plugin.fifoThread.send(ThreadMessage.Teardown());
-    plugin.fifoThread = Tid.init;
 
     if (plugin.fifoFilename.exists && !plugin.fifoFilename.isDir)
     {
