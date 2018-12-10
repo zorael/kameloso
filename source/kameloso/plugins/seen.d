@@ -832,19 +832,17 @@ void onEndOfMotd(SeenPlugin plugin)
  +/
 void periodically(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     import std.datetime.systime : Clock;
 
     enum hoursBetweenSaves = 3;
 
     immutable now = Clock.currTime.toUnixTime;
+    plugin.state.nextPeriodical = now + (hoursBetweenSaves * 3600);
 
-    with (plugin)
+    if (plugin.seenSettings.enabled)
     {
         plugin.updateAllUsers();
-        seenUsers.rehash().saveSeen(seenFile);
-        state.nextPeriodical = now + (hoursBetweenSaves * 3600);
+        plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
     }
 }
 

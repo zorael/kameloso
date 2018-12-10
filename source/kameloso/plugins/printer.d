@@ -1616,6 +1616,11 @@ void periodically(PrinterPlugin plugin)
 {
     import std.datetime.systime : Clock;
 
+    // Schedule the next run for the following midnight.
+    plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
+
+    if (!plugin.printerSettings.enabled) return;
+
     logger.info(datestamp);
 
     if (plugin.printerSettings.logs)
@@ -1623,9 +1628,6 @@ void periodically(PrinterPlugin plugin)
         plugin.commitLogs();
         plugin.buffers.clear();
     }
-
-    // Schedule the next run for the following midnight.
-    plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
 }
 
 
