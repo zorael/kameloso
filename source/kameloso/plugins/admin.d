@@ -1034,8 +1034,8 @@ void onCommandStatus(AdminPlugin plugin)
 
 // onBusMessage
 /++
- +  Receives a passed `kameloso.thread.BusMessage` with the "`admin verb`"
- +  header, and calls functions based on the payload message.
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`admin`" header,
+ +  and calls functions based on the payload message.
  +
  +  This is used in the Pipeline plugin, to allow us to trigger admin verbs via
  +  the command-line pipe.

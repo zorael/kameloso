@@ -40,7 +40,7 @@ import std.stdio : File;
  +          `PipelinePlugin`, to provide the main thread's `core.thread.Tid` for
  +          concurrency messages, made `shared` to allow being sent between
  +          threads.
- +      filename = String filename if the fifo to read from.
+ +      filename = String filename of the FIFO to read from.
  +/
 void pipereader(shared IRCPluginState newState, const string filename)
 {
