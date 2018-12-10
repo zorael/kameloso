@@ -892,6 +892,35 @@ void onEndOfMotd(SeenPlugin plugin)
 }
 
 
+// periodically
+/++
+ +  Saves seen users to disk once every `hoursBetweenSaves` hours.
+ +
+ +  This is to make sure that as little data as possible is lost in the event
+ +  of an unexpected shutdown.
+ +
+ +  `periodically` is a function that is run whenever the UNIX timestamp
+ +  exceeds the value of `plugin.state.nextPeriodical`.
+ +/
+void periodically(SeenPlugin plugin)
+{
+    if (!plugin.seenSettings.enabled) return;
+
+    import std.datetime.systime : Clock;
+
+    enum hoursBetweenSaves = 3;
+
+    immutable now = Clock.currTime.toUnixTime;
+
+    with (plugin)
+    {
+        plugin.updateAllUsers();
+        seenUsers.rehash().saveSeen(seenFile);
+        state.nextPeriodical = now + (hoursBetweenSaves * 3600);
+    }
+}
+
+
 // teardown
 /++
  +  When closing the program or when crashing with grace, saves the seen users
