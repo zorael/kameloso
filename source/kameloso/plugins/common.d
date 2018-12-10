@@ -172,8 +172,7 @@ abstract class WHOISRequest
  +/
 final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {
-    @safe:
-
+@safe:
     /// Stored function pointer/delegate.
     F fn;
 

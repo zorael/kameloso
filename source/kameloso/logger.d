@@ -25,8 +25,7 @@ version = CtTints;
  +/
 final class KamelosoLogger : Logger
 {
-    @safe:
-
+@safe:
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
     import std.experimental.logger : LogLevel;

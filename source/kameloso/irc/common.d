@@ -1485,6 +1485,7 @@ unittest
  +/
 final class IRCParseException : Exception
 {
+@safe:
     /// Bundled `kameloso.irc.defs.IRCEvent`, parsing which threw this exception.
     IRCEvent event;
 
