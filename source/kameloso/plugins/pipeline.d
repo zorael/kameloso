@@ -295,5 +295,8 @@ final class PipelinePlugin : IRCPlugin
     /// Filename of the created FIFO.
     string fifoFilename;
 
+    /// Whether or not the worker is running in the background.
+    bool workerRunning;
+
     mixin IRCPluginImpl;
 }
