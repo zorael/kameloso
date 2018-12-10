@@ -747,23 +747,9 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
     import kameloso.irc.common : stripModesign;
     import std.algorithm.searching : canFind;
 
-    /++
-     +  Make sure to strip the modesign, so `@foo` is the same person as
-     +  `foo`.
-     +/
+    // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     immutable nickname = plugin.state.client.server.stripModesign(signed);
-
-    // Only update the user if he/she is in a home channel.
-    foreach (immutable channelName, const channel; plugin.state.channels)
-    {
-        if (!plugin.state.client.homes.canFind(channelName)) continue;
-
-        if (channel.users.canFind(nickname))
-        {
-            plugin.seenUsers[nickname] = time;
-            return;
-        }
-    }
+    plugin.seenUsers[nickname] = time;
 }
 
 
@@ -779,14 +765,10 @@ void updateUser(SeenPlugin plugin, const string signed, const long time)
  +/
 void updateAllUsers(SeenPlugin plugin)
 {
-    import std.algorithm.searching : canFind;
-
     bool[string] uniqueUsers;
 
     foreach (immutable channelName, const channel; plugin.state.channels)
     {
-        if (!plugin.state.client.homes.canFind(channelName)) continue;
-
         foreach (const nickname; channel.users)
         {
             uniqueUsers[nickname] = true;
