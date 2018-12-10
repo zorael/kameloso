@@ -97,7 +97,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
 
             if (line[0] == ':')
             {
-                import kameloso.string : has, nom;
+                import kameloso.string : contains, nom;
                 import kameloso.thread : ThreadMessage, busMessage;
 
                 if (line.contains(' '))
