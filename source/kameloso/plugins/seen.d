@@ -18,36 +18,35 @@
  +  with `UDA`s of IRC event *types*. When an event is incoming it will trigger
  +  the function(s) annotated with its type.
  +
- +  Callback `core.thread.Fiber`s *are* supported but are not in any large-scale
- +  use. They can be registered to process on incoming events, or timed with a
- +  worst-case precision of roughly `kameloso.constants.Timeout.receive` *
+ +  Callback `core.thread.Fiber`s *are* supported. They can be registered to
+ +  process on incoming events, or timed with a worst-case precision of roughly
+ +  `kameloso.constants.Timeout.receive` *
  +  `(kameloso.main.mainLoop).checkTimedFibersEveryN` + 1 seconds. Compared to
  +  using `kameloso.irc.defs.IRCEvent` triggers they are expensive, in a
  +  micro-optimising sense.
  +/
-
 module kameloso.plugins.seen;
 
-/// We only want to compile this if we're compiling plugins at all.
+// We only want to compile this if we're compiling plugins at all.
 version(WithPlugins):
 
-/// We need crucial things from `kameloso.plugins.common`.
+// We need crucial things from `kameloso.plugins.common`.
 import kameloso.plugins.common;
 
-/// Likewise `kameloso.irc.defs`, for the definitions of an IRC event.
+// Likewise `kameloso.irc.defs`, for the definitions of an IRC event.
 import kameloso.irc.defs;
 
-/// `kameloso.irc.colours` for some IRC colouring and formatting.
+// `kameloso.irc.colours` for some IRC colouring and formatting.
 import kameloso.irc.colours : ircBold, ircColourNick;
 
-/// `kameloso.common` for some globals.
+// `kameloso.common` for some globals.
 import kameloso.common;
 
 /+
- +  Most of the module can (and ideally should) be kept private. Our surface
- +  area here will be restricted to only one `kameloso.plugins.common.IRCPlugin`
- +  class, and the usual pattern used is to have the private bits first and that
- +  public class last. We'll turn that around here to make it easier to parse.
+    Most of the module can (and ideally should) be kept private. Our surface
+    area here will be restricted to only one `kameloso.plugins.common.IRCPlugin`
+    class, and the usual pattern used is to have the private bits first and that
+    public class last. We'll turn that around here to make it easier to parse.
  +/
 
 public:
@@ -82,13 +81,12 @@ public:
  +      WHOISRequest[string] whoisQueue;
  +      Fiber[][IRCEvent.Type] awaitingFibers;
  +      Labeled!(Fiber, long)[] timedFibers;
+ +      long nextPeriodical;
  +  }
  +  ---
  +
  +  * `client` houses information about the client itself, and the server you're
  +     connected to.
- +
- +  * `settings` contains a few program-wide settings, not specific to a plugin.
  +
  +  * `mainThread` is the *thread ID* of the thread running the main loop. We
  +     indirectly used it to send strings to the server by way of concurrency
@@ -124,10 +122,14 @@ public:
  +     `kameloso.typecons.Labeled` emplate and marked with a UNIX timestamp of
  +     when they should be run. Use `kameloso.plugins.common.delayFiber` to
  +     enqueue.
+ +
+ +  * `nextPeriodical` is a UNIX timestamp of when the `periodical(IRCPlugin)`
+ +     function should be run next. It is a way of automating occasional tasks,
+ +     in our case the saving of the seen users to disk.
  +/
 final class SeenPlugin : IRCPlugin
 {
-    // seenSetting
+    // seenSettings
     /++
      +  An instance of *settings* for the Seen plugin. We will define this
      +  later. The members of it will be saved to and loaded from the
@@ -270,19 +272,22 @@ struct SeenSettings
  +  authorised to trigger the function. It has three policies; `anyone`,
  +  `whitelist` and `admin`.
  +
- +  * `anyone` will let precisely anyone trigger it, without looking them up.
+ +  * `ignored` will let precisely anyone trigger it, without looking them up.
  +     <br>
+ +  * `anyone` will let precisely anyone trigger it, but only after having
+ +     looked them up.<br>
  +  * `whitelist` will only allow users in the `whitelist` array in the
  +     configuration file.<br>
  +  * `admin` will allow only you and your other adminitrators, also as defined
  +     in the configuration file.
  +
- +  In the case of `whitelist` and `admin`, it will look you up and compare your
- +  *services account name* to those configured before doing anything. If you
- +  aren't logged into services, or if your account name isn't included in the
- +  lists, the function will not trigger.
+ +  In the case of `anyone`, `whitelist`, `admin`, it will look you up and
+ +  compare your *services account name* to those configured before doing
+ +  anything. In the case of `anyone`, the results won't matter and it will just
+ +  let it pass. In the other cases, if you aren't logged into services or if
+ +  your account name isn't included in the lists, the function will not trigger.
  +
- +  This particular function doesn't care.
+ +  This particular function doesn't care at all, so it is `PrivilegeLevel.ignore`.
  +/
 @(Chainable)
 @(IRCEvent.Type.EMOTE)
@@ -297,17 +302,17 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
 
-    /++
-     +  Updates the user's timestamp to the current time.
-     +
-     +  This will, as such, be automatically called on `EMOTE`, `QUERY`, `CHAN`,
-     +  `JOIN`, `PART` and `QUIT` events. Furthermore, it will only trigger if
-     +  it took place in a home channel, in the case of all but `QUIT` (which
-     +  as noted is global and not associated with a channel).
-     +
-     +  It says `plugin.updateUser(...)` but there is no method `updateUser` in
-     +  the `SeenPlugin plugin`; it is top-/module-level. Virtually the entirety
-     +  of our implementation will rely on UFCS.
+    /+
+        Updates the user's timestamp to the current time.
+
+        This will, as such, be automatically called on `EMOTE`, `QUERY`, `CHAN`,
+        `JOIN`, `PART` and `QUIT` events. Furthermore, it will only trigger if
+        it took place in a home channel, in the case of all but `QUIT` (which
+        as noted is global and not associated with a channel).
+
+        It says `plugin.updateUser(...)` but there is no method `updateUser` in
+        the `SeenPlugin plugin`; it is top-/module-level. Virtually the entirety
+        of our implementation will rely on UFCS.
      +/
     import std.datetime.systime : Clock;
     plugin.updateUser(event.sender.nickname, Clock.currTime.toUnixTime);
@@ -328,9 +333,9 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
 
-    /++
-     +  There may not be an old one if the user was not indexed upon us joining
-     +  the channel for some reason.
+    /+
+        There may not be an old one if the user was not indexed upon us joining
+        the channel for some reason.
      +/
 
     if (const user = event.sender.nickname in plugin.seenUsers)
@@ -349,7 +354,7 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
  +  A `WHO` request enumerates all members in a channel. It returns several
  +  replies, one event per each user in the channel. The
  +  `kameloso.plugins.chanqueries.ChanQueriesService` services instigates this
- +  shortly after having joined one, as a service to the other plugins.
+ +  shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @(ChannelPolicy.home)
@@ -363,6 +368,7 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 }
 
 
+// onNamesReply
 /++
  +  Catch a `NAMES` reply and record each person as having been seen.
  +
@@ -374,17 +380,17 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @(ChannelPolicy.home)
-void onNameReply(SeenPlugin plugin, const IRCEvent event)
+void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 {
     if (!plugin.seenSettings.enabled) return;
 
     import std.algorithm.iteration : splitter;
     import std.datetime.systime : Clock;
 
-    /++
-     +  Use a `std.algorithm.iteration.splitter` to iterate each name and call
-     +  `updateUser` to update (or create) their entry in the `seenUsers`
-     +  associative array.
+    /+
+        Use a `std.algorithm.iteration.splitter` to iterate each name and call
+        `updateUser` to update (or create) their entry in the
+        `SeenPlugin.seenUsers` associative array.
      +/
 
     immutable now = Clock.currTime.toUnixTime;
@@ -494,35 +500,35 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
-    /++
-     +  The bot uses concurrency messages to queue strings to be sent to the
-     +  server. This has benefits such as that even a multi-threaded program
-     +  will have synchronous messages sent, and it's overall an easy and
-     +  convenient way for plugin to send messages up the stack.
-     +
-     +  There are shorthand versions for sending these messages in
-     +  `kameloso.messaging`, and additionally this module has mixed in
-     +  `MessagingProxy` in the `SeenPlugin`, creating even shorter shorthand
-     +  versions.
-     +
-     +  You can therefore use them as such:
-     +
-     +  ---
-     +  with (plugin)  // <-- neccessary for the short-shorthand
-     +  {
-     +      chan("#d", "Hello world!");
-     +      query("kameloso", "Hello you!");
-     +      privmsg(event.channel, event.sender.nickname, "Query or chan!");
-     +      join("#flerrp");
-     +      part("#flerrp");
-     +      topic("#flerrp", "This is a new topic");
-     +  }
-     +  ---
-     +
-     +  `privmsg` will either send a channel message or a personal query message
-     +  depending on the arguments passed to it. If the first `channel` argument
-     +  is not empty, it will be a `chan` channel message, else a private
-     +  `query` message.
+    /+
+        The bot uses concurrency messages to queue strings to be sent to the
+        server. This has benefits such as that even a multi-threaded program
+        will have synchronous messages sent, and it's overall an easy and
+        convenient way for plugin to send messages up the stack.
+
+        There are shorthand versions for sending these messages in
+        `kameloso.messaging`, and additionally this module has mixed in
+        `MessagingProxy` in the `SeenPlugin`, creating even shorter shorthand
+        versions.
+
+        You can therefore use them as such:
+
+        ---
+        with (plugin)  // <-- neccessary for the short-shorthand
+        {
+            chan("#d", "Hello world!");
+            query("kameloso", "Hello you!");
+            privmsg(event.channel, event.sender.nickname, "Query or chan!");
+            join("#flerrp");
+            part("#flerrp");
+            topic("#flerrp", "This is a new topic");
+        }
+        ---
+
+        `privmsg` will either send a channel message or a personal query message
+        depending on the arguments passed to it. If the first `channel` argument
+        is not empty, it will be a `chan` channel message, else a private
+        `query` message.
      +/
 
     with (plugin)
@@ -627,8 +633,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
 // onCommandPrintSeen
 /++
- +  As a tool to help debug, prints the current `seenUsers` associative array to
- +  the local terminal.
+ +  As a tool to help debug, prints the current `SeenPlugin.seenUsers`
+ +  associative array to the local terminal.
  +/
 debug
 @(IRCEvent.Type.CHAN)
@@ -651,7 +657,7 @@ void onCommandPrintSeen(SeenPlugin plugin)
 
 // updateUser
 /++
- +  Updates a given nickname's entry in the seen array with the current time,
+ +  Updates a given nickname's entry in the seen array with the passed time,
  +  expressed in UNIX time.
  +
  +  This is not annotated with an IRC event type and will merely be invoked from
@@ -706,7 +712,7 @@ void updateAllUsers(SeenPlugin plugin)
     import std.datetime.systime : Clock;
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (const nickname, const nil; uniqueUsers)
+    foreach (immutable nickname, immutable nil; uniqueUsers)
     {
         plugin.updateUser(nickname, now);
     }
@@ -724,7 +730,7 @@ void updateAllUsers(SeenPlugin plugin)
  +
  +  Returns:
  +      `long[string]` associative array; UNIX timestamp longs keyed by nickname
- +          strings.
+ +      strings.
  +/
 long[string] loadSeen(const string filename)
 {
@@ -947,5 +953,5 @@ mixin ChannelAwareness;
 
 /++
  +  This full plugin is <200 source lines of code. (`dscanner --sloc seen.d`)
- +  It could be made much smaller if we made it less feature-rich.
+ +  Even at those numbers it is fairly feature-rich.
  +/
