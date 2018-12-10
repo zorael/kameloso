@@ -100,7 +100,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
                 import kameloso.string : has, nom;
                 import kameloso.thread : ThreadMessage, busMessage;
 
-                if (line.has(' '))
+                if (line.contains(' '))
                 {
                     string slice = line[1..$];
                     immutable header = slice.nom(' ');
