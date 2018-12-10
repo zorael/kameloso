@@ -74,21 +74,22 @@ void writeToDisk(const string filename, const string configurationText,
  +      The contents of the supplied file.
  +
  +  Throws:
- +      `FileIsNotAFileException` if the configuration file is a directory, a
+ +      `FileTypeMismatchException` if the configuration file is a directory, a
  +      character file or any other non-file type we can't write to.
  +      `ConfigurationFileReadFailureException` if the reading and decoding of
  +      the configuration file failed.
  +/
 string configReader(const string configFile)
 {
-    import std.file : exists, isFile, readText;
+    import kameloso.common : FileTypeMismatchException;
+    import std.file : exists, getAttributes, isFile, readText;
     import std.string : chomp;
 
     if (!configFile.exists) return string.init;
     else if (!configFile.isFile)
     {
-        throw new FileIsNotAFileException("Configuration file is not a file",
-            configFile, __FILE__);
+        throw new FileTypeMismatchException("Configuration file is not a file",
+            configFile, getAttributes(configFile), __FILE__);
     }
 
     try

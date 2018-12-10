@@ -185,14 +185,16 @@ void pipereader(shared IRCPluginState newState, const string filename)
  +      state = String filename of FIFO to create.
  +
  +  Throws:
- +      `std.file.FileException` if FIFO could not be created.
- +      `kameloso.plugins.pipeline.FIFOAlreadyExistsException` if a fifo with
- +          the same filename already exists.
+ +      `ReturnValueException` if the FIFO could not be created.
+ +      `FileExistsException` if a FIFO with the same filename already
+ +      exists, suggesting concurrent conflicting instances of the program
+ +      (or merely a stale FIFO).
+ +      `FileTypeMismatchException` if a file or directory exists with the same
+ +      name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
 {
-    import std.file : FileException, exists, isDir;
-    import std.format : format;
+    import std.file : exists;
 
     if (!filename.exists)
     {
@@ -202,17 +204,27 @@ void createFIFO(const string filename)
 
         if (mkfifo.status != 0)
         {
-            throw new FileException("Could not create FIFO (mkfifo returned %d)".format(mkfifo.status));
+            throw new ReturnValueException("Could not create FIFO", "mkfifo", mkfifo.status);
         }
     }
-    else if (filename.isDir)
+    else
     {
-        throw new FileException(("Wanted to create FIFO %s but a directory " ~
-            "exists with the same name").format(filename));
-    }
-    else /* if (filename.isFile || filename.isSymlink) */
-    {
-        throw new FIFOAlreadyExistsException(filename ~ " already exists");
+        import core.sys.posix.sys.stat : S_ISFIFO;
+        import std.file : getAttributes, isDir;
+
+        immutable attrs = getAttributes(filename);
+
+        if (S_ISFIFO(attrs))
+        {
+            throw new FileExistsException("A FIFO with that name already exists",
+                filename, __FILE__, __LINE__);
+        }
+        else
+        {
+            throw new FileTypeMismatchException("Wanted to create a FIFO but a file or "
+                ~ "directory with the desired name already exists",
+                filename, attrs, __FILE__, __LINE__);
+        }
     }
 }
 

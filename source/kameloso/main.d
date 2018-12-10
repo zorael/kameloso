@@ -1099,7 +1099,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
-    import kameloso.config : ConfigurationFileReadFailureException, FileIsNotAFileException;
+    import kameloso.config : ConfigurationFileReadFailureException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
 
@@ -1130,7 +1130,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
     {
         logger.error("Error converting command-line arguments: ", logtint, e.msg);
     }
-    catch (const FileIsNotAFileException e)
+    catch (const FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             logtint, e.filename, errortint);
