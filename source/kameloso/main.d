@@ -1304,7 +1304,7 @@ Next tryResolve(ref IRCBot bot)
         bot.parser.client.server.port, settings.ipv6, *(bot.abort)));
 
     uint incrementedRetryDelay = Timeout.retry;
-    enum incrementMultiplier = 1.5;
+    enum incrementMultiplier = 1.2;
 
     resolver.call();
 
