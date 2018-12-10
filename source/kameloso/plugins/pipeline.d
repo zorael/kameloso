@@ -278,6 +278,35 @@ void teardown(PipelinePlugin plugin)
 }
 
 
+// onBusMessage
+/++
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`pipeline`" header,
+ +  and follows them accordingly.
+ +
+ +  This is used to send messages from the worker thread to the main plugin
+ +  context, to signal when the worker exited.
+ +/
+import kameloso.thread : Sendable;
+void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
+{
+    if (header != "pipeline") return;
+
+    import kameloso.thread : BusMessage;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (message.payload == "halt")
+    {
+        plugin.workerRunning = false;
+    }
+    else
+    {
+        logger.errorf(`Pipeline received unknown "%s" bus message.`, message.payload);
+    }
+}
+
+
 public:
 
 
