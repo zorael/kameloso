@@ -965,6 +965,59 @@ void initResources(SeenPlugin plugin)
 }
 
 
+// onBusMessage
+/++
+ +  Receives a passed `kameloso.thread.BusMessage` with the "`seen`" header,
+ +  and calls functions based on the payload message.
+ +
+ +  This is used in the Pipeline plugin, to allow us to trigger seen verbs via
+ +  the command-line pipe.
+ +
+ +  Params:
+ +      plugin = The current `SeenPlugin`.
+ +      header = String header describing the passed content payload.
+ +      content = Message content.
+ +/
+import kameloso.thread : Sendable;
+version(Posix)
+debug
+void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
+{
+    if (header != "seen") return;
+
+    import kameloso.string : strippedRight;
+    import kameloso.thread : BusMessage;
+
+    auto message = cast(BusMessage!string)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    immutable verb = message.payload.strippedRight;
+
+    switch (verb)
+    {
+    case "print":
+        logger.info("Currently seen users:");
+        plugin.onCommandPrintSeen();
+        break;
+
+    case "reload":
+        plugin.seenUsers = loadSeen(plugin.seenFile);
+        logger.info("Seen users reloaded from disk.");
+        break;
+
+    case "save":
+        plugin.updateAllUsers();
+        plugin.seenUsers.saveSeen(plugin.seenFile);
+        logger.info("Seen users saved to disk.");
+        break;
+
+    default:
+        logger.error("Unimplemented piped verb: ", verb);
+        break;
+    }
+}
+
+
 /++
  +  `kameloso.plugins.common.UserAwareness` is a mixin template; a few functions
  +  defined in `kameloso.plugins.common` to deal with common bookkeeping that
