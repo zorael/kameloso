@@ -261,21 +261,6 @@ void teardown(PipelinePlugin plugin)
 }
 
 
-// FIFOAlreadyExistsException
-/++
- +  Exception, to be thrown when attempting to create a named FIFO pipe and
- +  finding that it already exists.
- +/
-final class FIFOAlreadyExistsException : Exception
-{
-    /// Creates a new `FIFOAlreadyExistsException`.
-    this(const string message, const string file = __FILE__, const size_t line = __LINE__) pure
-    {
-        super(message, file, line);
-    }
-}
-
-
 public:
 
 
