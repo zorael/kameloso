@@ -2367,16 +2367,23 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         import std.datetime.systime : Clock;
 
-        immutable now = Clock.currTime.toUnixTime;
         enum hoursBetweenRehashes = 12;
 
-        if (now >= plugin.state.nextPeriodical)
+        immutable now = Clock.currTime.toUnixTime;
+
+        if (now >= _nextPingRehashTimestamp)
         {
-            /// Once every few hours, rehash the `users` array.
+            // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
             plugin.state.users.rehash();
-            plugin.state.nextPeriodical = now + (hoursBetweenRehashes * 3600);
+            _nextPingRehashTimestamp = now + (hoursBetweenRehashes * 3600);
         }
     }
+
+    /++
+     +  UNIX timestamp of when the `IRCPluginState.users` array is next to be
+     +  rehashed in `onUserAwarenessPingMixin`.
+     +/
+    long _nextPingRehashTimestamp;
 }
 
 
