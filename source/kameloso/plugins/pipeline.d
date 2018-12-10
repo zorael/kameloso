@@ -82,66 +82,68 @@ void pipereader(shared IRCPluginState newState, const string filename)
     File fifo = File(filename, "r");
     scope(exit) remove(filename);
 
-    bool halt;
-
-    while (!halt)
+    toploop:
+    while (true)
     {
-        eofLoop:
-        while (!fifo.eof)
+        // foreach but always break after processing one line, to be responsive
+        // and retaining the ability to break out of it.
+        foreach (immutable line; fifo.byLineCopy)
         {
-            foreach (immutable line; fifo.byLineCopy)
+            import kameloso.messaging : raw, quit;
+            import kameloso.string : beginsWith;
+            import std.uni : toLower;
+
+            if (!line.length) break;
+
+            debug
             {
-                import kameloso.messaging : raw, quit;
-                import kameloso.string : beginsWith;
-                import std.format : format;
-                import std.uni : toLower;
-
-                if (!line.length) break eofLoop;
-
-                debug
+                if (line[0] == ':')
                 {
-                    if (line[0] == ':')
-                    {
-                        import kameloso.string : has, nom;
-                        import kameloso.thread : ThreadMessage, busMessage;
+                    import kameloso.string : has, nom;
+                    import kameloso.thread : ThreadMessage, busMessage;
 
-                        if (line.has(' '))
-                        {
-                            string slice = line[1..$];
-                            immutable header = slice.nom(' ');
-                            state.mainThread.send(ThreadMessage.BusMessage(),
-                                header, busMessage(slice));
-                        }
-                        else
-                        {
-                            state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
-                        }
-                        break eofLoop;
-                    }
-                }
-
-                if (line.toLower.beginsWith("quit"))
-                {
-                    if ((line.length > 6) && (line[4..6] == " :"))
+                    if (line.has(' '))
                     {
-                        state.quit(line[6..$]);
+                        string slice = line[1..$];
+                        immutable header = slice.nom(' ');
+                        state.mainThread.send(ThreadMessage.BusMessage(),
+                            header, busMessage(slice));
                     }
                     else
                     {
-                        state.quit();
+                        state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
                     }
+
+                    break;
+                }
+            }
+
+            if (line.toLower.beginsWith("quit"))
+            {
+                if ((line.length > 6) && (line[4..6] == " :"))
+                {
+                    state.quit(line[6..$]);
                 }
                 else
                 {
-                    state.raw(line);
+                    state.quit();
                 }
 
-                break eofLoop;
+                break toploop;
             }
+            else
+            {
+                state.raw(line);
+            }
+
+            break;
         }
 
+        import kameloso.thread : busMessage;
         import core.time : seconds;
+
         static immutable instant = 0.seconds;
+        bool halt;
 
         receiveTimeout(instant,
             (ThreadMessage.Teardown)
@@ -154,22 +156,25 @@ void pipereader(shared IRCPluginState newState, const string filename)
             },
             (Variant v)
             {
-                state.askToWarn("pipeline received Variant: " ~ v.toString());
+                state.askToWarn("pipeline received Variant: " ~ logtint ~ v.toString());
+                state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halt"));
+                halt = true;
             }
         );
 
-        if (!halt)
-        {
-            import std.exception : ErrnoException;
+        if (halt) break toploop;
 
-            try
-            {
-                fifo.reopen(fifo.name);
-            }
-            catch (const ErrnoException e)
-            {
-                state.askToError("Failed to reopen FIFO: " ~ e.msg);
-            }
+        import std.exception : ErrnoException;
+
+        try
+        {
+            fifo.reopen(fifo.name);
+        }
+        catch (const ErrnoException e)
+        {
+            state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
+            state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halt"));
+            break toploop;
         }
     }
 }
