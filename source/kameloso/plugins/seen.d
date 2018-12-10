@@ -143,14 +143,6 @@ final class SeenPlugin : IRCPlugin
     @Settings SeenSettings seenSettings;
 
 
-    // nextHour
-    /++
-     +  The next hour we should save to disk, a number from 0 to 23. We will set
-     +  it up to save occasionally, once every few hours, as defined in one of
-     +  the members of `SeenSettings` (`hoursBetweenSaves`).
-     +/
-    uint nextHour;
-
     // seenUsers
     /++
      +  Our associative array (AA) of seen users; the dictionary keyed with
