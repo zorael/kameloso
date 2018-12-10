@@ -888,36 +888,7 @@ void onEndOfMotd(SeenPlugin plugin)
 {
     if (!plugin.seenSettings.enabled) return;
 
-    with (plugin)
-    {
-        seenUsers = loadSeen(seenFile);
-
-        if ((seenSettings.hoursBetweenSaves > 24) ||
-            (seenSettings.hoursBetweenSaves < 0))
-        {
-            string logtint;
-
-            version(Colours)
-            {
-                if (!settings.monochrome)
-                {
-                    import kameloso.logger : KamelosoLogger;
-                    logtint = (cast(KamelosoLogger)logger).logtint;
-                }
-            }
-
-            logger.warning("Invalid setting for hours between saves: ", logtint,
-                seenSettings.hoursBetweenSaves);
-            logger.warning("It must be a number between 1 and 24 (0 disables)");
-
-            seenSettings.hoursBetweenSaves = 0;
-        }
-        else if (seenSettings.hoursBetweenSaves > 0)
-        {
-            // Initialise nextHour to occur in `hoursBetweenSaves` hours
-            nextHour = (nextHour + seenSettings.hoursBetweenSaves) % 24;
-        }
-    }
+    plugin.seenUsers = loadSeen(plugin.seenFile);
 }
 
 
