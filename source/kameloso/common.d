@@ -434,9 +434,11 @@ struct IRCBot
 
             if (plugin.state.nextPeriodical == 0)
             {
-                // Schedule first periodical in an hour for plugins that don't
-                // set a timestamp themselves in `initialise`
-                plugin.state.nextPeriodical = now + 3600;
+                import kameloso.constants : Timeout;
+
+                // Schedule first periodical in `Timeout.initialPeriodical` for
+                // plugins that don't set a timestamp themselves in `initialise`
+                plugin.state.nextPeriodical = now + Timeout.initialPeriodical;
             }
         }
 
