@@ -118,6 +118,9 @@ struct CoreSettings
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
+    /// Whether or not to endlessly connect or whether to give up after a while.
+    bool endlesslyConnect = false;
+
     /// Character(s) that prefix a bot chat command.
     string prefix = "!";
 
