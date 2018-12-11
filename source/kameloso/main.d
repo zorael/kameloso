@@ -1172,7 +1172,8 @@ Next tryConnect(ref IRCBot bot)
     import std.concurrency : Generator;
 
     alias State = ConnectionAttempt.State;
-    auto connector = new Generator!ConnectionAttempt(() => connectFiber(bot.conn, *(bot.abort)));
+    auto connector = new Generator!ConnectionAttempt(() =>
+        connectFiber(bot.conn,  settings.endlesslyConnect, *bot.abort));
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.5;
 

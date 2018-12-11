@@ -367,10 +367,11 @@ struct ConnectionAttempt
  +
  +  Params:
  +      conn = Reference to the currenct, unconnected `Connection`.
+ +      endlesslyConnect = Whether or not to endlessly try connecting.
  +      abort = Reference to the current `abort` flag, which -- if set -- should
  +          make the function return.
  +/
-void connectFiber(ref Connection conn, ref bool abort)
+void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abort)
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, Socket, SocketException;
@@ -385,95 +386,101 @@ void connectFiber(ref Connection conn, ref bool abort)
 
     yield(attempt);
 
-    iploop:
-    foreach (immutable i, ip; conn.ips)
+    do
     {
-        attempt.ip = ip;
-        immutable isIPv6 = (ip.addressFamily == AddressFamily.INET6);
-        if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
-
-        conn.socket = isIPv6 ? &conn.socket6 : &conn.socket4;
-
-        enum connectionRetries = 3;
-
-        foreach (immutable retry; 0..connectionRetries)
+        iploop:
+        foreach (immutable i, ip; conn.ips)
         {
-            if (abort) return;
+            attempt.ip = ip;
+            immutable isIPv6 = (ip.addressFamily == AddressFamily.INET6);
+            if (isIPv6 && ipv6IsFailing) continue;  // Continue until IPv4 IP
 
-            if ((i > 0) || (retry > 0))
+            conn.socket = isIPv6 ? &conn.socket6 : &conn.socket4;
+
+            enum connectionRetries = 3;
+
+            foreach (immutable retry; 0..connectionRetries)
             {
-                import std.socket : SocketShutdown;
-                conn.socket.shutdown(SocketShutdown.BOTH);
-                conn.socket.close();
-                conn.reset();
-            }
+                if (abort) return;
 
-            try
-            {
-                attempt.numRetry = retry;
-                attempt.state = State.preconnect;
-                yield(attempt);
-
-                conn.socket.connect(ip);
-
-                // If we're here no exception was thrown, so we're connected
-                attempt.state = State.connected;
-                yield(attempt);
-                // Should never get here
-                assert(0, "Finished connectFiber resumed after yield");
-            }
-            catch (const SocketException e)
-            {
-                switch (e.msg)
+                if ((i > 0) || (retry > 0))
                 {
-                case "Unable to connect socket: Address family not supported by protocol":
-                    if (isIPv6)
-                    {
-                        ipv6IsFailing = true;
-                        attempt.state = State.ipv6Failure;
-                        attempt.error = e.msg;
-                        yield(attempt);
-                        continue iploop;
-                    }
-                    else
-                    {
-                        // Just treat it as a normal error
-                        goto case "Unable to connect socket: Connection refused";
-                    }
-
-                // Add more as necessary
-                case "Unable to connect socket: Connection refused":
-                    attempt.state = State.error;
-                    attempt.error = e.msg;
-                    yield(attempt);
-                    // Should never get here
-                    assert(0, "Dead connectFiber resumed after yield");
-
-                //case "Unable to connect socket: Network is unreachable":
-                default:
-                    // Don't delay for retrying on the last retry, drop down below
-                    if (retry < (connectionRetries - 1))
-                    {
-                        attempt.state = State.delayThenReconnect;
-                        yield(attempt);
-                    }
-                    break;
+                    import std.socket : SocketShutdown;
+                    conn.socket.shutdown(SocketShutdown.BOTH);
+                    conn.socket.close();
+                    conn.reset();
                 }
 
+                try
+                {
+                    attempt.numRetry = retry;
+                    attempt.state = State.preconnect;
+                    yield(attempt);
+
+                    conn.socket.connect(ip);
+
+                    // If we're here no exception was thrown, so we're connected
+                    attempt.state = State.connected;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Finished connectFiber resumed after yield");
+                }
+                catch (const SocketException e)
+                {
+                    switch (e.msg)
+                    {
+                    case "Unable to connect socket: Address family not supported by protocol":
+                        if (isIPv6)
+                        {
+                            ipv6IsFailing = true;
+                            attempt.state = State.ipv6Failure;
+                            attempt.error = e.msg;
+                            yield(attempt);
+                            continue iploop;
+                        }
+                        else
+                        {
+                            // Just treat it as a normal error
+                            goto case "Unable to connect socket: Connection refused";
+                        }
+
+                    // Add more as necessary
+                    case "Unable to connect socket: Connection refused":
+                        attempt.state = State.error;
+                        attempt.error = e.msg;
+                        yield(attempt);
+                        // Should never get here
+                        assert(0, "Dead connectFiber resumed after yield");
+
+                    //case "Unable to connect socket: Network is unreachable":
+                    default:
+                        // Don't delay for retrying on the last retry, drop down below
+                        if (retry < (connectionRetries - 1))
+                        {
+                            attempt.state = State.delayThenReconnect;
+                            yield(attempt);
+                        }
+                        break;
+                    }
+
+                }
+            }
+
+            if (i+1 < conn.ips.length)
+            {
+                // Not last IP
+                attempt.state = State.delayThenNextIP;
+                yield(attempt);
             }
         }
-
-        if (i+1 < conn.ips.length)
-        {
-            // Not last IP
-            attempt.state = State.delayThenNextIP;
-            yield(attempt);
-        }
     }
+    while (!abort && endlesslyConnect);
 
     // All IPs exhausted
     attempt.state = State.noMoreIPs;
     yield(attempt);
+    // Should never get here
+    assert(0, "Dead connectFiber resumed after yield");
 }
 
 
