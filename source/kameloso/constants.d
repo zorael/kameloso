@@ -35,6 +35,7 @@ enum Timeout
     ping = 200,
     whoisRetry = 15,
     titleCache = 600,
+    initialPeriodical = 3600,
 }
 
 
