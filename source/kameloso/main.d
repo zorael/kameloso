@@ -1275,7 +1275,7 @@ Next tryResolve(ref IRCBot bot)
     import kameloso.constants : Timeout;
     import std.concurrency : Generator;
 
-    string infotint, logtint, errortint;
+    string infotint, logtint, warningtint, errortint;
 
     version(Colours)
     {
@@ -1285,6 +1285,7 @@ Next tryResolve(ref IRCBot bot)
 
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
+            warningtint = (cast(KamelosoLogger)logger).warningtint;
             errortint = (cast(KamelosoLogger)logger).errortint;
         }
     }
@@ -1327,7 +1328,8 @@ Next tryResolve(ref IRCBot bot)
             return Next.continue_;
 
         case exception:
-            logger.warning("Socket exception caught when resolving server adddress: ", logtint, attempt.error);
+            logger.warningf("Could not resolve server address. (%s%s%s)",
+                logtint, attempt.error, warningtint);
 
             enum resolveAttempts = 15;  // FIXME
             if (attempt.numRetry+1 < resolveAttempts)
@@ -1343,8 +1345,8 @@ Next tryResolve(ref IRCBot bot)
             continue;
 
         case error:
-            logger.error("Socket exception caught when resolving server adddress: ", logtint, attempt.error);
-            logger.log("Could not resolve address to IPs. Verify your server address.");
+            logger.errorf("Could not resolve server address. (%s%s%s)", logtint, attempt.error, errortint);
+            logger.log("Failed to resolve address to IPs. Verify your server address.");
             return Next.returnFailure;
 
         case failure:
