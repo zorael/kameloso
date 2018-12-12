@@ -33,7 +33,7 @@ final class KamelosoLogger : Logger
 
     version(Colours)
     {
-        import kameloso.terminal : TerminalForeground, TerminalFormat, TerminalReset, colour;
+        import kameloso.terminal : TerminalForeground, TerminalReset, colour;
         import kameloso.constants : DefaultColours;
 
         alias logcoloursBright = DefaultColours.logcoloursBright;

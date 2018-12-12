@@ -506,8 +506,6 @@ void onNickInUse(ConnectService service)
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 void onBadNick(ConnectService service)
 {
-    import std.concurrency : prioritySend;
-
     if (service.registration == Progress.started)
     {
         // Mid-registration and invalid nickname; abort
@@ -526,8 +524,6 @@ void onBadNick(ConnectService service)
 @(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
 void onBanned(ConnectService service)
 {
-    import std.concurrency : prioritySend;
-
     logger.error("You are banned!");
     service.quit("Banned");
 }

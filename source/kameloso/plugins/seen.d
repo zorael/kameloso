@@ -679,7 +679,6 @@ void onCommandPrintSeen(SeenPlugin plugin)
 void updateUser(SeenPlugin plugin, const string signed, const long time)
 {
     import kameloso.irc.common : stripModesign;
-    import std.algorithm.searching : canFind;
 
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     immutable nickname = plugin.state.client.server.stripModesign(signed);
