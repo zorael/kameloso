@@ -511,7 +511,8 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             return Next.returnSuccess;
         }
 
-        debug if (shouldGenerateAsserts)
+        debug
+        if (shouldGenerateAsserts)
         {
             // --gen|--generate was passed, enter assert generation
             import kameloso.debugging : generateAsserts;
