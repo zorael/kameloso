@@ -553,7 +553,8 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
 
             attempt.state = State.success;
             yield(attempt);
-            return;  // Should never get here
+            // Should never get here
+            assert(0, "Dead resolveFiber resumed after yield");
         }
         catch (const SocketException e)
         {
