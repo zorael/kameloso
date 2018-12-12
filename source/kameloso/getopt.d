@@ -401,6 +401,8 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             "r|resourceDir","Specify a different resource directory [%s]"
                             .format(settings.resourceDirectory),
                             &settings.resourceDirectory,
+            "force",        "Force connecting (skips some sanity checks)",
+                            &settings.force,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,
             "writeconf",    &shouldWriteConfig,
