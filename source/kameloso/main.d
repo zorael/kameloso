@@ -1291,7 +1291,7 @@ Next tryResolve(ref IRCBot bot)
     }
 
     import kameloso.string : contains;
-    if (!bot.parser.client.server.address.contains('.'))
+    if (!settings.force && !bot.parser.client.server.address.contains('.'))
     {
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
@@ -1459,7 +1459,7 @@ int main(string[] args)
     if (!bot.parser.client.homes.length && !bot.parser.client.admins.length)
     {
         complainAboutMissingConfiguration(args);
-        return 1;
+        if (!settings.force) return 1;
     }
 
     // Resolve and create the resource directory
