@@ -258,6 +258,7 @@ void tryAuth(ConnectService service)
             break;
 
         case "EFNet":
+        case "WNet1":
             // No registration available
             service.authentication = Progress.finished;
             return;
