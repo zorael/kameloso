@@ -351,7 +351,7 @@ struct ConnectionAttempt
     string error;
 
     /// The number of retries so far towards this `ip`.
-    uint numRetry;
+    uint retryNum;
 }
 
 
@@ -413,7 +413,7 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
 
                 try
                 {
-                    attempt.numRetry = retry;
+                    attempt.retryNum = retry;
                     attempt.state = State.preconnect;
                     yield(attempt);
 
@@ -507,7 +507,7 @@ struct ResolveAttempt
     string error;
 
     /// The number of retries so far towards his `address`.
-    uint numRetry;
+    uint retryNum;
 }
 
 
@@ -539,7 +539,7 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
     {
         if (abort) return;
 
-        attempt.numRetry = i;
+        attempt.retryNum = i;
 
         with (AddressFamily)
         try

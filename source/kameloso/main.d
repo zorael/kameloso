@@ -1215,7 +1215,7 @@ Next tryConnect(ref IRCBot bot)
         case delayThenReconnect:
             import core.time : seconds;
 
-            if (attempt.numRetry == 0)
+            if (attempt.retryNum == 0)
             {
                 logger.logf("Retrying in %s%d%s seconds...",
                     infotint, incrementedRetryDelay, logtint);
@@ -1223,7 +1223,7 @@ Next tryConnect(ref IRCBot bot)
             else
             {
                 logger.logf("Retrying in %s%d%s seconds (attempt %1$s%4$d%3$s)...",
-                    infotint, incrementedRetryDelay, logtint, attempt.numRetry+1);
+                    infotint, incrementedRetryDelay, logtint, attempt.retryNum+1);
             }
 
             interruptibleSleep(incrementedRetryDelay.seconds, *abort);
@@ -1334,7 +1334,7 @@ Next tryResolve(ref IRCBot bot)
             logger.warningf("Could not resolve server address. (%s%s%s)",
                 logtint, attempt.error, warningtint);
 
-            if (attempt.numRetry+1 < resolveAttempts)
+            if (attempt.retryNum+1 < resolveAttempts)
             {
                 import kameloso.thread : interruptibleSleep;
                 import core.time : seconds;
