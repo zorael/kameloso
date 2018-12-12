@@ -768,7 +768,7 @@ Next mainLoop(ref IRCBot bot)
             }
             catch (const IRCParseException e)
             {
-                logger.warningf("IRC Parse Exception: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
                 printObject(e.event);
             }
@@ -782,7 +782,7 @@ Next mainLoop(ref IRCBot bot)
             }
             catch (const Exception e)
             {
-                logger.warningf("Unhandled exception: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+                logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
 
                 if (event != IRCEvent.init)
@@ -1612,7 +1612,7 @@ int main(string[] args)
         }
         catch (const IRCPluginInitialisationException e)
         {
-            logger.warningf("A plugin failed to start: %s%s %s(at %1$s%4$s%3$s:%1$s%5$d%3$s)",
+            logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 logtint, e.msg, warningtint, e.file, e.line);
             return 1;
         }
