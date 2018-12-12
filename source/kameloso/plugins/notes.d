@@ -208,7 +208,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     import std.json : JSONException;
     import std.typecons : No, Yes;
 
-    if (!event.content.contains(" ")) return;
+    if (!event.content.contains!(Yes.decode)(" ")) return;
 
     string slice = event.content;
     immutable nickname = slice.nom!(Yes.decode)(" ");

@@ -1291,7 +1291,7 @@ Next tryResolve(ref IRCBot bot)
     }
 
     import kameloso.string : contains;
-    if (!bot.parser.client.server.address.contains("."))
+    if (!bot.parser.client.server.address.contains('.'))
     {
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber

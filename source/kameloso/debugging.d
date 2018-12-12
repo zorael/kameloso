@@ -404,7 +404,7 @@ void generateAsserts(ref IRCBot bot) @system
         write("Enter daemon (ircdseven): ");
         string slice = readln().stripped;
 
-        immutable daemonstring = slice.contains(" ") ? slice.nom(" ") : slice;
+        immutable daemonstring = slice.contains(' ') ? slice.nom(' ') : slice;
         immutable version_ = slice;
 
         try
