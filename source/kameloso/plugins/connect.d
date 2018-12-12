@@ -532,6 +532,26 @@ void onBanned(ConnectService service)
 }
 
 
+// onPasswordMismatch
+/++
+ +  Quits the program if we supplied a bad `pass`.
+ +
+ +  There's no point in reconnecting.
+ +/
+@(IRCEvent.Type.ERR_PASSWDMISMATCH)
+void onPasswordMismatch(ConnectService service)
+{
+    if (service.registration != Progress.started)
+    {
+        // Unsure if this ever happens, but don't quit if we're actually registered
+        return;
+    }
+
+    logger.error("Password mismatch!");
+    service.quit("Incorrect password");
+}
+
+
 // onInvite
 /++
  +  Upon being invited to a channel, joins it if the settings say we should.
