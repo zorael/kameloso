@@ -524,12 +524,10 @@ struct ResolveAttempt
  +      abort = Reference bool which, if set, should make us abort and return.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, ref bool abort)
+    const bool useIPv6, const int resolveAttempts, ref bool abort)
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketException, getAddress;
-
-    enum resolveAttempts = 15;
 
     alias State = ResolveAttempt.State;
     ResolveAttempt attempt;

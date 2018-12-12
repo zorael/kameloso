@@ -1300,10 +1300,13 @@ Next tryResolve(ref IRCBot bot)
         return Next.returnFailure;
     }
 
+    enum defaultResolveAttempts = 15;
+    immutable resolveAttempts = settings.endlesslyConnect ? int.max : defaultResolveAttempts;
+
     alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(bot.conn, bot.parser.client.server.address,
-        bot.parser.client.server.port, settings.ipv6, *(bot.abort)));
+        bot.parser.client.server.port, settings.ipv6, resolveAttempts, *(bot.abort)));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -1331,7 +1334,6 @@ Next tryResolve(ref IRCBot bot)
             logger.warningf("Could not resolve server address. (%s%s%s)",
                 logtint, attempt.error, warningtint);
 
-            enum resolveAttempts = 15;  // FIXME
             if (attempt.numRetry+1 < resolveAttempts)
             {
                 import kameloso.thread : interruptibleSleep;
