@@ -130,6 +130,7 @@ struct CoreSettings
         string configFile;  /// Main configuration file.
         string resourceDirectory;  /// Path to resource directory.
         string configDirectory;  /// Path to configuration directory.
+        bool force;  /// Whether or not to force connecting.
     }
 }
 
