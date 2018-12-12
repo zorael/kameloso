@@ -521,6 +521,7 @@ struct ResolveAttempt
  +      address = String address to look up.
  +      port = Remote port build into the `Address`.
  +      useIPv6 = Whether to include resolved IPv6 addresses or not.
+ +      resolveAttempts = How many times to try resolving before giving up.
  +      abort = Reference bool which, if set, should make us abort and return.
  +/
 void resolveFiber(ref Connection conn, const string address, const ushort port,
