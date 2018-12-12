@@ -274,12 +274,12 @@ Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettin
 
     printObjects(client, client.server, settings);
 
-    logger.logf("Configuration written to %s%s", infotint, settings.configFile);
+    logger.logf("Configuration written to %s%s\n", infotint, settings.configFile);
 
     if (!client.admins.length && !client.homes.length)
     {
         import kameloso.common : complainAboutIncompleteConfiguration;
-        logger.log("Edit it and make sure it has entries for at least one of the following:");
+        logger.log("Edit it and make sure it contains at least one of the following:");
         complainAboutIncompleteConfiguration();
     }
 
