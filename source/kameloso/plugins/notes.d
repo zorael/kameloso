@@ -559,11 +559,11 @@ final class NotesPlugin : IRCPlugin
 
     // notes
     /++
-    +  The in-memory JSON storage of all stored notes.
-    +
-    +  It is in the JSON form of `Note[][string][string]`, where the first
-    +  string key is a channel and the second a nickname.
-    +/
+     +  The in-memory JSON storage of all stored notes.
+     +
+     +  It is in the JSON form of `Note[][string][string]`, where the first
+     +  string key is a channel and the second a nickname.
+     +/
     JSONStorage notes;
 
     /// Filename of file to save the notes to.

@@ -66,21 +66,21 @@ struct AdminSettings
     @Unconfigurable
     {
         /++
-        +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
-        +  events.
-        +/
+         +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
+         +  events.
+         +/
         bool printRaw;
 
         /++
-        +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
-        +  of events.
-        +/
+         +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
+         +  of events.
+         +/
         bool printBytes;
 
         /++
-        +  Toggles whether `onAnyEvent` prints assert statements for incoming
-        +  events.
-        +/
+         +  Toggles whether `onAnyEvent` prints assert statements for incoming
+         +  events.
+         +/
         bool printAsserts;
     }
 }

@@ -1946,17 +1946,17 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
             case "CHANMODES":
                 /++
-                +  This is a list of channel modes according to 4 types.
-                +
-                +  A = Mode that adds or removes a nick or address to a list.
-                +      Always has a parameter.
-                +  B = Mode that changes a setting and always has a parameter.
-                +  C = Mode that changes a setting and only has a parameter when
-                +      set.
-                +  D = Mode that changes a setting and never has a parameter.
-                +
-                +  Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
-                +/
+                 +  This is a list of channel modes according to 4 types.
+                 +
+                 +  A = Mode that adds or removes a nick or address to a list.
+                 +      Always has a parameter.
+                 +  B = Mode that changes a setting and always has a parameter.
+                 +  C = Mode that changes a setting and only has a parameter when
+                 +      set.
+                 +  D = Mode that changes a setting and never has a parameter.
+                 +
+                 +  Freenode: CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz
+                 +/
                 string modeslice = value;
                 aModes = modeslice.nom(',');
                 bModes = modeslice.nom(',');
@@ -2216,10 +2216,16 @@ struct IRCParser
 
     // toIRCEvent
     /++
-    +  Parses an IRC string into an `kameloso.irc.defs.IRCEvent`.
-    +
-    +  Proxies the call to the top-level `toIRCEvent(IRCParser, string)`.
-    +/
+     +  Parses an IRC string into an `kameloso.irc.defs.IRCEvent`.
+     +
+     +  Proxies the call to the top-level `toIRCEvent(IRCParser, string)`.
+     +
+     +  Params:
+     +      raw = Raw IRC string as received from a server.
+     +
+     +  Returns:
+     +      A complete `IRCEvent`.
+     +/
     IRCEvent toIRCEvent(const string raw)
     {
         return .toIRCEvent(this, raw);

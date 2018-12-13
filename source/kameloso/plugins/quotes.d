@@ -442,11 +442,11 @@ final class QuotesPlugin : IRCPlugin
 
     // quotes
     /++
-    +  The in-memory JSON storage of all user quotes.
-    +
-    +  It is in the JSON form of `string[][string]`, where the first key is the
-    +  nickname of a user.
-    +/
+     +  The in-memory JSON storage of all user quotes.
+     +
+     +  It is in the JSON form of `string[][string]`, where the first key is the
+     +  nickname of a user.
+     +/
     JSONStorage quotes;
 
     /// All Quotes plugin settings gathered.

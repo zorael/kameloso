@@ -514,7 +514,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                   not count. Indexing starts from the first character that is
                   part of the user’s actual message. See the example (normal
                   message) below.
-            +/
+             +/
             event.emotes = value;
             break;
 

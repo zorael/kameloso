@@ -467,11 +467,11 @@ struct IRCBot
 
     // teardownPlugins
     /++
-    +  Tears down all plugins, deinitialising them and having them save their
-    +  settings for a clean shutdown.
-    +
-    +  Think of it as a plugin destructor.
-    +/
+     +  Tears down all plugins, deinitialising them and having them save their
+     +  settings for a clean shutdown.
+     +
+     +  Think of it as a plugin destructor.
+     +/
     void teardownPlugins()
     {
         if (!plugins.length) return;
@@ -513,11 +513,11 @@ struct IRCBot
 
     // startPlugins
     /++
-    +  *start* all plugins, loading any resources they may want.
-    +
-    +  This has to happen after `initPlugins` or there will not be any plugins
-    +  in the `plugins` array to start.
-    +/
+     +  *start* all plugins, loading any resources they may want.
+     +
+     +  This has to happen after `initPlugins` or there will not be any plugins
+     +  in the `plugins` array to start.
+     +/
     void startPlugins()
     {
         foreach (plugin; plugins)
@@ -537,14 +537,14 @@ struct IRCBot
 
     // propagateClient
     /++
-    +  Takes a client and passes it out to all plugins.
-    +
-    +  This is called when a change to the client has occurred and we want to
-    +  update all plugins to have an updated copy of it.
-    +
-    +  Params:
-    +      client = `kameloso.irc.common.IRCClient` to propagate to all plugins.
-    +/
+     +  Takes a client and passes it out to all plugins.
+     +
+     +  This is called when a change to the client has occurred and we want to
+     +  update all plugins to have an updated copy of it.
+     +
+     +  Params:
+     +      client = `kameloso.irc.common.IRCClient` to propagate to all plugins.
+     +/
     void propagateClient(IRCClient client) pure nothrow @nogc @safe
     {
         foreach (plugin; plugins)
@@ -568,7 +568,6 @@ struct IRCBot
  +  Params:
  +      colourCode = Terminal foreground colour to display the text in.
  +/
-
 version(Colours)
 void printVersionInfo(TerminalForeground colourCode)
 {

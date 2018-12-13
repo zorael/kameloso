@@ -969,9 +969,9 @@ struct IRCServer
         string prefixes;
 
         /++
-        +  Supported channel prefix characters, as announced by the server in
-        +  the `ISUPPORT` event, before the MOTD.
-        +/
+         +  Supported channel prefix characters, as announced by the server in
+         +  the `ISUPPORT` event, before the MOTD.
+         +/
         string chantypes = "#";
 
         /// The current case mapping.
