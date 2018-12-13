@@ -290,7 +290,7 @@ void onWelcome(PipelinePlugin plugin)
 
 // teardown
 /++
- +  Deinitialises the Pipeline plugin. Shuts down the pipereader thread.
+ +  De-initialises the Pipeline plugin. Shuts down the pipereader thread.
  +/
 void teardown(PipelinePlugin plugin)
 {

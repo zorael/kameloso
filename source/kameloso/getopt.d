@@ -4,7 +4,7 @@
 module kameloso.getopt;
 
 import kameloso.common : CoreSettings, IRCBot, Next;
-import kameloso.irc : IRCClient;
+import kameloso.irc.common : IRCClient;
 import std.typecons : No, Yes;
 
 @safe:
@@ -14,7 +14,7 @@ private:
 
 // meldSettingsFromFile
 /++
- +  Read `kameloso.common.CoreSettings` and `kameloso.irc.IRCClient` from file
+ +  Read `kameloso.common.CoreSettings` and `kameloso.irc.common.IRCClient` from file
  +  into temporaries, then meld them into the real ones, into which the
  +  command-line arguments will have been applied.
  +
@@ -27,8 +27,8 @@ private:
  +  ---
  +
  +  Params:
- +      client = Reference `kameloso.irc.IRCClient` to apply changes to.
- +      setttings = Reference `kameloso.common.CoreSettings` to apply changes
+ +      client = Reference `kameloso.irc.common.IRCClient` to apply changes to.
+ +      settings = Reference `kameloso.common.CoreSettings` to apply changes
  +          to.
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
@@ -54,7 +54,7 @@ void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 }
 
 
-// ajustGetopt
+// adjustGetopt
 /++
  +  Adjust values set by getopt, by looking for setting strings in the `args`
  +  `string[]` and manually overriding melded values with them.
@@ -227,7 +227,7 @@ void printHelp(GetoptResult results) @system
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
- +      client = Reference to the current `kameloso.irc.IRCClient`.
+ +      client = Reference to the current `kameloso.irc.common.IRCClient`.
  +      customSettings = Reference string array to all the custom settings set
  +          via `getopt`, to apply to things before saving to disk.
  +
@@ -310,7 +310,7 @@ public:
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      args = The `string[]` args the program was called with.
- +      customSettings = Refernce array of custom settings to apply on top of
+ +      customSettings = Reference array of custom settings to apply on top of
  +          the settings read from the configuration file.
  +
  +  Returns:

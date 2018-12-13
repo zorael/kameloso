@@ -129,13 +129,13 @@ public:
 import core.time : Duration;
 struct ListenAttempt
 {
-    /// At what state the listening process this attemt is currently at.
+    /// At what state the listening process this attempt is currently at.
     enum State
     {
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
-        timeout,    /// Connecion read timed out.
+        timeout,    /// Connection read timed out.
         warning,    /// Recoverable exception thrown; warn and continue.
         error,      /// Unrecoverable exception thrown; abort.
     }
@@ -166,9 +166,9 @@ struct ListenAttempt
  +  `core.thread.Fiber`.
  +
  +  It maintains its own buffer into which it receives from the server, though
- +  not neccessarily full lines. It thus keeps filling the buffer until it
+ +  not necessarily full lines. It thus keeps filling the buffer until it
  +  finds a newline character, yields `ListenAttempt`s back to the caller of
- +  the fiber, checks for more lines to yield, and if none yields an attempt
+ +  the Fiber, checks for more lines to yield, and if none yields an attempt
  +  with a `ListenAttempt.State` denoting that nothing was read and that a new
  +  attempt should be made later. The buffer logic is complex.
  +
@@ -336,7 +336,7 @@ struct ConnectionAttempt
         connected,          /// Successfully connected.
         delayThenReconnect, /// Failed to connect; should delay and retry.
         delayThenNextIP,    /// Failed to reconnect several times; next IP.
-        noMoreIPs,          /// Exhausted all IPs anc could not connect.
+        noMoreIPs,          /// Exhausted all IPs and could not connect.
         ipv6Failure,        /// IPv6 connection failed.
         error,              /// Error connecting; should abort.
     }
@@ -358,7 +358,7 @@ struct ConnectionAttempt
 // connectFiber
 /++
  +  Fiber function that tries to connect to IPs in the `conn.ips` array,
- +  yielding at certain points throghout the process to let the calling function
+ +  yielding at certain points throughout the process to let the calling function
  +  (here `kameloso.common.main`) output progress text to the local terminal.
  +
  +  It would make sense to just make this a single normal function, but then it
@@ -366,7 +366,7 @@ struct ConnectionAttempt
  +  really has no business with, separation of concerns-wise.
  +
  +  Params:
- +      conn = Reference to the currenct, unconnected `Connection`.
+ +      conn = Reference to the current, unconnected `Connection`.
  +      endlesslyConnect = Whether or not to endlessly try connecting.
  +      abort = Reference to the current `abort` flag, which -- if set -- should
  +          make the function return.

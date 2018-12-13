@@ -16,7 +16,7 @@ module kameloso.json;
  +  Example:
  +  ---
  +  JSONStorage s;
- +  s.reset();  // not always neccessary
+ +  s.reset();  // not always necessary
  +  s.storage["foo"] = null;  // JSONValue quirk
  +  s.storage["foo"]["abc"] = JSONValue(42);
  +  s.storage["foo"]["def"] = JSONValue(3.14f);

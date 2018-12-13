@@ -104,11 +104,11 @@ alias printObject = printObjects;
  +      printAll = Whether or not to also display members marked as
  +          `kameloso.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
- +      coloured = Whether to display in colours or noF.
+ +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
  +      sink = Output range to write to.
  +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and formaF.
+ +      things = Variadic list of structs to enumerate and format.
  +/
 void formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Sink, Things...)
@@ -129,7 +129,7 @@ if (isOutputRange!(Sink, char[]))
         sink.put(string.init);
     }
 
-    enum minimumTypeWidth = 9;  // Current sweet spot, accomodates well for `string[]`
+    enum minimumTypeWidth = 9;  // Current sweet spot, accommodates well for `string[]`
     enum minimumNameWidth = 20;
 
     static if (printAll)
@@ -508,10 +508,10 @@ if (isOutputRange!(Sink, char[]))
  +      printAll = Whether or not to also display members marked as
  +          `kameloso.uda.Unconfigurable`, usually transitive information that
  +          doesn't carry between program runs.
- +      coloured = Whether to display in colours or noF.
+ +      coloured = Whether to display in colours or not.
  +      widthArg = The width with which to pad output columns.
  +      bright = Whether or not to format for a bright terminal background.
- +      things = Variadic list of structs to enumerate and formaF.
+ +      things = Variadic list of structs to enumerate and format.
  +/
 string formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)
@@ -530,7 +530,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 ///
 unittest
 {
-    // Rely on the main unittests of the output range version of formatObjects
+    // Rely on the main unit tests of the output range version of formatObjects
 
     struct Struct
     {

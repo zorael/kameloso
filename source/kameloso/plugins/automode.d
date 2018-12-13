@@ -1,6 +1,6 @@
 /++
  +  The Automode plugin handles automatically setting the modes of users in a
- +  channel. The common usecase is to have someone be automatically set to `+o`
+ +  channel. The common use-case is to have someone be automatically set to `+o`
  +  (operator) when joining.
  +
  +  Commands:

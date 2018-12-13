@@ -183,7 +183,7 @@ string lookupReddit(IRCPluginState state, const string url)
             // doesn't already end with one. It apparently matters.
             if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
 
-            state.askToLog("No corresponding Redit post found.");
+            state.askToLog("No corresponding Reddit post found.");
             return string.init;
         }
         else

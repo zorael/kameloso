@@ -311,7 +311,7 @@ bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 /++
  +  Decodes an IRCv3 tag string, replacing some characters.
  +
- +  IRCv3 tags need to be free of spaces, so by neccessity they're encoded into
+ +  IRCv3 tags need to be free of spaces, so by necessity they're encoded into
  +  `\s`. Likewise; since tags are separated by semicolons, semicolons in tag
  +  string are encoded into `\:`, and literal backslashes `\\`.
  +
@@ -449,7 +449,7 @@ unittest
  +      event = `kameloso.irc.defs.IRCEvent` to examine.
  +
  +  Returns:
- +      `true` if the sender is judged to be from nicknam services, `false` if
+ +      `true` if the sender is judged to be from nickname services, `false` if
  +      not.
  +/
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
@@ -1015,7 +1015,7 @@ unittest
 /++
  +  Sets a new or removes a `Mode`.
  +
- +  `Mode`s that are merely a character in `modechars` are simpy removed if
+ +  `Mode`s that are merely a character in `modechars` are simply removed if
  +   the *sign* of the mode change is negative, whereas a more elaborate
  +  `Mode` in the `modes` array are only replaced or removed if they match a
  +   comparison test.
@@ -1594,7 +1594,7 @@ struct IRCClient
             @CannotContainComments
             string[] homes;
 
-            /// Currently inhabited channels (though not neccessarily homes).
+            /// Currently inhabited channels (though not necessarily homes).
             @CannotContainComments
             string[] channels;
         }

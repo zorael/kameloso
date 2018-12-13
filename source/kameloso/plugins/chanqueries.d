@@ -2,7 +2,7 @@
  +  The Channel Queries service queries channels for information about them (in
  +  terms of topic and modes) as well as its list of participants. It does this
  +  shortly after having joined a channel, as a service to all other plugins,
- +  so they don't each try to do it theemselves.
+ +  so they don't each repeat it themselves.
  +
  +  It has no commands.
  +
@@ -202,7 +202,7 @@ public:
  +  The Channel Queries service queries channels for information about them (in
  +  terms of topic and modes) as well as its list of participants. It does this
  +  shortly after having joined a channel, as a service to all other plugins,
- +  so they don't each try to do it theemselves.
+ +  so they don't each try to do it themselves.
  +/
 final class ChanQueriesService : IRCPlugin
 {

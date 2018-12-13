@@ -844,7 +844,7 @@ struct IRCEvent
     /// A timestamp of when the event transpired.
     long time;
 
-    /// What errors occured during parsing, if any.
+    /// What errors occurred during parsing, if any.
     string errors;
 
     version(TwitchSupport)
@@ -965,7 +965,7 @@ struct IRCServer
         /// Prefix characters by mode character; o by @, v by +, etc.
         char[char] prefixchars;
 
-        /// Characer channel mode prefixes (o,v,h,...)
+        /// Character channel mode prefixes (o,v,h,...)
         string prefixes;
 
         /++
@@ -1018,7 +1018,7 @@ struct IRCUser
     /// The alternate "display name" of the user, such as those on Twitch.
     string alias_;
 
-    /// Ther user's IDENT identification.
+    /// The user's IDENT identification.
     string ident;
 
     /// The reported user address, which may be a cloak.
@@ -1366,7 +1366,7 @@ struct IRCUser
     }
 
     /++
-     +  Compares two `IRCUser`s with eachother, ignoring members considered to
+     +  Compares two `IRCUser`s with each other, ignoring members considered to
      +  be extra or optional.
      +/
     bool opEquals(const IRCUser that) pure nothrow @safe const
@@ -2498,6 +2498,6 @@ struct IRCChannel
     /// Array of voiced channel users.
     alias voiced = modsShorthand!'v';
 
-    /// When the channel was created, expresed in UNIX time.
+    /// When the channel was created, expressed in UNIX time.
     long created;
 }

@@ -118,7 +118,7 @@ struct CoreSettings
     /// Flag denoting that we should save to file on exit.
     bool saveOnExit = false;
 
-    /// Whether or not to endlessly connect or whether to give up after a while.
+    /// Whether to endlessly connect or whether to give up after a while.
     bool endlesslyConnect = false;
 
     /// Character(s) that prefix a bot chat command.
@@ -542,11 +542,11 @@ struct IRCBot
     /++
     +  Takes a client and passes it out to all plugins.
     +
-    +  This is called when a change to the client has occured and we want to
+    +  This is called when a change to the client has occurred and we want to
     +  update all plugins to have an updated copy of it.
     +
     +  Params:
-    +      client = `kameloso.irc.IRCClient` to propagate to all plugins.
+    +      client = `kameloso.irc.common.IRCClient` to propagate to all plugins.
     +/
     void propagateClient(IRCClient client) pure nothrow @nogc @safe
     {
@@ -690,7 +690,7 @@ public:
         @disable this(this);
     }
 
-    /// Tranparently proxy all `Thing`-related calls to `thing`.
+    /// Transparently proxy all `Thing`-related calls to `thing`.
     alias thing this;
 }
 
@@ -1033,7 +1033,7 @@ else version(FreeBSD)
  +  On Linux it defaults to `$XDG_CONFIG_HOME/kameloso` and falls back to
  +  `~/.config/kameloso` if no `$XDG_CONFIG_HOME` environment variable present.
  +
- +  On MacOS it defaults to `$HOME/Library/Application Support/kameloso`.
+ +  On OSX it defaults to `$HOME/Library/Application Support/kameloso`.
  +
  +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
  +

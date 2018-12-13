@@ -574,7 +574,7 @@ unittest
 version(Colours)
 string invert(const string line, const string toInvert)
 {
-    import kameloso.irc : isValidNicknameCharacter;
+    import kameloso.irc.common : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
     import std.string : indexOf;
@@ -619,7 +619,7 @@ string invert(const string line, const string toInvert)
         }
         else
         {
-            // Begins at string start, or trailed by non-nicknick character
+            // Begins at string start, or trailed by non-nickname character
             sink.put(slice[0..startpos]);
             sink.put(inverted);
         }

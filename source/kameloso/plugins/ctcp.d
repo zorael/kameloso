@@ -291,7 +291,7 @@ public:
 /++
  +  The `CTCP` service (client-to-client protocol) answers to special queries
  +  sometime made over the IRC protocol. These are generally of metadata about
- +  the client itself and its capbilities.
+ +  the client itself and its capabilities.
  +
  +  Information about these were gathered from the following sites:
  +      https://modern.ircdocs.horse/ctcp.html

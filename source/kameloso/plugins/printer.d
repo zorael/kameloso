@@ -4,10 +4,10 @@
  +  colours.
  +
  +  It has no commands; all `kameloso.irc.defs.IRCEvent`s will be parsed and
- +  pinted, excluding certain types that were deemed too spammy. Print them as
+ +  printed, excluding certain types that were deemed too spammy. Print them as
  +  well by disabling `PrinterSettings.filterVerbose`.
  +
- +  It is not technically neccessary, but it is the main form of feedback you
+ +  It is not technically necessary, but it is the main form of feedback you
  +  get from the plugin, so you will only want to disable it if you want a
  +  really "headless" environment.
  +/
@@ -213,7 +213,7 @@ struct LogLineBuffer
     /// An `std.array.Appender` housing queued lines to write.
     Appender!(string[]) lines;
 
-    /// Create a new `LogLineBuffer` with the passed path strig as identifier.
+    /// Create a new `LogLineBuffer` with the passed path string as identifier.
     this(const string path)
     {
         this.path = path;
@@ -623,7 +623,7 @@ void onISUPPORT(PrinterPlugin plugin)
 {
     if (plugin.printedISUPPORT || !plugin.state.client.server.network.length)
     {
-        // We already printed this information, or we havent yet seen NETWORK
+        // We already printed this information, or we haven't yet seen NETWORK
         return;
     }
 
@@ -1908,8 +1908,8 @@ void highlightEmotesImpl(Sink)(const string line, auto ref Sink sink,
     import std.algorithm.sorting : sort;
     highlights[0..numHighlights].sort!((a,b) => a.start < b.start)();
 
-    // We need a dstring since we're slicing something that isn't neccessarily ASCII
-    // Without this highlights become offset a few characters depnding on the text
+    // We need a dstring since we're slicing something that isn't necessarily ASCII
+    // Without this highlights become offset a few characters depending on the text
     immutable dline = line.to!dstring;
 
     foreach (immutable i; 0..numHighlights)
@@ -2022,7 +2022,7 @@ void initialise(PrinterPlugin plugin)
 
 // teardown
 /++
- +  Deinitialises the plugin.
+ +  De-initialises the plugin.
  +
  +  If we're buffering writes, commit all queued lines to disk.
  +/

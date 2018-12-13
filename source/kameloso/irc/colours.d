@@ -136,7 +136,7 @@ unittest
  +  background.
  +
  +  Overload that doesn't take a string to tint, only the `IRCColour`s to
- +  produe a colour code from.
+ +  produce a colour code from.
  +
  +  Params:
  +      fg = Foreground `IRCColour`.
@@ -257,7 +257,7 @@ unittest
 
 // ircBold
 /++
- +  Returns the passed string wrapped inbetween IRC bold control characters.
+ +  Returns the passed string wrapped in between IRC bold control characters.
  +
  +  Params:
  +      line = String line to make IRC bold.
@@ -283,7 +283,7 @@ unittest
 
 // ircItalics
 /++
- +  Returns the passed string wrapped inbetween IRC italics control characters.
+ +  Returns the passed string wrapped in between IRC italics control characters.
  +
  +  Params:
  +      line = String line to make IRC italics.
@@ -309,7 +309,7 @@ unittest
 
 // ircUnderlined
 /++
- +  Returns the passed string wrapped inbetween IRC underlined control
+ +  Returns the passed string wrapped in between IRC underlined control
  +  characters.
  +
  +  Params:
@@ -360,7 +360,7 @@ char ircReset()
  +  Params:
  +      origLine = String line to map effects of.
  +      fgBase = Foreground base code to reset to after end colour tags.
- +      bgBase = Backgrund base code to reset to after end colour tags.
+ +      bgBase = Background base code to reset to after end colour tags.
  +
  +  Returns:
  +      A new string based on `origLine` with mIRC tokens mapped to terminal
@@ -537,10 +537,10 @@ string mapColours(const string line, const uint fgReset = TerminalForeground.def
 
         /+
             Technically mIRC accepts the full number range 0 to 99. Thus N and M
-            can maximally be two digits long. The way these colors are
+            can maximally be two digits long. The way these colours are
             interpreted varies from client to client. Some map the numbers back
             to 0 to 15, others interpret numbers larger than 15 as the default
-            text color.
+            text colour.
          +/
 
         ubyte fgIndex = hit[1].to!ubyte;

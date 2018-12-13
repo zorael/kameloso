@@ -62,12 +62,12 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
  +  Looks up a Bash quote and reports it to the appropriate nickname or
  +  channel.
  +
- +  Supposed to be run in its own, shortlived thread.
+ +  Supposed to be run in its own, short-lived thread.
  +
  +  Params:
  +      sState = A `shared` `kameloso.plugins.common.IRCPluginState` containing
  +          necessary information to pass messages to send messages to the main
- +          thread, to send text to the srever or display text on the screen.
+ +          thread, to send text to the server or display text on the screen.
  +      event = The `kameloso.irc.defs.IRCEvent` in flight.
  +      colouredOutgoing = Whether or not to tint messages going to the server
  +          with mIRC colouring.

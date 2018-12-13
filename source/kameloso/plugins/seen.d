@@ -59,7 +59,7 @@ public:
  +  private functions, as well as to house plugin-private variables that we want
  +  to keep out of top-level scope for the sake of modularity. If the only state
  +  is in the plugin, several plugins of the same kind can technically be run
- +  alongide eachother, which would allow for several bots to be run in
+ +  alongside each other, which would allow for several bots to be run in
  +  parallel. This is not yet supported but there's nothing stopping it.
  +
  +  As such it houses this plugin's *state*, notably its instance of
@@ -119,7 +119,7 @@ public:
  +
  +  * `timedFibers` is also an array of `core.thread.Fiber`s, but not an
  +     associative one keyed on event types. Instead they are wrapped in a
- +     `kameloso.typecons.Labeled` emplate and marked with a UNIX timestamp of
+ +     `kameloso.typecons.Labeled` template and marked with a UNIX timestamp of
  +     when they should be run. Use `kameloso.plugins.common.delayFiber` to
  +     enqueue.
  +
@@ -148,7 +148,7 @@ final class SeenPlugin : IRCPlugin
     // seenUsers
     /++
      +  Our associative array (AA) of seen users; the dictionary keyed with
-     +  users' nicknames and with values that are UNIX timetamps, denoting when
+     +  users' nicknames and with values that are UNIX timestamps, denoting when
      +  that user was last *seen* online.
      +
      +  Example:
@@ -278,7 +278,7 @@ struct SeenSettings
  +     looked them up.<br>
  +  * `whitelist` will only allow users in the `whitelist` array in the
  +     configuration file.<br>
- +  * `admin` will allow only you and your other adminitrators, also as defined
+ +  * `admin` will allow only you and your other administrators, also as defined
  +     in the configuration file.
  +
  +  In the case of `anyone`, `whitelist`, `admin`, it will look you up and
@@ -457,11 +457,11 @@ void onEndOfList(SeenPlugin plugin)
  +
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a
- +  `kameloso.plugins.common.BotCommand`. It will ssince have been sliced off,
+ +  `kameloso.plugins.common.BotCommand`. It will since have been sliced off,
  +  so we're left only with the "arguments" to "`seen`".
  +
  +  If this is a `CHAN` event, the original lines could (for example) have been
- +  "`kameloso: seen Joe`", or merely "`!seen Joe`" (asuming a `!` prefix).
+ +  "`kameloso: seen Joe`", or merely "`!seen Joe`" (assuming a `!` prefix).
  +  If it was a private `QUERY` message, the `kameloso:` prefix may have been
  +  omitted. In either case, we're left with only the parts we're interested in,
  +  and the rest sliced off.
@@ -514,7 +514,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         You can therefore use them as such:
 
         ---
-        with (plugin)  // <-- neccessary for the short-shorthand
+        with (plugin)  // <-- necessary for the short-shorthand
         {
             chan("#d", "Hello world!");
             query("kameloso", "Hello you!");

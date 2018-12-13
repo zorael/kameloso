@@ -520,7 +520,7 @@ unittest
  +  into fields like `target`, `channel`, `content`, etc.
  +
  +  IRC events are *riddled* with inconsistencies and specialcasings, so this
- +  function is very very long, but by neccessity.
+ +  function is very very long, but by necessity.
  +
  +  The `kameloso.irc.defs.IRCEvent` is finished at the end of this function.
  +
@@ -1231,7 +1231,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
 
                         if (targets.beginsWithOneOf(parser.client.server.chantypes))
                         {
-                            // First is bot, second is chanenl
+                            // First is bot, second is channel
                             event.channel = targets;
                         }
                         else
@@ -2014,7 +2014,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
             case "EXTBAN":
                 // EXTBAN=$,ajrxz
-                // ETBAN=
+                // EXTBAN=
                 // no character means implicitly $, I believe?
                 immutable prefix = value.nom(',');
                 extbanPrefix = prefix.length ? prefix.to!char : '$';

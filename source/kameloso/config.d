@@ -768,7 +768,7 @@ unittest
     struct DifferentSection
     {
         string ignored = "completely";
-        string because = "   no DifferentSeection struct was passed";
+        string because = "   no DifferentSection struct was passed";
         int nil = 5;
         string naN = `!"#¤%&/`;
     }
@@ -796,7 +796,7 @@ barArray blaawp,oorgle,blaawp
 
 [DifferentSection]
 ignored completely
-because    no DifferentSeection struct was passed
+because    no DifferentSection struct was passed
 nil 5
 naN !"#¤%&/
 `;
@@ -820,7 +820,7 @@ barArray                blaawp,oorgle,blaawp
 
 [DifferentSection]
 ignored                 completely
-because                 no DifferentSeection struct was passed
+because                 no DifferentSection struct was passed
 nil                     5
 naN                     !"#¤%&/`;
 

@@ -229,7 +229,7 @@ unittest
  +  string one = 1.plurality("one", "two");
  +  string two = 2.plurality("one", "two");
  +  string many = (-2).plurality("one", "many");
- +  string many0 = 0.plurlity("one", "many");
+ +  string many0 = 0.plurality("one", "many");
  +
  +  assert((one == "one"), one);
  +  assert((two == "two"), two);
@@ -634,8 +634,7 @@ unittest
  +  ---
  +
  +  Params:
- +      fullStrip = Whether to allow for the stripping to clear the entire
- +          string.
+ +      fullStrip = Whether to allow for the stripping to clear the entire string.
  +      line = Original line to strip the suffix from.
  +      suffix = Suffix string to strip.
  +
@@ -1185,7 +1184,7 @@ unittest
  +  then the passed maximum length.
  +
  +  If a line cannot be split due to the line being too short or the separator
- +  not occuring in the text, it is added to the returned array as-is and no
+ +  not occurring in the text, it is added to the returned array as-is and no
  +  more splitting is done.
  +
  +  Example:

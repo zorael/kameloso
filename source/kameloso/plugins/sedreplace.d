@@ -1,6 +1,6 @@
 /++
  +  The SedReplace plugin imitates the UNIX `sed` tool, allowing for the
- +  replacemnt/substitution of text. It does not require the tool itself though,
+ +  replacement/substitution of text. It does not require the tool itself though,
  +  and will work on Windows builds too.
  +
  +  ---
@@ -11,7 +11,7 @@
  +  It has no bot commands, as everything is done by scanning messages for signs
  +  of `s/this/that/` patterns.
  +
- +  It supports a delimiteter of `/`, `#` and `|`. You can also end it with a
+ +  It supports a delimiter of `/`, `#` and `|`. You can also end it with a
  +  `g` to set the global flag, to have more than one match substituted.
  +
  +  ---
@@ -211,7 +211,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 plugin.prevlines.remove(event.sender.nickname);
             }
 
-            // Processed a sed-replace command (succesfully or not); return
+            // Processed a sed-replace command (successfully or not); return
             return;
 
         default:

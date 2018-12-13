@@ -88,7 +88,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.random : uniform;
 
-    // Fetched from wikipedia
+    // Fetched from Wikipedia
     static immutable string[20] eightballAnswers =
     [
         "It is certain",

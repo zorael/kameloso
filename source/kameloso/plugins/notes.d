@@ -10,7 +10,7 @@
  +  `fakechan`<br>
  +  `fakejoin`
  +
- +  It is vey optional.
+ +  It is very optional.
  +/
 module kameloso.plugins.notes;
 
@@ -547,7 +547,7 @@ public:
 
 // NotesPlugin
 /++
- +  The Notes plugin, which allows people to leave messages to eachother,
+ +  The Notes plugin, which allows people to leave messages to each other,
  +  for offline communication and such.
  +/
 final class NotesPlugin : IRCPlugin

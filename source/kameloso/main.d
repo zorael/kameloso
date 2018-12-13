@@ -615,7 +615,7 @@ Next mainLoop(ref IRCBot bot)
             // something was read or not.
 
             /++
-             +  At a cadence of once every `checkFiberFibersEveryN`, walk the
+             +  At a cadence of once every `checkTimedFibersEveryN`, walk the
              +  array of plugins and see if they have timed `core.thread.Fiber`s
              +  to call.
              +/
@@ -1091,7 +1091,7 @@ void resetSignals() nothrow @nogc
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +      args = The arguments passed to the program.
  +      customSettings = Reference to the dynamic array of custom settings as
- +          defined with `--set plugin.setting=value` on the command lnie.
+ +          defined with `--set plugin.setting=value` on the command line.
  +
  +  Returns:
  +      `kameloso.common.Next`.* depending on what action the calling site
@@ -1365,12 +1365,12 @@ public:
 
 version(unittest)
 /++
- +  Unittesting main; does nothing.
+ +  Unit-testing main; does nothing.
  +/
 void main()
 {
     // Compiled with -b unittest, so run the tests and exit.
-    // Logger is initialised in a module constructor, don't reinit here.
+    // Logger is initialised in a module constructor, don't re-init here.
     logger.info("All tests passed successfully!");
     // No need to Cygwin-flush; the logger did that already
 }
@@ -1399,7 +1399,7 @@ int main(string[] args)
     string[] customSettings;
 
     // Initialise the logger immediately so it's always available.
-    // handleGetopt reinits later when we know the settings for monochrome
+    // handleGetopt re-inits later when we know the settings for monochrome
     initLogger(settings.monochrome, settings.brightTerminal);
 
     scope(failure)
@@ -1528,7 +1528,7 @@ int main(string[] args)
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
 
-            // Reinit plugins here so it isn't done on the first connect attempt
+            // Re-init plugins here so it isn't done on the first connect attempt
             bot.initPlugins(customSettings);
 
             // Reset throttling, in case there were queued messages.
@@ -1656,7 +1656,7 @@ int main(string[] args)
 
 // complainAboutInvalidConfigurationEntries
 /++
- +  Prints some information about invalid configugration enries to the local
+ +  Prints some information about invalid configuration entries to the local
  +  terminal.
  +
  +  Params:

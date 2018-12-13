@@ -17,7 +17,7 @@ debug:
 // formatClientAssignment
 /++
  +  Constructs statement lines for each changed field of an
- +  `kameloso.irc.IRCClient`, including instantiating a fresh one.
+ +  `kameloso.irc.common.IRCClient`, including instantiating a fresh one.
  +
  +  Example:
  +  ---
@@ -29,7 +29,7 @@ debug:
  +
  +  Params:
  +      sink = Output buffer to write to.
- +      client = `kameloso.irc.IRCClient` to simulate the assignment of.
+ +      client = `kameloso.irc.common.IRCClient` to simulate the assignment of.
  +/
 void formatClientAssignment(Sink)(auto ref Sink sink, IRCClient client)
 {

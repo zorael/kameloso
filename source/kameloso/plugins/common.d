@@ -88,7 +88,7 @@ interface IRCPlugin
      +  Executed during start if we want to change a setting by its string name.
      +
      +  Returns:
-     +      Boolean of whether the set succeded or not.
+     +      Boolean of whether the set succeeded or not.
      +/
     bool setSettingByName(const string, const string);
 
@@ -386,7 +386,7 @@ struct IRCPluginState
     import std.concurrency : Tid;
 
     /++
-     +  The current `kameloso.irc.IRCClient`, containing information pertaining
+     +  The current `kameloso.irc.common.IRCClient`, containing information pertaining
      +  to the bot in the context of the current (alive) connection.
      +/
     IRCClient client;
@@ -578,7 +578,7 @@ struct Chainable;
  +  letting no other functions in the same module be triggered after it has
  +  been.
  +
- +  This is not strictly neccessary since anything non-`Chainable` is implicitly
+ +  This is not strictly necessary since anything non-`Chainable` is implicitly
  +  `Terminating`, but we add it to silence warnings and in hopes of the code
  +  becoming more self-documenting.
  +/
@@ -1625,7 +1625,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // teardown
     /++
-     +  Deinitialises the plugin.
+     +  De-initialises the plugin.
      +/
     void teardown() @system
     {
@@ -1963,7 +1963,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
     /++
      +  Replays any queued requests awaiting the result of a WHOIS. Before that,
      +  records the user's services account by saving it to the user's
-     +  `kameloso.irc.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
+     +  `kameloso.irc.common.IRCClient` in the `IRCPlugin`'s `IRCPluginState.users`
      +  associative array.
      +
      +  This function was part of `UserAwareness` but triggering queued requests
@@ -1972,7 +1972,7 @@ mixin template MinimalAuthentication(bool debug_ = false, string module_ = __MOD
      +  Most of the time a plugin doesn't require a full `UserAwareness`; only
      +  those that need looking up users outside of the current event do. The
      +  persistency service allows for plugins to just read the information from
-     +  the `kameloso.irc.defs.IRCUser` embedded in th event directly, and that's
+     +  the `kameloso.irc.defs.IRCUser` embedded in the event directly, and that's
      +  often enough.
      +
      +  General rule: if a plugin doesn't access `state.users`, it's probably
@@ -2358,7 +2358,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  The number of hours is so far hardcoded but can be made configurable if
      +  there's a use-case for it.
      +
-     +  This reimplements `IRCPlugin.periodically`.
+     +  This re-implements `IRCPlugin.periodically`.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -2614,7 +2614,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Sets a mode for a channel.
      +
      +  Most modes replace others of the same type, notable exceptions being
-     +  bans and mode exemptions. We let `kameloso.irc.setMode` take care of
+     +  bans and mode exemptions. We let `kameloso.irc.common.setMode` take care of
      +  that.
      +/
     @(Awareness.early)
@@ -2930,7 +2930,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `kameloso.irc.IRCClient` of the calling `IRCPlugin`'s
+ +      client = `kameloso.irc.common.IRCClient` of the calling `IRCPlugin`'s
  +          `IRCPluginState`.
  +      policy = Policy to apply.
  +      mutEvent = Reference to the mutable `kameloso.irc.defs.IRCEvent` we're
@@ -3102,7 +3102,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
 /++
  +  Construct and queue a `WHOIS` request in the local request queue.
  +
- +  The main loop will catch up on it and do the neccessary `WHOIS` calls, then
+ +  The main loop will catch up on it and do the necessary `WHOIS` calls, then
  +  replay the event.
  +
  +  Params:

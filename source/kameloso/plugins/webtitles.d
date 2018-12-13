@@ -2,10 +2,10 @@
  +  The Webtitles plugin catches URLs pasted in a channel, follows them and
  +  reports beck the title of the web page that was linked to.
  +
- +  It has no bot commands; eveything is done by automatically scanning channel
- +  and pivate query messages fo things that look like links.
+ +  It has no bot commands; everything is done by automatically scanning channel
+ +  and private query messages for things that look like links.
  +
- +  It reqiures version `Web` for obvious reasons.
+ +  It requires version `Web` for obvious reasons.
  +
  +  It is optional.
  +/
@@ -62,7 +62,7 @@ struct TitleLookup
  +  A record of an URL lookup request.
  +
  +  This is used to aggregate information about a lookup request, making it
- +  easier to pass it inbetween functions. It serves no greater purpose.
+ +  easier to pass it in between functions. It serves no greater purpose.
  +/
 struct TitleRequest
 {
@@ -138,7 +138,7 @@ void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
         if (url.contains!(Yes.decode)('#'))
         {
             import kameloso.string : nom;
-            // URL contains an octorhorpe fragment identifier, like
+            // URL contains an octothorpe fragment identifier, like
             // https://www.google.com/index.html#this%20bit
             // Strip that.
             url = url.nom!(Yes.decode)('#');
@@ -295,7 +295,7 @@ unittest
  +  Looks up an URL and reports the title to the main thread, for printing in a
  +  channel.
  +
- +  Supposed to be run in its own, shortlived thread.
+ +  Supposed to be run in its own, short-lived thread.
  +
  +  Params:
  +      sState = The `kameloso.plugins.common.IRCPluginState` of the current

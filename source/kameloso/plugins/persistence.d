@@ -7,7 +7,7 @@
  +  like his ident and address will be available to plugins as well, assuming
  +  the Persistence service had seen that previously.
  +
- +  It has no commands. It only does postprocessing and doesn't handle
+ +  It has no commands. It only does post-processing and doesn't handle
  +  `kameloso.irc.defs.IRCEvent`s in the normal sense at all.
  +
  +  It is mandatory for plugins to pick up user classes.
@@ -411,7 +411,7 @@ public:
 // PersistenceService
 /++
  +  The Persistence service melds new `kameloso.irc.defs.IRCUser`s (from
- +  postprocessing new `kameloso.irc.defs.IRCEvent`s) with old records of
+ +  post-processing new `kameloso.irc.defs.IRCEvent`s) with old records of
  +  themselves.
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in

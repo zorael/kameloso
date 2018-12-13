@@ -5,7 +5,7 @@
  +  things along the same line.
  +
  +  It also offers some less debug-y, more administrative functions, like adding
- +  and removing homes on-the-fly, whitelisting or un-whitelisting account
+ +  and removing homes on-the-fly, whitelisting or de-whitelisting account
  +  names, joining or leaving channels, as well as plain quitting.
  +
  +  It has a few command, whose names should be fairly self-explanatory:
@@ -309,7 +309,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 // onCommandAddChan
 /++
  +  Adds a channel to the list of currently active home channels, in the
- +  `kameloso.irc.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Follows up with a Fiber to verify that the channel was actually joined.
@@ -440,7 +440,7 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandDelHome
 /++
  +  Removes a channel from the list of currently active home channels, from the
- +  `kameloso.irc.IRCClient.homes` array of the current `AdminPlugin`'s
+ +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +/
 @(IRCEvent.Type.CHAN)
@@ -489,7 +489,7 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 // onCommandWhitelist
 /++
  +  Adds a nickname to the list of users who may trigger the bot, to the current
- +  `kameloso.irc.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `anyone` and `admin`.
@@ -581,7 +581,7 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list)
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
- +  `kameloso.irc.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
+ +  `kameloso.irc.common.IRCClient.Class.whitelist` of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.

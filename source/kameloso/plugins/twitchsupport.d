@@ -1,15 +1,15 @@
 /++
- +  The Twitch Support service postprocesses `kameloso.irc.defs.IRCEvent`s after
+ +  The Twitch Support service post-processes `kameloso.irc.defs.IRCEvent`s after
  +  they are parsed but before they are sent to the plugins for handling, and
  +  deals with Twitch-specifics. Those include extracting the colour someone's
  +  name should be printed in, their alias/"display name" (generally their
  +  nickname capitalised), converting the event to some event types unique to
  +  Twitch, etc.
  +
- +  It has no bot commands and no event handlers; it only postpocesses events.
+ +  It has no bot commands and no event handlers; it only post-processes events.
  +
  +  It is useless on other servers but crucial on Twitch itself. Even enabled
- +  it won't slow the bot down though, as the vey fist thing it does is to
+ +  it won't slow the bot down though, as the very fist thing it does is to
  +  verify that it is on a Twitch server, and aborts and returns if not.
  +/
 module kameloso.plugins.twitchsupport;
@@ -63,7 +63,7 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
 /++
  +  Parses a Twitch event's IRCv3 tags.
  +
- +  The event is passed by ref as many tags neccessitate changes to it.
+ +  The event is passed by ref as many tags necessitate changes to it.
  +
  +  Params:
  +      service = Current `TwitchSupportService`.
@@ -671,10 +671,10 @@ public:
  +  Twitch-specific service.
  +
  +  Twitch events are initially very basic with only skeletal functionality,
- +  until you enable capabilites that unlock their IRCv3 tags, at which point
+ +  until you enable capabilities that unlock their IRCv3 tags, at which point
  +  events become a flood of information.
  +
- +  This service only postprocesses events and doesn't yet act on them in any
+ +  This service only post-processes events and doesn't yet act on them in any
  +  way.
  +/
 final class TwitchSupportService : IRCPlugin

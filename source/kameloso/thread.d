@@ -41,7 +41,7 @@ struct ThreadMessage
     /++
      +  Concurrency message asking for a reference to the arrays of
      +  `kameloso.plugins.common.IRCPlugin`s in the current
-     +  `kameloso.irc.IRCClient`'s plugin array.
+     +  `kameloso.irc.common.IRCClient`'s plugin array.
      +/
     struct PeekPlugins {}
 
@@ -150,7 +150,7 @@ unittest
 /++
  +  A `core.thread.Fiber` carrying a payload of type `T`.
  +
- +  Used interchangably with `core.thread.Fiber`, but allows for casting to true
+ +  Used interchangeably with `core.thread.Fiber`, but allows for casting to true
  +  `CarryingFiber!T`-ness to access the `payload` member.
  +
  +  Example:
@@ -175,7 +175,7 @@ final class CarryingFiber(T) : Fiber
     T payload;
 
     /++
-     +  Constructor function merely taking a function/delgate pointer, to call
+     +  Constructor function merely taking a function/delegate pointer, to call
      +  when invoking this `core.thread.Fiber` (via `.call()`).
      +/
     this(Fn, Args...)(Fn fn, Args args)
@@ -200,10 +200,10 @@ final class CarryingFiber(T) : Fiber
 
 // interruptibleSleep
 /++
- +  Sleep in small periods, checking the passed `abort` bool inbetween to see
+ +  Sleep in small periods, checking the passed `abort` bool in between to see
  +  if we should break and return.
  +
- +  This is useful when a different signal handler has been set up, as triggeing
+ +  This is useful when a different signal handler has been set up, as triggering
  +  it won't break sleeps. This way it does, assuming the `abort` bool is the
  +  signal handler one.
  +

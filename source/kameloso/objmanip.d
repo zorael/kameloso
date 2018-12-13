@@ -382,7 +382,7 @@ unittest
  +  It enumerates all fields in classes and structs and recursively sums up the
  +  space everything takes. It's VERY NAÏVE in that it doesn't take into account
  +  that some arrays and such may have been allocated in a larger chunk than the
- +  length of the array itself. It's mostly an approximaion, and not a good one
+ +  length of the array itself. It's mostly an approximation, and not a good one
  +  at that.
  +
  +  Example:

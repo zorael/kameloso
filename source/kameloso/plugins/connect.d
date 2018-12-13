@@ -100,7 +100,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 
 // onSelfjoin
 /++
- +  Records a channel in the `channels` array in the `kameloso.irc.IRCClient` of
+ +  Records a channel in the `channels` array in the `kameloso.irc.common.IRCClient` of
  +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon
  +  joining it.
  +/
@@ -125,7 +125,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 // joinChannels
 /++
  +  Joins all channels listed as homes *and* channels in the arrays in
- +  `kameloso.irc.IRCClient` of the current `ConnectService`'s
+ +  `kameloso.irc.common.IRCClient` of the current `ConnectService`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
  +  Params:
@@ -198,7 +198,7 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 /++
  +  Pongs the server upon `PING`.
  +
- +  We make sure to ping with the sender as target, and not the neccessarily
+ +  We make sure to ping with the sender as target, and not the necessarily
  +  the server as saved in the `kameloso.irc.defs.IRCServer` struct. For
  +  example, `ERR_BADPING` (or is it `ERR_NEEDPONG`?) generally wants you to
  +  ping a random number or string.
@@ -584,7 +584,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 /++
  +  Handles server capability exchange.
  +
- +  This is a neccessary step to register with some IRC server; the capabilities
+ +  This is a necessary step to register with some IRC server; the capabilities
  +  have to be requested (`CAP LS`), and the negotiations need to be ended
  +  (`CAP END`).
  +/
@@ -628,7 +628,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             case "twitch.tv/membership":
             case "twitch.tv/tags":
             case "twitch.tv/commands":
-                // Twitch-specific capabilites
+                // Twitch-specific capabilities
             case "account-notify":
             case "extended-join":
             //case "identify-msg":
@@ -696,15 +696,15 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 // onSASLAuthenticate
 /++
  +  Constructs a SASL plain authentication token from the bot's
- +  `kameloso.irc.IRCClient.authLogin` and `kameloso.irc.IRCClient.authPassword`,
+ +  `kameloso.irc.common.IRCClient.authLogin` and `kameloso.irc.common.IRCClient.authPassword`,
  +  then sends it to the server, during registration.
  +
  +  A SASL plain authentication token is composed like so:
  +
  +     `base64(authLogin \0 authLogin \0 authPassword)`
  +
- +  ...where `kameloso.irc.IRCClient.authLogin` is the services account name and
- +  `kameloso.irc.IRCClient.authPassword` is the account password.
+ +  ...where `kameloso.irc.common.IRCClient.authLogin` is the services account name and
+ +  `kameloso.irc.common.IRCClient.authPassword` is the account password.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
 void onSASLAuthenticate(ConnectService service)
@@ -821,7 +821,7 @@ void onWelcome(ConnectService service)
  +  Requests an UTF-8 codepage after we've figured out that the server supports
  +  changing such.
  +
- +  Currenly only RusNet is known to support codepages. If more show up,
+ +  Currently only RusNet is known to support codepages. If more show up,
  +  consider creating an `IRCServer.hasCodepages` bool and set it if `CODEPAGES`
  +  is included in `RPL_MYINFO`.
  +/
@@ -944,7 +944,7 @@ void start(ConnectService service)
  +  Receives a passed `kameloso.thread.BusMessage` with the "`connect`" header,
  +  and calls functions based on the payload message.
  +
- +  This is used to let other plugins trigger reauthentication with services.
+ +  This is used to let other plugins trigger re-authentication with services.
  +
  +  Params:
  +      service = The current `ConnectService`.

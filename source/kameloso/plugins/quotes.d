@@ -3,7 +3,7 @@
  +
  +  A user quote can be added by triggering the "`addquote`" bot command, by use
  +  of "`botname: addquote`" or "`!addquote`" (assuming a prefix of "`!`"). A
- +  random one can then be replayed by use o the "`quote [nickname]`" command.
+ +  random one can then be replayed by use of the "`quote [nickname]`" command.
  +
  +  It has a few commands:
  +
@@ -111,7 +111,7 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
  +  Fetches and repeats a random quote of a supplied nickname.
  +
  +  The quote is read from in-memory JSON storage, and it is sent to the
- +  channel the triggering event occured in, alternatively in a private message
+ +  channel the triggering event occurred in, alternatively in a private message
  +  if the request was sent in one such.
  +/
 @(IRCEvent.Type.CHAN)
