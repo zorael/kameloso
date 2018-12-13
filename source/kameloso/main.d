@@ -150,8 +150,6 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
  +/
 Next checkMessages(ref IRCBot bot)
 {
-    scope (failure) bot.teardownPlugins();
-
     Next next;
 
     /// Send a message to the server bypassing throttling.
