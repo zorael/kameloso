@@ -1397,7 +1397,6 @@ int main(string[] args)
     {
         import kameloso.terminal : TerminalToken;
         logger.error("We just crashed!", cast(char)TerminalToken.bell);
-        bot.teardownPlugins();
         resetSignals();
     }
 
@@ -1558,9 +1557,7 @@ int main(string[] args)
             assert(0, "tryResolve returned Next returnSuccess or retry");
 
         case returnFailure:
-            // No need to teardown; if it's the first connect there's
-            // nothing to tear down, and if it's after the first, later code
-            // will have already torn it down.
+            // No need to teardown; the scopeguard does it for us.
             logger.info("Exiting...");
             return 1;
         }
