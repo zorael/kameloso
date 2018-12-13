@@ -1499,6 +1499,15 @@ int main(string[] args)
      +/
     bool firstConnect = true;
 
+    scope(exit)
+    {
+        // Save if we're exiting and configuration says we should.
+        if (settings.saveOnExit)
+        {
+            bot.writeConfigurationFile(settings.configFile);
+        }
+    }
+
     do
     {
         if (!firstConnect)
@@ -1583,12 +1592,7 @@ int main(string[] args)
             assert(0, "tryConnect returned Next returnSuccess or retry");
 
         case returnFailure:
-            // Save if it's not the first connection and configuration says we should
-            if (!firstConnect && settings.saveOnExit)
-            {
-                bot.writeConfigurationFile(settings.configFile);
-            }
-
+            // No need to saveOnExit, the scopeguard takes care of that
             logger.info("Exiting...");
             return 1;
         }
@@ -1621,14 +1625,6 @@ int main(string[] args)
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
     }
 
-    // Save if we're exiting and configuration says we should.
-    if (settings.saveOnExit)
-    {
-        bot.writeConfigurationFile(settings.configFile);
-    }
-
-    import core.thread : thread_joinAll;
-
     if (*bot.abort)
     {
         // Ctrl+C
@@ -1638,8 +1634,6 @@ int main(string[] args)
     {
         logger.info("Exiting...");
     }
-
-    thread_joinAll();
 
     return *bot.abort ? 1 : 0;
 }
