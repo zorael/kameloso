@@ -169,6 +169,10 @@ abstract class WHOISRequest
  +  a function pointer, which we queue and do a `WHOIS` call. When the response
  +  returns we trigger the object and the original `kameloso.irc.defs.IRCEvent`
  +  is replayed.
+ +
+ +  Params:
+ +      F = Some function type.
+ +      Payload = Optional payload type.
  +/
 final class WHOISRequestImpl(F, Payload = typeof(null)) : WHOISRequest
 {

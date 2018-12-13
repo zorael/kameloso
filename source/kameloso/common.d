@@ -397,6 +397,10 @@ struct IRCBot
      +  Params:
      +      customSettings = String array of custom settings to apply to plugins
      +          in addition to those read from the configuration file.
+     +
+     +  Returns:
+     +      An associative array of `string[]`s of invalid configuration entries,
+     +      keyed by `string` plugin names.
      +/
     string[][string] initPlugins(string[] customSettings)
     {
@@ -663,6 +667,11 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
  +  Access to the `thing` is passed on by use of `alias this` proxying, so this
  +  will transparently act like the original `thing` in most cases. The original
  +  object can be accessed via the `thing` member when it doesn't.
+ +
+ +  Params:
+ +      Thing = The type to embed and label.
+ +      Label = The type to embed as label.
+ +      disableThis = Whether or not to disable copying of the resulting struct.
  +/
 struct Labeled(Thing, Label, Flag!"disableThis" disableThis = No.disableThis)
 {
@@ -734,6 +743,7 @@ unittest
  +  ---
  +
  +  Params:
+ +      disableThis = Whether or not to disable copying of the resulting struct.
  +      thing = Object to wrap.
  +      label = Label ID to apply to the wrapped item.
  +

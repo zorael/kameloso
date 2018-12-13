@@ -511,6 +511,9 @@ if (isOutputRange!(Sink, char[]))
  +      widthArg = The width with which to pad output columns.
  +      bright = Whether or not to format for a bright terminal background.
  +      things = Variadic list of structs to enumerate and format.
+ +
+ +  Returns:
+ +      String with the object formatted, as per the passed arguments.
  +/
 string formatObjects(Flag!"printAll" printAll = No.printAll,
     Flag!"coloured" coloured = Yes.coloured, uint widthArg = 0, Things...)

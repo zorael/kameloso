@@ -17,7 +17,7 @@ import std.typecons : Flag, No, Yes;
  +  Currently it does not support static arrays.
  +
  +  Params:
- +      var = Alias of variable to examine.
+ +      var = Alias of variable to introspect.
  +/
 template isConfigurableVariable(alias var)
 {
@@ -67,7 +67,8 @@ unittest
  +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member name lengths of.
+ +      all = Flag of whether to display all members, or only those not hidden.
+ +      Things = Types to introspect and count member name lengths of.
  +/
 private template longestMemberNameImpl(Flag!"all" all, Things...)
 if (Things.length > 0)
@@ -111,7 +112,7 @@ if (Things.length > 0)
  +  columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member name lengths of.
+ +      Things = Types to introspect and count member name lengths of.
  +/
 alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
 
@@ -150,7 +151,7 @@ unittest
  +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member name lengths of.
+ +      Things = Types to introspect and count member name lengths of.
  +/
 alias longestUnconfigurableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
 
@@ -188,7 +189,8 @@ unittest
  +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member type name lengths of.
+ +      all = Whether to consider all members or only those not hidden or unconfigurable.
+ +      Things = Types to introspect and count member type name lengths of.
  +/
 private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
 if (Things.length > 0)
@@ -244,7 +246,7 @@ if (Things.length > 0)
  +  columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member type name lengths of.
+ +      Things = Types to introspect and count member type name lengths of.
  +/
 alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
 
@@ -271,7 +273,7 @@ unittest
  +  columns line up.
  +
  +  Params:
- +      Things = Types to examine and count member type name lengths of.
+ +      Things = Types to introspect and count member type name lengths of.
  +/
 alias longestUnconfigurableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
 
@@ -294,6 +296,9 @@ unittest
 /++
  +  Eponymous template bool of whether a variable is "assignable"; if it is
  +  an lvalue that isn't protected from being written to.
+ +
+ +  Params:
+ +      T = Type to introspect.
  +/
 template isOfAssignableType(T)
 if (isType!T)
@@ -307,7 +312,16 @@ if (isType!T)
 }
 
 
-/// Ditto
+// isOfAssignableType
+/++
+ +  Eponymous template bool of whether a variable is "assignable"; if it is
+ +  an lvalue that isn't protected from being written to.
+ +
+ +  Overload that takes an alias symbol instead of a normal template parameter.
+ +
+ +  Params:
+ +      symbol = Symbol to introspect.
+ +/
 enum isOfAssignableType(alias symbol) = isType!symbol && is(symbol == enum);
 
 ///
@@ -346,6 +360,9 @@ unittest
  +  True if a type is `string`, `dstring` or `wstring`; otherwise false.
  +
  +  Does not consider e.g. `char[]` a string, as `std.traits.isSomeString` does.
+ +
+ +  Params:
+ +      S = String type to introspect.
  +/
 enum isTrulyString(S) = is(S == string) || is(S == dstring) || is(S == wstring);
 
@@ -365,6 +382,10 @@ unittest
 /++
  +  Given an array of qualified elements, aliases itself to one such of
  +  unqualified elements.
+ +
+ +  Params:
+ +      QualArray = Qualified array type.
+ +      QualType = Qualified type, element of `QualArray`.
  +/
 template UnqualArray(QualArray : QualType[], QualType)
 if (!isAssociativeArray!QualType)
@@ -397,6 +418,11 @@ unittest
 /++
  +  Given an associative array with elements that have a storage class, aliases
  +  itself to an associative array with elements without the storage classes.
+ +
+ +  Params:
+ +      QualArray = Qualified associative array type.
+ +      QualElem = Qualified type, element of `QualArray`.
+ +      QualKey = Qualified type, key of `QualArray`.
  +/
 template UnqualArray(QualArray : QualElem[QualKey], QualElem, QualKey)
 if (!isArray!QualElem)
@@ -429,6 +455,11 @@ unittest
 /++
  +  Given an associative array of arrays with a storage class, aliases itself to
  +  an associative array with array elements without the storage classes.
+ +
+ +  Params:
+ +      QualArray = Qualified associative array type.
+ +      QualElem = Qualified type, element of `QualArray`.
+ +      QualKey = Qualified type, key of `QualArray`.
  +/
 template UnqualArray(QualArray : QualElem[QualKey], QualElem, QualKey)
 if (isArray!QualElem)
@@ -469,6 +500,9 @@ unittest
  +  Eponymous template that is true if the passed type is a struct.
  +
  +  Used with `std.meta.Filter`, which cannot take `is()` expressions.
+ +
+ +  Params:
+ +      T = Type to introspect.
  +/
 enum isStruct(T) = is(T == struct);
 
@@ -477,6 +511,9 @@ enum isStruct(T) = is(T == struct);
 /++
  +  Eponymous template that is true if the passed type has default values to
  +  any of its fields.
+ +
+ +  Params:
+ +      QualT = Qualified struct type to introspect for elaborate .init.
  +/
 template hasElaborateInit(QualT)
 if (is(QualT == struct))

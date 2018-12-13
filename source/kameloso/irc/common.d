@@ -214,6 +214,9 @@ auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
  +  Params:
  +      parser = Reference to the current `IRCParser`.
  +      event =  `kameloso.irc.defs.IRCEvent` to examine.
+ +
+ +  Returns:
+ +      `true` if it passes the special checks, `false` if not.
  +/
 bool isSpecial(const ref IRCParser parser, const IRCEvent event) pure
 {
@@ -982,6 +985,13 @@ unittest
  +  assert((nickname == "kameloso"), nickname);
  +  assert((signs == "@+"), signs);
  +  ---
+ +
+ +  Params:
+ +      server = The `kameloso.irc.defs.IRCServer` whose prefix characters to strip.
+ +      nickname = The (potentially) signed nickname to strip the prefix off.
+ +
+ +  Returns:
+ +      The raw nickname, unsigned.
  +/
 string stripModesign(const IRCServer server, const string nickname) pure nothrow @nogc
 {

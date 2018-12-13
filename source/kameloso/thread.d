@@ -79,6 +79,9 @@ interface Sendable {}
  +  A payload of type `T` wrapped in a class implementing the `Sendable` interface.
  +
  +  Used to wrap values for sending via the message bus.
+ +
+ +  Params:
+ +      T = Type to embed into the `BusMessage` as payload.
  +/
 final class BusMessage(T) : Sendable
 {
@@ -161,6 +164,9 @@ unittest
  +
  +  auto fiber = new CarryingFiber!bool(true, &dg);
  +  ---
+ +
+ +  Params:
+ +      T = Type to embed into the `CarryingFiber` as payload.
  +/
 import core.thread : Fiber;
 final class CarryingFiber(T) : Fiber

@@ -156,7 +156,12 @@ final class KamelosoLogger : Logger
         string fataltint() const @property { return tintImpl!(LogLevel.fatal); }
     }
 
-    /// This override is needed or it won't compile.
+    /++
+     +  This override is needed or it won't compile.
+     +
+     +  Params:
+     +      payload = Message payload to write.
+     +/
     override void writeLogMsg(ref LogEntry payload) pure nothrow const {}
 
     /// Outputs the head of a logger message.

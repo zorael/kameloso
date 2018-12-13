@@ -1190,7 +1190,13 @@ struct IRCUser
         this.address = address;
     }
 
-    /// Guesses that a sender is a server.
+    /++
+     +  Guesses that a sender is a server.
+     +
+     +  Returns:
+     +      `true` if the sender nickname and/or address looks to be a server's,
+     +      `false` if not.
+     +/
     bool isServer() pure @property const
     {
         import std.string : indexOf;
@@ -1248,6 +1254,8 @@ struct IRCUser
      +
      +  Params:
      +      other = `IRCUser` to compare this one with.
+     +      caseMapping = `IRCServer.CaseMapping` with which to translate
+     +          the nicknames in the relevant masks to lowercase.
      +
      +  Returns:
      +      `true` if the `IRCUser`s are deemed to match, `false` if not.
@@ -1367,6 +1375,12 @@ struct IRCUser
     /++
      +  Compares two `IRCUser`s with each other, ignoring members considered to
      +  be extra or optional.
+     +
+     +  Params:
+     +      that = Second user to compare this one with.
+     +
+     +  Returns:
+     +      `true` if the users match, `false` if not.
      +/
     bool opEquals(const IRCUser that) pure nothrow @safe const
     {
@@ -1376,6 +1390,9 @@ struct IRCUser
 
     /++
      +  Produces a hash for this `IRCUser`.
+     +
+     +  Returns:
+     +      A hash.
      +/
     size_t toHash() pure nothrow @safe const
     {
@@ -2420,6 +2437,12 @@ struct IRCChannel
         /++
          +  Compare two `Mode`s with each other to see if they are both of the
          +  same type, as well as having the same `data` and/or `user`.
+         +
+         +  Params:
+         +      that = Other `Mode` to compare this one with.
+         +
+         +  Returns:
+         +      `true` if the `Mode`s match, `false` if not.
          +/
         bool opEquals(const Mode that) pure nothrow @safe const
         {
@@ -2437,6 +2460,9 @@ struct IRCChannel
          +  Produces a hash for this `Mode`.
          +
          +  Use a scopeguard to keep it nothrow.
+         +
+         +  Returns:
+         +      A hash.
          +/
         size_t toHash() pure nothrow @safe const
         {
@@ -2473,7 +2499,15 @@ struct IRCChannel
      +/
     string[][char] mods;
 
-    /// Template to deduplicate code for mods shorthands.
+    /++
+     +  Template to deduplicate code for mods shorthands.
+     +
+     +  Params:
+     +      prefix = Mode character.
+     +
+     +  Returns:
+     +      A `string[]` array of all users with the given mode character.
+     +/
     ref string[] modsShorthand(char prefix)()
     {
         auto modsOp = prefix in mods;

@@ -15,6 +15,9 @@ import std.typecons : Flag, No, Yes;
  +
  +  `std.conv.to` is typically the go-to for this job; however it quickly bloats
  +  the binary and is supposedly not performant on larger enums.
+ +
+ +  Params:
+ +      E = `enum` to base this template on.
  +/
 template Enum(E)
 if (is(E == enum))
@@ -182,6 +185,7 @@ unittest
  +  ---
  +
  +  Params:
+ +      acceptLowercase = Flag of whether or not to accept rrggbb in lowercase form.
  +      hex = Hexadecimal number in string form.
  +
  +  Returns:

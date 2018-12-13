@@ -649,6 +649,7 @@ unittest
  +  terminal, instead of doing it directly.
  +
  +  Params:
+ +      logLevel = The `std.experimental.logging.LogLevel` at which to log the message.
  +      state = Current `kameloso.plugins.common.IRCPluginState`, used to send
  +          the concurrency message to the main thread.
  +      line = The text body to ask the main thread to display.
