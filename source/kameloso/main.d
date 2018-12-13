@@ -101,7 +101,7 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
     import core.time : seconds, msecs;
     import std.datetime.systime : Clock, SysTime;
 
-    if (*(bot.abort)) return;
+    if (*bot.abort) return;
 
     with (bot.throttling)
     {
@@ -123,8 +123,8 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
         {
             x = (Clock.currTime - t0).total!"msecs"/1000.0;
             y = k*x + m;
-            interruptibleSleep(100.msecs, *(bot.abort));
-            if (*(bot.abort)) return;
+            interruptibleSleep(100.msecs, *bot.abort);
+            if (*bot.abort) return;
         }
 
         bot.conn.sendline(strings);
@@ -545,7 +545,7 @@ Next mainLoop(ref IRCBot bot)
 
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(bot.conn, *(bot.abort)));
+        listenFiber(bot.conn, *bot.abort));
 
     /// How often to check for timed `core.thread.Fiber`s, multiples of `Timeout.receive`.
     enum checkTimedFibersEveryN = 3;
@@ -1297,7 +1297,7 @@ Next tryResolve(ref IRCBot bot)
     alias State = ResolveAttempt.State;
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(bot.conn, bot.parser.client.server.address,
-        bot.parser.client.server.port, settings.ipv6, resolveAttempts, *(bot.abort)));
+        bot.parser.client.server.port, settings.ipv6, resolveAttempts, *bot.abort));
 
     uint incrementedRetryDelay = Timeout.retry;
     enum incrementMultiplier = 1.2;
@@ -1613,10 +1613,10 @@ int main(string[] args)
         next = bot.mainLoop();
         firstConnect = false;
     }
-    while (!*(bot.abort) && ((next == Next.continue_) || (next == Next.retry) ||
+    while (!*bot.abort && ((next == Next.continue_) || (next == Next.retry) ||
         ((next == Next.returnFailure) && settings.reconnectOnFailure)));
 
-    if (!(*bot.abort) && (next == Next.returnFailure) && !settings.reconnectOnFailure)
+    if (!*bot.abort && (next == Next.returnFailure) && !settings.reconnectOnFailure)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
