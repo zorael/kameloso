@@ -1330,12 +1330,6 @@ struct IRCUser
         return true;
     }
 
-    /// Ditto
-    bool matchesByMask(const string userstring) pure const
-    {
-        return matchesByMask(IRCUser(userstring));
-    }
-
     ///
     unittest
     {
