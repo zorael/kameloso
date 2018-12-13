@@ -54,8 +54,7 @@ struct QuotesSettings
  +      nickname = Nickname of the user to fetch quotes for.
  +
  +  Returns:
- +      Random quote string. If no quote is available it returns an empty string
- +      instead.
+ +      Random quote string. If no quote is available it returns an empty string instead.
  +/
 string getRandomQuote(QuotesPlugin plugin, const string nickname)
 {

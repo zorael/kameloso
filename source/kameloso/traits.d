@@ -64,8 +64,7 @@ unittest
 /++
  +  Gets the name of the longest member in one or more struct/class objects.
  +
- +  This is used for formatting terminal output of objects, so that columns line
- +  up.
+ +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
  +      Things = Types to examine and count member name lengths of.
@@ -148,8 +147,7 @@ unittest
  +  Gets the name of the longest member in one or more structs, including
  +  `kameloso.uda.Unconfigurable` ones.
  +
- +  This is used for formatting terminal output of objects, so that columns line
- +  up.
+ +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
  +      Things = Types to examine and count member name lengths of.
@@ -187,8 +185,7 @@ unittest
 /++
  +  Gets the name of the longest type of a member in one or more structs.
  +
- +  This is used for formatting terminal output of objects, so that columns line
- +  up.
+ +  This is used for formatting terminal output of objects, so that columns line up.
  +
  +  Params:
  +      Things = Types to examine and count member type name lengths of.

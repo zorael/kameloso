@@ -411,8 +411,7 @@ public:
 // PersistenceService
 /++
  +  The Persistence service melds new `kameloso.irc.defs.IRCUser`s (from
- +  post-processing new `kameloso.irc.defs.IRCEvent`s) with old records of
- +  themselves.
+ +  post-processing new `kameloso.irc.defs.IRCEvent`s) with old records of themselves.
  +
  +  Sometimes the only bit of information about a sender (or target) embedded in
  +  an `kameloso.irc.defs.IRCEvent` may be his/her nickname, even though the

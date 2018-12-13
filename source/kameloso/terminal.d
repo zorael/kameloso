@@ -142,8 +142,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
 // colour
 /++
  +  Takes a mix of a `TerminalForeground`, a `TerminalBackground`, a
- +  `TerminalFormat` and/or a `TerminalReset` and composes them into a format
- +  code token.
+ +  `TerminalFormat` and/or a `TerminalReset` and composes them into a format code token.
  +
  +  This is the composing overload that fills its result into an output range.
  +

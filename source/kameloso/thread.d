@@ -76,8 +76,7 @@ interface Sendable {}
 
 // MessageContent
 /++
- +  A payload of type `T` wrapped in a class implementing the `Sendable`
- +  interface.
+ +  A payload of type `T` wrapped in a class implementing the `Sendable` interface.
  +
  +  Used to wrap values for sending via the message bus.
  +/
@@ -99,8 +98,7 @@ final class BusMessage(T) : Sendable
 
 // busMessage
 /++
- +  Constructor function to create a `shared` `BusMessage` with an unqualified
- +  template type.
+ +  Constructor function to create a `shared` `BusMessage` with an unqualified template type.
  +
  +  Example:
  +  ---
@@ -115,8 +113,7 @@ final class BusMessage(T) : Sendable
  +          then assign to its internal `payload`.
  +
  +  Returns:
- +      A `shared` `BusMessage!T` where `T` is the unqualified type of the
- +      payload.
+ +      A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
  +/
 shared(Sendable) busMessage(T)(T payload) @safe
 {

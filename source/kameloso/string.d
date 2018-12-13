@@ -19,8 +19,7 @@ import std.typecons : Flag, No, Yes;
 // nom
 /++
  +  Given some string, finds the supplied separator token in it, returns the
- +  string up to that point, and advances the passed string by ref to after the
- +  token.
+ +  string up to that point, and advances the passed string by ref to after the token.
  +
  +  The naming is in line with standard library functions such as
  +  `std.string.munch`, `std.file.slurp` and others.
@@ -43,8 +42,7 @@ import std.typecons : Flag, No, Yes;
  +      decode = Whether to use auto-decoding functions, or try to keep to non-
  +          decoding ones (when possible).
  +      line = String to walk and advance.
- +      separator = Token that deliminates what should be returned and to where
- +          to advance.
+ +      separator = Token that deliminates what should be returned and to where to advance.
  +      callingFile = Name of the calling source file, used to pass along when
  +          throwing an exception.
  +      callingLine = Line number where in the source file this is called, used
@@ -266,8 +264,7 @@ unittest
 /++
  +  Removes paired preceding and trailing tokens around a string line.
  +
- +  You should not need to use this directly; rather see `unquoted` and
- +  `unsinglequoted`.
+ +  You should not need to use this directly; rather see `unquoted` and `unsinglequoted`.
  +
  +  Params:
  +      token = Token character to strip away.
@@ -423,8 +420,7 @@ unittest
 
 // beginsWith
 /++
- +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
- +  such a hotspot.
+ +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is such a hostpot.
  +
  +  Merely slices; does not decode the string and may thus give weird results on
  +  weird inputs.
@@ -440,8 +436,7 @@ unittest
  +
  +  Params:
  +      haystack = Original line to examine.
- +      needle = The `char` (or technically `ubyte`) to check if `haystack`
- +          begins with.
+ +      needle = The `char` (or technically `ubyte`) to check if `haystack` begins with.
  +
  +  Returns:
  +      `true` if `haystack` begins with `needle`, `false` if not.
@@ -565,8 +560,7 @@ unittest
  +      demandSeparatingChars = Makes it a necessity that `line` is followed
  +          by one of the prefix letters `:?! `. If it isn't, the `line` string
  +          will be returned as is.
- +      line = String line prefixed with `prefix`, potentially including
- +          separating characters.
+ +      line = String line prefixed with `prefix`, potentially including separating characters.
  +      prefix = Prefix to strip.
  +
  +  Returns:

@@ -31,8 +31,7 @@
  +  `auth`<br>
  +  `status`
  +
- +  It is optional if you don't intend to be controlling the bot from another
- +  client.
+ +  It is optional if you don't intend to be controlling the bot from another client.
  +/
 module kameloso.plugins.admin;
 
@@ -151,8 +150,7 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandShowUser
 /++
- +  Prints the details of one or more specific, supplied users to the local
- +  terminal.
+ +  Prints the details of one or more specific, supplied users to the local terminal.
  +
  +  It basically prints the matching `kameloso.irc.defs.IRCUser`.
  +/
@@ -281,8 +279,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
  +  Sends a `QUIT` event to the server.
  +
  +  If any extra text is following the "`quit`" prefix, it uses that as the quit
- +  reason, otherwise it falls back to the default as specified in the
- +  configuration file.
+ +  reason, otherwise it falls back to the default as specified in the configuration file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -627,8 +624,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 
 // onCommandDeblacklist
 /++
- +  Removes a nickname from the list of users who may not trigger the bot
- +  whatsoever.
+ +  Removes a nickname from the list of users who may not trigger the bot whatsoever.
  +
  +  This is on a `whitelist` level, as opposed to `admin`.
  +/
@@ -656,8 +652,7 @@ void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      add = Whether to add to or remove from lists.
- +      section = Which list to add to or remove from; `whitelist` or
- +          `blacklist`.
+ +      section = Which list to add to or remove from; `whitelist` or `blacklist`.
  +      account = Services account name to add or remove.
  +/
 void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,

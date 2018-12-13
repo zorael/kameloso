@@ -28,8 +28,7 @@ import std.typecons : Flag, No, Yes;
  +  Params:
  +      filename = Filename of file to write to.
  +      configurationText = Content to write to file.
- +      banner = Whether to add the "*kameloso bot*" banner at the head of the
- +          file.
+ +      banner = Whether to add the "*kameloso bot*" banner at the head of the file.
  +/
 void writeToDisk(const string filename, const string configurationText,
     Flag!"addBanner" banner = Yes.addBanner)
@@ -110,8 +109,7 @@ string configReader(const string configFile)
 
 // readConfigInto
 /++
- +  Reads a configuration file and applies the settings therein to passed
- +  objects.
+ +  Reads a configuration file and applies the settings therein to passed objects.
  +
  +  More than one can be supplied, and invalid ones for which there are no
  +  settings will be silently ignored with no errors.
@@ -627,8 +625,7 @@ naN     !"¤%&/`;
 
 // justifiedConfigurationText
 /++
- +  Takes an unformatted string of configuration text and justifies it to neat
- +  columns.
+ +  Takes an unformatted string of configuration text and justifies it to neat columns.
  +
  +  It does one pass through it all first to determine the maximum width of the
  +  entry names, then another to format it and eventually return a flat string.

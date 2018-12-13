@@ -449,8 +449,7 @@ unittest
  +      event = `kameloso.irc.defs.IRCEvent` to examine.
  +
  +  Returns:
- +      `true` if the sender is judged to be from nickname services, `false` if
- +      not.
+ +      `true` if the sender is judged to be from nickname services, `false` if not.
  +/
 bool isFromAuthService(const ref IRCParser parser, const IRCEvent event) pure
 {
@@ -698,8 +697,7 @@ unittest
  +      server = The current `kameloso.irc.defs.IRCServer` with all its settings.
  +
  +  Returns:
- +      `true` if the nickname string is judged to be a nickname, `false` if
- +      not.
+ +      `true` if the nickname string is judged to be a nickname, `false` if not.
  +/
 bool isValidNickname(const string nickname, const IRCServer server) pure nothrow @nogc
 {
@@ -782,8 +780,7 @@ unittest
  +  ---
  +
  +  Params:
- +      c = Character to compare with the list of accepted characters in a
- +          nickname.
+ +      c = Character to compare with the list of accepted characters in a nickname.
  +
  +  Returns:
  +      `true` if the character is in the list of valid characters for

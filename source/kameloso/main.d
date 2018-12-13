@@ -25,8 +25,7 @@ shared static this()
  +  Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
  +
  +  It may have been fixed in versions in the future at time of writing, so
- +  limit it to 2.082 and earlier. Update this condition as compilers are
- +  released.
+ +  limit it to 2.082 and earlier. Update this condition as compilers are released.
  +
  +  Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
@@ -138,8 +137,7 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
 
 // checkMessages
 /++
- +  Checks for concurrency messages and performs action based on what was
- +  received.
+ +  Checks for concurrency messages and performs action based on what was received.
  +
  +  The return value tells the caller whether the received action means the bot
  +  should exit or not.
@@ -148,8 +146,7 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
  +      bot = Reference to the current `kameloso.common.IRCBot`.
  +
  +  Returns:
- +      `kameloso.common.Next`.* depending on what course of action to take
- +      next.
+ +      `kameloso.common.Next`.* depending on what course of action to take next.
  +/
 Next checkMessages(ref IRCBot bot)
 {
@@ -524,8 +521,7 @@ void exhaustMessages()
  +
  +  Full lines are stored in `kameloso.connection.ListenAttempt`s which are
  +  yielded in the `std.concurrency.Generator` to be caught here, consequently
- +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all the
- +  plugins.
+ +  parsed into `kameloso.irc.defs.IRCEvent`s, and then dispatched to all plugins.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -1013,8 +1009,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
 
 // handleWHOISQueue
 /++
- +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each
- +  one.
+ +  Takes a queue of `WHOISRequest` objects and emits `WHOIS` requests for each one.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -1094,8 +1089,7 @@ void resetSignals() nothrow @nogc
  +          defined with `--set plugin.setting=value` on the command line.
  +
  +  Returns:
- +      `kameloso.common.Next`.* depending on what action the calling site
- +      should take.
+ +      `kameloso.common.Next`.* depending on what action the calling site should take.
  +/
 Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 {
@@ -1153,8 +1147,7 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
 /++
  +  Tries to connect to the IPs in `kameloso.common.IRCBot.conn.ips` by
  +  leveraging `kameloso.connection.connectFiber`, reacting on the
- +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the
- +  user.
+ +  `kameloso.connection.ConnectAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.IRCBot`.
@@ -1258,16 +1251,14 @@ Next tryConnect(ref IRCBot bot)
 /++
  +  Tries to resolve the address in `bot.parser.client.server` to IPs, by
  +  leveraging `kameloso.connection.resolveFiber`, reacting on the
- +  `kameloso.connection.ResolveAttempt`s it yields to provide feedback to the
- +  user.
+ +  `kameloso.connection.ResolveAttempt`s it yields to provide feedback to the user.
  +
  +  Params:
  +      bot = Reference to the current `kameloso.common.bot`.
  +
  +  Returns:
  +      `kameloso.common.Next.continue_` if resolution succeeded,
- +      `kameloso.common.Next.returnFaillure` if it failed and the program
- +      should exit.
+ +      `kameloso.common.Next.returnFailure` if it failed and the program should exit.
  +/
 Next tryResolve(ref IRCBot bot)
 {
@@ -1656,8 +1647,7 @@ int main(string[] args)
 
 // complainAboutInvalidConfigurationEntries
 /++
- +  Prints some information about invalid configuration entries to the local
- +  terminal.
+ +  Prints some information about invalid configuration entries to the local terminal.
  +
  +  Params:
  +      invalidEntries = A `string[][string]` associative array of dynamic
@@ -1696,8 +1686,7 @@ void complainAboutInvalidConfigurationEntries(const string[][string] invalidEntr
 
 // complainAboutMissingConfiguration
 /++
- +  Displays an error if the configuration is *incomplete*, e.g. missing crucial
- +  information.
+ +  Displays an error if the configuration is *incomplete*, e.g. missing crucial information.
  +
  +  It assumes such information is missing, and that the check has been done at
  +  the calling site.

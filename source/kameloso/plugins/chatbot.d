@@ -126,8 +126,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
  +  Plugins don't know about other plugins; the only thing they know of the
  +  outside world is the thread ID of the main thread `mainThread` (stored in
  +  `kameloso.plugins.common.IRCPluginState`). As such, we can't easily query
- +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated
- +  functions.
+ +  each plugin for their `kameloso.plugins.common.BotCommand`-annotated functions.
  +
  +  To work around this we construct a `CarryingFiber!(IRCPlugin[])` and send it
  +  to the main thread. It will attach the client-global `plugins` array of

@@ -503,8 +503,7 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 
 // onUserQuit
 /++
- +  Removes a record of an applied automode for an account, in any and all
- +  channels.
+ +  Removes a record of an applied automode for an account, in any and all channels.
  +/
 @(IRCEvent.Type.QUIT)
 void onUserQuit(AutomodePlugin plugin, const IRCEvent event)

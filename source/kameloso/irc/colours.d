@@ -39,8 +39,7 @@ enum IRCColour
 
 // ircColour
 /++
- +  Colour-codes the passed string with mIRC colouring, foreground and
- +  background.
+ +  Colour-codes the passed string with mIRC colouring, foreground and background.
  +
  +  Output range overload that outputs to a passed auto ref sink.
  +
@@ -89,8 +88,7 @@ unittest
 
 // ircColour
 /++
- +  Colour-codes the passed string with mIRC colouring, foreground and
- +  background.
+ +  Colour-codes the passed string with mIRC colouring, foreground and background.
  +
  +  Direct overload that leverages he output range version to colour an internal
  +  `std.array.Appender`, and returns the resulting string.
@@ -133,7 +131,6 @@ unittest
 // ircColour
 /++
  +  Returns a mIRC colour code for the passed foreground and background colour.
- +  background.
  +
  +  Overload that doesn't take a string to tint, only the `IRCColour`s to
  +  produce a colour code from.
@@ -309,8 +306,7 @@ unittest
 
 // ircUnderlined
 /++
- +  Returns the passed string wrapped in between IRC underlined control
- +  characters.
+ +  Returns the passed string wrapped in between IRC underlined control characters.
  +
  +  Params:
  +      line = String line to make IRC italics.
@@ -363,8 +359,7 @@ char ircReset()
  +      bgBase = Background base code to reset to after end colour tags.
  +
  +  Returns:
- +      A new string based on `origLine` with mIRC tokens mapped to terminal
- +      ones.
+ +      A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
 string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,

@@ -646,12 +646,10 @@ unittest
 
 // meldInto
 /++
- +  Takes two associative arrays and melds them together, making a union of the
- +  two.
+ +  Takes two associative arrays and melds them together, making a union of the two.
  +
  +  This is largely the same as the array-version `meldInto` but doesn't need
- +  the extensive template constraints it employs, so it might as well be kept
- +  separate.
+ +  the extensive template constraints it employs, so it might as well be kept separate.
  +
  +  Example:
  +  ---

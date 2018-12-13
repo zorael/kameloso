@@ -245,8 +245,7 @@ uint numFromHex(Flag!"acceptLowercase" acceptLowercase = No.acceptLowercase)(con
  +  red/green/blue equivalents.
  +
  +  Params:
- +      acceptLowercase = Whether or not to accept the RRGGBB string in
- +          lowercase letters.
+ +      acceptLowercase = Whether or not to accept the rrggbb string in lowercase letters.
  +      hexString = Hexadecimal number (colour) in string form.
  +      r = Out-reference integer for the red part of the hex string.
  +      g = Out-reference integer for the green part of the hex string.

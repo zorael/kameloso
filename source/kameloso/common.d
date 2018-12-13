@@ -35,8 +35,7 @@ shared static this()
  +  coloured logging.
  +
  +  The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
- +  and `fatal`. It is not global, so instantiate a thread-local `Logger` if
- +  threading.
+ +  and `fatal`. It is not global, so instantiate a thread-local `Logger` if threading.
  +
  +  Having this here is unfortunate; ideally plugins should not use variables
  +  from other modules, but unsure of any way to fix this other than to have
@@ -47,8 +46,7 @@ Logger logger;
 
 // initLogger
 /++
- +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this
- +  thread.
+ +  Initialises the `kameloso.logger.KamelosoLogger` logger for use in this thread.
  +
  +  It needs to be separately instantiated per thread.
  +
@@ -237,8 +235,7 @@ enum : ubyte
 
 // getMultipleOf
 /++
- +  Given a number, calculate the largest multiple of `n` needed to reach that
- +  number.
+ +  Given a number, calculate the largest multiple of `n` needed to reach that number.
  +
  +  It rounds up, and if supplied `Yes.alwaysOneUp` it will always overshoot.
  +  This is good for when calculating format pattern widths.
@@ -764,8 +761,7 @@ unittest
 
 // timeSince
 /++
- +  Express how much time has passed in a `Duration`, in natural (English)
- +  language.
+ +  Express how much time has passed in a `Duration`, in natural (English) language.
  +
  +  Write the result to a passed output range `sink`.
  +
@@ -897,8 +893,7 @@ unittest
 
 // timeSince
 /++
- +  Express how much time has passed in a `Duration`, in natural (English)
- +  language.
+ +  Express how much time has passed in a `Duration`, in natural (English) language.
  +
  +  Returns the result as a string.
  +
@@ -1106,8 +1101,7 @@ unittest
  +  we're currently running.
  +
  +  On Posix it defaults to `$XDG_DATA_HOME/kameloso` and falls back to
- +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable
- +  present.
+ +  `~/.local/share/kameloso` if no `XDG_DATA_HOME` environment variable present.
  +
  +  On Windows it defaults to `%LOCALAPPDATA%\\Local\\kameloso`.
  +
@@ -1246,8 +1240,7 @@ final class FileExistsException : Exception
 // FileTypeMismatchException
 /++
  +  Exception, to be thrown when attempting to access a file or directory and
- +  finding that something with the that name exists, but is of an unexpected
- +  type.
+ +  finding that something with the that name exists, but is of an unexpected type.
  +
  +  It is a normal `Exception` but with an embedded filename string, and an uint
  +  representing the existing file's type (file, directory, symlink, ...).

@@ -159,8 +159,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working on.
  +
  +  Throws: `IRCParseException` if an unknown type was encountered.
  +/
@@ -300,8 +299,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to start working on.
  +      slice = Reference to the *slice* of the raw IRC string.
  +/
 void parsePrefix(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
@@ -409,8 +407,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
  +  Throws: `IRCParseException` if conversion from typestring to
@@ -526,8 +523,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
  +  Throws: `IRCParseException` if an unknown to-connect-type event was
@@ -1188,8 +1184,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
 void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
@@ -1417,8 +1412,7 @@ void parseGeneralCases(ref IRCParser parser, ref IRCEvent event, ref string slic
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +/
 void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
 {
@@ -1510,8 +1504,7 @@ void postparseSanityCheck(const ref IRCParser parser, ref IRCEvent event)
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
-            on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
 void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
@@ -1630,8 +1623,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
  +  Throws: `IRCParseException` on unknown CTCP types.
@@ -1753,8 +1745,7 @@ void onPRIVMSG(const ref IRCParser parser, ref IRCEvent event, ref string slice)
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
 void onMode(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
@@ -1894,8 +1885,7 @@ unittest
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +
  +  Throws: `IRCParseException` if something could not be parsed or converted.
@@ -2056,8 +2046,7 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
  +
  +  Params:
  +      parser = Reference to the current `IRCParser`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working
- +          on.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` to continue working on.
  +      slice = Reference to the slice of the raw IRC string.
  +/
 void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure

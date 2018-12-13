@@ -1,7 +1,7 @@
 /++
  +  The Connect service handles logging onto IRC servers after having connected,
  +  as well as managing authentication to services. It also manages responding
- +  to `PING`.
+ +  to `PING` requests.
  +
  +  It has no commands; everything in it is reactionary, with no special
  +  awareness mixed in.
@@ -101,8 +101,7 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 // onSelfjoin
 /++
  +  Records a channel in the `channels` array in the `kameloso.irc.common.IRCClient` of
- +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon
- +  joining it.
+ +  the current `ConnectService`'s `kameloso.plugins.common.IRCPluginState` upon joining it.
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
@@ -470,8 +469,7 @@ void onAuthEndNotice(ConnectService service, const IRCEvent event)
 /++
  +  Modifies the nickname by appending characters to the end of it.
  +
- +  Flags the client as updated, so as to propagate the change to all other
- +  plugins.
+ +  Flags the client as updated, so as to propagate the change to all other plugins.
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 void onNickInUse(ConnectService service)
@@ -730,8 +728,7 @@ void onSASLAuthenticate(ConnectService service)
 
 // onSASLSuccess
 /++
- +  On SASL authentication success, calls a `CAP END` to finish the `CAP`
- +  negotiations.
+ +  On SASL authentication success, calls a `CAP END` to finish the `CAP` negotiations.
  +
  +  Flags the client as having finished registering and authing, allowing the
  +  main loop to pick it up and propagate it to all other plugins.
@@ -818,8 +815,7 @@ void onWelcome(ConnectService service)
 
 // onISUPPORT
 /++
- +  Requests an UTF-8 codepage after we've figured out that the server supports
- +  changing such.
+ +  Requests an UTF-8 codepage after we've figured out that the server supports changing such.
  +
  +  Currently only RusNet is known to support codepages. If more show up,
  +  consider creating an `IRCServer.hasCodepages` bool and set it if `CODEPAGES`

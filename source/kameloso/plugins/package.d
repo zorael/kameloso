@@ -27,8 +27,7 @@ public import kameloso.plugins.common;
  +  ---
  +
  +  Params:
- +      module_ = Fully qualified string name of the module to evaluate and
- +          potentially import.
+ +      module_ = Fully qualified string name of the module to evaluate and potentially import.
  +      alias_ = Name of the symbol to create that points to an empty `AliasSeq`
  +          iff the module was not imported.
  +

@@ -332,8 +332,7 @@ unittest
  +  Params:
  +      payload = Payload to attach to the `WHOISRequest`.
  +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
- +          results.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
  +  Returns:
@@ -354,8 +353,7 @@ WHOISRequest whoisRequest(F, Payload)(Payload payload, IRCEvent event,
  +
  +  Params:
  +      event = `kameloso.irc.defs.IRCEvent` that instigated the `WHOIS` lookup.
- +      privilegeLevel = The privilege level policy to apply to the `WHOIS`
- +          results.
+ +      privilegeLevel = The privilege level policy to apply to the `WHOIS` results.
  +      fn = Function/delegate pointer to call upon receiving the results.
  +
  +  Returns:
@@ -374,8 +372,7 @@ WHOISRequest whoisRequest(F)(IRCEvent event, PrivilegeLevel privilegeLevel, F fn
  +
  +  This neatly tidies up the amount of top-level variables in each plugin
  +  module. This allows for making more or less all functions top-level
- +  functions, since any state could be passed to it with variables of this
- +  type.
+ +  functions, since any state could be passed to it with variables of this type.
  +
  +  Plugin-specific state should be kept inside the `IRCPlugin` itself.
  +/
@@ -426,8 +423,7 @@ struct IRCPluginState
 
 
 /++
- +  The tristate results from comparing a username with the admin or whitelist
- +  lists.
+ +  The tristate results from comparing a username with the admin or whitelist lists.
  +/
 enum FilterResult { fail, pass, whois }
 
@@ -575,8 +571,7 @@ struct Chainable;
 
 /++
  +  Annotation denoting that an event-handling function is the end of a chain,
- +  letting no other functions in the same module be triggered after it has
- +  been.
+ +  letting no other functions in the same module be triggered after it has been.
  +
  +  This is not strictly necessary since anything non-`Chainable` is implicitly
  +  `Terminating`, but we add it to silence warnings and in hopes of the code
@@ -637,15 +632,14 @@ struct Description
 
 
 /++
- +  Annotation denoting that a variable is the basename of a resource file or
- +  directory.
+ +  Annotation denoting that a variable is the basename of a *resource* file or directory.
  +/
 struct Resource;
 
 
 /++
- +  Annotation denoting that a variable is the basename of a configuration file
- +  or directory.
+ +  Annotation denoting that a variable is the basename of a *configuration*
+ +  file or directory.
  +/
 struct Configuration;
 
@@ -663,8 +657,7 @@ struct Configuration;
  +
  +  Params:
  +      event = `kameloso.irc.defs.IRCEvent` to filter.
- +      level = The `PrivilegeLevel` context in which this user should be
- +          filtered.
+ +      level = The `PrivilegeLevel` context in which this user should be filtered.
  +
  +  Returns:
  +      A `FilterResult` saying the event should `pass`, `fail`, or that more
@@ -2930,11 +2923,9 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  matching and continue with the next one.
  +
  +  Params:
- +      client = `kameloso.irc.common.IRCClient` of the calling `IRCPlugin`'s
- +          `IRCPluginState`.
+ +      client = `kameloso.irc.common.IRCClient` of the calling `IRCPlugin`'s `IRCPluginState`.
  +      policy = Policy to apply.
- +      mutEvent = Reference to the mutable `kameloso.irc.defs.IRCEvent` we're
- +          considering.
+ +      mutEvent = Reference to the mutable `kameloso.irc.defs.IRCEvent` we're considering.
  +
  +  Returns:
  +      `true` if the message is in a context where the event matches the
@@ -3108,8 +3099,7 @@ void catchUser(IRCPlugin plugin, IRCUser newUser) @safe
  +  Params:
  +      plugin = Current `IRCPlugin`.
  +      payload = Payload to attach to the `WHOISRequest`, generally an
- +          `kameloso.irc.defs.IRCEvent` to replay once the `WHOIS` result
- +          return.
+ +          `kameloso.irc.defs.IRCEvent` to replay once the `WHOIS` results return.
  +      event = `kameloso.irc.defs.IRCEvent` that instigated this `WHOIS` call.
  +      privilegeLevel = Privilege level to compare the user with.
  +      fn = Function/delegate pointer to call when the results return.
@@ -3155,8 +3145,7 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
  +  Changes a setting of a plugin, given both the names of the plugin and the
  +  setting, in string form.
  +
- +  This merely iterates the passed `plugins` and calls their `setSettingByName`
- +  methods.
+ +  This merely iterates the passed `plugins` and calls their `setSettingByName` methods.
  +
  +  Params:
  +      plugins = Array of all `IRCPlugin`s.
@@ -3262,8 +3251,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point
- +          in time.
+ +      fiber = `core.thread.Fiber` to enqueue to be executed at a later point in time.
  +      secs = Number of seconds to delay the `fiber`.
  +/
 void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
@@ -3285,8 +3273,7 @@ void delayFiber(IRCPlugin plugin, Fiber fiber, const long secs)
  +
  +  Params:
  +      plugin = The current `IRCPlugin`.
- +      secs = Number of seconds to delay the implicit fiber in the current
- +          context.
+ +      secs = Number of seconds to delay the implicit fiber in the current context.
  +/
 void delayFiber(IRCPlugin plugin, const long secs)
 {
@@ -3392,8 +3379,7 @@ void awaitEvents(IRCPlugin plugin, const IRCEvent.Type[] types)
 
 // IRCPluginInitialisationException
 /++
- +  Exception thrown when an IRC plugin failed to initialise itself or its
- +  resources.
+ +  Exception thrown when an IRC plugin failed to initialise itself or its resources.
  +
  +  A normal `Exception`, which only differs in the sense that we can deduce
  +  what went wrong by its type.

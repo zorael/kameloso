@@ -90,8 +90,7 @@ public:
  +
  +  * `mainThread` is the *thread ID* of the thread running the main loop. We
  +     indirectly used it to send strings to the server by way of concurrency
- +     messages, but it is usually not something you will have to deal with
- +     directly.
+ +     messages, but it is usually not something you will have to deal with directly.
  +
  +  * `users` is an associative array keyed with users' nicknames. The value to
  +     that key is an `kameloso.irc.defs.IRCUser` representing that user in terms
@@ -120,8 +119,7 @@ public:
  +  * `timedFibers` is also an array of `core.thread.Fiber`s, but not an
  +     associative one keyed on event types. Instead they are wrapped in a
  +     `kameloso.typecons.Labeled` template and marked with a UNIX timestamp of
- +     when they should be run. Use `kameloso.plugins.common.delayFiber` to
- +     enqueue.
+ +     when they should be run. Use `kameloso.plugins.common.delayFiber` to enqueue.
  +
  +  * `nextPeriodical` is a UNIX timestamp of when the `periodical(IRCPlugin)`
  +     function should be run next. It is a way of automating occasional tasks,
@@ -231,8 +229,7 @@ private:
  +  `[Seen]`.
  +
  +  Each member of the struct will be given its own line in there. Note that not
- +  all types are supported, such as associative arrays or nested
- +  structs/classes.
+ +  all types are supported, such as associative arrays or nested structs/classes.
  +/
 struct SeenSettings
 {
@@ -421,8 +418,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
  +  Optimises the lookups in the associative array of seen users.
  +
  +  At the end of a long listing of users in a channel, when we're reasonably
- +  sure we've added users to our associative array of seen users, *rehashes*
- +  it.
+ +  sure we've added users to our associative array of seen users, *rehashes* it.
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(IRCEvent.Type.RPL_ENDOFWHO)
@@ -728,8 +724,7 @@ void updateAllUsers(SeenPlugin plugin)
  +      filename = Filename of the file to read from.
  +
  +  Returns:
- +      `long[string]` associative array; UNIX timestamp longs keyed by nickname
- +      strings.
+ +      `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
 long[string] loadSeen(const string filename)
 {
@@ -931,8 +926,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
  +  `kameloso.plugins.common.UserAwareness` is a mixin template; a few functions
  +  defined in `kameloso.plugins.common` to deal with common bookkeeping that
  +  every plugin *that wants to keep track of users* need. If you don't want to
- +  track which users you have seen (and are visible to you now), you don't need
- +  this.
+ +  track which users you have seen (and are visible to you now), you don't need this.
  +/
 mixin UserAwareness;
 
@@ -941,11 +935,9 @@ mixin UserAwareness;
  +  Complementary to `kameloso.plugins.common.UserAwareness` is
  +  `kameloso.plugins.common.ChannelAwareness`, which will add in bookkeeping
  +  about the channels the bot is in, their topics, modes and list of
- +  participants. Channel awareness requires user awareness, but not the other
- +  way around.
+ +  participants. Channel awareness requires user awareness, but not the other way around.
  +
- +  We will want it to limit the amount of tracked users to people in our home
- +  channels.
+ +  We will want it to limit the amount of tracked users to people in our home channels.
  +/
 mixin ChannelAwareness;
 

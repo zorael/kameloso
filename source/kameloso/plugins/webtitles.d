@@ -292,8 +292,7 @@ unittest
 
 // worker
 /++
- +  Looks up an URL and reports the title to the main thread, for printing in a
- +  channel.
+ +  Looks up an URL and reports the title to the main thread, for printing in a channel.
  +
  +  Supposed to be run in its own, short-lived thread.
  +
@@ -303,8 +302,7 @@ unittest
  +          (between multiple threads).
  +      cache = Reference to the cache of previous `TitleLookup`s.
  +      titleReq = Current title request.
- +      colouredOutgoing = Whether or not to include mIRC colours in outgoing
- +          messages.
+ +      colouredOutgoing = Whether or not to include mIRC colours in outgoing messages.
  +/
 void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
     TitleRequest titleReq, const bool colouredOutgoing)
@@ -364,15 +362,13 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
  +  Takes a direct imgur link (one that points to an image) and rewrites it to
  +  instead point to the image's page.
  +
- +  Images (jpg, png, ...) can naturally not have titles, but the normal pages
- +  can.
+ +  Images (jpg, png, ...) can naturally not have titles, but the normal pages can.
  +
  +  Params:
  +      url = String link to rewrite.
  +
  +  Returns:
- +      A rewritten string if it's a compatible imgur one, else the passed
- +      `url`.
+ +      A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
 string rewriteDirectImgurURL(const string url)
 {
@@ -418,8 +414,7 @@ unittest
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      lookup = Finished title lookup.
  +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
- +      colouredOutput = Whether or not to include mIRC colours in outgoing
- +          messages.
+ +      colouredOutput = Whether or not to include mIRC colours in outgoing messages.
  +/
 void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent event,
     const bool colouredOutput)
@@ -457,8 +452,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
  +      state = The current `kameloso.plugins.common.IRCPluginState`.
  +      info = `YouTubeVideoInfo` describing the lookup results.
  +      event = The `kameloso.irc.defs.IRCEvent` that instigated the lookup.
- +      colouredOutput = Whether or not to include mIRC colours in outgoing
- +          messages.
+ +      colouredOutput = Whether or not to include mIRC colours in outgoing messages.
  +/
 void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCEvent event,
     const bool colouredOutput)

@@ -994,8 +994,7 @@ struct IRCServer
 
 /++
  +  An aggregate of fields representing a single user on IRC. Instances of these
- +  should not survive a disconnect and reconnect; they are on a per-connection
- +  basis.
+ +  should not survive a disconnect and reconnect; they are on a per-connection basis.
  +/
 struct IRCUser
 {
@@ -2384,8 +2383,7 @@ struct Typenums
  +
  +  An IRC channel may have a topic, a creation date, and one or more *modes*.
  +  Modes define how the channel behaves and how it treats its users, including
- +  which ones have operator and voice status, as well as which are banned, and
- +  more.
+ +  which ones have operator and voice status, as well as which are banned, and more.
  +/
 struct IRCChannel
 {

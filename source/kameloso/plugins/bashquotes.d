@@ -59,8 +59,7 @@ void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 
 // worker
 /++
- +  Looks up a Bash quote and reports it to the appropriate nickname or
- +  channel.
+ +  Looks up a Bash quote and reports it to the appropriate nickname or channel.
  +
  +  Supposed to be run in its own, short-lived thread.
  +

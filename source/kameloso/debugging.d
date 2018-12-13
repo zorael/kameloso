@@ -375,8 +375,7 @@ unittest
  +  ---
  +
  +  Params:
- +      bot = Reference to the current `kameloso.common.IRCBot`, with all its
- +          settings.
+ +      bot = Reference to the current `kameloso.common.IRCBot`, with all its settings.
  +/
 void generateAsserts(ref IRCBot bot) @system
 {

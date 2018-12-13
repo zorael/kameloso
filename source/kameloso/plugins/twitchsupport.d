@@ -67,8 +67,7 @@ void postprocess(TwitchSupportService service, ref IRCEvent event)
  +
  +  Params:
  +      service = Current `TwitchSupportService`.
- +      event = Reference to the `kameloso.irc.defs.IRCEvent` whose tags should
- +          be parsed.
+ +      event = Reference to the `kameloso.irc.defs.IRCEvent` whose tags should be parsed.
  +/
 void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 {
@@ -674,8 +673,7 @@ public:
  +  until you enable capabilities that unlock their IRCv3 tags, at which point
  +  events become a flood of information.
  +
- +  This service only post-processes events and doesn't yet act on them in any
- +  way.
+ +  This service only post-processes events and doesn't yet act on them in any way.
  +/
 final class TwitchSupportService : IRCPlugin
 {

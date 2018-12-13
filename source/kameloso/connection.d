@@ -10,8 +10,7 @@ import kameloso.constants;
 /++
  +  Functions and state needed to maintain a connection.
  +
- +  This is simply to decrease the amount of globals and to create some
- +  convenience functions.
+ +  This is simply to decrease the amount of globals and to create some convenience functions.
  +/
 struct Connection
 {
@@ -186,13 +185,11 @@ struct ListenAttempt
  +  ---
  +
  +  Params:
- +      conn = `Connection` whose `std.socket.Socket` it reads from the server
- +          with.
+ +      conn = `Connection` whose `std.socket.Socket` it reads from the server with.
  +      abort = Reference flag which, if set, means we should abort and return.
  +
  +  Yields:
- +      `ListenAttempt`s with information about the line receieved in its
- +      member values.
+ +      `ListenAttempt`s with information about the line receieved in its member values.
  +/
 void listenFiber(Connection conn, ref bool abort)
 {

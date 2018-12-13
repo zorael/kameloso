@@ -482,8 +482,7 @@ if (isOutputRange!(Sink, char[]))
 
 // formatObjects
 /++
- +  A `string`-returning variant of `formatObjects` that doesn't take an
- +  input range.
+ +  A `string`-returning variant of `formatObjects` that doesn't take an input range.
  +
  +  This is useful when you just want the object(s) formatted without having to
  +  pass it a sink.

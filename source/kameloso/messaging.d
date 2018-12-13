@@ -261,8 +261,7 @@ unittest
 /++
  +  Sets a channel mode.
  +
- +  This includes modes that pertain to a user in the context of a channel,
- +  like bans.
+ +  This includes modes that pertain to a user in the context of a channel, like bans.
  +
  +  Params:
  +      quiet = Whether or not to echo what was sent to the local terminal.
@@ -601,8 +600,7 @@ unittest
 /++
  +  Sends text to the server, verbatim.
  +
- +  This is used to send messages of types for which there exist no helper
- +  functions.
+ +  This is used to send messages of types for which there exist no helper functions.
  +
  +  Params:
  +      quiet = Whether or not to echo what was sent to the local terminal.

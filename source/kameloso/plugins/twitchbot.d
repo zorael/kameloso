@@ -145,10 +145,9 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandStartVote
 /++
- +  Instigates a vote. A duration and two or more voting options have to be
- +  passed.
+ +  Instigates a vote. A duration and two or more voting options have to be passed.
  +
- +  Implemented as a Fiber.
+ +  Implemented as a `core.thread.Fiber`.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -307,8 +306,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
- +  Populate the oneliners array after we have successfully logged onto the
- +  server.
+ +  Populate the oneliners array after we have successfully logged onto the server.
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)

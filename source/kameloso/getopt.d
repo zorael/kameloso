@@ -28,8 +28,7 @@ private:
  +
  +  Params:
  +      client = Reference `kameloso.irc.common.IRCClient` to apply changes to.
- +      settings = Reference `kameloso.common.CoreSettings` to apply changes
- +          to.
+ +      settings = Reference `kameloso.common.CoreSettings` to apply changes to.
  +/
 void meldSettingsFromFile(ref IRCClient client, ref CoreSettings settings)
 {
@@ -232,8 +231,7 @@ void printHelp(GetoptResult results) @system
  +          via `getopt`, to apply to things before saving to disk.
  +
  +  Returns:
- +      `kameloso.common.Next.returnSuccess` so the caller knows to return and
- +      exit.
+ +      `kameloso.common.Next.returnSuccess` so the caller knows to return and exit.
  +/
 Next writeConfig(ref IRCBot bot, ref IRCClient client, ref string[] customSettings) @system
 {
@@ -292,11 +290,9 @@ public:
 
 // handleGetopt
 /++
- +  Read command-line options and merge them with those in the configuration
- +  file.
+ +  Read command-line options and merge them with those in the configuration file.
  +
- +  The priority of options then becomes getopt over config file over hardcoded
- +  defaults.
+ +  The priority of options then becomes getopt over config file over hardcoded defaults.
  +
  +  Example:
  +  ---

@@ -1,7 +1,6 @@
 /++
  +  The Printer plugin takes incoming `kameloso.irc.defs.IRCEvent`s, formats them
- +  into being easily readable and prints them to the screen, optionally with
- +  colours.
+ +  into being easily readable and prints them to the screen, optionally with colours.
  +
  +  It has no commands; all `kameloso.irc.defs.IRCEvent`s will be parsed and
  +  printed, excluding certain types that were deemed too spammy. Print them as
@@ -699,8 +698,7 @@ unittest
 
 // formatMessageMonochrome
 /++
- +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, in
- +  monochrome.
+ +  Formats an `kameloso.irc.defs.IRCEvent` into an output range sink, in monochrome.
  +
  +  It formats the timestamp, the type of the event, the sender or sender alias,
  +  the channel or target, the content body, as well as auxiliary information.
@@ -1381,8 +1379,7 @@ unittest
  +  Using an associative array is an alternative approach. It's faster, but uses
  +  the heap. From the documentation:
  +
- +      The following constructs may allocate memory using the garbage
- +      collector:
+ +      The following constructs may allocate memory using the garbage collector:
  +          [...]
  +          * Any insertion, removal, or lookups in an associative array
  +
@@ -1644,8 +1641,7 @@ void periodically(PrinterPlugin plugin)
  +  ---
  +
  +  Params:
- +      now = UNIX timestamp of the base date from which to proceed to the next
- +          midnight.
+ +      now = UNIX timestamp of the base date from which to proceed to the next midnight.
  +
  +  Returns:
  +      A `std.datetime.systime.SysTime` of the midnight following the date
@@ -2010,8 +2006,7 @@ unittest
 
 // initialise
 /++
- +  Set the next periodical timestamp to midnight immediately after plugin
- +  construction.
+ +  Set the next periodical timestamp to midnight immediately after plugin construction.
  +/
 void initialise(PrinterPlugin plugin)
 {
