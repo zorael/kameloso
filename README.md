@@ -2,9 +2,9 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's designed to be easy to write your own. API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's because we simply haven't encountered that type of event before. It's then an easy case of creating rules for that kind of event on that particular IRC network or server daemon.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's because we simply haven't encountered that type of event before. It's then an easy case of creating rules for that kind of event on that particular IRC server.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -20,11 +20,11 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * user `quotes` plugin
 * Reddit post lookup
 * [`bash.org`](http://bash.org) quoting
-* Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitch.d)); see [notes on connecting](#twitch) below
+* Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitchbot.d)); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other UNIX-likes only)
 * mIRC colour coding and text effects (bold, underlined, ...), translated into ANSI terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration stored on file; generate one and edit it to get an idea of the settings available to toggle (see [notes on generating](#configuration) below)
+* configuration stored on file; create one and edit it to get an idea of the settings available (see [notes on generating](#configuration) below)
 
 If nothing else it makes for a good read-only terminal lurkbot.
 
@@ -38,7 +38,7 @@ If nothing else it makes for a good read-only terminal lurkbot.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client lurking channels and less as a bot offering functionality.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client lurking channels and less as a bot hosting commands.
 
 # Table of contents
 
@@ -46,21 +46,22 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
   * [Compiling](#compiling)
-    * [Windows](#windows)
 * [How to use](#how-to-use)
   * [Configuration](#configuration)
     * [Command-line arguments](#command-line-arguments)
     * [Display settings](#display-settings)
-  * [Other files](#other-files)
+    * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
   * [Twitch](#twitch)
   * [Use as a library](#use-as-a-library)
 * [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
 * [Known bugs](#known-bugs)
+  * [Windows](#windows)
+  * [Posix](#posix)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
-  * [License](#license)
+* [License](#license)
 * [Acknowledgements](#acknowledgements)
 
 ---
@@ -106,14 +107,14 @@ $ dub build -b unittest
 
 The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run them in one go. Test builds will only run the unit tests and immediately exit.
 
-The available *build configurations* are:
+The relevant *build configurations* are:
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `colours+web`, includes both of the above
-* `posix`, default on Posix-like systems, equals `colours+web`
-* `windows`, default on Windows, equals `web`
+* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours+web`
+* `windows`, default on Windows, equals `web` (no colours)
 * `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
@@ -121,15 +122,6 @@ List them with `dub build --print-configs`. You can specify which to compile wit
 ```bash
 $ dub build -c cygwin
 ```
-
-## Windows
-
-There are a few Windows caveats.
-
-* Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
-* Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
-* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
-* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations.
 
 # How to use
 
@@ -172,14 +164,13 @@ Repeated calls of `--writeconfig` will only regenerate the file. It will never o
 
 If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-## Other files
+### Other files
 
 More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **MacOS** and **Windows** they will be put in subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
 
 ## Example use
 
-Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to anything you do. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists. Refer to the `admins` field in the configuration file, as well as your `users.json`.
-
+Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
 
 ```bash
 $ ./kameloso
@@ -264,7 +255,7 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versions at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
 
 # Debugging and generating unit tests
 
@@ -276,7 +267,16 @@ If more state is necessary to replicate the environment, such as needing things 
 
 # Known bugs
 
-* (Posix) If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads.
+## Windows
+
+* Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+* Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
+* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
+* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations.
+
+## Posix
+
+* If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads.
 
 # Roadmap
 
@@ -285,6 +285,7 @@ If more state is necessary to replicate the environment, such as needing things 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * private notes (later)
+* trim `README.md`, split into wiki pages
 
 # Built with
 
@@ -293,7 +294,7 @@ If more state is necessary to replicate the environment, such as needing things 
 * [`dlang-requests`](https://code.dlang.org/packages/requests)
 * [`arsd`](https://github.com/adamdruppe/arsd)
 
-## License
+# License
 
 This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) file for details.
 
