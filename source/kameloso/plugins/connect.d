@@ -666,8 +666,14 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
             service.raw!(Yes.quiet)("CAP END");
-            service.capabilityNegotiation = Progress.finished;
-            service.negotiateNick();
+
+            if (service.capabilityNegotiation == Progress.started)
+            {
+                // Gate this behind a Progress.started check, in case the fallback
+                // Fiber negotiating nick if no CAP response already fired
+                service.capabilityNegotiation = Progress.finished;
+                service.negotiateNick();
+            }
         }
         break;
 
