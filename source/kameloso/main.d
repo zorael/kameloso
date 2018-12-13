@@ -1220,6 +1220,7 @@ Next tryConnect(ref IRCBot bot)
             }
 
             interruptibleSleep(incrementedRetryDelay.seconds, *abort);
+            if (*abort) return Next.returnFailure;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
             continue;
 
@@ -1227,6 +1228,7 @@ Next tryConnect(ref IRCBot bot)
             logger.logf("Trying next IP in %s%d%s seconds.",
                 infotint, Timeout.retry, logtint);
             interruptibleSleep(Timeout.retry.seconds, *abort);
+            if (*abort) return Next.returnFailure;
             continue;
 
         case noMoreIPs:
@@ -1333,6 +1335,7 @@ Next tryResolve(ref IRCBot bot)
                 logger.logf("Network down? Retrying in %s%d%s seconds.",
                     infotint, incrementedRetryDelay, logtint);
                 interruptibleSleep(incrementedRetryDelay.seconds, *abort);
+                if (*abort) return Next.returnFailure;
                 incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
             }
             continue;
@@ -1509,6 +1512,8 @@ int main(string[] args)
 
     do
     {
+        // *bot.abort is guaranteed to be false here.
+
         if (!firstConnect)
         {
             import kameloso.constants : Timeout;
@@ -1526,6 +1531,7 @@ int main(string[] args)
 
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
+            if (*bot.abort) break;
 
             // Re-init plugins here so it isn't done on the first connect attempt
             bot.initPlugins(customSettings);
@@ -1540,11 +1546,13 @@ int main(string[] args)
             bot.teardownPlugins();
         }
 
+        // May as well check once here, in case something in initPlugins aborted or so.
         if (*bot.abort) break;
 
         bot.conn.reset();
 
         immutable actionAfterResolve = tryResolve(bot);
+        if (*bot.abort) break;  // tryResolve interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterResolve)
@@ -1577,6 +1585,7 @@ int main(string[] args)
         }
 
         immutable actionAfterConnect = tryConnect(bot);
+        if (*bot.abort) break;  // tryConnect interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterConnect)
