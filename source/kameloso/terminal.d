@@ -302,14 +302,14 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
 version(Colours)
 void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
-    enum pureBlackReplacement = 150;
+    enum pureBlackReplacement = 120;
 
-    enum tooDarkThreshold = 140;
+    enum tooDarkThreshold = 120;
     enum tooDarkIncrement = 80;
 
     enum highlight = 20;
 
-    enum darkenThreshold = 200;
+    enum darkenThreshold = 220;
     enum darken = 20;
 
     // Sanity check
