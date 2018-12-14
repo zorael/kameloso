@@ -4,37 +4,35 @@
 
 A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's because we simply haven't encountered that type of event before. It's then an easy case of creating rules for that kind of event on that particular IRC server.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's simply because we haven't encountered that type of event before. It's then merely an easy case of creating rules for how to parse it.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
 ## Current functionality includes:
 
 * bedazzling coloured terminal output like it's the 90s
-* automatic mode sets (eg. auto `+o` for op)
+* automatic mode sets (eg. auto `+o` on join for op)
 * looking up titles of pasted web URLs
 * logs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
-* user `quotes` plugin
-* Reddit post lookup
-* [`bash.org`](http://bash.org) quoting
-* Twitch support (with default-disabled [example bot plugin](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitchbot.d)); see [notes on connecting](#twitch) below
-* piping text from the terminal to the server (Linux/OSX and other UNIX-likes only)
-* mIRC colour coding and text effects (bold, underlined, ...), translated into ANSI terminal formatting
+* user `quotes`
+* Twitch chat support (with default-disabled [example bot](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitchbot.d)); see notes on [connecting to Twitch](#twitch) below
+* piping text from the terminal to the server (Linux/OSX and other Posix-likes only)
+* mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
-* configuration stored on file; create one and edit it to get an idea of the settings available (see [notes on generating](#configuration) below)
+* configuration stored on file; [create one](#configuration) and edit it to get an idea of the settings available
 
 If nothing else it makes for a good read-only terminal lurkbot.
 
 ## Current limitations:
 
-* **the dmd and ldc compilers may segfault** if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026), see more on build types below).
-* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307))
-* nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the change was reverted. There are corner cases where things might break; please file bugs.
+* the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
+* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
+* nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the changes were reverted. There might be corner cases where things break; please file bugs.
 * missing good how-to-use guide. Use the source, Luke!
-* IRC server that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
+* IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
@@ -46,6 +44,7 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
   * [Prerequisites](#prerequisites)
   * [Downloading](#downloading)
   * [Compiling](#compiling)
+    * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
   * [Configuration](#configuration)
     * [Command-line arguments](#command-line-arguments)
@@ -68,15 +67,11 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 
 # Getting started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes, as well as general use.
-
 ## Prerequisites
 
-You need a **D** compiler and the official [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on version **2.076** or later (released September 2017). You will also need a good chunk of RAM, as compiling requires some 4 Gb to build all features (linux, excluding tests).
+You need a D compiler and the [**dub**](https://code.dlang.org/download) package manager. There are three compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.076** or later (released September 2017). You will also need some 4 Gb of RAM to build all features (Linux, excluding tests).
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), in `debug` mode (see below). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
-
-It's *possible* to build it manually without dub, but it is non-trivial if you want the web-related plugins to work. Your best bet is to first build it with dub in verbose mode, then copy the actual command it runs and modify it to suit your needs.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently too old to be used.
 
 ## Downloading
 
@@ -93,26 +88,26 @@ Do not use `dub fetch` until we have released **v1.0.0**. It will download an an
 $ dub build
 ```
 
-This will compile it in the default `debug` *build type*, which adds some extra code and debugging symbols.
+This will compile it in the default `debug` mode, which adds some extra code and debugging symbols.
 
 > You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
-The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. [Bug reported.](https://issues.dlang.org/show_bug.cgi?id=18026)
+The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them.
+Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them. Tests are run at the *start* of the program, not during compilation. Furthermore, test builds will only run the unit tests and immediately exit.
 
 ```bash
-$ dub build -b unittest
+$ dub test
 ```
 
-The tests are run at the *start* of the program, not during compilation. You can use the shorthand `dub test` to compile with tests and run them in one go. Test builds will only run the unit tests and immediately exit.
+### Build configurations
 
-The relevant *build configurations* are:
+There are several configurations in which the bot may be built.
 
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
-* `colours+web`, includes both of the above
+* `colours+web`, unsurprisingly includes both of the above
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours+web`
 * `windows`, default on Windows, equals `web` (no colours)
 * `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
@@ -127,7 +122,7 @@ $ dub build -c cygwin
 
 ## Configuration
 
-The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. It cannot work without having at least one of the two, so you need to generate and edit a configuration file before starting.
+The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. To define these you need to generate and edit a configuration file.
 
 ```bash
 $ ./kameloso --writeconfig
@@ -158,15 +153,15 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Repeated calls of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will remove any lines not corresponding to a valid setting, which includes old settings no longer in use as well as comments.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will remove any lines not corresponding to a valid setting, so comments are removed.
 
 ### Display settings
 
-If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the entire range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
+If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **MacOS** and **Windows** they will be put in subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features. Where these are stored also depends on platform; in the case of **OSX** and **Windows** they will be put in subdirectories of the same directory as the configuration file, listed above. On **Linux**, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points). As before it falls back to the working directory on other unknown platforms.
 
 ## Example use
 
@@ -207,7 +202,7 @@ kameloso | [reddit.com] DMD 2.078.0 Has Been Released : programming
 
 ### Online help and commands
 
-Send `help` to the bot in a *private message* for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
+Send `help` to the bot in a private message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
 
 The *prefix* character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
@@ -236,11 +231,11 @@ port                6667
 
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
 
-Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot query the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
+Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
 
 See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
 
-Known limitation: a user that is in more than one observed channel can be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation, and it is persistent and carries across channels.
+Known limitation: a user that is in more than one observed channel can rarely be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation.
 
 ## Use as a library
 
@@ -259,9 +254,9 @@ Feel free to copy these and drop them into your own project. Look up the structs
 
 # Debugging and generating unit tests
 
-Writing an IRC bot when servers all behave differently is difficult, and you will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't -- or more likely there will be an error message. Please file an issue.
+Writing an IRC bot when servers all behave differently is difficult, and you will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't. Very likely there will be an error message. Please file an issue.
 
-If you're working on developing the bot yourself, you can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the server daemon and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
+You can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the requested server information and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
 
 If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/fake the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
 
@@ -272,7 +267,7 @@ If more state is necessary to replicate the environment, such as needing things 
 * Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 * Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
 * Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
-* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations.
+* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations. Any changes will have to be saved in a different way.
 
 ## Posix
 
@@ -285,7 +280,6 @@ If more state is necessary to replicate the environment, such as needing things 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * private notes (later)
-* trim `README.md`, split into wiki pages
 
 # Built with
 
