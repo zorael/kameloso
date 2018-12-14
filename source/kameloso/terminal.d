@@ -288,7 +288,7 @@ void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @no
  +  int r = 255;
  +  int g = 128;
  +  int b = 100;
- +  normaliseColoursBright(r, g, b);
+ +  normaliseColours(r, g, b);
  +  assert(r != 255);
  +  assert(g != 128);
  +  assert(b != 100);
