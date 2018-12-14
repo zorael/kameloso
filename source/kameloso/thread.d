@@ -67,14 +67,13 @@ struct ThreadMessage
 }
 
 
-// Sendable
 /++
  +  Interface for a message sendable through the message bus.
  +/
 interface Sendable {}
 
 
-// MessageContent
+// BusMessage
 /++
  +  A payload of type `T` wrapped in a class implementing the `Sendable` interface.
  +

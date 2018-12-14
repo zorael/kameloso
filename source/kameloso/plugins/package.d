@@ -124,31 +124,37 @@ version(WithPlugins)
 }
 
 
-/++
- +  List of enabled plugins. Add and remove to enable and disable.
- +
- +  Due to use of `tryImportMixin` above only files actually present will have
- +  been imported.
- +
- +  Note that `dub` will still compile any files in the `plugins` directory!
- +  To completely omit a plugin you will either have to compile the bot
- +  manually, delete the source file(s) in question, or add an `__EOF__` at the
- +  top of them. Everything below a line with that text is skipped. Make sure
- +  it's above the `module` declaration.
- +/
 import std.meta : AliasSeq;
 version(WithPlugins)
 {
+    /++
+     +  List of enabled plugins gated behind `version(Web)`.
+     +/
     public alias EnabledWebPlugins = AliasSeq!(
         WebtitlesPlugin,
         RedditPlugin,
         BashQuotesPlugin,
     );
 
+    /++
+     +  List of enabled plugins gated behind `version(Posix)`.
+     +/
     public alias EnabledPosixPlugins = AliasSeq!(
         PipelinePlugin,
     );
 
+    /++
+     +  List of enabled plugins. Add and remove to enable and disable.
+     +
+     +  Due to use of `tryImportMixin` above only files actually present will have
+     +  been imported.
+     +
+     +  Note that `dub` will still compile any files in the `plugins` directory!
+     +  To completely omit a plugin you will either have to compile the bot
+     +  manually, delete the source file(s) in question, or add an `__EOF__` at
+     +  the top of them. Everything below a line with that text is skipped. Make
+     +  sure it's above the `module` declaration.
+     +/
     public alias EnabledPlugins = AliasSeq!(
         TwitchSupportService, // Must be before PersistenceService
         PersistenceService, // Should be early

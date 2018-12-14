@@ -345,7 +345,7 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
 public:
 
 
-// Pipeline
+// PipelinePlugin
 /++
  +  The Pipeline plugin reads from a local named pipe (FIFO) for messages to
  +  send to the server.

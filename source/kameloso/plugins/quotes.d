@@ -440,7 +440,6 @@ final class QuotesPlugin : IRCPlugin
 {
     import kameloso.json : JSONStorage;
 
-    // quotes
     /++
      +  The in-memory JSON storage of all user quotes.
      +

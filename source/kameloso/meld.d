@@ -8,7 +8,6 @@ module kameloso.meld;
 import std.traits : isArray, isAssociativeArray;
 
 
-// MeldingStrategy
 /++
  +  To what extent a source should overwrite a target when melding.
  +/

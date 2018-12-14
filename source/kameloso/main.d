@@ -22,12 +22,12 @@ shared static this()
 
 
 /+
- +  Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
- +
- +  It may have been fixed in versions in the future at time of writing, so
- +  limit it to 2.083 and earlier. Update this condition as compilers are released.
- +
- +  Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
+    Warn about bug #18026; Stack overflow in ddmd/dtemplate.d:6241, TemplateInstance::needsCodegen()
+
+    It may have been fixed in versions in the future at time of writing, so
+    limit it to 2.083 and earlier. Update this condition as compilers are released.
+
+    Exempt DDoc generation, as it doesn't seem to trigger the segfaults.
  +/
 static if (__VERSION__ <= 2083L)
 {

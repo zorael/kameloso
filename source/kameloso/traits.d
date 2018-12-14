@@ -60,7 +60,7 @@ unittest
 }
 
 
-// longestMemberName
+// longestMemberNameImpl
 /++
  +  Gets the name of the longest member in one or more struct/class objects.
  +

@@ -855,6 +855,7 @@ struct IRCEvent
 }
 
 
+// IRCServer
 /++
  +  Aggregate of all information and state pertaining to the connected IRC
  +  server. Some fields are transient on a per-connection basis and should not
@@ -992,6 +993,7 @@ struct IRCServer
 }
 
 
+// IRCUser
 /++
  +  An aggregate of fields representing a single user on IRC. Instances of these
  +  should not survive a disconnect and reconnect; they are on a per-connection basis.

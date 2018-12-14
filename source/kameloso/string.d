@@ -420,7 +420,8 @@ unittest
 
 // beginsWith
 /++
- +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is such a hostpot.
+ +  A cheaper variant of `std.algorithm.searching.startsWith`, since this is
+ +  such a hotspot.
  +
  +  Merely slices; does not decode the string and may thus give weird results on
  +  weird inputs.

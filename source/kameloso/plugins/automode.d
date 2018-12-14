@@ -9,7 +9,7 @@
  +  `clearmodes`<br>
  +  `delmodes`<br>
  +  `printmodes`<br>
- +  `hello`
+ +  `hello|op`
  +/
 module kameloso.plugins.automode;
 
