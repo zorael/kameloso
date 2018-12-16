@@ -1506,6 +1506,16 @@ int main(string[] args)
         {
             bot.writeConfigurationFile(settings.configFile);
         }
+
+        if (*bot.abort)
+        {
+            // Ctrl+C
+            logger.error("Aborting...");
+        }
+        else
+        {
+            logger.info("Exiting...");
+        }
     }
 
     do
@@ -1564,7 +1574,6 @@ int main(string[] args)
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
-            logger.info("Exiting...");
             return 1;
         }
 
@@ -1627,16 +1636,6 @@ int main(string[] args)
     {
         // Didn't Ctrl+C, did return failure and shouldn't reconnect
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
-    }
-
-    if (*bot.abort)
-    {
-        // Ctrl+C
-        logger.error("Aborting...");
-    }
-    else
-    {
-        logger.info("Exiting...");
     }
 
     return *bot.abort ? 1 : 0;
