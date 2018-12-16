@@ -213,7 +213,7 @@ void printHelp(GetoptResult results) @system
     import std.getopt : defaultGetoptPrinter;
     defaultGetoptPrinter(headline, results.options);
     writeln();
-    writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account, etc.");
+    writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.");
     writeln();
 }
 
@@ -350,26 +350,26 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
         auto results = args.getopt(
             config.caseSensitive,
             config.bundling,
-            "n|nickname",   "Bot nickname",
+            "n|nickname",   "Nickname",
                             &client.nickname,
-            "s|server",     "Server address",
+            "s|server",     "Server address [%s]".format(client.server.address),
                             &client.server.address,
-            "P|port",       "Server port",
+            "P|port",       "Server port [%d]".format(client.server.port),
                             &client.server.port,
-            "6|ipv6",       "Use IPv6 when available",
+            "6|ipv6",       "Use IPv6 when available [%s]".format(settings.ipv6),
                             &settings.ipv6,
-            "A|account",    "Services account login name, if applicable",
+            "A|account",    "Services account name",
                             &client.authLogin,
             "auth",         &client.authLogin,
             "p|password",   "Services account password",
                             &client.authPassword,
             "authPassword", &client.authPassword,
-            "pass",         "Registration password (not auth or services)",
+            "pass",         "Registration pass",
                             &client.pass,
-            "admins",       "Services accounts of the bot's administrators",
+            "admins",       "Administrators' services accounts, comma-separated",
                             &client.admins,
             "H|homes",      "Home channels to operate in, comma-separated " ~
-                            "(remember to escape or enquote the octothorpe #s!)",
+                            "(escape or enquote any octothorpe #s)",
                             &inputHomes,
             "C|channels",   "Non-home channels to idle in, comma-separated (ditto)",
                             &inputChannels,
@@ -381,12 +381,12 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             "settings",     "Show all plugins' settings",
                             &shouldShowSettings,
             "show",         &shouldShowSettings,
-            "bright",       "Bright terminal colour setting",
+            "bright",       "Adjust colours for bright terminal backgrounds",
                             &settings.brightTerminal,
-            "brightTerminal", &settings.brightTerminal,
+            "brightTerminal",&settings.brightTerminal,
             "monochrome",   "Use monochrome output",
                             &settings.monochrome,
-            "set",          "Manually change a setting (--set plugin.option=setting)",
+            "set",          "Manually change a setting (syntax: --set plugin.option=setting)",
                             &customSettings,
             "asserts",      genDescription,
                             &shouldGenerateAsserts,
@@ -397,7 +397,7 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             "r|resourceDir","Specify a different resource directory [%s]"
                             .format(settings.resourceDirectory),
                             &settings.resourceDirectory,
-            "force",        "Force connecting (skips some sanity checks)",
+            "force",        "Force connect (skips some sanity checks)",
                             &settings.force,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,
