@@ -4,7 +4,7 @@
 
 A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), where some [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's simply because we haven't encountered that type of event before. It's then merely an easy case of creating rules for how to parse it.
+It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's simply because we haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Once discovered it's not a difficult thing to do.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -28,15 +28,32 @@ If nothing else it makes for a good read-only terminal lurkbot.
 
 ## Current limitations:
 
+* missing good how-to-use guide. Use the source, Luke!
 * the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
-* nicknames are case-sensitive, while channel names are not. Making all of it case-insensitive made things really gnarly, so the changes were reverted. There might be corner cases where things break; please file bugs.
-* missing good how-to-use guide. Use the source, Luke!
 * IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client lurking channels and less as a bot hosting commands.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client idling in channels and less as a bot hosting commands.
+
+# TL;DR: abridged
+
+```
+$ ./kameloso --help
+
+-n       --nickname Nickname
+-s         --server Server address [irc.freenode.net]
+-P           --port Server port [6667]
+-A        --account Services account name
+-p       --password Services account password
+           --admins Administrators' services accounts, comma-separated
+-H          --homes Home channels to operate in, comma-separated
+-C       --channels Non-home channels to idle in, comma-separated
+-w    --writeconfig Write configuration to file
+
+A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.
+```
 
 # Table of contents
 
@@ -174,13 +191,9 @@ $ ./kameloso
 ```
      you joined #channel
 kameloso sets mode +o you
-     you | !say foo
-kameloso | foo
-     you | foo bar baz
-     you | s/bar/BAR/
-kameloso | you | foo BAR baz
-     you | !8ball
-kameloso | It is decidedly so
+     you | I am a fish
+     you | s/fish/snek
+kameloso | you | I am a snek
      you | !addquote you This is a quote
 kameloso | Quote saved. (1 on record)
      you | !quote you
@@ -191,13 +204,8 @@ kameloso | Note added.
 kameloso | I last saw OfflinePerson 1 hour and 34 minutes ago.
      you | kameloso: sudo PRIVMSG #channel :this is a raw IRC command
 kameloso | this is a raw IRC command
-     you | !bash 85514
-kameloso | <Reverend> IRC is just multiplayer notepad.
      you | https://www.youtube.com/watch?v=s-mOy8VUEBk
-kameloso | [youtube.com] Danish language
-     you | !reddit https://dlang.org/blog/2018/01/04/dmd-2-078-0-has-been-released
-kameloso | Reddit post: https://www.reddit.com/r/programming/comments/7o2tcw/dmd_20780_has_been_released
-kameloso | [reddit.com] DMD 2.078.0 Has Been Released : programming
+kameloso | [youtube.com] Danish language (uploaded by snurre)
 ```
 
 ### Online help and commands
@@ -215,7 +223,7 @@ It can technically be any string and not just one character. Enquote it if you w
 
 ## Twitch
 
-To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth). Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
+To connect to Twitch servers you must supply an [*OAuth token*](https://en.wikipedia.org/wiki/OAuth) *pass*. Generate one [here](https://twitchapps.com/tmi), then add it to your `kameloso.conf` in the `pass` field.
 
 ```ini
 [IRCBot]
