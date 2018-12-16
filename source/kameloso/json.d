@@ -91,6 +91,7 @@ struct JSONStorage
             else
             {
                 // Rethrow and let something up the stack catch it
+                logger.warning(filename, " is corrupt.");
                 throw e;
             }
         }
