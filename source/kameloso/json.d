@@ -54,15 +54,12 @@ struct JSONStorage
      +      filename = Filename of file to read from.
      +
      +  Throws:
-     +      Whatever `std.file.readText` and/or `std.json.parseJSON` throws,
-     +      iff not an error about an incomplete file, in which an error is
-     +      instead shown.
+     +      Whatever `std.file.readText` and/or `std.json.parseJSON` throws.
      +/
-    import std.typecons : Flag, No, Yes;
-    void load(const string filename, Flag!"newIfError" newIfError = Yes.newIfError)
+    void load(const string filename)
     {
-        import kameloso.common : logger;
-        import std.file : exists, isFile, readText;
+        import kameloso.common : FileTypeMismatchException;
+        import std.file : exists, getAttributes, isFile, readText;
         import std.path : baseName;
         import std.json : JSONException;
 
@@ -72,30 +69,12 @@ struct JSONStorage
         }
         else if (!filename.isFile)
         {
-            // How do we deal with this?
-            logger.warning(filename.baseName, " exists but is not a file");
-            return reset();
+            reset();
+            throw new FileTypeMismatchException("File exists but is not a file.",
+                filename.baseName, cast(ushort)getAttributes(filename), __FILE__, __LINE__);
         }
 
-        try
-        {
-            storage = parseJSON(readText(filename));
-        }
-        catch (const JSONException e)
-        {
-            import kameloso.string : beginsWith;
-
-            if (newIfError && e.msg.beginsWith("Unexpected end of data."))
-            {
-                logger.warning(filename.baseName, " is corrupt. Starting afresh.");
-            }
-            else
-            {
-                // Rethrow and let something up the stack catch it
-                logger.warning(filename.baseName, " is corrupt.");
-                throw e;
-            }
-        }
+        storage = parseJSON(readText(filename));
     }
 
     // save
