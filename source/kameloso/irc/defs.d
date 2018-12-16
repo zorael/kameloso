@@ -100,6 +100,7 @@ struct IRCEvent
         TWITCH_ERROR,     /// Twitch generic error, see `event.aux`.
         TWITCH_RAID,      /// Twitch raid.
         TWITCH_GIFTUPGRADE,/// Twitch "continuing the gift sub"
+        TWITCH_CHARITY,   /// Twitch charity donation.
 
         ACCOUNT,    /// Someone logged in on nickname services.
         SASL_AUTHENTICATE,/// SASL authentication negotiation.
