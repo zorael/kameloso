@@ -97,7 +97,7 @@ enum TerminalReset
     hidden      = 28,
 }
 
-/// Bool of whether a type is a colour code enum.
+/// Bool of whether or not a type is a colour code enum.
 enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
                         is(T : TerminalFormat) || is(T : TerminalReset) ||
                         is(T == int);  // FIXME
@@ -460,7 +460,8 @@ unittest
  +  ---
  +
  +  Params:
- +      normalise = Whether to normalise colours so that they aren't too dark.
+ +      normalise = Whether or not to normalise colours so that they aren't too
+            dark or too bright.
  +      sink = Output range to write the final code into.
  +      r = Red value.
  +      g = Green value.
@@ -510,7 +511,8 @@ if (isOutputRange!(Sink, string))
  +  ---
  +
  +  Params:
- +      normalise = Whether to normalise colours so that they aren't too dark.
+ +      normalise = Whether or not to normalise colours so that they aren't too
+ +          dark or too bright.
  +      word = String to tint.
  +      r = Red value.
  +      g = Green value.

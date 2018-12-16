@@ -2427,7 +2427,7 @@ struct IRCChannel
         /// Users that are explicitly exempt from the `Mode`.
         IRCUser[] exceptions;
 
-        /// Whether this `Mode` should be considered to be its own antithesis.
+        /// Whether or not this `Mode` should be considered to be its own antithesis.
         bool negated;
 
         /++

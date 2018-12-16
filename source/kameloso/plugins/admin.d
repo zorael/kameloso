@@ -67,19 +67,19 @@ struct AdminSettings
     {
         /++
          +  Toggles whether `onAnyEvent` prints the raw strings of all incoming
-         +  events.
+         +  events or not.
          +/
         bool printRaw;
 
         /++
          +  Toggles whether `onAnyEvent` prints the raw bytes of the *contents*
-         +  of events.
+         +  of events or not.
          +/
         bool printBytes;
 
         /++
          +  Toggles whether `onAnyEvent` prints assert statements for incoming
-         +  events.
+         +  events or not.
          +/
         bool printAsserts;
     }

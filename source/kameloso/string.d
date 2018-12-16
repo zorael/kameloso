@@ -470,8 +470,8 @@ unittest
  +
  +  Params:
  +      haystack = String line to check the beginning of.
- +      needles = String of characters to test and see whether `haystack` begins
- +          with any of them.
+ +      needles = String of characters to test and see whether or not `haystack`
+ +          begins with any of them.
  +
  +  Returns:
  +      `true` if the first character of `haystack` is also in `characters`,
@@ -515,8 +515,8 @@ unittest
  +  weird inputs.
  +
  +  Params:
- +      haystraw = Single character to evaluate whether it exists in `needles`.
- +      needles = String of characters to test and see whether `haystraw`
+ +      haystraw = Single character to evaluate whether or not it exists in `needles`.
+ +      needles = String of characters to test and see whether or not `haystraw`
  +          equals any of them.
  +
  +  Returns:
@@ -629,7 +629,7 @@ unittest
  +  ---
  +
  +  Params:
- +      fullStrip = Whether to allow for the stripping to clear the entire string.
+ +      fullStrip = Whether or not to allow for the stripping to clear the entire string.
  +      line = Original line to strip the suffix from.
  +      suffix = Suffix string to strip.
  +
@@ -844,7 +844,7 @@ unittest
  +      needle = Substring to search `haystack` for.
  +
  +  Returns:
- +      Whether the passed `haystack` string contained the passed `needle`
+ +      Whether or not the passed `haystack` string contained the passed `needle`
  +      substring or token.
  +/
 bool contains(Flag!"decode" decode = No.decode, T, C)(const T haystack, const C needle) pure

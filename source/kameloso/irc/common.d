@@ -204,7 +204,7 @@ auto typenumsOf(const IRCServer.Daemon daemon) pure nothrow @nogc
 
 // isSpecial
 /++
- +  Judges whether the sender of an `kameloso.irc.defs.IRCEvent` is *special*.
+ +  Judges whether or not the sender of an `kameloso.irc.defs.IRCEvent` is *special*.
  +
  +  Special senders include services and staff, administrators and the like. The
  +  use of this is contested and the notion may be removed at a later date. For
@@ -436,7 +436,8 @@ unittest
 
 // isFromAuthService
 /++
- +  Looks at an  and decides whether it is from nickname services.
+ +  Looks at an `kameloso.irc.defs.IRCEvent` and judges whether or not it is
+ +  from nickname services.
  +
  +  Example:
  +  ---
@@ -584,7 +585,7 @@ unittest
 
 // isValidChannel
 /++
- +  Examines a string and decides whether it *looks* like a channel.
+ +  Examines a string and judges whether or not it *looks* like a channel.
  +
  +  It needs to be passed an `kameloso.irc.defs.IRCServer` to know the max
  +  channel name length. An alternative would be to change the
@@ -767,7 +768,7 @@ unittest
 
 // isValidNicknameCharacter
 /++
- +  Determines whether a passed `char` can be part of a nickname.
+ +  Determines whether or not a passed `char` can be part of a nickname.
  +
  +  The IRC standard describes nicknames as being a string of any of the
  +  following characters:

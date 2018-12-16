@@ -294,7 +294,7 @@ unittest
 
 // isOfAssignableType
 /++
- +  Eponymous template bool of whether a variable is "assignable"; if it is
+ +  Eponymous template bool of whether or not a variable is "assignable"; if it is
  +  an lvalue that isn't protected from being written to.
  +
  +  Params:
@@ -314,7 +314,7 @@ if (isType!T)
 
 // isOfAssignableType
 /++
- +  Eponymous template bool of whether a variable is "assignable"; if it is
+ +  Eponymous template bool of whether or not a variable is "assignable"; if it is
  +  an lvalue that isn't protected from being written to.
  +
  +  Overload that takes an alias symbol instead of a normal template parameter.

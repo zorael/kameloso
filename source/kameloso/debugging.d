@@ -86,7 +86,7 @@ with (parser.client)
  +  instances of a struct.
  +
  +  Params:
- +      asserts = Whether to build assert statements or assign statements.
+ +      asserts = Whether or not to build assert statements or assign statements.
  +      sink = Output buffer to write to.
  +      before = Original struct object.
  +      after = Changed struct object.

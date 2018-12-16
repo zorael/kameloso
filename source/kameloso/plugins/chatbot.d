@@ -30,7 +30,7 @@ import kameloso.messaging;
  +/
 struct ChatbotSettings
 {
-    /// Whether the Chatbot plugin should react to events at all.
+    /// Whether or not the Chatbot plugin should react to events at all.
     bool enabled = true;
 }
 

@@ -41,7 +41,7 @@ final class KamelosoLogger : Logger
     }
 
     bool monochrome;  /// Whether to use colours or not in logger output.
-    bool brightTerminal;   /// Whether to use colours for a bright background.
+    bool brightTerminal;   /// Whether or not to use colours for a bright background.
 
     /// Create a new `KamelosoLogger` with the passed settings.
     this(LogLevel lv = LogLevel.all, bool monochrome = false,

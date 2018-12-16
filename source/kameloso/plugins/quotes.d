@@ -33,7 +33,7 @@ import kameloso.messaging;
  +/
 struct QuotesSettings
 {
-    /// Whether the Quotes plugin should react to events at all.
+    /// Whether or not the Quotes plugin should react to events at all.
     bool enabled = true;
 }
 

@@ -100,7 +100,7 @@ public:
      +      strings = Variadic list of strings to send.
      +
      +  Bugs:
-     +      Limits lines to 512 but doesn't take into consideration whether a
+     +      Limits lines to 512 but doesn't take into consideration whether or not a
      +      line included a newline, which would break.
      +/
     void sendline(Strings...)(const Strings strings)

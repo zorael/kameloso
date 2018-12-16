@@ -32,13 +32,13 @@ struct ConnectSettings
 {
     import kameloso.uda : CannotContainComments, Separator;
 
-    /// Whether to join channels upon being invited to them.
+    /// Whether or not to join channels upon being invited to them.
     bool joinOnInvite = false;
 
     /// Whether to use SASL authentication or not.
     bool sasl = true;
 
-    /// Whether to abort and exit if SASL authentication fails.
+    /// Whether or not to abort and exit if SASL authentication fails.
     bool exitOnSASLFailure = false;
 
     /// Lines to send after successfully connecting and registering.
@@ -993,7 +993,7 @@ final class ConnectService : IRCPlugin
     /// At what step we're currently at with regard to capabilities.
     Progress capabilityNegotiation;
 
-    /// Whether the server has sent at least one `PING`.
+    /// Whether or not the server has sent at least one `PING`.
     bool serverPinged;
 
     /// Whether or not the bot has renamed itself during registration.

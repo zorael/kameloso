@@ -255,7 +255,7 @@ struct SeenSettings
  +  `kameloso.plugins.common.Chainable` for the modules and functions that
  +  actually need it.
  +
- +  The `kameloso.plugins.common.ChannelPolicy` annotation decides whether this
+ +  The `kameloso.plugins.common.ChannelPolicy` annotation dictates whether or not this
  +  function should be called based on the *channel* the event took place in, if
  +  applicable. The two policies are `home`, in which only events in channels in
  +  the `homes` array will be allowed to trigger this; or `any`, in which case

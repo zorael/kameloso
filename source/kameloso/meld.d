@@ -156,7 +156,7 @@ if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
                     {
                         static if (is(Thing == class))
                         {
-                            // We cannot tell whether it has the same value as
+                            // We cannot tell whether or not it has the same value as
                             // `Thing.init` does, as it would need to be instantiated.
                             // Assume overwrite?
                             targetMember = meldThis.tupleof[i];
@@ -221,7 +221,7 @@ if ((is(Thing == struct) || is(Thing == class)) && (!is(intoThis == const) &&
                     {
                         static if (is(Thing == class))
                         {
-                            // We cannot tell whether it has the same value as
+                            // We cannot tell whether or not it has the same value as
                             // `Thing.init` does, as it would need to be instantiated.
                             // Assume overwrite?
                             targetMember = meldThis.tupleof[i];
@@ -521,7 +521,7 @@ unittest
  +  one taking a `MeldingStrategy` instead.
  +
  +  Params:
- +      overwrite = Whether the source object should overwrite set (non-`init`)
+ +      overwrite = Whether or not the source object should overwrite set (non-`init`)
  +          values in the receiving object.
  +      meldThis = Struct to meld (source).
  +      intoThis = Reference to struct to meld (target).

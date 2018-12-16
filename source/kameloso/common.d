@@ -98,7 +98,7 @@ struct CoreSettings
         bool monochrome = true;  /// Mainly version Windows.
     }
 
-    /// Flag denoting whether the program should reconnect after disconnect.
+    /// Flag denoting whether or not the program should reconnect after disconnect.
     bool reconnectOnFailure = true;
 
     /// Flag denoting that the terminal has a bright background.
@@ -249,7 +249,7 @@ enum : ubyte
  +  ---
  +
  +  Params:
- +      oneUp = Whether to always overshoot.
+ +      oneUp = Whether or not to always overshoot.
  +      num = Number to reach.
  +      n = Base value to find a multiplier for.
  +

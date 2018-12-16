@@ -650,10 +650,10 @@ struct Configuration;
 
 // filterUser
 /++
- +  Decides whether a nickname is known good (whitelisted/admin), known bad (not
+ +  Decides if a nickname is known good (whitelisted/admin), known bad (not
  +  whitelisted/admin), or needs `WHOIS` (to tell if whitelisted/admin).
  +
- +  This is used to tell whether a user is allowed to use the bot's services.
+ +  This is used to tell whether or not a user is allowed to use the bot's services.
  +  If the user is not in the in-memory user array, return `FilterResult.whois`.
  +  If the user's NickServ account is in the whitelist (or equals one of the
  +  bot's admins'), return `FilterResult.pass`. Else, return `FilterResult.fail`
@@ -2920,7 +2920,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
 // nickPolicyMatches
 /++
- +  Evaluates whether the message in an event satisfies the `NickPolicy`
+ +  Evaluates whether or not the message in an event satisfies the `NickPolicy`
  +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
  +
  +  If it doesn't match, the `onEvent` routine shall consider the UDA as not

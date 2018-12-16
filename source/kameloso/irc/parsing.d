@@ -988,7 +988,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
             if (slice.contains(" :"))
             {
                 // Banned
-                // Whether it's a tempban or a permban is decided in the Twitch plugin
+                // Whether or not it's a tempban or a permban is decided in the Twitch plugin
                 event.channel = slice.nom(" :");
                 event.target.nickname = slice;
             }
@@ -1614,7 +1614,7 @@ void onNotice(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 /++
  +  Handle `QUERY` and `CHAN` messages (`PRIVMSG`).
  +
- +  Whether it is a private query message or a channel message is only obvious
+ +  Whether or not it is a private query message or a channel message is only obvious
  +  by looking at the target field of it; if it starts with a `#`, it is a
  +  channel message.
  +

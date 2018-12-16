@@ -36,19 +36,19 @@ struct PrinterSettings
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
-    /// Whether to display advanced colours in RRGGBB rather than simple Terminal.
+    /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
     bool truecolour = true;
 
-    /// Whether to normalise truecolours; make dark brighter and bright darker.
+    /// Whether or not to normalise truecolours; make dark brighter and bright darker.
     bool normaliseTruecolour = true;
 
-    /// Whether to display nicks in random colour based on their nickname hash.
+    /// Whether or not to display nicks in random colour based on their nickname hash.
     bool randomNickColours = true;
 
-    /// Whether to show Message of the Day upon connecting.
+    /// Whether or not to show Message of the Day upon connecting.
     bool motd = true;
 
-    /// Whether to filter away most uninteresting events.
+    /// Whether or not to filter away most uninteresting events.
     bool filterVerbose = true;
 
     /++
@@ -57,28 +57,28 @@ struct PrinterSettings
      +/
     bool bellOnMention = true;
 
-    /// Whether to bell on parsing errors.
+    /// Whether or not to bell on parsing errors.
     bool bellOnError = true;
 
-    /// Whether to be silent and not print error messages in the event output.
+    /// Whether or not to be silent and not print error messages in the event output.
     bool silentErrors = false;
 
-    /// Whether to have the type (and badge) names be in capital letters.
+    /// Whether or not to have the type (and badge) names be in capital letters.
     bool uppercaseTypes = false;
 
-    /// Whether to log events.
+    /// Whether or not to log events.
     bool logs = false;
 
-    /// Whether to log non-home channels.
+    /// Whether or not to log non-home channels.
     bool logAllChannels = false;
 
-    /// Whether to log errors.
+    /// Whether or not to log errors.
     bool logErrors = true;
 
-    /// Whether to log raw events.
+    /// Whether or not to log raw events.
     bool logRaw = false;
 
-    /// Whether to buffer writes.
+    /// Whether or not to buffer writes.
     bool bufferedWrites = true;
 }
 
@@ -224,8 +224,8 @@ struct LogLineBuffer
 /++
  +  Logs an event to disk.
  +
- +  It is set to `ChannelPolicy.any`, and configuration decides whether non-home
- +  events should be logged. Likewise whether raw events should be logged.
+ +  It is set to `ChannelPolicy.any`, and configuration dictates whether or not non-home
+ +  events should be logged. Likewise whether or not raw events should be logged.
  +
  +  Lines will either be saved immediately to disk, opening a `std.stdio.File`
  +  with appending privileges for each event as they occur, or buffered by
@@ -2047,10 +2047,10 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
-    /// Whether we have nagged about an invalid log directory.
+    /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 
-    /// Whether we have printed daemon-network information.
+    /// Whether or not we have printed daemon-network information.
     bool printedISUPPORT;
 
     /// Buffers, to clump log file writes together.
