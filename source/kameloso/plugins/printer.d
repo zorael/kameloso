@@ -579,6 +579,7 @@ void commitLogs(PrinterPlugin plugin)
     if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs ||
         !plugin.printerSettings.bufferedWrites) return;
 
+    import std.exception : ErrnoException;
     import std.file : FileException;
 
     foreach (ref buffer; plugin.buffers)
@@ -596,6 +597,17 @@ void commitLogs(PrinterPlugin plugin)
         catch (const FileException e)
         {
             logger.warning("File exception caught when committing logs: ", e.msg);
+        }
+        catch (const ErrnoException e)
+        {
+            import kameloso.string : contains;
+
+            logger.warning("Exception caught when committing logs: ", e.msg);
+
+            if (e.msg.contains("No space left on device"))
+            {
+                logger.warning("This probably corrupted the file.");
+            }
         }
         catch (const Exception e)
         {
