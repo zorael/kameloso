@@ -63,6 +63,7 @@ struct JSONStorage
     {
         import kameloso.common : logger;
         import std.file : exists, isFile, readText;
+        import std.path : baseName;
         import std.json : JSONException;
 
         if (!filename.exists)
@@ -72,7 +73,7 @@ struct JSONStorage
         else if (!filename.isFile)
         {
             // How do we deal with this?
-            logger.warning(filename, " exists but is not a file");
+            logger.warning(filename.baseName, " exists but is not a file");
             return reset();
         }
 
@@ -86,12 +87,12 @@ struct JSONStorage
 
             if (newIfError && e.msg.beginsWith("Unexpected end of data."))
             {
-                logger.warning(filename, " is corrupt. Starting afresh.");
+                logger.warning(filename.baseName, " is corrupt. Starting afresh.");
             }
             else
             {
                 // Rethrow and let something up the stack catch it
-                logger.warning(filename, " is corrupt.");
+                logger.warning(filename.baseName, " is corrupt.");
                 throw e;
             }
         }
