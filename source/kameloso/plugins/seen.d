@@ -862,9 +862,25 @@ void teardown(SeenPlugin plugin)
 void initResources(SeenPlugin plugin)
 {
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
-    json.load(plugin.seenFile);
+
+    try
+    {
+        json.load(plugin.seenFile);
+    }
+    catch (const JSONException e)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.path : baseName;
+
+        logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.",
+            cast(char)TerminalToken.bell);
+    }
+
+    // Let other Exceptions pass.
+
     json.save(plugin.seenFile);
 }
 

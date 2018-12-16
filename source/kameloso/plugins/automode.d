@@ -96,9 +96,22 @@ void saveAutomodes(AutomodePlugin plugin)
 void initResources(AutomodePlugin plugin)
 {
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
-    json.load(plugin.automodeFile);
+
+    try
+    {
+        json.load(plugin.automodeFile);
+    }
+    catch (const JSONException e)
+    {
+        import std.path : baseName;
+        throw new IRCPluginInitialisationException(plugin.automodeFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
     json.save(plugin.automodeFile);
 }
 

@@ -343,8 +343,11 @@ void initResources(PersistenceService service)
     }
     catch (const JSONException e)
     {
-        throw new IRCPluginInitialisationException(service.userFile ~ " may be malformed.");
+        import std.path : baseName;
+        throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
     }
+
+    // Let other Exceptions pass.
 
     if ("whitelist" !in json)
     {

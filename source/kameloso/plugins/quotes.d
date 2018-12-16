@@ -416,9 +416,22 @@ void onEndOfMotd(QuotesPlugin plugin)
 void initResources(QuotesPlugin plugin)
 {
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
-    json.load(plugin.quotesFile);
+
+    try
+    {
+        json.load(plugin.quotesFile);
+    }
+    catch (const JSONException e)
+    {
+        import std.path : baseName;
+        throw new IRCPluginInitialisationException(plugin.quotesFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
     json.save(plugin.quotesFile);
 }
 

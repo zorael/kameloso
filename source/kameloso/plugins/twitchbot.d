@@ -361,9 +361,22 @@ void initResources(TwitchBotPlugin plugin)
     if (!plugin.twitchBotSettings.enabled) return;
 
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
-    json.load(plugin.onelinerFile);
+
+    try
+    {
+        json.load(plugin.onelinerFile);
+    }
+    catch (const JSONException e)
+    {
+        import std.path : baseName;
+        throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
     json.save(plugin.onelinerFile);
 }
 

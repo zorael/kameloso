@@ -533,9 +533,22 @@ void onEndOfMotd(NotesPlugin plugin)
 void initResources(NotesPlugin plugin)
 {
     import kameloso.json : JSONStorage;
+    import std.json : JSONException;
 
     JSONStorage json;
-    json.load(plugin.notesFile);
+
+    try
+    {
+        json.load(plugin.notesFile);
+    }
+    catch (const JSONException e)
+    {
+        import std.path : baseName;
+        throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
     json.save(plugin.notesFile);
 }
 
