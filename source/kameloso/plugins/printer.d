@@ -579,6 +579,7 @@ void commitLogs(PrinterPlugin plugin)
     if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs ||
         !plugin.printerSettings.bufferedWrites) return;
 
+    import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
     import std.file : FileException;
 
@@ -596,15 +597,18 @@ void commitLogs(PrinterPlugin plugin)
         }
         catch (const FileException e)
         {
-            logger.warning("File exception caught when committing logs: ", e.msg);
+            logger.warning("File exception caught when committing logs: ",
+                e.msg, cast(char)TerminalToken.bell);
         }
         catch (const ErrnoException e)
         {
-            logger.warning("Exception caught when committing logs: ", e.msg);
+            logger.warning("Exception caught when committing logs: ",
+                e.msg, cast(char)TerminalToken.bell);
         }
         catch (const Exception e)
         {
-            logger.warning("Unhandled exception caught when committing logs: ", e.msg);
+            logger.warning("Unhandled exception caught when committing logs: ",
+                e.msg, cast(char)TerminalToken.bell);
         }
         finally
         {
