@@ -1587,7 +1587,17 @@ int main(string[] args)
         }
         catch (const IRCPluginInitialisationException e)
         {
-            logger.warningf("A plugin failed to load resources: %s%s", logtint, e.msg);
+            import kameloso.terminal : TerminalToken;
+            logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
+                logtint, e.file, warningtint, e.msg, TerminalToken.bell);
+            return 1;
+        }
+        catch (const Exception e)
+        {
+            import kameloso.terminal : TerminalToken;
+            logger.warningf("The %s%s%s plugin failed to load its resources.%c",
+                logtint, e.file, warningtint, TerminalToken.bell);
+            logger.trace(e);
             return 1;
         }
 
