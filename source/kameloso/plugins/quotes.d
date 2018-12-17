@@ -370,6 +370,7 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 
     import std.stdio : stdout, writeln;
 
+    writeln("Currently stored quotes:");
     writeln(plugin.quotes.toPrettyString);
     version(FlushStdout) stdout.flush();
 }

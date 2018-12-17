@@ -259,6 +259,7 @@ void onCommandPrintNotes(NotesPlugin plugin)
 
     import std.stdio : stdout, writeln;
 
+    writeln("Currently queued notes:");
     writeln(plugin.notes.toPrettyString);
     version(FlushStdout) stdout.flush();
 }
