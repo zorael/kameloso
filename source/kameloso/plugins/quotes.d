@@ -300,7 +300,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             if (settings.colouredOutgoing)
             {
                 import std.conv : text;
-                message = "Quote for %s saved (%d on record)"
+                message = "Quote for %s saved (%s on record)"
                     .format(event.sender.nickname.ircColourNick.ircBold,
                     plugin.quotes[id].array.length.text.ircBold);
             }
