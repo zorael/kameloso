@@ -71,12 +71,12 @@ void onMessage(RedditPlugin plugin, const IRCEvent event)
 
     import kameloso.common : logger;
     import kameloso.constants : Timeout;
-    import kameloso.string : contains, stripped;
+    import kameloso.string : beginsWith, contains, stripped;
     import std.datetime.systime : Clock;
 
     immutable url = event.content.stripped;
 
-    if (!url.length || url.contains(' '))
+    if (!url.length || url.contains(' ') || !url.beginsWith("http"))
     {
         logger.error("Cannot look up Reddit post; invalid URL.");
         return;
