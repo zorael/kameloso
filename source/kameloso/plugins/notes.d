@@ -7,7 +7,6 @@
  +  `addnote` | `note`<br>
  +  `printnotes`<br>
  +  `reloadnotes`<br>
- +  `fakechan`<br>
  +  `fakejoin`
  +
  +  It is very optional.
