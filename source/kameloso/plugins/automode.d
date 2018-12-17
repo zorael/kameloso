@@ -252,7 +252,7 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "addmode")
 @Description("Adds an automatic mode change for a user account.",
-    "$command [channel] [account/nickname] [mode]")
+    "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
     if (!plugin.automodeSettings.enabled) return;
@@ -265,22 +265,22 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 2)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
-            "Usage: addmode [channel] [account/nickname] [mode]");
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
+            "Usage: addmode [channel] [mode] [account/nickname]");
         return;
     }
 
     string line = event.content;  // need mutable
 
     immutable channelName = line.nom!(Yes.decode)(" ").toLower;
-    immutable specified = line.nom!(Yes.decode)(" ");
 
     while (line.beginsWith("+"))
     {
         line.nom!(Yes.decode)("+");
     }
 
-    immutable mode = line;
+    immutable mode = line.nom!(Yes.decode)(" ");
+    immutable specified = line;
 
     if (!channelName.isValidChannel(plugin.state.client.server))
     {
