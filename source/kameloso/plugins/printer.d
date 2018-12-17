@@ -141,7 +141,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case RPL_ENDOFEXCEPTLIST:
     case SPAMFILTERLIST:
     case ENDOFSPAMFILTERLIST:
-    //case CAP:
+    case CAP:
     case ERR_CHANOPRIVSNEEDED:
     case GLOBALUSERSTATE:
     case USERSTATE:
