@@ -264,9 +264,9 @@ void onCommandPrintNotes(NotesPlugin plugin)
 }
 
 
-// onCommandReloadQuotes
+// onCommandReloadNotes
 /++
- +  Reloads quotes from disk, overwriting the in-memory storage.
+ +  Reloads notes from disk, overwriting the in-memory storage.
  +
  +  This is both for debugging purposes and for live-editing notes on disk.
  +/
@@ -275,8 +275,8 @@ void onCommandPrintNotes(NotesPlugin plugin)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.required, "reloadnotes")
-@Description("Reloads quotes from disk.")
-void onCommandReloadQuotes(NotesPlugin plugin)
+@Description("Reloads notes from disk.")
+void onCommandReloadNotes(NotesPlugin plugin)
 {
     if (!plugin.notesSettings.enabled) return;
 
