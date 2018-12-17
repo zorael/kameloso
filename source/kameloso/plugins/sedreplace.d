@@ -31,6 +31,8 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 
+import std.typecons : Flag, No, Yes;
+
 /// Lifetime of a `Line` in `prevlines`, in seconds.
 enum replaceTimeoutSeconds = 3600;
 

@@ -18,6 +18,8 @@ import kameloso.irc.defs;
 import kameloso.messaging;
 import kameloso.common : logger;
 
+import std.typecons : Flag, No, Yes;
+
 
 /// All Twitch bot plugin runtime settings.
 struct TwitchBotSettings

@@ -22,6 +22,7 @@ import kameloso.irc.defs;
 import kameloso.messaging;
 
 import std.concurrency;
+import std.typecons : Flag, No, Yes;
 
 
 // RedditSettings

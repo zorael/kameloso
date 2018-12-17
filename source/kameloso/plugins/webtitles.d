@@ -23,6 +23,7 @@ import kameloso.irc.defs;
 import kameloso.irc.colours : ircBold;
 
 import std.concurrency;
+import std.typecons : Flag, No, Yes;
 
 
 // WebtitlesSettings
