@@ -439,7 +439,7 @@ void reportURL(IRCPluginState state, const TitleLookup lookup, const IRCEvent ev
         line = lookup.title;
     }
 
-    state.privmsg(event.channel, event.sender.nickname, line);
+    state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, line);
 }
 
 
@@ -470,7 +470,7 @@ void reportYouTube(IRCPluginState state, const YouTubeVideoInfo info, const IRCE
         line = "[youtube.com] %s (uploaded by %s)".format(info.title, info.author);
     }
 
-    state.privmsg(event.channel, event.sender.nickname, line);
+    state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, line);
 }
 
 

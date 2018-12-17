@@ -24,6 +24,8 @@ import kameloso.common;
 import kameloso.irc.colours : ircBold;
 import kameloso.messaging;
 
+import std.typecons : Flag, No, Yes;
+
 
 // NotesSettings
 /++
@@ -79,7 +81,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     .format(event.sender.nickname, note.sender, timestamp, note.line);
             }
 
-            plugin.chan(event.channel, message);
+            plugin.chan!(Yes.quiet)(event.channel, message);
         }
         else
         {
@@ -97,7 +99,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     .format(event.sender.nickname, noteArray.length);
             }
 
-            plugin.chan(event.channel, message);
+            plugin.chan!(Yes.quiet)(event.channel, message);
 
             foreach (const note; noteArray)
             {
@@ -117,7 +119,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
                 }
 
-                plugin.chan(event.channel, report);
+                plugin.chan!(Yes.quiet)(event.channel, report);
             }
         }
 
@@ -217,7 +219,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, event.channel, line);
-        plugin.chan(event.channel, "Note added.");
+        plugin.chan!(Yes.quiet)(event.channel, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
     catch (const JSONException e)

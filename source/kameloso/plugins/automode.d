@@ -295,7 +295,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Invalid channel: " ~ channelName;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         return;
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
@@ -311,12 +311,12 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Invalid account or nickname: " ~ specified;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         return;
     }
     else if (!mode.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
             "You must supply a mode.");
         return;
     }
@@ -348,7 +348,7 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
                 .format(verb, specified, maybeAccount, channelName, mode);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
 
@@ -400,7 +400,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
     if (event.content.count(" ") != 1)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname,
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
             "Usage: clearmode [channel] [account]");
         return;
     }
@@ -425,7 +425,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "Automode cleared: %s on %s".format(account, channelName);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         plugin.saveAutomodes();
     }
     else
@@ -441,7 +441,7 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
             message = "No automodes defined for channel " ~ channelName;
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
     }
 }
 

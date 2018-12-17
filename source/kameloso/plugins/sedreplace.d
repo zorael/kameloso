@@ -206,7 +206,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 import kameloso.messaging : chan;
                 import std.format : format;
 
-                plugin.chan(event.channel, "%s | %s".format(event.sender.nickname, result));
+                plugin.chan!(Yes.quiet)(event.channel, "%s | %s".format(event.sender.nickname, result));
 
                 plugin.prevlines.remove(event.sender.nickname);
             }

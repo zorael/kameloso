@@ -209,12 +209,12 @@ void reportReddit(IRCPluginState state, const string reddit, const IRCEvent even
     {
         import kameloso.thread : ThreadMessage, busMessage;
 
-        state.privmsg(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
+        state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "Reddit post: " ~ reddit);
         state.mainThread.send(ThreadMessage.BusMessage(), "reddit title", busMessage(event));
     }
     else
     {
-        state.privmsg(event.channel, event.sender.nickname,
+        state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
             "No corresponding Reddit post found.");
     }
 }

@@ -21,6 +21,8 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.messaging;
 
+import std.typecons : Flag, No, Yes;
+
 
 // BashQuotesSettings
 /++
@@ -108,7 +110,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
                 message = "No such bash.org quote: " ~ event.content;
             }
 
-            state.privmsg(event.channel, event.sender.nickname, message);
+            state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -137,11 +139,11 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
             message = "[bash.org] #%s".format(num);
         }
 
-        state.privmsg(event.channel, event.sender.nickname, message);
+        state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
 
         foreach (const line; range)
         {
-            state.privmsg(event.channel, event.sender.nickname, line);
+            state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, line);
         }
     }
     catch (const Exception e)

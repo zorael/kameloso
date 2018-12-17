@@ -26,6 +26,8 @@ import kameloso.common : logger, settings;
 import kameloso.irc.colours : ircBold, ircColourNick;
 import kameloso.messaging;
 
+import std.typecons : Flag, No, Yes;
+
 
 // QuotesSettings
 /++
@@ -147,7 +149,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -165,7 +167,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = "%s | %s".format(nickname, endQuote);
         }
 
-        plugin.privmsg(event.channel, event.sender.nickname, message);
+        plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
     }
 
     try
@@ -191,7 +193,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
                 message = "No quote on record for %s".format(replyUser.nickname);
             }
 
-            plugin.privmsg(event.channel, event.sender.nickname, message);
+            plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         }
 
         void onFailure(const IRCUser failureUser)
@@ -282,7 +284,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -308,7 +310,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
                     .format(event.sender.nickname, plugin.quotes[id].array.length);
             }
 
-            plugin.privmsg(event.channel, event.sender.nickname, message);
+            plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
         }
         catch (const JSONException e)
         {
@@ -390,7 +392,7 @@ void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, "Reloading quotes.");
+    plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "Reloading quotes.");
     plugin.quotes.load(plugin.quotesFile);
 }
 

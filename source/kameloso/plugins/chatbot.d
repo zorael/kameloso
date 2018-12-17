@@ -23,6 +23,8 @@ import kameloso.common : settings;
 import kameloso.irc.colours : ircBold;
 import kameloso.messaging;
 
+import std.typecons : Flag, No, Yes;
+
 
 // ChatbotSettings
 /++
@@ -58,11 +60,11 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length)
     {
-        plugin.state.privmsg(event.channel, event.sender.nickname, "Say what?");
+        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "Say what?");
         return;
     }
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, event.content);
+    plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, event.content);
 }
 
 
@@ -115,7 +117,7 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
 
-    plugin.state.privmsg(event.channel, event.sender.nickname, reply);
+    plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, reply);
 }
 
 
@@ -188,7 +190,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                                 .format(p.name, specifiedCommand, description.string_);
                         }
 
-                        plugin.state.query(sender.nickname, message);
+                        plugin.state.query!(Yes.quiet)(sender.nickname, message);
 
                         if (description.syntax.length)
                         {
@@ -207,7 +209,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                                     .replace("$command", specifiedCommand);
                             }
 
-                            plugin.state.query(sender.nickname, syntax);
+                            plugin.state.query!(Yes.quiet)(sender.nickname, syntax);
                         }
                     }
                     else
@@ -225,7 +227,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                                 .format(specifiedCommand, specifiedPlugin);
                         }
 
-                        plugin.state.query(sender.nickname, message);
+                        plugin.state.query!(Yes.quiet)(sender.nickname, message);
                     }
 
                     return;
@@ -242,7 +244,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                     message = "No such plugin: " ~ specifiedPlugin;
                 }
 
-                plugin.state.query(sender.nickname, message);
+                plugin.state.query!(Yes.quiet)(sender.nickname, message);
                 return;
             }
             else
@@ -266,7 +268,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                         message = pattern.format(width, p.name, p.commands.keys.sort());
                     }
 
-                    plugin.state.query(sender.nickname, message);
+                    plugin.state.query!(Yes.quiet)(sender.nickname, message);
                     return;
                 }
 
@@ -281,7 +283,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                     message = "No such plugin: " ~ content;
                 }
 
-                plugin.state.query(sender.nickname, message);
+                plugin.state.query!(Yes.quiet)(sender.nickname, message);
             }
         }
         else
@@ -297,8 +299,8 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                 cast(string)KamelosoInfo.built);
 
             immutable banner = settings.colouredOutgoing ? bannerColoured : bannerUncoloured;
-            plugin.state.query(sender.nickname, banner);
-            plugin.state.query(sender.nickname, "Available bot commands per plugin:");
+            plugin.state.query!(Yes.quiet)(sender.nickname, banner);
+            plugin.state.query!(Yes.quiet)(sender.nickname, "Available bot commands per plugin:");
 
             foreach (p; plugins)
             {
@@ -319,7 +321,7 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                     message = pattern.format(width, p.name, p.commands.keys.sort());
                 }
 
-                plugin.state.query(sender.nickname, message);
+                plugin.state.query!(Yes.quiet)(sender.nickname, message);
             }
 
             string message;
@@ -334,8 +336,8 @@ void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
                 message = "Use help [plugin] [command] for information about a command.";
             }
 
-            plugin.state.query(sender.nickname, message);
-            plugin.state.query(sender.nickname, "Additional unlisted regex commands may be available.");
+            plugin.state.query!(Yes.quiet)(sender.nickname, message);
+            plugin.state.query!(Yes.quiet)(sender.nickname, "Additional unlisted regex commands may be available.");
         }
     }
 
