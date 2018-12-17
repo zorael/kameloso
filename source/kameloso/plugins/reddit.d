@@ -126,6 +126,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
 
     try
     {
+        state.askToLog("Checking Reddit ...");
         immutable redditURL = state.lookupReddit(url);
         state.reportReddit(redditURL, event);
 
@@ -163,8 +164,6 @@ string lookupReddit(IRCPluginState state, const string url)
     req.keepAlive = false;
     req.bufferSize = BufferSize.titleLookup;
 
-    state.askToLog("Checking Reddit ...");
-
     auto res = req.get("https://www.reddit.com/" ~ url);
 
     with (res.finalURI)
@@ -180,8 +179,6 @@ string lookupReddit(IRCPluginState state, const string url)
             // No Reddit post found but retry with a slash appended if it
             // doesn't already end with one. It apparently matters.
             if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
-
-            state.askToLog("No corresponding Reddit post found.");
             return string.init;
         }
         else
