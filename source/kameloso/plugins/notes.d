@@ -296,7 +296,6 @@ debug
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.required, "fakechan")
 @BotCommand(NickPolicy.required, "fakejoin")
 @Description("[debug] Fakes a user joining a channel.",
     "$command [nickname to fake a join for]")
