@@ -178,7 +178,7 @@ string lookupReddit(IRCPluginState state, const string url)
 
             // No Reddit post found but retry with a slash appended if it
             // doesn't already end with one. It apparently matters.
-            if (!uri.endsWith("/")) return state.lookupReddit(url ~ '/');
+            if (!url.endsWith("/")) return state.lookupReddit(url ~ '/');
             return string.init;
         }
         else
