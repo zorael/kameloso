@@ -766,7 +766,7 @@ void onCommandResetTerminal(AdminPlugin plugin)
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
 
-    write(TerminalToken.reset);
+    write(cast(char)TerminalToken.reset);
     version(FlushStdout) stdout.flush();
 }
 
