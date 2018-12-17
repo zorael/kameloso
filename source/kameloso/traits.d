@@ -307,6 +307,7 @@ if (isType!T)
 
     enum isOfAssignableType = isType!T &&
         !isSomeFunction!T &&
+        !__traits(isTemplate, T) &&
         !is(T == const) &&
         !is(T == immutable);
 }

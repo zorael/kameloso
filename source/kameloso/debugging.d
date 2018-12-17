@@ -119,7 +119,7 @@ if (is(QualThing == struct))
         {
             sink.formatDelta!asserts(before.tupleof[i], member, indents, prefix ~ memberstring);
         }
-        else static if (!isType!member && !isSomeFunction!member)
+        else static if (!isType!member && !isSomeFunction!member && !__traits(isTemplate, member))
         {
             if (after.tupleof[i] != before.tupleof[i])
             {
