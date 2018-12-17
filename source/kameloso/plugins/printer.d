@@ -146,6 +146,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case GLOBALUSERSTATE:
     case USERSTATE:
     case ROOMSTATE:
+    case SASL_AUTHENTICATE:
         // These event types are spammy; ignore if we're configured to
         if (!plugin.printerSettings.filterVerbose) goto default;
         break;
