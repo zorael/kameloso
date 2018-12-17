@@ -541,7 +541,7 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             if (event.aux.length)
             {
                 import std.format : format;
-                event.aux = "%s (%s)".format(decoded, event.aux);
+                event.aux = "%s: %s".format(decoded, event.aux);
             }
             else
             {
@@ -549,12 +549,12 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             }
             break;
 
-        case "msg-param-learn-more":
+        case "msg-param-charity-learn-more":
             //msg-param-charity-learn-more = https://link.twitch.tv/blizzardofbits
             if (event.aux.length)
             {
                 import std.format : format;
-                event.aux = "%s (%s)".format(event.aux, value);
+                event.aux = "%s: %s".format(event.aux, value);
             }
             else
             {
