@@ -2024,6 +2024,25 @@ void initialise(PrinterPlugin plugin)
 }
 
 
+// initResources
+/++
+ +  Ensures that there is a log directory.
+ +/
+void initResources(PrinterPlugin plugin)
+{
+    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
+
+    import std.path : expandTilde;
+
+    immutable logLocation = plugin.logDirectory.expandTilde;
+
+    if (!plugin.establishLogLocation(logLocation))
+    {
+        throw new IRCPluginInitialisationException("Could not create log directory");
+    }
+}
+
+
 // teardown
 /++
  +  De-initialises the plugin.
