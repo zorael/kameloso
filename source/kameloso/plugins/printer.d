@@ -258,9 +258,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         break;
     }
 
-    immutable logLocation = plugin.logDirectory.expandTilde;
-    if (!plugin.establishLogLocation(logLocation)) return;
-
     import std.algorithm.searching : canFind;
 
     if (!plugin.printerSettings.logAllChannels &&
@@ -269,6 +266,9 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         // Not logging all channels and this is not a home.
         return;
     }
+
+    immutable logLocation = plugin.logDirectory.expandTilde;
+    if (!plugin.establishLogLocation(logLocation)) return;
 
     /// Write buffered lines.
     void writeToPath(const string key, const string path, bool doFormat = true)
