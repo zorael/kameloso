@@ -524,13 +524,13 @@ if (is(QualT == struct))
     {
         bool match;
 
-        foreach (memberstring; __traits(allMembers, T))
+        foreach (immutable memberstring; __traits(allMembers, T))
         {
             import std.meta : Alias;
             import std.traits : isSomeFunction, isType;
 
             alias member = Alias!(__traits(getMember, T.init, memberstring));
-            static if (!isType!member && !isSomeFunction!member)
+            static if (!isType!member && !isSomeFunction!member && !__traits(isTemplate, member))
             {
                 alias memberType = typeof(member);
 
