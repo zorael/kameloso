@@ -687,6 +687,10 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // Number of hours remaining in a charity
         case "msg-param-charity-hashtag":
             // charity hashtag
+        case "msg-param-fun-string":
+            // msg-param-fun-string = FunStringTwo
+            // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
+            // Unsure.
 
 
             // Ignore these events.
