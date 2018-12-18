@@ -2123,6 +2123,7 @@ void onMyInfo(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                 network = "Twitch";
                 prefixes = "o";
                 prefixchars = [ '@' : 'o' ];
+                maxNickLength = 25;
             }
 
             version(FlagUpdatedClient) parser.client.updated = true;
