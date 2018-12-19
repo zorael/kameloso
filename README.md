@@ -4,7 +4,7 @@
 
 A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
-It works well with the majority of server networks. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, most often it's simply because we haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Once discovered it's not a difficult thing to do.
+It works well. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Once discovered it's not a difficult thing to do.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -24,7 +24,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; [create one](#configuration) and edit it to get an idea of the settings available
 
-If nothing else it makes for a good read-only terminal lurkbot.
+If nothing else it makes for a good lurkbot.
 
 ## Current limitations:
 
@@ -40,8 +40,6 @@ Testing is primarily done on [**freenode**](https://freenode.net), so support an
 # TL;DR: abridged
 
 ```
-$ ./kameloso --help
-
 -n       --nickname Nickname
 -s         --server Server address [irc.freenode.net]
 -P           --port Server port [6667]
@@ -97,7 +95,7 @@ $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 ```
 
-Do not use `dub fetch` until we have released **v1.0.0**. It will download an ancient version.
+Note: do not use `dub fetch` until we have released **v1.0.0**. It will download an ancient version.
 
 ## Compiling
 
@@ -105,13 +103,13 @@ Do not use `dub fetch` until we have released **v1.0.0**. It will download an an
 $ dub build
 ```
 
-This will compile it in the default `debug` mode, which adds some extra code and debugging symbols.
+This will compile the bot in the default `debug` mode, which adds some extra code and debugging symbols.
 
 > You can automatically skip these and add some optimisations by building it in `release` mode with `dub build -b release`. Mind that build times will increase. Refer to the output of `dub build --help` for more build types.
 
 The above might currently not work, as the compiler may crash on some build configurations under anything other than `debug` mode. (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026))
 
-Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them. Tests are run at the *start* of the program, not during compilation. Furthermore, test builds will only run the unit tests and immediately exit.
+Unit tests are built into the language, but you need to compile the project in `unittest` mode to include them. Tests are run at the *start* of the program, not during compilation. Test builds will only run the unit tests and immediately exit.
 
 ```bash
 $ dub test
@@ -139,7 +137,7 @@ $ dub build -c cygwin
 
 ## Configuration
 
-The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. To define these you need to generate and edit a configuration file.
+The bot needs the services account name of one or more administrators of the bot, and/or one or more home channels to operate in. To define these you can either specify them on the command-line, or generate a configuration file and enter them there.
 
 ```bash
 $ ./kameloso --writeconfig
@@ -152,7 +150,7 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 * Windows: `%LOCALAPPDATA%\kameloso`
 * Other unexpected platforms: fallback to current working directory
 
-Open the file in there in a text editor and fill in the fields. Peruse it to get an idea of the features available.
+Open the file in a text editor and fill in the fields.
 
 ### Command-line arguments
 
@@ -182,11 +180,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with its white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
-
-```bash
-$ ./kameloso
-```
+Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
 
 ```
      you joined #channel
@@ -212,7 +206,7 @@ kameloso | [youtube.com] Danish language (uploaded by snurre)
 
 Send `help` to the bot in a private message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
 
-The *prefix* character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The **prefix** character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
 ```ini
 [Core]
@@ -237,13 +231,11 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (In the case of SASL authentication, `authPassword` is used during late registration.)
+`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (Only in the case of SASL authentication is `authPassword` used during registration.)
 
-Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You also can only join channels for which a corresponding Twitch user account exists.
+Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You can also only join channels for which a corresponding Twitch user account exists.
 
 See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
-
-Known limitation: a user that is in more than one observed channel can rarely be displayed with a badge in one that he/she actually has in another. This is because a user can only have one set of badges at a time per the current implementation.
 
 ## Use as a library
 
@@ -258,15 +250,13 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
 * [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d).
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d). It can be slimmed down further if only support for a specific server network is required (for which [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d) is needed).
 
 # Debugging and generating unit tests
 
-Writing an IRC bot when servers all behave differently is difficult, and you will come across unexpected events for which there are no rules on how to parse. It may be some messages silently have weird values in the wrong fields (e.g. nickname where channel should go), or be empty when they shouldn't. Very likely there will be an error message. Please file an issue.
-
 You can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the requested server information and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
 
-If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/fake the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
+If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/craft the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
 
 # Known bugs
 
@@ -274,12 +264,12 @@ If more state is necessary to replicate the environment, such as needing things 
 
 * Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
 * Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
-* Use in Cygwin terminals without compiling the aforementioned `cygwin` configuration will be unpleasant (terminal output will be broken). Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
-* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C, due to technical limitations. Any changes will have to be saved in a different way.
+* Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
+* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C. Any changes to configuration will have to be otherwise saved prior to forcefully exiting thus.
 
 ## Posix
 
-* If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads.
+* If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads. Help wanted.
 
 # Roadmap
 
