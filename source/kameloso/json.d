@@ -86,20 +86,41 @@ struct JSONStorage
         storage = parseJSON(fileContents.length ? fileContents : "{}");
     }
 
+
     // save
     /++
-     +  Saves a JSON storage to disk (in its prettyString format).
+     +  Formats a JSON storage into an output range sink.
+     +
+     +  Non-object types are saved as their `JSONValue.toPrettyString` strings
+     +  whereas object-types are formatted as specified by the passed
+     +  `KeyOrderStrategy` argument.
      +
      +  Params:
-     +      filename = Filename of file to read from.
+     +      filename = Filename of the file to save to.
+     +      strategy = Key order strategy in which to sort object-type JSON keys.
+     +      givenOrder = The order in which object-type keys should be listed in
+     +          the output file. Non-existent keys are represented as empty. Not
+     +          specified keys are omitted.
      +/
-    void save(const string filename)
+    void save(const string filename, KeyOrderStrategy strategy = KeyOrderStrategy.asIs,
+        string[] givenOrder = string[].init) @system
     {
+        import std.array : Appender;
+        import std.json : JSON_TYPE;
         import std.stdio : File, writeln;
 
-        auto file = File(filename, "w");
+        Appender!string sink;
 
-        file.writeln(storage.toPrettyString);
+        if (storage.type == JSON_TYPE.object)
+        {
+            saveObject(sink, strategy, givenOrder);
+        }
+        else
+        {
+            sink.put(storage.toPrettyString);
+        }
+
+        File(filename, "w").writeln(sink.data);
     }
 
     // saveObject
