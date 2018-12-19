@@ -737,7 +737,7 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     }
 
     logger.logf("%s%sed %s%s%s.", (add ? string.init : "de"), section, infotint, account, logtint);
-    json.save(plugin.userFile);
+    json.save(plugin.userFile, JSONStorage.KeyOrderStrategy.adjusted);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
