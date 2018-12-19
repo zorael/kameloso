@@ -381,7 +381,8 @@ void initResources(PersistenceService service)
         json["blacklist"] = JSONValue(deduplicated);
     }
 
-    json.save(service.userFile);
+    // Force whitelist to appear before blacklist in the .json
+    json.save(service.userFile, JSONStorage.KeyOrderStrategy.reverse);
 }
 
 unittest
