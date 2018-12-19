@@ -101,6 +101,96 @@ struct JSONStorage
 
         file.writeln(storage.toPrettyString);
     }
+
+    // saveObject
+    /++
+     +  Formats an object-type JSON storage into an output range sink.
+     +
+     +  Top-level keys are sorted as per the passed `KeyOrderStrategy`.
+     +
+     +  Params:
+     +      sink = Output sink to fill with formatted output.
+     +      strategy = Order strategy in which to sort top-level keys.
+     +      givenOrder = The order in which object-type keys should be listed in
+     +          the output file, iff `strategy` is `KeyOrderStrategy.inGivenOrder`.
+     +          Non-existent keys are represented as empty. Not specified keys are omitted.
+     +/
+    private void saveObject(Sink)(auto ref Sink sink, KeyOrderStrategy strategy = KeyOrderStrategy.asIs,
+        string[] givenOrder = string[].init) @system
+    {
+        import kameloso.string : indent;
+        import std.array : array;
+        import std.format : formattedWrite;
+        import std.range : retro;
+
+        if (storage.isNull)
+        {
+            sink.put("{\n}");
+            return;
+        }
+
+        sink.put("{\n");
+
+        with (KeyOrderStrategy)
+        final switch (strategy)
+        {
+        case asIs:
+            // asIs can really just be saved as .toPrettyString, but if we want
+            // to make it look the same as reverse and inGivenOrder we have to
+            // manually iterate the keys, like they do.
+
+            auto range = storage.object.byKey.array.retro;
+            size_t i;
+
+            foreach(immutable key; range)
+            {
+                sink.formattedWrite("    \"%s\":\n", key);
+                sink.put(storage[key].toPrettyString.indent);
+                sink.put((++i < range.length) ? ",\n" : "\n");
+            }
+            break;
+
+        case reverse:
+            import std.algorithm.sorting : sort;
+
+            auto range = storage.object.byKey.array.sort.retro;
+            size_t i;
+
+            foreach(immutable key; range)
+            {
+                sink.formattedWrite("    \"%s\":\n", key);
+                sink.put(storage[key].toPrettyString.indent);
+                sink.put((++i < range.length) ? ",\n" : "\n");
+            }
+            break;
+
+        case inGivenOrder:
+            if (!givenOrder.length)
+            {
+                throw new Exception("JSONStorage.save called with strategy " ~
+                    "inGivenOrder without any order given");
+            }
+
+            foreach (immutable i, immutable key; givenOrder)
+            {
+                sink.formattedWrite("    \"%s\":\n", key);
+
+                if (auto entry = key in storage)
+                {
+                    sink.put(entry.toPrettyString.indent);
+                }
+                else
+                {
+                    sink.put("{\n}".indent);
+                }
+
+                sink.put((i+1 < givenOrder.length) ? ",\n" : "\n");
+            }
+            break;
+        }
+
+        sink.put("}");
+    }
 }
 
 ///
