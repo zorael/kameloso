@@ -90,7 +90,7 @@ struct JSONStorage
 
     // save
     /++
-     +  Formats a JSON storage into an output range sink.
+     +  Saves the JSON storage to disk.
      +
      +  Non-object types are saved as their `JSONValue.toPrettyString` strings
      +  whereas object-types are formatted as specified by the passed
