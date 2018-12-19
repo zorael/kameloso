@@ -1578,6 +1578,7 @@ int main(string[] args)
         }
 
         import kameloso.plugins.common : IRCPluginInitialisationException;
+        import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
         // valid server to create a directory for.
@@ -1589,14 +1590,14 @@ int main(string[] args)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
-                logtint, e.file, warningtint, e.msg, TerminalToken.bell);
+                logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
             return 1;
         }
         catch (const Exception e)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources.%c",
-                logtint, e.file, warningtint, TerminalToken.bell);
+                logtint, e.file.baseName, warningtint, TerminalToken.bell);
             logger.trace(e);
             return 1;
         }
