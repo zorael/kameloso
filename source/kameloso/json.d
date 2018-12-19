@@ -191,6 +191,93 @@ struct JSONStorage
 
         sink.put("}");
     }
+
+    ///
+    @system unittest
+    {
+        import std.array : Appender;
+        import std.json;
+
+        JSONStorage this_;
+        Appender!(char[]) sink;
+        JSONValue j;
+
+        // Original JSON
+        this_.storage = parseJSON(
+`{
+"#abc":
+{
+"kameloso" : "v",
+"hirrsteff" : "o"
+},
+"#def":
+{
+"flerpeloso" : "o",
+"harrsteff": "v"
+}
+}`);
+
+        // KeyOrderStrategy.asIs
+        this_.saveObject(sink, KeyOrderStrategy.asIs);
+        assert((sink.data ==
+`{
+    "#abc":
+    {
+        "hirrsteff": "o",
+        "kameloso": "v"
+    },
+    "#def":
+    {
+        "flerpeloso": "o",
+        "harrsteff": "v"
+    }
+}`), '\n' ~ sink.data);
+        sink.clear();
+
+        // KeyOrderStrategy.reverse
+        this_.saveObject(sink, KeyOrderStrategy.reverse);
+        assert((sink.data ==
+`{
+    "#def":
+    {
+        "flerpeloso": "o",
+        "harrsteff": "v"
+    },
+    "#abc":
+    {
+        "hirrsteff": "o",
+        "kameloso": "v"
+    }
+}`), '\n' ~ sink.data);
+        sink.clear();
+
+        // KeyOrderStrategy.inGivenOrder
+        this_.saveObject(sink, KeyOrderStrategy.inGivenOrder, [ "#def", "#abc", "#foo" ]);
+        assert((sink.data ==
+`{
+    "#def":
+    {
+        "flerpeloso": "o",
+        "harrsteff": "v"
+    },
+    "#abc":
+    {
+        "hirrsteff": "o",
+        "kameloso": "v"
+    },
+    "#foo":
+    {
+    }
+}`), '\n' ~ sink.data);
+        sink.clear();
+
+        // Empty JSONValue
+        JSONStorage this2;
+        this2.saveObject(sink);
+        assert((sink.data ==
+`{
+}`), '\n' ~ sink.data);
+    }
 }
 
 ///
