@@ -81,7 +81,8 @@ struct JSONStorage
                 filename.baseName, cast(ushort)getAttributes(filename), __FILE__, __LINE__);
         }
 
-        storage = parseJSON(readText(filename));
+        immutable fileContents = readText(filename);
+        storage = parseJSON(fileContents.length ? fileContents : "{}");
     }
 
     // save
