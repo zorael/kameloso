@@ -823,6 +823,144 @@ unittest
 }
 
 
+// indented
+/++
+ +  Indents a string, line by line, with the supplied number of tabs.
+ +
+ +  Tab length is hardcoded to the defaults in `tabs` for now.
+ +
+ +  Params:
+ +      numTabs = Amount of tabs to indent with, default 1.
+ +      string_ = String to indent the lines of.
+ +      sink = Output range to fill with the indented lines.
+ +/
+void indented(uint numTabs = 1, Sink)(const string string_, auto ref Sink sink)
+{
+    import std.algorithm.iteration : splitter;
+
+    enum indent = numTabs.tabs;
+    uint n;
+
+    foreach (l; string_.splitter("\n"))
+    {
+        if (n++ > 0) sink.put("\n");
+
+        if (!l.length)
+        {
+            sink.put("\n");
+            continue;
+        }
+
+        import std.format : formattedWrite;
+        sink.formattedWrite("%s%s", indent, l);
+    }
+}
+
+///
+unittest
+{
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+
+    immutable string_ =
+"Lorem ipsum
+sit amet
+I don't remember
+any more offhand
+so shrug";
+
+    string_.indented!1(sink);
+    assert((sink.data ==
+"    Lorem ipsum
+    sit amet
+    I don't remember
+    any more offhand
+    so shrug"), '\n' ~ sink.data);
+
+    sink.clear();
+    string_.indented!2(sink);
+    assert((sink.data ==
+"        Lorem ipsum
+        sit amet
+        I don't remember
+        any more offhand
+        so shrug"), '\n' ~ sink.data);
+
+    sink.clear();
+    string_.indented!0(sink);
+    assert((sink.data ==
+"Lorem ipsum
+sit amet
+I don't remember
+any more offhand
+so shrug"), '\n' ~ sink.data);
+}
+
+
+// indent
+/++
+ +  Indents a string, line by line, with the supplied number of tabs.
+ +  Returns a string.
+ +
+ +  Merely wraps the output range overload, using an `std.array.Appender` as sink.
+ +
+ +  Tab length is hardcoded to the defaults in `tabs` for now.
+ +
+ +  Params:
+ +      numTabs = Amount of tabs to indent with, default 1.
+ +      string_ = String to indent the lines of.
+ +
+ +  Returns:
+ +      A string with all the lines of the original string indented.
+ +/
+string indent(uint numTabs = 1)(const string string_)
+{
+    import std.array : Appender;
+
+    static assert((numTabs >= 0), "Can't indent with negative number of tabs");
+
+    Appender!string sink;
+    string_.indented!numTabs(sink);
+    return sink.data;
+}
+
+///
+unittest
+{
+    immutable string_ =
+"Lorem ipsum
+sit amet
+I don't remember
+any more offhand
+so shrug";
+
+    immutable indentedOne = string_.indent!1;
+    assert((indentedOne ==
+"    Lorem ipsum
+    sit amet
+    I don't remember
+    any more offhand
+    so shrug"), '\n' ~ indentedOne);
+
+    immutable indentedTwo = string_.indent!2;
+    assert((indentedTwo ==
+"        Lorem ipsum
+        sit amet
+        I don't remember
+        any more offhand
+        so shrug"), '\n' ~ indentedTwo);
+
+    immutable indentedZero = string_.indent!0;
+    assert((indentedZero ==
+"Lorem ipsum
+sit amet
+I don't remember
+any more offhand
+so shrug"), '\n' ~ indentedTwo);
+}
+
+
 // contains
 /++
  +  Checks a string to see if it contains a given substring or character.
