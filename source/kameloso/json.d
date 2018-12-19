@@ -37,7 +37,8 @@ struct JSONStorage
     /// Strategy in which to sort object-type JSON keys.
     enum KeyOrderStrategy
     {
-        asIs,
+        passthrough,
+        adjusted,
         reverse,
         inGivenOrder,
     }
@@ -102,7 +103,7 @@ struct JSONStorage
      +          the output file. Non-existent keys are represented as empty. Not
      +          specified keys are omitted.
      +/
-    void save(const string filename, KeyOrderStrategy strategy = KeyOrderStrategy.asIs,
+    void save(const string filename, KeyOrderStrategy strategy = KeyOrderStrategy.passthrough,
         string[] givenOrder = string[].init) @system
     {
         import std.array : Appender;
@@ -163,7 +164,7 @@ struct JSONStorage
      +          the output file, iff `strategy` is `KeyOrderStrategy.inGivenOrder`.
      +          Non-existent keys are represented as empty. Not specified keys are omitted.
      +/
-    private void saveObject(Sink)(auto ref Sink sink, KeyOrderStrategy strategy = KeyOrderStrategy.asIs,
+    private void saveObject(Sink)(auto ref Sink sink, KeyOrderStrategy strategy = KeyOrderStrategy.passthrough,
         string[] givenOrder = string[].init) @system
     {
         import kameloso.string : indent;
@@ -177,18 +178,23 @@ struct JSONStorage
             return;
         }
 
-        sink.put("{\n");
-
         with (KeyOrderStrategy)
         final switch (strategy)
         {
-        case asIs:
-            // asIs can really just be saved as .toPrettyString, but if we want
+        case passthrough:
+            // Just pass through and save .toPrettyString; keep original behaviour.
+            sink.put(storage.toPrettyString);
+            return;
+
+        case adjusted:
+            // adjusted can really just be saved as .toPrettyString, but if we want
             // to make it look the same as reverse and inGivenOrder we have to
             // manually iterate the keys, like they do.
 
             auto range = storage.object.byKey.array.retro;
             size_t i;
+
+            sink.put("{\n");
 
             foreach(immutable key; range)
             {
@@ -204,6 +210,8 @@ struct JSONStorage
             auto range = storage.object.byKey.array.sort.retro;
             size_t i;
 
+            sink.put("{\n");
+
             foreach(immutable key; range)
             {
                 sink.formattedWrite("    \"%s\":\n", key);
@@ -218,6 +226,8 @@ struct JSONStorage
                 throw new Exception("JSONStorage.save called with strategy " ~
                     "inGivenOrder without any order given");
             }
+
+            sink.put("{\n");
 
             foreach (immutable i, immutable key; givenOrder)
             {
@@ -265,8 +275,8 @@ struct JSONStorage
 }
 }`);
 
-        // KeyOrderStrategy.asIs
-        this_.saveObject(sink, KeyOrderStrategy.asIs);
+        // KeyOrderStrategy.adjusted
+        this_.saveObject(sink, KeyOrderStrategy.adjusted);
         assert((sink.data ==
 `{
     "#abc":
