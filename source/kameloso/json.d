@@ -29,6 +29,13 @@ struct JSONStorage
 {
     import std.json : JSONValue, parseJSON;
 
+    enum SaveStrategy
+    {
+        plain,
+        reverse,
+        inGivenOrder,
+    }
+
     /// The underlying `JSONValue` storage of this `JSONStorage`.
     JSONValue storage;
 
