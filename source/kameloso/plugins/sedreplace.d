@@ -205,10 +205,20 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
                 immutable result = line.content.sedReplace(event.content);
                 if ((result == event.content) || !result.length) return;
 
+                import kameloso.common : settings;
                 import kameloso.messaging : chan;
                 import std.format : format;
 
-                plugin.chan!(Yes.quiet)(event.channel, "%s | %s".format(event.sender.nickname, result));
+                if (settings.hideOutgoing)
+                {
+                    plugin.chan!(Yes.quiet)(event.channel, "%s | %s"
+                        .format(event.sender.nickname, result));
+                }
+                else
+                {
+                    plugin.chan!(No.quiet)(event.channel, "%s | %s"
+                        .format(event.sender.nickname, result));
+                }
 
                 plugin.prevlines.remove(event.sender.nickname);
             }
