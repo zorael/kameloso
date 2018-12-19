@@ -301,13 +301,13 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             {
                 import std.conv : text;
                 message = "Quote for %s saved (%s on record)"
-                    .format(event.sender.nickname.ircColourNick.ircBold,
+                    .format(id.ircColourNick.ircBold,
                     plugin.quotes[id].array.length.text.ircBold);
             }
             else
             {
                 message = "Quote for %s saved (%d on record)"
-                    .format(event.sender.nickname, plugin.quotes[id].array.length);
+                    .format(id, plugin.quotes[id].array.length);
             }
 
             plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
@@ -341,7 +341,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
     {
         if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch)
         {
-            return onSuccess(event.sender.nickname);
+            return onSuccess(specified);
         }
     }
 
