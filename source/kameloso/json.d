@@ -34,6 +34,14 @@ struct JSONStorage
 
     alias storage this;
 
+    /// Strategy in which to sort object-type JSON keys.
+    enum KeyOrderStrategy
+    {
+        asIs,
+        reverse,
+        inGivenOrder,
+    }
+
     // reset
     /++
      +  Initialises and clears the `JSONValue`, preparing it for object storage.
