@@ -886,33 +886,25 @@ enum AlterationResult
  +  Params:
  +      plugin = The current `AdminPlugin`.
  +      add = Whether to add to or remove from lists.
- +      section = Which list to add to or remove from; `whitelist` or `blacklist`.
+ +      list = Which list to add to or remove from; `whitelist` or `blacklist`.
  +      account = Services account name to add or remove.
+ +
+ +  Returns:
+ +      `AlterationResult.alreadyInList` if enlisting (`Yes.add`) and the account
+ +      was already in the specified list.
+ +      `AlterationResult.noSuchAccount` if delisting (`No.add`) and no such
+ +      account could be found in the specified list.
+ +      `AlterationResult.success` if enlisting or delisting succeeded.
  +/
-void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string section, const string account)
+AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
+    const string list, const string account)
 {
     import kameloso.json : JSONStorage;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
-    assert(((section == "whitelist") || (section == "blacklist")), section);
-
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        import kameloso.common : settings;
-
-        if (!settings.monochrome)
-        {
-            import kameloso.logger : KamelosoLogger;
-
-            infotint = (cast(KamelosoLogger)logger).infotint;
-            logtint = (cast(KamelosoLogger)logger).logtint;
-        }
-    }
+    assert(((list == "whitelist") || (list == "blacklist")), list);
 
     JSONStorage json;
     json.reset();
@@ -942,14 +934,13 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
     {
         import std.algorithm.searching : canFind;
 
-        if (json[section].array.canFind(accountAsJSON))
+        if (json[list].array.canFind(accountAsJSON))
         {
-            logger.logf("Account %s%s%s already %sed.", infotint, account, logtint, section);
-            return;
+            return AlterationResult.alreadyInList;
         }
         else
         {
-            json[section].array ~= accountAsJSON;
+            json[list].array ~= accountAsJSON;
         }
     }
     else
@@ -957,22 +948,21 @@ void alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        immutable index = json[section].array.countUntil(accountAsJSON);
+        immutable index = json[list].array.countUntil(accountAsJSON);
 
         if (index == -1)
         {
-            logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, section);
-            return;
+            return AlterationResult.noSuchAccount;
         }
 
-        json[section] = json[section].array.remove!(SwapStrategy.unstable)(index);
+        json[list] = json[list].array.remove!(SwapStrategy.unstable)(index);
     }
 
-    logger.logf("%s%sed %s%s%s.", (add ? string.init : "de"), section, infotint, account, logtint);
     json.save(plugin.userFile, JSONStorage.KeyOrderStrategy.adjusted);
 
     // Force persistence to reload the file with the new changes
     plugin.state.mainThread.send(ThreadMessage.Reload());
+    return AlterationResult.success;
 }
 
 
