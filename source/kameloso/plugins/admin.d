@@ -1279,7 +1279,17 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    immutable verb = slice.contains(' ') ? slice.nom(' ') : slice;
+    string verb;
+
+    if (slice.contains(' '))
+    {
+        verb = slice.nom(' ');
+    }
+    else
+    {
+        verb = slice;
+        slice = string.init;
+    }
 
     switch (verb)
     {
