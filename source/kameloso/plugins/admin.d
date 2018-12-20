@@ -577,6 +577,117 @@ void lookupEnlist(AdminPlugin plugin, const string specified, const string list)
 }
 
 
+// delist
+/++
+ +  Removes a nickname from either the whitelist or the blacklist.
+ +
+ +  Passes the `list` parameter to `alterAccountClassifier`, for list selection.
+ +
+ +  Params:
+ +      plugin = The current `AdminPlugin`.
+ +      account = The account to delist as whitelisted/blacklisted.
+ +      list = Which of "whitelist" or "blacklist" to remove from.
+ +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
+ +/
+void delist(AdminPlugin plugin, const string account, const string list,
+    const IRCEvent event = IRCEvent.init)
+{
+    import std.format : format;
+
+    if (!account.length)
+    {
+        if (event.sender.nickname.length)
+        {
+            // IRC report
+            plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
+                "No account specified.");
+        }
+        else
+        {
+            // Terminal report
+            logger.warning("No account specified.");
+        }
+        return;
+    }
+
+    immutable result = plugin.alterAccountClassifier(No.add, list, account);
+
+    if (event.sender.nickname.length)
+    {
+        // IRC report
+
+        with (AlterationResult)
+        final switch (result)
+        {
+        case alreadyInList:
+            assert(0, "Invalid enlist-only AlterationResult returned to delist()");
+
+        case noSuchAccount:
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "No such account %s to de%s.".format(account.ircColourNick.ircBold, list);
+            }
+            else
+            {
+                message = "No such account %s to de%s".format(account, list);
+            }
+
+            plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            break;
+
+        case success:
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "de%sed %s.".format(list, account.ircColourNick.ircBold);
+            }
+            else
+            {
+                message = "de%sed %s".format(list, account);
+            }
+
+            plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            break;
+        }
+    }
+    else
+    {
+        // Terminal report
+
+        string infotint, logtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                infotint = (cast(KamelosoLogger)logger).infotint;
+                logtint = (cast(KamelosoLogger)logger).logtint;
+            }
+        }
+
+        with (AlterationResult)
+        final switch (result)
+        {
+        case alreadyInList:
+            assert(0, "Invalid enlist-only AlterationResult returned to delist()");
+
+        case noSuchAccount:
+            logger.logf("No such account %s%s%s to de%s.", infotint, account, logtint, list);
+            break;
+
+        case success:
+            logger.logf("de%sed %s%s%s.", list, infotint, account, logtint);
+            break;
+        }
+    }
+}
+
+
 // onCommandDewhitelist
 /++
  +  Removes a nickname from the list of users who may trigger the bot, from the
