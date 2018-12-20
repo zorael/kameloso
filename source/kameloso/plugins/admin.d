@@ -519,40 +519,146 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
  +      plugin = The current `AdminPlugin`.
  +      specified = The nickname or account to white-/blacklist.
  +      list = Which of "whitelist" or "blacklist" to add to.
+ +      event = Optional instigating `kameloso.irc.defs.IRCEvent`.
  +/
-void lookupEnlist(AdminPlugin plugin, const string specified, const string list)
+void lookupEnlist(AdminPlugin plugin, const string specified, const string list,
+    const IRCEvent event = IRCEvent.init)
 {
     import kameloso.common : settings;
     import kameloso.irc.common : isValidNickname;
     import kameloso.string : contains, stripped;
+
+    /// Report result, either to the local terminal or to the IRC channel/sender
+    void report(const AlterationResult result, const string id)
+    {
+        import std.format : format;
+
+        if (event.sender.nickname.length)
+        {
+            // IRC report
+
+            with (AlterationResult)
+            final switch (result)
+            {
+            case success:
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = "%sed %s.".format(list, id.ircColourNick.ircBold);
+                }
+                else
+                {
+                    message = "%sed %s.".format(list, id);
+                }
+
+                plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+                break;
+
+            case noSuchAccount:
+                assert(0, "Invalid delist-only AlterationResult passed to report()");
+
+            case alreadyInList:
+                string message;
+
+                if (settings.colouredOutgoing)
+                {
+                    message = "Account %s already %sed.".format(id.ircColourNick.ircBold, list);
+                }
+                else
+                {
+                    message = "Account %s already %sed.".format(id, list);
+                }
+
+                plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+                break;
+            }
+        }
+        else
+        {
+            // Terminal report
+
+            string infotint, logtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    infotint = (cast(KamelosoLogger)logger).infotint;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            with (AlterationResult)
+            final switch (result)
+            {
+            case success:
+                logger.logf("%sed %s%s%s.", list, infotint, specified, logtint);
+                break;
+
+            case noSuchAccount:
+                assert(0, "Invalid enlist-only AlterationResult passed to report()");
+
+            case alreadyInList:
+                logger.logf("Account %s%s%s already %sed.", infotint, specified, logtint, list);
+                break;
+            }
+        }
+    }
 
     const user = specified in plugin.state.users;
 
     if (user && user.account.length)
     {
         // user.nickname == specified
-        return plugin.alterAccountClassifier(Yes.add, list, user.account);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account);
+        return report(result, user.account);
     }
     else if (!specified.isValidNickname(plugin.state.client.server))
     {
-        string logtint;
-
-        version(Colours)
+        if (event.sender.nickname.length)
         {
-            if (!settings.monochrome)
-            {
-                import kameloso.logger : KamelosoLogger;
-                logtint = (cast(KamelosoLogger)logger).logtint;
-            }
-        }
+            // IRC report
 
-        logger.warning("Invalid nickname/account: ", logtint, specified);
+            string message;
+
+            if (settings.colouredOutgoing)
+            {
+                message = "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold;
+            }
+            else
+            {
+                message = "Invalid nickname/account: " ~ specified;
+            }
+
+            plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+        }
+        else
+        {
+            // Terminal report
+
+            string logtint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                }
+            }
+
+            logger.warning("Invalid nickname/account: ", logtint, specified);
+        }
         return;
     }
 
     void onSuccess(const string id)
     {
-        plugin.alterAccountClassifier(Yes.add, list, id);
+        immutable result = plugin.alterAccountClassifier(Yes.add, list, id);
+        report(result, id);
     }
 
     void onFailure(const IRCUser failureUser)
