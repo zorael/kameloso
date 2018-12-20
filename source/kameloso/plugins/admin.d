@@ -44,7 +44,7 @@ private:
 import kameloso.common : logger, settings;
 import kameloso.plugins.common;
 import kameloso.irc.common : IRCClient;
-import kameloso.irc.colours : IRCColour, ircBold, ircColour;
+import kameloso.irc.colours : IRCColour, ircBold, ircColour, ircColourNick;
 import kameloso.irc.defs;
 import kameloso.messaging;
 
