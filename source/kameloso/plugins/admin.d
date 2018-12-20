@@ -757,6 +757,21 @@ void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 }
 
 
+// AlterationResult
+/++
+ +  Enum embodying the results of an account alteration.
+ +
+ +  Returned by functions to report success or failure, to let them give terminal
+ +  or IRC feedback appropriately.
+ +/
+enum AlterationResult
+{
+    alreadyInList,  /// When enlisting, an account already existed.
+    noSuchAccount,  /// When delisting, an account could not be found.
+    success,        /// Successful enlist/delist.
+}
+
+
 // alterAccountClassifier
 /++
  +  Adds or removes an account from the file of user classifier definitions,
