@@ -505,7 +505,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.lookupEnlist(event.content.stripped, "whitelist");
+    plugin.lookupEnlist(event.content.stripped, "whitelist", event);
 }
 
 
@@ -814,7 +814,7 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.alterAccountClassifier(No.add, "whitelist", event.content.stripped);
+    plugin.delist(event.content.stripped, "whitelist", event);
 }
 
 
@@ -837,7 +837,7 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.lookupEnlist(event.content.stripped, "blacklist");
+    plugin.lookupEnlist(event.content.stripped, "blacklist", event);
 }
 
 
@@ -859,7 +859,7 @@ void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.adminSettings.enabled) return;
 
     import kameloso.string : stripped;
-    plugin.alterAccountClassifier(No.add, "blacklist", event.content.stripped);
+    plugin.delist(event.content.stripped, "blacklist", event);
 }
 
 
@@ -1368,7 +1368,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
     case "dewhitelist":
     case "deblacklist":
-        return plugin.alterAccountClassifier(No.add, verb, slice);
+        return plugin.delist(slice, verb[2..$]);
 
     default:
         logger.error("Unimplemented piped verb: ", verb);
