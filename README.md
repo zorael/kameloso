@@ -16,9 +16,9 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * logs
 * `sed`-replacement of the last message sent (`s/this/that/` substitution)
 * saving `notes` to offline users that get played back when they come online
-* [`seen`](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
+* [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes`
-* Twitch chat support (with default-disabled [example bot](https://github.com/zorael/kameloso/blob/master/source/kameloso/plugins/twitchbot.d)); see notes on [connecting to Twitch](#twitch) below
+* Twitch chat support (with default-disabled [example bot](source/kameloso/plugins/twitchbot.d)); see notes on [connecting to Twitch](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other Posix-likes only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
@@ -35,7 +35,7 @@ If nothing else it makes for a good lurkbot.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. Twitch also sees extensive testing, but mostly as a client idling in channels and less as a bot hosting commands.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) also sees extensive testing, but mostly as a client idling in channels and less as a bot hosting commands.
 
 # TL;DR: abridged
 
@@ -186,7 +186,7 @@ Once the bot has joined a home channel, it's ready. Mind that you need to author
      you joined #channel
 kameloso sets mode +o you
      you | I am a fish
-     you | s/fish/snek
+     you | s/fish/snek/
 kameloso | you | I am a snek
      you | !addquote you This is a quote
 kameloso | Quote saved. (1 on record)
@@ -241,16 +241,16 @@ See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/por
 
 The IRC event parsing bits are largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
 
-* [`irc/defs.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/defs.d)
-* [`irc/parsing.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/parsing.d)
-* [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d)
-* [`string.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/string.d)
-* [`conv.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/conv.d)
-* [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d)
-* [`traits.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/traits.d)
-* [`uda.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/uda.d)
+* [`irc/defs.d`](source/kameloso/irc/defs.d)
+* [`irc/parsing.d`](source/kameloso/irc/parsing.d)
+* [`irc/common.d`](source/kameloso/irc/common.d)
+* [`string.d`](source/kameloso/string.d)
+* [`conv.d`](source/kameloso/conv.d)
+* [`meld.d`](source/kameloso/meld.d)
+* [`traits.d`](source/kameloso/traits.d)
+* [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/irc/common.d). Some very basic examples can be found in [`tests/events.d`](https://github.com/zorael/kameloso/blob/master/source/tests/events.d). It can be slimmed down further if only support for a specific server network is required (for which [`meld.d`](https://github.com/zorael/kameloso/blob/master/source/kameloso/meld.d) is needed).
+Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). It can be slimmed down further if support for only a specific server network is required.
 
 # Debugging and generating unit tests
 
