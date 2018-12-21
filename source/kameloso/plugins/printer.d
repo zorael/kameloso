@@ -75,6 +75,9 @@ struct PrinterSettings
     /// Whether or not to log errors.
     bool logErrors = true;
 
+    /// Whether ot not to log server messages.
+    bool logServer = false;
+
     /// Whether or not to log raw events.
     bool logRaw = false;
 
@@ -206,17 +209,57 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 struct LogLineBuffer
 {
     import std.array : Appender;
+    import std.path : buildNormalizedPath;
 
-    /// The filesystem path to the log file, used as an identifier.
-    string path;
+    /// Basename directory this buffer will be saved to.
+    string dir;
 
-    /// An `std.array.Appender` housing queued lines to write.
+    /// Fully qualifed filename this bufer will be saved to.
+    string file;
+
+    /// The month this buffer was created, to allow us to rotate on month change.
+    int month;
+
+    /// Buffered lines that will be saved to `file`, in `dir`.
     Appender!(string[]) lines;
 
-    /// Create a new `LogLineBuffer` with the passed path string as identifier.
-    this(const string path)
+    /// Updates the `month` field to reflect the current date.
+    void updateMonth()
     {
-        this.path = path;
+        import std.datetime.systime : Clock;
+        import std.datetime.date : Date;
+
+        const now = Clock.currTime;
+        this.month = now.month;
+
+        // Cut the day from the date string, keep YYYY-MM
+        this.file = buildNormalizedPath(dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
+    }
+
+    /++
+     +  Contructor taking a `std.datetime.sytime.SysTime`, to save as the date
+     +  the buffer was created.
+     +/
+    this(const string dir, const SysTime now)
+    {
+        import std.datetime.date : Date;
+
+        this.dir = dir;
+        this.month = now.month;
+
+        // Cut the day from the date string, keep YYYY-MM
+        this.file = buildNormalizedPath(this.dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
+    }
+
+    /++
+     +  Constructor not taking a `std.datetime.sytime.SysTime`, for use with
+     +  buffers that should not be dated, such as the error log and the raw log.
+     +/
+    this(const string dir, const string filename)
+    {
+        this.dir = dir;
+        this.month = -1;
+        this.file = buildNormalizedPath(this.dir, filename);
     }
 }
 
@@ -242,11 +285,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
     if (!plugin.printerSettings.logs) return;  // Allow for disabled printer to still log
 
-    import std.exception : ErrnoException;
-    import std.file : FileException;
-    import std.path : buildNormalizedPath, expandTilde;
-    import std.stdio : File, writeln;
-
     // Ignore some types that would only show up in the log with the bot's name.
     with (IRCEvent.Type)
     switch (event.type)
@@ -268,67 +306,98 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (!plugin.establishLogLocation(plugin.logDirectory)) return;
+    import std.typecons : Flag, No, Yes;
 
     /// Write buffered lines.
-    void writeToPath(const string key, const string path, bool doFormat = true)
+    void writeEventToFile(const string key, const string givenPath = string.init,
+        Flag!"extendPath" extendPath = Yes.extendPath, Flag!"formatEvent" formatEvent = Yes.formatEvent)
     {
+        import std.exception : ErrnoException;
+        import std.file : FileException;
+        import std.datetime.systime : Clock;
+
+        const now = Clock.currTime;
+
+        immutable path = givenPath.length ? givenPath.escapedPath : key.escapedPath;
+
         try
         {
-            LogLineBuffer* pathBuffer = key in plugin.buffers;
+            LogLineBuffer* buffer = key in plugin.buffers;
 
-            if (!pathBuffer)
+            if (!buffer)
             {
-                plugin.buffers[key] = LogLineBuffer(path);
-                pathBuffer = key in plugin.buffers;
-
-                import std.file : exists;
-                if (pathBuffer.path.exists)
+                if (extendPath)
                 {
-                    if (plugin.printerSettings.bufferedWrites)
-                    {
-                        pathBuffer.lines.put(string.init);  // one empty line
-                        pathBuffer.lines.put(datestamp);
-                    }
-                    else
-                    {
-                        auto file = File(pathBuffer.path, "a");
-                        file.writeln("\n"); // likewise
-                        file.writeln(datestamp);
-                    }
-                }
-            }
+                    import std.file : exists, mkdirRecurse;
+                    import std.path : buildNormalizedPath;
 
-            if (plugin.printerSettings.bufferedWrites)
-            {
-                if (doFormat)
-                {
-                    import std.array : Appender;
-                    Appender!string sink;
-                    sink.reserve(512);
-                    plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
-                    pathBuffer.lines ~= sink.data;
+                    immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
+                    plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
+                    buffer = key in plugin.buffers;
                 }
                 else
                 {
-                    pathBuffer.lines ~= event.raw;
+                    plugin.buffers[key] = LogLineBuffer(plugin.logDirectory, path);
+                }
+
+                buffer = key in plugin.buffers;
+            }
+            else if ((buffer.month > 0) && (now.month != buffer.month))
+            {
+                buffer.updateMonth();
+            }
+
+            if (formatEvent)
+            {
+                // Normal buffers
+                if (plugin.printerSettings.bufferedWrites)
+                {
+                    import std.array : Appender;
+
+                    // Normal log
+                    Appender!string sink;
+                    sink.reserve(512);
+                    plugin.formatMessageMonochrome(sink, event, false);  // false bell on mention
+                    buffer.lines ~= sink.data;
+                }
+                else
+                {
+                    import std.file : exists, mkdirRecurse;
+
+                    if (!buffer.dir.exists)
+                    {
+                        mkdirRecurse(buffer.dir);
+                    }
+
+                    import std.stdio : File;
+                    auto file = File(buffer.file, "a");
+                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false);
                 }
             }
             else
             {
-                auto file = File(pathBuffer.path, "a");
-
-                if (doFormat)
+                // Raw log
+                if (plugin.printerSettings.bufferedWrites)
                 {
-                    plugin.formatMessageMonochrome(file.lockingTextWriter, event, false);
+                    buffer.lines ~= event.raw;
                 }
                 else
                 {
+                    import std.file : exists, mkdirRecurse;
+
+                    if (!buffer.dir.exists)
+                    {
+                        mkdirRecurse(buffer.dir);
+                    }
+
+                    import std.stdio : File;
+                    auto file = File(buffer.file, "a");
                     file.writeln(event.raw);
                 }
             }
 
-            if (doFormat && event.errors.length && plugin.printerSettings.logErrors)
+            // Errors
+            if (plugin.printerSettings.logErrors && event.errors.length)
             {
                 import kameloso.printing : formatObjects;
 
@@ -337,57 +406,46 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (!errBuffer)
                 {
-                    plugin.buffers[errorLabel] = LogLineBuffer(buildNormalizedPath(plugin.logDirectory,
-                        plugin.state.client.server.address ~ ".err.log"));
+                    plugin.buffers[errorLabel] = LogLineBuffer(plugin.logDirectory, "error.log");
                     errBuffer = errorLabel in plugin.buffers;
-
-                    import std.file : exists;
-                    if (errBuffer.path.exists)
-                    {
-                        if (plugin.printerSettings.bufferedWrites)
-                        {
-                            errBuffer.lines.put(string.init);  // one empty line
-                            errBuffer.lines.put(datestamp);
-                        }
-                        else
-                        {
-                            auto file = File(errBuffer.path, "a");
-                            file.writeln("\n"); // likewise
-                            file.writeln(datestamp);
-                        }
-                    }
+                }
+                else if ((buffer.month > 0) && (now.month != errBuffer.month))
+                {
+                    errBuffer.updateMonth();
                 }
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
                     errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event);
 
-                    if (event.sender != IRCUser.init)
+                    if (event.sender.nickname.length || event.sender.address.length)
                     {
                         errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
                     }
 
-                    if (event.target != IRCUser.init)
+                    if (event.target.nickname.length || event.target.address.length)
                     {
                         errBuffer.lines ~= formatObjects!(Yes.printAll, No.coloured)(false, event.target);
                     }
                 }
                 else
                 {
-                    File(errBuffer.path, "a")
+                    import std.stdio : File;
+
+                    File(errBuffer.file, "a")
                         .lockingTextWriter
                         .formatObjects!(Yes.printAll, No.coloured)(false, event);
 
-                    if (event.sender != IRCUser.init)
+                    if (event.sender.nickname.length || event.sender.address.length)
                     {
-                        File(errBuffer.path, "a")
+                        File(errBuffer.file, "a")
                             .lockingTextWriter
                             .formatObjects!(Yes.printAll, No.coloured)(false, event.sender);
                     }
 
-                    if (event.target != IRCUser.init)
+                    if (event.target.nickname.length || event.target.address.length)
                     {
-                        File(errBuffer.path, "a")
+                        File(errBuffer.file, "a")
                             .lockingTextWriter
                             .formatObjects!(Yes.printAll, No.coloured)(false, event.target);
                     }
@@ -410,9 +468,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     if (plugin.printerSettings.logRaw)
     {
-        // No need to sanitise the server address; it's ASCII
-        writeToPath(string.init, buildNormalizedPath(plugin.logDirectory,
-            plugin.state.client.server.address ~ ".raw.log"), false);
+        writeEventToFile("<raw>", "raw.log", No.extendPath, No.formatEvent);
     }
 
     with (IRCEvent.Type)
@@ -420,9 +476,8 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     with (event)
     switch (event.type)
     {
-    case SASL_AUTHENTICATE:
     case PING:
-        // Not of loggable interest
+        // Not of formatted loggable interest (raw will have been logged above)
         return;
 
     case QUIT:
@@ -441,17 +496,14 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (thisChannel.users.canFind(sender.nickname))
             {
                 // Channel message
-                writeToPath(channelName, buildNormalizedPath(plugin.logDirectory,
-                    channelName.escapedPath ~ ".log"));
+                writeEventToFile(channelName);
             }
         }
 
         if (sender.nickname.length && sender.nickname in plugin.buffers)
         {
-            immutable queryPath = buildNormalizedPath(plugin.logDirectory,
-                sender.nickname.escapedPath ~ ".log");
             // There is an open query buffer; write to it too
-            writeToPath(sender.nickname, queryPath);
+            writeEventToFile(sender.nickname);
         }
         break;
 
@@ -459,19 +511,17 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (channel.length && (sender.nickname.length || type == MODE))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeToPath(channel, buildNormalizedPath(plugin.logDirectory, channel.escapedPath ~ ".log"));
+            writeEventToFile(channel);
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
-            writeToPath(sender.nickname, buildNormalizedPath(plugin.logDirectory,
-                sender.nickname.escapedPath ~ ".log"));
+            writeEventToFile(sender.nickname);
         }
-        else if (!sender.nickname.length && sender.address.length)
+        else if (printerSettings.logServer && !sender.nickname.length && sender.address.length)
         {
             // Server
-            writeToPath(state.client.server.address, buildNormalizedPath(plugin.logDirectory,
-                state.client.server.address.escapedPath ~ ".log"));
+            writeEventToFile(state.client.server.address, "server.log", No.extendPath);
         }
         else
         {
@@ -591,10 +641,16 @@ void commitLogs(PrinterPlugin plugin)
         try
         {
             import std.array : join;
+            import std.file : exists, mkdirRecurse;
             import std.stdio : File, writeln;
 
+            if (!buffer.dir.exists)
+            {
+                mkdirRecurse(buffer.dir);
+            }
+
             immutable lines = buffer.lines.data.join("\n");
-            File(buffer.path, "a").writeln(lines);
+            File(buffer.file, "a").writeln(lines);
 
             // Only clear if we managed to write everything, otherwise accumulate
             buffer.lines.clear();

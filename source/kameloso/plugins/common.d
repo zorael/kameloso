@@ -1331,15 +1331,15 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         {
             static if (isConfigurableVariable!member)
             {
-                import std.path : buildNormalizedPath;
-
                 static if (hasUDA!(this.tupleof[i], Resource))
                 {
-                    member = buildNormalizedPath(settings.resourceDirectory, member);
+                    import std.path : buildNormalizedPath, expandTilde;
+                    member = buildNormalizedPath(settings.resourceDirectory, member).expandTilde;
                 }
                 else static if (hasUDA!(this.tupleof[i], Configuration))
                 {
-                    member = buildNormalizedPath(settings.configDirectory, member);
+                    import std.path : buildNormalizedPath, expandTilde;
+                    member = buildNormalizedPath(settings.configDirectory, member).expandTilde;
                 }
             }
         }
