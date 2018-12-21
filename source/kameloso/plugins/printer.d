@@ -240,7 +240,7 @@ struct LogLineBuffer
 @(IRCEvent.Type.ANY)
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
+    if (!plugin.printerSettings.logs) return;  // Allow for disabled printer to still log
 
     import std.exception : ErrnoException;
     import std.file : FileException;
@@ -577,8 +577,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 @(IRCEvent.Type.ERR_NOMOTD)
 void commitLogs(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs ||
-        !plugin.printerSettings.bufferedWrites) return;
+    if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
 
     import kameloso.terminal : TerminalToken;
     import std.exception : ErrnoException;
@@ -2030,7 +2029,7 @@ void initialise(PrinterPlugin plugin)
  +/
 void initResources(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.enabled || !plugin.printerSettings.logs) return;
+    if (!plugin.printerSettings.logs) return;
 
     import std.path : expandTilde;
 
