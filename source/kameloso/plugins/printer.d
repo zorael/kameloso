@@ -268,8 +268,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         return;
     }
 
-    immutable logLocation = plugin.logDirectory.expandTilde;
-    if (!plugin.establishLogLocation(logLocation)) return;
+    if (!plugin.establishLogLocation(plugin.logDirectory)) return;
 
     /// Write buffered lines.
     void writeToPath(const string key, const string path, bool doFormat = true)
@@ -338,7 +337,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                 if (!errBuffer)
                 {
-                    plugin.buffers[errorLabel] = LogLineBuffer(buildNormalizedPath(logLocation,
+                    plugin.buffers[errorLabel] = LogLineBuffer(buildNormalizedPath(plugin.logDirectory,
                         plugin.state.client.server.address ~ ".err.log"));
                     errBuffer = errorLabel in plugin.buffers;
 
@@ -412,7 +411,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     if (plugin.printerSettings.logRaw)
     {
         // No need to sanitise the server address; it's ASCII
-        writeToPath(string.init, buildNormalizedPath(logLocation,
+        writeToPath(string.init, buildNormalizedPath(plugin.logDirectory,
             plugin.state.client.server.address ~ ".raw.log"), false);
     }
 
@@ -442,13 +441,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             if (thisChannel.users.canFind(sender.nickname))
             {
                 // Channel message
-                writeToPath(channelName, buildNormalizedPath(logLocation, channelName.escapedPath ~ ".log"));
+                writeToPath(channelName, buildNormalizedPath(plugin.logDirectory,
+                    channelName.escapedPath ~ ".log"));
             }
         }
 
         if (sender.nickname.length && sender.nickname in plugin.buffers)
         {
-            immutable queryPath = buildNormalizedPath(logLocation, sender.nickname.escapedPath ~ ".log");
+            immutable queryPath = buildNormalizedPath(plugin.logDirectory,
+                sender.nickname.escapedPath ~ ".log");
             // There is an open query buffer; write to it too
             writeToPath(sender.nickname, queryPath);
         }
@@ -458,18 +459,18 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         if (channel.length && (sender.nickname.length || type == MODE))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeToPath(channel, buildNormalizedPath(logLocation, channel.escapedPath ~ ".log"));
+            writeToPath(channel, buildNormalizedPath(plugin.logDirectory, channel.escapedPath ~ ".log"));
         }
         else if (sender.nickname.length)
         {
             // Implicitly not a channel; query
-            writeToPath(sender.nickname, buildNormalizedPath(logLocation,
+            writeToPath(sender.nickname, buildNormalizedPath(plugin.logDirectory,
                 sender.nickname.escapedPath ~ ".log"));
         }
         else if (!sender.nickname.length && sender.address.length)
         {
             // Server
-            writeToPath(state.client.server.address, buildNormalizedPath(logLocation,
+            writeToPath(state.client.server.address, buildNormalizedPath(plugin.logDirectory,
                 state.client.server.address.escapedPath ~ ".log"));
         }
         else
@@ -2031,11 +2032,7 @@ void initResources(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs) return;
 
-    import std.path : expandTilde;
-
-    immutable logLocation = plugin.logDirectory.expandTilde;
-
-    if (!plugin.establishLogLocation(logLocation))
+    if (!plugin.establishLogLocation(plugin.logDirectory))
     {
         throw new IRCPluginInitialisationException("Could not create log directory");
     }
