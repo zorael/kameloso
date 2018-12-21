@@ -595,6 +595,9 @@ void commitLogs(PrinterPlugin plugin)
 
             immutable lines = buffer.lines.data.join("\n");
             File(buffer.path, "a").writeln(lines);
+
+            // Only clear if we managed to write everything, otherwise accumulate
+            buffer.lines.clear();
         }
         catch (const FileException e)
         {
@@ -610,10 +613,6 @@ void commitLogs(PrinterPlugin plugin)
         {
             logger.warning("Unhandled exception caught when committing logs: ",
                 e.msg, cast(char)TerminalToken.bell);
-        }
-        finally
-        {
-            buffer.lines.clear();
         }
     }
 }
