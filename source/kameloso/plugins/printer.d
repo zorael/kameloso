@@ -276,7 +276,7 @@ struct LogLineBuffer
  +  populating arrays of lines to be written in bulk, once in a while.
  +
  +  See_Also:
- +      commitLogs
+ +      commitAllLogs
  +/
 @(Chainable)
 @(ChannelPolicy.any)
@@ -608,17 +608,13 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 }
 
 
-// commitLogs
+// commitAllLogs
 /++
- +  Write buffered log lines to disk.
+ +  Writes all buffered log lines to disk.
  +
  +  This is a way of queueing writes so that they can be committed seldomly and
  +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
  +  losing uncommitted lines in a catastrophical crash.
- +
- +  In order to not accumulate a boundless amount of buffers, keep a counter of
- +  how many PINGs a buffer has been empty. When the counter reaches zero (value
- +  hardcoded in struct `LogLineBuffer`), remove the dead buffer from the array.
  +
  +  Params:
  +      plugin = The current `PrinterPlugin`.
@@ -626,7 +622,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
-void commitLogs(PrinterPlugin plugin)
+void commitAllLogs(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
 
@@ -636,40 +632,57 @@ void commitLogs(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        if (!buffer.lines.data.length) continue;
+        commitLog(buffer);
+    }
+}
 
-        try
-        {
-            import std.array : join;
-            import std.file : exists, mkdirRecurse;
-            import std.stdio : File, writeln;
 
-            if (!buffer.dir.exists)
-            {
-                mkdirRecurse(buffer.dir);
-            }
+// commitLog
+/++
+ +  Writes a single log buffer to disk.
+ +
+ +  Params:
+ +      buffer = `LogLineBuffer` whose lines to commit to disk.
+ +/
+void commitLog(ref LogLineBuffer buffer)
+{
+    import kameloso.terminal : TerminalToken;
+    import std.exception : ErrnoException;
+    import std.file : FileException;
 
-            immutable lines = buffer.lines.data.join("\n");
-            File(buffer.file, "a").writeln(lines);
+    if (!buffer.lines.data.length) return;
 
-            // Only clear if we managed to write everything, otherwise accumulate
-            buffer.lines.clear();
-        }
-        catch (const FileException e)
+    try
+    {
+        import std.array : join;
+        import std.file : exists, mkdirRecurse;
+        import std.stdio : File, writeln;
+
+        if (!buffer.dir.exists)
         {
-            logger.warning("File exception caught when committing logs: ",
-                e.msg, cast(char)TerminalToken.bell);
+            mkdirRecurse(buffer.dir);
         }
-        catch (const ErrnoException e)
-        {
-            logger.warning("Exception caught when committing logs: ",
-                e.msg, cast(char)TerminalToken.bell);
-        }
-        catch (const Exception e)
-        {
-            logger.warning("Unhandled exception caught when committing logs: ",
-                e.msg, cast(char)TerminalToken.bell);
-        }
+
+        immutable lines = buffer.lines.data.join("\n");
+        File(buffer.file, "a").writeln(lines);
+
+        // Only clear if we managed to write everything, otherwise accumulate
+        buffer.lines.clear();
+    }
+    catch (const FileException e)
+    {
+        logger.warning("File exception caught when committing log: ",
+            e.msg, cast(char)TerminalToken.bell);
+    }
+    catch (const ErrnoException e)
+    {
+        logger.warning("Exception caught when committing log: ",
+            e.msg, cast(char)TerminalToken.bell);
+    }
+    catch (const Exception e)
+    {
+        logger.warning("Unhandled exception caught when committing log: ",
+            e.msg, cast(char)TerminalToken.bell);
     }
 }
 
@@ -1687,8 +1700,8 @@ void periodically(PrinterPlugin plugin)
 
     if (plugin.printerSettings.logs)
     {
-        plugin.commitLogs();
-        plugin.buffers.clear();
+        plugin.commitAllLogs();
+        plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
     }
 }
 
@@ -2106,7 +2119,7 @@ void teardown(PrinterPlugin plugin)
     if (plugin.printerSettings.bufferedWrites)
     {
         // Commit all logs before exiting
-        commitLogs(plugin);
+        commitAllLogs(plugin);
     }
 }
 
