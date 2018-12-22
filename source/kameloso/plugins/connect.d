@@ -816,6 +816,7 @@ void onNoCapabilities(ConnectService service, const IRCEvent event)
 void onWelcome(ConnectService service)
 {
     service.registration = Progress.finished;
+    service.nickNegotiation = Progress.finished;
 }
 
 
@@ -915,9 +916,12 @@ void register(ConnectService service)
  +/
 void negotiateNick(ConnectService service)
 {
-    if (service.registration == Progress.finished) return;
+    if ((service.registration == Progress.finished) ||
+        (service.nickNegotiation != Progress.notStarted)) return;
 
     import std.format : format;
+
+    service.nickNegotiation = Progress.started;
 
     service.raw("USER %s * 8 : %s".format(service.state.client.ident, service.state.client.user));
     service.raw("NICK " ~ service.state.client.nickname);
@@ -990,8 +994,11 @@ final class ConnectService : IRCPlugin
     /// At what step we're currently at with regards to registration.
     Progress registration;
 
-    /// At what step we're currently at with regard to capabilities.
+    /// At what step we're currently at with regards to capabilities.
     Progress capabilityNegotiation;
+
+    /// At what step we're currently at with regards to nick negotiation.
+    Progress nickNegotiation;
 
     /// Whether or not the server has sent at least one `PING`.
     bool serverPinged;
