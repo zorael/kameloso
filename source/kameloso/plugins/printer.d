@@ -352,10 +352,14 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 }
 
                 buffer = key in plugin.buffers;
+                insertDatestamp(buffer);  // New buffer, new "day"
             }
             else if ((buffer.month > 0) && (now.month != buffer.month))
             {
-                buffer.updateMonth();
+                // Should this ever happen?
+                logger.error("Observed month change but not buffer clear... Please report this.");
+                buffer.updateMonth(now);
+                insertDatestamp(buffer);  // New month, new day
             }
 
             if (!raw)
@@ -419,10 +423,14 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 {
                     plugin.buffers[errorLabel] = LogLineBuffer(plugin.logDirectory, "error.log");
                     errBuffer = errorLabel in plugin.buffers;
+                    insertDatestamp(errBuffer);  // New buffer, new "day"
                 }
                 else if ((buffer.month > 0) && (now.month != errBuffer.month))
                 {
-                    errBuffer.updateMonth();
+                    // Should this ever happen?
+                    logger.error("Observed month change but not buffer clear... Please report this.");
+                    errBuffer.updateMonth(now);
+                    insertDatestamp(errBuffer);  // New month, new "day"
                 }
 
                 if (plugin.printerSettings.bufferedWrites)
