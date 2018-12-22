@@ -333,7 +333,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
                     immutable subdir = buildNormalizedPath(plugin.logDirectory, path);
                     plugin.buffers[key] = LogLineBuffer(subdir, Clock.currTime);
-                    buffer = key in plugin.buffers;
                 }
                 else
                 {
