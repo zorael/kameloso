@@ -223,16 +223,6 @@ struct LogLineBuffer
     /// Buffered lines that will be saved to `file`, in `dir`.
     Appender!(string[]) lines;
 
-    /// Updates the `month` field to reflect the current date.
-    void updateMonth(const SysTime now)
-    {
-        import std.datetime.date : Date;
-
-        this.month = now.month;
-        // Cut the day from the date string, keep YYYY-MM
-        this.file = buildNormalizedPath(dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
-    }
-
     /++
      +  Contructor taking a `std.datetime.sytime.SysTime`, to save as the date
      +  the buffer was created.
@@ -362,13 +352,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 buffer = key in plugin.buffers;
                 if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
             }
-            else if ((buffer.month > 0) && (now.month != buffer.month))
-            {
-                // Should this ever happen?
-                logger.error("Observed month change but not buffer clear... Please report this.");
-                buffer.updateMonth(now);
-                if (!raw) insertDatestamp(buffer);  // New month, new day, except if raw
-            }
 
             if (!raw)
             {
@@ -432,13 +415,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                     plugin.buffers[errorLabel] = LogLineBuffer(plugin.logDirectory, "error.log");
                     errBuffer = errorLabel in plugin.buffers;
                     insertDatestamp(errBuffer);  // New buffer, new "day"
-                }
-                else if ((buffer.month > 0) && (now.month != errBuffer.month))
-                {
-                    // Should this ever happen?
-                    logger.error("Observed month change but not buffer clear... Please report this.");
-                    errBuffer.updateMonth(now);
-                    insertDatestamp(errBuffer);  // New month, new "day"
                 }
 
                 if (plugin.printerSettings.bufferedWrites)
