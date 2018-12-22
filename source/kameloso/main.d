@@ -599,7 +599,6 @@ Next mainLoop(ref IRCBot bot)
         // Call the generator, query it for event lines
         listener.call();
 
-        with (bot.parser)
         listenerloop:
         foreach (const attempt; listener)
         {
@@ -700,11 +699,11 @@ Next mainLoop(ref IRCBot bot)
                     event = bot.parser.toIRCEvent(sanitize(attempt.line));
                 }
 
-                if (client.updated)
+                if (bot.parser.client.updated)
                 {
                     // Parsing changed the client; propagate
-                    client.updated = false;
-                    bot.propagateClient(client);
+                    bot.parser.client.updated = false;
+                    bot.propagateClient(bot.parser.client);
                 }
 
                 foreach (plugin; bot.plugins)
@@ -714,9 +713,9 @@ Next mainLoop(ref IRCBot bot)
                     if (plugin.state.client.updated)
                     {
                         // Postprocessing changed the client; propagate
-                        client = plugin.state.client;
-                        client.updated = false;
-                        bot.propagateClient(client);
+                        bot.parser.client = plugin.state.client;
+                        bot.parser.client.updated = false;
+                        bot.propagateClient(bot.parser.client);
                     }
                 }
 
@@ -741,10 +740,9 @@ Next mainLoop(ref IRCBot bot)
                                 processing; it keeps its update internally
                                 between both passes.
                             */
-                            client = plugin.state.client;
-                            client.updated = false;
-                            bot.parser.client = client;
-                            bot.propagateClient(client);
+                            bot.parser.client = plugin.state.client;
+                            bot.parser.client.updated = false;
+                            bot.propagateClient(bot.parser.client);
                         }
                     }
                     catch (const UTFException e)
