@@ -360,14 +360,14 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 }
 
                 buffer = key in plugin.buffers;
-                insertDatestamp(buffer);  // New buffer, new "day"
+                if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
             }
             else if ((buffer.month > 0) && (now.month != buffer.month))
             {
                 // Should this ever happen?
                 logger.error("Observed month change but not buffer clear... Please report this.");
                 buffer.updateMonth(now);
-                insertDatestamp(buffer);  // New month, new day
+                if (!raw) insertDatestamp(buffer);  // New month, new day, except if raw
             }
 
             if (!raw)
