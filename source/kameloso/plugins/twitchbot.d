@@ -213,17 +213,24 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         if (thisFiber.payload == IRCEvent.init)
         {
             // Invoked by timer, not by event
+            import std.algorithm.iteration : sum;
             import std.algorithm.sorting : sort;
             import std.array : array;
 
             plugin.state.chan!(Yes.quiet)(event.channel, "Voting complete, results:");
 
+            immutable total = cast(double)votes.byValue.sum;
             auto sorted = votes.byKeyValue.array.sort!((a,b) => a.value < b.value);
+
             foreach (const result; sorted)
             {
                 import kameloso.string : plurality;
-                plugin.state.chan!(Yes.quiet)(event.channel, "%s : %d %s"
-                    .format(result.key, result.value, result.value.plurality("vote", "votes")));
+
+                immutable noun = result.value.plurality("vote", "votes");
+
+                plugin.state.chan!(Yes.quiet)(event.channel, "%s : %d %s (%.1f)"
+                    .format(result.key, result.value, noun,
+                    cast(double)(result.value/(result.value + total))));
             }
 
             plugin.voting = false;
