@@ -331,7 +331,15 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 import std.stdio : File, writeln;
 
                 if (!buffer.dir.exists) mkdirRecurse(buffer.dir);
-                File(buffer.file, "a").writeln(datestamp);
+
+                // Insert an empty space if the file exists, to separate old content from new
+                immutable addLinebreak = buffer.file.exists;
+
+                File file = File(buffer.file, "a");
+
+                if (addLinebreak) file.writeln();
+
+                file.writeln(datestamp);
             }
 
             LogLineBuffer* buffer = key in plugin.buffers;
