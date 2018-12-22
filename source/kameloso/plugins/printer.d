@@ -224,14 +224,11 @@ struct LogLineBuffer
     Appender!(string[]) lines;
 
     /// Updates the `month` field to reflect the current date.
-    void updateMonth()
+    void updateMonth(const SysTime now)
     {
-        import std.datetime.systime : Clock;
         import std.datetime.date : Date;
 
-        const now = Clock.currTime;
         this.month = now.month;
-
         // Cut the day from the date string, keep YYYY-MM
         this.file = buildNormalizedPath(dir, (cast(Date)now).toISOExtString[0..7] ~ ".log");
     }
@@ -306,7 +303,11 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         return;
     }
 
+    import std.datetime.systime : Clock;
     import std.typecons : Flag, No, Yes;
+
+    // Get this once and reuse.
+    const now = Clock.currTime;
 
     /// Write buffered lines.
     void writeEventToFile(const string key, const string givenPath = string.init,
@@ -314,9 +315,6 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
-        import std.datetime.systime : Clock;
-
-        const now = Clock.currTime;
 
         immutable path = givenPath.length ? givenPath.escapedPath : key.escapedPath;
 
