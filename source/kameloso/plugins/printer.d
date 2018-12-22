@@ -310,7 +310,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     /// Write buffered lines.
     void writeEventToFile(const string key, const string givenPath = string.init,
-        Flag!"extendPath" extendPath = Yes.extendPath, Flag!"formatEvent" formatEvent = Yes.formatEvent)
+        Flag!"extendPath" extendPath = Yes.extendPath, Flag!"raw" raw = No.raw)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
@@ -347,7 +347,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 buffer.updateMonth();
             }
 
-            if (formatEvent)
+            if (!raw)
             {
                 // Normal buffers
                 if (plugin.printerSettings.bufferedWrites)
@@ -468,7 +468,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
     if (plugin.printerSettings.logRaw)
     {
-        writeEventToFile("<raw>", "raw.log", No.extendPath, No.formatEvent);
+        writeEventToFile("<raw>", "raw.log", No.extendPath, Yes.raw);
     }
 
     with (IRCEvent.Type)
