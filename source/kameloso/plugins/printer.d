@@ -322,6 +322,20 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 
         try
         {
+            /// Write datestamp to file immediately, bypassing any buffers.
+            static void insertDatestamp(const LogLineBuffer* buffer)
+            {
+                assert(buffer, "Tried to add datestamp to null buffer");
+                assert((buffer.file.length && buffer.dir.length),
+                    "Tried to add datestamp to uninitialised buffer");
+
+                import std.file : exists, mkdirRecurse;
+                import std.stdio : File, writeln;
+
+                if (!buffer.dir.exists) mkdirRecurse(buffer.dir);
+                File(buffer.file, "a").writeln(datestamp);
+            }
+
             LogLineBuffer* buffer = key in plugin.buffers;
 
             if (!buffer)
