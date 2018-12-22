@@ -606,6 +606,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
     {
         // Create missing log directory
         import std.file : mkdirRecurse;
+
         mkdirRecurse(logLocation);
 
         string infotint;
@@ -615,7 +616,6 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
             if (!settings.monochrome)
             {
                 import kameloso.logger : KamelosoLogger;
-
                 infotint = (cast(KamelosoLogger)logger).infotint;
             }
         }
@@ -631,12 +631,13 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 /++
  +  Writes all buffered log lines to disk.
  +
- +  This is a way of queueing writes so that they can be committed seldomly and
- +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
- +  losing uncommitted lines in a catastrophical crash.
+ +  Merely wraps `commitLog` by iterating over all buffers and invoking it.
  +
  +  Params:
  +      plugin = The current `PrinterPlugin`.
+ +
+ +  See_Also:
+ +      commitLog
  +/
 @(IRCEvent.Type.PING)
 @(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -660,8 +661,15 @@ void commitAllLogs(PrinterPlugin plugin)
 /++
  +  Writes a single log buffer to disk.
  +
+ +  This is a way of queueing writes so that they can be committed seldomly and
+ +  in bulk, supposedly being nicer to the hardware at the cost of the risk of
+ +  losing uncommitted lines in a catastrophical crash.
+ +
  +  Params:
  +      buffer = `LogLineBuffer` whose lines to commit to disk.
+ +
+ +  See_Also:
+ +      commitAllLogs
  +/
 void commitLog(ref LogLineBuffer buffer)
 {
