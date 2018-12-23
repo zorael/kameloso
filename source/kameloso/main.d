@@ -1478,13 +1478,13 @@ int main(string[] args)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
-        return 1;
+        if (!settings.force) return 1;
     }
     catch (const IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
-        return 1;
+        if (!settings.force) return 1;
     }
 
     // Resolve and create the resource directory
