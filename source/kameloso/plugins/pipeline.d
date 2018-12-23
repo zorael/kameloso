@@ -263,6 +263,8 @@ void createFIFO(const string filename)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PipelinePlugin plugin)
 {
+    if (!plugin.pipelineSettings.enabled) return;
+
     import std.format : format;
 
     with (plugin)
