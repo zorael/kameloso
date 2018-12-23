@@ -3398,6 +3398,23 @@ final class IRCPluginInitialisationException : Exception
 }
 
 
+// IRCPluginSettingsException
+/++
+ +  Exception thrown when an IRC plugin failed to have its settings set.
+ +
+ +  A normal `Exception`, which only differs in the sense that we can deduce
+ +  what went wrong by its type.
+ +/
+final class IRCPluginSettingsException : Exception
+{
+    /// Wraps normal Exception constructors.
+    this(const string message, const string file = __FILE__, const int line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
+
+
 // WHOISFiberDelegate
 /++
  +  Functionality for catching WHOIS results and calling passed function aliases
