@@ -3155,8 +3155,11 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
  +      plugins = Array of all `IRCPlugin`s.
  +      customSettings = Array of custom settings to apply to plugins' own
  +          setting, in the string forms of "`plugin.setting=value`".
+ +
+ +  Returns:
+ +      `true` if no setting name mismatches occured, `false` if it did.
  +/
-void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
+bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 {
     import kameloso.common : logger, settings;
     import kameloso.string : contains, nom;
@@ -3174,6 +3177,8 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         }
     }
 
+    bool noErrors = true;
+
     top:
     foreach (immutable line; customSettings)
     {
@@ -3184,7 +3189,8 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
 
         if (!slice.contains!(Yes.decode)("."))
         {
-            logger.warningf("Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format.", logtint, warningtint);
+            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. ("%1$s%3$s%2$s")`,
+                logtint, warningtint, line);
             continue;
         }
 
@@ -3233,6 +3239,7 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
                 {
                     logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
                         logtint, plugin.name, warningtint, setting);
+                    noErrors = false;
                 }
 
                 continue top;
@@ -3240,7 +3247,10 @@ void applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         }
 
         logger.warning("Invalid plugin: ", logtint, pluginstring);
+        noErrors = false;
     }
+
+    return noErrors;
 }
 
 
