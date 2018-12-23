@@ -153,7 +153,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
             (Variant v)
             {
                 state.askToError("Pipeline plugin received Variant: " ~ logtint ~ v.toString());
-                state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halt"));
+                state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
                 halt = true;
             }
         );
@@ -169,7 +169,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
         catch (const ErrnoException e)
         {
             state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
-            state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halt"));
+            state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
         }
     }
@@ -331,7 +331,7 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-    if (message.payload == "halt")
+    if (message.payload == "halted")
     {
         plugin.workerRunning = false;
     }
