@@ -1392,10 +1392,24 @@ int main(string[] args)
     // handleGetopt re-inits later when we know the settings for monochrome
     initLogger(settings.monochrome, settings.brightTerminal);
 
+    scope(exit)
+    {
+        if (*bot.abort)
+        {
+            // Ctrl+C
+            logger.error("Aborting...");
+        }
+        else
+        {
+            logger.info("Exiting...");
+        }
+    }
+
     scope(failure)
     {
         import kameloso.terminal : TerminalToken;
         logger.error("We just crashed!", cast(char)TerminalToken.bell);
+        *bot.abort = true;
         resetSignals();
     }
 
@@ -1492,6 +1506,15 @@ int main(string[] args)
     // It will change later and knowing this is useful when authenticating
     bot.parser.client.origNickname = bot.parser.client.nickname;
 
+    scope(exit)
+    {
+        // Save if we're exiting and configuration says we should.
+        if (settings.saveOnExit)
+        {
+            bot.writeConfigurationFile(settings.configFile);
+        }
+    }
+
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = bot.parser.client;
 
@@ -1503,25 +1526,6 @@ int main(string[] args)
      +  connected at least once already.
      +/
     bool firstConnect = true;
-
-    scope(exit)
-    {
-        // Save if we're exiting and configuration says we should.
-        if (settings.saveOnExit)
-        {
-            bot.writeConfigurationFile(settings.configFile);
-        }
-
-        if (*bot.abort)
-        {
-            // Ctrl+C
-            logger.error("Aborting...");
-        }
-        else
-        {
-            logger.info("Exiting...");
-        }
-    }
 
     do
     {
