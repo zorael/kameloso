@@ -1299,16 +1299,6 @@ Next tryResolve(ref IRCBot bot)
         }
     }
 
-    import kameloso.string : contains;
-    if (!settings.force && !bot.parser.client.server.address.contains('.'))
-    {
-        // Workaround for Issue 19247:
-        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
-        logger.errorf("Invalid address! [%s%s%s]", logtint,
-            bot.parser.client.server.address, errortint);
-        return Next.returnFailure;
-    }
-
     enum defaultResolveAttempts = 15;
     immutable resolveAttempts = settings.endlesslyConnect ? int.max : defaultResolveAttempts;
 
@@ -1451,7 +1441,7 @@ int main(string[] args)
         return 1;
     }
 
-    string pre, post, infotint, logtint, warningtint;
+    string pre, post, infotint, logtint, warningtint, errortint;
 
     version(Colours)
     {
@@ -1468,6 +1458,7 @@ int main(string[] args)
             infotint = (cast(KamelosoLogger)logger).infotint;
             logtint = (cast(KamelosoLogger)logger).logtint;
             warningtint = (cast(KamelosoLogger)logger).warningtint;
+            errortint = (cast(KamelosoLogger)logger).errortint;
         }
     }
 
@@ -1483,6 +1474,14 @@ int main(string[] args)
     {
         complainAboutMissingConfiguration(args);
         if (!settings.force) return 1;
+    }
+
+    if (!settings.force && !bot.parser.client.server.address.isValidAddress)
+    {
+        // See docs for `isValidAddress`
+        logger.errorf("Invalid address! [%s%s%s]", logtint,
+            bot.parser.client.server.address, errortint);
+        return Next.returnFailure;
     }
 
     // Initialise plugins outside the loop once, for the error messages
