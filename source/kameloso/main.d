@@ -1467,6 +1467,7 @@ int main(string[] args)
     }
 
     // Initialise plugins outside the loop once, for the error messages
+    import kameloso.plugins.common : IRCPluginSettingsException;
     import std.conv : ConvException;
 
     try
@@ -1477,6 +1478,12 @@ int main(string[] args)
     catch (const ConvException e)
     {
         // Configuration file/--set argument syntax error
+        logger.error(e.msg);
+        return 1;
+    }
+    catch (const IRCPluginSettingsException e)
+    {
+        // --set plugin/setting name error
         logger.error(e.msg);
         return 1;
     }

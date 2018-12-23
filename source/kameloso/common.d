@@ -447,7 +447,13 @@ struct IRCBot
             }
         }
 
-        plugins.applyCustomSettings(customSettings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings);
+
+        if (!allCustomSuccess)
+        {
+            import kameloso.plugins.common : IRCPluginSettingsException;
+            throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
+        }
 
         return allInvalidEntries;
     }
