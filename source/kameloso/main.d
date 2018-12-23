@@ -1245,6 +1245,26 @@ Next tryConnect(ref IRCBot bot)
 }
 
 
+// isValidAddress
+/++
+ +  Simple check to see if an address contains at least one dot.
+ +
+ +  Workaround for Issue 19247:
+ +  Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
+ +
+ +  Params:
+ +      address = Host address to examine.
+ +
+ +  Returns:
+ +      `true` if the address has at least one dot in it, `false` if not.
+ +/
+bool isValidAddress(const string address)
+{
+    import kameloso.string : contains;
+    return address.contains('.');
+}
+
+
 // tryResolve
 /++
  +  Tries to resolve the address in `bot.parser.client.server` to IPs, by
