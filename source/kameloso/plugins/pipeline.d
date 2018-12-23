@@ -28,6 +28,23 @@ import std.concurrency;
 import std.stdio : File;
 
 
+// PipelineSettings
+/++
+ +  All settings for a `PipelinePlugin`, aggregated.
+ +/
+struct PipelineSettings
+{
+    /// Whether or not the Pipeline plugin should do anything at all.
+    bool enabled = true;
+
+    /++
+     +  Whether or not to place the FIFO in the working directory. If false, it
+     +  will be saved in `/tmp`, or `$TMPDIR` if version `UseTMPDIR`.
+     +/
+    bool fifoInWorkingDir = false;
+}
+
+
 // pipereader
 /++
  +  Reads a FIFO (named pipe) and relays lines received there to the main
@@ -360,6 +377,9 @@ final class PipelinePlugin : IRCPlugin
 
     /// Filename of the created FIFO.
     string fifoFilename;
+
+    /// All Pipeline settings gathered.
+    @Settings PipelineSettings pipelineSettings;
 
     /// Whether or not the worker is running in the background.
     bool workerRunning;
