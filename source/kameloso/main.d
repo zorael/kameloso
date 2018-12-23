@@ -1465,21 +1465,6 @@ int main(string[] args)
         if (!settings.force) return 1;
     }
 
-    // Resolve and create the resource directory
-    import std.file : exists;
-    import std.path : dirName;
-
-    settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
-        "server", bot.parser.client.server.address);
-    settings.configDirectory = settings.configFile.dirName;
-
-    if (!settings.resourceDirectory.exists)
-    {
-        import std.file : mkdirRecurse;
-        mkdirRecurse(settings.resourceDirectory);
-        logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
-    }
-
     // Initialise plugins outside the loop once, for the error messages
     import kameloso.plugins.common : IRCPluginSettingsException;
     import std.conv : ConvException;
@@ -1500,6 +1485,21 @@ int main(string[] args)
         // --set plugin/setting name error
         logger.error(e.msg);
         return 1;
+    }
+
+    // Resolve and create the resource directory
+    import std.file : exists;
+    import std.path : dirName;
+
+    settings.resourceDirectory = buildNormalizedPath(settings.resourceDirectory,
+        "server", bot.parser.client.server.address);
+    settings.configDirectory = settings.configFile.dirName;
+
+    if (!settings.resourceDirectory.exists)
+    {
+        import std.file : mkdirRecurse;
+        mkdirRecurse(settings.resourceDirectory);
+        logger.logf("Created resource directory %s%s", infotint, settings.resourceDirectory);
     }
 
     // Save the original nickname *once*, outside the connection loop.
