@@ -28,6 +28,12 @@ import std.concurrency;
 import std.stdio : File;
 
 
+// It makes sense to obey $TMPDIR and not hardcode /tmp, but it supposedly makes
+// the FIFO really difficult to access on OSX where it translates to some really
+// long path. OSX does support /tmp though. So shrug and version it.
+//version = UseTMPDIR;
+
+
 // PipelineSettings
 /++
  +  All settings for a `PipelinePlugin`, aggregated.
@@ -275,7 +281,28 @@ void onWelcome(PipelinePlugin plugin)
         }
 
         // Save the filename *once* so it persists across nick changes.
-        fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
+
+        if (plugin.pipelineSettings.fifoInWorkingDir)
+        {
+            fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
+        }
+        else
+        {
+            version(UseTMPDIR)
+            {
+                import std.process : environment;
+                immutable tempdir = environment.get("TMPDIR", "/tmp");
+            }
+            else
+            {
+                enum tempdir = "/tmp";
+            }
+
+            import std.path : buildNormalizedPath;
+
+            fifoFilename = buildNormalizedPath(tempdir,
+                state.client.nickname ~ "@" ~ state.client.server.address);
+        }
 
         try
         {
