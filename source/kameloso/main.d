@@ -1402,19 +1402,6 @@ int main(string[] args)
     // handleGetopt re-inits later when we know the settings for monochrome
     initLogger(settings.monochrome, settings.brightTerminal);
 
-    scope(exit)
-    {
-        if (*bot.abort)
-        {
-            // Ctrl+C
-            logger.error("Aborting...");
-        }
-        else
-        {
-            logger.info("Exiting...");
-        }
-    }
-
     scope(failure)
     {
         import kameloso.terminal : TerminalToken;
@@ -1531,6 +1518,16 @@ int main(string[] args)
         if (settings.saveOnExit)
         {
             bot.writeConfigurationFile(settings.configFile);
+        }
+
+        if (*bot.abort)
+        {
+            // Ctrl+C
+            logger.error("Aborting...");
+        }
+        else
+        {
+            logger.info("Exiting...");
         }
     }
 
