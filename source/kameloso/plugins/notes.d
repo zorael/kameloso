@@ -143,6 +143,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 
         if (e.msg == "JSONValue is not an object")
         {
+            logger.warning("Notes file corrupt. Starting from scratch.");
             plugin.notes.reset();
             plugin.notes.save(plugin.notesFile);
         }
