@@ -89,20 +89,20 @@ void onPing(ChanQueriesService service)
 
             if (!(service.channelStates[channelName] & ChannelState.topicKnown))
             {
-                raw!(Yes.quiet)(service.state, "TOPIC " ~ channelName);
+                raw(service.state, "TOPIC " ~ channelName, true);
                 Fiber.yield();  // awaiting RPL_TOPIC or RPL_NOTOPIC
 
                 service.delayFiber(service.secondsBetween);
                 Fiber.yield();  // delay
             }
 
-            raw!(Yes.quiet)(service.state, "WHO " ~ channelName);
+            raw(service.state, "WHO " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_ENDOFWHO
 
             service.delayFiber(service.secondsBetween);
             Fiber.yield();  // delay
 
-            raw!(Yes.quiet)(service.state, "MODE " ~ channelName);
+            raw(service.state, "MODE " ~ channelName, true);
             Fiber.yield();  // awaiting RPL_CHANNELMODEIS
 
             foreach (immutable modechar; service.state.client.server.aModes.representation)
@@ -113,8 +113,7 @@ void onPing(ChanQueriesService service)
                 service.delayFiber(service.secondsBetween * 2);
                 Fiber.yield();  // delay
 
-                raw!(Yes.quiet)(service.state, "MODE %s +%c"
-                    .format(channelName, cast(char)modechar));
+                raw(service.state, "MODE %s +%c".format(channelName, cast(char)modechar), true);
             }
 
             // Overwrite state with `ChannelState.queried`;

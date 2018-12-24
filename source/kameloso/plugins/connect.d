@@ -168,8 +168,8 @@ void joinChannels(ConnectService service)
 
         // Join in two steps so homes don't get shoved away by the channels
         // FIXME: line should split if it reaches 512 characters
-        if (client.homes.length) service.join(homelist.join(","));
-        if (client.channels.length) service.join(chanlist.join(","));
+        if (client.homes.length) service.join(homelist.join(","), true);
+        if (client.channels.length) service.join(chanlist.join(","), true);
     }
 }
 
@@ -304,7 +304,7 @@ void tryAuth(ConnectService service)
                 return;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s".format(verb, password));
+            service.query(serviceNick, "%s %s".format(verb, password), true);
             if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
             break;
 
@@ -321,13 +321,13 @@ void tryAuth(ConnectService service)
                 account = client.origNickname;
             }
 
-            service.query!(Yes.quiet)(serviceNick, "%s %s %s".format(verb, account, password));
+            service.query(serviceNick, "%s %s %s".format(verb, account, password), true);
             if (!settings.hideOutgoing) logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
             break;
 
         case rusnet:
             // Doesn't want a PRIVMSG
-            service.raw!(Yes.quiet)("NICKSERV IDENTIFY " ~ password);
+            service.raw("NICKSERV IDENTIFY " ~ password, true);
             if (!settings.hideOutgoing) logger.trace("--> NICKSERV IDENTIFY hunter2");
             break;
 
@@ -619,7 +619,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             {
             case "sasl":
                 if (!service.connectSettings.sasl || !service.state.client.authPassword.length) continue;
-                service.raw!(Yes.quiet)("CAP REQ :sasl");
+                service.raw("CAP REQ :sasl", true);
                 tryingSASL = true;
                 break;
 
@@ -652,7 +652,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                 // UnrealIRCd
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
-                service.raw!(Yes.quiet)("CAP REQ :" ~ cap);
+                service.raw("CAP REQ :" ~ cap, true);
                 break;
 
             default:
@@ -665,7 +665,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         {
             // No SASL request in action, safe to end handshake
             // See onSASLSuccess for info on CAP END
-            service.raw!(Yes.quiet)("CAP END");
+            service.raw("CAP END", true);
 
             if (service.capabilityNegotiation == Progress.started)
             {
@@ -681,7 +681,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         switch (event.content)
         {
         case "sasl":
-            service.raw("AUTHENTICATE PLAIN");
+            service.raw("AUTHENTICATE PLAIN", true);
             break;
 
         default:
@@ -726,7 +726,7 @@ void onSASLAuthenticate(ConnectService service)
         immutable authToken = "%s%c%s%c%s".format(authLogin, '\0', authLogin, '\0', password);
         immutable encoded = Base64.encode(authToken.representation);
 
-        service.raw!(Yes.quiet)("AUTHENTICATE " ~ encoded);
+        service.raw("AUTHENTICATE " ~ encoded, true);
         if (!settings.hideOutgoing) logger.trace("--> AUTHENTICATE hunter2");
     }
 }
@@ -758,7 +758,7 @@ void onSASLSuccess(ConnectService service)
      +  Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    service.raw!(Yes.quiet)("CAP END");
+    service.raw("CAP END", true);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -786,7 +786,7 @@ void onSASLFailure(ConnectService service)
     service.authentication = Progress.finished;
 
     // See `onSASLSuccess` for info on `CAP END`
-    service.raw!(Yes.quiet)("CAP END");
+    service.raw("CAP END", true);
     service.capabilityNegotiation = Progress.finished;
     service.negotiateNick();
 }
@@ -833,7 +833,7 @@ void onISUPPORT(ConnectService service)
 {
     if (service.state.client.server.daemon == IRCServer.Daemon.rusnet)
     {
-        service.raw!(Yes.quiet)("CODEPAGE UTF-8");
+        service.raw("CODEPAGE UTF-8", true);
     }
 }
 
@@ -871,11 +871,11 @@ void register(ConnectService service)
     with (service.state)
     {
         service.registration = Progress.started;
-        service.raw!(Yes.quiet)("CAP LS 302");
+        service.raw("CAP LS 302", true);
 
         if (client.pass.length)
         {
-            service.raw!(Yes.quiet)("PASS " ~ client.pass);
+            service.raw("PASS " ~ client.pass, true);
             if (!settings.hideOutgoing) logger.trace("--> PASS hunter2");  // fake it
         }
         else if (client.server.address.endsWith(".twitch.tv"))

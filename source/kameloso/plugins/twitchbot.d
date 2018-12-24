@@ -63,12 +63,12 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 
         immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
 
-        plugin.state.chan!(Yes.quiet)(event.channel, "%s has been streaming for %s."
+        plugin.state.chan(event.channel, "%s has been streaming for %s."
             .format(plugin.twitchBotSettings.owner, delta));
     }
     else
     {
-        plugin.state.chan!(Yes.quiet)(event.channel, plugin.twitchBotSettings.owner ~
+        plugin.state.chan(event.channel, plugin.twitchBotSettings.owner ~
             " is currently not streaming.");
     }
 }
@@ -91,7 +91,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
 
     plugin.broadcastStart = Clock.currTime.toUnixTime;
-    plugin.state.query!(Yes.quiet)(event.sender.nickname, "Broadcast start registered.");
+    plugin.state.query(event.sender.nickname, "Broadcast start registered.");
 }
 
 
@@ -110,7 +110,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     plugin.broadcastStart = 0L;
-    plugin.state.query!(Yes.quiet)(event.sender.nickname, "Broadcast set as ended.");
+    plugin.state.query(event.sender.nickname, "Broadcast set as ended.");
 }
 
 
@@ -139,7 +139,7 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const response = oneliner in plugin.oneliners)
     {
-        plugin.state.chan!(Yes.quiet)(event.channel, *response);
+        plugin.state.chan(event.channel, *response);
     }
 }
 
@@ -217,7 +217,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
             import std.algorithm.sorting : sort;
             import std.array : array;
 
-            plugin.state.chan!(Yes.quiet)(event.channel, "Voting complete, results:");
+            plugin.state.chan(event.channel, "Voting complete, results:");
 
             immutable total = cast(double)votes.byValue.sum;
             auto sorted = votes.byKeyValue.array.sort!((a,b) => a.value < b.value);
@@ -228,7 +228,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
                 immutable noun = result.value.plurality("vote", "votes");
 
-                plugin.state.chan!(Yes.quiet)(event.channel, "%s : %d %s (%.1f)"
+                plugin.state.chan(event.channel, "%s : %d %s (%.1f)"
                     .format(result.key, result.value, noun,
                     cast(double)(result.value/(result.value + total))));
             }
@@ -274,7 +274,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.delayFiber(fiber, dur);
     plugin.voting = true;
 
-    plugin.state.chan!(Yes.quiet)(event.channel,
+    plugin.state.chan(event.channel,
         "Voting commenced! Please place your vote for one of: %(%s, %)".format(votes.keys));
 }
 
@@ -308,7 +308,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.oneliners[word] = slice;
     saveOneliners(plugin.oneliners, plugin.onelinerFile);
 
-    plugin.state.chan!(Yes.quiet)(event.channel, "Oneliner " ~ word ~ " added");
+    plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added");
 }
 
 

@@ -80,7 +80,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     .format(event.sender.nickname, note.sender, timestamp, note.line);
             }
 
-            plugin.chan!(Yes.quiet)(event.channel, message);
+            plugin.chan(event.channel, message);
         }
         else
         {
@@ -98,12 +98,10 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     .format(event.sender.nickname, noteArray.length);
             }
 
-            plugin.chan!(Yes.quiet)(event.channel, message);
+            plugin.chan(event.channel, message);
 
             foreach (const note; noteArray)
             {
-                import std.typecons : No, Yes;
-
                 immutable timestamp = (Clock.currTime - note.when)
                     .timeSince!(Yes.abbreviate);
 
@@ -118,7 +116,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                     report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
                 }
 
-                plugin.chan!(Yes.quiet)(event.channel, report);
+                plugin.chan(event.channel, report);
             }
         }
 
@@ -218,7 +216,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, event.channel, line);
-        plugin.chan!(Yes.quiet)(event.channel, "Note added.");
+        plugin.chan(event.channel, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
     catch (const JSONException e)

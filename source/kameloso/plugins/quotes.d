@@ -149,7 +149,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -167,7 +167,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
             message = "%s | %s".format(nickname, endQuote);
         }
 
-        plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+        plugin.privmsg(event.channel, event.sender.nickname, message);
     }
 
     try
@@ -193,7 +193,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
                 message = "No quote on record for %s".format(replyUser.nickname);
             }
 
-            plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            plugin.privmsg(event.channel, event.sender.nickname, message);
         }
 
         void onFailure(const IRCUser failureUser)
@@ -284,7 +284,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
             message = `"%s" is not a valid account or nickname.`.format(specified);
         }
 
-        plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+        plugin.state.privmsg(event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -310,7 +310,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
                     .format(id, plugin.quotes[id].array.length);
             }
 
-            plugin.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            plugin.privmsg(event.channel, event.sender.nickname, message);
         }
         catch (const JSONException e)
         {
@@ -393,7 +393,7 @@ void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 {
     if (!plugin.quotesSettings.enabled) return;
 
-    plugin.state.privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "Reloading quotes.");
+    plugin.state.privmsg(event.channel, event.sender.nickname, "Reloading quotes.");
     plugin.quotes.load(plugin.quotesFile);
 }
 

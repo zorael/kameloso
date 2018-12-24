@@ -541,28 +541,28 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
             if (settings.colouredOutgoing)
             {
-                privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
+                privmsg(event.channel, event.sender.nickname,
                     "Invalid user: " ~ event.content.ircBold);
             }
             else
             {
-                privmsg!(Yes.quiet)(event.channel, event.sender.nickname,
+                privmsg(event.channel, event.sender.nickname,
                     "Invalid user: " ~ event.content);
             }
 
-            privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            privmsg(event.channel, event.sender.nickname, message);
             return;
         }
         else if (state.client.nickname == event.content)
         {
             // The requested nick is the bot's.
-            privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "T-that's me though...");
+            privmsg(event.channel, event.sender.nickname, "T-that's me though...");
             return;
         }
         else if (event.sender.nickname == event.content)
         {
             // The person is asking for seen information about him-/herself.
-            privmsg!(Yes.quiet)(event.channel, event.sender.nickname, "That's you!");
+            privmsg(event.channel, event.sender.nickname, "That's you!");
             return;
         }
 
@@ -583,7 +583,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
                     message = event.content ~ line;
                 }
 
-                privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+                privmsg(event.channel, event.sender.nickname, message);
                 return;
             }
         }
@@ -606,7 +606,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
                 message = "I have never seen %s.".format(event.content);
             }
 
-            privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+            privmsg(event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -624,7 +624,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             message = "I last saw %s %s ago.".format(event.content, elapsed);
         }
 
-        privmsg!(Yes.quiet)(event.channel, event.sender.nickname, message);
+        privmsg(event.channel, event.sender.nickname, message);
     }
 }
 
