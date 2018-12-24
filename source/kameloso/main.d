@@ -1572,13 +1572,39 @@ int main(string[] args)
         case continue_:
             break;
 
-        case returnSuccess:  // should never happen
         case retry:  // should never happen
-            assert(0, "tryResolve returned Next returnSuccess or retry");
+            assert(0, "tryResolve returned Next.retry");
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
-            return 1;
+            retval = 1;
+            break outerloop;
+
+        case returnSuccess:
+            // Ditto
+            retval = 0;
+            break outerloop;
+        }
+
+        immutable actionAfterConnect = tryConnect(bot);
+        if (*bot.abort) break outerloop;  // tryConnect interruptibleSleep can abort
+
+        with (Next)
+        final switch (actionAfterConnect)
+        {
+        case continue_:
+            break;
+
+        case returnSuccess:  // should never happen
+            assert(0, "tryConnect returned Next.returnSuccess");
+
+        case retry:  // should never happen
+            assert(0, "tryConnect returned Next.retry");
+
+        case returnFailure:
+            // No need to saveOnExit, the scopeguard takes care of that
+            retval = 1;
+            break outerloop;
         }
 
         import kameloso.plugins.common : IRCPluginInitialisationException;
@@ -1605,26 +1631,8 @@ int main(string[] args)
             logger.warningf("The %s%s%s plugin failed to load its resources.%c",
                 logtint, e.file.baseName, warningtint, TerminalToken.bell);
             logger.trace(e);
-            return 1;
-        }
-
-        immutable actionAfterConnect = tryConnect(bot);
-        if (*bot.abort) break;  // tryConnect interruptibleSleep can abort
-
-        with (Next)
-        final switch (actionAfterConnect)
-        {
-        case continue_:
-            break;
-
-        case returnSuccess:  // should never happen
-        case retry:  // should never happen
-            assert(0, "tryConnect returned Next returnSuccess or retry");
-
-        case returnFailure:
-            // No need to saveOnExit, the scopeguard takes care of that
-            logger.info("Exiting...");
-            return 1;
+            retval = 1;
+            break outerloop;
         }
 
         import kameloso.irc.parsing : IRCParser;
