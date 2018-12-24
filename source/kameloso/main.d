@@ -1447,14 +1447,24 @@ int main(string[] args)
         if (!settings.force) return 1;
     }
 
-    // Workaround for Issue 19247:
-    // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
-    // the workaround being never resolve addresses that don't contain at least one dot
-    if (!settings.force && !bot.parser.client.server.address.contains('.'))
+    version(Posix)
+    {
+        // Workaround for Issue 19247:
+        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
+        // the workaround being never resolve addresses that don't contain at least one dot
+        immutable addressIsResolvable = bot.parser.client.server.address.contains('.');
+    }
+    else
+    {
+        // On Windows this doesn't happen, so allow all addresses.
+        enum addressIsResolvable = true;
+    }
+
+    if (!settings.force && !addressIsResolvable)
     {
         logger.errorf("Invalid address! [%s%s%s]", logtint,
             bot.parser.client.server.address, errortint);
-        return Next.returnFailure;
+        return 1;
     }
 
     // Initialise plugins outside the loop once, for the error messages
