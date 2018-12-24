@@ -709,6 +709,8 @@ void commitLog(ref LogLineBuffer buffer)
 @(IRCEvent.Type.RPL_ISUPPORT)
 void onISUPPORT(PrinterPlugin plugin)
 {
+    if (!plugin.printerSettings.enabled) return;
+
     if (plugin.printedISUPPORT || !plugin.state.client.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK

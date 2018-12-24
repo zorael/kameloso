@@ -386,6 +386,7 @@ void teardown(PipelinePlugin plugin)
 import kameloso.thread : Sendable;
 void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
 {
+    if (!plugin.pipelineSettings.enabled) return;
     if (header != "pipeline") return;
 
     import kameloso.thread : BusMessage;

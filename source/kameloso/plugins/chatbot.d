@@ -146,6 +146,8 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Shows a list of all available commands.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.chatbotSettings.enabled) return;
+
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 

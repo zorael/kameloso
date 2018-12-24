@@ -1265,6 +1265,7 @@ import kameloso.thread : Sendable;
 version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
+    if (!plugin.adminSettings.enabled) return;
     if (header != "admin") return;
 
     import kameloso.printing : printObject;

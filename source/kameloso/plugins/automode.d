@@ -463,6 +463,7 @@ debug
 void onCommandPrintModes(AutomodePlugin plugin)
 {
     if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     import std.json : JSONValue;
     import std.stdio : writeln;
@@ -487,6 +488,7 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @Description("Forces the bot to attempt to apply automodes.")
 void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 {
+    if (!plugin.automodeSettings.enabled) return;
     if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     if (event.sender.account.length)
@@ -558,6 +560,7 @@ void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
+    if (!plugin.automodeSettings.enabled) return;
     if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
     plugin.populateAutomodes();

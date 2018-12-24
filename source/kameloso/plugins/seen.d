@@ -905,6 +905,7 @@ version(Posix)
 debug
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
+    if (!plugin.seenSettings.enabled) return;
     if (header != "seen") return;
 
     import kameloso.string : strippedRight;

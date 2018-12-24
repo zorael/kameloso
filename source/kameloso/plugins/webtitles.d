@@ -696,9 +696,9 @@ void start(WebtitlesPlugin plugin)
 import kameloso.thread : Sendable;
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
 {
-    import kameloso.thread : BusMessage;
+    if (!plugin.webtitlesSettings.enabled) return;
 
-    //logger.log("Webtitles received bus message: ", header);
+    import kameloso.thread : BusMessage;
 
     if (header == "reddit title")
     {
