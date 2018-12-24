@@ -28,10 +28,15 @@ import std.concurrency;
 import std.stdio : File;
 
 
-// It makes sense to obey $TMPDIR and not hardcode /tmp, but it supposedly makes
-// the FIFO really difficult to access on OSX where it translates to some really
-// long path. OSX does support /tmp though. So shrug and version it.
-//version = UseTMPDIR;
+/+
+    For storage location of the FIFO it makes sense to default to /tmp;
+    Posix however defines a variable $TMPDIR, which should take precedence.
+    However, this supposedly makes the file really difficult to access on OSX
+    where it translates to some really long, programmatically generated path.
+    OSX naturally does support /tmp though. So shrug and version it to
+    default-ignore $TMPDIR on OSX but obey it on other platforms.
+ +/
+//version = OSXTMPDIR;
 
 
 // PipelineSettings
@@ -265,8 +270,6 @@ void onWelcome(PipelinePlugin plugin)
 {
     if (!plugin.pipelineSettings.enabled) return;
 
-    import std.format : format;
-
     with (plugin)
     {
         string logtint, warningtint;
@@ -283,14 +286,29 @@ void onWelcome(PipelinePlugin plugin)
         }
 
         // Save the filename *once* so it persists across nick changes.
+        // If !fifoInWorkingDir then in /tmp or $TMPDIR
+        fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
 
-        if (plugin.pipelineSettings.fifoInWorkingDir)
+        if (!pipelineSettings.fifoInWorkingDir)
         {
-            fifoFilename = state.client.nickname ~ "@" ~ state.client.server.address;
-        }
-        else
-        {
-            version(UseTMPDIR)
+            // See notes at the top of module.
+            version(OSX)
+            {
+                version(OSXTMPDIR)
+                {
+                    enum useTMPDIR = true;
+                }
+                else
+                {
+                    enum useTMPDIR = false;
+                }
+            }
+            else // Implicitly not Windows since Posix-only plugin
+            {
+                enum useTMPDIR = true;
+            }
+
+            static if (useTMPDIR)
             {
                 import std.process : environment;
                 immutable tempdir = environment.get("TMPDIR", "/tmp");
@@ -301,10 +319,10 @@ void onWelcome(PipelinePlugin plugin)
             }
 
             import std.path : buildNormalizedPath;
-
-            fifoFilename = buildNormalizedPath(tempdir,
-                state.client.nickname ~ "@" ~ state.client.server.address);
+            fifoFilename = buildNormalizedPath(tempdir, fifoFilename);
         }
+
+        import std.format : format;
 
         try
         {
