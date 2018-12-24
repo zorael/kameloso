@@ -508,6 +508,8 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
     if (!plugin.automodeSettings.enabled) return;
     if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
 
+    if (!event.sender.account.length) return;
+
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
     {
         (*channelApplications).remove(event.sender.account);
