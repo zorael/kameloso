@@ -8,6 +8,7 @@
 module kameloso.messaging;
 
 import kameloso.irc.defs;
+import kameloso.common : settings;
 import kameloso.plugins.common : IRCPluginState;
 import kameloso.string : beginsWithOneOf;
 
@@ -26,7 +27,6 @@ version(unittest)
  +  Sends a channel message.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -34,15 +34,16 @@ version(unittest)
  +          which to send messages to the server.
  +      channel = Channel in which to send the message.
  +      content = Message body content to send.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void chan(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string content)
+void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string content, bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.content = content;
 
@@ -74,7 +75,6 @@ unittest
  +  Sends a private query message to a user.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -82,15 +82,16 @@ unittest
  +          which to send messages to the server.
  +      nickname = Nickname of user to which to send the private message.
  +      content = Message body content to send.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void query(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string nickname, const string content)
+void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string nickname, const string content, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.QUERY;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.target.nickname = nickname;
     event.content = content;
 
@@ -126,7 +127,6 @@ unittest
  +  underlying same type; `PRIVMSG`.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -135,23 +135,24 @@ unittest
  +      channel = Channel in which to send the message, if applicable.
  +      nickname = Nickname of user to which to send the message, if applicable.
  +      content = Message body content to send.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void privmsg(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string nickname, const string content)
+void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string nickname, const string content, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     if (channel.length)
     {
-        return chan!quiet(state, channel, content);
+        return chan!priority(state, channel, content, quiet);
     }
     else if (nickname.length)
     {
-        return query!quiet(state, nickname, content);
+        return query!priority(state, nickname, content, quiet);
     }
     else
     {
-        assert(0, "Empty privmsg");
+        assert(0, "Tried to send empty privmsg with no channel nor target nickname");
     }
 }
 
@@ -192,7 +193,6 @@ unittest
  +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -201,15 +201,16 @@ unittest
  +      emoteTarget = Target of the emote, either a nickname to be sent as a
  +          private message, or a channel.
  +      content = Message body content to send.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void emote(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string emoteTarget, const string content)
+void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string emoteTarget, const string content, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.EMOTE;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = content;
 
     if (emoteTarget.beginsWithOneOf(state.client.server.chantypes))
@@ -264,7 +265,6 @@ unittest
  +  This includes modes that pertain to a user in the context of a channel, like bans.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -273,15 +273,16 @@ unittest
  +      channel = Channel to change the modes of.
  +      modes = Mode characters to apply to the channel.
  +      content = Target of mode change, if applicable.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void mode(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string modes, const string content = string.init)
+void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string modes, const string content = string.init, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.MODE;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.aux = modes;
     event.content = content;
@@ -315,7 +316,6 @@ unittest
  +  Sets the topic of a channel.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -323,15 +323,16 @@ unittest
  +          which to send messages to the server.
  +      channel = Channel whose topic to change.
  +      content = Topic body text.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void topic(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string content)
+void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string content, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.TOPIC;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.content = content;
 
@@ -363,7 +364,6 @@ unittest
  +  Invites a user to a channel.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -371,15 +371,16 @@ unittest
  +          which to send messages to the server.
  +      channel = Channel to which to invite the user.
  +      nickname = Nickname of user to invite.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void invite(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string nickname)
+void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string nickname, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.INVITE;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.target.nickname = nickname;
 
@@ -411,22 +412,22 @@ unittest
  +  Joins a channel.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      channel = Channel to join.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void join(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel)
+void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.JOIN;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
 
     state.mainThread.send(event);
@@ -456,7 +457,6 @@ unittest
  +  Kicks a user from a channel.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -465,15 +465,16 @@ unittest
  +      channel = Channel from which to kick the user.
  +      nickname = Nickname of user to kick.
  +      reason = Optionally the reason behind the kick.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void kick(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string nickname, const string reason = string.init)
+void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string nickname, const string reason = string.init, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.KICK;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.target.nickname = nickname;
     event.content = reason;
@@ -507,7 +508,6 @@ unittest
  +  Leaves a channel.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
@@ -515,15 +515,16 @@ unittest
  +          which to send messages to the server.
  +      channel = Channel to leave.
  +      reason = Optionally, reason behind leaving.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void part(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string channel, const string reason = string.init)
+void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string channel, const string reason = string.init, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.PART;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.channel = channel;
     event.content = reason;
 
@@ -555,16 +556,16 @@ unittest
  +  Disconnects from the server, optionally with a quit reason.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server. Default to `Yes.priority`, since we're quitting.
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      reason = Optionally, the reason for quitting.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void quit(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = Yes.priority)
-    (IRCPluginState state, const string reason = string.init)
+void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
+    const string reason = string.init, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -603,22 +604,22 @@ unittest
  +  This is used to send messages of types for which there exist no helper functions.
  +
  +  Params:
- +      quiet = Whether or not to echo what was sent to the local terminal.
  +      priority = Whether or not to send the message as a priority message,
  +          skipping messages in the threshold queue and immediately sending it
  +          to the server.
  +      state = Current plugin's `kameloso.plugins.common.IRCPluginState`, via
  +          which to send messages to the server.
  +      line = Raw IRC string to send to the server.
+ +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void raw(Flag!"quiet" quiet = No.quiet, Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string line)
+void raw(Flag!"priority" priority = No.priority)(IRCPluginState state,
+    const string line, const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
     IRCEvent event;
     event.type = IRCEvent.Type.UNSET;
-    static if (quiet) event.target.class_ = IRCUser.Class.special;
+    if (quiet) event.target.class_ = IRCUser.Class.special;
     event.content = line;
 
     state.mainThread.send(event);
