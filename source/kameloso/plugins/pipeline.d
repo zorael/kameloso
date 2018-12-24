@@ -50,7 +50,8 @@ struct PipelineSettings
 
     /++
      +  Whether or not to place the FIFO in the working directory. If false, it
-     +  will be saved in `/tmp`, or `$TMPDIR` if version `UseTMPDIR`.
+     +  will be saved in `/tmp` or wherever `$TMPDIR` points. If OSX, then there
+     +  only if version `OSXTMPDIR`.
      +/
     bool fifoInWorkingDir = false;
 }
