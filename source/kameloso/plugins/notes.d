@@ -45,6 +45,8 @@ struct NotesSettings
  +/
 @(Chainable)
 @(IRCEvent.Type.JOIN)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.EMOTE)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
