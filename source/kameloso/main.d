@@ -1382,15 +1382,17 @@ int main(string[] args)
     // handleGetopt re-inits later when we know the settings for monochrome
     initLogger(settings.monochrome, settings.brightTerminal);
 
+    // Set up signal handling so that we can gracefully catch Ctrl+C.
+    setupSignals();
+
     scope(failure)
     {
         import kameloso.terminal : TerminalToken;
+
         logger.error("We just crashed!", cast(char)TerminalToken.bell);
         *bot.abort = true;
         resetSignals();
     }
-
-    setupSignals();
 
     immutable actionAfterGetopt = bot.tryGetopt(args, customSettings);
 
