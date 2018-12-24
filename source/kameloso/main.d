@@ -1521,6 +1521,7 @@ int main(string[] args)
      +/
     bool firstConnect = true;
 
+    outerloop:
     do
     {
         // *bot.abort is guaranteed to be false here.
@@ -1542,7 +1543,7 @@ int main(string[] args)
 
             logger.log("Please wait a few seconds ...");
             interruptibleSleep(Timeout.retry.seconds, *bot.abort);
-            if (*bot.abort) break;
+            if (*bot.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
             bot.initPlugins(customSettings);
@@ -1558,12 +1559,12 @@ int main(string[] args)
         }
 
         // May as well check once here, in case something in initPlugins aborted or so.
-        if (*bot.abort) break;
+        if (*bot.abort) break outerloop;
 
         bot.conn.reset();
 
         immutable actionAfterResolve = tryResolve(bot);
-        if (*bot.abort) break;  // tryResolve interruptibleSleep can abort
+        if (*bot.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterResolve)
@@ -1588,13 +1589,15 @@ int main(string[] args)
         try
         {
             bot.initPluginResources();
+            if (*bot.abort) break outerloop;
         }
         catch (const IRCPluginInitialisationException e)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
                 logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
-            return 1;
+            //return 1;
+            break outerloop;
         }
         catch (const Exception e)
         {
@@ -1631,12 +1634,14 @@ int main(string[] args)
         try
         {
             bot.startPlugins();
+            if (*bot.abort) break outerloop;
         }
         catch (const IRCPluginInitialisationException e)
         {
             logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 logtint, e.msg, warningtint, e.file, e.line);
-            return 1;
+            //return 1;
+            break outerloop;
         }
 
         // Start the main loop
