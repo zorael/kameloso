@@ -5,7 +5,7 @@
  +
  +  It has a few commands:
  +
- +  `say`<br>
+ +  `say`|`echo`<br>
  +  `8ball`<br>
  +  `help`
  +
@@ -49,8 +49,10 @@ struct ChatbotSettings
 @(ChannelPolicy.home)
 @BotCommand("say")
 @BotCommand("säg")
+@BotCommand("echo")
 @BotCommand(NickPolicy.required, "say")
 @BotCommand(NickPolicy.required, "säg")
+@BotCommand(NickPolicy.required, "echo")
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
