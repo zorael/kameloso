@@ -1400,8 +1400,10 @@ int main(string[] args)
     final switch (actionAfterGetopt)
     {
     case continue_:
-    case retry:  // should never happen
         break;
+
+    case retry:  // should never happen
+        assert(0, "tryGetopt returned Next.retry");
 
     case returnSuccess:
         return 0;
