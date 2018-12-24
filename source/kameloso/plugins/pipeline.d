@@ -322,8 +322,6 @@ void onWelcome(PipelinePlugin plugin)
             fifoFilename = buildNormalizedPath(tempdir, fifoFilename);
         }
 
-        import std.format : format;
-
         try
         {
             createFIFO(fifoFilename);
@@ -337,13 +335,13 @@ void onWelcome(PipelinePlugin plugin)
         }
         catch (const FileExistsException e)
         {
-            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]"
-                .format(e.msg, logtint, e.filename, warningtint));
+            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
+                e.msg, logtint, e.filename, warningtint);
         }
         catch (const FileTypeMismatchException e)
         {
-            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]"
-                .format(e.msg, logtint, e.filename, warningtint));
+            logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
+                e.msg, logtint, e.filename, warningtint);
         }
 
         // Let other Exceptions pass
