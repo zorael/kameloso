@@ -1508,24 +1508,6 @@ int main(string[] args)
     // It will change later and knowing this is useful when authenticating
     bot.parser.client.origNickname = bot.parser.client.nickname;
 
-    scope(exit)
-    {
-        // Save if we're exiting and configuration says we should.
-        if (settings.saveOnExit)
-        {
-            bot.writeConfigurationFile(settings.configFile);
-        }
-
-        if (*bot.abort)
-        {
-            // Ctrl+C
-            logger.error("Aborting...");
-        }
-        else
-        {
-            logger.info("Exiting...");
-        }
-    }
 
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = bot.parser.client;
@@ -1670,7 +1652,24 @@ int main(string[] args)
         logger.logf("(Not reconnecting due to %sreconnectOnFailure%s not being enabled)", infotint, logtint);
     }
 
-    return *bot.abort ? 1 : 0;
+    // Save if we're exiting and configuration says we should.
+    if (settings.saveOnExit)
+    {
+        bot.writeConfigurationFile(settings.configFile);
+    }
+
+    if (*bot.abort)
+    {
+        // Ctrl+C
+        logger.error("Aborting...");
+        return 1;
+    }
+    else if (!silentExit)
+    {
+        logger.info("Exiting...");
+    }
+
+    return 0;
 }
 
 
