@@ -1523,10 +1523,15 @@ int main(string[] args)
      +/
     bool firstConnect = true;
 
+    /// Whether or not "Exiting..." should be printed at program exit.
+    bool silentExit;
+
     outerloop:
     do
     {
         // *bot.abort is guaranteed to be false here.
+
+        silentExit = true;
 
         if (!firstConnect)
         {
@@ -1653,6 +1658,9 @@ int main(string[] args)
             retval = 1;
             break outerloop;
         }
+
+        // Do verbose exits if mainLoop causes a return
+        silentExit = false;
 
         // Start the main loop
         next = bot.mainLoop();
