@@ -536,6 +536,20 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 }
 
 
+// onSelfPart
+/++
+ +  Removes all recorded mode applications for a channel when leaving it.
+ +/
+@(IRCEvent.Type.SELFPART)
+void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
+{
+    if (!plugin.automodeSettings.enabled) return;
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
+    plugin.appliedAutomodes.remove(event.channel);
+}
+
+
 // onEndOfMotd
 /++
  +  Populate automodes array after we have successfully logged onto the server.
