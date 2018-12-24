@@ -1508,6 +1508,8 @@ int main(string[] args)
     // It will change later and knowing this is useful when authenticating
     bot.parser.client.origNickname = bot.parser.client.nickname;
 
+    /// Return value so that the exit scopeguard knows what to return.
+    int retval;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = bot.parser.client;
@@ -1622,7 +1624,7 @@ int main(string[] args)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
                 logtint, e.file.baseName, warningtint, e.msg, TerminalToken.bell);
-            //return 1;
+            retval = 1;
             break outerloop;
         }
         catch (const Exception e)
@@ -1648,7 +1650,7 @@ int main(string[] args)
         {
             logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 logtint, e.msg, warningtint, e.file, e.line);
-            //return 1;
+            retval = 1;
             break outerloop;
         }
 
@@ -1682,7 +1684,7 @@ int main(string[] args)
         logger.info("Exiting...");
     }
 
-    return 0;
+    return retval;
 }
 
 
