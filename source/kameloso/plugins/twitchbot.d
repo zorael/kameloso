@@ -48,8 +48,6 @@ struct TwitchBotSettings
 @BotCommand(NickPolicy.direct, "uptime")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     if (plugin.broadcastStart > 0)
     {
         import core.time : msecs;
@@ -84,8 +82,6 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.ignore, "start")
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     import std.datetime.systime : Clock;
 
     plugin.broadcastStart = Clock.currTime.toUnixTime;
@@ -104,8 +100,6 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.ignore, "stop")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     plugin.broadcastStart = 0L;
     plugin.state.query(event.sender.nickname, "Broadcast set as ended.");
 }
@@ -124,8 +118,6 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     import kameloso.string : beginsWith, nom;
 
     if (!event.content.beginsWith(plugin.twitchBotSettings.onelinerPrefix)) return;
@@ -153,8 +145,6 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.direct, "startvote")
 void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     import kameloso.string : contains, nom;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
@@ -285,8 +275,6 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.direct, "oneliner")
 void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     import kameloso.string : contains, nom;
     import std.typecons : No, Yes;
 
@@ -314,8 +302,6 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     plugin.populateOneliners();
 }
 
@@ -348,7 +334,7 @@ void saveOneliners(const string[string] oneliners, const string filename)
  +/
 void teardown(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     saveOneliners(plugin.oneliners, plugin.onelinerFile);
 }
@@ -360,7 +346,7 @@ void teardown(TwitchBotPlugin plugin)
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
+    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
