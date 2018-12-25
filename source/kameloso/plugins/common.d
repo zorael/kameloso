@@ -1385,8 +1385,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Basic constructor for a plugin.
      +
-     +  It passes execution to the top-level `.initialise(IRCPlugin)` if it
-     +  exists.
+     +  It passes execution to the top-level `.initialise(IRCPlugin)` if it exists.
      +
      +  Params:
      +      state = The aggregate of all plugin state variables, making
@@ -1586,8 +1585,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 
     // printSettings
     /++
-     +  Prints the plugin's `Settings`-annotated structs, with a hardcoded width
-     +  to suit all the other plugins' settings member name lengths, to date.
+     +  Prints the plugin's `Settings`-annotated structs.
      +
      +  It both prints module-level structs as well as structs in the
      +  `kameloso.irc.defs.IRCPlugin` (subtype) itself.
@@ -1628,7 +1626,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Example:
      +  ---
      +  Appender!string sink;
-     +  sink.reserve(128);  // LDC fix
+     +  sink.reserve(128);
      +  serialiseConfigInto(sink);
      +  ---
      +
@@ -1713,7 +1711,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
      +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
      +/
-    string name() @property const
+    string name() @property const pure
     {
         enum ctName =
         {
