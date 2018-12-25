@@ -100,6 +100,8 @@ struct PrinterSettings
 @(ChannelPolicy.any)
 void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
+    if (!plugin.printerSettings.printToScreen) return;
+
     IRCEvent mutEvent = event; // need a mutable copy
 
     with (IRCEvent.Type)
