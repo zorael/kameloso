@@ -691,6 +691,12 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
             // msg-param-fun-string = FunStringTwo
             // [subgift] [#waifugate] AnAnonymousGifter (Asdf): "An anonymous user gifted a Tier 1 sub to Asdf!" (1000) {1}
             // Unsure.
+        case "message-id":
+            // message-id = 3
+            // WHISPER, rolling number enumerating messages
+        case "thread-id":
+            // thread-id = 22216721_404208264
+            // WHISPER, private message session?
 
 
             // Ignore these events.
