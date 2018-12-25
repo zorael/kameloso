@@ -437,7 +437,13 @@ final class TwitchBotPlugin : IRCPlugin
      +/
     void onEvent(const IRCEvent event)
     {
-        if (state.client.server.daemon != IRCServer.Daemon.twitch) return;
+        if ((state.client.server.daemon != IRCServer.Daemon.unset) &&
+            (state.client.server.daemon != IRCServer.Daemon.twitch))
+        {
+            // Daemon known and not Twitch
+            return;
+        }
+
         return onEventImpl(event);
     }
 }
