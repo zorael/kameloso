@@ -425,4 +425,21 @@ final class TwitchBotPlugin : IRCPlugin
     @Settings TwitchBotSettings twitchBotSettings;
 
     mixin IRCPluginImpl;
+
+    /++
+     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does nothing on non-Twitch servers. The function to call is
+     +  `IRCPluginImpl.onEventImpl`.
+     +
+     +  Non-onEvent functions will still need server checks.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +          after verifying we're on a Twitch server.
+     +/
+    void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon != IRCServer.Daemon.twitch) return;
+        return onEventImpl(event);
+    }
 }
