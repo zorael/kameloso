@@ -836,8 +836,6 @@ void periodically(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     plugin.updateAllUsers();
     plugin.seenUsers.saveSeen(plugin.seenFile);
 }
@@ -849,8 +847,6 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
 

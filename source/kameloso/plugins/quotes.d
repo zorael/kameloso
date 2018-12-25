@@ -408,8 +408,6 @@ void onEndOfMotd(QuotesPlugin plugin)
  +/
 void initResources(QuotesPlugin plugin)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
 

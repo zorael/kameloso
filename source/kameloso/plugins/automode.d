@@ -95,8 +95,6 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
-    if (!plugin.automodeSettings.enabled) return;
-
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
 

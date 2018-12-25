@@ -2125,8 +2125,6 @@ void initResources(PrinterPlugin plugin)
  +/
 void teardown(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.enabled) return;
-
     if (plugin.printerSettings.bufferedWrites)
     {
         // Commit all logs before exiting

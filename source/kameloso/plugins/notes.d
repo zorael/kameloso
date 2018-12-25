@@ -520,8 +520,6 @@ void onEndOfMotd(NotesPlugin plugin)
  +/
 void initResources(NotesPlugin plugin)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
 
