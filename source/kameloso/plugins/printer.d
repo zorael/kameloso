@@ -1586,10 +1586,6 @@ void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
             badgechar = '8';
             break;
 
-        case "bits-leader":
-            badgechar = 'L';
-            break;
-
         case "staff":
             badgechar = '*';
             break;
@@ -1599,9 +1595,17 @@ void abbreviateBadges(Sink)(auto ref Sink sink, const string badgestring)
             break;
 
         default:
+            import kameloso.string : beginsWith;
             import std.algorithm.searching : endsWith;
 
-            if (badge.endsWith("_1"))
+            if (badge.beginsWith("bits-"))
+            {
+                // bits-leader
+                // bits-charity
+                badgechar = badge[5];
+                break;
+            }
+            else if (badge.endsWith("_1"))
             {
                 minor.put(badge[0]);
                 continue;
