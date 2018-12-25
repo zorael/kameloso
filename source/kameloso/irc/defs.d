@@ -86,6 +86,7 @@ struct IRCEvent
         USERNOTICE, /// Twitch subscription or resubscription event.
         HOSTTARGET, /// Twitch channel hosting target.
         RECONNECT,  /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
+        WHISPER,          /// Twitch private query message.
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
         TWITCH_SUB,       /// Twitch subscription event, including resubs.
