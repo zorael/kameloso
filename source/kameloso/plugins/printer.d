@@ -1710,7 +1710,10 @@ void periodically(PrinterPlugin plugin)
 
     if (!plugin.printerSettings.enabled) return;
 
-    logger.info(datestamp);
+    if (plugin.printerSettings.printToScreen)
+    {
+        logger.info(datestamp);
+    }
 
     if (plugin.printerSettings.logs)
     {
