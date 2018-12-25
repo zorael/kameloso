@@ -78,7 +78,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
 
     plugin.broadcastStart = Clock.currTime.toUnixTime;
-    plugin.state.query(event.sender.nickname, "Broadcast start registered.");
+    plugin.state.chan(event.channel, "Broadcast start registered.");
 }
 
 
@@ -94,7 +94,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
     plugin.broadcastStart = 0L;
-    plugin.state.query(event.sender.nickname, "Broadcast set as ended.");
+    plugin.state.chan(event.channel, "Broadcast set as ended.");
 }
 
 
@@ -146,13 +146,13 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (plugin.voting)
     {
-        logger.warning("A vote is already in progress!");
+        plugin.state.chan(event.channel, "A vote is already in progress!");
         return;
     }
 
     if (event.content.count(' ') > 2)
     {
-        logger.warning("Need one duration and at least two options");
+        plugin.state.chan(event.channel, "Need one duration and at least two options.");
         return;
     }
 
@@ -165,7 +165,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     }
     catch (const ConvException e)
     {
-        logger.warning("Duration must be a number");
+        plugin.state.chan(event.channel, "Duration must be a number.");
         return;
     }
 
@@ -276,6 +276,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     {
         // Delete oneliner
         plugin.oneliners.remove(event.content);
+        plugin.state.chan(event.channel, "Oneliner " ~ event.content ~ " removed.");
         return;
     }
 
@@ -284,7 +285,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.oneliners[word] = slice;
     saveOneliners(plugin.oneliners, plugin.onelinerFile);
 
-    plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added");
+    plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added.");
 }
 
 
