@@ -1849,9 +1849,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
         return kameloso.messaging.privmsg!priority(privateState, channel, nickname, content, quiet);
     }
 
-    deprecated("All outgoing messages are now throttled. Use privmsg instead.")
-    alias throttleline = privmsg;
-
     // emote
     /++
      +  Sends an `ACTION` "emote" to the supplied target (nickname or channel).
