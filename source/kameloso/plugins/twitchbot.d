@@ -144,7 +144,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : count;
     import std.conv : ConvException, to;
 
-    if (plugin.voting)
+    if (plugin.votingUnderway)
     {
         plugin.state.chan(event.channel, "A vote is already in progress!");
         return;
@@ -170,14 +170,14 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     /// Available vote options and their vote counts.
-    uint[string] votes;
+    uint[string] voteChoices;
 
     /// Which users have already voted.
     bool[string] votedUsers;
 
-    foreach (immutable option; slice.splitter(" "))
+    foreach (immutable choice; slice.splitter(" "))
     {
-        votes[option] = 0;
+        voteChoices[choice] = 0;
     }
 
     import kameloso.thread : CarryingFiber;
@@ -198,8 +198,8 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
             plugin.state.chan(event.channel, "Voting complete, results:");
 
-            immutable total = cast(double)votes.byValue.sum;
-            auto sorted = votes.byKeyValue.array.sort!((a,b) => a.value < b.value);
+            immutable total = cast(double)voteChoices.byValue.sum;
+            auto sorted = voteChoices.byKeyValue.array.sort!((a,b) => a.value < b.value);
 
             foreach (const result; sorted)
             {
@@ -212,7 +212,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                     cast(double)(result.value/(result.value + total))));
             }
 
-            plugin.voting = false;
+            plugin.votingUnderway = false;
 
             // End Fiber
             return;
@@ -221,7 +221,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         // Triggered by an event
         immutable vote = thisFiber.payload.content;
 
-        if (!vote.length || (vote.count(" ") > 0))
+        if (!vote.length || (vote.contains(" ")))
         {
             // Not a vote; yield and await a new event
             Fiber.yield();
@@ -235,7 +235,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
             return dg();
         }
 
-        if (auto ballot = vote in votes)
+        if (auto ballot = vote in voteChoices)
         {
             // Valid entry, increment vote count
             ++(*ballot);
@@ -251,10 +251,10 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
     plugin.delayFiber(fiber, dur);
-    plugin.voting = true;
+    plugin.votingUnderway = true;
 
     plugin.state.chan(event.channel,
-        "Voting commenced! Please place your vote for one of: %(%s, %)".format(votes.keys));
+        "Voting commenced! Please place your vote for one of: %(%s, %)".format(voteChoices.keys));
 }
 
 
@@ -390,7 +390,7 @@ public:
 final class TwitchBotPlugin : IRCPlugin
 {
     /// Flag for when voting is underway.
-    bool voting;
+    bool votingUnderway;
 
     /// UNIX timestamp of when broadcasting started.
     long broadcastStart;
