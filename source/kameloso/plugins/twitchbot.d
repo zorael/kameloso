@@ -16,7 +16,7 @@ private:
 import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.messaging;
-import kameloso.common : logger;
+import kameloso.common : logger, settings;
 
 import std.typecons : Flag, No, Yes;
 
@@ -26,12 +26,6 @@ struct TwitchBotSettings
 {
     /// Whether or not this plugin should react to any events.
     bool enabled = false;
-
-    /// String name of the owner of the bot (channel broadcaster).
-    string owner = "The streamer";
-
-    /// Character(s) we should expect oneliners to be prefixed with.
-    string onelinerPrefix = "!";
 }
 
 
@@ -61,12 +55,11 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
 
         plugin.state.chan(event.channel, "%s has been streaming for %s."
-            .format(plugin.twitchBotSettings.owner, delta));
+            .format(event.channel, delta));
     }
     else
     {
-        plugin.state.chan(event.channel, plugin.twitchBotSettings.owner ~
-            " is currently not streaming.");
+        plugin.state.chan(event.channel, event.channel ~ " is currently not streaming.");
     }
 }
 
@@ -118,12 +111,13 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : beginsWith, nom;
+    import kameloso.string : beginsWith, contains, nom;
 
-    if (!event.content.beginsWith(plugin.twitchBotSettings.onelinerPrefix)) return;
+    if (!event.content.beginsWith(settings.prefix)) return;
 
     string slice = event.content;
-    immutable oneliner = slice.nom(plugin.twitchBotSettings.onelinerPrefix);
+    slice.nom(settings.prefix);
+    immutable oneliner = slice.contains(" ") ? slice.nom(" ") : slice;
 
     if (const response = oneliner in plugin.oneliners)
     {
