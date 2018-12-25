@@ -808,6 +808,32 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /// This plugin's `IRCPluginState` structure.
     IRCPluginState privateState;
 
+    /++
+     +  Returns false if a `Settings`-annotated struct member has a bool
+     +  `enabled` with a value of `false`.
+     +
+     +  Returns:
+     +      `true` if the plugin is deemed enabled (or cannot be disabled),
+     +      `false` if not.
+     +/
+    private bool pluginIsEnabled() const @property pure nothrow @nogc
+    {
+        import std.meta : Filter;
+        import std.traits : getSymbolsByUDA;
+
+        alias settingsSymbols = Filter!(hasEnabledBool, getSymbolsByUDA!(typeof(this), Settings));
+
+        static if (settingsSymbols.length)
+        {
+            return (settingsSymbols[0].enabled);
+        }
+        else
+        {
+            // If no way to disable it, consider it always enabled.
+            return true;
+        }
+    }
+
 
     // onEvent
     /++
