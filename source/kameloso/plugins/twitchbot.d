@@ -4,6 +4,8 @@
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, contains banned words, etc.
+ +
+ +  Also support for more than one home channel at a time.
  +/
 module kameloso.plugins.twitchbot;
 
@@ -33,13 +35,15 @@ struct TwitchBotSettings
 /++
  +  Reports how long the streamer has been streaming.
  +
- +  Technically, how much time has passed since `!start` was issued.
+ +  Technically, how much time has passed since `!start` was issued. The streamer's
+ +  name is assumed to be the same as the channel's.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.ignore)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "uptime")
+@Description("Reports how long the streamer has been streaming.")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
     if (plugin.broadcastStart > 0)
@@ -72,7 +76,8 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.ignore, "start")
+@BotCommand(NickPolicy.direct, "start")
+@Description("Marks the start of a broadcast.")
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.datetime.systime : Clock;
@@ -90,7 +95,8 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.ignore, "stop")
+@BotCommand(NickPolicy.direct, "stop")
+@Description("Marks the stop of a brodcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
     plugin.broadcastStart = 0L;
@@ -136,7 +142,9 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(NickPolicy.direct, "startvote")
+@BotCommand(NickPolicy.direct, "vote")
+@BotCommand(NickPolicy.direct, "poll")
+@Description("Starts a vote.", "$command [seconds] [choice1] [choice2] ...")
 void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
@@ -267,6 +275,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(NickPolicy.direct, "oneliner")
+@Description("Adds a oneliner command.", "$command [trigger] [text, if none then deletes the trigger]")
 void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
