@@ -346,8 +346,6 @@ void teardown(TwitchBotPlugin plugin)
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
 
