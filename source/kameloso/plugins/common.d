@@ -766,6 +766,12 @@ unittest
 }
 
 
+/++
+ +  Trait to single out symbols containing a bool "enabled".
+ +/
+enum hasEnabled(alias symbol) = __traits(hasMember, symbol, "enabled");
+
+
 // IRCPluginImpl
 /++
  +  Mixin that fully implements an `IRCPlugin`.
@@ -804,6 +810,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import kameloso.string : contains, nom;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
+
+        // Don't process event if a @Settings-annotated struct member has a false bool "enabled"
+        alias settingsSymbols = Filter!(hasEnabled, getSymbolsByUDA!(typeof(this), Settings));
+        static if (settingsSymbols.length) if (settingsSymbols[0].enabled == false) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
