@@ -327,19 +327,6 @@ void saveOneliners(const string[string] oneliners, const string filename)
 }
 
 
-// teardown
-/++
- +  When closing the program or when crashing with grace, saves the oneliners
- +  array to disk for later reloading.
- +/
-void teardown(TwitchBotPlugin plugin)
-{
-    if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
-    saveOneliners(plugin.oneliners, plugin.onelinerFile);
-}
-
-
 // initResources
 /++
  +  Reads and writes the file of oneliners to disk, ensuring that it's there.
