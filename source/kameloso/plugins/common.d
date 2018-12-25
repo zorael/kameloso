@@ -769,7 +769,28 @@ unittest
 /++
  +  Trait to single out symbols containing a bool "enabled".
  +/
-enum hasEnabled(alias symbol) = __traits(hasMember, symbol, "enabled");
+enum hasEnabledBool(alias symbol) = __traits(hasMember, symbol, "enabled") &&
+    is(typeof(__traits(getMember, symbol, "enabled")) == bool);
+
+///
+unittest
+{
+    struct EnabledBool
+    {
+        bool enabled;
+    }
+
+    struct EnabledString
+    {
+        string enabled;
+    }
+
+    struct NoEnabled {}
+
+    static assert(hasEnabledBool!EnabledBool);
+    static assert(!(hasEnabledBool!EnabledString));
+    static assert(!(hasEnabledBool!NoEnabled));
+}
 
 
 // IRCPluginImpl
@@ -812,8 +833,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
 
         // Don't process event if a @Settings-annotated struct member has a false bool "enabled"
-        alias settingsSymbols = Filter!(hasEnabled, getSymbolsByUDA!(typeof(this), Settings));
-        static if (settingsSymbols.length) if (settingsSymbols[0].enabled == false) return;
+        alias settingsSymbols = Filter!(hasEnabledBool, getSymbolsByUDA!(typeof(this), Settings));
+        static if (settingsSymbols.length) if (!settingsSymbols[0].enabled) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
