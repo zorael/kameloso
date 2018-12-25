@@ -808,7 +808,28 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /// This plugin's `IRCPluginState` structure.
     IRCPluginState privateState;
 
+
     // onEvent
+    /++
+     +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to `onEventImpl`.
+     +
+     +  This is made a separate function to allow plugins to override it and
+     +  insert their own code, while still leveraging `onEventImpl` for the
+     +  actual dirty work.
+     +
+     +  Params:
+     +      event = Parse `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`.
+     +
+     +  See_Also:
+     +      onEventImpl
+     +/
+    void onEvent(const IRCEvent event) @system
+    {
+        return onEventImpl(event);
+    }
+
+
+    // onEventImpl
     /++
      +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to functions annotated
      +  with the right `kameloso.irc.defs.IRCEvent.Type`s.
@@ -819,7 +840,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event handlers.
      +/
-    void onEvent(const IRCEvent event) @system
+    void onEventImpl(const IRCEvent event) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
