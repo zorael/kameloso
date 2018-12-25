@@ -1675,6 +1675,18 @@ unittest
         assert((sink.data == ":H"), sink.data);
         sink.clear();
     }
+    {
+        immutable badges = "bits-charity/1";
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "c"), sink.data);
+        sink.clear();
+    }
+    {
+        immutable badges = "bits-leader/1";
+        sink.abbreviateBadges(badges);
+        assert((sink.data == "l"), sink.data);
+        sink.clear();
+    }
 }
 
 
