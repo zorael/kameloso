@@ -297,8 +297,6 @@ struct SeenSettings
 @(ChannelPolicy.home)
 void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     /+
         Updates the user's timestamp to the current time.
 
@@ -328,8 +326,6 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.ignore)
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     /+
         There may not be an old one if the user was not indexed upon us joining
         the channel for some reason.
@@ -357,8 +353,6 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     // Update the user's entry
     import std.datetime.systime : Clock;
     plugin.updateUser(event.target.nickname, Clock.currTime.toUnixTime);
@@ -379,8 +373,6 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     import std.algorithm.iteration : splitter;
     import std.datetime.systime : Clock;
 
@@ -425,8 +417,6 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onEndOfList(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     plugin.seenUsers.rehash();
 }
 
@@ -487,8 +477,6 @@ void onEndOfList(SeenPlugin plugin)
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
 void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     import kameloso.common : timeSince;
     import kameloso.irc.common : isValidNickname;
     import kameloso.string : contains;
@@ -643,8 +631,6 @@ debug
 @Description("[debug] Prints all seen users (and timestamps) to the local terminal.")
 void onCommandPrintSeen(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     import std.json : JSONValue;
     import std.stdio : stdout, writeln;
 
@@ -812,8 +798,6 @@ void saveSeen(const long[string] seenUsers, const string filename)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(SeenPlugin plugin)
 {
-    if (!plugin.seenSettings.enabled) return;
-
     plugin.seenUsers = loadSeen(plugin.seenFile);
 }
 

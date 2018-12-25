@@ -179,8 +179,6 @@ unittest
 @(ChannelPolicy.home)
 void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
-    if (!plugin.sedReplaceSettings.enabled) return;
-
     import kameloso.string : beginsWith, stripped;
     import std.datetime.systime : Clock;
 

@@ -103,8 +103,6 @@ struct YouTubeVideoInfo
 @(ChannelPolicy.home)
 void onMessage(WebtitlesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.webtitlesSettings.enabled) return;
-
     import kameloso.common : logger, settings;
     import kameloso.string : beginsWith, contains;
     import std.typecons : No, Yes;
@@ -696,8 +694,6 @@ void start(WebtitlesPlugin plugin)
 import kameloso.thread : Sendable;
 void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
 {
-    if (!plugin.webtitlesSettings.enabled) return;
-
     import kameloso.thread : BusMessage;
 
     if (header == "reddit title")

@@ -48,7 +48,6 @@ struct TwitchBotSettings
 @BotCommand(NickPolicy.direct, "uptime")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     if (plugin.broadcastStart > 0)
@@ -85,7 +84,6 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.ignore, "start")
 void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import std.datetime.systime : Clock;
@@ -106,7 +104,6 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.ignore, "stop")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     plugin.broadcastStart = 0L;
@@ -127,7 +124,6 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : beginsWith, nom;
@@ -157,7 +153,6 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.direct, "startvote")
 void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
@@ -290,7 +285,6 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 @BotCommand(NickPolicy.direct, "oneliner")
 void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     import kameloso.string : contains, nom;
@@ -320,7 +314,6 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    if (!plugin.twitchBotSettings.enabled) return;
     if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
     plugin.populateOneliners();

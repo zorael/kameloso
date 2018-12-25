@@ -107,8 +107,6 @@ debug
 @(ChannelPolicy.any)
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import std.stdio : stdout, writefln, writeln;
 
     if (plugin.adminSettings.printRaw)
@@ -164,8 +162,6 @@ debug
     "to the local terminal.", "$command [nickname] [nickname] ...")
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
 
@@ -209,8 +205,6 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 @Description("Saves current configuration to disk.")
 void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.thread : ThreadMessage;
 
     plugin.state.privmsg(event.channel, event.sender.nickname, "Saving configuration to disk.");
@@ -232,8 +226,6 @@ debug
 @Description("[debug] Prints out the current users array to the local terminal.")
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.printing : printObject;
     import kameloso.objmanip : deepSizeof;
     import std.stdio : stdout, writefln, writeln;
@@ -268,8 +260,6 @@ debug
     "$command [raw string]")
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     plugin.state.raw(event.content);
 }
 
@@ -290,8 +280,6 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
     "$command [optional quit reason]")
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     if (event.content.length)
     {
         plugin.state.quit(event.content);
@@ -319,8 +307,6 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 @Description("Adds a channel to the list of homes.", "$command [channel]")
 void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.irc.common : isValidChannel;
     import kameloso.string : stripped;
     import std.algorithm.searching : canFind;
@@ -446,8 +432,6 @@ void onCommandAddHome(AdminPlugin plugin, const IRCEvent event)
 @Description("Removes a channel from the list of homes and leaves it.", "$command [channel]")
 void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.string : stripped;
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -499,8 +483,6 @@ void onCommandDelHome(AdminPlugin plugin, const IRCEvent event)
     "$command [account to whitelist]")
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "whitelist", event);
 }
@@ -807,8 +789,6 @@ void delist(AdminPlugin plugin, const string account, const string list,
     "$command [account to remove from whitelist]")
 void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.string : stripped;
     plugin.delist(event.content.stripped, "whitelist", event);
 }
@@ -830,8 +810,6 @@ void onCommandDewhitelist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to blacklist]")
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.string : stripped;
     plugin.lookupEnlist(event.content.stripped, "blacklist", event);
 }
@@ -852,8 +830,6 @@ void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
     "$command [account to remove from whitelist]")
 void onCommandDeblacklist(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.string : stripped;
     plugin.delist(event.content.stripped, "blacklist", event);
 }
@@ -979,8 +955,6 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
     "to recover from binary garbage mode")
 void onCommandResetTerminal(AdminPlugin plugin)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
 
@@ -1004,8 +978,6 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events raw.")
 void onCommandprintRaw(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import std.conv : text;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
@@ -1040,8 +1012,6 @@ debug
 @Description("[debug] Toggles a flag to print all incoming events as bytes.")
 void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import std.conv : text;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
@@ -1076,8 +1046,6 @@ debug
 @Description("[debug] Toggles a flag to generate assert statements for incoming events")
 void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import std.conv : text;
     import std.stdio : stdout;
 
@@ -1120,8 +1088,6 @@ void onCommandAsserts(AdminPlugin plugin, const IRCEvent event)
 @Description("Joins/parts a channel.", "$command [channel]")
 void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : joiner, splitter;
     import std.conv : to;
@@ -1160,8 +1126,6 @@ void onCommandJoinPart(AdminPlugin plugin, const IRCEvent event)
 @Description("Changes a plugin's settings", "$command [plugin.setting=value]")
 void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
@@ -1200,8 +1164,6 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 @Description("(Re-)authenticates with services. Useful if the server has forcefully logged us out.")
 void onCommandAuth(AdminPlugin plugin)
 {
-    if (!plugin.adminSettings.enabled) return;
-
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
 
@@ -1265,8 +1227,9 @@ import kameloso.thread : Sendable;
 version(Posix)  // No need to compile this in on pipeline-less builds
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
-    if (!plugin.adminSettings.enabled) return;
     if (header != "admin") return;
+
+    // Don't return if disabled, as it blocks us from reenabling with verb set
 
     import kameloso.printing : printObject;
     import kameloso.string : contains, nom, strippedRight;

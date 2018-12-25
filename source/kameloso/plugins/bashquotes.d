@@ -50,8 +50,6 @@ struct BashQuotesSettings
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
 void onMessage(BashQuotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.bashQuotesSettings.enabled) return;
-
     import std.concurrency : spawn;
 
     // Defer all work to the worker thread

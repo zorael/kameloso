@@ -51,8 +51,6 @@ struct NotesSettings
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import kameloso.common : timeSince;
     import std.datetime.systime : Clock;
     import std.format : format;
@@ -164,8 +162,6 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onNames(NotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import kameloso.irc.common : stripModesign;
     import std.algorithm.iteration : splitter;
 
@@ -204,8 +200,6 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import kameloso.string : contains, nom;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -255,8 +249,6 @@ debug
 @Description("[debug] Prints saved notes to the local terminal.")
 void onCommandPrintNotes(NotesPlugin plugin)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import std.stdio : stdout, writeln;
 
     writeln("Currently queued notes:");
@@ -279,8 +271,6 @@ void onCommandPrintNotes(NotesPlugin plugin)
 @Description("Reloads notes from disk.")
 void onCommandReloadNotes(NotesPlugin plugin)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     logger.log("Reloading notes.");
     plugin.notes.load(plugin.notesFile);
 }
@@ -301,8 +291,6 @@ debug
     "$command [nickname to fake a join for]")
 void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     import kameloso.string : contains, nom;
     import std.typecons : No, Yes;
 
@@ -522,8 +510,6 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(NotesPlugin plugin)
 {
-    if (!plugin.notesSettings.enabled) return;
-
     plugin.notes.load(plugin.notesFile);
 }
 

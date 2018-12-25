@@ -125,8 +125,6 @@ void addQuote(QuotesPlugin plugin, const string nickname, const string line)
     "$command [nickname]")
 void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     import kameloso.irc.common : isValidNickname, stripModesign;
     import kameloso.string : stripped;
     import std.format : format;
@@ -257,8 +255,6 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 @Description("Creates a new quote.", "$command [nickname] [quote text]")
 void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     import kameloso.irc.common : isValidNickname, stripModesign;
     import kameloso.string : nom;
     import std.json : JSONException;
@@ -366,8 +362,6 @@ debug
 @Description("[debug] Prints all quotes to the local terminal.")
 void onCommandPrintQuotes(QuotesPlugin plugin)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     import std.stdio : stdout, writeln;
 
     writeln("Currently stored quotes:");
@@ -391,8 +385,6 @@ void onCommandPrintQuotes(QuotesPlugin plugin)
 @Description("Reloads quotes from disk.")
 void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     plugin.state.privmsg(event.channel, event.sender.nickname, "Reloading quotes.");
     plugin.quotes.load(plugin.quotesFile);
 }
@@ -406,8 +398,6 @@ void onCommandReloadQuotes(QuotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(QuotesPlugin plugin)
 {
-    if (!plugin.quotesSettings.enabled) return;
-
     plugin.quotes.load(plugin.quotesFile);
 }
 

@@ -68,8 +68,6 @@ struct RedditLookup
     "$command [URL to look up]")
 void onMessage(RedditPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.redditSettings.enabled) return;
-
     import kameloso.common : logger;
     import kameloso.constants : Timeout;
     import kameloso.string : beginsWith, contains, stripped;

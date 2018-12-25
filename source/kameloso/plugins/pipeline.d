@@ -269,8 +269,6 @@ void createFIFO(const string filename)
 @(IRCEvent.Type.RPL_WELCOME)
 void onWelcome(PipelinePlugin plugin)
 {
-    if (!plugin.pipelineSettings.enabled) return;
-
     with (plugin)
     {
         string logtint, warningtint;

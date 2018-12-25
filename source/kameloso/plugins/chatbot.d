@@ -56,8 +56,6 @@ struct ChatbotSettings
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.chatbotSettings.enabled) return;
-
     import std.format : format;
 
     if (!event.content.length)
@@ -87,8 +85,6 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Implements 8ball. Randomises a vague yes/no response.")
 void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.chatbotSettings.enabled) return;
-
     import std.format : format;
     import std.random : uniform;
 
@@ -148,8 +144,6 @@ void onCommand8ball(ChatbotPlugin plugin, const IRCEvent event)
 @Description("Shows a list of all available commands.")
 void onCommandHelp(ChatbotPlugin plugin, const IRCEvent event)
 {
-    if (!plugin.chatbotSettings.enabled) return;
-
     import kameloso.thread : CarryingFiber, ThreadMessage;
     import std.concurrency : send;
 
