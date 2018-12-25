@@ -407,8 +407,7 @@ struct IRCPluginState
      +
      +  The main loop iterates this after processing all on-event functions so
      +  as to know what nicks the plugin wants a `WHOIS` for. After the `WHOIS`
-     +  response returns, the event bundled with the `WHOISRequest` will be
-     +  replayed.
+     +  response returns, the event bundled with the `WHOISRequest` will be replayed.
      +/
     WHOISRequest[][string] whoisQueue;
 
@@ -490,8 +489,7 @@ struct BotCommand
     string string_;
 
     /++
-     +  Create a new `BotCommand` with the passed `policy` and trigger
-     +  `string_`.
+     +  Create a new `BotCommand` with the passed `policy` and trigger `string_`.
      +/
     this(const NickPolicy policy, const string string_) pure
     {
@@ -541,8 +539,7 @@ struct BotRegex
     }
 
     /++
-     +  Creates a new `BotRegex` with the passed `policy` and regex `expression`
-     +  string.
+     +  Creates a new `BotRegex` with the passed `policy` and regex `expression` string.
      +/
     this(const NickPolicy policy, const string expression)
     {
@@ -797,8 +794,7 @@ unittest
 /++
  +  Mixin that fully implements an `IRCPlugin`.
  +
- +  Uses compile-time introspection to call top-level functions to extend
- +  behaviour;
+ +  Uses compile-time introspection to call top-level functions to extend behaviour;
  +/
 version(WithPlugins)
 mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
@@ -821,8 +817,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  `NickPolicy` where such is appropriate.
      +
      +  Params:
-     +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event
-     +          handlers.
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event handlers.
      +/
     void onEvent(const IRCEvent event) @system
     {
@@ -1860,9 +1855,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
      +
      +  This reflects how channel messages and private messages are both the
      +  underlying same type; `PRIVMSG`.
-     +
-     +  It sends it in a throttled fashion, usable for long output when the bot
-     +  may otherwise get kicked for spamming.
      +/
     void privmsg(Flag!"priority" priority = No.priority)(const string channel,
         const string nickname, const string content, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -1884,8 +1876,7 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Sets a channel mode.
      +
-     +  This includes modes that pertain to a user in the context of a channel,
-     +  like bans.
+     +  This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)(const string channel,
         const string modes, const string content = string.init,
@@ -1938,9 +1929,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     // part
     /++
      +  Leaves a channel.
-     +
-     +  Cannot seemingly be wrapped using `std.functional.partial` due to the
-     +  default `= string.init` parameter.
      +/
     void part(Flag!"priority" priority = No.priority)(const string channel,
         const string reason = string.init, const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -1951,9 +1939,6 @@ mixin template MessagingProxy(bool debug_ = false, string module_ = __MODULE__)
     // quit
     /++
      +  Disconnects from the server, optionally with a quit reason.
-     +
-     +  Cannot seemingly be wrapped using `std.functional.partial` due to the
-     +  default `= string.init` parameter.
      +/
     void quit(Flag!"priority" priority = No.priority)(const string reason = string.init,
         const bool quiet = kameloso.common.settings.hideOutgoing)
@@ -2489,8 +2474,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     // onChannelAwarenessSelfjoinMixin
     /++
      +  Create a new `kameloso.irc.defs.IRCChannel` in the the `IRCPlugin`'s
-     +  `IRCPluginState.channels` associative array when the bot joins a
-     +  channel.
+     +  `IRCPluginState.channels` associative array when the bot joins a channel.
      +/
     @(Awareness.setup)
     @(Chainable)
@@ -2684,8 +2668,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Sets a mode for a channel.
      +
      +  Most modes replace others of the same type, notable exceptions being
-     +  bans and mode exemptions. We let `kameloso.irc.common.setMode` take care of
-     +  that.
+     +  bans and mode exemptions. We let `kameloso.irc.common.setMode` take care of that.
      +/
     @(Awareness.early)
     @(Chainable)
@@ -2719,8 +2702,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         {
             // Register operators, half-ops, voiced etc
             // Can be more than one if multi-prefix capability is enabled
-            // Server-sent string, can assume ASCII (@,%,+...) and go char
-            // by char
+            // Server-sent string, can assume ASCII (@,%,+...) and go char by char
             foreach (immutable modesign; event.aux.representation)
             {
                 if (const modechar = modesign in plugin.state.client.server.prefixchars)
@@ -2799,8 +2781,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             // Register operators, half-ops, voiced etc
             // Can be more than one if multi-prefix capability is enabled
-            // Server-sent string, can assume ASCII (@,%,+...) and go char
-            // by char
+            // Server-sent string, can assume ASCII (@,%,+...) and go char by char
             import std.string : representation;
             foreach (immutable modesign; modesigns.representation)
             {
