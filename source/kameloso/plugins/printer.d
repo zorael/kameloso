@@ -36,6 +36,9 @@ struct PrinterSettings
     /// Toggles whether or not the plugin should react to events at all.
     bool enabled = true;
 
+    /// Toggles whether or not the plugin should print to screen (as opposed to just log).
+    bool printToScreen = true;
+
     /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
     bool truecolour = true;
 
