@@ -1862,6 +1862,28 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 }
 
+unittest
+{
+    IRCPluginState state;
+
+    struct TestSettings
+    {
+        bool enabled = false;
+    }
+
+    final class TestPlugin : IRCPlugin
+    {
+        @Settings TestSettings testSettings;
+
+        mixin IRCPluginImpl;
+    }
+
+    TestPlugin p = new TestPlugin(state);
+    assert(!p.pluginIsEnabled);
+
+    p.testSettings.enabled = true;
+    assert(p.pluginIsEnabled);
+}
 
 // MessagingProxy
 /++
