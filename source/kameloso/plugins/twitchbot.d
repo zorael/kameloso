@@ -372,6 +372,93 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandAddAdmin
+/++
+ +  Adds a nickname to be an administrator for the current channel (that this
+ +  message was sent in).
+ +
+ +  Only one nickname at a time. Only the current channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "addadmin")
+@Description("Adds a Twitch administrator to the current channel.")
+void onCommandAddAdmin(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : contains;
+
+    if (!event.content.length || event.content.contains(" "))
+    {
+        plugin.state.chan(event.channel, "You must specify one (1) nickname.");
+        return;
+    }
+
+    if (auto adminArray = event.channel in plugin.adminsByChannel)
+    {
+        import std.algorithm.searching : canFind;
+
+        if ((*adminArray).canFind(event.content))
+        {
+            plugin.state.chan(event.channel, event.content ~ " is already a bot administrator.");
+            return;
+        }
+        else
+        {
+            *adminArray ~= event.content;
+            // Drop down for report
+        }
+    }
+    else
+    {
+        plugin.adminsByChannel[event.channel] ~= event.content;
+        // Drop down for report
+    }
+
+    plugin.state.chan(event.channel, event.content ~ " is now an administrator.");
+}
+
+
+// onCommandDelAdmin
+/++
+ +  Removes a nickname from being an administrator for the current channel
+ +  (that this message was sent in).
+ +
+ +  Only one nickname at a time. Only the current channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "deladmin")
+@Description("Removes a Twitch administrator from the current channel.")
+void onCommandDelAdmin(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : contains;
+
+    if (!event.content.length || event.content.contains(" "))
+    {
+        plugin.state.chan(event.channel, "You must specify one (1) nickname.");
+        return;
+    }
+
+    if (auto adminArray = event.channel in plugin.adminsByChannel)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import std.algorithm.searching : countUntil;
+
+        immutable index = (*adminArray).countUntil(event.content);
+
+        if (index != -1)
+        {
+            *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
+            plugin.state.chan(event.channel, "Administrator removed.");
+        }
+    }
+}
+
+
 // onEndOfMotd
 /++
  +  Populate the oneliners array after we have successfully logged onto the server.
