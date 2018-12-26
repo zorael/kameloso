@@ -131,8 +131,17 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the stop of a brodcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    plugin.activeChannels[event.channel].broadcastStart = 0L;
-    plugin.state.chan(event.channel, "Broadcast set as ended.");
+    import core.time : msecs;
+    import std.datetime.systime : Clock, SysTime;
+    import std.format : format;
+
+    auto channel = event.channel in plugin.activeChannels;
+    auto now = Clock.currTime;
+    now.fracSecs = 0.msecs;
+    auto delta = now - SysTime.fromUnixTime(channel.broadcastStart);
+    channel.broadcastStart = 0L;
+
+    plugin.state.chan(event.channel, "Broadcast ended. You streamed for %s.".format(delta));
 }
 
 
