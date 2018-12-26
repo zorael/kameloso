@@ -463,13 +463,14 @@ void initResources(TwitchBotPlugin plugin)
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
+ +      filename = Filename of the file to read from.
  +/
-void populateOneliners(TwitchBotPlugin plugin)
+void populateOneliners(TwitchBotPlugin plugin, const string filename)
 {
     import kameloso.json : JSONStorage;
 
     JSONStorage channelOnelinerJSON;
-    channelOnelinerJSON.load(plugin.onelinerFile);
+    channelOnelinerJSON.load(filename);
     plugin.onelinersByChannel = typeof(plugin.onelinersByChannel).init;
 
     foreach (immutable channelName, const onelinersJSON; channelOnelinerJSON.object)
