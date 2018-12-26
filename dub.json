@@ -42,6 +42,12 @@
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
+            "name": "polyglot",
+            "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web",
+                "TwitchBot", "TwitchWarnings", "OmniscientAdmin" ],
+            "dependencies": { "requests": "~>1.0.0" }
+        },
+        {
             "name": "vanilla",
             "versions": [ "WithPlugins" ]
         },
@@ -70,7 +76,8 @@
         {
             "name": "unittest",
             "buildType": "unittest",
-            "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours", "TwitchWarnings", "TwitchBot" ],
+            "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours",
+                "TwitchWarnings", "TwitchBot", "OmniscientAdmin" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dependencies": { "requests": "~>1.0.0" }
