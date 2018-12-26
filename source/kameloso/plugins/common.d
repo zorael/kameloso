@@ -917,7 +917,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Params:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event handlers.
      +/
-    void onEventImpl(const IRCEvent event) @system
+    private void onEventImpl(const IRCEvent event) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
