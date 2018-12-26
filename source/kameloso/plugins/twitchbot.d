@@ -262,7 +262,8 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.votingUnderway = true;
 
     plugin.state.chan(event.channel,
-        "Voting commenced! Please place your vote for one of: %(%s, %)".format(voteChoices.keys));
+        "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
+        .format(voteChoices.keys, dur));
 }
 
 
@@ -311,7 +312,8 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
-    plugin.state.chan("Available commands: %(%s, %)".format(plugin.oneliners.keys));
+    plugin.state.chan(event.channel, "Available commands: %-(%s, %)"
+        .format(plugin.oneliners.keys));
 }
 
 
