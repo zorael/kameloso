@@ -405,6 +405,27 @@ void saveOneliners(const string[string][string] onelinersByChannel, const string
 }
 
 
+// saveAdmins
+/++
+ +  Saves the passed admins associative array to disk, but in `JSON` format.
+ +
+ +  This is a convenient way to serialise the array.
+ +
+ +  Params:
+ +      adminsByChannel = The associative array of admins to save.
+ +      filename = Filename of the file to write to.
+ +/
+void saveAdmins(const string[][string] adminsByChannel, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    auto file = File(filename, "w");
+
+    file.writeln(JSONValue(adminsByChannel).toPrettyString);
+}
+
+
 // initResources
 /++
  +  Reads and writes the file of oneliners to disk, ensuring that it's there.
@@ -457,6 +478,38 @@ void populateOneliners(TwitchBotPlugin plugin)
         {
             plugin.onelinersByChannel[channelName][trigger] = stringJSON.str;
         }
+    }
+}
+
+
+// populateAdmins
+/++
+ +  Reads admins from disk, populating a `string[][string]` associative array;
+ +  `nickname[][channel]`.
+ +
+ +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
+ +  it to populate a normal associative array for faster lookups.
+ +
+ +  Params:
+ +      plugin = The current `TwitchBotPlugin`.
+ +      filename = Filename of the file to read from.
+ +/
+void populateAdmins(TwitchBotPlugin plugin, const string filename)
+{
+    import kameloso.json : JSONStorage;
+
+    JSONStorage channelAdminsJSON;
+    channelAdminsJSON.load(filename);
+
+    foreach (immutable channelName, const adminsJSON; channelAdminsJSON.object)
+    {
+        plugin.adminsByChannel.clear();
+
+        foreach (const nickname; adminsJSON.array)
+        {
+            plugin.adminsByChannel[channelName] ~= nickname.str;
+        }
+        //plugin.adminsByChannel[channelName] = adminsJSON.array;
     }
 }
 
