@@ -327,7 +327,12 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.typecons : No, Yes;
 
-    if (!event.content.contains!(Yes.decode)(" "))
+    if (!event.content.length)
+    {
+        plugin.state.chan(event.channel, "You must specify a trigger.");
+        return;
+    }
+    else if (!event.content.contains!(Yes.decode)(" "))
     {
         // Delete oneliner
         plugin.onelinersByChannel[event.channel].remove(event.content);
