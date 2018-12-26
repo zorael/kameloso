@@ -157,9 +157,12 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     slice.nom(settings.prefix);
     immutable oneliner = slice.contains(" ") ? slice.nom(" ") : slice;
 
-    if (const response = oneliner in plugin.onelinersByChannel[event.channel])
+    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
-        plugin.state.chan(event.channel, *response);
+        if (const response = oneliner in *channelOneliners)
+        {
+            plugin.state.chan(event.channel, *response);
+        }
     }
 }
 
@@ -348,8 +351,16 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
-    plugin.state.chan(event.channel, "Available commands: %-(%s, %)"
-        .format(plugin.onelinersByChannel[event.channel].keys));
+
+    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
+    {
+        plugin.state.chan(event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
+            .format(channelOneliners.keys));
+    }
+    else
+    {
+        plugin.state.chan(event.channel, "There are no commands available right now.");
+    }
 }
 
 
