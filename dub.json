@@ -37,6 +37,11 @@
             "dependencies-windows": { "requests": "~>1.0.0" }
         },
         {
+            "name": "twitch",
+            "versions": [ "WithPlugins", "Colours", "Web", "TwitchBot" ],
+            "dependencies-windows": { "requests": "~>1.0.0" }
+        },
+        {
             "name": "vanilla",
             "versions": [ "WithPlugins" ]
         },
