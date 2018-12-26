@@ -392,7 +392,7 @@ void onEndOfMotd(TwitchBotPlugin plugin)
  +  This is a convenient way to serialise the array.
  +
  +  Params:
- +      oneliners = The associative array of oneliners to save.
+ +      onelinersByChannel = The associative array of oneliners to save.
  +      filename = Filename of the file to write to.
  +/
 void saveOneliners(const string[string][string] onelinersByChannel, const string filename)
@@ -521,7 +521,6 @@ void populateAdmins(TwitchBotPlugin plugin, const string filename)
         {
             plugin.adminsByChannel[channelName] ~= nickname.str;
         }
-        //plugin.adminsByChannel[channelName] = adminsJSON.array;
     }
 }
 
@@ -559,6 +558,7 @@ final class TwitchBotPlugin : IRCPlugin
     /// Filename of file with oneliners.
     @Resource string onelinerFile = "twitchliners.json";
 
+    /// Associative array of admins, nickname array keyed by channel.
     string[][string] adminsByChannel;
 
     /// Filename of file with oneliners.
