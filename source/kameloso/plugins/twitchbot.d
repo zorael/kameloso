@@ -59,11 +59,11 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
 
         plugin.state.chan(event.channel, "%s has been streaming for %s."
-            .format(event.channel, delta));
+            .format(event.channel[1..$], delta));
     }
     else
     {
-        plugin.state.chan(event.channel, event.channel ~ " is currently not streaming.");
+        plugin.state.chan(event.channel, event.channel[1..$] ~ " is currently not streaming.");
     }
 }
 
@@ -295,6 +295,23 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     saveOneliners(plugin.oneliners, plugin.onelinerFile);
 
     plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added.");
+}
+
+
+// onCommandCommands
+/++
+ +  Sends a list of the current oneliners to the channel.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "commands")
+@Description("Lists all available oneliners.")
+void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import std.format : format;
+    plugin.state.chan("Available commands: %(%s, %)".format(plugin.oneliners.keys));
 }
 
 
