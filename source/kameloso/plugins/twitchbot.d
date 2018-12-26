@@ -31,6 +31,36 @@ struct TwitchBotSettings
 }
 
 
+// onSelfjoin
+/++
+ +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
+ +  always a state struct available.
+ +/
+@(IRCEvent.Type.SELFJOIN)
+@(ChannelPolicy.home)
+void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    if (event.channel !in plugin.activeChannels)
+    {
+        plugin.activeChannels[event.channel] = TwitchBotPlugin.Channel.init;
+    }
+}
+
+
+// onSelfpart
+/++
+ +  Removes a channel's corresponding `TwitchBotPlugin.Channel` when we leave it.
+ +
+ +  This resets all that channel's state, except for oneliners.
+ +/
+@(IRCEvent.Type.SELFPART)
+@(ChannelPolicy.home)
+void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    plugin.activeChannels.remove(event.channel);
+}
+
+
 // onCommandUptime
 /++
  +  Reports how long the streamer has been streaming.
