@@ -505,6 +505,43 @@ final class TwitchBotPlugin : IRCPlugin
     mixin IRCPluginImpl;
 
     /++
+     +  Override `IRCPluginImpl.allow` and inject a user check, so we can support
+     +  channel-specific admins.
+     +
+     +  Params:
+     +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
+     +      privilegeLevel = `PrivilegeLevel` of the handler in question.
+     +
+     +  Returns:
+     +      `true` if the event should be allowed to trigger, `false` if not.
+     +/
+    import kameloso.plugins.common : FilterResult, PrivilegeLevel;
+    FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
+    {
+        with (PrivilegeLevel)
+        final switch (privilegeLevel)
+        {
+        case ignore:
+        case anyone:
+        case whitelist:
+            return allowImpl(event, privilegeLevel);
+
+        case admin:
+            if (const channelAdmins = event.channel in adminsByChannel)
+            {
+                import std.algorithm.searching : canFind;
+
+                return ((*channelAdmins).canFind(event.sender.nickname)) ?
+                    FilterResult.pass : allowImpl(event, privilegeLevel);
+            }
+            else
+            {
+                return allowImpl(event, privilegeLevel);
+            }
+        }
+    }
+
+    /++
      +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
      +  plugin does nothing on non-Twitch servers. The function to call is
      +  `IRCPluginImpl.onEventImpl`.
