@@ -380,7 +380,8 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(TwitchBotPlugin plugin)
 {
-    plugin.populateOneliners();
+    plugin.populateOneliners(plugin.onelinerFile);
+    plugin.populateAdmins(plugin.adminsFile);
 }
 
 
@@ -434,6 +435,7 @@ void initResources(TwitchBotPlugin plugin)
 {
     import kameloso.json : JSONStorage;
     import std.json : JSONException;
+    import std.path : baseName;
 
     JSONStorage json;
 
@@ -443,13 +445,22 @@ void initResources(TwitchBotPlugin plugin)
     }
     catch (const JSONException e)
     {
-        import std.path : baseName;
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
+    }
+
+    try
+    {
+        json.load(plugin.adminsFile);
+    }
+    catch (const JSONException e)
+    {
+        throw new IRCPluginInitialisationException(plugin.adminsFile.baseName ~ " may be malformed.");
     }
 
     // Let other Exceptions pass.
 
     json.save(plugin.onelinerFile);
+    json.save(plugin.adminsFile);
 }
 
 
