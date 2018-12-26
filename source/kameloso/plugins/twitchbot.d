@@ -327,6 +327,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
+    import std.format : format;
     import std.typecons : No, Yes;
 
     if (!event.content.contains!(Yes.decode)(" "))
@@ -334,7 +335,8 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
         // Delete oneliner
         plugin.onelinersByChannel[event.channel].remove(event.content);
         saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
-        plugin.state.chan(event.channel, "Oneliner " ~ event.content ~ " removed.");
+        plugin.state.chan(event.channel, "Oneliner %s%s removed."
+            .format(settings.prefix, event.content));
         return;
     }
 
@@ -343,7 +345,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.onelinersByChannel[event.channel][word] = slice;
     saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
 
-    plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added.");
+    plugin.state.chan(event.channel, "Oneliner %s%s added.".format(settings.prefix, word));
 }
 
 
