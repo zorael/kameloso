@@ -472,14 +472,14 @@ enum PrivilegeLevel
 /++
  +  Defines an IRC bot command, for people to trigger with messages.
  +
- +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
+ +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
  +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
  +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
  +/
 struct BotCommand
 {
     /// The policy to which extent the command needs the bot's nickname.
-    NickPolicy policy;
+    PrefixPolicy policy;
 
     /// The prefix string, one word with no spaces.
     string string_;
@@ -487,7 +487,7 @@ struct BotCommand
     /++
      +  Create a new `BotCommand` with the passed `policy` and trigger `string_`.
      +/
-    this(const NickPolicy policy, const string string_) pure
+    this(const PrefixPolicy policy, const string string_) pure
     {
         this.policy = policy;
         this.string_ = string_;
@@ -499,7 +499,7 @@ struct BotCommand
      +/
     this(const string string_) pure
     {
-        this.policy = NickPolicy.direct;
+        this.policy = PrefixPolicy.prefixed;
         this.string_ = string_;
     }
 }
@@ -509,7 +509,7 @@ struct BotCommand
 /++
  +  Defines an IRC bot regular expression, for people to trigger with messages.
  +
- +  If no `NickPolicy` is specified then it will default to `NickPolicy.direct`
+ +  If no `PrefixPolicy` is specified then it will default to `PrefixPolicy.prefixed`
  +  and look for `kameloso.common.CoreSettings.prefix` at the beginning of
  +  messages, to prefix the `string_`. (Usually "`!`", making it "`!command`".)
  +/
@@ -518,7 +518,7 @@ struct BotRegex
     import std.regex : Regex, regex;
 
     /// The policy to which extent the command needs the bot's nickname.
-    NickPolicy policy;
+    PrefixPolicy policy;
 
     /++
      +  Regex engine to match incoming messages with.
@@ -528,7 +528,7 @@ struct BotRegex
     Regex!char engine;
 
     /// Creates a new `BotRegex` with the passed `policy` and regex `engine`.
-    this(const NickPolicy policy, Regex!char engine) pure
+    this(const PrefixPolicy policy, Regex!char engine) pure
     {
         this.policy = policy;
         this.engine = engine;
@@ -537,7 +537,7 @@ struct BotRegex
     /++
      +  Creates a new `BotRegex` with the passed `policy` and regex `expression` string.
      +/
-    this(const NickPolicy policy, const string expression)
+    this(const PrefixPolicy policy, const string expression)
     {
         this.policy = policy;
         this.engine = expression.regex;
@@ -546,14 +546,14 @@ struct BotRegex
     /// Creates a new `BotRegex` with the passed regex `engine`.
     this(Regex!char engine) pure
     {
-        this.policy = NickPolicy.direct;
+        this.policy = PrefixPolicy.prefixed;
         this.engine = engine;
     }
 
     /// Creates a new `BotRegex` with the passed regex `expression` string.
     this(const string expression)
     {
-        this.policy = NickPolicy.direct;
+        this.policy = PrefixPolicy.prefixed;
         this.engine = expression.regex;
     }
 }
