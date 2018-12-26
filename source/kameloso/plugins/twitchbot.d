@@ -46,7 +46,9 @@ struct TwitchBotSettings
 @Description("Reports how long the streamer has been streaming.")
 void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    if (plugin.broadcastStart > 0)
+    immutable broadcastStart = plugin.activeChannels[event.channel].broadcastStart;
+
+    if (broadcastStart > 0)
     {
         import core.time : msecs;
         import std.datetime.systime : Clock, SysTime;
@@ -56,7 +58,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
 
-        immutable delta = now - SysTime.fromUnixTime(plugin.broadcastStart);
+        immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
         plugin.state.chan(event.channel, "%s has been streaming for %s."
             .format(event.channel[1..$], delta));
@@ -82,7 +84,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.datetime.systime : Clock;
 
-    plugin.broadcastStart = Clock.currTime.toUnixTime;
+    plugin.activeChannels[event.channel].broadcastStart = Clock.currTime.toUnixTime;
     plugin.state.chan(event.channel, "Broadcast start registered.");
 }
 
@@ -99,7 +101,7 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Marks the stop of a brodcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    plugin.broadcastStart = 0L;
+    plugin.activeChannels[event.channel].broadcastStart = 0L;
     plugin.state.chan(event.channel, "Broadcast set as ended.");
 }
 
@@ -125,7 +127,7 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     slice.nom(settings.prefix);
     immutable oneliner = slice.contains(" ") ? slice.nom(" ") : slice;
 
-    if (const response = oneliner in plugin.oneliners)
+    if (const response = oneliner in plugin.onelinersByChannel[event.channel])
     {
         plugin.state.chan(event.channel, *response);
     }
@@ -152,7 +154,9 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : count;
     import std.conv : ConvException, to;
 
-    if (plugin.votingUnderway)
+    auto channel = event.channel in plugin.activeChannels;
+
+    if (channel.votingUnderway)
     {
         plugin.state.chan(event.channel, "A vote is already in progress!");
         return;
@@ -221,7 +225,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                     .format(result.key, result.value, noun, votePercentage));
             }
 
-            plugin.votingUnderway = false;
+            channel.votingUnderway = false;
 
             // End Fiber
             return;
@@ -260,7 +264,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
     plugin.delayFiber(fiber, dur);
-    plugin.votingUnderway = true;
+    channel.votingUnderway = true;
 
     plugin.state.chan(event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
@@ -286,16 +290,16 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     if (!event.content.contains!(Yes.decode)(" "))
     {
         // Delete oneliner
-        plugin.oneliners.remove(event.content);
-        saveOneliners(plugin.oneliners, plugin.onelinerFile);
+        plugin.onelinersByChannel[event.channel].remove(event.content);
+        saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
         plugin.state.chan(event.channel, "Oneliner " ~ event.content ~ " removed.");
         return;
     }
 
     string slice = event.content;
     immutable word = slice.nom!(Yes.decode)(" ");
-    plugin.oneliners[word] = slice;
-    saveOneliners(plugin.oneliners, plugin.onelinerFile);
+    plugin.onelinersByChannel[event.channel][word] = slice;
+    saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
 
     plugin.state.chan(event.channel, "Oneliner " ~ word ~ " added.");
 }
@@ -315,7 +319,7 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
     plugin.state.chan(event.channel, "Available commands: %-(%s, %)"
-        .format(plugin.oneliners.keys));
+        .format(plugin.onelinersByChannel[event.channel].keys));
 }
 
 
@@ -341,14 +345,14 @@ void onEndOfMotd(TwitchBotPlugin plugin)
  +      oneliners = The associative array of oneliners to save.
  +      filename = Filename of the file to write to.
  +/
-void saveOneliners(const string[string] oneliners, const string filename)
+void saveOneliners(const string[string][string] onelinersByChannel, const string filename)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     auto file = File(filename, "w");
 
-    file.writeln(JSONValue(oneliners).toPrettyString);
+    file.writeln(JSONValue(onelinersByChannel).toPrettyString);
 }
 
 
@@ -394,13 +398,16 @@ void populateOneliners(TwitchBotPlugin plugin)
 {
     import kameloso.json : JSONStorage;
 
-    JSONStorage onelinersJSON;
-    onelinersJSON.load(plugin.onelinerFile);
-    plugin.oneliners = typeof(plugin.oneliners).init;
+    JSONStorage channelOnelinerJSON;
+    channelOnelinerJSON.load(plugin.onelinerFile);
+    plugin.onelinersByChannel = typeof(plugin.onelinersByChannel).init;
 
-    foreach (immutable trigger, const stringJSON; onelinersJSON.object)
+    foreach (immutable channelName, const onelinersJSON; channelOnelinerJSON.object)
     {
-        plugin.oneliners[trigger] = stringJSON.str;
+        foreach (immutable trigger, const stringJSON; onelinersJSON.object)
+        {
+            plugin.onelinersByChannel[channelName][trigger] = stringJSON.str;
+        }
     }
 }
 
