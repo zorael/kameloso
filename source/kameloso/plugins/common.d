@@ -857,7 +857,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  with the right `kameloso.irc.defs.IRCEvent.Type`s.
      +
      +  It also does checks for `ChannelPolicy`, `PrivilegeLevel` and
-     +  `NickPolicy` where such is appropriate.
+     +  `PrefixPolicy` where such is appropriate.
      +
      +  Params:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to dispatch to event handlers.
@@ -3020,7 +3020,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
 // nickPolicyMatches
 /++
- +  Evaluates whether or not the message in an event satisfies the `NickPolicy`
+ +  Evaluates whether or not the message in an event satisfies the `PrefixPolicy`
  +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
  +
  +  If it doesn't match, the `onEvent` routine shall consider the UDA as not

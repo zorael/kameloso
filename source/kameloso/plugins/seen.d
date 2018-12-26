@@ -428,18 +428,17 @@ void onEndOfList(SeenPlugin plugin)
  +
  +  The `kameloso.plugins.common.BotCommand` annotation defines a piece of text
  +  that the incoming message must start with for this function to be called.
- +  `kameloso.plugins.common.NickPolicy` deals with whether the message has to
+ +  `kameloso.plugins.common.PrefixPolicy` deals with whether the message has to
  +  start with the name of the *bot* or not, and to what extent.
  +
- +  Nickname policies can be one of:
- +  * `optional`, where the bot's nickname will be allowed and stripped away,
+ +  Prefix policies can be one of:
+ +  * `direct`, where the raw command is expected without any bot prefix at all.
+ +  * `prefixed`, where the message has to start with the command prefix (usually `!`)
+ +  * `optionalNickname`, where the bot's nickname will be allowed and stripped away,
  +     but the function will still be invoked given the right command string.
  +     <br>
- +  * `required`, where the message has to start with the name of the bot if in
- +     a `CHAN` message, but it needn't be there in a `QUERY`.<br>
- +  * `hardRequired`, where the message *has* to start with the bot's nickname
- +     at all times, or this function will not be called.<br>
- +  * `direct`, where the raw command is expected without any bot prefix at all.
+ +  * `requiredNickname`, where the message has to start with the name of the bot
+ +     if in a `CHAN` message, but it needn't be there in a `QUERY`.<br>
  +
  +  The plugin system will have made certain we only get messages starting with
  +  "`seen`", since we annotated this function with such a
