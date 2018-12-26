@@ -287,6 +287,7 @@ void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     {
         // Delete oneliner
         plugin.oneliners.remove(event.content);
+        saveOneliners(plugin.oneliners, plugin.onelinerFile);
         plugin.state.chan(event.channel, "Oneliner " ~ event.content ~ " removed.");
         return;
     }
