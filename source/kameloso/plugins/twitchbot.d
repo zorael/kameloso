@@ -494,6 +494,11 @@ final class TwitchBotPlugin : IRCPlugin
     /// Filename of file with oneliners.
     @Resource string onelinerFile = "twitchliners.json";
 
+    string[][string] adminsByChannel;
+
+    /// Filename of file with oneliners.
+    @Resource string adminsFile = "twitchadmins.json";
+
     /// All Twitch plugin settings.
     @Settings TwitchBotSettings twitchBotSettings;
 
