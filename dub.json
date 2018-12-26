@@ -22,24 +22,24 @@
             "name": "posix",
             "platforms": [ "posix" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies-posix": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
             "versions": [ "WithPlugins", "Colours", "Web" ],
-            "dependencies-windows": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
             "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web" ],
-            "dependencies-windows": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "twitch",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchBot" ],
-            "dependencies-windows": { "requests": "~>1.0.0" }
+            "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "vanilla",
