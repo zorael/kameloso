@@ -814,18 +814,30 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     private bool pluginIsEnabled() const @property pure nothrow @nogc
     {
-        import std.meta : Filter;
-        import std.traits : getSymbolsByUDA;
+        import std.traits : hasUDA;
 
-        alias settingsSymbols = Filter!(hasEnabledBool, getSymbolsByUDA!(typeof(this), Settings));
+        bool retval = true;
 
-        static if (settingsSymbols.length)
+        static if (this.tupleof.length)
         {
-            return (settingsSymbols[0].enabled);
+            foreach (immutable i, immutable member; this.tupleof)
+            {
+                static if (hasUDA!(this.tupleof[i], Settings))
+                {
+                    static if (__traits(hasMember, member, "enabled"))
+                    {
+                        static if (is(typeof(__traits(getMember, member, "enabled")) : bool))
+                        {
+                            retval = __traits(getMember, member, "enabled");
+                            break;
+                        }
+                    }
+                }
+            }
+            return retval;
         }
         else
         {
-            // If no way to disable it, consider it always enabled.
             return true;
         }
     }
