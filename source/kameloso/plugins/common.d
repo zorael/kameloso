@@ -1393,6 +1393,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +
      +  It passes execution to the top-level `.initialise(IRCPlugin)` if it exists.
      +
+     +  There's no point in checking whether the plugin is enabled or not, as it
+     +  will only be possible to change the setting after having created the
+     +  plugin (and serialised settings into it).
+     +
      +  Params:
      +      state = The aggregate of all plugin state variables, making
      +          this the "original state" of the plugin.
@@ -1404,8 +1408,6 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.traits : hasUDA;
 
         this.privateState = state;
-
-        if (!pluginIsEnabled) return;
 
         foreach (immutable i, ref member; this.tupleof)
         {
