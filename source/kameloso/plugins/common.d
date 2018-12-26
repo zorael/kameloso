@@ -435,18 +435,14 @@ enum FilterResult { fail, pass, whois }
  +  To what extent the annotated function demands its triggering
  +  `kameloso.irc.defs.IRCEvent`'s contents be prefixed with the bot's nickname.
  +/
-enum NickPolicy
+enum PrefixPolicy
 {
-    ignore,      /// Any prefixes will be ignored.
-    /++
-     +  Message should begin with `kameloso.common.CoreSettings.prefix`
-     +  (e.g. "`!`")
-     +/
-    direct,
-    optional,    /// Message may begin with bot name, if so it will be stripped.
-    required,    /// Message must begin with bot name, except in `QUERY` events.
-    hardRequired,/// Message must begin with bot name, regardless of type.
+    direct,   /// Message will be treated as-is without looking for prefixes.
+    prefixed, /// Message should begin with `kameloso.common.CoreSettings.prefix` (e.g. "`!`")
+    optionalNickname, /// Message may begin with bot name, if so it will be stripped.
+    requiredNickname, /// Message must begin with bot name, except in `QUERY` events.
 }
+
 
 /// Whether an annotated function should work in all channels or just in homes.
 enum ChannelPolicy
