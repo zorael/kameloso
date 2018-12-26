@@ -3038,20 +3038,20 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCEvent mutEvent)
+bool nickPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;
     import std.typecons : No, Yes;
 
     with (mutEvent)
-    with (NickPolicy)
+    with (PrefixPolicy)
     final switch (policy)
     {
-    case ignore:
+    case direct:
         return true;
 
-    case direct:
+    case prefixed:
         if (settings.prefix.length && content.beginsWith(settings.prefix))
         {
             /*static if (verbose)
@@ -3067,7 +3067,7 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
         }
         break;
 
-    case optional:
+    case optionalNickname:
         if (content.beginsWith('@'))
         {
             // Using @name to refer to someone is not
@@ -3081,7 +3081,7 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
         }
         break;
 
-    case required:
+    case requiredNickname:
         if (type == IRCEvent.Type.QUERY)
         {
             /*static if (verbose)
@@ -3089,11 +3089,9 @@ bool nickPolicyMatches(const IRCClient client, const NickPolicy policy, ref IRCE
                 writeln(name, "but it is a query, consider optional");
                 version(FlushStdout) stdout.flush();
             }*/
-            goto case optional;
+            goto case optionalNickname;
         }
-        goto case hardRequired;
 
-    case hardRequired:
         if (content.beginsWith('@'))
         {
             content = content[1..$];
