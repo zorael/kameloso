@@ -574,7 +574,7 @@ void populateOneliners(TwitchBotPlugin plugin, const string filename)
 
     JSONStorage channelOnelinerJSON;
     channelOnelinerJSON.load(filename);
-    plugin.onelinersByChannel = typeof(plugin.onelinersByChannel).init;
+    plugin.onelinersByChannel.clear();
 
     foreach (immutable channelName, const onelinersJSON; channelOnelinerJSON.object)
     {
@@ -583,6 +583,8 @@ void populateOneliners(TwitchBotPlugin plugin, const string filename)
             plugin.onelinersByChannel[channelName][trigger] = stringJSON.str;
         }
     }
+
+    plugin.onelinersByChannel.rehash();
 }
 
 
@@ -604,16 +606,17 @@ void populateAdmins(TwitchBotPlugin plugin, const string filename)
 
     JSONStorage channelAdminsJSON;
     channelAdminsJSON.load(filename);
+    plugin.adminsByChannel.clear();
 
     foreach (immutable channelName, const adminsJSON; channelAdminsJSON.object)
     {
-        plugin.adminsByChannel.clear();
-
         foreach (const nickname; adminsJSON.array)
         {
             plugin.adminsByChannel[channelName] ~= nickname.str;
         }
     }
+
+    plugin.adminsByChannel.rehash();
 }
 
 
