@@ -30,6 +30,7 @@ If nothing else it makes for a good lurkbot.
 
 * missing good how-to-use guide. Use the source, Luke!
 * the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
+* terminal colours may need a registry fix to display properly; see the [known issues](#known-issues) section.
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
 * IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
@@ -70,7 +71,7 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
   * [Twitch](#twitch)
   * [Use as a library](#use-as-a-library)
 * [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
-* [Known bugs](#known-bugs)
+* [Known issues](#known-issues)
   * [Windows](#windows)
   * [Posix](#posix)
 * [Roadmap](#roadmap)
@@ -124,7 +125,7 @@ There are several configurations in which the bot may be built.
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `colours+web`, unsurprisingly includes both of the above
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours+web`
-* `windows`, default on Windows, equals `web` (no colours)
+* `windows`, default on Windows, currently also equals `colours+web`
 * `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
@@ -233,7 +234,7 @@ port                6667
 
 `pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (Only in the case of SASL authentication is `authPassword` used during registration.)
 
-Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining it, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You can also only join channels for which a corresponding Twitch user account exists.
+Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining one, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You can also only join channels for which a corresponding Twitch user account exists.
 
 See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
 
@@ -258,14 +259,23 @@ You can generate unit test assert blocks for new events by passing the command-l
 
 If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/craft the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
 
-# Known bugs
+# Known issues
 
 ## Windows
 
-* Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
-* Terminal colours may also not work in the default `cmd` console, depending on your version of Windows and likely your terminal font. Unsure of how to fix this. Powershell works fine.
-* Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
-* When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C. Any changes to configuration will have to be otherwise saved prior to forcefully exiting thus.
+Web URL lookup, including the web titles and Reddit plugins, will not work out of the box with secure HTTPS connections due to missing libraries. Download a "light" installer from [slproweb.com](https://slproweb.com/products/Win32OpenSSL.html) and install **to system libraries**, and it should no longer warn on program start.
+
+Terminal colours may also not work, requiring a registry edit to make it display properly. This works for at least Windows 10.
+
+* Under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
+* Alternatively in Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
+* Alternatively in cmd.exe: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
+
+Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
+
+Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
+
+When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C. Any changes to configuration will have to be otherwise saved prior to forcefully exiting thus.
 
 ## Posix
 
