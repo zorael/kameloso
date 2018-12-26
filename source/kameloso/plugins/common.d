@@ -843,6 +843,49 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     }
 
 
+    // allow
+    /++
+     +  Pass on the supplied arguments to `allowImpl`.
+     +
+     +  This is made a separate function to allow plugins to override it and
+     +  insert their own code, while still allowing for leveraging `allowImpl`.
+     +
+     +  Params:
+     +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
+     +      privilegeLevel = `PrivilegeLevel` of the handler in question.
+     +
+     +  Returns:
+     +      `true` if the event should be allowed to trigger, `false` if not.
+     +
+     +  See_Also:
+     +      allowImpl
+     +/
+    private FilterResult allow(const IRCEvent event, const PrivilegeLevel privilegeLevel)
+    {
+        return allowImpl(event, privilegeLevel);
+    }
+
+
+    // allowImpl
+    /++
+     +  Judges whether an event may be triggered, based on the event itself and
+     +  the annotated `PrivilegeLevel` of the handler in question.
+     +
+     +  Pass the passed arguments to `filterUser`, doing nothing otherwise.
+     +
+     +  Params:
+     +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
+     +      privilegeLevel = `PrivilegeLevel` of the handler in question.
+     +
+     +  Returns:
+     +      `true` if the event should be allowed to trigger, `false` if not.
+     +/
+    private FilterResult allowImpl(const IRCEvent event, const PrivilegeLevel privilegeLevel)
+    {
+        return filterUser(event, privilegeLevel);
+    }
+
+
     // onEvent
     /++
      +  Pass on the supplied `kameloso.irc.defs.IRCEvent` to `onEventImpl`.
@@ -1203,7 +1246,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         version(FlushStdout) stdout.flush();
                     }
 
-                    immutable result = filterUser(mutEvent, privilegeLevel);
+                    immutable result = allow(mutEvent, privilegeLevel);
 
                     with (FilterResult)
                     final switch (result)
