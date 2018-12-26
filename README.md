@@ -69,6 +69,7 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
   * [Twitch](#twitch)
+    * [Twitch bot](#twitch-bot)
   * [Use as a library](#use-as-a-library)
 * [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
 * [Known issues](#known-issues)
@@ -125,8 +126,9 @@ There are several configurations in which the bot may be built.
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `colours+web`, unsurprisingly includes both of the above
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours+web`
-* `windows`, default on Windows, currently also equals `colours+web`
+* `windows`, default on Windows, also equals `colours+web`
 * `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
+* `polyglot`, equals everything available, including things like the Admin plugin being able to see Twitch users
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
@@ -237,6 +239,14 @@ port                6667
 Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining one, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You can also only join channels for which a corresponding Twitch user account exists.
 
 See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
+
+### Twitch bot
+
+There is a rudimentary bot plugin but it is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included.
+
+```bash
+$ dub build -c twitch
+```
 
 ## Use as a library
 
