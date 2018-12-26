@@ -1,11 +1,8 @@
 /++
- +  This is an example Twitch bot. It is largely untested and mostly just
- +  showcases how a Twitch plugin might be written.
+ +  This is an example Twitch bot.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
  +  message has too many capital letters, contains banned words, etc.
- +
- +  Also support for more than one home channel at a time.
  +/
 module kameloso.plugins.twitchbot;
 
