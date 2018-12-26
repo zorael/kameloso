@@ -419,14 +419,21 @@ public:
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
-    /// Flag for when voting is underway.
-    bool votingUnderway;
+    /// Contained state of a bot channel, so there can be several alongside each other.
+    struct Channel
+    {
+        /// Flag for when voting is underway.
+        bool votingUnderway;
 
-    /// UNIX timestamp of when broadcasting started.
-    long broadcastStart;
+        /// UNIX timestamp of when broadcasting started.
+        long broadcastStart;
+    }
 
-    /// An associative array of oneliners.
-    string[string] oneliners;
+    /// Array of active bot channels' state.
+    Channel[string] activeChannels;
+
+    /// Associative array of oneliners, keyed by channel name keyed by trigger word.
+    string[string][string] onelinersByChannel;
 
     /// Filename of file with oneliners.
     @Resource string onelinerFile = "twitchliners.json";
