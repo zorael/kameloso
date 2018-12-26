@@ -416,7 +416,7 @@ void onCommandAddAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         // Drop down for report
     }
 
-    saveOneliners(plugin.adminsByChannel, plugin.adminsFile);
+    saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
     plugin.state.chan(event.channel, event.content ~ " is now an administrator.");
 
 }
@@ -455,7 +455,7 @@ void onCommandDelAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         if (index != -1)
         {
             *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-            saveOneliners(plugin.adminsByChannel, plugin.adminsFile);
+            saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
             plugin.state.chan(event.channel, "Administrator removed.");
         }
     }
