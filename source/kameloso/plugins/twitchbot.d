@@ -214,10 +214,11 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                 import kameloso.string : plurality;
 
                 immutable noun = result.value.plurality("vote", "votes");
+                immutable double voteRatio = cast(double)result.value / total;
+                immutable double votePercentage = 100 * voteRatio;
 
-                plugin.state.chan(event.channel, "%s : %d %s (%.1f)"
-                    .format(result.key, result.value, noun,
-                    cast(double)(result.value/(result.value + total))));
+                plugin.state.chan(event.channel, "%s : %d %s (%.1f%%)"
+                    .format(result.key, result.value, noun, votePercentage));
             }
 
             plugin.votingUnderway = false;
