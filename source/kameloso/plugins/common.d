@@ -1020,7 +1020,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         // Reset between iterations
                         mutEvent = event;
 
-                        if (!privateState.client.nickPolicyMatches(commandUDA.policy, mutEvent))
+                        if (!privateState.client.prefixPolicyMatches(commandUDA.policy, mutEvent))
                         {
                             static if (verbose)
                             {
@@ -1087,7 +1087,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                             static assert((regexUDA.ending == Regex!char.init),
                                 name ~ " has an incomplete BotRegex");
 
-                            if (!privateState.client.nickPolicyMatches(regexUDA.policy, event))
+                            if (!privateState.client.prefixPolicyMatches(regexUDA.policy, event))
                             {
                                 static if (verbose)
                                 {
@@ -3054,7 +3054,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 }
 
 
-// nickPolicyMatches
+// prefixPolicyMatches
 /++
  +  Evaluates whether or not the message in an event satisfies the `PrefixPolicy`
  +  specified, as fetched from a `BotCommand` or `BotRegex` UDA.
@@ -3074,7 +3074,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
  +  TODO:
  +      Support for verbose.
  +/
-bool nickPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
+bool prefixPolicyMatches(const IRCClient client, const PrefixPolicy policy, ref IRCEvent mutEvent)
 {
     import kameloso.common : settings;
     import kameloso.string : beginsWith, nom, stripPrefix;
