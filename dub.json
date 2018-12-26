@@ -21,19 +21,19 @@
         {
             "name": "posix",
             "platforms": [ "posix" ],
-            "versions": [ "WithPlugins", "Web", "Colours" ],
+            "versions": [ "WithPlugins", "Colours", "Web" ],
             "dependencies-posix": { "requests": "~>1.0.0" }
         },
         {
             "name": "windows",
             "platforms": [ "windows" ],
-            "versions": [ "WithPlugins", "Web" ],
+            "versions": [ "WithPlugins", "Colours", "Web" ],
             "dependencies-windows": { "requests": "~>1.0.0" }
         },
         {
             "name": "cygwin",
             "platforms": [ "windows", "cygwin" ],
-            "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours" ],
+            "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web" ],
             "dependencies-windows": { "requests": "~>1.0.0" }
         },
         {
