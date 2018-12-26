@@ -527,20 +527,22 @@ void initResources(TwitchBotPlugin plugin)
     import std.json : JSONException;
     import std.path : baseName;
 
-    JSONStorage json;
+    JSONStorage onelinerJSON;
 
     try
     {
-        json.load(plugin.onelinerFile);
+        onelinerJSON.load(plugin.onelinerFile);
     }
     catch (const JSONException e)
     {
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
     }
 
+    JSONStorage adminsJSON;
+
     try
     {
-        json.load(plugin.adminsFile);
+        adminsJSON.load(plugin.adminsFile);
     }
     catch (const JSONException e)
     {
@@ -549,8 +551,8 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    json.save(plugin.onelinerFile);
-    json.save(plugin.adminsFile);
+    onelinerJSON.save(plugin.onelinerFile);
+    adminsJSON.save(plugin.adminsFile);
 }
 
 
