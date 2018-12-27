@@ -784,8 +784,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     IRCPluginState privateState;
 
     /++
-     +  Returns false if a `Settings`-annotated struct member has a bool
-     +  `enabled` with a value of `false`.
+     +  Introspects the current plugin, looking for a `Settings`-annotated struct
+     +  member that has a bool annotated with `Enabler`, which denotes it as the
+     +  bool that toggles a plugin on and off.
+     +
+     +  It then returns its value.
      +
      +  Returns:
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
@@ -793,32 +796,30 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     private bool pluginIsEnabled() const @property pure nothrow @nogc
     {
-        import std.traits : hasUDA;
+        import std.traits : Unqual, hasUDA;
 
         bool retval = true;
 
-        static if (this.tupleof.length)
+        top:
+        foreach (immutable i, immutable member; this.tupleof)
         {
-            foreach (immutable i, immutable member; this.tupleof)
+            static if (hasUDA!(this.tupleof[i], Settings))
             {
-                static if (hasUDA!(this.tupleof[i], Settings))
+                foreach (immutable n, immutable submember; this.tupleof[i].tupleof)
                 {
-                    static if (__traits(hasMember, member, "enabled"))
+                    static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                     {
-                        static if (is(typeof(__traits(getMember, member, "enabled")) : bool))
-                        {
-                            retval = __traits(getMember, member, "enabled");
-                            break;
-                        }
+                        static assert(is(typeof(this.tupleof[i].tupleof[n]) : bool),
+                            Unqual!(typeof(this)).stringof ~ " has a non-bool Enabler");
+
+                        retval = submember;
+                        break top;
                     }
                 }
             }
-            return retval;
         }
-        else
-        {
-            return true;
-        }
+
+        return retval;
     }
 
 
