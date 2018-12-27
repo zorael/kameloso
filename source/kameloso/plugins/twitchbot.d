@@ -31,6 +31,29 @@ struct TwitchBotSettings
 }
 
 
+// onAnyMessage
+/++
+ +  Bells on any message, if the `TwitchBotSettings.bellOnMessage` setting is set.
+ +
+ +  This is useful with small audiences, so you don't miss messages.
+ +/
+@(Chainable)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.WHISPER)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onAnyMessage(TwitchBotPlugin plugin)
+{
+    import kameloso.terminal : TerminalToken;
+    import std.stdio : stdout, write;
+
+    if (!plugin.twitchBotSettings.bellOnMessage) return;
+
+    write(cast(char)TerminalToken.bell);
+    stdout.flush();
+}
+
+
 // onSelfjoin
 /++
  +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
