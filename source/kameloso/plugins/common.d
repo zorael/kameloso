@@ -1883,7 +1883,7 @@ unittest
 
     struct TestSettings
     {
-        bool enabled = false;
+        @Enabler bool enuubled = false;
     }
 
     final class TestPlugin : IRCPlugin
@@ -1896,7 +1896,7 @@ unittest
     TestPlugin p = new TestPlugin(state);
     assert(!p.pluginIsEnabled);
 
-    p.testSettings.enabled = true;
+    p.testSettings.enuubled = true;
     assert(p.pluginIsEnabled);
 }
 
