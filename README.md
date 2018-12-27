@@ -18,8 +18,8 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes`
-* Twitch chat support including basic [Twitch bot](source/kameloso/plugins/twitchbot.d) (default disabled); see notes on [connecting to Twitch](#twitch) below
-* piping text from the terminal to the server (Linux/OSX and other Posix-likes only)
+* Twitch chat support, including basic [Twitch bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
+* piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; [create one](#configuration) and edit it to get an idea of the settings available
@@ -28,15 +28,16 @@ If nothing else it makes for a good lurkbot.
 
 ## Current limitations:
 
-* missing good how-to-use guide. Use the source, Luke!
+* missing good how-to-use guide. Use the source, Luke! Also [the wiki](https://github.com/zorael/kameloso/wiki).
+* only one developer, so only one pair of eyes.
 * the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
-* terminal colours may need a registry fix to display properly; see the [known issues](#known-issues) section.
-* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** segfaults upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
+* Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
+* the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
 * IRC servers that have not been tested against may exhibit weird behaviour if parsing goes awry. Need concrete examples to fix; please report errors and abnormalities.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) also sees extensive testing, but mostly as a client idling in channels and less as a bot hosting commands.
+Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) also sees extensive testing.
 
 # TL;DR: abridged
 
@@ -71,7 +72,6 @@ A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc
   * [Twitch](#twitch)
     * [Twitch bot](#twitch-bot)
   * [Use as a library](#use-as-a-library)
-* [Debugging and generating unit tests](#debugging-and-generating-unit-tests)
 * [Known issues](#known-issues)
   * [Windows](#windows)
   * [Posix](#posix)
@@ -171,7 +171,7 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will remove any lines not corresponding to a valid setting, so comments are removed.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so comments are removed.
 
 ### Display settings
 
@@ -234,11 +234,7 @@ address             irc.chat.twitch.tv
 port                6667
 ```
 
-`pass` is not the same as `authPassword`. It is supplied very early during login (or *registration*) to allow you to connect -- even before negotiating username and nickname, which is otherwise the very first thing to happen. `authPassword` is something that is sent to a services bot (like `NickServ` or `AuthServ`) after registration has finished and you have successfully logged onto the server. (Only in the case of SASL authentication is `authPassword` used during registration.)
-
-Mind that in many ways Twitch does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised. Participants in a channel are not always enumerated upon joining one, and you cannot query the server for the list. You cannot ask the server for information about a single user either. You cannot readily trust who is **+o** and who isn't, as it will oscillate to **-o** at irregular intervals. You can also only join channels for which a corresponding Twitch user account exists.
-
-See [this Twitch help page on moderation](https://help.twitch.tv/customer/en/portal/articles/659095-twitch-chat-and-moderation-commands) and [this page on harassment](https://help.twitch.tv/customer/portal/articles/2329145-how-to-manage-harassment-in-chat) for available moderator commands to send as normal channel `PRIVMSG` messages.
+See [the wiki](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
 ### Twitch bot
 
@@ -265,12 +261,6 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`uda.d`](source/kameloso/uda.d)
 
 Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). It can be slimmed down further if support for only a specific server network is required.
-
-# Debugging and generating unit tests
-
-You can generate unit test assert blocks for new events by passing the command-line `--asserts` flag, specifying the requested server information and pasting the raw line. Copy the generated assert block and place it in `tests/events.d`, or wherever is appropriate.
-
-If more state is necessary to replicate the environment, such as needing things from `RPL_ISUPPORT` or a specific resolved server address (from early `NOTICE` or `RPL_HELLO`), paste/craft the raw line for those first and it will inherit the implied changes for any following lines throughout the session. It will print the changes evoked, so you'll know if you succeeded.
 
 # Known issues
 
