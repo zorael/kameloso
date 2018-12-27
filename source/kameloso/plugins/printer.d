@@ -150,7 +150,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
     case CAP:
     case ERR_CHANOPRIVSNEEDED:
     case GLOBALUSERSTATE:
-    case USERSTATE:
+    //case USERSTATE:
     case ROOMSTATE:
     case SASL_AUTHENTICATE:
         // These event types are spammy; ignore if we're configured to
@@ -169,6 +169,7 @@ void onPrintableEvent(PrinterPlugin plugin, const IRCEvent event)
             goto default;
         }
 
+    case USERSTATE: // Insanely spammy, once every sent message
     case PING:
     case PONG:
         break;
