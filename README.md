@@ -18,9 +18,9 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes`
-* Twitch chat support (with default-disabled [example bot](source/kameloso/plugins/twitchbot.d)); see notes on [connecting to Twitch](#twitch) below
+* Twitch chat support including basic [Twitch bot](source/kameloso/plugins/twitchbot.d) (default disabled); see notes on [connecting to Twitch](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other Posix-likes only)
-* mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting
+* mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
 * configuration stored on file; [create one](#configuration) and edit it to get an idea of the settings available
 
@@ -246,7 +246,10 @@ There is a rudimentary bot plugin but it is opt-in, both during compilation and 
 
 ```bash
 $ dub build -c twitch
+$ ./kameloso --writeconfig
 ```
+
+Commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!addadmin`, `!deladmin` (assuming a prefix of "`!`").
 
 ## Use as a library
 
@@ -283,13 +286,13 @@ Terminal colours may also not work, requiring a registry edit to make it display
 
 Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
 
-Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell consoles are not affected and can be used with any configuration. `cmd` also works without `cygwin`, albeit with the previously mentioned colour issues.
+Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell and `cmd` consoles are unaffected and can be used with any configuration.
 
 When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C. Any changes to configuration will have to be otherwise saved prior to forcefully exiting thus.
 
 ## Posix
 
-* If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads. Help wanted.
+If the pipeline FIFO is removed while the program is running, it will hang upon exiting, requiring manual interruption with Ctrl+C. This is a tricky problem to solve, as it requires figuring out how to do non-blocking reads. Help wanted.
 
 # Roadmap
 
