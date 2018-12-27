@@ -765,33 +765,6 @@ unittest
 }
 
 
-/++
- +  Trait to single out symbols containing a bool "enabled".
- +/
-enum hasEnabledBool(alias symbol) = __traits(hasMember, symbol, "enabled") &&
-    is(typeof(__traits(getMember, symbol, "enabled")) == bool);
-
-///
-unittest
-{
-    struct EnabledBool
-    {
-        bool enabled;
-    }
-
-    struct EnabledString
-    {
-        string enabled;
-    }
-
-    struct NoEnabled {}
-
-    static assert(hasEnabledBool!EnabledBool);
-    static assert(!(hasEnabledBool!EnabledString));
-    static assert(!(hasEnabledBool!NoEnabled));
-}
-
-
 // IRCPluginImpl
 /++
  +  Mixin that fully implements an `IRCPlugin`.
