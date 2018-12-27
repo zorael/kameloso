@@ -273,23 +273,29 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
             import std.algorithm.sorting : sort;
             import std.array : array;
 
-            plugin.state.chan(event.channel, "Voting complete, results:");
-
             immutable total = cast(double)voteChoices.byValue.sum;
-            auto sorted = voteChoices.byKeyValue.array.sort!((a,b) => a.value < b.value);
 
-            foreach (const result; sorted)
+            if (total > 0)
             {
-                import kameloso.string : plurality;
-                import std.math : isNaN;
+                plugin.state.chan(event.channel, "Voting complete, results:");
 
-                immutable noun = result.value.plurality("vote", "votes");
-                immutable double voteRatio = cast(double)result.value / total;
-                immutable double votePercentage = 100 * voteRatio;
+                auto sorted = voteChoices.byKeyValue.array.sort!((a,b) => a.value < b.value);
 
-                plugin.state.chan(event.channel, "%s : %d %s (%.1f%%)"
-                    .format(result.key, result.value, noun,
-                    votePercentage.isNaN ? 0.0 : votePercentage));
+                foreach (const result; sorted)
+                {
+                    import kameloso.string : plurality;
+
+                    immutable noun = result.value.plurality("vote", "votes");
+                    immutable double voteRatio = cast(double)result.value / total;
+                    immutable double votePercentage = 100 * voteRatio;
+
+                    plugin.state.chan(event.channel, "%s : %d %s (%.1f%%)"
+                        .format(result.key, result.value, noun, votePercentage));
+                }
+            }
+            else
+            {
+                plugin.state.chan(event.channel, "Voting complete, no one voted.");
             }
 
             channel.votingUnderway = false;
