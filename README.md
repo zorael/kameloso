@@ -249,7 +249,7 @@ $ dub build -c twitch
 $ ./kameloso --writeconfig
 ```
 
-Commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!addadmin`, `!deladmin` (assuming a prefix of "`!`").
+Commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!admin` (assuming a prefix of "`!`").
 
 ## Use as a library
 
