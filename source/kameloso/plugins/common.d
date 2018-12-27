@@ -641,6 +641,12 @@ struct Resource;
 struct Configuration;
 
 
+/++
+ +  Annotation denoting that a variable enables and disables a plugin.
+ +/
+struct Enabler;
+
+
 // filterUser
 /++
  +  Decides if a nickname is known good (whitelisted/admin), known bad (not
