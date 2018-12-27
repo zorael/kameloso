@@ -34,7 +34,7 @@ import std.typecons : No, Yes;
 struct PrinterSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
-    bool enabled = true;
+    @Enabler bool enabled = true;
 
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
     bool printToScreen = true;

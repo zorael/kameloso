@@ -234,7 +234,7 @@ private:
 struct SeenSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
-    bool enabled = true;
+    @Enabler bool enabled = true;
 }
 
 

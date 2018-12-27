@@ -32,7 +32,7 @@ import std.typecons : Flag, No, Yes;
 struct RedditSettings
 {
     /// Toggles whether or not the plugin should react to events at all.
-    bool enabled = true;
+    @Enabler bool enabled = true;
 }
 
 

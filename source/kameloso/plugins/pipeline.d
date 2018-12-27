@@ -46,7 +46,7 @@ import std.stdio : File;
 struct PipelineSettings
 {
     /// Whether or not the Pipeline plugin should do anything at all.
-    bool enabled = true;
+    @Enabler bool enabled = true;
 
     /++
      +  Whether or not to place the FIFO in the working directory. If false, it
