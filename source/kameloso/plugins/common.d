@@ -3300,7 +3300,7 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
     }
     else
     {
-        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(state, event, privilegeLevel, fn);
+        plugin.state.whoisQueue[user.nickname] ~= whoisRequest(event, privilegeLevel, fn);
     }
 }
 
