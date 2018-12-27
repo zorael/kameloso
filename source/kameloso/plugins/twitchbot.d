@@ -25,6 +25,9 @@ struct TwitchBotSettings
 {
     /// Whether or not this plugin should react to any events.
     bool enabled = false;
+
+    /// Whether or not to bell on every message.
+    bool bellOnMessage = false;
 }
 
 
