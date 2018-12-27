@@ -411,10 +411,14 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAddAdmin
+// onCommandAdmin
 /++
- +  Adds a nickname to be an administrator for the current channel (that this
- +  message was sent in).
+ +  Adds, lists and removes administrators from a channel.
+ +
+ +  * `!admin +nickname` adds `nickname` as an administrator.
+ +  * `!admin -nickname` removes `nickname` as an administrator.
+ +  * `!admin list` lists all administrators.
+ +  * `!admin clear` clears all administrators.
  +
  +  Only one nickname at a time. Only the current channel.
  +/
@@ -422,81 +426,87 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "addadmin")
-@Description("Adds a Twitch administrator to the current channel.")
-void onCommandAddAdmin(TwitchBotPlugin plugin, const IRCEvent event)
+@BotCommand(PrefixPolicy.prefixed, "admin")
+@Description("Adds or removes a Twitch administrator to/from the current channel.")
+void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains;
 
-    if (!event.content.length || event.content.contains(" "))
+    if ((event.content.length < 3) || event.content.contains(" "))
     {
-        plugin.state.chan(event.channel, "You must specify one (1) nickname.");
+        plugin.state.chan(event.channel, "You must specify one (1) nickname, " ~
+            "prefixed with a + or a - to add or remove.");
         return;
     }
 
-    if (auto adminArray = event.channel in plugin.adminsByChannel)
-    {
-        import std.algorithm.searching : canFind;
+    immutable sign = event.content[0];
+    immutable nickname = event.content[1..$];
 
-        if ((*adminArray).canFind(event.content))
+    if (sign == '+')
+    {
+        if (auto adminArray = event.channel in plugin.adminsByChannel)
         {
-            plugin.state.chan(event.channel, event.content ~ " is already a bot administrator.");
-            return;
+            import std.algorithm.searching : canFind;
+
+            if ((*adminArray).canFind(nickname))
+            {
+                plugin.state.chan(event.channel, nickname ~ " is already a bot administrator.");
+                return;
+            }
+            else
+            {
+                *adminArray ~= nickname;
+                // Drop down for report
+            }
         }
         else
         {
-            *adminArray ~= event.content;
+            plugin.adminsByChannel[event.channel] ~= nickname;
             // Drop down for report
         }
+
+        saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+        plugin.state.chan(event.channel, nickname ~ " is now an administrator.");
+    }
+    else if (sign == '-')
+    {
+        if (auto adminArray = event.channel in plugin.adminsByChannel)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+            import std.algorithm.searching : countUntil;
+
+            immutable index = (*adminArray).countUntil(nickname);
+
+            if (index != -1)
+            {
+                *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
+                saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+                plugin.state.chan(event.channel, "Administrator removed.");
+            }
+        }
+    }
+    else if (event.content == "list")
+    {
+        if (const adminList = event.channel in plugin.adminsByChannel)
+        {
+            import std.format : format;
+            plugin.state.chan(event.channel, "Current administrators: %-(%s, %)"
+                .format(*adminList));
+        }
+        else
+        {
+            plugin.state.chan(event.channel, "There are no administrators registered for this channel.");
+        }
+    }
+    else if (event.content == "clear")
+    {
+        plugin.adminsByChannel.remove(event.channel);
+        saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+        plugin.state.chan(event.channel, "Administrator list cleared.");
     }
     else
     {
-        plugin.adminsByChannel[event.channel] ~= event.content;
-        // Drop down for report
-    }
-
-    saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-    plugin.state.chan(event.channel, event.content ~ " is now an administrator.");
-
-}
-
-
-// onCommandDelAdmin
-/++
- +  Removes a nickname from being an administrator for the current channel
- +  (that this message was sent in).
- +
- +  Only one nickname at a time. Only the current channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "deladmin")
-@Description("Removes a Twitch administrator from the current channel.")
-void onCommandDelAdmin(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.string : contains;
-
-    if (!event.content.length || event.content.contains(" "))
-    {
-        plugin.state.chan(event.channel, "You must specify one (1) nickname.");
-        return;
-    }
-
-    if (auto adminArray = event.channel in plugin.adminsByChannel)
-    {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.algorithm.searching : countUntil;
-
-        immutable index = (*adminArray).countUntil(event.content);
-
-        if (index != -1)
-        {
-            *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-            saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-            plugin.state.chan(event.channel, "Administrator removed.");
-        }
+        plugin.state.chan(event.channel, "You must prefix the nickname with a + or a -.");
     }
 }
 
