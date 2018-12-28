@@ -1484,39 +1484,11 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     string[][string] deserialiseConfigFrom(const string configFile)
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
-
         import kameloso.config : readConfigInto;
         import kameloso.meld : MeldingStrategy, meldInto;
-        import kameloso.traits : isStruct;
-        import std.meta : Filter;
-        import std.traits : getSymbolsByUDA, hasUDA;
-
-        alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
+        import std.traits : hasUDA;
 
         string[][string] invalidEntries;
-
-        foreach (ref symbol; symbols)
-        {
-            alias T = typeof(symbol);
-
-            if (symbol != T.init)
-            {
-                // This symbol was already configured earlier;
-                // --> this is a reconnect
-                continue;
-            }
-
-            T tempSymbol;
-            immutable theseInvalidEntries = configFile.readConfigInto(tempSymbol);
-
-            foreach (immutable section, const sectionEntries; theseInvalidEntries)
-            {
-                invalidEntries[section] ~= sectionEntries;
-            }
-
-            tempSymbol.meldInto!(MeldingStrategy.aggressive)(symbol);
-        }
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
@@ -1578,21 +1550,10 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     bool setSettingByName(const string setting, const string value)
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
-
         import kameloso.objmanip : setMemberByName;
-        import kameloso.traits : isStruct;
-        import std.meta : Filter;
-        import std.traits : getSymbolsByUDA, hasUDA;
+        import std.traits : hasUDA;
 
-        alias symbols = Filter!(isStruct, getSymbolsByUDA!(thisModule, Settings));
         bool success;
-
-        foreach (ref symbol; symbols)
-        {
-            success = symbol.setMemberByName(setting, value);
-            if (success) break;
-        }
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
@@ -1617,20 +1578,9 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +/
     void printSettings() const
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
-
         import kameloso.printing : printObject;
-        import kameloso.traits : isStruct;
-        import std.meta : Filter;
-        import std.traits : getSymbolsByUDA, hasUDA;
+        import std.traits : hasUDA;
         import std.typecons : No, Yes;
-
-        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
-
-        foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
-        {
-            printObject!(No.printAll)(symbol);
-        }
 
         foreach (immutable i, symbol; this.tupleof)
         {
@@ -1662,19 +1612,8 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     import std.array : Appender;
     void serialiseConfigInto(ref Appender!string sink) const
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
-
         import kameloso.config : serialise;
-        import kameloso.traits : isStruct;
-        import std.meta : Filter;
-        import std.traits : getSymbolsByUDA, hasUDA;
-
-        alias moduleLevelSymbols = getSymbolsByUDA!(thisModule, Settings);
-
-        foreach (symbol; Filter!(isStruct, moduleLevelSymbols))
-        {
-            sink.serialise(symbol);
-        }
+        import std.traits : hasUDA;
 
         foreach (immutable i, symbol; this.tupleof)
         {
