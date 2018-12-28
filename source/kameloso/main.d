@@ -32,5 +32,5 @@ int main(string[] args)
 {
     import kameloso.kameloso : kamelosoMain;
 
-    return kameloso.kameloso.kamelosoMain(args);
+    return kamelosoMain(args);
 }
