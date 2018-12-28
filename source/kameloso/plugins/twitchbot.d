@@ -144,8 +144,23 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.datetime.systime : Clock;
 
-    plugin.activeChannels[event.channel].broadcastStart = Clock.currTime.toUnixTime;
-    plugin.state.chan(event.channel, "Broadcast start registered.");
+    auto channel = event.channel in plugin.activeChannels;
+
+    if (channel.broadcastStart != 0L)
+    {
+        string nickname = event.channel[1..$];
+
+        if (const streamer = nickname in plugin.state.users)
+        {
+            if (streamer.alias_.length) nickname = streamer.alias_;
+        }
+
+        plugin.state.chan(event.channel, nickname ~ " is already streaming.");
+        return;
+    }
+
+    channel.broadcastStart = Clock.currTime.toUnixTime;
+    plugin.state.chan(event.channel, "Broadcast start registered!");
 }
 
 
