@@ -470,7 +470,9 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
 
-    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+
+    if (channelOneliners && channelOneliners.length)
     {
         plugin.state.chan(event.channel, ("Available commands: %-(" ~ settings.prefix ~ "%s, %)")
             .format(channelOneliners.keys));
