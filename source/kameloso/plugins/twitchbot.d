@@ -217,11 +217,10 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
     string slice = event.content;
     slice.nom(settings.prefix);
-    immutable oneliner = slice.contains(" ") ? slice.nom(" ") : slice;
 
     if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
-        if (const response = oneliner in *channelOneliners)
+        if (const response = slice in *channelOneliners)
         {
             plugin.state.chan(event.channel, *response);
         }
