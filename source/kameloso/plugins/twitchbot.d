@@ -227,7 +227,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         return;
     }
 
-    if (event.content.count(' ') < 2)
+    if (event.content.count(" ") < 2)
     {
         plugin.state.chan(event.channel, "Need one duration and at least two options.");
         return;
@@ -238,7 +238,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     try
     {
-        dur = slice.nom(' ').to!long;
+        dur = slice.nom!(Yes.decode)(" ").to!long;
     }
     catch (const ConvException e)
     {
