@@ -446,8 +446,8 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Adds, lists and removes administrators from a channel.
  +
- +  * `!admin +nickname` adds `nickname` as an administrator.
- +  * `!admin -nickname` removes `nickname` as an administrator.
+ +  * `!admin add nickname` adds `nickname` as an administrator.
+ +  * `!admin del nickname` removes `nickname` as an administrator.
  +  * `!admin list` lists all administrators.
  +  * `!admin clear` clears all administrators.
  +
@@ -461,20 +461,25 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 @Description("Adds or removes a Twitch administrator to/from the current channel.")
 void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 {
-    import kameloso.string : contains;
+    import kameloso.string : contains, nom;
+    import std.algorithm.searching : count;
+    import std.format : format;
 
-    if ((event.content.length < 3) || event.content.contains(" "))
+    if (!event.content.length || (event.content.count(" ") > 1))
     {
-        plugin.state.chan(event.channel, "You must specify one (1) nickname, " ~
-            "prefixed with a + or a - to add or remove.");
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list|clear] [nickname]"
+            .format(settings.prefix, event.aux));
         return;
     }
 
-    immutable sign = event.content[0];
-    immutable nickname = event.content[1..$];
+    string slice = event.content;
+    immutable verb = slice.contains(" ") ? slice.nom(" ") : slice;
 
-    if (sign == '+')
+    switch (verb)
     {
+    case "add":
+        immutable nickname = slice;
+
         if (auto adminArray = event.channel in plugin.adminsByChannel)
         {
             import std.algorithm.searching : canFind;
@@ -498,9 +503,11 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
         saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
         plugin.state.chan(event.channel, nickname ~ " is now an administrator.");
-    }
-    else if (sign == '-')
-    {
+        break;
+
+    case "del":
+        immutable nickname = slice;
+
         if (auto adminArray = event.channel in plugin.adminsByChannel)
         {
             import std.algorithm.mutation : SwapStrategy, remove;
@@ -515,9 +522,9 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
                 plugin.state.chan(event.channel, "Administrator removed.");
             }
         }
-    }
-    else if (event.content == "list")
-    {
+        break;
+
+    case "list":
         if (const adminList = event.channel in plugin.adminsByChannel)
         {
             import std.format : format;
@@ -528,16 +535,18 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         {
             plugin.state.chan(event.channel, "There are no administrators registered for this channel.");
         }
-    }
-    else if (event.content == "clear")
-    {
+        break;
+
+    case "clear":
         plugin.adminsByChannel.remove(event.channel);
         saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
         plugin.state.chan(event.channel, "Administrator list cleared.");
-    }
-    else
-    {
-        plugin.state.chan(event.channel, "You must prefix the nickname with a + or a -.");
+        break;
+
+    default:
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list|clear] [nickname]"
+            .format(settings.prefix, event.aux));
+        break;
     }
 }
 
