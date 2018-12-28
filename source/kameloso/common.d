@@ -416,7 +416,7 @@ struct IRCBot
         state.mainThread = thisTid;
         immutable now = Clock.currTime.toUnixTime;
 
-        plugins.reserve(EnabledPlugins.length + 4);
+        plugins.reserve(EnabledPlugins.length);
 
         // Instantiate all plugin types in the `EnabledPlugins` `AliasSeq` in
         // `kameloso.plugins.package`
@@ -643,7 +643,7 @@ void writeConfigurationFile(ref IRCBot bot, const string filename)
     import std.array : Appender;
 
     Appender!string sink;
-    sink.reserve(1536);  // ~1097
+    sink.reserve(2048);  // ~1756
 
     with (bot)
     with (bot.parser)
