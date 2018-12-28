@@ -401,7 +401,17 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    immutable verb = slice.contains(" ") ? slice.nom(" ") : slice;
+    string verb;
+
+    if (slice.contains(" "))
+    {
+        verb = slice.nom(" ");
+    }
+    else
+    {
+        verb = slice;
+        slice = string.init;
+    }
 
     switch (verb)
     {
