@@ -101,7 +101,14 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 {
     immutable broadcastStart = plugin.activeChannels[event.channel].broadcastStart;
 
-    if (broadcastStart > 0)
+    string nickname = event.channel[1..$];
+
+    if (const streamer = nickname in plugin.state.users)
+    {
+        if (streamer.alias_.length) nickname = streamer.alias_;
+    }
+
+    if (broadcastStart > 0L)
     {
         import core.time : msecs;
         import std.datetime.systime : Clock, SysTime;
@@ -114,11 +121,11 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
         immutable delta = now - SysTime.fromUnixTime(broadcastStart);
 
         plugin.state.chan(event.channel, "%s has been streaming for %s."
-            .format(event.channel[1..$], delta));
+            .format(nickname, delta));
     }
     else
     {
-        plugin.state.chan(event.channel, event.channel[1..$] ~ " is currently not streaming.");
+        plugin.state.chan(event.channel, nickname ~ " is currently not streaming.");
     }
 }
 
@@ -161,10 +168,18 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
     auto channel = event.channel in plugin.activeChannels;
     auto now = Clock.currTime;
     now.fracSecs = 0.msecs;
-    auto delta = now - SysTime.fromUnixTime(channel.broadcastStart);
+    const delta = now - SysTime.fromUnixTime(channel.broadcastStart);
     channel.broadcastStart = 0L;
 
-    plugin.state.chan(event.channel, "Broadcast ended. You streamed for %s.".format(delta));
+    string nickname = event.channel[1..$];
+
+    if (const streamer = nickname in plugin.state.users)
+    {
+        if (streamer.alias_.length) nickname = streamer.alias_;
+    }
+
+    plugin.state.chan(event.channel, "Broadcast ended. %s's stream lasted %s."
+        .format(nickname, delta));
 }
 
 
