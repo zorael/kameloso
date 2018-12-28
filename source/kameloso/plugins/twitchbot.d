@@ -514,54 +514,80 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    immutable verb = slice.contains(" ") ? slice.nom(" ") : slice;
+    string verb;
+
+    if (slice.contains(" "))
+    {
+        verb = slice.nom(" ");
+    }
+    else
+    {
+        verb = slice;
+        slice = string.init;
+    }
 
     switch (verb)
     {
     case "add":
-        immutable nickname = slice;
-
-        if (auto adminArray = event.channel in plugin.adminsByChannel)
+        if (slice.length)
         {
-            import std.algorithm.searching : canFind;
+            immutable nickname = slice;
 
-            if ((*adminArray).canFind(nickname))
+            if (auto adminArray = event.channel in plugin.adminsByChannel)
             {
-                plugin.state.chan(event.channel, nickname ~ " is already a bot administrator.");
-                return;
+                import std.algorithm.searching : canFind;
+
+                if ((*adminArray).canFind(nickname))
+                {
+                    plugin.state.chan(event.channel, nickname ~ " is already a bot administrator.");
+                    return;
+                }
+                else
+                {
+                    *adminArray ~= nickname;
+                    // Drop down for report
+                }
             }
             else
             {
-                *adminArray ~= nickname;
+                plugin.adminsByChannel[event.channel] ~= nickname;
                 // Drop down for report
+            }
+
+            saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+            plugin.state.chan(event.channel, nickname ~ " is now an administrator.");
+        }
+        else
+        {
+            plugin.state.chan(event.channel, "Usage: %s%s [add] [nickname]"
+                .format(settings.prefix, event.aux));
+        }
+        break;
+
+    case "del":
+        if (slice.length)
+        {
+            immutable nickname = slice;
+
+            if (auto adminArray = event.channel in plugin.adminsByChannel)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                import std.algorithm.searching : countUntil;
+
+                immutable index = (*adminArray).countUntil(nickname);
+
+                if (index != -1)
+                {
+                    *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
+                    saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+                    plugin.state.chan(event.channel, "Administrator removed.");
+                }
             }
         }
         else
         {
-            plugin.adminsByChannel[event.channel] ~= nickname;
-            // Drop down for report
-        }
-
-        saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-        plugin.state.chan(event.channel, nickname ~ " is now an administrator.");
-        break;
-
-    case "del":
-        immutable nickname = slice;
-
-        if (auto adminArray = event.channel in plugin.adminsByChannel)
-        {
-            import std.algorithm.mutation : SwapStrategy, remove;
-            import std.algorithm.searching : countUntil;
-
-            immutable index = (*adminArray).countUntil(nickname);
-
-            if (index != -1)
-            {
-                *adminArray = (*adminArray).remove!(SwapStrategy.unstable)(index);
-                saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-                plugin.state.chan(event.channel, "Administrator removed.");
-            }
+            plugin.state.chan(event.channel, "Usage: %s%s [del] [nickname]"
+                .format(settings.prefix, event.aux));
         }
         break;
 
