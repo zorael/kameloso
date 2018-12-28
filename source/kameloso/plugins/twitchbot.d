@@ -345,43 +345,74 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onCommandAddOneliner
+// onCommandModifyOneliner
 /++
- +  Adds a oneliner to the list of oneliners, and saves it to disk.
+ +  Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
-@Description("Adds a oneliner command.", "$command [trigger] [text, if none then deletes the trigger]")
-void onCommandAddOneliner(TwitchBotPlugin plugin, const IRCEvent event)
+@Description("Adds or removes a oneliner command, or list all available.",
+    "$command [add|del] [text]")
+void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
+    import std.algorithm.searching : count;
     import std.format : format;
     import std.typecons : No, Yes;
 
     if (!event.content.length)
     {
-        plugin.state.chan(event.channel, "You must specify a trigger.");
-        return;
-    }
-    else if (!event.content.contains!(Yes.decode)(" "))
-    {
-        // Delete oneliner
-        plugin.onelinersByChannel[event.channel].remove(event.content);
-        saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
-        plugin.state.chan(event.channel, "Oneliner %s%s removed."
-            .format(settings.prefix, event.content));
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del] [trigger] [text]"
+            .format(settings.prefix, event.aux));
         return;
     }
 
     string slice = event.content;
-    immutable word = slice.nom!(Yes.decode)(" ");
-    plugin.onelinersByChannel[event.channel][word] = slice;
-    saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+    immutable verb = slice.contains(" ") ? slice.nom(" ") : slice;
 
-    plugin.state.chan(event.channel, "Oneliner %s%s added.".format(settings.prefix, word));
+    switch (verb)
+    {
+    case "add":
+        if (slice.contains(" "))
+        {
+            immutable trigger = slice.nom(" ");
+
+            plugin.onelinersByChannel[event.channel][trigger] = slice;
+            saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+
+            plugin.state.chan(event.channel, "Oneliner %s%s added.".format(settings.prefix, trigger));
+        }
+        else
+        {
+            plugin.state.chan(event.channel, "Usage: %s%s add [trigger] [text]"
+                .format(settings.prefix, event.aux));
+        }
+        return;
+
+    case "del":
+        if (slice.length)
+        {
+            plugin.onelinersByChannel[event.channel].remove(slice);
+            saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+
+            plugin.state.chan(event.channel, "Oneliner %s%s removed."
+                .format(settings.prefix, slice));
+        }
+        else
+        {
+            plugin.state.chan(event.channel, "Usage: %s%s del [trigger]"
+                .format(settings.prefix, event.aux));
+        }
+        return;
+
+    default:
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del] [trigger] [text]"
+            .format(settings.prefix, event.aux));
+        break;
+    }
 }
 
 
