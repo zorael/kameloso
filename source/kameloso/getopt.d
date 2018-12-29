@@ -388,9 +388,6 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
                             &settings.monochrome,
             "set",          "Manually change a setting (syntax: --set plugin.option=setting)",
                             &customSettings,
-            "asserts",      genDescription,
-                            &shouldGenerateAsserts,
-            "gen",          &shouldGenerateAsserts,
             "c|config",     "Specify a different configuration file [%s]"
                             .format(settings.configFile),
                             &settings.configFile,
@@ -401,8 +398,12 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
                             &settings.force,
             "w|writeconfig","Write configuration to file",
                             &shouldWriteConfig,
+            "save",         &shouldWriteConfig,
             "writeconf",    &shouldWriteConfig,
             "init",         &shouldWriteConfig,
+            "asserts",      genDescription,
+                            &shouldGenerateAsserts,
+            "gen",          &shouldGenerateAsserts,
             "version",      "Show version information",
                             &shouldShowVersion,
         );
