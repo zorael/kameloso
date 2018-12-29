@@ -111,4 +111,3 @@ test_script:
  - mv kameloso.exe kameloso-twitch.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c cygwin
- - mv kameloso.exe kameloso.exe
