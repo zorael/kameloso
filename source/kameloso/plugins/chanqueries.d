@@ -51,7 +51,6 @@ void onPing(ChanQueriesService service)
 {
     import core.thread : Fiber;
 
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
     if (service.querying) return;  // Try again next PING
 
     service.querying = true;  // "Lock"
@@ -155,8 +154,6 @@ void onPing(ChanQueriesService service)
 @(ChannelPolicy.any)
 void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 {
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     service.channelStates[event.channel] = ChannelState.unset;
 }
 
@@ -171,8 +168,6 @@ void onSelfjoin(ChanQueriesService service, const IRCEvent event)
 @(ChannelPolicy.any)
 void onSelfpart(ChanQueriesService service, const IRCEvent event)
 {
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     service.channelStates.remove(event.channel);
 }
 
@@ -187,8 +182,6 @@ void onSelfpart(ChanQueriesService service, const IRCEvent event)
 @(ChannelPolicy.any)
 void onTopic(ChanQueriesService service, const IRCEvent event)
 {
-    if (service.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
 
@@ -222,4 +215,24 @@ private:
     bool querying;
 
     mixin IRCPluginImpl;
+
+    /++
+     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  service does nothing on Twitch servers. The function to call is
+     +  `IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +          after verifying we're not on a Twitch server.
+     +/
+    void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // Daemon known to be Twitch
+            return;
+        }
+
+        return onEventImpl(event);
+    }
 }
