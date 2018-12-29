@@ -133,8 +133,6 @@ void initResources(AutomodePlugin plugin)
 @(ChannelPolicy.home)
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     string account, nickname;
 
     with (IRCEvent.Type)
@@ -256,8 +254,6 @@ void applyAutomodes(AutomodePlugin plugin, const string nickname, const string a
     "$command [channel] [mode] [account/nickname]")
 void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     import kameloso.irc.common : isValidChannel, isValidNickname;
     import kameloso.string : beginsWith, nom;
     import std.algorithm.searching : count;
@@ -389,8 +385,6 @@ void onCommandAddAutomode(AutomodePlugin plugin, const IRCEvent event)
     "$command [channel] [account]")
 void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     import kameloso.string : nom;
     import std.algorithm.searching : count;
     import std.format : format;
@@ -459,8 +453,6 @@ debug
 @Description("[debug] Prints out automodes definitions to the local terminal.")
 void onCommandPrintModes(AutomodePlugin plugin)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     import std.json : JSONValue;
     import std.stdio : writeln;
 
@@ -484,8 +476,6 @@ void onCommandPrintModes(AutomodePlugin plugin)
 @Description("Forces the bot to attempt to apply automodes.")
 void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     if (event.sender.account.length)
     {
         plugin.applyAutomodes(event.sender.nickname, event.sender.account);
@@ -502,8 +492,6 @@ void onCommandHello(AutomodePlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     if (!event.sender.account.length) return;
 
     if (auto channelApplications = event.channel in plugin.appliedAutomodes)
@@ -520,8 +508,6 @@ void onUserPart(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.QUIT)
 void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     if (!event.sender.account.length) return;
 
     foreach (ref channelApplications; plugin.appliedAutomodes)
@@ -538,8 +524,6 @@ void onUserQuit(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.SELFPART)
 void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     plugin.appliedAutomodes.remove(event.channel);
 }
 
@@ -552,8 +536,6 @@ void onSelfPart(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.ERR_NOMOTD)
 void onEndOfMotd(AutomodePlugin plugin)
 {
-    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
-
     plugin.populateAutomodes();
 }
 
@@ -614,4 +596,24 @@ private:
     @Resource string automodeFile = "automodes.json";
 
     mixin IRCPluginImpl;
+
+    /++
+     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does nothing on Twitch servers. The function to call is
+     +  `IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +          after verifying we're not on a Twitch server.
+     +/
+    void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // Daemon is known to be Twitch
+            return;
+        }
+
+        return onEventImpl(event);
+    }
 }
