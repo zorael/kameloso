@@ -84,6 +84,7 @@
                 "TwitchWarnings", "TwitchBot", "OmniscientAdmin" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
+            "dflags": [ "-dip25", "-dip1000", "-dip1008" ],
             "dependencies": { "requests": "~>1.0.0" }
         }
     ]
