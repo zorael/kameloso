@@ -19,11 +19,11 @@ branches:
     - stable
 
 artifacts:
-  - path: kameloso-dmd.exe
+  - path: kameloso.exe
     name: kameloso
-  - path: kameloso-dmd-twitch.exe
+  - path: kameloso-twitch.exe
     name: kameloso-twitch
-  - path: kameloso-dmd-dev.exe
+  - path: kameloso-dev.exe
     name: kameloso-dev
 
 install:
@@ -106,9 +106,9 @@ test_script:
  #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c polyglot || true
  #- dub build --nodeps --arch=%Darch% --compiler=%DC% -b plain -c vanilla  || true
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c polyglot
- - mv kameloso.exe kameloso-%DC%-%Darch%-dev.exe
+ - mv kameloso.exe kameloso-dev.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c twitch
- - mv kameloso.exe kameloso-%DC%-%Darch%-twitch.exe
+ - mv kameloso.exe kameloso-twitch.exe
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c vanilla
  - dub build --nodeps --arch=%Darch% --compiler=%DC% -b debug -c cygwin
- - mv kameloso.exe kameloso-%DC%-%Darch%.exe
+ - mv kameloso.exe kameloso.exe
