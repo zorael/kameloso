@@ -37,8 +37,6 @@ version(Colours)
  +/
 void postprocess(TwitchSupportService service, ref IRCEvent event)
 {
-    if (service.state.client.server.daemon != IRCServer.Daemon.twitch) return;
-
     service.parseTwitchTags(event);
 
     with (IRCEvent.Type)
@@ -735,4 +733,25 @@ public:
 final class TwitchSupportService : IRCPlugin
 {
     mixin IRCPluginImpl;
+
+    /++
+     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  service does nothing on non-Twitch servers. The function to call is
+     +  `IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +          after verifying we're on a Twitch server.
+     +/
+    void onEvent(const IRCEvent event)
+    {
+        if ((state.client.server.daemon != IRCServer.Daemon.unset) &&
+            (state.client.server.daemon != IRCServer.Daemon.twitch))
+        {
+            // Daemon known and not Twitch
+            return;
+        }
+
+        return onEventImpl(event);
+    }
 }
