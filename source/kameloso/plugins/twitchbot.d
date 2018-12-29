@@ -74,7 +74,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Removes a channel's corresponding `TwitchBotPlugin.Channel` when we leave it.
  +
- +  This resets all that channel's state, except for oneliners.
+ +  This resets all that channel's state, except for oneliners and administrators.
  +/
 @(IRCEvent.Type.SELFPART)
 @(ChannelPolicy.home)
@@ -88,8 +88,10 @@ void onSelfpart(TwitchBotPlugin plugin, const IRCEvent event)
 /++
  +  Reports how long the streamer has been streaming.
  +
- +  Technically, how much time has passed since `!start` was issued. The streamer's
- +  name is assumed to be the same as the channel's.
+ +  Technically, how much time has passed since `!start` was issued.
+ +
+ +  The streamer's name is divined from the `plugin.state.users` associative
+ +  array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -133,6 +135,11 @@ void onCommandUptime(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandStart
 /++
  +  Marks the start of a broadcast, for later uptime queries.
+ +
+ +  Consecutive calls to `!start` are ignored.
+ +
+ +  The streamer's name is divined from the `plugin.state.users` associative
+ +  array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
@@ -167,13 +174,16 @@ void onCommandStart(TwitchBotPlugin plugin, const IRCEvent event)
 // onCommandStop
 /++
  +  Marks the stop of a broadcast.
+ +
+ +  The streamer's name is divined from the `plugin.state.users` associative
+ +  array by looking at the entry for the nickname this channel corresponds to.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.SELFCHAN)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "stop")
-@Description("Marks the stop of a brodcast.")
+@Description("Marks the stop of a broadcast.")
 void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import core.time : msecs;
@@ -230,7 +240,9 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
 // onCommandStartVote
 /++
- +  Instigates a vote. A duration and two or more voting options have to be passed.
+ +  Instigates a vote.
+ +
+ +  A duration and two or more voting options have to be passed.
  +
  +  Implemented as a `core.thread.Fiber`.
  +/
@@ -675,7 +687,8 @@ void saveAdmins(const string[][string] adminsByChannel, const string filename)
 
 // initResources
 /++
- +  Reads and writes the file of oneliners to disk, ensuring that it's there.
+ +  Reads and writes the file of oneliners and administrators  to disk, ensuring
+ +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
 {
@@ -714,8 +727,8 @@ void initResources(TwitchBotPlugin plugin)
 
 // populateOneliners
 /++
- +  Reads oneliners from disk, populating a `string[string]` associative array;
- +  `oneliner[trigger]`.
+ +  Reads oneliners from disk, populating a `string[string][string]` associative
+ +  array; `oneliner[trigger][channel]`.
  +
  +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
  +  it to populate a normal associative array for faster lookups.
@@ -786,14 +799,15 @@ public:
 
 // TwitchBotPlugin
 /++
- +  The Twitch plugin is an example of how a bot for Twitch servers may be written.
+ +  The Twitch Bot plugin is an example of how a bot for Twitch servers may be
+ +  written. It contains some basic tools for streamers, and the audience thereof.
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
     /// Contained state of a bot channel, so there can be several alongside each other.
     struct Channel
     {
-        /// Flag for when voting is underway.
+        /// Flag for when voting is currently ongoing.
         bool votingUnderway;
 
         /// UNIX timestamp of when broadcasting started.
@@ -803,19 +817,19 @@ final class TwitchBotPlugin : IRCPlugin
     /// Array of active bot channels' state.
     Channel[string] activeChannels;
 
-    /// Associative array of oneliners, keyed by channel name keyed by trigger word.
+    /// Associative array of oneliners, keyed by trigger word keyed by channel name.
     string[string][string] onelinersByChannel;
 
     /// Filename of file with oneliners.
     @Resource string onelinerFile = "twitchliners.json";
 
-    /// Associative array of admins, nickname array keyed by channel.
+    /// Associative array of administrators; nickname array keyed by channel.
     string[][string] adminsByChannel;
 
-    /// Filename of file with oneliners.
+    /// Filename of file with administrators.
     @Resource string adminsFile = "twitchadmins.json";
 
-    /// All Twitch plugin settings.
+    /// All Twitch Bot plugin settings.
     @Settings TwitchBotSettings twitchBotSettings;
 
     mixin IRCPluginImpl;
@@ -823,6 +837,10 @@ final class TwitchBotPlugin : IRCPlugin
     /++
      +  Override `IRCPluginImpl.allow` and inject a user check, so we can support
      +  channel-specific admins.
+     +
+     +  It is also possible to leverage the whitelist for this, but it would
+     +  block much of the bot from being used by those who fall under the
+     +  `anyone` category.
      +
      +  Params:
      +      event = `kameloso.irc.defs.IRCEvent` to allow, or not.
@@ -840,9 +858,11 @@ final class TwitchBotPlugin : IRCPlugin
         case ignore:
         case anyone:
         case whitelist:
+            // Fallback to original, unchanged behaviour
             return allowImpl(event, privilegeLevel);
 
         case admin:
+            // Let pass if the sender is in `adminsByChannel[event.channel]`
             if (const channelAdmins = event.channel in adminsByChannel)
             {
                 import std.algorithm.searching : canFind;
@@ -861,8 +881,6 @@ final class TwitchBotPlugin : IRCPlugin
      +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
      +  plugin does nothing on non-Twitch servers. The function to call is
      +  `IRCPluginImpl.onEventImpl`.
-     +
-     +  Non-onEvent functions will still need server checks.
      +
      +  Params:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
