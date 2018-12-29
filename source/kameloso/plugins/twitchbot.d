@@ -482,7 +482,8 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 @(PrivilegeLevel.admin)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "admin")
-@Description("Adds or removes a Twitch administrator to/from the current channel.")
+@Description("Adds or removes a Twitch administrator to/from the current channel.",
+    "$command [add|del|list|clear] [nickname]")
 void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
