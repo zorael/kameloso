@@ -1631,7 +1631,7 @@ int kamelosoMain(string[] args)
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources.%c",
                 logtint, e.file.baseName, warningtint, TerminalToken.bell);
-            logger.trace(e);
+            logger.trace(e.message);
             retval = 1;
             break outerloop;
         }
