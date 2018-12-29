@@ -21,26 +21,32 @@ build() {
     ARGS="--compiler=$1 --build-mode=singleFile"
 
     ## test
-    dub test $ARGS -c colours+web
+    dub test $ARGS # -c full # not needed, unittest already includes more
     ARGS="$ARGS --nodeps --force"
     #dub test $ARGS -c pluginless
     dub test $ARGS -c vanilla
 
 
     ## debug
-    dub build $ARGS -b debug -c colours+web
-    mv kameloso artifacts/kameloso-debug
+    dub build $ARGS -b debug -c full
+    mv kameloso artifacts/kameloso
+
+    dub build $ARGS -b debug -c twitch
+    mv kameloso artifacts/kameloso-twitch
 
     #dub build $ARGS -b debug -c pluginless
-    #mv kameloso artifacts/kameloso-debug-pluginless
+    #mv kameloso artifacts/kameloso-pluginless
 
     dub build $ARGS -b debug -c vanilla
-    mv kameloso artifacts/kameloso-debug-vanilla
+    mv kameloso artifacts/kameloso-vanilla
 
 
     ## plain
-    dub build $ARGS -b plain -c colours+web || true
+    dub build $ARGS -b plain -c full || true
     mv kameloso artifacts/kameloso-plain || true
+
+    dub build $ARGS -b plain -c twitch || true
+    mv kameloso artifacts/kameloso-plain-twitch || true
 
     #dub build $ARGS -b plain -c pluginless || true
     #mv kameloso artifacts/kameloso-plain-pluginless || true
@@ -50,8 +56,11 @@ build() {
 
 
     ## release
-    dub build $ARGS -b release -c colours+web || true
+    dub build $ARGS -b release -c full || true
     mv kameloso artifacts/kameloso-release || true
+
+    dub build $ARGS -b release -c twitch || true
+    mv kameloso artifacts/kameloso-release-twitch || true
 
     #dub build $ARGS -b release -c pluginless || true
     #mv kameloso artifacts/kameloso-release-pluginless || true
