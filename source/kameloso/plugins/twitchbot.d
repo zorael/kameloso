@@ -651,6 +651,14 @@ void onEndOfMotd(TwitchBotPlugin plugin)
  +
  +  This is a convenient way to serialise the array.
  +
+ +  Example:
+ +  ---
+ +  plugin.onelinersByChannel["#channel"]["adl"] = "I thought what I'd do " ~
+ +      "was, I'd pretend I was one of those deaf-mutes.";
+ +
+ +  saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
+ +  ---
+ +
  +  Params:
  +      onelinersByChannel = The associative array of oneliners to save.
  +      filename = Filename of the file to write to.
@@ -672,6 +680,14 @@ void saveOneliners(const string[string][string] onelinersByChannel, const string
  +
  +  This is a convenient way to serialise the array.
  +
+ +  Example:
+ +  ---
+ +  plugin.adminsByChannel["#channel"] ~= "kameloso";
+ +  plugin.adminsByChannel["#channel"] ~= "hirrsteff";
+ +
+ +  saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
+ +  ---
+ +
  +  Params:
  +      adminsByChannel = The associative array of admins to save.
  +      filename = Filename of the file to write to.
@@ -689,7 +705,7 @@ void saveAdmins(const string[][string] adminsByChannel, const string filename)
 
 // initResources
 /++
- +  Reads and writes the file of oneliners and administrators  to disk, ensuring
+ +  Reads and writes the file of oneliners and administrators to disk, ensuring
  +  that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
@@ -735,6 +751,13 @@ void initResources(TwitchBotPlugin plugin)
  +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
  +  it to populate a normal associative array for faster lookups.
  +
+ +  Example:
+ +  ---
+ +  // Early after connect...
+ +  plugin.populateOneliners(plugin.onelinerFile);
+ +  plugin.populateAdmins(plugin.adminsFile);
+ +  ---
+ +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
  +      filename = Filename of the file to read from.
@@ -766,6 +789,13 @@ void populateOneliners(TwitchBotPlugin plugin, const string filename)
  +
  +  It is stored in JSON form, so we read it into a `JSONValue` and then iterate
  +  it to populate a normal associative array for faster lookups.
+ +
+ +  Example:
+ +  ---
+ +  // Early after connect...
+ +  plugin.populateOneliners(plugin.onelinerFile);
+ +  plugin.populateAdmins(plugin.adminsFile);
+ +  ---
  +
  +  Params:
  +      plugin = The current `TwitchBotPlugin`.
@@ -801,13 +831,13 @@ public:
 
 // TwitchBotPlugin
 /++
- +  The Twitch Bot plugin is an example of how a bot for Twitch servers may be
- +  written. It contains some basic tools for streamers, and the audience thereof.
+ +  The Twitch Bot plugin is an example Twitch streamer bot. It contains some
+ +  basic tools for streamers, and the audience thereof.
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
 private:
-    /// Contained state of a bot channel, so there can be several alongside each other.
+    /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
         /// Flag for when voting is currently ongoing.
