@@ -776,12 +776,12 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
 {
     import core.thread : Fiber;
 
-    enum hasIRCPluginImpl = true;
+    private enum hasIRCPluginImpl = true;
 
     @safe:
 
-    /// This plugin's `IRCPluginState` structure.
-    IRCPluginState privateState;
+    /// This plugin's `IRCPluginState` structure. Has to be public for some things to work.
+    public IRCPluginState privateState;
 
     /++
      +  Introspects the current plugin, looking for a `Settings`-annotated struct
@@ -862,7 +862,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  See_Also:
      +      onEventImpl
      +/
-    void onEvent(const IRCEvent event) @system
+    public void onEvent(const IRCEvent event) @system
     {
         return onEventImpl(event);
     }
@@ -1414,7 +1414,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      state = The aggregate of all plugin state variables, making
      +          this the "original state" of the plugin.
      +/
-    this(IRCPluginState state) @system
+    public this(IRCPluginState state) @system
     {
         import kameloso.common : settings;
         import kameloso.traits : isConfigurableVariable;
@@ -1451,7 +1451,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Lets a plugin modify an `kameloso.irc.defs.IRCEvent` while it's begin
      +  constructed, before it's finalised and passed on to be handled.
      +/
-    void postprocess(ref IRCEvent event) @system
+    public void postprocess(ref IRCEvent event) @system
     {
         static if (__traits(compiles, .postprocess))
         {
@@ -1465,7 +1465,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Writes plugin resources to disk, creating them if they don't exist.
      +/
-    void initResources() @system
+    public void initResources() @system
     {
         static if (__traits(compiles, .initResources))
         {
@@ -1482,7 +1482,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  This does not proxy a call but merely loads configuration from disk for
      +  all struct variables annotated `Settings`.
      +/
-    string[][string] deserialiseConfigFrom(const string configFile)
+    public string[][string] deserialiseConfigFrom(const string configFile)
     {
         import kameloso.config : readConfigInto;
         import kameloso.meld : MeldingStrategy, meldInto;
@@ -1548,7 +1548,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Returns:
      +      `true` if a member was found and set, `false` otherwise.
      +/
-    bool setSettingByName(const string setting, const string value)
+    public bool setSettingByName(const string setting, const string value)
     {
         import kameloso.objmanip : setMemberByName;
         import std.traits : hasUDA;
@@ -1576,7 +1576,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  It both prints module-level structs as well as structs in the
      +  `kameloso.irc.defs.IRCPlugin` (subtype) itself.
      +/
-    void printSettings() const
+    public void printSettings() const
     {
         import kameloso.printing : printObject;
         import std.traits : hasUDA;
@@ -1610,7 +1610,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +          settings text.
      +/
     import std.array : Appender;
-    void serialiseConfigInto(ref Appender!string sink) const
+    public void serialiseConfigInto(ref Appender!string sink) const
     {
         import kameloso.config : serialise;
         import std.traits : hasUDA;
@@ -1631,7 +1631,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Runs early after-connect routines, immediately after connection has been
      +  established.
      +/
-    void start() @system
+    public void start() @system
     {
         static if (__traits(compiles, .start))
         {
@@ -1660,7 +1660,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  De-initialises the plugin.
      +/
-    void teardown() @system
+    public void teardown() @system
     {
         static if (__traits(compiles, .teardown))
         {
@@ -1677,7 +1677,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Slices the last field of the module name; ergo, `kameloso.plugins.xxx`
      +  would return the name `xxx`, as would `kameloso.xxx` and `xxx`.
      +/
-    string name() @property const pure
+    public string name() @property const pure
     {
         enum ctName =
         {
@@ -1707,7 +1707,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      Associative array of all `Descriptions`, keyed by
      +      `BotCommand.string_`s.
      +/
-    Description[string] commands() pure nothrow @property const
+    public Description[string] commands() pure nothrow @property const
     {
         enum ctCommands =
         {
@@ -1747,7 +1747,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  so `main.d` can access the property, albeit indirectly.
      +/
     pragma(inline)
-    ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
+    public ref inout(IRCPluginState) state() inout pure nothrow @nogc @property
     {
         return this.privateState;
     }
@@ -1759,7 +1759,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  the interval since the last call has passed, letting the plugin do
      +  scheduled tasks.
      +/
-    void periodically(const long now) @system
+    public void periodically(const long now) @system
     {
         static if (__traits(compiles, .periodically))
         {
@@ -1775,7 +1775,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     /++
      +  Reloads the plugin, where such makes sense.
      +/
-    void reload() @system
+    public void reload() @system
     {
         static if (__traits(compiles, .reload))
         {
@@ -1790,7 +1790,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +  Proxies a bus message to the plugin, to let it handle it (or not).
      +/
     import kameloso.thread : Sendable;
-    void onBusMessage(const string header, shared Sendable content) @system
+    public void onBusMessage(const string header, shared Sendable content) @system
     {
         static if (__traits(compiles, .onBusMessage))
         {
