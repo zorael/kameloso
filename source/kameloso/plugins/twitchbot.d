@@ -253,7 +253,13 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     }
     catch (ConvException e)
     {
-        plugin.state.chan(event.channel, "Duration must be a number.");
+        plugin.state.chan(event.channel, "Duration must be a positive number.");
+        return;
+    }
+
+    if (dur <= 0)
+    {
+        plugin.state.chan(event.channel, "Duration must be a positive number.");
         return;
     }
 
@@ -317,26 +323,21 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
         // Triggered by an event
         immutable vote = thisFiber.payload.content;
+        immutable nickname = thisFiber.payload.sender.nickname;
 
         if (!vote.length || (vote.contains(" ")))
         {
             // Not a vote; yield and await a new event
-            Fiber.yield();
-            return dg();
         }
-
-        if (thisFiber.payload.sender.nickname in votedUsers)
+        else if (nickname in votedUsers)
         {
-            // User already voted
-            Fiber.yield();
-            return dg();
+            // User already voted and we don't support revotes for now
         }
-
-        if (auto ballot = vote in voteChoices)
+        else if (auto ballot = vote in voteChoices)
         {
             // Valid entry, increment vote count
             ++(*ballot);
-            votedUsers[thisFiber.payload.sender.nickname] = true;
+            votedUsers[nickname] = true;
         }
 
         // Yield and await a new event
