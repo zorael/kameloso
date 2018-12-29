@@ -195,7 +195,7 @@ void pipereader(shared IRCPluginState newState, const string filename)
         {
             fifo.reopen(filename);
         }
-        catch (const ErrnoException e)
+        catch (ErrnoException e)
         {
             state.askToError("Pipeline plugin failed to reopen FIFO: " ~ logtint ~ e.msg);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
@@ -327,17 +327,17 @@ void onWelcome(PipelinePlugin plugin)
             fifoThread = spawn(&pipereader, cast(shared)state, fifoFilename);
             workerRunning = true;
         }
-        catch (const ReturnValueException e)
+        catch (ReturnValueException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %$2s%$5d%4$s)",
                 e.msg, logtint, e.command, warningtint, e.retval);
         }
-        catch (const FileExistsException e)
+        catch (FileExistsException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, logtint, e.filename, warningtint);
         }
-        catch (const FileTypeMismatchException e)
+        catch (FileTypeMismatchException e)
         {
             logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
                 e.msg, logtint, e.filename, warningtint);

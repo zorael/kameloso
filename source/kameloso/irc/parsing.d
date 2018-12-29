@@ -441,7 +441,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
             alias T = IRCEvent.Type;
             event.type = (event.type == T.UNSET) ? T.NUMERIC : event.type;
         }
-        catch (const ConvException e)
+        catch (ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
         }
@@ -453,7 +453,7 @@ void parseTypestring(ref IRCParser parser, ref IRCEvent event, ref string slice)
             import kameloso.conv : Enum;
             event.type = Enum!(IRCEvent.Type).fromString(typestring);
         }
-        catch (const ConvException e)
+        catch (ConvException e)
         {
             throw new IRCParseException(e.msg, event, e.file, e.line);
         }
@@ -2026,11 +2026,11 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
 
         version(FlagUpdatedClient) parser.client.updated = true;
     }
-    catch (const ConvException e)
+    catch (ConvException e)
     {
         throw new IRCParseException(e.msg, event, e.file, e.line);
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         throw new IRCParseException(e.msg, event, e.file, e.line);
     }

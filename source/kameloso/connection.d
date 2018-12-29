@@ -422,7 +422,7 @@ void connectFiber(ref Connection conn, const bool endlesslyConnect, ref bool abo
                     // Should never get here
                     assert(0, "Finished connectFiber resumed after yield");
                 }
-                catch (const SocketException e)
+                catch (SocketException e)
                 {
                     switch (e.msg)
                     {
@@ -554,7 +554,7 @@ void resolveFiber(ref Connection conn, const string address, const ushort port,
             // Should never get here
             assert(0, "Dead resolveFiber resumed after yield");
         }
-        catch (const SocketException e)
+        catch (SocketException e)
         {
             switch (e.msg)
             {

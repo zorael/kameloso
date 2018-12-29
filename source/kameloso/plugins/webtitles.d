@@ -349,7 +349,7 @@ void worker(shared IRCPluginState sState, ref shared TitleLookup[string] cache,
         state.reportURL(lookup, titleReq.event, colouredOutgoing);
         cache[titleReq.url] = lookup;
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         state.askToError("Webtitles worker exception: " ~ e.msg);
     }

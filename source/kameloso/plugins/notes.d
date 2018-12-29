@@ -123,7 +123,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         plugin.clearNotes(event.sender.nickname, event.channel);
         plugin.notes.save(plugin.notesFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         string logtint, errortint;
 
@@ -216,7 +216,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
         plugin.chan(event.channel, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         string logtint;
 
@@ -412,15 +412,15 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
             plugin.pruneNotes();
         }
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         logger.error("Failed to clear notes: ", logtint, e.msg);
     }
-    catch (const FileException e)
+    catch (FileException e)
     {
         logger.error("Failed to save notes: ", logtint, e.msg);
     }
-    catch (const ErrnoException e)
+    catch (ErrnoException e)
     {
         logger.error("Failed to open/close notes file: ", logtint, e.msg);
     }
@@ -529,7 +529,7 @@ void initResources(NotesPlugin plugin)
     {
         json.load(plugin.notesFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         import std.path : baseName;
         throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");

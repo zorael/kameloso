@@ -134,7 +134,7 @@ void worker(shared IRCPluginState sState, shared RedditLookup[string] cache,
         lookup.when = Clock.currTime.toUnixTime;
         cache[url] = lookup;
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         state.askToError("Reddit worker exception: " ~ e.msg);
     }

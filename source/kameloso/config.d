@@ -97,7 +97,7 @@ string configReader(const string configFile)
             .readText
             .chomp;
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         // catch Exception instead of UTFException, just in case there are more
         // kinds of error than the normal "Invalid UTF-8 sequence".
@@ -435,7 +435,7 @@ string[][string] applyConfiguration(Range, Things...)(Range range, ref Things th
                     section = "IRCClient";
                 }
             }
-            catch (const Exception e)
+            catch (Exception e)
             {
                 logger.warningf(`Malformed configuration section header "%s": %s`, line, e.msg);
             }

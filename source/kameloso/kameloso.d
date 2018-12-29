@@ -690,11 +690,11 @@ Next mainLoop(ref IRCBot bot)
                 {
                     event = bot.parser.toIRCEvent(attempt.line);
                 }
-                catch (const UTFException e)
+                catch (UTFException e)
                 {
                     event = bot.parser.toIRCEvent(sanitize(attempt.line));
                 }
-                catch (const UnicodeException e)
+                catch (UnicodeException e)
                 {
                     event = bot.parser.toIRCEvent(sanitize(attempt.line));
                 }
@@ -745,12 +745,12 @@ Next mainLoop(ref IRCBot bot)
                             bot.propagateClient(bot.parser.client);
                         }
                     }
-                    catch (const UTFException e)
+                    catch (UTFException e)
                     {
                         logger.warningf("UTFException %s.onEvent: %s%s",
                             plugin.name, logtint, e.msg);
                     }
-                    catch (const Exception e)
+                    catch (Exception e)
                     {
                         logger.warningf("Exception %s.onEvent: %s%s",
                             plugin.name, logtint, e.msg);
@@ -758,21 +758,21 @@ Next mainLoop(ref IRCBot bot)
                     }
                 }
             }
-            catch (const IRCParseException e)
+            catch (IRCParseException e)
             {
                 logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
                 printObject(e.event);
             }
-            catch (const UTFException e)
+            catch (UTFException e)
             {
                 logger.warning("UTFException: ", logtint, e.msg);
             }
-            catch (const UnicodeException e)
+            catch (UnicodeException e)
             {
                 logger.warning("UnicodeException: ", logtint, e.msg);
             }
-            catch (const Exception e)
+            catch (Exception e)
             {
                 logger.warningf("Unhandled exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
@@ -849,7 +849,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                     toRemove ~= i;
                 }
             }
-            catch (const IRCParseException e)
+            catch (IRCParseException e)
             {
                 string logtint;
 
@@ -869,7 +869,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                 printObject(e.event);
                 toRemove ~= i;
             }
-            catch (const Exception e)
+            catch (Exception e)
             {
                 string logtint;
 
@@ -953,7 +953,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
             // Always removed a timed Fiber after processing
             toRemove ~= i;
         }
-        catch (const IRCParseException e)
+        catch (IRCParseException e)
         {
             string logtint;
 
@@ -973,7 +973,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
             printObject(e.event);
             toRemove ~= i;
         }
-        catch (const Exception e)
+        catch (Exception e)
         {
             string logtint;
 
@@ -1112,25 +1112,25 @@ Next tryGetopt(ref IRCBot bot, string[] args, ref string[] customSettings)
         // Act on arguments getopt, pass return value to main
         return bot.handleGetopt(args, customSettings);
     }
-    catch (const GetOptException e)
+    catch (GetOptException e)
     {
         logger.error("Error parsing command-line arguments: ", logtint, e.msg);
     }
-    catch (const ConvException e)
+    catch (ConvException e)
     {
         logger.error("Error converting command-line arguments: ", logtint, e.msg);
     }
-    catch (const FileTypeMismatchException e)
+    catch (FileTypeMismatchException e)
     {
         logger.errorf("Specified configuration file %s%s%s is not a file!",
             logtint, e.filename, errortint);
     }
-    catch (const ConfigurationFileReadFailureException e)
+    catch (ConfigurationFileReadFailureException e)
     {
         logger.errorf("Error reading and decoding configuration file [%s%s%s]: %1$s%4$s",
             logtint, e.filename, errortint, e.msg);
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         logger.error("Unhandled exception handling command-line arguments: ", logtint, e.msg);
     }
@@ -1485,13 +1485,13 @@ int kamelosoMain(string[] args)
         const invalidEntries = bot.initPlugins(customSettings);
         complainAboutInvalidConfigurationEntries(invalidEntries);
     }
-    catch (const ConvException e)
+    catch (ConvException e)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
         if (!settings.force) return 1;
     }
-    catch (const IRCPluginSettingsException e)
+    catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
@@ -1618,7 +1618,7 @@ int kamelosoMain(string[] args)
             bot.initPluginResources();
             if (*bot.abort) break outerloop;
         }
-        catch (const IRCPluginInitialisationException e)
+        catch (IRCPluginInitialisationException e)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources: %1$s%4$s%5$c",
@@ -1626,7 +1626,7 @@ int kamelosoMain(string[] args)
             retval = 1;
             break outerloop;
         }
-        catch (const Exception e)
+        catch (Exception e)
         {
             import kameloso.terminal : TerminalToken;
             logger.warningf("The %s%s%s plugin failed to load its resources.%c",
@@ -1645,7 +1645,7 @@ int kamelosoMain(string[] args)
             bot.startPlugins();
             if (*bot.abort) break outerloop;
         }
-        catch (const IRCPluginInitialisationException e)
+        catch (IRCPluginInitialisationException e)
         {
             logger.warningf("A plugin failed to start: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                 logtint, e.msg, warningtint, e.file, e.line);

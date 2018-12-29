@@ -104,7 +104,7 @@ void initResources(AutomodePlugin plugin)
     {
         json.load(plugin.automodeFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         import std.path : baseName;
         throw new IRCPluginInitialisationException(plugin.automodeFile.baseName ~ " may be malformed.");

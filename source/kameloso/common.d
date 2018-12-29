@@ -410,7 +410,7 @@ struct IRCBot
                         plugin.name, e.msg);
                 }
             }
-            catch (const Exception e)
+            catch (Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
             }

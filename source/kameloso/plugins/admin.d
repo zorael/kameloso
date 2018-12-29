@@ -1142,7 +1142,7 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
             thisFiber.payload.applyCustomSettings([ event.content ]);
             plugin.state.privmsg(event.channel, event.sender.nickname, "Setting changed.");
         }
-        catch (const ConvException e)
+        catch (ConvException e)
         {
             plugin.state.privmsg(event.channel, event.sender.nickname, "Invalid setting.");
         }
@@ -1317,7 +1317,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
                 thisFiber.payload.applyCustomSettings([ slice ]);
                 logger.log("Setting changed.");
             }
-            catch (const ConvException e)
+            catch (ConvException e)
             {
                 logger.error("Invalid setting.");
             }

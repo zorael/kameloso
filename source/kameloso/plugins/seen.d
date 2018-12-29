@@ -757,7 +757,7 @@ long[string] loadSeen(const string filename)
             aa[user] = time.integer;
         }
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         logger.error("Could not load seen JSON from file: ", logtint, e.msg);
     }
@@ -855,7 +855,7 @@ void initResources(SeenPlugin plugin)
     {
         json.load(plugin.seenFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         import kameloso.terminal : TerminalToken;
         import std.path : baseName;

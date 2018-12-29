@@ -266,11 +266,11 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.admin;
             }
         }
-        catch (const JSONException e)
+        catch (JSONException e)
         {
             logger.warning("JSON exception caught when populating admins: ", e.msg);
         }
-        catch (const Exception e)
+        catch (Exception e)
         {
             logger.warning("Unhandled exception caught when populating admins: ", e.msg);
         }
@@ -285,11 +285,11 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.whitelist;
             }
         }
-        catch (const JSONException e)
+        catch (JSONException e)
         {
             logger.warning("JSON exception caught when populating whitelist: ", e.msg);
         }
-        catch (const Exception e)
+        catch (Exception e)
         {
             logger.warning("Unhandled exception caught when populating whitelist: ", e.msg);
         }
@@ -304,11 +304,11 @@ void reloadClassifiersFromDisk(PersistenceService service)
                 service.userClasses[account.str] = IRCUser.Class.blacklist;
             }
         }
-        catch (const JSONException e)
+        catch (JSONException e)
         {
             logger.warning("JSON exception caught when populating blacklist: ", e.msg);
         }
-        catch (const Exception e)
+        catch (Exception e)
         {
             logger.warning("Unhandled exception caught when populating blacklist: ", e.msg);
         }
@@ -341,7 +341,7 @@ void initResources(PersistenceService service)
     {
         json.load(service.userFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         import std.path : baseName;
         throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");

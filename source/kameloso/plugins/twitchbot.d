@@ -251,7 +251,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     {
         dur = slice.nom!(Yes.decode)(" ").to!long;
     }
-    catch (const ConvException e)
+    catch (ConvException e)
     {
         plugin.state.chan(event.channel, "Duration must be a number.");
         return;
@@ -702,7 +702,7 @@ void initResources(TwitchBotPlugin plugin)
     {
         onelinerJSON.load(plugin.onelinerFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
     }
@@ -713,7 +713,7 @@ void initResources(TwitchBotPlugin plugin)
     {
         adminsJSON.load(plugin.adminsFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         throw new IRCPluginInitialisationException(plugin.adminsFile.baseName ~ " may be malformed.");
     }

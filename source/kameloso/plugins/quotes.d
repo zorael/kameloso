@@ -219,7 +219,7 @@ void onCommandQuote(QuotesPlugin plugin, const IRCEvent event)
 
         enqueueAndWHOIS(specified);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         string logtint, errortint;
 
@@ -308,7 +308,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const IRCEvent event)
 
             plugin.privmsg(event.channel, event.sender.nickname, message);
         }
-        catch (const JSONException e)
+        catch (JSONException e)
         {
             string logtint, errortint;
 
@@ -417,7 +417,7 @@ void initResources(QuotesPlugin plugin)
     {
         json.load(plugin.quotesFile);
     }
-    catch (const JSONException e)
+    catch (JSONException e)
     {
         import std.path : baseName;
         throw new IRCPluginInitialisationException(plugin.quotesFile.baseName ~ " may be malformed.");

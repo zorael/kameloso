@@ -1129,7 +1129,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                                     mutEvent.aux = hits[0];
                                 }
                             }
-                            catch (const Exception e)
+                            catch (Exception e)
                             {
                                 logger.warning("BotRegex exception: ", e.msg);
                                 continue;  // next BotRegex
@@ -1371,7 +1371,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                         return;
                     }
                 }
-                catch (const UTFException e)
+                catch (UTFException e)
                 {
                     /*logger.warningf("tryCatchHandle UTFException on %s: %s",
                         __traits(identifier, fun), e.msg);*/
@@ -1380,7 +1380,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
                     sanitizeEvent(saneEvent);
                     handle!fun(cast(const)saneEvent);
                 }
-                catch (const UnicodeException e)
+                catch (UnicodeException e)
                 {
                     /*logger.warningf("tryCatchHandle UnicodeException on %s: %s",
                         __traits(identifier, fun), e.msg);*/

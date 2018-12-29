@@ -126,7 +126,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
 
                             success = true;
                         }
-                        catch (const ConvException e)
+                        catch (ConvException e)
                         {
                             immutable message = `Could not convert %s.%s array entry "%s" into %s (%s)`
                                 .format(Thing.stringof.stripSuffix("Settings"),
@@ -186,7 +186,7 @@ bool setMemberByName(Thing)(ref Thing thing, const string memberToSet, const str
                             .to!T;
                         success = true;
                     }
-                    catch (const ConvException e)
+                    catch (ConvException e)
                     {
                         immutable message = `Invalid value for setting %s.%s: " ~
                             "could not convert "%s" to %s (%s)`

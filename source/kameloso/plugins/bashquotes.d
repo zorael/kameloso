@@ -144,7 +144,7 @@ void worker(shared IRCPluginState sState, const IRCEvent event, const bool colou
             state.privmsg(event.channel, event.sender.nickname, line);
         }
     }
-    catch (const Exception e)
+    catch (Exception e)
     {
         state.askToWarn("Bashquotes could not fetch %s: %s".format(url, e.msg));
     }
