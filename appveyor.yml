@@ -20,11 +20,11 @@ branches:
 
 artifacts:
   - path: kameloso.exe
-    name: kameloso
+    name: Normal build (debug mode)
   - path: kameloso-twitch.exe
-    name: kameloso-twitch
+    name: With Twitch bot (debug mode)
   - path: kameloso-dev.exe
-    name: kameloso-dev
+    name: All-inclusive dev build (debug mode)
 
 install:
   - ps: function SetUpDCompiler
