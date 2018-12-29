@@ -124,11 +124,13 @@ There are several configurations in which the bot may be built.
 * `vanilla`, builds without any specific extras
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
-* `colours+web`, unsurprisingly includes both of the above
-* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `colours+web`
-* `windows`, default on Windows, also equals `colours+web`
-* `cygwin`, equals `colours+web` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
-* `polyglot`, equals everything available, including things like the Admin plugin being able to see Twitch users
+* `full`, includes both of the above
+* `twitch`, everything so far, plus the example Twitch bot
+* `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
+* `windows`, default on Windows, also equals `full`
+* `cygwin`, equals `full` but with extra code needed for running it under the default Cygwin terminal (**mintty**)
+* `cygwin+twitch`, `cygwin` but with the Twitch bot
+* `polyglot`, equals everything available, including things like the Admin plugin being able to see Twitch users (more of a development build)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
