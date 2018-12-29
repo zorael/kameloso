@@ -32,13 +32,17 @@
         },
         {
             "name": "cygwin",
-            "platforms": [ "windows", "cygwin" ],
             "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
             "name": "twitch",
             "versions": [ "WithPlugins", "Colours", "Web", "TwitchBot" ],
+            "dependencies": { "requests": "~>1.0.0" }
+        },
+        {
+            "name": "twitch+cygwin",
+            "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web", "TwitchBot" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
@@ -61,7 +65,7 @@
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
-            "name": "colours+web",
+            "name": "full",
             "versions": [ "WithPlugins", "Colours", "Web" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
