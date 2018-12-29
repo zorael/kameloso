@@ -208,36 +208,6 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
-// onOneliner
-/++
- +  Responds to oneliners.
- +
- +  Responses are stored in `TwitchBotPlugin.oneliners`.
- +/
-@(Chainable)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PrivilegeLevel.ignore)
-@(ChannelPolicy.home)
-void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
-{
-    import kameloso.string : beginsWith, contains, nom;
-
-    if (!event.content.beginsWith(settings.prefix)) return;
-
-    string slice = event.content;
-    slice.nom(settings.prefix);
-
-    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
-    {
-        if (const response = slice in *channelOneliners)
-        {
-            plugin.state.chan(event.channel, *response);
-        }
-    }
-}
-
-
 // onCommandStartVote
 /++
  +  Instigates a vote.
@@ -626,6 +596,36 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         plugin.state.chan(event.channel, "Usage: %s%s [add|del|list|clear] [nickname]"
             .format(settings.prefix, event.aux));
         break;
+    }
+}
+
+
+// onOneliner
+/++
+ +  Responds to oneliners.
+ +
+ +  Responses are stored in `TwitchBotPlugin.onelinersByChannel`.
+ +/
+@(Chainable)
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    import kameloso.string : beginsWith, contains, nom;
+
+    if (!event.content.beginsWith(settings.prefix)) return;
+
+    string slice = event.content;
+    slice.nom(settings.prefix);
+
+    if (const channelOneliners = event.channel in plugin.onelinersByChannel)
+    {
+        if (const response = slice in *channelOneliners)
+        {
+            plugin.state.chan(event.channel, *response);
+        }
     }
 }
 
