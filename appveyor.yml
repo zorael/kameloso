@@ -3,13 +3,13 @@ platform: x64
 environment:
   matrix:
     - DC: dmd
-      DReleaseType: pre-releases
-      DVersion: 2.082.1
-      DSubversion: -beta.1
-      DAppVeyorBuildJob: g3p21p0863xxw1be
+      DReleaseType: releases
+      DVersion: 2.083.1
+      DSubversion:
+      DAppVeyorBuildJob: so9h5h85a11yywir
       arch: x64
     - DC: ldc
-      DVersion: 1.12.0-beta2
+      DVersion: 1.13.0
       arch: x64
 
 skip_tags: true
