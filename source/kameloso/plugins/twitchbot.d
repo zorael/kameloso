@@ -852,7 +852,7 @@ final class TwitchBotPlugin : IRCPlugin
             }
             else
             {
-                return allowImpl(event, privilegeLevel);
+                goto case whitelist;
             }
         }
     }
