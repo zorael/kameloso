@@ -1370,6 +1370,7 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
+private:
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
 

@@ -2178,6 +2178,7 @@ public:
  +/
 final class PrinterPlugin : IRCPlugin
 {
+private:
     /// Whether or not we have nagged about an invalid log directory.
     bool naggedAboutDir;
 

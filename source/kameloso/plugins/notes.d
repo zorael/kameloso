@@ -553,6 +553,7 @@ public:
  +/
 final class NotesPlugin : IRCPlugin
 {
+private:
     import kameloso.json : JSONStorage;
 
     /// All Notes plugin settings gathered.

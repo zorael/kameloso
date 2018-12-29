@@ -127,6 +127,7 @@ public:
  +/
 final class SeenPlugin : IRCPlugin
 {
+private:  // Module-level private.
     // seenSettings
     /++
      +  An instance of *settings* for the Seen plugin. We will define this

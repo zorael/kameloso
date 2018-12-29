@@ -276,6 +276,7 @@ public:
  +/
 final class RedditPlugin : IRCPlugin
 {
+private:
     /// Cache of recently looked-up URLs.
     shared RedditLookup[string] cache;
 

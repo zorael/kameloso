@@ -24,6 +24,7 @@ import kameloso.plugins.common;
 import kameloso.irc.defs;
 import kameloso.common : logger, settings;
 import kameloso.irc.colours : ircBold, ircColourNick;
+import kameloso.json : JSONStorage;
 import kameloso.messaging;
 
 import std.typecons : Flag, No, Yes;
@@ -444,8 +445,7 @@ public:
  +/
 final class QuotesPlugin : IRCPlugin
 {
-    import kameloso.json : JSONStorage;
-
+private:
     /++
      +  The in-memory JSON storage of all user quotes.
      +

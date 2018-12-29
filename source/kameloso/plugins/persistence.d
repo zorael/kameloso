@@ -429,6 +429,7 @@ public:
  +/
 final class PersistenceService : IRCPlugin
 {
+private:
     /// File with user definitions.
     @Resource string userFile = "users.json";
 

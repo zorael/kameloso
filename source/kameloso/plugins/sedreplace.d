@@ -244,6 +244,7 @@ public:
  +/
 final class SedReplacePlugin : IRCPlugin
 {
+private:
     /++
      +  A `Line[string]` 1-buffer of the previous line every user said, with
      +  with nickname as key.

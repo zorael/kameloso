@@ -164,6 +164,7 @@ public:
  +/
 final class BashQuotesPlugin : IRCPlugin
 {
+private:
     /// All BashQuotes options gathered.
     @Settings BashQuotesSettings bashQuotesSettings;
 

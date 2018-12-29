@@ -299,6 +299,7 @@ public:
  +/
 final class CTCPService : IRCPlugin
 {
+private:
     mixin IRCPluginImpl;
     mixin MessagingProxy;
 }

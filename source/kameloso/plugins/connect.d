@@ -1009,6 +1009,7 @@ public:
  +/
 final class ConnectService : IRCPlugin
 {
+private:
     /// All Connect service settings gathered.
     @Settings ConnectSettings connectSettings;
 

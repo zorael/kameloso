@@ -417,6 +417,7 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
+private:
     /// Thread ID of the thread reading the named pipe.
     Tid fifoThread;
 

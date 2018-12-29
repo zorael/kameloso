@@ -806,6 +806,7 @@ public:
  +/
 final class TwitchBotPlugin : IRCPlugin
 {
+private:
     /// Contained state of a bot channel, so there can be several alongside each other.
     struct Channel
     {

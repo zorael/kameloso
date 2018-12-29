@@ -600,6 +600,7 @@ public:
  +/
 final class AutomodePlugin : IRCPlugin
 {
+private:
     /// Associative array of automodes.
     string[string][string] automodes;
 

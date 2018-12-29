@@ -205,6 +205,7 @@ public:
  +/
 final class ChanQueriesService : IRCPlugin
 {
+private:
     /++
      +  Extra seconds delay between channel mode/user queries. Not delaying may
      +  cause kicks and disconnects if results are returned quickly.

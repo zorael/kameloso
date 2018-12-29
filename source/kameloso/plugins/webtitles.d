@@ -718,6 +718,7 @@ public:
  +/
 final class WebtitlesPlugin : IRCPlugin
 {
+private:
     /// Cache of recently looked-up web titles.
     shared TitleLookup[string] cache;
 

@@ -362,6 +362,7 @@ public:
  +/
 final class ChatbotPlugin : IRCPlugin
 {
+private:
     /// All Chatbot plugin settings gathered.
     @Settings ChatbotSettings chatbotSettings;
 
