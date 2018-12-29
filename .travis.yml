@@ -17,13 +17,13 @@ addons:
       - libevent-dev
 
 script:
-  - dub test  --compiler=${DC}          -c colours #+web  # no web unittests
+  - dub test  --compiler=${DC} # unittest already includes more than other configs
   - dub test  --compiler=${DC} --nodeps -c vanilla
-  - dub build --compiler=${DC} --nodeps -b debug   -c colours+web
-  - dub build --compiler=${DC} --nodeps -b debug   -c vanilla || true
-  - dub build --compiler=${DC} --nodeps -b plain   -c colours+web || true
+  - dub build --compiler=${DC} --nodeps -b debug   -c twitch
+  - dub build --compiler=${DC} --nodeps -b debug   -c vanilla
+  - dub build --compiler=${DC} --nodeps -b plain   -c twitch  || true
   - dub build --compiler=${DC} --nodeps -b plain   -c vanilla || true
-  - dub build --compiler=${DC} --nodeps -b release -c colours+web || true
+  - dub build --compiler=${DC} --nodeps -b release -c twitch  || true
   - dub build --compiler=${DC} --nodeps -b release -c vanilla || true
   - test ${DC} = ldc2 || dub build --compiler=${DC} --nodeps -b ddox -c pluginless-vanilla
 
