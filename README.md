@@ -2,7 +2,7 @@
 
 **kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, some of which are examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
 It works well. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Once discovered it's not a difficult thing to do.
 
@@ -18,7 +18,7 @@ Please report bugs. Unreported bugs can only be fixed by accident.
 * saving `notes` to offline users that get played back when they come online
 * [`seen`](source/kameloso/plugins/seen.d) plugin; reporting when a user was last seen, written as a rough example plugin
 * user `quotes`
-* Twitch chat support, including basic [Twitch bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
+* Twitch chat support, including basic [streamer bot](source/kameloso/plugins/twitchbot.d) (default disabled); see [notes on connecting](#twitch) below
 * piping text from the terminal to the server (Linux/OSX and other Posix platforms only)
 * mIRC colour coding and text effects (bold, underlined, ...), mapped to ANSI terminal formatting ([extra step](#windows) needed for Windows)
 * [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer) authentication (`plain`)
@@ -29,7 +29,6 @@ If nothing else it makes for a good lurkbot.
 ## Current limitations:
 
 * missing good how-to-use guide. Use the source, Luke! Also [the wiki](https://github.com/zorael/kameloso/wiki).
-* only one developer, so only one pair of eyes.
 * the dmd and ldc compilers may segfault if building in anything other than `debug` mode (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)).
 * Windows may need a registry fix to display terminal colours properly; see the [known issues](#known-issues) section.
 * the stable release of the **gdc** compiler doesn't yet support `static foreach` and thus cannot be used to build this bot. The development release based on D version **2.081** doesn't work yet either, segfaulting upon compiling (bug [#307](https://bugzilla.gdcproject.org/show_bug.cgi?id=307)).
@@ -37,7 +36,7 @@ If nothing else it makes for a good lurkbot.
 
 Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services) (`NickServ`/`Q`/`AuthServ`/...) may be difficult, since the bot identifies people by their account names. You will probably want to register yourself with such, where available.
 
-Testing is primarily done on [**freenode**](https://freenode.net), so support and coverage is best there. [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc) also sees extensive testing.
+Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc), so support and coverage is best there.
 
 # TL;DR: abridged
 
@@ -295,6 +294,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * private notes (later)
+* more pairs of eyes
 
 # Built with
 
