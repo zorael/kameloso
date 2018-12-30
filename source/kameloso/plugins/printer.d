@@ -1729,7 +1729,7 @@ void periodically(PrinterPlugin plugin)
     // Schedule the next run for the following midnight.
     plugin.state.nextPeriodical = getNextMidnight(Clock.currTime).toUnixTime;
 
-    if (!plugin.printerSettings.enabled) return;
+    if (!plugin.isEnabled) return;
 
     if (plugin.printerSettings.printToScreen)
     {

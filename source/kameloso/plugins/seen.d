@@ -821,7 +821,7 @@ void periodically(SeenPlugin plugin)
     immutable now = Clock.currTime.toUnixTime;
     plugin.state.nextPeriodical = now + (hoursBetweenSaves * 3600);
 
-    if (plugin.seenSettings.enabled)
+    if (plugin.isEnabled)
     {
         plugin.updateAllUsers();
         plugin.seenUsers.rehash().saveSeen(plugin.seenFile);
@@ -889,7 +889,7 @@ version(Posix)
 debug
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
-    if (!plugin.seenSettings.enabled) return;
+    if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
     import kameloso.string : strippedRight;
