@@ -409,8 +409,8 @@ void onCommandClearAutomode(AutomodePlugin plugin, const IRCEvent event)
 
         if (settings.colouredOutgoing)
         {
-            message = "Automode cleared: %s on %s".
-                format(account.ircColourNick.ircBold, channelName.ircBold);
+            message = "Automode cleared: %s on %s"
+                .format(account.ircColourNick.ircBold, channelName.ircBold);
         }
         else
         {
