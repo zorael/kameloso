@@ -794,7 +794,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
      +      `true` if the plugin is deemed enabled (or cannot be disabled),
      +      `false` if not.
      +/
-    private bool pluginIsEnabled() const @property pure nothrow @nogc
+    private bool isEnabled() const @property pure nothrow @nogc
     {
         import std.traits : Unqual, hasUDA;
 
@@ -887,7 +887,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getSymbolsByUDA, isSomeFunction, getUDAs, hasUDA;
 
-        if (!pluginIsEnabled) return;
+        if (!isEnabled) return;
 
         alias setupAwareness(alias T) = hasUDA!(T, Awareness.setup);
         alias earlyAwareness(alias T) = hasUDA!(T, Awareness.early);
@@ -1455,7 +1455,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .postprocess))
         {
-            if (!pluginIsEnabled) return;
+            if (!isEnabled) return;
             .postprocess(this, event);
         }
     }
@@ -1469,7 +1469,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .initResources))
         {
-            if (!pluginIsEnabled) return;
+            if (!isEnabled) return;
             .initResources(this);
         }
     }
@@ -1635,7 +1635,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .start))
         {
-            if (!pluginIsEnabled) return;
+            if (!isEnabled) return;
 
             import std.datetime.systime : SysTime;
             import std.meta : AliasSeq, staticMap;
@@ -1664,7 +1664,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .teardown))
         {
-            if (!pluginIsEnabled) return;
+            if (!isEnabled) return;
             .teardown(this);
         }
     }
@@ -1735,7 +1735,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
             return descriptions;
         }();
 
-        return pluginIsEnabled ? ctCommands : (Description[string]).init;
+        return isEnabled ? ctCommands : (Description[string]).init;
     }
 
     // state
@@ -1779,7 +1779,7 @@ mixin template IRCPluginImpl(bool debug_ = false, string module_ = __MODULE__)
     {
         static if (__traits(compiles, .reload))
         {
-            if (!pluginIsEnabled) return;
+            if (!isEnabled) return;
             .reload(this);
         }
     }
@@ -1833,10 +1833,10 @@ unittest
     }
 
     TestPlugin p = new TestPlugin(state);
-    assert(!p.pluginIsEnabled);
+    assert(!p.isEnabled);
 
     p.testSettings.enuubled = true;
-    assert(p.pluginIsEnabled);
+    assert(p.isEnabled);
 }
 
 // MessagingProxy
