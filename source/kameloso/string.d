@@ -217,6 +217,121 @@ unittest
 }
 
 
+// nom
+/++
+ +  Given some string, finds the supplied separator token in it, returns the
+ +  string up to that point, and advances the passed string by ref to after the token.
+ +
+ +  The naming is in line with standard library functions such as
+ +  `std.string.munch`, `std.file.slurp` and others.
+ +
+ +  Overload that takes an extra `Flag!"inherit"` template parameter, to toggle
+ +  whether the return value inherits the passed line (and clearing it) upon no
+ +  separator match.
+ +
+ +  Example:
+ +  ---
+ +  string foobar = "foo bar!";
+ +  string foo = foobar.nom(" ");
+ +  string bar = foobar.nom!(Yes.inherit)("?");
+ +
+ +  assert((foo == "foo"), foo);
+ +  assert((bar == "bar!"), bar);
+ +  assert(!foobar.length);
+ +
+ +  string slice = "snarfl";
+ +  string verb = slice.nom!(Yes.inherit)(" ");
+ +
+ +  assert((verb == "snarfl"), verb);
+ +  assert(!slice.length, slice);
+ +  ---
+ +
+ +  Params:
+ +      inherit = Whether or not to have the returned string inherit (and clear)
+ +          the passed line by ref.
+ +      decode = Whether to use auto-decoding functions, or try to keep to non-
+ +          decoding ones (when possible).
+ +      line = String to walk and advance.
+ +      separator = Token that deliminates what should be returned and to where to advance.
+ +      callingFile = Name of the calling source file, used to pass along when
+ +          throwing an exception.
+ +      callingLine = Line number where in the source file this is called, used
+ +          to pass along when throwing an exception.
+ +
+ +  Returns:
+ +      The string `line` from the start up to the separator token. The original
+ +      variable is advanced to after the token.
+ +
+ +  Throws: `Exception` if the separator could not be found in the string.
+ +/
+pragma(inline)
+T nom(Flag!"inherit" inherit, Flag!"decode" decode = No.decode, T, C)
+    (ref T line, const C separator, const string callingFile = __FILE__,
+    const size_t callingLine = __LINE__) pure
+if (isMutable!T && isSomeString!T && (is(C : T) || is(C : ElementType!T) || is(C : ElementEncodingType!T)))
+{
+    static if (inherit)
+    {
+        if (line.contains!decode(separator))
+        {
+            // Separator exists, no inheriting will take place, call original nom
+            return line.nom!decode(separator, callingFile, callingLine);
+        }
+        else
+        {
+            // No separator match; inherit string and clear the original
+            scope(exit) line = string.init;
+            return line;
+        }
+    }
+    else
+    {
+        // Not inheriting due to argumet No.iherit, so just pass onto original nom
+        return line.nom!decode(separator, callingFile, callingLine);
+    }
+}
+
+///
+unittest
+{
+    {
+        string line = "Lorem ipsum";
+        immutable head = line.nom(" ");
+        assert((head == "Lorem"), head);
+        assert((line == "ipsum"), line);
+    }
+    {
+        string line = "Lorem";
+        immutable head = line.nom!(Yes.inherit)(" ");
+        assert((head == "Lorem"), head);
+        assert(!line.length, line);
+    }
+    {
+        string slice = "verb";
+        string verb;
+
+        if (slice.contains(' '))
+        {
+            verb = slice.nom(' ');
+        }
+        else
+        {
+            verb = slice;
+            slice = string.init;
+        }
+
+        assert((verb == "verb"), verb);
+        assert(!slice.length, slice);
+    }
+    {
+        string slice = "verb";
+        immutable verb = slice.nom!(Yes.inherit)(' ');
+        assert((verb == "verb"), verb);
+        assert(!slice.length, slice);
+    }
+}
+
+
 // plurality
 /++
  +  Selects the correct singular or plural form of a word depending on the
