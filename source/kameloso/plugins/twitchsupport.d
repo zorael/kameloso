@@ -732,6 +732,7 @@ public:
  +/
 final class TwitchSupportService : IRCPlugin
 {
+private:
     mixin IRCPluginImpl;
 
     /++
