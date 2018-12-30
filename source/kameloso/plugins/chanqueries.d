@@ -225,7 +225,7 @@ private:
      +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
      +          after verifying we're not on a Twitch server.
      +/
-    void onEvent(const IRCEvent event)
+    public void onEvent(const IRCEvent event)
     {
         if (state.client.server.daemon == IRCServer.Daemon.twitch)
         {
