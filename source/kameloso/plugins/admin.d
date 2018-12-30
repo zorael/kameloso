@@ -1239,17 +1239,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    string verb;
-
-    if (slice.contains(' '))
-    {
-        verb = slice.nom(' ');
-    }
-    else
-    {
-        verb = slice;
-        slice = string.init;
-    }
+    immutable verb = slice.nom!(Yes.inherit)(' ');
 
     switch (verb)
     {

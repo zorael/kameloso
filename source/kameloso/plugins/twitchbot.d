@@ -383,17 +383,7 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    string verb;
-
-    if (slice.contains(" "))
-    {
-        verb = slice.nom(" ");
-    }
-    else
-    {
-        verb = slice;
-        slice = string.init;
-    }
+    immutable verb = slice.nom!(Yes.inherit)(" ");
 
     switch (verb)
     {
@@ -498,17 +488,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content;
-    string verb;
-
-    if (slice.contains(" "))
-    {
-        verb = slice.nom(" ");
-    }
-    else
-    {
-        verb = slice;
-        slice = string.init;
-    }
+    immutable verb = slice.nom!(Yes.inherit)(" ");
 
     switch (verb)
     {
