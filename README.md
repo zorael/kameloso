@@ -4,7 +4,7 @@
 
 A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
 
-It works well. IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have yet been written. Once discovered it's not a difficult thing to do.
+IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet. Once discovered it's not a difficult thing to do.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -178,7 +178,7 @@ Later invocations of `--writeconfig` will only regenerate the file. It will neve
 
 If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-If you are on Windows and you're seeing weird "`\033[92m`"-like characters instead of colours, see the [known issues](#known-issues) section for a fix.
+If you are on Windows and you're seeing weird `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a fix.
 
 ### Other files
 
@@ -212,14 +212,14 @@ kameloso | [youtube.com] Danish language (uploaded by snurre)
 
 Send `help` to the bot in a private message for a summary of available bot commands, and `help [plugin] [command]` for a brief description of a specific one. Mind that commands defined as *regular expressions* cannot be shown, due to technical reasons.
 
-The **prefix** character (here "`!`") is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The **prefix** character (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
 
 ```ini
 [Core]
 prefix              !
 ```
 
-It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix token, like `"please "`.
+It can technically be any string and not just one character. Enquote it if you want any spaces as part of the prefix, like `"please "` (making it `please note`, `please quote`, ...).
 
 ## Twitch
 
@@ -241,14 +241,16 @@ See [the wiki](https://github.com/zorael/kameloso/wiki/Twitch) for more informat
 
 ### Twitch bot
 
-There is a rudimentary bot plugin but it is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included.
+There is a basic streamer bot plugin but it is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included. (It will not show up when generating the file if the plugin is not compiled in.)
 
 ```bash
 $ dub build -c twitch
 $ ./kameloso --writeconfig
 ```
 
-Commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!admin` (assuming a prefix of "`!`").
+ Assuming a prefix of `!`, commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!admin`
+
+ The `help` command does not work on Twitch.
 
 ## Use as a library
 
@@ -263,7 +265,7 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](source/kameloso/traits.d)
 * [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). It can be slimmed down further if support for only a specific server network is required.
+Feel free to copy these and drop them into your own project. Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only a specific server network is required.
 
 # Known issues
 
@@ -275,13 +277,13 @@ Terminal colours may also not work, requiring a registry edit to make it display
 
 * Under `HKEY_CURRENT_USER\Console`, create a `DWORD` named `VirtualTerminalLevel` and give it a value of `1`.
 * Alternatively in Powershell: `Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1`
-* Alternatively in cmd.exe: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
+* Alternatively in `cmd`: `reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1`
 
 Otherwise use the `--monochrome` setting to disable colours, or compile a non-`colours` configuration.
 
-Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Here too Powershell and `cmd` consoles are unaffected and can be used with any configuration.
+Terminal output will be broken in Cygwin terminals without compiling the aforementioned `cygwin` configuration. Powershell and `cmd` consoles are unaffected.
 
-When run in such Cygwin terminals, the bot cannot gracefully shut down upon Ctrl+C. Any changes to configuration will have to be otherwise saved prior to forcefully exiting thus.
+When run in such Cygwin terminals, the bot will not gracefully shut down upon hitting Ctrl+C. Any changes to configuration will thus have to be otherwise saved prior to forcefully terminating like that.
 
 ## Posix
 
@@ -294,6 +296,7 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
 * private notes (later)
+* non-blocking FIFO
 * more pairs of eyes
 
 # Built with
