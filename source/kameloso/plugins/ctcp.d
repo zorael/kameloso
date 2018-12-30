@@ -302,4 +302,24 @@ final class CTCPService : IRCPlugin
 private:
     mixin IRCPluginImpl;
     mixin MessagingProxy;
+
+    /++
+     +  Override `IRCPluginImpl.onEvent` and inject a server check, so this
+     +  plugin does nothing on Twitch servers. The function to call is
+     +  `IRCPluginImpl.onEventImpl`.
+     +
+     +  Params:
+     +      event = Parsed `kameloso.irc.defs.IRCEvent` to pass onto `onEventImpl`
+     +          after verifying we're not on a Twitch server.
+     +/
+    public void onEvent(const IRCEvent event)
+    {
+        if (state.client.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // Daemon is known to be Twitch
+            return;
+        }
+
+        return onEventImpl(event);
+    }
 }
