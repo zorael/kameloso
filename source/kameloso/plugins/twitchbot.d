@@ -475,7 +475,6 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
  +  * `!admin add nickname` adds `nickname` as an administrator.
  +  * `!admin del nickname` removes `nickname` as an administrator.
  +  * `!admin list` lists all administrators.
- +  * `!admin clear` clears all administrators.
  +
  +  Only one nickname at a time. Only the current channel.
  +/
@@ -485,7 +484,7 @@ void onCommandCommands(TwitchBotPlugin plugin, const IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "admin")
 @Description("Adds or removes a Twitch administrator to/from the current channel.",
-    "$command [add|del|list|clear] [nickname]")
+    "$command [add|del|list] [nickname]")
 void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 {
     import kameloso.string : contains, nom;
@@ -495,7 +494,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (!event.content.length || (event.content.count(" ") > 1))
     {
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list|clear] [nickname]"
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         return;
     }
@@ -581,14 +580,8 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
         }
         break;
 
-    case "clear":
-        plugin.adminsByChannel.remove(event.channel);
-        saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-        plugin.state.chan(event.channel, "Administrator list cleared.");
-        break;
-
     default:
-        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list|clear] [nickname]"
+        plugin.state.chan(event.channel, "Usage: %s%s [add|del|list] [nickname]"
             .format(settings.prefix, event.aux));
         break;
     }
