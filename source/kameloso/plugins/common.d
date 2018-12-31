@@ -3278,6 +3278,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, string[] customSettings) @trusted
         {
             logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. ("%1$s%3$s%2$s")`,
                 logtint, warningtint, line);
+            noErrors = false;
             continue;
         }
 
