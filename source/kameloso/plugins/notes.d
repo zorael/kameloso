@@ -39,7 +39,8 @@ struct NotesSettings
 
 // onReplayEvent
 /++
- +  Sends notes queued for a user to a channel when they join.
+ +  Sends notes queued for a user to a channel when they join or show activity.
+ +  Private notes are also sent, when some exist.
  +
  +  Nothing is sent if no notes are stored.
  +/
@@ -47,6 +48,7 @@ struct NotesSettings
 @(IRCEvent.Type.JOIN)
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.EMOTE)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.anyone)
 @(ChannelPolicy.home)
 void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
@@ -55,98 +57,105 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
     import std.format : format;
     import std.json : JSONException;
+    import std.range : only;
 
-    try
+    foreach (immutable channel; only(event.channel, ""))
     {
-        const noteArray = plugin.getNotes(event.channel, event.sender.nickname);
-
-        if (!noteArray.length) return;
-        else if (noteArray.length == 1)
+        try
         {
-            const note = noteArray[0];
-            immutable timestamp = (Clock.currTime - note.when).timeSince;
+            const noteArray = plugin.getNotes(channel, event.sender.nickname);
 
-            string message;
-
-            if (settings.colouredOutgoing)
+            if (!noteArray.length) return;
+            else if (noteArray.length == 1)
             {
-                message = "%s! %s left note %s ago: %s"
-                    .format(event.sender.nickname.ircBold, note.sender.ircColourNick.ircBold,
-                    timestamp.ircBold, note.line);
-            }
-            else
-            {
-                message = "%s! %s left note %s ago: %s"
-                    .format(event.sender.nickname, note.sender, timestamp, note.line);
-            }
+                const note = noteArray[0];
+                immutable timestamp = (Clock.currTime - note.when).timeSince;
 
-            plugin.chan(event.channel, message);
-        }
-        else
-        {
-            string message;
-
-            if (settings.colouredOutgoing)
-            {
-                import std.conv : text;
-                message = "%s! You have %s notes."
-                    .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
-            }
-            else
-            {
-                message = "%s! You have %d notes."
-                    .format(event.sender.nickname, noteArray.length);
-            }
-
-            plugin.chan(event.channel, message);
-
-            foreach (const note; noteArray)
-            {
-                immutable timestamp = (Clock.currTime - note.when)
-                    .timeSince!(Yes.abbreviate);
-
-                string report;
+                string message;
 
                 if (settings.colouredOutgoing)
                 {
-                    report = "%s %s ago: %s".format(note.sender.ircColourNick.ircBold, timestamp, note.line);
+                    message = "%s! %s left note %s ago: %s"
+                        .format(event.sender.nickname.ircBold, note.sender.ircColourNick.ircBold,
+                        timestamp.ircBold, note.line);
                 }
                 else
                 {
-                    report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
+                    message = "%s! %s left note %s ago: %s"
+                        .format(event.sender.nickname, note.sender, timestamp, note.line);
                 }
 
-                plugin.chan(event.channel, report);
+                plugin.privmsg(channel, event.sender.nickname, message);
             }
-        }
-
-        plugin.clearNotes(event.sender.nickname, event.channel);
-        plugin.notes.save(plugin.notesFile);
-    }
-    catch (JSONException e)
-    {
-        string logtint, errortint;
-
-        version(Colours)
-        {
-            if (!settings.monochrome)
+            else
             {
-                import kameloso.logger : KamelosoLogger;
+                string message;
 
-                logtint = (cast(KamelosoLogger)logger).logtint;
-                errortint = (cast(KamelosoLogger)logger).errortint;
+                if (settings.colouredOutgoing)
+                {
+                    import std.conv : text;
+                    message = "%s! You have %s notes."
+                        .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
+                }
+                else
+                {
+                    message = "%s! You have %d notes."
+                        .format(event.sender.nickname, noteArray.length);
+                }
+
+                plugin.privmsg(channel, event.sender.nickname, message);
+
+                foreach (const note; noteArray)
+                {
+                    immutable timestamp = (Clock.currTime - note.when)
+                        .timeSince!(Yes.abbreviate);
+
+                    string report;
+
+                    if (settings.colouredOutgoing)
+                    {
+                        report = "%s %s ago: %s".format(note.sender.ircColourNick.ircBold, timestamp, note.line);
+                    }
+                    else
+                    {
+                        report = "%s %s ago: %s".format(note.sender, timestamp, note.line);
+                    }
+
+                    plugin.privmsg(channel, event.sender.nickname, report);
+                }
             }
-        }
 
-        logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-            logtint, event.sender.nickname, errortint, event.channel, e.msg);
-
-        if (e.msg == "JSONValue is not an object")
-        {
-            logger.warning("Notes file corrupt. Starting from scratch.");
-            plugin.notes.reset();
+            plugin.clearNotes(event.sender.nickname, channel);
             plugin.notes.save(plugin.notesFile);
         }
+        catch (JSONException e)
+        {
+            string logtint, errortint;
+
+            version(Colours)
+            {
+                if (!settings.monochrome)
+                {
+                    import kameloso.logger : KamelosoLogger;
+
+                    logtint = (cast(KamelosoLogger)logger).logtint;
+                    errortint = (cast(KamelosoLogger)logger).errortint;
+                }
+            }
+
+            logger.errorf("Could not fetch and/or replay notes for %s%s%s on %1$s%4$s%3$s: %1$s%5$s",
+                logtint, event.sender.nickname, errortint, event.channel, e.msg);
+
+            if (e.msg == "JSONValue is not an object")
+            {
+                logger.warning("Notes file corrupt. Starting from scratch.");
+                plugin.notes.reset();
+                plugin.notes.save(plugin.notesFile);
+            }
+        }
+
+        // Break early and save us a loop and a lookup
+        if (!channel.length) break;
     }
 }
 
@@ -189,8 +198,13 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 // onCommandAddNote
 /++
  +  Adds a note to the in-memory storage, and saves it to disk.
+ +
+ +  Messages sent in a channel will become messages for the target user in that
+ +  channel. Those sent in a private query will be private notes, sent privately
+ +  in the same fashion as channel notes are sent publicly.
  +/
 @(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "note")
@@ -211,7 +225,7 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     try
     {
         plugin.addNote(nickname, event.sender.nickname, event.channel, line);
-        plugin.chan(event.channel, "Note added.");
+        plugin.privmsg(event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
     catch (JSONException e)
@@ -405,7 +419,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
                 .format(channel, plugin.notes[channel].type));
 
             logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-                infotint, nickname, logtint, channel);
+                infotint, nickname, logtint, channel.length ? channel : "(private messages)");
             plugin.notes[channel].object.remove(nickname);
             plugin.pruneNotes();
         }
