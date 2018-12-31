@@ -28,6 +28,9 @@ struct TwitchBotSettings
 
     /// Whether or not to bell on every message.
     bool bellOnMessage = false;
+
+    /// Whether or not to do reminders at the end of vote durations.
+    bool voteReminders = true;
 }
 
 
