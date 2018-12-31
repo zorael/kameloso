@@ -570,7 +570,7 @@ void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
     static if (priority) import std.concurrency : send = prioritySend;
 
     import kameloso.thread : ThreadMessage;
-    state.mainThread.send(ThreadMessage.Quit(), reason);
+    state.mainThread.send(ThreadMessage.Quit(), reason, quiet);
 }
 
 ///

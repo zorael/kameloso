@@ -230,12 +230,12 @@ Next checkMessages(ref IRCBot bot)
     }
 
     /// Quit the server with the supplied reason, or the default.
-    void quitServer(ThreadMessage.Quit, string givenReason)
+    void quitServer(ThreadMessage.Quit, string givenReason, bool hideOutgoing)
     {
         // This will automatically close the connection.
         // Set quit to yes to propagate the decision up the stack.
         immutable reason = givenReason.length ? givenReason : bot.parser.client.quitReason;
-        if (!settings.hideOutgoing) logger.tracef(`--> QUIT :%s`, reason);
+        if (!hideOutgoing) logger.trace("--> QUIT :", reason);
         bot.conn.sendline("QUIT :", reason);
         next = Next.returnSuccess;
     }
@@ -359,7 +359,7 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case QUIT:
-            return quitServer(ThreadMessage.Quit(), content);
+            return quitServer(ThreadMessage.Quit(), content, (target.class_ == IRCUser.Class.special));
 
         case NICK:
             line = "NICK %s".format(target.nickname);
