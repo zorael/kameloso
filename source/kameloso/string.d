@@ -1226,6 +1226,69 @@ unittest
 }
 
 
+// strippedRight
+/++
+ +  Returns a slice of the passed string with any trailing passed characters.
+ +
+ +  Duplicates `std.string.stripRight`, which we can no longer trust not to
+ +  assert on unexpected input.
+ +
+ +  Params:
+ +      line = Line to strip the right side of.
+ +      c = Character to strip away.
+ +
+ +  Returns:
+ +      The passed line without any trailing passed characters.
+ +/
+string strippedRight(const string line, const char c) pure nothrow @nogc
+{
+    if (!line.length) return line;
+
+    size_t pos = line.length;
+
+    loop:
+    while (pos > 0)
+    {
+        switch (line[pos-1])
+        {
+        case c:
+            --pos;
+            break;
+
+        default:
+            break loop;
+        }
+    }
+
+    return line[0..pos];
+}
+
+///
+unittest
+{
+    {
+        immutable trailing = "abc,";
+        immutable stripped = trailing.strippedRight(',');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc!!!";
+        immutable stripped = trailing.strippedRight('!');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc";
+        immutable stripped = trailing.strippedRight(' ');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "";
+        immutable stripped = trailing.strippedRight(' ');
+        assert(!stripped.length, stripped);
+    }
+}
+
+
 // strippedLeft
 /++
  +  Returns a slice of the passed string with any preceding whitespace and/or
@@ -1297,6 +1360,70 @@ unittest
 }
 
 
+// strippedLeft
+/++
+ +  Returns a slice of the passed string with any preceding passed characters
+ +  sliced off.
+ +
+ +  Duplicates `std.string.stripLeft`, which we can no longer trust not to
+ +  assert on unexpected input.
+ +
+ +  Params:
+ +      line = Line to strip the left side of.
+ +      c = Character to strip away.
+ +
+ +  Returns:
+ +      The passed line without any preceding passed characters.
+ +/
+string strippedLeft(const string line, const char c) pure nothrow @nogc
+{
+    if (!line.length) return line;
+
+    size_t pos;
+
+    loop:
+    while (pos < line.length)
+    {
+        switch (line[pos])
+        {
+        case c:
+            ++pos;
+            break;
+
+        default:
+            break loop;
+        }
+    }
+
+    return line[pos..$];
+}
+
+///
+unittest
+{
+    {
+        immutable trailing = ",abc";
+        immutable stripped = trailing.strippedLeft(',');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "!!!abc";
+        immutable stripped = trailing.strippedLeft('!');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "abc";
+        immutable stripped = trailing.strippedLeft(' ');
+        assert((stripped == "abc"), stripped);
+    }
+    {
+        immutable trailing = "";
+        immutable stripped = trailing.strippedLeft(' ');
+        assert(!stripped.length, stripped);
+    }
+}
+
+
 // stripped
 /++
  +  Returns a slice of the passed string with any preceding or trailing
@@ -1344,6 +1471,58 @@ unittest
         immutable line = " \r\n  abc\r\n\r\n";
         immutable stripped_ = line.stripped;
         assert((stripped_ == "abc"), stripped_);
+    }
+}
+
+
+// stripped
+/++
+ +  Returns a slice of the passed string with any preceding or trailing
+ +  passed characters sliced off.
+ +
+ +  It merely calls both `strippedLeft` and `strippedRight`. As such it
+ +  duplicates `std.string.strip`, which we can no longer trust not to assert
+ +  on unexpected input.
+ +
+ +  Params:
+ +      line = Line to strip both the right and left side of.
+ +      c = Character to strip away.
+ +
+ +  Returns:
+ +      The passed line, stripped of surrounding passed characters.
+ +/
+string stripped(const string line, const char c) pure nothrow @nogc
+{
+    return line.strippedLeft(c).strippedRight(c);
+}
+
+///
+unittest
+{
+    {
+        immutable line = "   abc   ";
+        immutable stripped_ = line.stripped(' ');
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = "!!!";
+        immutable stripped_ = line.stripped('!');
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "";
+        immutable stripped_ = line.stripped('_');
+        assert((stripped_ == ""), stripped_);
+    }
+    {
+        immutable line = "abc";
+        immutable stripped_ = line.stripped('\t');
+        assert((stripped_ == "abc"), stripped_);
+    }
+    {
+        immutable line = " \r\n  abc\r\n\r\n  ";
+        immutable stripped_ = line.stripped(' ');
+        assert((stripped_ == "\r\n  abc\r\n\r\n"), stripped_);
     }
 }
 
