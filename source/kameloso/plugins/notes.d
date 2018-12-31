@@ -341,6 +341,7 @@ void onCommandFakejoin(NotesPlugin plugin, const IRCEvent event)
  +/
 auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 {
+    import kameloso.string : decode64;
     import std.datetime.systime : SysTime;
     import std.format : format;
     import std.json : JSON_TYPE;
@@ -370,7 +371,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
             foreach (immutable i, note; nickNotes.array)
             {
                 noteArray[i].sender = note["sender"].str;
-                noteArray[i].line = note["line"].str;
+                noteArray[i].line = decode64(note["line"].str);
                 noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
             }
         }
@@ -476,6 +477,7 @@ void pruneNotes(NotesPlugin plugin)
 void addNote(NotesPlugin plugin, const string nickname, const string sender,
     const string channel, const string line)
 {
+    import kameloso.string : encode64;
     import std.datetime.systime : Clock;
     import std.json : JSONValue;
 
@@ -490,7 +492,7 @@ void addNote(NotesPlugin plugin, const string nickname, const string sender,
     auto senderAndLine =
     [
         "sender" : sender,
-        "line"   : line,
+        "line"   : encode64(line),
         //"when" : Clock.currTime.toUnixTime,
     ];
 
