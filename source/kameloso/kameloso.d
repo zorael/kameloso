@@ -108,6 +108,13 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
         immutable now = Clock.currTime;
         if (t0 == SysTime.init) t0 = now;
 
+        version(TwitchSupport)
+        {
+            immutable k = (bot.parser.client.server.daemon == IRCServer.Daemon.twitch) ?
+                -1.0 : bot.throttling.k;
+            immutable burst = 1.5;
+        }
+
         double x = (now - t0).total!"msecs"/1000.0;
         auto y = k * x + m;
 
@@ -321,7 +328,15 @@ Next checkMessages(ref IRCBot bot)
             break;
 
         case QUERY:
-            prelude = "PRIVMSG %s :".format(target.nickname);
+            version(TwitchSupport)
+            {
+                if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+                {
+                    prelude = "PRIVMSG #%s :.w %s ".format(bot.parser.client.nickname, target.nickname);
+                }
+            }
+
+            if (!prelude.length) prelude = "PRIVMSG %s :".format(target.nickname);
             lines = content.splitWords(' ', maxIRCLineLength-prelude.length);
             break;
 
