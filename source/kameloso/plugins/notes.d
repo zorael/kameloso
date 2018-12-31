@@ -220,6 +220,14 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
 
     string slice = event.content;
     immutable nickname = slice.nom!(Yes.decode)(" ");
+
+    if (nickname == plugin.state.client.nickname)
+    {
+        plugin.privmsg(event.channel, event.sender.nickname,
+            "You cannot leave the bot a message; it would never be replayed.");
+        return;
+    }
+
     immutable line = slice;
 
     try
