@@ -366,6 +366,37 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     plugin.delayFiber(fiber, dur);
     channel.votingUnderway = true;
 
+    import std.datetime.systime : Clock;
+    immutable end = Clock.currTime.toUnixTime + dur;
+
+    void dgReminder()
+    {
+        auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+        plugin.state.chan(event.channel, "%d seconds!".format(thisFiber.payload));
+    }
+
+    if (plugin.twitchBotSettings.voteReminders)
+    {
+        // Warn once at 30 seconds remaining if the vote was for at least 60 seconds
+        // Warn once at 10 seconds if the vote was for at least 20 seconds
+
+        if (dur >= 60)
+        {
+            auto reminder30 = new CarryingFiber!int(&dgReminder);
+            reminder30.payload = 30;
+            plugin.delayFiber(reminder30, dur-30);
+        }
+
+        if (dur >= 20)
+        {
+            auto reminder10 = new CarryingFiber!int(&dgReminder);
+            reminder10.payload = 10;
+            plugin.delayFiber(reminder10, dur-10);
+        }
+    }
+
     plugin.state.chan(event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
         .format(voteChoices.keys, dur));
