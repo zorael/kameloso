@@ -1164,6 +1164,8 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 @Description("(Re-)authenticates with services. Useful if the server has forcefully logged us out.")
 void onCommandAuth(AdminPlugin plugin)
 {
+    if (plugin.state.client.server.daemon == IRCServer.Daemon.twitch) return;
+
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
 
