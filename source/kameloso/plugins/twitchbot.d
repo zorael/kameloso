@@ -235,8 +235,9 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import std.uni : toLower;
 
     auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to start a vote in what is probably a non-home channel");
 
-    if (channel.votingUnderway)
+    if (channel.voteInstance > 0)
     {
         plugin.state.chan(event.channel, "A vote is already in progress!");
         return;
@@ -292,10 +293,14 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
     import std.format : format;
+    import std.random : uniform;
+
+    /// Unique vote instance identifier
+    immutable id = uniform(1, 10_000);
 
     void dg()
     {
-        if (!plugin.activeChannels[event.channel].votingUnderway) return;
+        if (channel.voteInstance != id) return;
 
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
@@ -332,7 +337,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                 plugin.state.chan(event.channel, "Voting complete, no one voted.");
             }
 
-            channel.votingUnderway = false;
+            channel.voteInstance = 0;
 
             // End Fiber
             return;
@@ -366,14 +371,11 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     plugin.awaitEvent(fiber, IRCEvent.Type.CHAN);
     plugin.delayFiber(fiber, dur);
-    channel.votingUnderway = true;
-
-    import std.datetime.systime : Clock;
-    immutable end = Clock.currTime.toUnixTime + dur;
+    channel.voteInstance = id;
 
     void dgReminder()
     {
-        if (!plugin.activeChannels[event.channel].votingUnderway) return;
+        if (channel.voteInstance != id) return;
 
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
@@ -867,8 +869,8 @@ private:
     /// Contained state of a channel, so that there can be several alongside each other.
     struct Channel
     {
-        /// Flag for when voting is currently ongoing.
-        bool votingUnderway;
+        /// ID of the currently ongoing vote, if any (otherwise 0).
+        int voteInstance;
 
         /// UNIX timestamp of when broadcasting started.
         long broadcastStart;
