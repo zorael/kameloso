@@ -269,8 +269,14 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     /// Which users have already voted.
     bool[string] votedUsers;
 
-    foreach (immutable choice; slice.splitter(" "))
+    foreach (immutable rawChoice; slice.splitter(" "))
     {
+        import kameloso.string : strippedRight;
+
+        // Strip any trailing commas
+        immutable choice = rawChoice.strippedRight(',');
+        if (!choice.length) continue;
+
         voteChoices[choice] = 0;
     }
 
