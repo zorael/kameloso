@@ -485,6 +485,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     import kameloso.string : contains, nom;
     import std.algorithm.searching : count;
     import std.format : format;
+    import std.uni : toLower;
 
     if (!event.content.length || (event.content.count(" ") > 1))
     {
@@ -501,7 +502,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     case "add":
         if (slice.length)
         {
-            immutable nickname = slice;
+            immutable nickname = slice.toLower;
 
             if (auto adminArray = event.channel in plugin.adminsByChannel)
             {
@@ -509,7 +510,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
 
                 if ((*adminArray).canFind(nickname))
                 {
-                    plugin.state.chan(event.channel, nickname ~ " is already a bot administrator.");
+                    plugin.state.chan(event.channel, slice ~ " is already a bot administrator.");
                     return;
                 }
                 else
@@ -525,7 +526,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
             }
 
             saveAdmins(plugin.adminsByChannel, plugin.adminsFile);
-            plugin.state.chan(event.channel, nickname ~ " is now an administrator.");
+            plugin.state.chan(event.channel, slice ~ " is now an administrator.");
         }
         else
         {
@@ -537,7 +538,7 @@ void onCommandAdmin(TwitchBotPlugin plugin, const IRCEvent event)
     case "del":
         if (slice.length)
         {
-            immutable nickname = slice;
+            immutable nickname = slice.toLower;
 
             if (auto adminArray = event.channel in plugin.adminsByChannel)
             {
@@ -799,7 +800,8 @@ void populateAdmins(TwitchBotPlugin plugin, const string filename)
     {
         foreach (const nickname; adminsJSON.array)
         {
-            plugin.adminsByChannel[channelName] ~= nickname.str;
+            import std.uni : toLower;
+            plugin.adminsByChannel[channelName] ~= nickname.str.toLower;
         }
     }
 
