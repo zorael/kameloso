@@ -415,6 +415,40 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 }
 
 
+// onCommandAbortVote
+/++
+ +  Aborts an ongoing vote.
+ +
+ +  Vote instances are uniquely identified by the UNIX timestamp of when it
+ +  started. There may be an arbitrary number of Fibers queued to trigger as the
+ +  duration comes to a close. By setting the `TwitchBotPlugin.Channel.voteInstance`
+ +  ID variable to 0 we invalidate all such Fibers, which rely on that ID being
+ +  equal to the ID they themselves have stored in their closures.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.SELFCHAN)
+@(PrivilegeLevel.admin)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "abortvote")
+@BotCommand(PrefixPolicy.prefixed, "abortpoll")
+@Description("Aborts an ongoing vote.")
+void onCommandAbortVote(TwitchBotPlugin plugin, const IRCEvent event)
+{
+    auto channel = event.channel in plugin.activeChannels;
+    assert(channel, "Tried to abort a vote in what is probably a non-home channel");
+
+    if (channel.voteInstance > 0)
+    {
+        channel.voteInstance = 0;
+        plugin.state.chan(event.channel, "Vote aborted.");
+    }
+    else
+    {
+        plugin.state.chan(event.channel, "No ongoing vote.");
+    }
+}
+
+
 // onCommandModifyOneliner
 /++
  +  Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
