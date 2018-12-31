@@ -276,7 +276,8 @@ unittest
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string modes, const string content = string.init, const bool quiet = settings.hideOutgoing)
+    const string channel, const string modes, const string content = string.init,
+    const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
@@ -468,7 +469,8 @@ unittest
  +      quiet = Whether or not to echo what was sent to the local terminal.
  +/
 void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string nickname, const string reason = string.init, const bool quiet = settings.hideOutgoing)
+    const string channel, const string nickname, const string reason = string.init,
+    const bool quiet = settings.hideOutgoing)
 {
     static if (priority) import std.concurrency : send = prioritySend;
 

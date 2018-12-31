@@ -297,11 +297,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
         return;
     }
 
-    import std.datetime.systime : Clock;
     import std.typecons : Flag, No, Yes;
-
-    // Get this once and reuse.
-    const now = Clock.currTime;
 
     /// Write buffered lines.
     void writeEventToFile(const string key, const string givenPath = string.init,
@@ -342,6 +338,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
             {
                 if (extendPath)
                 {
+                    import std.datetime.systime : Clock;
                     import std.file : exists, mkdirRecurse;
                     import std.path : buildNormalizedPath;
 
