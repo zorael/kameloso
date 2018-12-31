@@ -290,6 +290,12 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         voteChoices[lower] = 0;
     }
 
+    if (!voteChoices.length)
+    {
+        plugin.state.chan(event.channel, "Need at least two unique vote choices.");
+        return;
+    }
+
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
     import std.format : format;
