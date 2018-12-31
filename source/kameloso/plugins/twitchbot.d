@@ -611,7 +611,9 @@ void onOneliner(TwitchBotPlugin plugin, const IRCEvent event)
 
     if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
-        if (const response = slice in *channelOneliners)
+        // Insert .toLower here if we want case-insensitive oneliners
+        //import std.uni : toLower;
+        if (const response = slice/*.toLower*/ in *channelOneliners)
         {
             plugin.state.chan(event.channel, *response);
         }
