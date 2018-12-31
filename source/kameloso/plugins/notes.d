@@ -65,7 +65,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
         {
             const noteArray = plugin.getNotes(channel, event.sender.nickname);
 
-            if (!noteArray.length) return;
+            if (!noteArray.length) continue;
             else if (noteArray.length == 1)
             {
                 const note = noteArray[0];
