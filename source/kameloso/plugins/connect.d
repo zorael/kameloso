@@ -376,30 +376,6 @@ void onEndOfMotd(ConnectService service)
         !service.state.client.authPassword.length ||
         (service.state.client.server.daemon == IRCServer.Daemon.twitch)))
     {
-        version(TwitchSupport)
-        {
-            if ((service.state.client.server.daemon == IRCServer.Daemon.twitch) &&
-                (settings.prefix == "."))
-            {
-                string logtint, warningtint;
-
-                version(Colours)
-                {
-                    if (!settings.monochrome)
-                    {
-                        import kameloso.logger : KamelosoLogger;
-
-                        logtint = (cast(KamelosoLogger)logger).logtint;
-                        warningtint = (cast(KamelosoLogger)logger).warningtint;
-                    }
-                }
-
-                logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
-                    "on Twitch servers, as it is reserved for Twitch's own commands.",
-                    logtint, settings.prefix, warningtint);
-            }
-        }
-
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
         // Twitch servers can't auth so join immediately

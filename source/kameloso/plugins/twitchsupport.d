@@ -717,6 +717,44 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
 }
 
 
+// onEndOfMotd
+/++
+ +  Upon having connected, registered and logged onto the Twitch servers,
+ +  disable outgoing colours and warn about having a `.` prefix.
+ +
+ +  Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+ +  Furthermore, Twitch's own commands are prefixed with a dot `.`, so we can't
+ +  use that ourselves.
+ +/
+@(IRCEvent.Type.RPL_ENDOFMOTD)
+void onEndOfMotd()
+{
+    import kameloso.common : logger, settings;
+
+    settings.colouredOutgoing = false;
+
+    if (settings.prefix == ".")
+    {
+        string logtint, warningtint;
+
+        version(Colours)
+        {
+            if (!settings.monochrome)
+            {
+                import kameloso.logger : KamelosoLogger;
+
+                logtint = (cast(KamelosoLogger)logger).logtint;
+                warningtint = (cast(KamelosoLogger)logger).warningtint;
+            }
+        }
+
+        logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work ` ~
+            "on Twitch servers, as it is reserved for Twitch's own commands.",
+            logtint, settings.prefix, warningtint);
+    }
+}
+
+
 public:
 
 
