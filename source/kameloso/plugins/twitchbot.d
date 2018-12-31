@@ -295,6 +295,8 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     void dg()
     {
+        if (!plugin.activeChannels[event.channel].votingUnderway) return;
+
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
@@ -371,6 +373,8 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
 
     void dgReminder()
     {
+        if (!plugin.activeChannels[event.channel].votingUnderway) return;
+
         auto thisFiber = cast(CarryingFiber!int)(Fiber.getThis);
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
