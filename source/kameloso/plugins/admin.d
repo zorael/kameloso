@@ -1139,12 +1139,22 @@ void onSetCommand(AdminPlugin plugin, const IRCEvent event)
 
         try
         {
-            thisFiber.payload.applyCustomSettings([ event.content ]);
-            plugin.state.privmsg(event.channel, event.sender.nickname, "Setting changed.");
+            immutable success = thisFiber.payload.applyCustomSettings([ event.content ]);
+
+            if (success)
+            {
+                plugin.state.privmsg(event.channel, event.sender.nickname, "Setting changed.");
+            }
+            else
+            {
+                plugin.state.privmsg(event.channel, event.sender.nickname,
+                    "Invalid syntax or plugin/settings name.");
+            }
         }
         catch (ConvException e)
         {
-            plugin.state.privmsg(event.channel, event.sender.nickname, "Invalid setting.");
+            plugin.state.privmsg(event.channel, event.sender.nickname,
+                "There was a conversion error. Please verify the values in your setting.");
         }
     }
 
