@@ -229,6 +229,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
     import std.conv : ConvException, to;
+    import std.uni : toLower;
 
     auto channel = event.channel in plugin.activeChannels;
 
@@ -269,6 +270,9 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
     /// Which users have already voted.
     bool[string] votedUsers;
 
+    /// What the choices were originally named before lowercasing.
+    string[string] origChoiceNames;
+
     foreach (immutable rawChoice; slice.splitter(" "))
     {
         import kameloso.string : strippedRight;
@@ -276,8 +280,10 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         // Strip any trailing commas
         immutable choice = rawChoice.strippedRight(',');
         if (!choice.length) continue;
+        immutable lower = choice.toLower;
 
-        voteChoices[choice] = 0;
+        origChoiceNames[lower] = choice;
+        voteChoices[lower] = 0;
     }
 
     import kameloso.thread : CarryingFiber;
@@ -313,7 +319,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
                     immutable double votePercentage = 100 * voteRatio;
 
                     plugin.state.chan(event.channel, "%s : %d %s (%.1f%%)"
-                        .format(result.key, result.value, noun, votePercentage));
+                        .format(origChoiceNames[result.key], result.value, noun, votePercentage));
                 }
             }
             else
@@ -339,7 +345,7 @@ void onCommandStartVote(TwitchBotPlugin plugin, const IRCEvent event)
         {
             // User already voted and we don't support revotes for now
         }
-        else if (auto ballot = vote in voteChoices)
+        else if (auto ballot = vote.toLower in voteChoices)
         {
             // Valid entry, increment vote count
             ++(*ballot);
