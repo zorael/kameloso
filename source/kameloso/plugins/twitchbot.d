@@ -206,7 +206,7 @@ void onCommandStop(TwitchBotPlugin plugin, const IRCEvent event)
         if (streamer.alias_.length) nickname = streamer.alias_;
     }
 
-    plugin.state.chan(event.channel, "Broadcast ended. %s's stream lasted %s."
+    plugin.state.chan(event.channel, "Broadcast ended. %s streamed for %s."
         .format(nickname, delta));
 }
 
@@ -444,7 +444,7 @@ void onCommandAbortVote(TwitchBotPlugin plugin, const IRCEvent event)
     }
     else
     {
-        plugin.state.chan(event.channel, "No ongoing vote.");
+        plugin.state.chan(event.channel, "There is no ongoing vote.");
     }
 }
 
