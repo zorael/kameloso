@@ -4,7 +4,7 @@
  +
  +  It has a few commands:
  +
- +  `addnote` | `note`<br>
+ +  `note`<br>
  +  `printnotes`<br>
  +  `reloadnotes`<br>
  +  `fakejoin`
@@ -193,9 +193,7 @@ void onNames(NotesPlugin plugin, const IRCEvent event)
 @(IRCEvent.Type.CHAN)
 @(PrivilegeLevel.whitelist)
 @(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "addnote")
 @BotCommand(PrefixPolicy.prefixed, "note")
-@BotCommand(PrefixPolicy.requiredNickname, "addnote")
 @BotCommand(PrefixPolicy.requiredNickname, "note")
 @Description("Adds a note and saves it to disk.", "$command [account] [note text]")
 void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
