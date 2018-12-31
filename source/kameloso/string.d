@@ -259,10 +259,10 @@ unittest
  +          to pass along when throwing an exception.
  +
  +  Returns:
- +      The string `line` from the start up to the separator token. The original
- +      variable is advanced to after the token.
- +
- +  Throws: `Exception` if the separator could not be found in the string.
+ +      The string `line` from the start up to the separator token, if it exists.
+ +      If so, the original variable is advanced to after the token.
+ +      If it doesn't exist, the string in `line` is inherited into the return
+ +      value and returned, while the `line` symbol itself is cleared.
  +/
 pragma(inline)
 T nom(Flag!"inherit" inherit, Flag!"decode" decode = No.decode, T, C)

@@ -215,12 +215,12 @@ void pipereader(shared IRCPluginState newState, const string filename)
  +      state = String filename of FIFO to create.
  +
  +  Throws:
- +      `ReturnValueException` if the FIFO could not be created.
- +      `FileExistsException` if a FIFO with the same filename already
- +      exists, suggesting concurrent conflicting instances of the program
+ +      `kameloso.common.ReturnValueException` if the FIFO could not be created.
+ +      `kameloso.common.FileExistsException` if a FIFO with the same filename
+ +      already exists, suggesting concurrent conflicting instances of the program
  +      (or merely a stale FIFO).
- +      `FileTypeMismatchException` if a file or directory exists with the same
- +      name as the FIFO we want to create.
+ +      `kameloso.common.FileTypeMismatchException` if a file or directory
+ +      exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
 {

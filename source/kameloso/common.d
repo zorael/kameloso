@@ -301,6 +301,9 @@ struct IRCBot
      +  Returns:
      +      An associative array of `string[]`s of invalid configuration entries,
      +      keyed by `string` plugin names.
+     +
+     +  Throws:
+     +      `IRCPluginSettingsException` on failure to apply custom settings.
      +/
     string[][string] initPlugins(string[] customSettings)
     {

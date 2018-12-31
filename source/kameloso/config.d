@@ -73,7 +73,7 @@ void writeToDisk(const string filename, const string configurationText,
  +      The contents of the supplied file.
  +
  +  Throws:
- +      `FileTypeMismatchException` if the configuration file is a directory, a
+ +      `kameloso.common.FileTypeMismatchException` if the configuration file is a directory, a
  +      character file or any other non-file type we can't write to.
  +      `ConfigurationFileReadFailureException` if the reading and decoding of
  +      the configuration file failed.

@@ -64,6 +64,8 @@ struct JSONStorage
      +
      +  Throws:
      +      Whatever `std.file.readText` and/or `std.json.parseJSON` throws.
+     +      `kameloso.common.FileTypeMismatchException` if the filename exists
+     +      but is not a file.
      +/
     void load(const string filename)
     {
@@ -163,6 +165,10 @@ struct JSONStorage
      +      givenOrder = The order in which object-type keys should be listed in
      +          the output file, iff `strategy` is `KeyOrderStrategy.inGivenOrder`.
      +          Non-existent keys are represented as empty. Not specified keys are omitted.
+     +
+     +  Throws:
+     +      `Exception` if `KeyOrderStrategy.givenOrder` was supplied yet no
+     +      order was given in `givenOrder`.
      +/
     private void saveObject(Sink)(auto ref Sink sink, KeyOrderStrategy strategy = KeyOrderStrategy.passthrough,
         string[] givenOrder = string[].init) @system
