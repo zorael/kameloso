@@ -1311,14 +1311,37 @@ void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
                 case CHAN:
                 case EMOTE:
                 case TWITCH_CHEER:
+                //case SELFCHAN:
                     import kameloso.terminal : invert;
                     import kameloso.irc.common : containsNickname;
 
-                    if (!content.containsNickname(plugin.state.client.nickname)) goto default;
+                    /// Nick was mentioned (certain)
+                    bool match;
+                    string inverted = content;
 
-                    // Nick was mentioned (certain)
+                    if (content.containsNickname(plugin.state.client.nickname))
+                    {
+                        inverted = content.invert(plugin.state.client.nickname);
+                        match = true;
+                    }
+
+                    version(TwitchSupport)
+                    {
+                        // On Twitch, also highlight the display name alias
+                        if ((plugin.state.client.server.daemon == IRCServer.Daemon.twitch) &&
+                            plugin.state.client.alias_.length &&  // Should always be true but check
+                            (plugin.state.client.nickname != plugin.state.client.alias_) &&
+                            content.containsNickname(plugin.state.client.alias_))
+                        {
+                            inverted = inverted.invert(plugin.state.client.alias_);
+                            match = true;
+                        }
+                    }
+
+                    if (!match) goto default;
+
+                    put(sink, inverted);
                     shouldBell = bellOnMention;
-                    put(sink, content.invert(plugin.state.client.nickname));
                     break;
 
                 default:
