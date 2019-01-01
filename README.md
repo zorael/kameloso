@@ -1,10 +1,10 @@
 # kameloso [![CircleCI Linux/OSX](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?maxAge=3600&logo=circleci)](https://circleci.com/gh/zorael/kameloso) [![Travis Linux/OSX and documentation](https://img.shields.io/travis/zorael/kameloso/master.svg?maxAge=3600&logo=travis)](https://travis-ci.org/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?maxAge=3600&logo=appveyor)](https://ci.appveyor.com/project/zorael/kameloso) [![Issue 46](https://img.shields.io/github/issues/detail/s/zorael/kameloso/46.svg?maxAge=3600)](https://github.com/zorael/kameloso/issues/46) [![GitHub commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v1.0.0-rc.4.svg?maxAge=3600&logo=github)](https://github.com/zorael/kameloso/compare/v1.0.0-rc.4...master)
 
-**kameloso** sits and listens in the channels you specify and reacts to events, like bots generally do.
+**kameloso** sits in your channels and listens to commands and events, like bots generally do.
 
-A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's made to be easy to write your own (API documentation is [available online](https://zorael.github.io/kameloso)). Any and all ideas for inclusion welcome.
+A variety of features comes bundled in the form of compile-time plugins, including some examples and proofs of concepts. It's easily extensible, API documentation is [available online](https://zorael.github.io/kameloso). Any and all ideas for inclusion welcome.
 
-IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet. Once discovered it's not a difficult thing to do.
+IRC is standardised but servers still come in [many flavours](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/IRCd_software_implementations3.svg/1533px-IRCd_software_implementations3.svg.png), some of which [outright conflict](http://defs.ircdocs.horse/defs/numerics.html) with others. If something doesn't immediately work, usually it's because we simply haven't encountered that type of event before, and so no rules for how to parse it have been written yet. Once discovered it's generally not a difficult thing to do.
 
 Please report bugs. Unreported bugs can only be fixed by accident.
 
@@ -38,7 +38,7 @@ Use on networks without [*services*](https://en.wikipedia.org/wiki/IRC_services)
 
 Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://help.twitch.tv/customer/portal/articles/1302780-twitch-irc), so support and coverage is best there.
 
-# TL;DR: abridged
+# TL;DR
 
 ```
 -n       --nickname Nickname
@@ -124,12 +124,12 @@ There are several configurations in which the bot may be built.
 * `colours`, compiles in terminal colours
 * `web`, compiles in plugins with web lookup (`webtitles`, `reddit` and `bashquotes`)
 * `full`, includes both of the above
-* `twitch`, everything so far, plus the example Twitch bot
+* `twitch`, everything so far, plus the Twitch bot
 * `posix`, default on Posix-like systems (Linux, OSX, ...), equals `full`
 * `windows`, default on Windows, also equals `full`
 * `cygwin`, equals `full` but with extra code needed for running under the default Cygwin terminal (**mintty**)
 * `twitch+cygwin`, `cygwin` but with the Twitch bot
-* `polyglot`, equals everything available, including things like the Admin plugin being able to see Twitch users (more of a development build)
+* `polyglot`, equals everything available, including things like more error messages and the Admin plugin being able to see Twitch users (more of a development build)
 
 List them with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default for your operating system.
 
@@ -172,13 +172,13 @@ $ ./kameloso \
 Configuration file written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so comments are removed.
+Later invocations of `--writeconfig` will only regenerate the file. It will never overwrite custom settings, only complement them with new ones. Mind however that it will delete any lines not corresponding to a valid setting, so settings that relate to plugins that *are currently not built in* are removed, as well as comments.
 
 ### Display settings
 
 If you have compiled in colours and you have bright terminal background, the colours may be hard to see and the text difficult to read. If so, make sure to pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please see to your terminal appearance settings. This is not uncommon, especially with backgrounds that are not fully black or white. (read: Monokai, Breeze, Solaris, ...)
 
-If you are on Windows and you're seeing weird `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a fix.
+If you are on Windows and you're seeing weird `\033[92m`-like characters instead of colours, see the [known issues](#known-issues) section for a permanent fix.
 
 ### Other files
 
@@ -186,7 +186,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-Once the bot has joined a home channel, it's ready. Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
+Mind that you need to authorise yourself with services with an account listed as an administrator in the configuration file to make it listen to you. Before allowing *anyone* to trigger any functionality it will look them up and compare their accounts with the white- and blacklists. Refer to the `admins` field in the configuration file, as well as your generated `users.json`.
 
 ```
      you joined #channel
@@ -241,20 +241,22 @@ See [the wiki](https://github.com/zorael/kameloso/wiki/Twitch) for more informat
 
 ### Twitch bot
 
-There is a basic streamer bot plugin but it is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included. (It will not show up when generating the file if the plugin is not compiled in.)
+The streamer bot plugin is opt-in, both during compilation and at runtime. Build the `twitch` configuration to compile it, and enable it in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, regenerate the file after having compiled with the bot included. (It will not show up when generating the file if the plugin is not compiled in.)
 
 ```bash
 $ dub build -c twitch
-$ ./kameloso --writeconfig
+$ ./kameloso --set twitchbot.enabled=true --writeconfig
 ```
 
- Assuming a prefix of `!`, commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!admin`
+Assuming a prefix of `!`, commands to test are: `!uptime`, `!start`, `!stop`, `!oneliner`, `!commands`, `!vote`/`!poll`, `!abortvote`/`!abortpoll`, `!admin`
 
- The `help` command does not work on Twitch.
+NOTE: a dot `.` prefix will not work on Twitch, as it conflicts with Twitch's own commands.
+
+Again, refer to [the wiki](https://github.com/zorael/kameloso/wiki/Twitch).
 
 ## Use as a library
 
-The IRC event parsing bits are largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
+The IRC event parsing is largely decoupled from the bot parts of the program, needing only some common non-bot-oriented helper modules.
 
 * [`irc/defs.d`](source/kameloso/irc/defs.d)
 * [`irc/parsing.d`](source/kameloso/irc/parsing.d)
@@ -265,7 +267,7 @@ The IRC event parsing bits are largely decoupled from the bot parts of the progr
 * [`traits.d`](source/kameloso/traits.d)
 * [`uda.d`](source/kameloso/uda.d)
 
-Feel free to copy these and drop them into your own project. Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only a specific server network is required.
+Feel free to copy these and drop them into your own project. Examples of parsing results can be found in [`tests/events.d`](source/tests/events.d). Look up the structs `IRCBot` and `IRCParser` to get started. See the versioning at the top of [`irc/common.d`](source/kameloso/irc/common.d). It can be slimmed down further if support for only one server network is required; inquire within.
 
 # Known issues
 
@@ -295,7 +297,6 @@ If the pipeline FIFO is removed while the program is running, it will hang upon 
 * pipedream: DCC
 * pipedream two: `ncurses`?
 * `seen` doing what? channel-split? `IRCEvent`-based? (later)
-* private notes (later)
 * non-blocking FIFO
 * more pairs of eyes
 
