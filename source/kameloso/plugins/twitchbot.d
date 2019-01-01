@@ -1,8 +1,12 @@
 /++
- +  This is an example Twitch bot.
+ +  This is an example Twitch streamer bot. It supports basic authentication,
+ +  allowing for administrators that are not necessarily in the whitelist nor are
+ +  Twitch moderators, querying uptime or how long a streamer has been streaming,
+ +  as well as custom (non-hardcoded) oneliner commands.
  +
  +  One immediately obvious venue of expansion is expression bans, such as if a
- +  message has too many capital letters, contains banned words, etc.
+ +  message has too many capital letters, contains banned words, etc. There is
+ +  no protection from spam yet either.
  +/
 module kameloso.plugins.twitchbot;
 
@@ -487,7 +491,8 @@ void onCommandModifyOneliner(TwitchBotPlugin plugin, const IRCEvent event)
             plugin.onelinersByChannel[event.channel][trigger] = slice;
             saveOneliners(plugin.onelinersByChannel, plugin.onelinerFile);
 
-            plugin.state.chan(event.channel, "Oneliner %s%s added.".format(settings.prefix, trigger));
+            plugin.state.chan(event.channel, "Oneliner %s%s added."
+                .format(settings.prefix, trigger));
         }
         else
         {
