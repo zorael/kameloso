@@ -109,12 +109,12 @@ struct JSONStorage
         string[] givenOrder = string[].init) @system
     {
         import std.array : Appender;
-        import std.json : JSON_TYPE;
+        import std.json : JSONType;
         import std.stdio : File, writeln;
 
         Appender!string sink;
 
-        if (storage.type == JSON_TYPE.object)
+        if (storage.type == JSONType.object)
         {
             saveObject(sink, strategy, givenOrder);
         }

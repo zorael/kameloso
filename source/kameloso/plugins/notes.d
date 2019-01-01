@@ -358,7 +358,7 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
     import kameloso.string : decode64;
     import std.datetime.systime : SysTime;
     import std.format : format;
-    import std.json : JSON_TYPE;
+    import std.json : JSONType;
 
     struct Note
     {
@@ -370,13 +370,13 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 
     if (const channelNotes = channel in plugin.notes)
     {
-        assert((channelNotes.type == JSON_TYPE.OBJECT),
+        assert((channelNotes.type == JSONType.object),
             "Invalid channel notes list type for %s: %s"
             .format(channel, channelNotes.type));
 
         if (const nickNotes = nickname in channelNotes.object)
         {
-            assert((nickNotes.type == JSON_TYPE.ARRAY),
+            assert((nickNotes.type == JSONType.array),
                 "Invalid notes list type for %s on %s: %s"
                 .format(nickname, channel, nickNotes.type));
 
@@ -419,7 +419,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
     import std.file : FileException;
     import std.format : format;
     import std.exception : ErrnoException;
-    import std.json : JSONException, JSON_TYPE;
+    import std.json : JSONException, JSONType;
 
     string infotint, logtint;
 
@@ -438,7 +438,7 @@ void clearNotes(NotesPlugin plugin, const string nickname, const string channel)
     {
         if (nickname in plugin.notes[channel])
         {
-            assert((plugin.notes[channel].type == JSON_TYPE.OBJECT),
+            assert((plugin.notes[channel].type == JSONType.object),
                 "Invalid channel notes list type for %s: %s"
                 .format(channel, plugin.notes[channel].type));
 
