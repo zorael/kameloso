@@ -384,9 +384,18 @@ auto getNotes(NotesPlugin plugin, const string channel, const string nickname)
 
             foreach (immutable i, note; nickNotes.array)
             {
+                import std.base64 : Base64Exception;
                 noteArray[i].sender = note["sender"].str;
-                noteArray[i].line = decode64(note["line"].str);
                 noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+
+                try
+                {
+                    noteArray[i].line = decode64(note["line"].str);
+                }
+                catch (Base64Exception e)
+                {
+                    noteArray[i].line = "(An error occured and the note could not be read)";
+                }
             }
         }
     }
