@@ -3713,3 +3713,29 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         mixin(carriedVariableName) = nickname;
     }
 }
+
+
+// nameOf
+/++
+ +  Returns either the nickname or the alias of a user, depending on whether the
+ +  alias is known or not.
+ +
+ +  If not version TwitchSupport then it always returns the nickname.
+ +
+ +  Params:
+ +      user = `kameloso.irc.defs.IRCUser` to examine.
+ +
+ +  Returns:
+ +      The nickname of the user if there is no alias known, else the alias.
+ +/
+string nameOf(const IRCUser user) pure @safe nothrow @nogc
+{
+    version(TwitchSupport)
+    {
+        return user.alias_.length ? user.alias_ : user.nickname;
+    }
+    else
+    {
+        return user.nickname;
+    }
+}
