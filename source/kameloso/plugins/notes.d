@@ -58,15 +58,20 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONException;
     import std.range : only;
+    import std.uni : toLower;
 
     foreach (immutable channel; only(event.channel, ""))
     {
         try
         {
-            const noteArray = plugin.getNotes(channel, event.sender.nickname);
+            immutable lowerNickname = event.sender.nickname.toLower;
+            const noteArray = plugin.getNotes(channel, lowerNickname);
 
             if (!noteArray.length) continue;
-            else if (noteArray.length == 1)
+
+            immutable senderName = nameOf(event.sender);
+
+            if (noteArray.length == 1)
             {
                 const note = noteArray[0];
                 immutable timestamp = (Clock.currTime - note.when).timeSince;
@@ -76,13 +81,13 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 if (settings.colouredOutgoing)
                 {
                     message = "%s! %s left note %s ago: %s"
-                        .format(event.sender.nickname.ircBold, note.sender.ircColourNick.ircBold,
+                        .format(senderName.ircBold, note.sender.ircColourNick.ircBold,
                         timestamp.ircBold, note.line);
                 }
                 else
                 {
                     message = "%s! %s left note %s ago: %s"
-                        .format(event.sender.nickname, note.sender, timestamp, note.line);
+                        .format(senderName, note.sender, timestamp, note.line);
                 }
 
                 plugin.privmsg(channel, event.sender.nickname, message);
@@ -95,12 +100,11 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 {
                     import std.conv : text;
                     message = "%s! You have %s notes."
-                        .format(event.sender.nickname.ircBold, noteArray.length.text.ircBold);
+                        .format(senderName.ircBold, noteArray.length.text.ircBold);
                 }
                 else
                 {
-                    message = "%s! You have %d notes."
-                        .format(event.sender.nickname, noteArray.length);
+                    message = "%s! You have %d notes.".format(senderName, noteArray.length);
                 }
 
                 plugin.privmsg(channel, event.sender.nickname, message);
@@ -125,7 +129,7 @@ void onReplayEvent(NotesPlugin plugin, const IRCEvent event)
                 }
             }
 
-            plugin.clearNotes(event.sender.nickname, channel);
+            plugin.clearNotes(lowerNickname, channel);
             plugin.notes.save(plugin.notesFile);
         }
         catch (JSONException e)
@@ -215,24 +219,26 @@ void onCommandAddNote(NotesPlugin plugin, const IRCEvent event)
     import kameloso.string : contains, nom;
     import std.json : JSONException;
     import std.typecons : No, Yes;
+    import std.uni : toLower;
 
     if (!event.content.contains!(Yes.decode)(" ")) return;
 
     string slice = event.content;
-    immutable nickname = slice.nom!(Yes.decode)(" ");
+    immutable lowerNickname = slice.nom!(Yes.decode)(" ").toLower;
 
-    if (nickname == plugin.state.client.nickname)
+    if (lowerNickname == plugin.state.client.nickname.toLower)
     {
         plugin.privmsg(event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
         return;
     }
 
+    immutable senderName = nameOf(event.sender);
     immutable line = slice;
 
     try
     {
-        plugin.addNote(nickname, event.sender.nickname, event.channel, line);
+        plugin.addNote(lowerNickname, senderName, event.channel, line);
         plugin.privmsg(event.channel, event.sender.nickname, "Note added.");
         plugin.notes.save(plugin.notesFile);
     }
