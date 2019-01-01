@@ -110,9 +110,14 @@ void throttleline(Strings...)(ref IRCBot bot, const Strings strings)
 
         version(TwitchSupport)
         {
-            immutable k = (bot.parser.client.server.daemon == IRCServer.Daemon.twitch) ?
-                -1.0 : bot.throttling.k;
-            immutable burst = 1.5;
+            double k = bot.throttling.k;
+            double burst = bot.throttling.burst;
+
+            if (bot.parser.client.server.daemon == IRCServer.Daemon.twitch)
+            {
+                k = -1.0;
+                burst = 0.0;
+            }
         }
 
         double x = (now - t0).total!"msecs"/1000.0;
