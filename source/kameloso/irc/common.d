@@ -1618,6 +1618,12 @@ struct IRCClient
             /// The original client nickname before connecting, in case it changed.
             string origNickname;
 
+            version(TwitchSupport)
+            {
+                /// The Twitch display name or alias of the bot.
+                string alias_;
+            }
+
             /// The current modechars active on the client (e.g. "ix");
             string modes;
 
