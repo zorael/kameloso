@@ -420,6 +420,7 @@ void generateAsserts(ref IRCBot bot) @system
         catch (ConvException e)
         {
             logger.error("Conversion exception caught when parsing daemon: ", e.msg);
+            version(PrintStacktraces) logger.trace(e.info);
             return;
         }
 
@@ -511,10 +512,12 @@ void generateAsserts(ref IRCBot bot) @system
                 import kameloso.printing : printObject;
                 logger.warningf("IRC Parse Exception at %s:%d: %s", e.file, e.line, e.msg);
                 printObject(e.event);
+                version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
                 logger.warningf("Exception at %s:%d: %s", e.file, e.line, e.msg);
+                version(PrintStacktraces) logger.trace(e.toString);
             }
         }
     }

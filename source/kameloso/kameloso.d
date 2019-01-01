@@ -764,12 +764,14 @@ Next mainLoop(ref IRCBot bot)
                     {
                         logger.warningf("UTFException %s.onEvent: %s%s",
                             plugin.name, logtint, e.msg);
+                        version(PrintStacktraces) logger.trace(e.info);
                     }
                     catch (Exception e)
                     {
                         logger.warningf("Exception %s.onEvent: %s%s",
                             plugin.name, logtint, e.msg);
                         printObject(event);
+                        version(PrintStacktraces) logger.trace(e.toString);
                     }
                 }
             }
@@ -778,14 +780,17 @@ Next mainLoop(ref IRCBot bot)
                 logger.warningf("IRC Parse Exception: %s%s%s (at %1$s%4$s%3$s:%1$s%5$d%3$s)",
                     logtint, e.msg, warningtint, e.file, e.line);
                 printObject(e.event);
+                version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
             {
                 logger.warning("UTFException: ", logtint, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UnicodeException e)
             {
                 logger.warning("UnicodeException: ", logtint, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
@@ -800,6 +805,8 @@ Next mainLoop(ref IRCBot bot)
                 {
                     logger.warningf(`Offending line: "%s%s%s"`, logtint, attempt.line, warningtint);
                 }
+
+                version(PrintStacktraces) logger.trace(e.toString);
             }
         }
 
@@ -882,6 +889,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                 logger.warningf("IRC Parse Exception %s.awaitingFibers[%d]: %s%s",
                     plugin.name, i, logtint, e.msg);
                 printObject(e.event);
+                version(PrintStacktraces) logger.trace(e.info);
                 toRemove ~= i;
             }
             catch (Exception e)
@@ -902,6 +910,7 @@ void handleFibers(IRCPlugin plugin, const IRCEvent event)
                 logger.warningf("Exception %s.awaitingFibers[%d]: %s%s",
                     plugin.name, i, logtint, e.msg);
                 printObject(event);
+                version(PrintStacktraces) logger.trace(e.toString);
                 toRemove ~= i;
             }
         }
@@ -986,6 +995,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
             logger.warningf("IRC Parse Exception %s.timedFibers[%d]: %s%s",
                 plugin.name, i, logtint, e.msg);
             printObject(e.event);
+            version(PrintStacktraces) logger.trace(e.info);
             toRemove ~= i;
         }
         catch (Exception e)
@@ -1005,6 +1015,7 @@ void handleTimedFibers(IRCPlugin plugin, ref int timedFiberCheckCounter, const l
 
             logger.warningf("Exception %s.timedFibers[%d]: %s%s",
                 plugin.name, i, logtint, e.msg);
+            version(PrintStacktraces) logger.trace(e.toString);
             toRemove ~= i;
         }
     }

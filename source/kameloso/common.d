@@ -411,11 +411,13 @@ struct IRCBot
                 {
                     logger.warningf("ErrnoException when tearing down %s: %s",
                         plugin.name, e.msg);
+                    version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
                 logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
+                version(PrintStacktraces) logger.trace(e.toString);
             }
         }
 

@@ -48,7 +48,7 @@
         {
             "name": "polyglot",
             "versions": [ "WithPlugins", "FlushStdout", "Colours", "Web",
-                "TwitchBot", "TwitchWarnings", "OmniscientAdmin" ],
+                "TwitchBot", "TwitchWarnings", "OmniscientAdmin", "PrintStacktraces" ],
             "dependencies": { "requests": "~>1.0.0" }
         },
         {
@@ -81,7 +81,7 @@
             "name": "unittest",
             "buildType": "unittest",
             "versions": [ "WithPlugins", "FlushStdout", "Web", "Colours",
-                "TwitchWarnings", "TwitchBot", "OmniscientAdmin" ],
+                "TwitchWarnings", "TwitchBot", "OmniscientAdmin", "PrintStacktraces" ],
             "sourcePaths": [ "tests" ],
             "importPaths": [ "tests" ],
             "dflags": [ "-dip25", "-dip1000", "-dip1008" ],
