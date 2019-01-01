@@ -450,7 +450,8 @@ void generateAsserts(ref IRCBot bot) @system
         stdout.lockingTextWriter.formatClientAssignment(parser.client);
 
         writeln();
-        writeln("// Paste raw event strings and hit Enter to generate an assert block.");
+        writeln("// Paste raw event strings and hit Enter to generate an assert block. " ~
+            "Ctrl+C twice to exit.");
         writeln();
 
         string input;
