@@ -406,6 +406,14 @@ void parseTwitchTags(TwitchSupportService service, ref IRCEvent event)
                 event.target.class_ = IRCUser.Class.admin;
                 event.target.alias_ = alias_;
                 event.target.address = string.init;
+
+                if (!service.state.client.alias_.length)
+                {
+                    // Also store the alias in the IRCClient, for highlighting purposes
+                    // *ASSUME* it never changes during runtime.
+                    service.state.client.alias_ = alias_;
+                    service.state.client.updated = true;
+                }
             }
             else
             {
