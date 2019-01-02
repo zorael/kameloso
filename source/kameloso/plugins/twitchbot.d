@@ -64,6 +64,34 @@ void onAnyMessage(TwitchBotPlugin plugin)
 }
 
 
+// onImportant
+/++
+ +  Bells on any important event, like subscriptions, cheers and raids, if the
+ +  `TwitchBotSettings.bellOnImportant` setting is set.
+ +/
+@(Chainable)
+@(IRCEvent.Type.TWITCH_SUB)
+@(IRCEvent.Type.TWITCH_SUBGIFT)
+@(IRCEvent.Type.TWITCH_CHEER)
+@(IRCEvent.Type.TWITCH_REWARDGIFT)
+@(IRCEvent.Type.TWITCH_PURCHASE)
+@(IRCEvent.Type.TWITCH_RAID)
+@(IRCEvent.Type.TWITCH_GIFTUPGRADE)
+@(IRCEvent.Type.TWITCH_CHARITY)
+@(PrivilegeLevel.ignore)
+@(ChannelPolicy.home)
+void onImportant(TwitchBotPlugin plugin)
+{
+    import kameloso.terminal : TerminalToken;
+    import std.stdio : stdout, write;
+
+    if (!plugin.twitchBotSettings.bellOnImportant) return;
+
+    write(cast(char)TerminalToken.bell);
+    stdout.flush();
+}
+
+
 // onSelfjoin
 /++
  +  Registers a new `TwitchBotPlugin.Channel` as we join a channel, so there's
