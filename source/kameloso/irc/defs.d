@@ -2559,12 +2559,13 @@ struct IRCChannel
     Mode[] modes;
 
     /++
-     +  Array of all the nicknames inhabiting the channel. These are not
-     +  `IRCUser`s; those are kept in the `users` associative array of
-     +  `kameloso.plugins.common.IRCPluginState.users`. These are merely keys to
-     +  that array.
+     +  Associative array of all the nicknames inhabiting the channel.
+     +
+     +  These are not `IRCUser`s; those are kept in the `users` associative array of
+     +  `kameloso.plugins.common.IRCPluginState.users`. The keys here are merely
+     +  keys to that array.
      +/
-    string[] users;
+    bool[string] users;
 
     /++
      +  Associative array of nicknames with a prefixing channel mode (operator,
