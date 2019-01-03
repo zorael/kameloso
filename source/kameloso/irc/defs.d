@@ -77,15 +77,28 @@ struct IRCEvent
         CTCP_LAG,   /// Something requested LAG info?
         CTCP_AVATAR,/// Someone requested an avatar image.
         CTCP_SLOTS, /// Someone broadcasted their file transfer slots.
+        ACCOUNT,    /// Someone logged in on nickname services.
+        SASL_AUTHENTICATE,/// SASL authentication negotiation.
+        AUTH_CHALLENGE,   /// Authentication challenge.
+        AUTH_FAILURE,     /// Authentication failure.
+        CHGHOST,          /// User "changes host", which is a thing on some networks.
+        CHANNELFORBIDDEN, // = 926,     // <nickname> <channel> :Channel <channel> is forbidden: This channel is closed by request of the channel operators.
+        BOTSNOTWELCOME,   // = 931,     // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
+        ENDOFSPAMFILTERLIST,// = 940,   // <nickname> <channel> :End of channel spamfilter list
+        SPAMFILTERLIST,   // = 941,
+        NICKUNLOCKED,     // = 945,
+        NICKNOTLOCKED,    // = 946,
+        ENDOFEXEMPTOPSLIST,// = 953 ///End of exempt channel ops list.
 
-        USERSTATE,  /// Twitch user information.
-        ROOMSTATE,  /// Twitch channel information.
-        GLOBALUSERSTATE,/// Twitch information about self upon login.
-        CLEARCHAT,  /// Twitch `CLEARCHAT` event, clearing the chat or banning a user.
-        CLEARMSG,   /// Twitch `CLEARMSG` event, deletes a sent message.
-        USERNOTICE, /// Twitch subscription or resubscription event.
-        HOSTTARGET, /// Twitch channel hosting target.
-        RECONNECT,  /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
+        // Twitch specifics
+        USERSTATE,        /// Twitch user information.
+        ROOMSTATE,        /// Twitch channel information.
+        GLOBALUSERSTATE,  /// Twitch information about self upon login.
+        CLEARCHAT,        /// Twitch `CLEARCHAT` event, clearing the chat or banning a user.
+        CLEARMSG,         /// Twitch `CLEARMSG` event, deletes a sent message.
+        USERNOTICE,       /// Twitch subscription or resubscription event.
+        HOSTTARGET,       /// Twitch channel hosting target.
+        RECONNECT,        /// Twitch `RECONNECT` event; Twitch IRC processes restarting.
         WHISPER,          /// Twitch private query message.
         TWITCH_HOSTSTART, /// Twitch channel hosting start.
         TWITCH_HOSTEND,   /// Twitch channel hosting end.
@@ -102,13 +115,6 @@ struct IRCEvent
         TWITCH_RAID,      /// Twitch raid.
         TWITCH_GIFTUPGRADE,/// Twitch "continuing the gift sub"
         TWITCH_CHARITY,   /// Twitch charity donation.
-
-        ACCOUNT,    /// Someone logged in on nickname services.
-        SASL_AUTHENTICATE,/// SASL authentication negotiation.
-        AUTH_CHALLENGE,/// Authentication challenge.
-        AUTH_FAILURE,/// Authentication failure.
-        CHGHOST,    /// User "changes host", which is a thing on some networks.
-        ENDOFEXEMPTOPSLIST,// = 953 ///End of exempt channel ops list.
 
         RPL_WELCOME, // = 001,          // ":Welcome to <server name> <user>"
         RPL_YOURHOST, // = 002,         // ":Your host is <servername>, running version <version>"
@@ -745,13 +751,7 @@ struct IRCEvent
         ERR_SASLABORTED, // = 906,      // :orwell.freenode.net 906 kameloso^ :SASL authentication aborted
         ERR_SASLALREADY, // = 907,
         RPL_SASLMECHS, // = 908,
-        BOTSNOTWELCOME, // = 931,       // <nickname> :Malicious bot, spammers, and other automated systems of dubious origins are NOT welcome here.
-        CHANNELFORBIDDEN, // = 926,     // <nickname> <channel> :Channel <channel> is forbidden: This channel is closed by request of the channel operators.
         ERR_WORDFILTERED, // = 936,
-        ENDOFSPAMFILTERLIST, // = 940,  // <nickname> <channel> :End of channel spamfilter list
-        SPAMFILTERLIST, // = 941,
-        NICKUNLOCKED, // = 945,
-        NICKNOTLOCKED, // = 946,
         ERR_CANTUNLOADMODULE, // = 972, // CONFLICT
         ERR_CANNOTDOCOMMAND, // = 972,
         ERR_CANNOTCHANGEUMODE, // = 973,
