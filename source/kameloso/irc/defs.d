@@ -2635,11 +2635,13 @@ struct IRCChannel
 
         IRCChannel channel;
         channel.name = "#channel";
-        channel.users.length = 42;
+        channel.users["abc"] = true;
+        channel.users["def"] = true;
+        channel.users["ghi"] = true;
         channel.modechars = "asdf";
         channel.modes.length = 3;
         channel.toString(sink);
 
-        assert((sink.data == "#channel u:42 m:asdf+3"), sink.data);
+        assert((sink.data == "#channel u:3 m:asdf+3"), sink.data);
     }
 }
