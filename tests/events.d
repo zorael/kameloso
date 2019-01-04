@@ -147,7 +147,6 @@ unittest
         {
             assert((sender.address == "like.so"), sender.address);
             assert((type == IRCEvent.Type.ERR_NEEDPONG), Enum!(IRCEvent.Type).toString(type));
-            assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "PONG 3705964477"), content);
         }
     }
