@@ -890,11 +890,8 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
-    case RPL_LINKS: // 364
-    //case RPL_TRACEUSER: // 205
     case RPL_TRACEEND: // 262
     case RPL_TRYAGAIN: // 263
-    //case RPL_STATSLINKINFO: // 211
     case RPL_STATSDEBUG: // 249
     case RPL_ENDOFSTATS: // 219
     case RPL_HELPSTART: // 704
@@ -908,14 +905,38 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         // :livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)
         // :livingstone.freenode.net 249 kameloso p :1 staff members
         // :livingstone.freenode.net 219 kameloso p :End of /STATS report
-        // :verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -
         // :verne.freenode.net 263 kameloso^ STATS :This command could not be completed because it has been used recently, and is rate-limited
         // :verne.freenode.net 262 kameloso^ verne.freenode.net :End of TRACE
-        // :wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536
-        // :rajaniemi.freenode.net 364 kameloso^ rajaniemi.freenode.net rajaniemi.freenode.net :0 Helsinki, FI, EU
         slice.nom(' '); // bot nickname
         event.aux = slice.nom(" :");
         event.content = slice;
+        break;
+
+    case RPL_STATSLINKINFO: // 211
+        // :verne.freenode.net 211 kameloso^ kameloso^[~NaN@194.117.188.126] 0 109 8 15 0 :40 0 -
+        // Without knowing more we can't do much except slice it conservatively
+        slice.nom(' '); // bot nickname
+        event.content = slice.nom(' ');
+        event.aux = slice;
+        break;
+
+    case RPL_TRACEUSER: // 205
+        import std.conv : to;
+        // :wolfe.freenode.net 205 kameloso^ User v6users zorael[~NaN@2001:41d0:2:80b4::] (255.255.255.255) 16 :536
+        slice.nom(" User "); // bot nickname
+        event.aux = slice.nom(' '); // "class"
+        event.content = slice.nom(" :");
+        event.count = slice.to!int; // unsure
+        break;
+
+    case RPL_LINKS: // 364
+        import std.conv : to;
+        // :rajaniemi.freenode.net 364 kameloso^ rajaniemi.freenode.net rajaniemi.freenode.net :0 Helsinki, FI, EU
+        slice.nom(' '); // bot nickname
+        slice.nom(' '); // "mask"
+        event.aux = slice.nom(" :"); // server address
+        event.count = slice.nom(' ').to!int; // hop count
+        event.content = slice; // "server info"
         break;
 
     case ERR_BANONCHAN: // 435
