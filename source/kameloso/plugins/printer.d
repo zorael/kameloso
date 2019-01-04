@@ -489,7 +489,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
     case ACCOUNT:
         // These don't carry a channel; instead have them be logged in all
         // channels this user is in (that the bot is also in)
-        foreach (immutable channelName, const thisChannel; state.channels)
+        foreach (immutable channelName, const foreachChannel; state.channels)
         {
             if (!printerSettings.logAllChannels && !state.client.homes.canFind(channelName))
             {
@@ -497,7 +497,7 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
                 continue;
             }
 
-            if (thisChannel.users.canFind(sender.nickname))
+            if (sender.nickname in foreachChannel.users)
             {
                 // Channel message
                 writeEventToFile(channelName);

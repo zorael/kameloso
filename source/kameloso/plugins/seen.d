@@ -556,7 +556,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 
         foreach (const channel; state.channels)
         {
-            if (channel.users.canFind(event.content))
+            if (event.content in channel.users)
             {
                 immutable line = event.channel.length && (channel.name == event.channel) ?
                     " is here right now!" : " is online right now.";
@@ -686,7 +686,7 @@ void updateAllUsers(SeenPlugin plugin)
 
     foreach (immutable channelName, const channel; plugin.state.channels)
     {
-        foreach (const nickname; channel.users)
+        foreach (const nickname; channel.users.byKey)
         {
             uniqueUsers[nickname] = true;
         }

@@ -2267,11 +2267,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Upon someone changing nickname, update their entry in the `IRCPlugin`'s
      +  `IRCPluginState.users` array to point to the new nickname.
      +
-     +  Does *not* add a new entry if one doesn't exits, to counter the fact
-     +  that `NICK` events don't belong to a channel, and as such can't be
-     +  regulated with `ChannelPolicy` annotations. This way the user will only
-     +  be moved if it was already added elsewhere. Else we'll leak users.
-     +
      +  Removes the old entry after assigning it to the new key.
      +/
     @(Awareness.early)
@@ -2283,18 +2278,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         {
             plugin.state.users[event.target.nickname] = *oldUser;
             plugin.state.users.remove(event.sender.nickname);
-        }
-
-        foreach (ref channel; plugin.state.channels)
-        {
-            import std.algorithm.searching : countUntil;
-
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-
-            if (userIndex != -1)
-            {
-                channel.users[userIndex] = event.target.nickname;  // not sender
-            }
         }
     }
 
@@ -2345,9 +2328,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 
             foreach (const channel; plugin.state.channels)
             {
-                import std.algorithm.searching : canFind;
-
-                if (channel.users.canFind(event.sender.nickname))
+                if (event.sender.nickname in channel.users)
                 {
                     // ACCOUNT of a user that's in a relevant channel
                     return plugin.catchUser(event.sender);
@@ -2433,7 +2414,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
     {
-        plugin.state.users.rehash();
+        rehashUsers(plugin);
     }
 
 
@@ -2464,7 +2445,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         if (now >= _nextPingRehashTimestamp)
         {
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
-            plugin.state.users.rehash();
+            rehashUsers(plugin);
             _nextPingRehashTimestamp = now + (hoursBetweenRehashes * 3600);
         }
     }
@@ -2545,12 +2526,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         if (!channel) return;
 
         nickloop:
-        foreach (immutable nickname; channel.users)
+        foreach (immutable nickname; channel.users.byKey)
         {
-            foreach (const channel; plugin.state.channels)
+            foreach (const stateChannel; plugin.state.channels)
             {
-                import std.algorithm.searching : canFind;
-                if (channel.users.canFind(nickname)) continue nickloop;
+                if (nickname in stateChannel.users) continue nickloop;
             }
 
             // nickname is not in any of our other tracked channels; remove
@@ -2571,7 +2551,7 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        plugin.state.channels[event.channel].users ~= event.sender.nickname;
+        plugin.state.channels[event.channel].users[event.sender.nickname] = true;
     }
 
 
@@ -2591,26 +2571,20 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @channelPolicy
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.algorithm.searching : countUntil;
+        auto channel = event.channel in plugin.state.channels;
 
-        immutable userIndex = plugin.state.channels[event.channel].users
-            .countUntil(event.sender.nickname);
-
-        if (userIndex == -1)
+        if (event.sender.nickname !in channel.users)
         {
             // On Twitch servers with no NAMES on joining a channel, users
             // that you haven't seen may leave despite never having been seen
             return;
         }
 
-        plugin.state.channels[event.channel].users = plugin.state.channels[event.channel].users
-            .remove!(SwapStrategy.unstable)(userIndex);
+        channel.users.remove(event.sender.nickname);
 
-        foreach (const channel; plugin.state.channels)
+        foreach (const foreachChannel; plugin.state.channels)
         {
-            import std.algorithm.searching : canFind;
-            if (channel.users.canFind(event.sender.nickname)) return;
+            if (event.sender.nickname in foreachChannel.users) return;
         }
 
         // event.sender is not in any of our tracked channels; remove
@@ -2623,22 +2597,26 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Upon someone changing nickname, update their entry in the
      +  `IRCPluginState.users` associative array point to the new nickname.
      +
-     +  Removes the old entry.
+     +  Does *not* add a new entry if one doesn't exits, to counter the fact
+     +  that `NICK` events don't belong to a channel, and as such can't be
+     +  regulated with `ChannelPolicy` annotations. This way the user will only
+     +  be moved if it was already added elsewhere. Else we'll leak users.
+     +
+     +  Removes the old entry after assigning it to the new key.
      +/
     @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.searching : countUntil;
-
-        // User awareness bits take care of the user AA
+        // User awareness bits take care of the IRCPluginState.users AA
 
         foreach (ref channel; plugin.state.channels)
         {
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-            if (userIndex == -1) continue;
-            channel.users[userIndex] = event.target.nickname;  // not sender
+            if (event.sender.nickname !in channel.users) continue;
+
+            channel.users.remove(event.sender.nickname);
+            channel.users[event.target.nickname] = true;
         }
     }
 
@@ -2655,14 +2633,10 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     @(IRCEvent.Type.QUIT)
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.algorithm.searching : countUntil;
-
         foreach (ref channel; plugin.state.channels)
         {
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-            if (userIndex == -1) continue;
-            channel.users = channel.users.remove!(SwapStrategy.unstable)(userIndex);
+            if (event.sender.nickname !in channel.users) continue;
+            channel.users.remove(event.sender.nickname);
         }
     }
 
@@ -2749,24 +2723,20 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
                     plugin.state.channels[event.channel].setMode(modestring,
                         event.target.nickname, plugin.state.client.server);
                 }
-                /*else
-                {
-                    logger.warningf(`Invalid modesign in RPL_WHOREPLY: "%s" ` ~
-                        `The server did not advertise it!`, modesign);
-                }*/
             }
         }
 
         if (event.target.nickname == plugin.state.client.nickname) return;
 
-        import std.algorithm.searching : canFind;
-        if (plugin.state.channels[event.channel].users.canFind(event.target.nickname))
+        auto channel = event.channel in plugin.state.channels;
+
+        if (event.target.nickname in channel.users)
         {
             // Already registered
             return;
         }
 
-        plugin.state.channels[event.channel].users ~= event.target.nickname;
+        channel.users[event.target.nickname] = true;
     }
 
 
@@ -2836,14 +2806,15 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
 
             if (nickname == plugin.state.client.nickname) continue;
 
-            import std.algorithm.searching : canFind;
-            if (plugin.state.channels[event.channel].users.canFind(nickname))
+            auto channel = event.channel in plugin.state.channels;
+
+            if (nickname in channel.users)
             {
                 // Already registered
                 continue;
             }
 
-            plugin.state.channels[event.channel].users ~= nickname;
+            channel.users[nickname] = true;
         }
     }
 
@@ -2974,13 +2945,11 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     {
         if (plugin.state.client.server.daemon != IRCServer.Daemon.twitch) return;
 
-        import std.algorithm.searching : canFind;
-
         auto channel = event.channel in plugin.state.channels;
 
-        if (!channel.users.canFind(event.sender.nickname))
+        if (event.sender.nickname !in channel.users)
         {
-            channel.users ~= event.sender.nickname;
+            channel.users[event.sender.nickname] = true;
         }
 
         plugin.catchUser(event.sender);
@@ -3228,6 +3197,24 @@ void doWhois(F, Payload)(IRCPlugin plugin, Payload payload, const IRCEvent event
 void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilegeLevel, F fn)
 {
     return doWhois!(F, typeof(null))(plugin, null, event, privilegeLevel, fn);
+}
+
+
+// rehashUsers
+/++
+ +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
+ +  associative array and the ones in each `IRCChannel.users` associative arrays.
+ +
+ +  This optimises lookup and should be done every so often,
+ +/
+void rehashUsers(IRCPlugin plugin)
+{
+    plugin.state.users.rehash();
+
+    foreach (ref channel; plugin.state.channels)
+    {
+        channel.users.rehash();
+    }
 }
 
 
