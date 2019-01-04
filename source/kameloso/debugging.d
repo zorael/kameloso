@@ -441,6 +441,7 @@ void generateAsserts(ref IRCBot bot) @system
 
         write("Enter server address (irc.freenode.net): ");
         parser.client.server.address = readln().stripped;
+        if (!parser.client.server.address.length) parser.client.server.address = "irc.freenode.net";
 
         writeln();
         printObjects!(Yes.printAll)(parser.client, parser.client.server);
@@ -448,6 +449,8 @@ void generateAsserts(ref IRCBot bot) @system
 
         parser.client.updated = false;
         stdout.lockingTextWriter.formatClientAssignment(parser.client);
+        writeln();
+        writeln("parser.typenums = typenumsOf(parser.client.server.daemon);");
 
         writeln();
         writeln("// Paste raw event strings and hit Enter to generate an assert block. " ~
@@ -472,6 +475,11 @@ void generateAsserts(ref IRCBot bot) @system
                 // Indented or commented; slice away and try again
                 raw = raw[1..$];
             }
+
+            import core.thread : Thread;
+            import core.time : msecs;
+
+            Thread.sleep(75.msecs);
 
             if (!raw.length)
             {
