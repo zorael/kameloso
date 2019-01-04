@@ -858,7 +858,7 @@ void parseSpecialcases(ref IRCParser parser, ref IRCEvent event, ref string slic
         }
         break;
 
-    case ERR_BADPING: // 513
+    case ERR_NEEDPONG: // 513
         /++
          +  "Also known as ERR_NEEDPONG (Unreal/Ultimate) for use during
          +  registration, however it's not used in Unreal (and might not be used
