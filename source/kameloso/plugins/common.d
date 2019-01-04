@@ -3200,6 +3200,24 @@ void doWhois(F)(IRCPlugin plugin, const IRCEvent event, PrivilegeLevel privilege
 }
 
 
+// rehashUsers
+/++
+ +  Rehashes a plugin's users, both the ones in the `IRCPluginState.users`
+ +  associative array and the ones in each `IRCChannel.users` associative arrays.
+ +
+ +  This optimises lookup and should be done every so often,
+ +/
+void rehashUsers(IRCPlugin plugin)
+{
+    plugin.state.users.rehash();
+
+    foreach (ref channel; plugin.state.channels)
+    {
+        channel.users.rehash();
+    }
+}
+
+
 // applyCustomSettings
 /++
  +  Changes a setting of a plugin, given both the names of the plugin and the
