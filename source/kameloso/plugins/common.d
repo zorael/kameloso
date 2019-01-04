@@ -2414,7 +2414,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @channelPolicy
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin)
     {
-        plugin.state.users.rehash();
+        rehashUsers(plugin);
     }
 
 
@@ -2445,7 +2445,7 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         if (now >= _nextPingRehashTimestamp)
         {
             // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
-            plugin.state.users.rehash();
+            rehashUsers(plugin);
             _nextPingRehashTimestamp = now + (hoursBetweenRehashes * 3600);
         }
     }
