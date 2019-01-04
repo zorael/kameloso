@@ -2267,11 +2267,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
      +  Upon someone changing nickname, update their entry in the `IRCPlugin`'s
      +  `IRCPluginState.users` array to point to the new nickname.
      +
-     +  Does *not* add a new entry if one doesn't exits, to counter the fact
-     +  that `NICK` events don't belong to a channel, and as such can't be
-     +  regulated with `ChannelPolicy` annotations. This way the user will only
-     +  be moved if it was already added elsewhere. Else we'll leak users.
-     +
      +  Removes the old entry after assigning it to the new key.
      +/
     @(Awareness.early)
@@ -2283,18 +2278,6 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         {
             plugin.state.users[event.target.nickname] = *oldUser;
             plugin.state.users.remove(event.sender.nickname);
-        }
-
-        foreach (ref channel; plugin.state.channels)
-        {
-            import std.algorithm.searching : countUntil;
-
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-
-            if (userIndex != -1)
-            {
-                channel.users[userIndex] = event.target.nickname;  // not sender
-            }
         }
     }
 
@@ -2623,22 +2606,26 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
      +  Upon someone changing nickname, update their entry in the
      +  `IRCPluginState.users` associative array point to the new nickname.
      +
-     +  Removes the old entry.
+     +  Does *not* add a new entry if one doesn't exits, to counter the fact
+     +  that `NICK` events don't belong to a channel, and as such can't be
+     +  regulated with `ChannelPolicy` annotations. This way the user will only
+     +  be moved if it was already added elsewhere. Else we'll leak users.
+     +
+     +  Removes the old entry after assigning it to the new key.
      +/
     @(Awareness.setup)
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const IRCEvent event)
     {
-        import std.algorithm.searching : countUntil;
-
-        // User awareness bits take care of the user AA
+        // User awareness bits take care of the IRCPluginState.users AA
 
         foreach (ref channel; plugin.state.channels)
         {
-            immutable userIndex = channel.users.countUntil(event.sender.nickname);
-            if (userIndex == -1) continue;
-            channel.users[userIndex] = event.target.nickname;  // not sender
+            if (event.sender.nickname !in *channel.users) continue;
+
+            channel.users.remove(event.sender.nickname);
+            channel.users[event.target.nickname] = true;
         }
     }
 
