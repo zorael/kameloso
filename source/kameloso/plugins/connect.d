@@ -176,7 +176,7 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
- +  Responds to `ERR_BADPING` events by sending the text supplied as content in
+ +  Responds to `ERR_NEEDPONG` events by sending the text supplied as content in
  +  the `kameloso.irc.defs.IRCEvent` to the server.
  +
  +  "Also known as `ERR_NEEDPONG` (Unreal/Ultimate) for use during registration,
@@ -184,7 +184,7 @@ void joinChannels(ConnectService service)
  +
  +  Encountered at least once, on a private server.
  +/
-@(IRCEvent.Type.ERR_BADPING)
+@(IRCEvent.Type.ERR_NEEDPONG)
 void onToConnectType(ConnectService service, const IRCEvent event)
 {
     if (service.serverPinged) return;
