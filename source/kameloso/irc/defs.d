@@ -579,8 +579,8 @@ struct IRCEvent
         ERR_SILELISTFULL, // = 511,
         ERR_NOSUCHGLINE, // = 512,      // CONFLICT
         ERR_TOOMANYWATCH, // = 512,
-        //ERR_NEEDPONG, // 513,         // CONFLICT
-        ERR_BADPING, // = 513,          // <nickname> :To connect type /QUOTE PONG <number>
+        //ERR_BADPING, // 513,         // CONFLICT
+        ERR_NEEDPONG, // = 513,          // <nickname> :To connect type /QUOTE PONG <number>
         ERR_NOSUCHJUPE, // = 514,       // CONFLICT
         ERR_TOOMANYDCC, // = 514,       // CONFLICT
         ERR_INVALID_ERROR, // = 514,
@@ -1763,7 +1763,7 @@ struct Typenums
         504 : Type.ERR_USERNOTONSERV,
         511 : Type.ERR_SILELISTFULL,
         512 : Type.ERR_TOOMANYWATCH,
-        513 : Type.ERR_BADPING,
+        513 : Type.ERR_NEEDPONG,
         514 : Type.ERR_INVALID_ERROR,
         515 : Type.ERR_BADEXPIRE,
         516 : Type.ERR_DONTCHEAT,
