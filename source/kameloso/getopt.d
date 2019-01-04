@@ -508,13 +508,20 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             return Next.returnSuccess;
         }
 
-        debug
         if (shouldGenerateAsserts)
         {
-            // --gen|--generate was passed, enter assert generation
-            import kameloso.debugging : generateAsserts;
-            bot.generateAsserts();
-            return Next.returnSuccess;
+            debug
+            {
+                // --gen|--generate was passed, enter assert generation
+                import kameloso.debugging : generateAsserts;
+                bot.generateAsserts();
+                return Next.returnSuccess;
+            }
+            else
+            {
+                import std.getopt : GetOptException;
+                throw new GetOptException("--asserts is disabled in non-debug mode");
+            }
         }
 
         // 10. `client` finished; inherit into `client`
