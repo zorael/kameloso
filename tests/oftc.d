@@ -49,7 +49,6 @@ unittest
             assert((num == 345), num.to!string);
         }
     }
-        version(none)
     {
         immutable event = parser.toIRCEvent(":irc.oftc.net 344 kameloso #garderoben harbl!snarbl@* kameloso!~NaN@194.117.188.126 1515418362");
         with (IRCEvent.Type)

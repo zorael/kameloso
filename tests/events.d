@@ -30,19 +30,6 @@ unittest
         }
     }
     {
-        immutable event = parser.toIRCEvent(":port80b.se.quakenet.org 353 kameloso = #garderoben :@kameloso");
-        with (IRCEvent.Type)
-        with (event)
-        {
-            assert((type == RPL_NAMREPLY), Enum!(IRCEvent.Type).toString(type));
-            assert((sender.address == "port80b.se.quakenet.org"), sender.address);
-            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
-            assert((channel == "#garderoben"), channel);
-            assert((content == "@kameloso"), content);
-            assert((num == 353), num.to!string);
-        }
-    }
-    {
         immutable event = parser.toIRCEvent(":miranda.chathispano.com 465 kameloso 1511086908 :[1511000504768] G-Lined by ChatHispano Network. Para mas informacion visite http://chathispano.com/gline/?id=<id> (expires at Dom, 19/11/2017 11:21:48 +0100).");
         with (IRCEvent.Type)
         with (event)
@@ -55,7 +42,6 @@ unittest
             assert((num == 465), num.to!string);
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":irc.RomaniaChat.eu 322 kameloso #GameOfThrones 1 :[+ntTGfB]");
         with (IRCEvent.Type)
@@ -70,7 +56,6 @@ unittest
             assert((num == 322), num.to!string);
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":irc.RomaniaChat.eu 322 kameloso #radioclick 63 :[+ntr]  Bun venit pe #Radioclick! Site oficial www.radioclick.ro sau servere irc.romaniachat.eu, irc.radioclick.ro");
         with (IRCEvent.Type)
@@ -85,8 +70,6 @@ unittest
             assert((num == 322), num.to!string);
         }
     }
-
-
     {
         immutable event = parser.toIRCEvent(":cadance.canternet.org 379 kameloso kameloso :is using modes +ix");
         with (IRCEvent.Type)
@@ -99,7 +82,6 @@ unittest
             assert((num == 379), num.to!string);
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":Miyabro!~Miyabro@DA8192E8:4D54930F:650EE60D:IP CHGHOST ~Miyabro Miyako.is.mai.waifu");
         with (IRCEvent.Type)
@@ -112,7 +94,6 @@ unittest
             assert((sender.class_ != IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":Iasdf666!~Iasdf666@The.Breakfast.Club PRIVMSG #uk :be more welcoming you negative twazzock");
         with (IRCEvent.Type)
@@ -127,7 +108,6 @@ unittest
             assert((content == "be more welcoming you negative twazzock"), content);
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":gallon!~MO.11063@482c29a5.e510bf75.97653814.IP4 PART :#cncnet-yr");
         with (IRCEvent.Type)

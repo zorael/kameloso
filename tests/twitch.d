@@ -178,7 +178,7 @@ unittest
             assert((target.nickname == "user"), target.nickname);
         }
     }
-        {
+    {
         immutable event = parser.toIRCEvent(":tmi.twitch.tv RECONNECT");
         with (event)
         {

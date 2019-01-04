@@ -223,7 +223,6 @@ unittest
             assert((content == "kameloso^"), content);
         }
     }
-
     {
         immutable event = parser.toIRCEvent(":livingstone.freenode.net 249 kameloso p :dax (dax@freenode/staff/dax)");
         with (IRCEvent.Type)
