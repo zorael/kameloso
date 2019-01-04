@@ -313,6 +313,9 @@ public:
  +      `kameloso.common.Next.continue_` or `kameloso.common.Next.returnSuccess`
  +      depending on whether the arguments chosen mean the program should
  +      proceed or not.
+ +
+ +  Throws:
+ +      `std.getopt.GetOptException` if `--asserts`/`--gen` is passed in non-debug builds.
  +/
 Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @system
 {
