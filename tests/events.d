@@ -182,3 +182,58 @@ unittest
         assert((server.resolvedAddress == "irc.portlane.se"), server.resolvedAddress);
     }
 }
+
+
+unittest
+{
+    IRCParser parser;
+
+    with (parser.client)
+    {
+        server.address = "efnet.port80.se";
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":efnet.port80.se 004 kameloso efnet.port80.se ircd-ratbox-3.0.9 oiwszcrkfydnxbauglZCD biklmnopstveIrS bkloveI");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "efnet.port80.se"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "oiwszcrkfydnxbauglZCD biklmnopstveIrS bkloveI"), content);
+            assert((aux == "ircd-ratbox-3.0.9"), aux);
+            assert((num == 4), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.daemon == IRCServer.Daemon.ratbox), Enum!(IRCServer.Daemon).toString(server.daemon));
+        assert((server.daemonstring == "ircd-ratbox-3.0.9"), server.daemonstring);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":efnet.port80.se 005 kameloso CHANTYPES=&# EXCEPTS INVEX CHANMODES=eIb,k,l,imnpstS CHANLIMIT=&#:50 PREFIX=(ov)@+ MAXLIST=beI:100 MODES=4 NETWORK=EFnet KNOCK STATUSMSG=@+ CALLERID=g :are supported by this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "efnet.port80.se"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "CHANTYPES=&# EXCEPTS INVEX CHANMODES=eIb,k,l,imnpstS CHANLIMIT=&#:50 PREFIX=(ov)@+ MAXLIST=beI:100 MODES=4 NETWORK=EFnet KNOCK STATUSMSG=@+ CALLERID=g"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.network == "EFnet"), server.network);
+        assert((server.daemonstring == "EFnet"), server.daemonstring);
+        assert((server.aModes == "eIb"), server.aModes);
+        assert((server.bModes == "k"), server.bModes);
+        assert((server.cModes == "l"), server.cModes);
+        assert((server.dModes == "imnpstS"), server.dModes);
+        assert((server.prefixchars == ['+':'v', '@':'o']), server.prefixchars.to!string);
+        assert((server.prefixes == "ov"), server.prefixes);
+        assert((server.chantypes == "&#"), server.chantypes);
+    }
+}
