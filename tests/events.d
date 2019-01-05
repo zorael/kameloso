@@ -368,3 +368,119 @@ unittest
         assert((modes == "ir"), modes);
     }
 }
+
+
+unittest
+{
+    IRCParser parser;
+
+    with (parser.client)
+    {
+        server.address = "irc.geekshed.net";
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":fe-00107.GeekShed.net NOTICE AUTH :*** Looking up your hostname...");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.NOTICE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "fe-00107.GeekShed.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "*** Looking up your hostname..."), content);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.resolvedAddress == "fe-00107.GeekShed.net"), server.resolvedAddress);
+    }
+
+    {
+        immutable event = parser.toIRCEvent("PING :E21567FB");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.PING), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "irc.geekshed.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "E21567FB"), content);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":fe-00107.GeekShed.net 004 kameloso fe-00107.GeekShed.net Unreal3.2.10.3-gs iowghraAsORTVSxNCWqBzvdHtGpIDc lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGjUZ");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "fe-00107.GeekShed.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "iowghraAsORTVSxNCWqBzvdHtGpIDc lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGjUZ"), content);
+            assert((aux == "Unreal3.2.10.3-gs"), aux);
+            assert((num == 4), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.daemon == IRCServer.Daemon.unreal), Enum!(IRCServer.Daemon).toString(server.daemon));
+        assert((server.daemonstring == "Unreal3.2.10.3-gs"), server.daemonstring);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":fe-00107.GeekShed.net 005 kameloso CMDS=KNOCK,MAP,DCCALLOW,USERIP,STARTTLS UHNAMES NAMESX SAFELIST HCN MAXCHANNELS=100 CHANLIMIT=#:100 MAXLIST=b:60,e:60,I:60 NICKLEN=30 CHANNELLEN=32 TOPICLEN=307 KICKLEN=307 AWAYLEN=307 :are supported by this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "fe-00107.GeekShed.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "CMDS=KNOCK,MAP,DCCALLOW,USERIP,STARTTLS UHNAMES NAMESX SAFELIST HCN MAXCHANNELS=100 CHANLIMIT=#:100 MAXLIST=b:60,e:60,I:60 NICKLEN=30 CHANNELLEN=32 TOPICLEN=307 KICKLEN=307 AWAYLEN=307"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.maxNickLength == 30), server.maxNickLength.to!string);
+        assert((server.maxChannelLength == 32), server.maxChannelLength.to!string);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":fe-00107.GeekShed.net 005 kameloso MAXTARGETS=20 WALLCHOPS WATCH=128 WATCHOPTS=A SILENCE=15 MODES=12 CHANTYPES=# PREFIX=(qaohv)~&@%+ CHANMODES=beI,kfL,lj,psmntirRcOAQKVCuzNSMTGUZ NETWORK=GeekShed CASEMAPPING=ascii EXTBAN=~,qjncrRaT ELIST=MNUCT :are supported by this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "fe-00107.GeekShed.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "MAXTARGETS=20 WALLCHOPS WATCH=128 WATCHOPTS=A SILENCE=15 MODES=12 CHANTYPES=# PREFIX=(qaohv)~&@%+ CHANMODES=beI,kfL,lj,psmntirRcOAQKVCuzNSMTGUZ NETWORK=GeekShed CASEMAPPING=ascii EXTBAN=~,qjncrRaT ELIST=MNUCT"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.network == "GeekShed"), server.network);
+        assert((server.daemonstring == "GeekShed"), server.daemonstring);
+        assert((server.aModes == "beI"), server.aModes);
+        assert((server.bModes == "kfL"), server.bModes);
+        assert((server.cModes == "lj"), server.cModes);
+        assert((server.dModes == "psmntirRcOAQKVCuzNSMTGUZ"), server.dModes);
+        assert((server.prefixchars == ['&':'a', '+':'v', '@':'o', '%':'h', '~':'q']), server.prefixchars.to!string);
+        assert((server.prefixes == "qaohv"), server.prefixes);
+        assert((server.extbanPrefix == '~'), server.extbanPrefix.to!string);
+        assert((server.extbanTypes == "qjncrRaT"), server.extbanTypes);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":kameloso MODE kameloso :+iRx");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFMODE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "kameloso"), sender.nickname);
+            assert((aux == "+iRx"), aux);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((modes == "Rix"), modes);
+    }
+}
