@@ -459,6 +459,14 @@ Next handleGetopt(ref IRCBot bot, string[] args, ref string[] customSettings) @s
             if (inputChannels.length) client.channels = inputChannels;
         }
 
+        // 6a. Strip whitespace
+        import kameloso.string : stripped;
+        import std.algorithm.iteration : map;
+        import std.array : array;
+
+        client.channels = client.channels.map!((ch) => ch.stripped).array;
+        client.homes = client.homes.map!((ch) => ch.stripped).array;
+
         // 7. Clear entries that are dashes
         import kameloso.objmanip : zeroMembers;
         zeroMembers!"-"(client);
