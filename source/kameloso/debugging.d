@@ -134,6 +134,17 @@ if (is(QualThing == struct))
                         enum pattern = "%s%s%s = \"%s\";\n";
                     }
                 }
+                else static if (is(T == char))
+                {
+                    static if (asserts)
+                    {
+                        enum pattern = "%sassert((%s%s == '%s'), %2$s%3$s.to!string);\n";
+                    }
+                    else
+                    {
+                        enum pattern = "%s%s%s = '%s';\n";
+                    }
+                }
                 else static if (is(T == enum))
                 {
                     import kameloso.string : nom;
