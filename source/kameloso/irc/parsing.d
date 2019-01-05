@@ -2006,6 +2006,12 @@ void onISUPPORT(ref IRCParser parser, ref IRCEvent event, ref string slice) pure
                     parser.typenums = typenumsOf(IRCServer.Daemon.ircnet);
                     parser.client.server.daemon = IRCServer.Daemon.ircnet;
                 }
+                else if (value == "Rizon")
+                {
+                    // Rizon reports hybrid but actually has some extras
+                    parser.typenums = typenumsOf(IRCServer.Daemon.rizon);
+                    parser.client.server.daemon = IRCServer.Daemon.rizon;
+                }
 
                 parser.client.server.daemonstring = value;
                 version(FlagUpdatedClient) parser.client.updated = true;
