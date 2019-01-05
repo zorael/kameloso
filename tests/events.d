@@ -237,3 +237,134 @@ unittest
         assert((server.chantypes == "&#"), server.chantypes);
     }
 }
+
+
+unittest
+{
+    IRCParser parser;
+
+    with (parser.client)
+    {
+        server.address = "bitcoin.uk.eu.dal.net";
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":bitcoin.uk.eu.dal.net NOTICE AUTH :*** Looking up your hostname...");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.NOTICE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "bitcoin.uk.eu.dal.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "*** Looking up your hostname..."), content);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.resolvedAddress == "bitcoin.uk.eu.dal.net"), server.resolvedAddress);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":bitcoin.uk.eu.dal.net 004 kameloso bitcoin.uk.eu.dal.net bahamut-2.1.4 aAbcCdefFghHiIjkKmnoOPrRsSwxXy AbceiIjklLmMnoOpPrRsStv");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_MYINFO), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "bitcoin.uk.eu.dal.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "aAbcCdefFghHiIjkKmnoOPrRsSwxXy AbceiIjklLmMnoOpPrRsStv"), content);
+            assert((aux == "bahamut-2.1.4"), aux);
+            assert((num == 4), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.daemon == IRCServer.Daemon.bahamut), Enum!(IRCServer.Daemon).toString(server.daemon));
+        assert((server.daemonstring == "bahamut-2.1.4"), server.daemonstring);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":bitcoin.uk.eu.dal.net 005 kameloso NETWORK=DALnet SAFELIST MAXBANS=200 MAXCHANNELS=50 CHANNELLEN=32 KICKLEN=307 NICKLEN=30 TOPICLEN=307 MODES=6 CHANTYPES=# CHANLIMIT=#:50 PREFIX=(ov)@+ STATUSMSG=@+ :are available on this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "bitcoin.uk.eu.dal.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "NETWORK=DALnet SAFELIST MAXBANS=200 MAXCHANNELS=50 CHANNELLEN=32 KICKLEN=307 NICKLEN=30 TOPICLEN=307 MODES=6 CHANTYPES=# CHANLIMIT=#:50 PREFIX=(ov)@+ STATUSMSG=@+"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.network == "DALnet"), server.network);
+        assert((server.daemonstring == "DALnet"), server.daemonstring);
+        assert((server.maxNickLength == 30), server.maxNickLength.to!string);
+        assert((server.maxChannelLength == 32), server.maxChannelLength.to!string);
+        assert((server.prefixchars == ['+':'v', '@':'o']), server.prefixchars.to!string);
+        assert((server.prefixes == "ov"), server.prefixes);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":bitcoin.uk.eu.dal.net 005 kameloso CASEMAPPING=ascii WATCH=128 SILENCE=10 ELIST=cmntu EXCEPTS INVEX CHANMODES=beI,k,jl,cimMnOprRsSt MAXLIST=b:200,e:100,I:100 TARGMAX=DCCALLOW:,JOIN:,KICK:4,KILL:20,NOTICE:20,PART:,PRIVMSG:20,WHOIS:,WHOWAS: :are available on this server");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_ISUPPORT), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.address == "bitcoin.uk.eu.dal.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "CASEMAPPING=ascii WATCH=128 SILENCE=10 ELIST=cmntu EXCEPTS INVEX CHANMODES=beI,k,jl,cimMnOprRsSt MAXLIST=b:200,e:100,I:100 TARGMAX=DCCALLOW:,JOIN:,KICK:4,KILL:20,NOTICE:20,PART:,PRIVMSG:20,WHOIS:,WHOWAS:"), content);
+            assert((num == 5), num.to!string);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((server.aModes == "beI"), server.aModes);
+        assert((server.bModes == "k"), server.bModes);
+        assert((server.cModes == "jl"), server.cModes);
+        assert((server.dModes == "cimMnOprRsSt"), server.dModes);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":NickServ!service@dal.net NOTICE kameloso :Password accepted for kameloso.");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.RPL_LOGGEDIN), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "NickServ"), sender.nickname);
+            assert((sender.ident == "service"), sender.ident);
+            assert((sender.address == "dal.net"), sender.address);
+            assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+            assert((content == "Password accepted for kameloso."), content);
+        }
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":kameloso MODE kameloso :+i");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFMODE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "kameloso"), sender.nickname);
+            assert((aux == "+i"), aux);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((modes == "i"), modes);
+    }
+
+    {
+        immutable event = parser.toIRCEvent(":kameloso MODE kameloso :+r");
+        with (event)
+        {
+            assert((type == IRCEvent.Type.SELFMODE), Enum!(IRCEvent.Type).toString(type));
+            assert((sender.nickname == "kameloso"), sender.nickname);
+            assert((aux == "+r"), aux);
+        }
+    }
+
+    with (parser.client)
+    {
+        assert((modes == "ir"), modes);
+    }
+}
