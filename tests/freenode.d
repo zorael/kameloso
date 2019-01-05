@@ -356,8 +356,6 @@ unittest
 
     parser.typenums = typenumsOf(parser.client.server.daemon);
 
-    try
-    {
     {
         immutable event = parser.toIRCEvent(":nick!~identh@unaffiliated/nick JOIN #freenode login :realname");
         with (event)
@@ -1407,16 +1405,5 @@ unittest
             assert((aux == "zorael!~NaN@2001:41d0:2:80b4:: 1514405101"), aux);
             assert((num == 728), num.to!string);
         }
-    }
-
-
-
-
-
-    }
-    catch (IRCParseException e)
-    {
-        import kameloso.printing : printObjects;
-        printObjects(e.event);
     }
 }
