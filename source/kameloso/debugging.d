@@ -250,16 +250,19 @@ assert((server.aModes == "eIbq"), server.aModes);
         string s;
         int i;
         bool b;
+        char c;
     }
 
     Foo f1;
     f1.s = "string";
     f1.i = 42;
     f1.b = true;
+    f1.c = '$';
 
     Foo f2 = f1;
     f2.s = "yarn";
     f2.b = false;
+    f2.c = '#';
 
     sink = typeof(sink).init;
 
@@ -267,6 +270,7 @@ assert((server.aModes == "eIbq"), server.aModes);
     assert(sink.data ==
 `s = "yarn";
 b = false;
+c = '#';
 `, '\n' ~ sink.data);
 
     sink = typeof(sink).init;
@@ -275,6 +279,7 @@ b = false;
     assert(sink.data ==
 `assert((s == "yarn"), s);
 assert(!b);
+assert((c == '#'), c.to!string);
 `, '\n' ~ sink.data);
 
     sink = typeof(sink).init;
