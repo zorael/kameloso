@@ -1469,7 +1469,6 @@ int kamelosoMain(string[] args)
     if (!bot.parser.client.homes.length && !bot.parser.client.admins.length)
     {
         complainAboutMissingConfiguration(args);
-        if (!settings.force) return 1;
     }
 
     version(Posix)
@@ -1775,7 +1774,7 @@ void complainAboutMissingConfiguration(const string[] args)
     import std.file : exists;
     import std.path : baseName;
 
-    logger.error("No administrators nor channels configured!");
+    logger.warning("Warning: No administrators nor channels configured!");
 
     immutable configFileExists = settings.configFile.exists;
     string infotint, logtint;
