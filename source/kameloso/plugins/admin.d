@@ -10,10 +10,10 @@
  +
  +  It has a few command, whose names should be fairly self-explanatory:
  +
- +  `user`<br>
+ +  `user` (debug)<br>
  +  `save` | `writeconfig`<br>
- +  `users`<br>
- +  `sudo`<br>
+ +  `users` (debug)<br>
+ +  `sudo` (debug)<br>
  +  `quit`<br>
  +  `addhome`<br>
  +  `delhome`<br>
@@ -22,16 +22,17 @@
  +  `blacklist`<br>
  +  `deblacklist`<br>
  +  `resetterm`<br>
- +  `printraw`<br>
- +  `printbytes`<br>
- +  `printasserts`<br>
+ +  `printraw` (debug)<br>
+ +  `printbytes` (debug)<br>
+ +  `printasserts` (debug)<br>
  +  `join`<br>
  +  `part`<br>
  +  `set`<br>
  +  `auth`<br>
- +  `status`
+ +  `status` (debug)
  +
- +  It is optional if you don't intend to be controlling the bot from another client.
+ +  It is optional if you don't intend to be controlling the bot from another
+ +  client or via the terminal.
  +/
 module kameloso.plugins.admin;
 
@@ -98,8 +99,8 @@ struct AdminSettings
  +  prints all incoming server strings byte per byte.
  +
  +  If `AdminPlugin.printAsserts` is set by way of invoking `onCommandprintRaw`,
- +  prints all incoming events as assert statements, for use in source code
- +  `unittest` blocks.
+ +  prints all incoming events as assert statements, for use in generating source
+ +  code `unittest` blocks.
  +/
 debug
 @(Chainable)
@@ -205,7 +206,8 @@ void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 /++
  +  Saves current configuration to disk.
  +
- +  This saves all plugins' settings, not just this plugin's.
+ +  This saves all plugins' settings, not just this plugin's, effectively
+ +  regenerating the configuration file.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -308,7 +310,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
  +  `kameloso.irc.common.IRCClient.homes` array of the current `AdminPlugin`'s
  +  `kameloso.plugins.common.IRCPluginState`.
  +
- +  Follows up with a Fiber to verify that the channel was actually joined.
+ +  Follows up with a `core.thread.Fiber` to verify that the channel was actually joined.
  +/
 @(IRCEvent.Type.CHAN)
 @(IRCEvent.Type.QUERY)
@@ -951,7 +953,7 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
 
 // onCommandResetTerminal
 /++
- +  Outputs the ASCII control character *15* to the terminal.
+ +  Outputs the ASCII control character *`15`* to the terminal.
  +
  +  This helps with restoring it if the bot has accidentally printed a different
  +  control character putting it would-be binary mode, like what happens when
