@@ -1151,7 +1151,7 @@ alias has = contains;
 ///
 unittest
 {
-    assert("Lorem ipsum sit amet".contains("sit"));
+    assert("Lorem ipsum sit amet".has("sit"));
 }
 
 
