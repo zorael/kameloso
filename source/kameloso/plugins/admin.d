@@ -141,6 +141,17 @@ void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 
         formatEventAssertBlock(stdout.lockingTextWriter, event);
         writeln();
+
+        if (plugin.state.client != plugin.previousClient)
+        {
+            import kameloso.debugging : formatDelta;
+            writeln("with (parser.client)");
+            writeln("{");
+            stdout.lockingTextWriter.formatDelta(plugin.previousClient, plugin.state.client, 1);
+            plugin.previousClient = plugin.state.client;
+            writeln("}\n");
+        }
+
         version(FlushStdout) stdout.flush();
     }
 }
@@ -1373,6 +1384,9 @@ public:
 final class AdminPlugin : IRCPlugin
 {
 private:
+    /// Snapshot of previous `IRCClient`.
+    IRCClient previousClient;
+
     /// File with user definitions. Must be the same as in persistence.d.
     @Resource string userFile = "users.json";
 
