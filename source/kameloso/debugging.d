@@ -112,7 +112,7 @@ if (is(QualThing == struct))
         alias T = Unqual!(typeof(member));
         enum memberstring = __traits(identifier, before.tupleof[i]);
 
-        static if ((memberstring == "raw") || (memberstring == "time"))
+        static if ((memberstring == "raw") || (memberstring == "time") || (memberstring == "lastWhois"))
         {
             continue;
         }
