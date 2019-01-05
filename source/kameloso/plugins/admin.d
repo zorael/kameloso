@@ -975,7 +975,7 @@ AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add
 @BotCommand(PrefixPolicy.requiredNickname, "resetterm")
 @Description("Outputs the ASCII control character 15 to the terminal, " ~
     "to recover from binary garbage mode")
-void onCommandResetTerminal(AdminPlugin plugin)
+void onCommandResetTerminal()
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
@@ -1323,7 +1323,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     }
 
     case "resetterm":
-        return plugin.onCommandResetTerminal();
+        return onCommandResetTerminal();
 
     case "set":
         import kameloso.thread : CarryingFiber, ThreadMessage;
